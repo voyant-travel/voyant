@@ -13,7 +13,11 @@
     "./routes": "./src/routes.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud": "./src/providers/voyant-cloud.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime": "./src/runtime.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/realtime-admin.json",
+    "./openapi/storefront": "./openapi/storefront/realtime-public.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -24,6 +28,8 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "hono": "catalog:"
@@ -34,7 +40,8 @@
     "vitest": "catalog:"
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -84,11 +91,23 @@
         "import": "./dist/providers/voyant-cloud.js",
         "default": "./dist/providers/voyant-cloud.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/realtime-admin.json",
+      "./openapi/storefront": "./openapi/storefront/realtime-public.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -102,6 +121,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createRealtimeRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

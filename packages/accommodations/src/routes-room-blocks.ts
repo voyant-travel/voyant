@@ -126,6 +126,7 @@ const nightUnavailableResponseSchema = z.object({
 const createRoomBlockRoute = createRoute({
   method: "post",
   path: "/room-blocks",
+  "x-voyant-api-id": "@voyant-travel/accommodations#api",
   request: {
     body: {
       required: true,
@@ -147,6 +148,7 @@ const createRoomBlockRoute = createRoute({
 const getRoomBlockRoute = createRoute({
   method: "get",
   path: "/room-blocks/{id}",
+  "x-voyant-api-id": "@voyant-travel/accommodations#api",
   request: { params: idParamSchema },
   responses: {
     200: {
@@ -163,6 +165,7 @@ const getRoomBlockRoute = createRoute({
 const setRoomBlockNightsRoute = createRoute({
   method: "put",
   path: "/room-blocks/{id}/nights",
+  "x-voyant-api-id": "@voyant-travel/accommodations#api",
   request: {
     params: idParamSchema,
     body: {
@@ -193,6 +196,7 @@ const setRoomBlockNightsRoute = createRoute({
 const pickupRoomBlockRoute = createRoute({
   method: "post",
   path: "/room-blocks/{id}/pickups",
+  "x-voyant-api-id": "@voyant-travel/accommodations#api",
   request: {
     params: idParamSchema,
     body: {
@@ -237,6 +241,7 @@ const pickupRoomBlockRoute = createRoute({
 const reverseRoomBlockPickupRoute = createRoute({
   method: "post",
   path: "/room-blocks/{id}/pickups/reverse",
+  "x-voyant-api-id": "@voyant-travel/accommodations#api",
   request: {
     params: idParamSchema,
     body: {
@@ -269,6 +274,7 @@ const reverseRoomBlockPickupRoute = createRoute({
 const releaseRoomBlockRoute = createRoute({
   method: "post",
   path: "/room-blocks/{id}/release",
+  "x-voyant-api-id": "@voyant-travel/accommodations#api",
   request: { params: idParamSchema },
   responses: {
     200: {

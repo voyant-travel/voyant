@@ -1,6 +1,7 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import { resolveBookingFinancialLifecycle } from "./financial-lifecycle.js"
 import { bookingsLinkable } from "./linkables.js"
 import {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -9,7 +10,13 @@ import {
 } from "./route-runtime.js"
 import { bookingRoutes } from "./routes.js"
 import { publicBookingRoutes } from "./routes-public.js"
-import { bookingsRuntimePort } from "./runtime-port.js"
+import { createBookingsRuntime } from "./runtime.js"
+import {
+  bookingsAccommodationRuntimePort,
+  bookingsConfigurationRuntimePort,
+  bookingsFinanceRuntimePort,
+  bookingsRelationshipsRuntimePort,
+} from "./runtime-port.js"
 
 export {
   BOOKING_ACTION_LEDGER_CAPABILITIES,
@@ -122,7 +129,21 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
     bootstrap: ({ bindings, container }) => {
       container.register(
         BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
-        buildBookingRouteRuntime(bindings as Record<string, unknown>, options),
+        buildBookingRouteRuntime(bindings as Record<string, unknown>, {
+          ...options,
+          closePaymentSchedulesForBooking:
+            options.closePaymentSchedulesForBooking ??
+            ((...args) =>
+              resolveBookingFinancialLifecycle(container)?.closePaymentSchedulesForBooking(
+                ...args,
+              )),
+          recordCancellationFinancialSettlement:
+            options.recordCancellationFinancialSettlement ??
+            ((...args) =>
+              resolveBookingFinancialLifecycle(container)?.recordCancellationFinancialSettlement(
+                ...args,
+              )),
+        }),
       )
     },
   }
@@ -138,7 +159,18 @@ export const bookingsHonoModule: HonoModule = createBookingsHonoModule()
 
 /** Package-owned adapter from graph ports to the complete Bookings runtime. */
 export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const provider = await getPort(bookingsRuntimePort)
+  const [configuration, accommodation, finance, relationships] = await Promise.all([
+    getPort(bookingsConfigurationRuntimePort),
+    getPort(bookingsAccommodationRuntimePort),
+    getPort(bookingsFinanceRuntimePort),
+    getPort(bookingsRelationshipsRuntimePort),
+  ])
+  const provider = createBookingsRuntime({
+    configuration,
+    accommodation,
+    finance,
+    relationships,
+  })
   const configured = createBookingsHonoModule(provider.options)
   const bootstrap = configured.module.bootstrap
   const selected: HonoModule = {
@@ -159,6 +191,12 @@ export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ ap
   return selected
 })
 
+export {
+  BOOKING_FINANCIAL_LIFECYCLE_KEY,
+  type BookingFinancialLifecycle,
+  registerBookingFinancialLifecycle,
+  resolveBookingFinancialLifecycle,
+} from "./financial-lifecycle.js"
 export type {
   BookingOverviewEnricherItem,
   BookingOverviewItemEnricher,
@@ -182,7 +220,15 @@ export type { BookingActionLedgerListResponse, BookingRoutes } from "./routes.js
 export type { PublicBookingRoutes } from "./routes-public.js"
 export { publicBookingRoutes } from "./routes-public.js"
 export type { BookingsRuntimeProvider } from "./runtime-port.js"
-export { bookingRequirementsRuntimePort, bookingsRuntimePort } from "./runtime-port.js"
+export {
+  bookingRequirementsRuntimePort,
+  bookingsAccommodationRuntimePort,
+  bookingsConfigurationRuntimePort,
+  bookingsFinanceRuntimePort,
+  bookingsInventoryRuntimePort,
+  bookingsRelationshipsRuntimePort,
+  bookingsRuntimePort,
+} from "./runtime-port.js"
 export type {
   BookingTravelerBedPreference,
   BookingTravelerDietary,

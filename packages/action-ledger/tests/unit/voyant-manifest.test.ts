@@ -13,6 +13,7 @@ describe("action-ledger deployment manifest", () => {
         {
           id: "@voyant-travel/action-ledger#api.admin",
           surface: "admin",
+          openapi: { document: "action-ledger" },
           runtime: {
             entry: "@voyant-travel/action-ledger",
             export: "actionLedgerHonoModule",
@@ -46,13 +47,18 @@ describe("action-ledger deployment manifest", () => {
           id: "@voyant-travel/action-ledger#health-extension.api",
           surface: "admin",
           mount: "action-ledger",
+          openapi: { document: "action-ledger-health" },
           runtime: {
             entry: "@voyant-travel/action-ledger/graph-runtime",
             export: "createActionLedgerHealthVoyantRuntime",
           },
         },
       ],
-      runtimePorts: [{ id: "action-ledger.health-runtime" }],
+      runtimePorts: [
+        { id: "action-ledger.booking-drift-runtime" },
+        { id: "action-ledger.finance-drift-runtime" },
+        { id: "action-ledger.inventory-drift-runtime" },
+      ],
     })
     expect(isGraphRuntimeFactory(createActionLedgerHealthVoyantRuntime)).toBe(true)
   })

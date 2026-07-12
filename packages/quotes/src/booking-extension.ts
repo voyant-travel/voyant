@@ -1,10 +1,10 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { parseJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 import { z } from "zod"
 
 // ---------- schema ----------
@@ -88,8 +88,11 @@ type Env = {
   }
 }
 
-const bookingQuoteExtensionRoutes = new Hono<Env>()
+export const QUOTES_BOOKING_OPENAPI_API_ID = "@voyant-travel/quotes#booking-extension.api"
 
+export const bookingQuoteExtensionRoutes = new OpenAPIHono<Env>()
+
+bookingQuoteExtensionRoutes
   .get("/:bookingId/quote-details", async (c) => {
     const row = await bookingQuoteExtensionService.get(c.get("db"), c.req.param("bookingId"))
     if (!row) {
@@ -115,6 +118,19 @@ const bookingQuoteExtensionRoutes = new Hono<Env>()
     }
     return c.json({ success: true })
   })
+
+for (const [method, path] of [
+  ["get", "/{bookingId}/quote-details"],
+  ["put", "/{bookingId}/quote-details"],
+  ["delete", "/{bookingId}/quote-details"],
+] as const) {
+  bookingQuoteExtensionRoutes.openAPIRegistry.registerPath({
+    method,
+    path,
+    responses: { 200: { description: "Quote booking detail response." } },
+    "x-voyant-api-id": QUOTES_BOOKING_OPENAPI_API_ID,
+  })
+}
 
 // ---------- extension export ----------
 

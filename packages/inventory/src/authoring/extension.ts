@@ -1,10 +1,9 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus, Extension } from "@voyant-travel/core"
-import { parseJsonBody } from "@voyant-travel/hono"
+import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { Hono } from "hono"
-import { z } from "zod"
 import {
   appendProductMutationLedgerEntry,
   type ProductLedgerMutationAction,
@@ -51,6 +50,51 @@ const duplicateBodySchema = z.object({
   idempotencyKey: z.string().min(1).max(255).optional(),
 })
 
+const authoringApiId = "@voyant-travel/inventory#authoring.extension.api"
+const idempotencyHeadersSchema = z.object({
+  "Idempotency-Key": z.string().max(255).optional(),
+})
+
+const composeProductRoute = createRoute({
+  method: "post",
+  path: "/compose",
+  summary: "Compose a product graph",
+  "x-voyant-api-id": authoringApiId,
+  request: {
+    headers: idempotencyHeadersSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: composeBodySchema } },
+    },
+  },
+  responses: {
+    200: { description: "An idempotent request reused an existing product graph" },
+    201: { description: "The product graph was created" },
+    422: { description: "The product graph specification is invalid" },
+  },
+})
+
+const duplicateProductRoute = createRoute({
+  method: "post",
+  path: "/{id}/duplicate",
+  summary: "Duplicate a product graph",
+  "x-voyant-api-id": authoringApiId,
+  request: {
+    params: z.object({ id: z.string() }),
+    headers: idempotencyHeadersSchema,
+    body: {
+      required: false,
+      content: { "application/json": { schema: duplicateBodySchema } },
+    },
+  },
+  responses: {
+    200: { description: "An idempotent request reused an existing duplicate" },
+    201: { description: "The product graph was duplicated" },
+    400: { description: "The request body is invalid" },
+    404: { description: "The source product does not exist" },
+  },
+})
+
 type DuplicateBody = z.infer<typeof duplicateBodySchema>
 
 /** Header takes precedence over a body-supplied key. */
@@ -87,9 +131,11 @@ async function recordAuthoring(
   await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "product" })
 }
 
-export const inventoryAuthoringRoutes = new Hono<Env>()
+export const inventoryAuthoringRoutes = new OpenAPIHono<Env>({
+  defaultHook: openApiValidationHook,
+})
 
-  .post("/compose", async (c) => {
+  .openapi(composeProductRoute, async (c) => {
     const body = await parseJsonBody(c, composeBodySchema)
     const outcome = await composeProduct(c.get("db"), body.spec, {
       userId: c.get("userId"),
@@ -110,7 +156,7 @@ export const inventoryAuthoringRoutes = new Hono<Env>()
     )
   })
 
-  .post("/:id/duplicate", async (c) => {
+  .openapi(duplicateProductRoute, async (c) => {
     // The UI clones with no body; the agent sends overrides. Tolerate both.
     const raw = (await c.req.text()).trim()
     let body: DuplicateBody = {}

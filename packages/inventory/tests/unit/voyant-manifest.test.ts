@@ -30,6 +30,7 @@ describe("inventory deployment manifests", () => {
         {
           id: "@voyant-travel/inventory#api.admin",
           surface: "admin",
+          openapi: { document: "products" },
           runtime: {
             entry: "@voyant-travel/inventory/graph-runtime",
             export: "createInventoryVoyantRuntime",
@@ -38,6 +39,7 @@ describe("inventory deployment manifests", () => {
         {
           id: "@voyant-travel/inventory#api.public",
           surface: "public",
+          openapi: { document: "products" },
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/inventory/graph-runtime",
@@ -48,7 +50,11 @@ describe("inventory deployment manifests", () => {
       runtimePorts: [{ id: "inventory.runtime" }],
       schema: [{ id: "@voyant-travel/inventory#schema" }],
       migrations: [{ id: "@voyant-travel/inventory#migrations" }],
-      links: [{ id: "@voyant-travel/inventory#linkable.product" }],
+      links: [
+        { id: "@voyant-travel/inventory#linkable.product" },
+        { id: "@voyant-travel/inventory#link.organization-product" },
+        { id: "@voyant-travel/inventory#link.person-product" },
+      ],
       workflows: [
         {
           id: "products.generate-pdf",
@@ -67,9 +73,10 @@ describe("inventory deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/inventory#extras.api",
+          openapi: { document: "extras" },
           runtime: {
-            entry: "@voyant-travel/inventory/extras",
-            export: "inventoryExtrasHonoModule",
+            entry: "@voyant-travel/inventory/graph-runtime",
+            export: "createInventoryExtrasVoyantRuntime",
           },
         },
       ],
@@ -83,6 +90,7 @@ describe("inventory deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/inventory#authoring.extension.api",
+          openapi: { document: "inventory-authoring" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/inventory/authoring/extension",
@@ -98,6 +106,7 @@ describe("inventory deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/inventory#booking-extension.api",
+          openapi: { document: "inventory-booking" },
           runtime: {
             entry: "@voyant-travel/inventory/booking-extension",
             export: "productsBookingExtension",
@@ -115,16 +124,18 @@ describe("inventory deployment manifests", () => {
         {
           surface: "admin",
           mount: "products",
+          openapi: { document: "products" },
           runtime: { export: "createInventoryContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "products",
+          openapi: { document: "products" },
           anonymous: true,
           runtime: { export: "createInventoryContentVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "inventory.content-runtime" }],
+      runtimePorts: [{ id: "catalog.content-runtime" }],
     })
     expect(inventoryBrochureVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",
@@ -133,10 +144,11 @@ describe("inventory deployment manifests", () => {
         {
           surface: "admin",
           mount: "products",
+          openapi: { document: "products" },
           runtime: { export: "createInventoryBrochureVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "inventory.brochure-runtime" }],
+      runtimePorts: [{ id: "inventory.brochure-runtime" }, { id: "storage.media-runtime" }],
     })
 
     const resolveRegistry = () => ({}) as never

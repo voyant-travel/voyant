@@ -5,12 +5,15 @@ import {
   AdminWorkspaceShell,
   createAdminWorkspaceBeforeLoad,
 } from "@voyant-travel/admin/app/workspace"
+import { RealtimeChannel } from "@voyant-travel/cloud-sdk"
+import { AdminWorkspaceRealtimeProvider } from "@voyant-travel/realtime-react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
-import { RealtimeLiveProvider } from "@/components/realtime-live"
 import { adminAuthRuntime } from "@/lib/admin-auth-runtime"
 import { operatorAdminDestinations } from "@/lib/admin-destinations"
-import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
-import { useSignOut } from "@/lib/auth"
+import { operatorAdminPresentation } from "@/lib/admin-presentation"
+import { authClient, useSignOut } from "@/lib/auth"
+import { getApiUrl } from "@/lib/env"
+import { projectFetcher } from "@/lib/voyant-fetcher"
 
 // The standard nav icon set ships from @voyant-travel/admin. Override a single
 // entry with `{ ...defaultOperatorNavIcons, finance: MyIcon }` if needed.
@@ -37,9 +40,14 @@ export function WorkspaceLayout() {
 
   return (
     <UserProvider initialUser={user}>
-      <RealtimeLiveProvider>
+      <AdminWorkspaceRealtimeProvider
+        fetcher={projectFetcher}
+        getApiUrl={getApiUrl}
+        realtimeChannel={RealtimeChannel}
+        useSession={authClient.useSession}
+      >
         <WorkspaceContent />
-      </RealtimeLiveProvider>
+      </AdminWorkspaceRealtimeProvider>
     </UserProvider>
   )
 }
@@ -55,7 +63,7 @@ function WorkspaceContent() {
       icons={operatorNavigationIcons}
       // The extension builder picks the nav label keys it needs from the full
       // nav messages — no hand-listing each key here.
-      extensions={(messages) => createOperatorAdminExtensions(messages.nav)}
+      extensions={(messages) => operatorAdminPresentation.createExtensions(messages.nav)}
       destinations={operatorAdminDestinations}
       onSignOut={() => signOut({ redirectTo: "/sign-in" })}
     >

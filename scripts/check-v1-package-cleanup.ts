@@ -81,58 +81,10 @@ const temporaryPackages = packageList(`
   @voyant-travel/suppliers-react|facade|@voyant-travel/distribution-react/suppliers|@voyant-travel/distribution-react
 `)
 
-function exportList(value: string) {
-  return value.trim().split(/\s+/)
-}
-
 const temporaryOwnerExports = new Map<string, string[]>([
-  [
-    "@voyant-travel/commerce",
-    exportList(`
-      ./markets ./markets/routes ./markets/schema ./markets/service-core
-      ./markets/service-rules ./markets/service-shared ./markets/service
-      ./markets/validation ./pricing/events ./pricing ./pricing/routes-core
-      ./pricing/routes-public ./pricing/routes-rules ./pricing/routes-shared
-      ./pricing/routes ./pricing/schema-catalogs ./pricing/schema-categories
-      ./pricing/schema-departure-overrides ./pricing/schema-option-rules
-      ./pricing/schema-policies ./pricing/schema-relations ./pricing/schema-shared
-      ./pricing/schema ./pricing/service-catalog-plane-pricing ./pricing/service-catalogs
-      ./pricing/service-categories ./pricing/service-departure-overrides
-      ./pricing/service-option-rules ./pricing/service-policies ./pricing/service-public
-      ./pricing/service-rule-resolver ./pricing/service-shared
-      ./pricing/service-transfer-rules ./pricing/service ./pricing/validation-public
-      ./pricing/validation-shared ./pricing/validation ./promotions/events ./promotions
-      ./promotions/routes-shared ./promotions/routes ./promotions/schema
-      ./promotions/service-booking-confirmed ./promotions/service-boundary-scheduler
-      ./promotions/service-catalog-evaluator ./promotions/service-catalog-plane-promotions
-      ./promotions/service-evaluator ./promotions/service-storefront ./promotions/service
-      ./promotions/validation ./promotions/workflow-bulk-reindex
-      ./promotions/workflow-bulk-reindex-manifest ./promotions/workflow-runtime
-      ./sellability ./sellability/routes ./sellability/schema
-      ./sellability/service-records ./sellability/service-resolve ./sellability/service-shared
-      ./sellability/service-snapshots ./sellability/service ./sellability/validation
-      ./pricing/public-routes ./pricing/public-validation
-    `),
-  ],
-  [
-    "@voyant-travel/operations",
-    exportList(`
-      ./availability ./availability/schema ./availability/validation ./availability/routes
-      ./availability/rrule ./availability/service-holds ./availability/slot-timezone
-      ./availability/service-catalog-plane-departures ./resources ./resources/schema
-      ./resources/validation ./resources/routes ./ground ./ground/schema ./ground/validation
-      ./ground/routes ./places ./places/schema ./places/validation ./places/routes
-      ./places/linkables
-    `),
-  ],
-  [
-    "@voyant-travel/distribution",
-    exportList(`
-      ./booking-extension ./channel-push ./suppliers ./suppliers/schema ./suppliers/validation
-      ./suppliers/routes ./suppliers/linkables ./external-refs ./external-refs/schema
-      ./external-refs/validation ./external-refs/routes
-    `),
-  ],
+  ["@voyant-travel/commerce", []],
+  ["@voyant-travel/operations", []],
+  ["@voyant-travel/distribution", []],
 ])
 
 const temporaryOwnerExportPrefixes = new Map<string, string[]>([

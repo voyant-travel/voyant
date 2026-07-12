@@ -1,19 +1,21 @@
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import { definePort } from "@voyant-travel/core/project"
 
-import type { CruiseContentHonoExtensionOptions } from "./routes-content.js"
+export interface CruisesRoutesRuntime {
+  resolveSourceAdapterRegistry(bindings: unknown): Promise<SourceAdapterRegistry>
+}
 
-export const cruisesContentRuntimePort = definePort<CruiseContentHonoExtensionOptions>({
-  id: "cruises.content-runtime",
+/** Deployment connector registry consumed by package-owned Cruise routes. */
+export const cruisesRoutesRuntimePort = definePort<CruisesRoutesRuntime>({
+  id: "cruises.routes-runtime",
   test(provider) {
     if (provider === null || typeof provider !== "object") {
-      throw new Error("cruises.content-runtime provider must be an options object.")
+      throw new Error("cruises.routes-runtime provider must be an options object.")
     }
-    for (const surface of ["admin", "public"] as const) {
-      if (typeof provider[surface]?.resolveRegistry !== "function") {
-        throw new Error(
-          `cruises.content-runtime provider must configure ${surface}.resolveRegistry().`,
-        )
-      }
+    if (typeof provider.resolveSourceAdapterRegistry !== "function") {
+      throw new Error(
+        "cruises.routes-runtime provider must implement resolveSourceAdapterRegistry().",
+      )
     }
   },
 })

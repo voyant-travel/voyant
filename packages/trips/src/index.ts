@@ -1,5 +1,6 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import {
@@ -76,11 +77,15 @@ export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
     module: tripsModule,
   }
   if (adminRoutes) {
-    honoModule.adminRoutes = createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin"))
+    honoModule.adminRoutes = stampOpenApiRegistryApiId(
+      createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin")),
+      "@voyant-travel/trips#api.admin",
+    )
   }
   if (publicRoutes) {
-    honoModule.publicRoutes = createTripsRoutes(
-      withTripsRouteSurface(resolvedRouteOptions, "public"),
+    honoModule.publicRoutes = stampOpenApiRegistryApiId(
+      createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "public")),
+      "@voyant-travel/trips#api.public",
     )
   }
   return honoModule

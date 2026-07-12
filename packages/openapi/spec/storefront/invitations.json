@@ -1,0 +1,297 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Framework API",
+    "version": "0.0.0",
+    "description": "Generated from the Voyant framework's standard module composition. Do not edit by hand."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CatalogSearchFilter": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "eq"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "value"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "in"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "field",
+              "values"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "range"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "field"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "and"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "or"
+                ]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "clauses"
+            ]
+          }
+        ]
+      },
+      "BookingProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BookingItemProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierServiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/public/invitations/{token}": {
+      "get": {
+        "operationId": "inspectAuthInvitation",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTTP 200"
+          },
+          "404": {
+            "description": "HTTP 404"
+          },
+          "410": {
+            "description": "HTTP 410"
+          }
+        },
+        "summary": "GET /v1/public/invitations/{token}",
+        "tags": [
+          "invitations"
+        ],
+        "x-voyant-module": "invitations",
+        "x-voyant-surface": "storefront"
+      }
+    },
+    "/v1/public/invitations/{token}/redeem": {
+      "post": {
+        "operationId": "redeemAuthInvitation",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "name",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTTP 200"
+          },
+          "409": {
+            "description": "HTTP 409"
+          },
+          "410": {
+            "description": "HTTP 410"
+          }
+        },
+        "summary": "POST /v1/public/invitations/{token}/redeem",
+        "tags": [
+          "invitations"
+        ],
+        "x-voyant-module": "invitations",
+        "x-voyant-surface": "storefront"
+      }
+    }
+  },
+  "webhooks": {}
+}

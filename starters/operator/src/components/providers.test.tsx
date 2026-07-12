@@ -45,7 +45,7 @@ vi.mock("@/lib/env", () => ({
 }))
 
 vi.mock("@/lib/voyant-fetcher", () => ({
-  operatorFetcher: vi.fn(),
+  projectFetcher: vi.fn(),
 }))
 
 import { Providers } from "./providers"

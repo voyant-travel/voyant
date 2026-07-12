@@ -1,4 +1,4 @@
-import { createManagedProfileAdminSsrHandler } from "@voyant-travel/admin-host/ssr"
+import { createAdminSsrHandler } from "@voyant-travel/admin-host/ssr"
 
 /**
  * The TanStack Start SSR handler, isolated in its own module so `entry.ts` can
@@ -14,4 +14,4 @@ import { createManagedProfileAdminSsrHandler } from "@voyant-travel/admin-host/s
  *
  * See docs/architecture/deployment-targets.md.
  */
-export const handleSsrRequest = createManagedProfileAdminSsrHandler<AppBindings>()
+export const handleSsrRequest = createAdminSsrHandler<AppBindings>()

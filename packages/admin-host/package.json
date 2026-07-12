@@ -6,6 +6,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./destinations": "./src/admin-destinations.ts",
+    "./presentation": "./src/admin-presentation.ts",
     "./serve": "./src/serve.ts",
     "./ssr": "./src/ssr.ts"
   },
@@ -18,7 +20,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-start": "^1.168.27",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/admin-app": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "hono": "^4.12.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -28,8 +34,12 @@
     "@voyant-travel/runtime": "workspace:^"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-start": "^1.168.27",
     "@types/node": "catalog:",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/admin-app": "workspace:^",
+    "@voyant-travel/types": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "hono": "catalog:",
     "react": "^19.2.7",
@@ -47,6 +57,16 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./destinations": {
+        "types": "./dist/admin-destinations.d.ts",
+        "import": "./dist/admin-destinations.js",
+        "default": "./dist/admin-destinations.js"
+      },
+      "./presentation": {
+        "types": "./dist/admin-presentation.d.ts",
+        "import": "./dist/admin-presentation.js",
+        "default": "./dist/admin-presentation.js"
       },
       "./serve": {
         "types": "./dist/serve.d.ts",

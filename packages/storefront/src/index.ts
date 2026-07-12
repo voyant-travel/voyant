@@ -1,11 +1,16 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { registerStorefrontBookingBootstrapRuntime } from "./booking-bootstrap-subscriber-runtime.js"
 import { createStorefrontAdminRoutes } from "./routes-admin.js"
 import { createStorefrontPublicRoutes } from "./routes-public.js"
-import { storefrontRuntimePort } from "./runtime-port.js"
+import {
+  storefrontBookingIntentsRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
+} from "./runtime-port.js"
 
 export type {
   GuestBookingGuardOptions,
@@ -218,15 +223,30 @@ export function createStorefrontHonoModule(options?: StorefrontHonoModuleOptions
         })
       },
     },
-    adminRoutes: createStorefrontAdminRoutes(options),
+    adminRoutes: stampOpenApiRegistryApiId(
+      createStorefrontAdminRoutes(options),
+      "@voyant-travel/storefront#api.admin",
+    ),
     publicPath: "/",
-    publicRoutes: createStorefrontPublicRoutes(options),
+    publicRoutes: stampOpenApiRegistryApiId(
+      createStorefrontPublicRoutes(options),
+      "@voyant-travel/storefront#api.public",
+    ),
     anonymous: storefrontAnonymousPublicPaths,
   }
 }
 
 export const createStorefrontVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const configured = createStorefrontHonoModule(await getPort(storefrontRuntimePort))
+  const [offers, bookingIntents, persistence] = await Promise.all([
+    getPort(storefrontOffersRuntimePort),
+    getPort(storefrontBookingIntentsRuntimePort),
+    getPort(storefrontIntakeRuntimePort),
+  ])
+  const configured = createStorefrontHonoModule({
+    offers,
+    bookingIntents,
+    intake: { persistence },
+  })
   const selected: HonoModule = { module: configured.module }
   if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
     selected.adminRoutes = configured.adminRoutes
@@ -254,8 +274,10 @@ export {
   createBookingBootstrapIntentHandler,
 } from "./booking-intents.js"
 export {
+  storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
   storefrontPaymentLinkRuntimePort,
-  storefrontRuntimePort,
   storefrontVerificationRuntimePort,
 } from "./runtime-port.js"

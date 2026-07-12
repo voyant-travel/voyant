@@ -20,14 +20,9 @@ const runtime = { withDb: (operation) => databaseRuntime.withDb(context.bindings
 container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
 `,
     "starters/operator/src/api/app.ts": "export const app = {}\n",
-    "starters/operator/src/api/runtime/trips-runtime.ts":
-      "export function createOperatorTripsRoutesOptions() {}\n",
-    "starters/operator/src/api/composition.ts": `
-const ports = {
-  [tripsDatabaseRuntimePort.id]: {
-    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
-  },
-}
+    "packages/trips/src/runtime.ts": "VoyantRuntimeHostPrimitives\n",
+    "starters/operator/src/api/runtime/deployment-resources.ts": `
+createGeneratedGraphRuntimePorts({ primitives })
 `,
     ...overrides,
   }
@@ -59,23 +54,25 @@ describe("Trips subscriber authority checker", () => {
     )
   })
 
-  it("rejects a central Operator subscriber implementation", async () => {
+  it("rejects a restored Operator Trips runtime", async () => {
     const root = await createFixture({
       "starters/operator/src/api/runtime/trips-runtime.ts": `
-eventBus.subscribe("payment.completed", handler)
+export const restored = true
 `,
     })
-    await assert.rejects(runChecker(root), /must not implement payment subscriber authority/)
+    await assert.rejects(runChecker(root), /Operator Trips runtime must stay deleted/)
   })
 
   it("rejects manual descriptor registration in composition", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/composition.ts": `
+      "starters/operator/src/api/runtime/deployment-resources.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
-    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
-  },
+    withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+      withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+  } satisfies TripsDatabaseRuntime,
 }
+createGeneratedGraphRuntimePorts({ primitives })
 tripsPaymentCompletedSubscriber.register(context)
 `,
     })

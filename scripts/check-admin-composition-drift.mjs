@@ -4,18 +4,16 @@
  * docs/architecture/unified-deployment-graph.md (Phase 4).
  *
  * The silent-failure this prevents (the #1 upgrade risk in the deployment-DX
- * assessment): a graph-selected package exposes a packaged admin
- * (`@voyant-travel/<m>-react/admin`), but is missing from the generated
- * `admin.extensions.generated.ts` — so its nav/pages silently vanish. And the
- * reverse: a generated admin entry whose package is no longer graph-selected.
+ * assessment): a graph-selected package exposes a packaged admin but does not
+ * declare admin.runtime, so its nav/pages silently vanish or fall back to a
+ * starter-owned compatibility catalog.
  *
  * Rule:
  *   expected = graph-selected module/plugin packages with an admin route
  *              surface whose `<m>-react` package exposes a `./admin` export.
- *   actual   = the `@voyant-travel/<m>-react/admin` imports wired into
- *              admin.extensions.generated.ts.
- *   FAIL on  (expected \ actual) [silently dropped admin]
- *        or  (actual not graph-selected) [admin for an unselected package].
+ *   actual   = the package imports in the selected-graph admin bundle.
+ *   FAIL when any expected package is absent, or when a compatibility
+ *        registry exists at all.
  */
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -35,12 +33,39 @@ const BUNDLE = optionPath(
   "--bundle",
   join(ROOT, "starters/operator/.voyant/admin/selected-graph-admin.generated.ts"),
 )
+const PRESENTATION = optionPath(
+  "--presentation",
+  join(ROOT, "starters/operator/src/lib/admin-presentation.tsx"),
+)
 const COMPATIBILITY = optionPath(
   "--compatibility",
   join(ROOT, "starters/operator/src/lib/admin-extensions.tsx"),
 )
-const DESTINATIONS = join(ROOT, "starters/operator/src/admin.destinations.generated.ts")
-const ROUTES = join(ROOT, "starters/operator/src/admin.routes.generated.tsx")
+const ROUTER = optionPath("--router", join(ROOT, "starters/operator/src/router.tsx"))
+const DESTINATIONS = optionPath(
+  "--destinations-source",
+  join(ROOT, "starters/operator/src/lib/admin-destinations.ts"),
+)
+const OPERATOR_PACKAGE = optionPath(
+  "--operator-package",
+  join(ROOT, "starters/operator/package.json"),
+)
+const ADMIN_HOST_DESTINATIONS = optionPath(
+  "--admin-host-destinations",
+  join(ROOT, "packages/admin-host/src/admin-destinations.ts"),
+)
+const LEGACY_ROUTES = optionPath(
+  "--legacy-routes",
+  join(ROOT, "starters/operator/src/admin.routes.generated.tsx"),
+)
+const LEGACY_DESTINATIONS = optionPath(
+  "--legacy-destinations",
+  join(ROOT, "starters/operator/src/admin.destinations.generated.ts"),
+)
+const LEGACY_GENERATOR = optionPath(
+  "--legacy-generator",
+  join(ROOT, "starters/operator/scripts/run-admin-generator.ts"),
+)
 
 function optionPath(name, fallback) {
   const index = process.argv.indexOf(name)
@@ -61,11 +86,13 @@ function readGraphSelectedAdminPackages() {
   const units = [...(graph.modules ?? []), ...(graph.extensions ?? []), ...(graph.plugins ?? [])]
   const packages = new Set()
   const bundledPackages = new Set()
+  const bundledRuntimeEntries = new Map()
 
   for (const unit of units) {
     if (typeof unit?.packageName === "string" && unit.admin?.runtime) {
       packages.add(unit.packageName)
       bundledPackages.add(unit.packageName)
+      bundledRuntimeEntries.set(unit.packageName, unit.admin.runtime.entry)
     }
     if (
       typeof unit?.packageName === "string" &&
@@ -78,6 +105,7 @@ function readGraphSelectedAdminPackages() {
   return {
     packages: [...packages].sort(),
     bundledPackages: [...bundledPackages].sort(),
+    bundledRuntimeEntries,
   }
 }
 
@@ -98,16 +126,16 @@ function hasAdminSurface(moduleName) {
   }
 }
 
-/** Pull the `@voyant-travel/<m>-react/admin` base modules wired into a file. */
-function adminImportsIn(file) {
+/** Pull all static first-party module specifiers wired into a source file. */
+function firstPartyImportsIn(file) {
   if (!existsSync(file)) return new Set()
   const src = readFileSync(file, "utf-8")
   const set = new Set()
-  const re = /@voyant-travel\/([a-z0-9-]+)-react\/admin/g
-  let m = re.exec(src)
-  while (m) {
-    set.add(`@voyant-travel/${m[1]}`)
-    m = re.exec(src)
+  const re = /(?:from\s+|import\s*)["'](@voyant-travel\/[^"']+)["']/g
+  let match = re.exec(src)
+  while (match) {
+    set.add(match[1])
+    match = re.exec(src)
   }
   return set
 }
@@ -127,74 +155,142 @@ function selectedFactoryReferencesIn(file) {
 
 const violations = []
 
-if (!existsSync(EXTENSIONS)) {
+if (existsSync(EXTENSIONS)) {
   violations.push(
-    "starters/operator/src/admin.extensions.generated.ts is missing — run `voyant admin generate`",
+    "starters/operator/src/admin.extensions.generated.ts must not exist; all admin factories must be selected-graph owned",
   )
 }
 
-const { packages: selected, bundledPackages } = readGraphSelectedAdminPackages()
-const selectedSet = new Set(selected)
-const expected = selected.filter(hasAdminSurface)
-const actual = adminImportsIn(EXTENSIONS)
-const bundled = new Set(bundledPackages)
-const actualBundle = adminImportsIn(BUNDLE)
-const compatibilitySelectedFactories = selectedFactoryReferencesIn(COMPATIBILITY)
+if (existsSync(COMPATIBILITY)) {
+  violations.push(
+    "starters/operator/src/lib/admin-extensions.tsx must not exist; generic composition belongs to admin-host",
+  )
+}
 
-// Silently-dropped admin: graph-selected + has ./admin, but not wired.
-for (const name of expected) {
-  if (!bundled.has(name) && !actual.has(name)) {
+for (const [label, file] of [
+  ["admin.routes.generated.tsx", LEGACY_ROUTES],
+  ["admin.destinations.generated.ts", LEGACY_DESTINATIONS],
+  ["run-admin-generator.ts", LEGACY_GENERATOR],
+]) {
+  if (existsSync(file)) {
     violations.push(
-      `${name} is selected by the deployment graph and exposes ${name}-react/admin but is missing from admin.extensions.generated.ts — run \`voyant admin generate\` (its admin nav/pages would silently disappear)`,
+      `${label} must not exist; .voyant selected-graph admin composition is authoritative`,
+    )
+  }
+}
+
+const routerSource = existsSync(ROUTER) ? readFileSync(ROUTER, "utf8") : ""
+if (
+  !routerSource.includes("buildAdminExtensionRoutes") ||
+  !routerSource.includes("operatorAdminPresentation.extensions")
+) {
+  violations.push(
+    "Operator router must build routes from the selected-graph admin extension registry",
+  )
+}
+
+const destinationsSource = existsSync(DESTINATIONS) ? readFileSync(DESTINATIONS, "utf8") : ""
+if (
+  !destinationsSource.includes("operatorAdminPresentation.extensions") ||
+  destinationsSource.includes("admin.destinations.generated")
+) {
+  violations.push(
+    "Operator destinations must derive from the selected-graph admin extension registry",
+  )
+}
+
+const hostDestinationsSource = existsSync(ADMIN_HOST_DESTINATIONS)
+  ? readFileSync(ADMIN_HOST_DESTINATIONS, "utf8")
+  : ""
+if (!hostDestinationsSource.includes("buildAdminExtensionDestinations(extensions)")) {
+  violations.push("Admin host must derive destination resolvers from extension route metadata")
+}
+
+const operatorPackageSource = existsSync(OPERATOR_PACKAGE)
+  ? readFileSync(OPERATOR_PACKAGE, "utf8")
+  : ""
+for (const legacyToken of [
+  "admin:generate",
+  "admin:check",
+  "run-admin-generator",
+  "--routes",
+  "--destinations",
+]) {
+  if (operatorPackageSource.includes(legacyToken)) {
+    violations.push(`Operator package retains legacy admin generation token ${legacyToken}`)
+  }
+}
+
+const {
+  packages: selected,
+  bundledPackages,
+  bundledRuntimeEntries,
+} = readGraphSelectedAdminPackages()
+const expected = selected.filter(hasAdminSurface)
+const bundled = new Set(bundledPackages)
+const actualBundleEntries = firstPartyImportsIn(BUNDLE)
+const presentationImports = firstPartyImportsIn(PRESENTATION)
+const presentationSelectedFactories = selectedFactoryReferencesIn(PRESENTATION)
+
+// Silently-dropped admin: graph-selected + has ./admin, but not bundled.
+for (const name of expected) {
+  if (!bundled.has(name)) {
+    violations.push(
+      `${name} is selected by the deployment graph and exposes ${name}-react/admin but does not declare admin.runtime`,
     )
   }
 }
 
 for (const name of bundled) {
-  if (!actualBundle.has(name)) {
+  const runtimeEntry = bundledRuntimeEntries.get(name)
+  if (!runtimeEntry || !actualBundleEntries.has(runtimeEntry)) {
     violations.push(
-      `${name} declares admin.runtime but is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
+      `${name} declares admin.runtime entry ${runtimeEntry ?? "<missing>"} but it is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
     )
   }
-  if (actual.has(name)) {
+  if (presentationSelectedFactories.has(name)) {
     violations.push(
-      `${name} is duplicated in admin.extensions.generated.ts after migration to the selected-graph admin bundle`,
-    )
-  }
-  if (compatibilitySelectedFactories.has(name)) {
-    violations.push(
-      `${name} remains package-keyed in the Operator compatibility registry after migration to generic selected-admin composition`,
+      `${name} remains package-keyed in the Operator presentation input instead of selected-admin composition`,
     )
   }
 }
 
-// Orphan admin: wired for a package the graph did not select.
-for (const name of actual) {
-  if (!selectedSet.has(name)) {
+for (const name of presentationImports) {
+  if (name === "@voyant-travel/admin-host/presentation") continue
+  violations.push(
+    `${name} remains imported by the Operator admin presentation input; package admin authority must arrive through the selected graph`,
+  )
+}
+
+for (const entry of actualBundleEntries) {
+  if (entry === "@voyant-travel/admin") continue
+  if (![...bundledRuntimeEntries.values()].includes(entry)) {
     violations.push(
-      `admin.extensions.generated.ts wires ${name}-react/admin but ${name} is not selected by the deployment graph — remove it or select the package`,
+      `selected-graph-admin.generated.ts wires ${entry} without a selected admin.runtime declaration`,
     )
   }
 }
 
-for (const name of actualBundle) {
-  if (!bundled.has(name)) {
-    violations.push(
-      `selected-graph-admin.generated.ts wires ${name} without a selected admin.runtime declaration`,
-    )
-  }
-}
-
-// Internal consistency: routes + destinations should cover the same admin set.
-for (const [label, file] of [
-  ["admin.routes.generated.tsx", ROUTES],
-  ["admin.destinations.generated.ts", DESTINATIONS],
+const presentationSource = existsSync(PRESENTATION) ? readFileSync(PRESENTATION, "utf8") : ""
+for (const token of [
+  "createAdminHostPresentation",
+  ".voyant/admin/selected-graph-admin.generated",
+  'import.meta.glob("../admin/*/index.tsx"',
 ]) {
-  const set = adminImportsIn(file)
-  if (set.size === 0 && expected.length > 0) {
-    // destinations/routes may import from different subpaths; only warn when
-    // the file references no admin domains at all while extensions has some.
-    if (!existsSync(file)) violations.push(`${label} is missing — run \`voyant admin generate\``)
+  if (!presentationSource.includes(token)) {
+    violations.push(`Operator admin presentation input must contain ${token}`)
+  }
+}
+
+for (const token of [
+  "createOperatorProfileSettingsExtraPage",
+  "CustomFieldDefinitionsPage",
+  "getCustomFieldDefinitionsQueryOptions",
+  "custom-fields",
+  "SlidersHorizontal",
+]) {
+  if (presentationSource.includes(token)) {
+    violations.push(`Operator admin presentation input retains package-owned token ${token}`)
   }
 }
 

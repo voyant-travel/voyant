@@ -15,13 +15,15 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-relationships-runtime-authority-"))
   const files = {
     "relationships/src/voyant.ts":
-      'export { relationshipsRouteRuntimePort } from "./runtime-port.js"\nruntimePorts: [requirePort(relationshipsRouteRuntimePort)]\nexport: "createRelationshipsVoyantRuntime"\n',
+      'export { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"\nruntimePorts: [requirePort(relationshipsRouteRuntimePort)]\nexport: "createRelationshipsVoyantRuntime"\n',
     "relationships/src/index.ts":
       "createRelationshipsVoyantRuntime = defineGraphRuntimeFactory(({ getPort }) => getPort(relationshipsRouteRuntimePort))\n",
     "relationships/src/runtime-port.ts":
-      'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\n',
-    "operator/src/api/composition.ts":
-      'import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"\nexport function buildOperatorRuntimePorts() { return { [relationshipsRouteRuntimePort.id]: {} } }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = {}\nfunction bindingsFromModuleFactories() {}\n',
+      'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\ndefinePort<RelationshipsMiceRuntime>({ id: "relationships.mice.runtime" })\n',
+    "relationships/src/runtime-contributor.ts":
+      'host.primitives.config.read(db, "customFields")\n[relationshipsMiceRuntimePort.id]\n',
+    "operator/src/api/runtime/deployment-resources.ts":
+      "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -57,14 +59,14 @@ describe("check-relationships-runtime-authority", () => {
     const root = await createFixture({
       "relationships/src/index.ts":
         "export const relationshipsHonoModule = createRelationshipsHonoModule()\n",
-      "operator/src/api/composition.ts":
-        'import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"\nexport function buildOperatorRuntimePorts() { return { [relationshipsRouteRuntimePort.id]: {} } }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\nfunction bindingsFromModuleFactories() {}\n',
+      "operator/src/api/runtime/deployment-resources.ts":
+        'function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must adapt its graph runtime factory through its typed port/)
       assert.match(error.stderr, /must not retain the preconfigured compatibility module export/)
-      assert.match(error.stderr, /must not bind Relationships runtime behavior by package id/)
+      assert.match(error.stderr, /compatibility runtime bindings must stay deleted/)
       return true
     })
   })

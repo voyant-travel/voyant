@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest"
 import {
+  bookingQuoteExtensionRoutes,
+  QUOTES_BOOKING_OPENAPI_API_ID,
+} from "../../src/booking-extension.js"
+import {
+  createQuoteProposalPublicRoutes,
+  createQuoteVersionSnapshotRoutes,
+  QUOTE_PROPOSAL_OPENAPI_API_IDS,
+  QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID,
+} from "../../src/proposal-routes.js"
+import {
   quotesBookingVoyantPlugin,
   quotesProposalVoyantPlugin,
   quotesVersionSnapshotVoyantPlugin,
@@ -17,6 +27,7 @@ describe("quotes deployment manifests", () => {
           id: "@voyant-travel/quotes#api",
           surface: "admin",
           mount: "quotes",
+          openapi: { document: "quotes" },
           transactional: true,
           runtime: { entry: "@voyant-travel/quotes", export: "createQuotesVoyantRuntime" },
         },
@@ -61,6 +72,7 @@ describe("quotes deployment manifests", () => {
         {
           id: "@voyant-travel/quotes#booking-extension.api",
           mount: "bookings",
+          openapi: { document: "quotes-booking" },
           runtime: {
             entry: "@voyant-travel/quotes/booking-extension",
             export: "quotesBookingExtension",
@@ -68,6 +80,10 @@ describe("quotes deployment manifests", () => {
         },
       ],
     })
+
+    expect(readApiIds(bookingQuoteExtensionRoutes)).toEqual(
+      Array.from({ length: 3 }, () => QUOTES_BOOKING_OPENAPI_API_ID),
+    )
   })
 
   it("owns the proposal and quote-version snapshot bridges", () => {
@@ -77,8 +93,10 @@ describe("quotes deployment manifests", () => {
         id: "@voyant-travel/quotes#proposal-extension",
         api: [
           {
+            id: "@voyant-travel/quotes#proposal-extension.api.admin",
             surface: "admin",
             mount: "quote-versions",
+            openapi: { document: "quotes" },
             runtime: {
               entry: "@voyant-travel/quotes",
               export: "createQuoteProposalVoyantRuntime",
@@ -88,6 +106,7 @@ describe("quotes deployment manifests", () => {
             surface: "public",
             mount: "proposals",
             anonymous: true,
+            openapi: { document: "quotes-proposal-public" },
             runtime: {
               entry: "@voyant-travel/quotes",
               export: "createQuoteProposalVoyantRuntime",
@@ -102,6 +121,7 @@ describe("quotes deployment manifests", () => {
           {
             surface: "admin",
             mount: "trips",
+            openapi: { document: "quote-version-snapshot" },
             runtime: {
               entry: "@voyant-travel/quotes",
               export: "createQuoteVersionSnapshotVoyantRuntime",
@@ -110,5 +130,41 @@ describe("quotes deployment manifests", () => {
         ],
       },
     ])
+
+    const document = (
+      createQuoteProposalPublicRoutes({} as never) as OpenApiDocumentSource
+    ).getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "Public quote proposals", version: "1" },
+    })
+    const operations = Object.values(document.paths ?? {}).flatMap((path) =>
+      Object.values(path).filter((operation) => typeof operation === "object"),
+    ) as Array<Record<string, unknown>>
+    expect(operations).toHaveLength(4)
+    expect(
+      operations.every(
+        (operation) => operation["x-voyant-api-id"] === QUOTE_PROPOSAL_OPENAPI_API_IDS.public,
+      ),
+    ).toBe(true)
+
+    expect(readApiIds(createQuoteVersionSnapshotRoutes({} as never))).toEqual([
+      QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID,
+    ])
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Quotes extension", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

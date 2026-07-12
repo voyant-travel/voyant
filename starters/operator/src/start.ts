@@ -4,7 +4,7 @@ import { createMiddleware, createStart } from "@tanstack/react-start"
  * Disable server-side execution of route loaders and components by default.
  *
  * Routes opt back into SSR with `ssr: true` or `ssr: "data-only"` and use
- * the SSR-aware `operatorFetcher` from `lib/voyant-fetcher.ts` to forward
+ * the SSR-aware `projectFetcher` from `lib/voyant-fetcher.ts` to forward
  * the incoming request's cookies. The SPA-mode default keeps the rest of
  * the dashboard on the existing client-only path during the gradual SSR
  * rollout.

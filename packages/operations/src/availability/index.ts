@@ -1,25 +1,12 @@
-import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import type { Module } from "@voyant-travel/core"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { availabilityLinkable } from "./linkables.js"
 import { availabilityAdminRoutes } from "./routes.js"
 import { availabilityService } from "./service.js"
 
+export { availabilityLinkable, departureLinkable } from "./linkables.js"
 export type { AvailabilityAdminRoutes, AvailabilityRoutes } from "./routes.js"
-
-/**
- * A "departure" in the catalog/profitability sense is a scheduled
- * availability slot. Exposed so cost allocations / reports can reference it.
- */
-export const departureLinkable: LinkableDefinition = {
-  module: "availability",
-  entity: "departure",
-  table: "availability_slots",
-  idPrefix: "avsl",
-}
-
-export const availabilityLinkable = {
-  departure: departureLinkable,
-}
 
 export const availabilityModule: Module = {
   name: "availability",

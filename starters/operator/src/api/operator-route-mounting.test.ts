@@ -12,16 +12,11 @@
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
-import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
-import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
+import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
-import {
-  buildOperatorProviders,
-  buildOperatorRuntimePorts,
-  operatorGraphRuntimeBindings,
-} from "./composition"
+import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never
@@ -102,9 +97,7 @@ async function responseWithSessionActor(
 function buildGraphComposition() {
   return composeVoyantGraphRuntime({
     runtime: createGeneratedGraphRuntime(),
-    capabilities: buildOperatorProviders(),
-    bindings: operatorGraphRuntimeBindings,
-    ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+    ...createOperatorDeploymentResources(),
   })
 }
 
@@ -113,7 +106,7 @@ function mountRoutePosture(composition: Awaited<ReturnType<typeof buildGraphComp
     publicPaths: [...composition.routePosture.publicPaths],
     dbTransactionalPaths: [...composition.routePosture.transactionalPaths],
     accessResources: composition.accessResources,
-    accessCatalog: effectiveAccessCatalog,
+    accessCatalog,
   }
 }
 
@@ -146,7 +139,7 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/mcp/manifest")).not.toBe(404)
   })
 
-  it("mounts lazy module admin + public surfaces (invitations)", async () => {
+  it("mounts package-owned invitations admin + public surfaces", async () => {
     expect(await status("/v1/admin/invitations")).not.toBe(404)
     expect(await status("/v1/public/invitations/tok_123")).not.toBe(404)
   })
@@ -181,8 +174,8 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/distribution/reconcile/bookings", "POST")).not.toBe(404)
   })
 
-  it("mounts the graph-selected SmartBill package admin route", async () => {
-    expect(await status("/v1/admin/smartbill/invoices/inv_123/sync", "POST")).not.toBe(404)
+  it("does not mount SmartBill routes unless the project selects the plugin", async () => {
+    expect(await status("/v1/admin/smartbill/invoices/inv_123/sync", "POST")).toBe(404)
   })
 
   it("lets storefront voucher validation pass the public actor gate even with an admin session", async () => {

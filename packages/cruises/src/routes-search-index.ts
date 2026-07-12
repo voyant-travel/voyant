@@ -1,6 +1,7 @@
-import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi"
+import { type OpenAPIHono, z } from "@hono/zod-openapi"
 
 import type { CruiseRoutesEnv as Env } from "./routes-env.js"
+import { createCruisesAdminRoute as createRoute } from "./routes-openapi.js"
 import { dataEnvelope, errorResponseSchema } from "./routes-openapi-schemas.js"
 import { cruisesSearchService } from "./service-search.js"
 import { insertSearchIndexSchema } from "./validation-search.js"

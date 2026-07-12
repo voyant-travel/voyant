@@ -14,16 +14,23 @@ describe("finance deployment manifest", () => {
       id: "@voyant-travel/finance",
       packageName: "@voyant-travel/finance",
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
-      runtimePorts: [{ id: "finance.runtime" }],
+      runtimePorts: [
+        { id: "finance.host.runtime" },
+        { id: "finance.notifications.runtime" },
+        { id: "finance.checkout-payment-starters.runtime", optional: true },
+        { id: "finance.invoice-settlement-poller", optional: true, cardinality: "many" },
+      ],
       api: [
         {
           id: "@voyant-travel/finance#api.admin",
           surface: "admin",
+          openapi: { document: "finance" },
           runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
         },
         {
           id: "@voyant-travel/finance#api.public",
           surface: "public",
+          openapi: { document: "finance" },
           anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
           runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
         },
@@ -55,8 +62,24 @@ describe("finance deployment manifest", () => {
       projectConfig: {},
       api: [{ id: "finance.admin", surface: "admin" }],
       hasPort: () => true,
-      getPort: async <TProvider>() => ({}) as TProvider,
-    })
+      getPort: async <TProvider>(port: { id: string }) => {
+        const providers: Record<string, unknown> = {
+          "finance.host.runtime": {
+            primitives: {
+              env: () => ({}),
+              storage: { downloadUrl: () => undefined },
+            },
+          },
+          "finance.notifications.runtime": {
+            resolveNotificationDispatcher: () => undefined,
+            listBookingReminderRuns: async () => [],
+          },
+          "finance.checkout-payment-starters.runtime": { resolvePaymentStarters: () => ({}) },
+        }
+        return providers[port.id] as TProvider
+      },
+      getPorts: async <TProvider>() => [] as TProvider[],
+    } as never)
 
     expect(runtime.adminRoutes).toBeDefined()
     expect(runtime.publicRoutes).toBeUndefined()
@@ -68,9 +91,13 @@ describe("finance deployment manifest", () => {
         schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/finance#booking-tax-extension",
         runtime: { entry: "@voyant-travel/finance", export: "createBookingTaxVoyantRuntime" },
-        runtimePorts: [{ id: "finance.booking-tax.runtime" }],
+        runtimePorts: [{ id: "finance.operator-settings.runtime" }],
         api: [
           {
+            id: "@voyant-travel/finance#booking-tax-extension.api",
+            surface: "admin",
+            mount: "bookings",
+            openapi: { document: "booking-tax" },
             runtime: {
               entry: "@voyant-travel/finance",
               export: "createBookingTaxHonoExtension",
@@ -83,6 +110,10 @@ describe("finance deployment manifest", () => {
         id: "@voyant-travel/finance#bookings-create-extension",
         api: [
           {
+            id: "@voyant-travel/finance#bookings-create-extension.api",
+            surface: "admin",
+            mount: "bookings",
+            openapi: { document: "bookings" },
             runtime: { entry: "@voyant-travel/finance", export: "bookingsCreateExtension" },
           },
         ],
@@ -99,12 +130,20 @@ describe("finance deployment manifest", () => {
         entry: "@voyant-travel/finance",
         export: "createBookingScheduleVoyantRuntime",
       },
-      runtimePorts: [{ id: "finance.booking-schedule.runtime" }],
+      runtimePorts: [
+        { id: "finance.host.runtime" },
+        { id: "finance.operator-settings.runtime" },
+        { id: "finance.distribution-payment-policy.runtime" },
+        { id: "finance.accommodations-payment-policy.runtime" },
+        { id: "finance.cruises-payment-policy.runtime" },
+        { id: "finance.inventory-payment-policy.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/finance#booking-schedule-extension.api.admin",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/finance",
             export: "createBookingScheduleHonoExtension",
@@ -114,6 +153,7 @@ describe("finance deployment manifest", () => {
           id: "@voyant-travel/finance#booking-schedule-extension.api.public",
           surface: "public",
           mount: "payment-policy",
+          openapi: { document: "bookings" },
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/finance",
@@ -155,6 +195,10 @@ describe("finance deployment manifest", () => {
     ])
     expect(financeVoyantModule.admin?.contributions?.map(({ id, slotId }) => [id, slotId])).toEqual(
       [
+        [
+          "@voyant-travel/finance#admin.contribution.booking-payment-controller",
+          "booking.details.payment-controller",
+        ],
         [
           "@voyant-travel/finance#admin.contribution.booking-invoices",
           "booking.details.invoices-tab",

@@ -1,0 +1,56 @@
+{
+  "name": "@voyant-travel/webhook-delivery",
+  "version": "0.1.0",
+  "description": "Durable, policy-aware outbound webhook delivery for Voyant Node deployments.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./postgres": "./src/postgres-store.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/ tests/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./postgres": {
+        "types": "./dist/postgres-store.d.ts",
+        "import": "./dist/postgres-store.js",
+        "default": "./dist/postgres-store.js"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/webhook-delivery"
+  }
+}

@@ -1,8 +1,8 @@
 // agent-quality: file-size exception -- owner: catalog-demo-api; existing route module stays co-located until a dedicated split preserves behavior and tests.
 /**
  * REST surface for the catalog demo service. Mirrors the methods on
- * `SourceAdapter` (`@voyant-travel/catalog/adapter/contract`) so the plugin
- * (`@voyant-travel/plugin-catalog-demo`) is a thin fetch wrapper.
+ * `SourceAdapter` (`@voyant-travel/catalog/adapter/contract`) for standalone
+ * contract and integration testing.
  *
  *   POST   /discover                   discover (paginated CatalogProjections)
  *   POST   /live-resolve               liveResolve (current price + availability)

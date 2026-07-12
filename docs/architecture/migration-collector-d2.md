@@ -110,7 +110,7 @@ There is **no long tail of D.1 databases in the wild**: exactly two deployments 
 
 Validating the D.1 single-folder collapse (2026-06-20) surfaced that the replay-parity oracle had been silently comparing against an **empty** push database: `drizzle.config.ts` loaded `.dev.vars` with `override: true`, clobbering the `DATABASE_URL` the oracle injected, so `drizzle-kit push` ran against a non-extension DB, aborted on a `gin_trgm_ops` index, and **exited 0**. Fixed by making an explicit `DATABASE_URL` win (`fix(operator): explicit DATABASE_URL must win over .dev.vars`). The lesson is encoded in Decision 7: the oracle must fail closed and assert real counts, because per-source drift detection is the only safety net D.2 has.
 
-## Managed profiles: custom module migrations (voyant#3069)
+## Graph deployments: custom module migrations (voyant#3069)
 
 A **source-free managed image** (`voyant-operator-runtime:<framework-version>`,
 platform#953/#954) runs migrations with **no drizzle-kit generation** and no
@@ -135,7 +135,7 @@ Resolution + ordering:
   loads its `migrations/` as a `MigrationSource`, or `null` when it ships none (a
   schema-less module/plugin — skipped). The ledger source name is the unscoped
   package name, stable across source and managed modes.
-- `collectManagedMigrationSources({ modulePackages, resolveFrom })` returns
+- `collectDeploymentMigrationSources({ modulePackages, resolveFrom })` returns
   `[framework(0), ...customModules(1..n)]` deps-first — hand straight to
   `runDeploymentMigrations`.
 - `getVoyantProjectMigrationMetadata(project)` now returns

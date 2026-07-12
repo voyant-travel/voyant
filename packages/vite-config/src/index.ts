@@ -139,7 +139,7 @@ export interface VoyantStartViteConfigOptions {
    *   packages resolve from `./src` and the app build stands alone (no
    *   prebuilt `dist` / `turbo ^build` needed).
    *
-   * This is the config a Cloud-built managed admin image would otherwise copy;
+   * This is the config a Cloud-built hosted admin image would otherwise copy;
    * packaging it keeps it a version bump, not a copy (voyant#3044).
    */
   nodeSsr?: boolean

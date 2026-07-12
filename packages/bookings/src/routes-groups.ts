@@ -16,10 +16,10 @@
  * rather than one long flat `.openapi()` chain to keep tsc inference linear.
  */
 
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
-
+import { createBookingsAdminRoute as createRoute } from "./routes-openapi.js"
 import { bookingGroupsService } from "./service-groups.js"
 import {
   addBookingGroupMemberSchema,

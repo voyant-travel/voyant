@@ -15,6 +15,7 @@ export const operationsVoyantModule = defineModule({
       id: "@voyant-travel/operations#api.admin",
       surface: "admin",
       mount: "operations",
+      openapi: { document: "operations" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/operations",
@@ -37,32 +38,60 @@ export const operationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/operations#linkable.departure",
-      source: "@voyant-travel/operations/availability",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.facility",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.functionSpace",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.property",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.spaceBlock",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
   ],
   events: [
     {
       id: "@voyant-travel/operations#event.availability-slot-changed",
       eventType: "availability.slot.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "operations", category: "domain" },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/operations#access.dashboard",
+        resource: "dashboard",
+        actions: ["read"],
+      },
+      {
+        id: "@voyant-travel/operations#access.ground",
+        resource: "ground",
+        actions: ["read", "write"],
+      },
+      {
+        id: "@voyant-travel/operations#access.resources",
+        resource: "resources",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   admin: {
+    compositionOrder: 10,
+    runtime: {
+      entry: "@voyant-travel/operations-react/admin",
+      export: "createSelectedOperationsAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/operations#admin.copy.availability",
@@ -100,6 +129,13 @@ export const operationsVoyantModule = defineModule({
       path,
       runtime: operationsAdminRuntime,
     })),
+    contributions: [
+      {
+        id: "@voyant-travel/operations#admin.contribution.product-option-resource-templates",
+        slotId: "product.details.option-extras",
+        runtime: operationsAdminRuntime,
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },

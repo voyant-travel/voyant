@@ -26,7 +26,7 @@
  * profile via `QuoteProposalRoutesOptions` — all generic / structural so this
  * package stays free of operator types and CloudflareBindings.
  */
-
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
@@ -68,14 +68,14 @@ export interface QuoteProposalRoutesOptions {
    */
   resolvePublicProposalBaseUrl(c: Context): string | null
   /** Build the trips reserve deps for a request (catalog/non-catalog wiring). */
-  reserveTripDeps(c: Context): ReserveTripDeps
+  reserveTripDeps(c: Context): ReserveTripDeps | Promise<ReserveTripDeps>
   /** Build the trips checkout deps for a request (payment-session wiring). */
-  startCheckoutDeps(c: Context): StartCheckoutDeps
+  startCheckoutDeps(c: Context): StartCheckoutDeps | Promise<StartCheckoutDeps>
   /**
    * Build the trips cancel deps for a request (provider hold-release wiring).
    * Used to release a reserved Trip when final CRM acceptance loses a race.
    */
-  cancelTripComponentsDeps(c: Context): CancelTripComponentsDeps
+  cancelTripComponentsDeps(c: Context): CancelTripComponentsDeps | Promise<CancelTripComponentsDeps>
   /**
    * Resolve the deployment's public operator profile, surfaced on the public
    * proposal payload. Returns `null` when no profile is configured.
@@ -91,6 +91,21 @@ export interface QuoteProposalRoutesOptions {
     c: Context,
   ): Promise<PublicProposalFeedbackRecord | null>
 }
+
+export const QUOTE_PROPOSAL_OPENAPI_API_IDS = {
+  admin: "@voyant-travel/quotes#proposal-extension.api.admin",
+  public: "@voyant-travel/quotes#proposal-extension.api.public",
+} as const
+
+export const QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID =
+  "@voyant-travel/quotes#quote-version-snapshot-extension.api"
+
+const PUBLIC_PROPOSAL_OPENAPI_OPERATIONS = [
+  ["get", "/{quoteVersionId}", "Get a public quote proposal"],
+  ["post", "/{quoteVersionId}/accept", "Accept a public quote proposal"],
+  ["post", "/{quoteVersionId}/decline", "Decline a public quote proposal"],
+  ["post", "/{quoteVersionId}/request-edits", "Request quote proposal edits"],
+] as const
 
 export interface QuoteVersionSnapshotRoutesOptions {
   /** Resolve the concrete transactional db for a request. */
@@ -299,23 +314,39 @@ export function createQuoteProposalAdminRoutes(
 /** Build the public proposal routes (relative paths; mount at `/v1/public/proposals`). */
 export function createQuoteProposalPublicRoutes(
   options: QuoteProposalRoutesOptions,
-): Hono<OperatorProposalRouteEnv> {
-  const app = new Hono<OperatorProposalRouteEnv>()
+): OpenAPIHono<OperatorProposalRouteEnv> {
+  const app = new OpenAPIHono<OperatorProposalRouteEnv>()
   app.get("/:quoteVersionId", (c) => handleGetPublicProposal(c, options))
   app.post("/:quoteVersionId/accept", (c) => handleAcceptPublicProposal(c, options))
   app.post("/:quoteVersionId/decline", (c) => handleDeclinePublicProposal(c, options))
   app.post("/:quoteVersionId/request-edits", (c) => handleRequestPublicProposalEdits(c, options))
+  for (const [method, path, summary] of PUBLIC_PROPOSAL_OPENAPI_OPERATIONS) {
+    app.openAPIRegistry.registerPath({
+      method,
+      path,
+      summary,
+      responses: { 200: { description: "Successful response." } },
+      "x-voyant-api-id": QUOTE_PROPOSAL_OPENAPI_API_IDS.public,
+    })
+  }
   return app
 }
 
 /** Build the Trip-snapshot freeze route (relative path; mount at `/v1/admin/trips`). */
 export function createQuoteVersionSnapshotRoutes(
   options: QuoteVersionSnapshotRoutesOptions,
-): Hono<OperatorQuoteVersionSnapshotRouteEnv> {
-  const app = new Hono<OperatorQuoteVersionSnapshotRouteEnv>()
+): OpenAPIHono<OperatorQuoteVersionSnapshotRouteEnv> {
+  const app = new OpenAPIHono<OperatorQuoteVersionSnapshotRouteEnv>()
   app.post("/:envelopeId/quote-versions/:quoteVersionId/snapshot", (c) =>
     handleFreezeQuoteVersionSnapshot(c, options),
   )
+  app.openAPIRegistry.registerPath({
+    method: "post",
+    path: "/{envelopeId}/quote-versions/{quoteVersionId}/snapshot",
+    summary: "Freeze a Trip snapshot into a Quote Version",
+    responses: { 200: { description: "The updated Quote Version and frozen Trip snapshot." } },
+    "x-voyant-api-id": QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID,
+  })
   return app
 }
 
@@ -769,7 +800,7 @@ async function finalizePublicProposalAcceptWithQuoteLock({
   return { kind: "accepted", accepted }
 }
 
-function reservePreparedPublicProposal(
+async function reservePreparedPublicProposal(
   c: Context<OperatorProposalRouteEnv>,
   options: QuoteProposalRoutesOptions,
   db: PostgresJsDatabase,
@@ -789,7 +820,7 @@ function reservePreparedPublicProposal(
         currency: snapshot.currency,
       },
     },
-    options.reserveTripDeps(c),
+    await options.reserveTripDeps(c),
   )
 }
 
@@ -848,7 +879,7 @@ async function releaseAcceptedProposalReservation(
           quoteVersionId: release.quoteVersionId,
         },
       },
-      options.cancelTripComponentsDeps(c),
+      await options.cancelTripComponentsDeps(c),
     )
   } catch (error) {
     console.warn("[proposal] failed to release reservation after proposal accept conflict:", error)
@@ -921,7 +952,7 @@ async function startAcceptedProposalCheckout(
           collectionCurrency: snapshot.currency,
         },
       },
-      options.startCheckoutDeps(c),
+      await options.startCheckoutDeps(c),
     )
   } catch (error) {
     console.warn("[proposal] checkout handoff failed after proposal acceptance:", error)

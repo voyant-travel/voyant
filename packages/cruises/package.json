@@ -18,13 +18,21 @@
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-external-refresh": "./src/service-external-refresh.ts",
+    "./external-refresh-workflow": "./src/external-refresh-workflow.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
+    "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
     "./service-pricing": "./src/service-pricing.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-port": "./src/runtime-port.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/cruises.json",
+    "./openapi/storefront": "./openapi/storefront/cruises.json",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -40,10 +48,12 @@
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/cruises-contracts": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
@@ -57,6 +67,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -133,6 +144,11 @@
         "import": "./dist/service-external-refresh.js",
         "default": "./dist/service-external-refresh.js"
       },
+      "./external-refresh-workflow": {
+        "types": "./dist/external-refresh-workflow.d.ts",
+        "import": "./dist/external-refresh-workflow.js",
+        "default": "./dist/external-refresh-workflow.js"
+      },
       "./service-content-synthesizer": {
         "types": "./dist/service-content-synthesizer.d.ts",
         "import": "./dist/service-content-synthesizer.js",
@@ -153,6 +169,11 @@
         "import": "./dist/booking-engine/index.js",
         "default": "./dist/booking-engine/index.js"
       },
+      "./booking-engine/operator-runtime": {
+        "types": "./dist/booking-engine/operator-runtime.d.ts",
+        "import": "./dist/booking-engine/operator-runtime.js",
+        "default": "./dist/booking-engine/operator-runtime.js"
+      },
       "./service-pricing": {
         "types": "./dist/service-pricing.d.ts",
         "import": "./dist/service-pricing.js",
@@ -163,10 +184,32 @@
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
       },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./payment-policy-runtime": {
+        "types": "./dist/payment-policy-runtime.d.ts",
+        "import": "./dist/payment-policy-runtime.js",
+        "default": "./dist/payment-policy-runtime.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./openapi/admin": "./openapi/admin/cruises.json",
+      "./openapi/storefront": "./openapi/storefront/cruises.json",
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
       }
     },
     "main": "./dist/index.js",
@@ -181,6 +224,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createCruisesRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

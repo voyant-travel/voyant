@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: bookings; existing route module stays co-located until a dedicated split preserves behavior and tests.
 
-import { createRoute, OpenAPIHono } from "@hono/zod-openapi"
+import { OpenAPIHono } from "@hono/zod-openapi"
 import {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
   ActionApprovalDecisionConflictError,
@@ -63,6 +63,7 @@ import {
   buildBookingRouteRuntime,
 } from "./route-runtime.js"
 import { bookingGroupRoutes } from "./routes-groups.js"
+import { createBookingsAdminRoute as createRoute } from "./routes-openapi.js"
 import type { publicBookingRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
 import { bookingPiiAccessLog } from "./schema.js"
@@ -3673,6 +3674,7 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 const listSupplierStatusesRoute = createRoute({
   method: "get",
   path: "/{id}/supplier-statuses",
+  "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
   request: { params: idParamSchema },
   responses: {
     200: dataResponse(z.array(bookingSupplierStatusSchema), "Booking supplier statuses"),
@@ -3682,6 +3684,7 @@ const listSupplierStatusesRoute = createRoute({
 const createSupplierStatusRoute = createRoute({
   method: "post",
   path: "/{id}/supplier-statuses",
+  "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
   request: {
     params: idParamSchema,
     body: jsonBody(insertSupplierStatusSchema, true, "Supplier status to create"),
@@ -3696,6 +3699,7 @@ const createSupplierStatusRoute = createRoute({
 const updateSupplierStatusRoute = createRoute({
   method: "patch",
   path: "/{id}/supplier-statuses/{statusId}",
+  "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
   request: {
     params: z.object({ id: z.string(), statusId: z.string() }),
     body: jsonBody(updateSupplierStatusSchema, false, "Partial supplier status update"),

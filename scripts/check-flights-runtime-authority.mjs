@@ -11,6 +11,10 @@ const pathOption = (name, fallback) => {
   return value
 }
 const flightsRoot = pathOption("--flights-root", join(ROOT, "packages/flights"))
+const retiredFlightsNodeRoot = pathOption(
+  "--retired-flights-node-root",
+  join(ROOT, "packages/flights-node"),
+)
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
 const violations = []
 
@@ -19,31 +23,13 @@ function readRequired(path) {
   return readFileSync(path, "utf8")
 }
 
-function section(source, start, end) {
-  const startIndex = source.indexOf(start)
-  const endIndex = source.indexOf(end, startIndex + start.length)
-  if (startIndex < 0 || endIndex < 0) {
-    throw new Error(`check-flights-runtime-authority: could not locate ${start}`)
-  }
-  return source.slice(startIndex, endIndex)
-}
-
 const packageJson = JSON.parse(readRequired(join(flightsRoot, "package.json")))
 const manifest = readRequired(join(flightsRoot, "src/voyant.ts"))
 const hono = readRequired(join(flightsRoot, "src/hono.ts"))
 const runtimePort = readRequired(join(flightsRoot, "src/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
-const operatorRuntime = readRequired(join(operatorRoot, "src/api/runtime/flights-runtime.ts"))
-const runtimePorts = section(
-  composition,
-  "export function buildOperatorRuntimePorts",
-  "function createLazyCatalogSearchRuntime",
-)
-const runtimeBindings = section(
-  composition,
-  "export const operatorGraphRuntimeBindings",
-  "function resolveOperatorSmartbillOptions",
-)
+const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const nodeContributor = readRequired(join(flightsRoot, "src/runtime-contributor.ts"))
+const runtime = readRequired(join(flightsRoot, "src/runtime.ts"))
 
 if (packageJson.dependencies?.["@voyant-travel/finance"] !== "workspace:^") {
   violations.push("Flights must own its @voyant-travel/finance runtime dependency")
@@ -72,20 +58,38 @@ for (const method of ["resolveAdapter", "startCardPayment"]) {
     violations.push(`flights.runtime conformance must require ${method}()`)
   }
 }
-if (!runtimePorts.includes("[flightsRuntimePort.id]")) {
-  violations.push("Operator must bind Flights through flightsRuntimePort.id")
+if (
+  packageJson.voyant?.runtime?.export !== "createFlightsRuntimePortContribution" ||
+  !packageJson.exports?.["./runtime-contributor"] ||
+  packageJson.exports?.["./standard-node"]
+) {
+  violations.push("Flights package must own its standard Node runtime contributor")
 }
-if (runtimeBindings.includes('"@voyant-travel/flights"')) {
-  violations.push("Operator must not bind Flights by package id")
+if (existsSync(retiredFlightsNodeRoot)) {
+  violations.push("the retired Flights Node suffix package must stay deleted")
+}
+if (composition.includes("operatorGraphRuntimeBindings")) {
+  violations.push("Operator compatibility runtime bindings must stay deleted")
 }
 if (composition.includes("loadFlightAdminRoutes")) {
   violations.push("Operator must not retain the Flights compatibility route loader")
 }
 if (
-  !operatorRuntime.includes("operatorFlightsRuntime: FlightsRuntime") ||
-  /createFlightsHonoModule|createFlightAdminRoutes|createOrderPaymentSessions/.test(operatorRuntime)
+  !nodeContributor.includes("primitives: VoyantRuntimeHostPrimitives") ||
+  !nodeContributor.includes("createFlightsRuntime(host.primitives)")
 ) {
-  violations.push("Operator Flights runtime must contain Node providers only")
+  violations.push("Flights must own runtime contribution from generic primitives")
+}
+for (const token of [
+  "resolveAdapter()",
+  "startCardPayment",
+  "Flight connector is not configured",
+]) {
+  if (!runtime.includes(token))
+    violations.push(`Flights standard Node runtime must preserve ${token}`)
+}
+if (composition.includes("loadFlightsRuntime") || composition.includes("./flights-runtime")) {
+  violations.push("Operator must not retain a Flights runtime loader or facade")
 }
 
 if (violations.length > 0) {
@@ -94,6 +98,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log(
-  "check-flights-runtime-authority: OK (package runtime authority; Node host providers only)",
-)
+console.log("check-flights-runtime-authority: OK (Flights-owned standard Node runtime authority)")

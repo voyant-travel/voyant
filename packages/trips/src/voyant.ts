@@ -1,6 +1,10 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
+const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
+const catalogCheckoutApiRuntimePortReference = { id: "commerce.checkout-api-options" } as const
+const flightsRuntimePortReference = { id: "flights.runtime" } as const
+
 export {
   type TripsDatabaseRuntime,
   tripsDatabaseRuntimePort,
@@ -12,12 +16,19 @@ export const tripsVoyantModule = defineModule({
   id: "@voyant-travel/trips",
   packageName: "@voyant-travel/trips",
   localId: "trips",
-  runtimePorts: [requirePort(tripsRoutesRuntimePort), requirePort(tripsDatabaseRuntimePort)],
+  runtimePorts: [
+    requirePort(tripsRoutesRuntimePort),
+    requirePort(tripsDatabaseRuntimePort),
+    catalogRuntimeServicesPortReference,
+    catalogCheckoutApiRuntimePortReference,
+    flightsRuntimePortReference,
+  ],
   api: [
     {
       id: "@voyant-travel/trips#api.admin",
       surface: "admin",
       mount: "trips",
+      openapi: { document: "trips" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/trips",
@@ -28,6 +39,7 @@ export const tripsVoyantModule = defineModule({
       id: "@voyant-travel/trips#api.public",
       surface: "public",
       mount: "trips",
+      openapi: { document: "trips" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/trips",
@@ -136,6 +148,11 @@ export const tripsVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 90,
+    runtime: {
+      entry: "@voyant-travel/trips-react/admin",
+      export: "createSelectedTripsAdminExtension",
+    },
     routes: [
       {
         id: "@voyant-travel/trips#admin.route.trips-index",
@@ -148,6 +165,16 @@ export const tripsVoyantModule = defineModule({
       {
         id: "@voyant-travel/trips#admin.route.trips-detail",
         path: "/trips/$id",
+        runtime: {
+          entry: "@voyant-travel/trips-react/admin",
+          export: "createTripsAdminExtension",
+        },
+      },
+    ],
+    contributions: [
+      {
+        id: "@voyant-travel/trips#admin.contribution.compose-booking",
+        slotId: "bookings.list.header-actions",
         runtime: {
           entry: "@voyant-travel/trips-react/admin",
           export: "createTripsAdminExtension",

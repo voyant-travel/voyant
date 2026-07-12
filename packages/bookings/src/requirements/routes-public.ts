@@ -1,8 +1,8 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-
+import { createBookingRequirementsPublicRoute } from "./routes-openapi.js"
 import { bookingRequirementsService } from "./service.js"
 import type { ResolveBookingRequirementsProductSnapshot } from "./service-public.js"
 import {
@@ -23,7 +23,7 @@ function cachePublicRead(c: Context) {
   c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
 }
 
-const transportRequirementsRoute = createRoute({
+const transportRequirementsRoute = createBookingRequirementsPublicRoute({
   method: "get",
   path: "/products/{productId}/transport-requirements",
   request: {

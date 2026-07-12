@@ -1,0 +1,171 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Auth Team Admin API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/team/members": {
+      "get": {
+        "operationId": "listTeamMembers",
+        "summary": "List team members",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "responses": {
+          "200": { "description": "The deployment team members." },
+          "401": { "description": "The caller is not authenticated." },
+          "404": { "description": "Cloud team management is unavailable." }
+        }
+      }
+    },
+    "/v1/admin/team/roles": {
+      "get": {
+        "operationId": "listTeamRoles",
+        "summary": "List team roles",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "responses": {
+          "200": { "description": "The available team roles." },
+          "401": { "description": "The caller is not authenticated." },
+          "404": { "description": "Cloud team management is unavailable." }
+        }
+      }
+    },
+    "/v1/admin/team/invitations": {
+      "get": {
+        "operationId": "listTeamInvitations",
+        "summary": "List team invitations",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "responses": {
+          "200": { "description": "The outstanding team invitations." },
+          "401": { "description": "The caller is not authenticated." }
+        }
+      },
+      "post": {
+        "operationId": "createTeamInvitation",
+        "summary": "Invite a team member",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "roleSlug": {
+                    "type": ["string", "null"],
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "expiresInDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "The created team invitation." },
+          "401": { "description": "The caller is not authenticated." }
+        }
+      }
+    },
+    "/v1/admin/team/invitations/{invitationId}": {
+      "delete": {
+        "operationId": "revokeTeamInvitation",
+        "summary": "Revoke a team invitation",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "The invitation was revoked." },
+          "401": { "description": "The caller is not authenticated." }
+        }
+      }
+    },
+    "/v1/admin/team/members/{membershipId}/access": {
+      "put": {
+        "operationId": "setTeamMemberAccess",
+        "summary": "Set team member access",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["hasAccess"],
+                "properties": { "hasAccess": { "type": "boolean" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "The updated team member." },
+          "401": { "description": "The caller is not authenticated." }
+        }
+      }
+    },
+    "/v1/admin/team/members/{membershipId}/permissions": {
+      "put": {
+        "operationId": "setTeamMemberPermissions",
+        "summary": "Set team member permissions",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "parameters": [
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["permissions"],
+                "properties": {
+                  "permissions": {
+                    "type": "array",
+                    "maxItems": 200,
+                    "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "The updated team member." },
+          "401": { "description": "The caller is not authenticated." }
+        }
+      }
+    }
+  }
+}

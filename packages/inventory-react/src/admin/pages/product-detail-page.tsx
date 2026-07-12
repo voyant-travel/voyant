@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  AdminWidgetSlotRenderer,
   useAdminBreadcrumbs,
   useAdminNavigate,
   useLocale,
@@ -17,6 +18,7 @@ import { ProductDetailPage } from "../../components/product-detail/product-detai
 import type { ProductMediaUploadHandler } from "../../components/product-media-section.js"
 import { useVoyantProductsContext } from "../../provider.js"
 import { createProductDetailRestApi } from "../product-detail-api.js"
+import { productDetailOptionExtrasSlot } from "../slots.js"
 
 /**
  * Packaged default for the `products-detail` contribution: binds the
@@ -26,10 +28,8 @@ import { createProductDetailRestApi } from "../product-detail-api.js"
  * semantic destinations (RFC §4.7), and a media upload handler that posts
  * to the starter-level `/v1/admin/uploads` storage route.
  *
- * Hosts that need app-owned composition (e.g. the operator's
- * availability-react option resource templates panel — a cycle from here,
- * since `@voyant-travel/operations-react/availability` depends on this package) substitute
- * their own implementation via the factory's `detailPageComponent` option.
+ * Cross-domain option content is supplied through the package-owned option
+ * extras widget slot, so hosts do not replace this route page.
  */
 export interface ProductDetailPageComponentProps {
   id: string
@@ -49,10 +49,8 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
     () => ({
       toProducts: () => navigateTo("product.list", {}),
       toProduct: (productId) => navigateTo("product.detail", { productId }),
-      // The packaged default cannot pre-select the product in the unified
-      // booking journey (`booking.create` carries no params); hosts that
-      // want the deep link substitute the page via `detailPageComponent`.
-      toNewBooking: () => navigateTo("booking.create", {}),
+      toNewBooking: (productId) =>
+        navigateTo("bookingJourney.start", { entityModule: "products", entityId: productId }),
       toAvailability: (slotId) => navigateTo("availabilitySlot.detail", { slotId }),
     }),
     [navigateTo],
@@ -98,6 +96,12 @@ export default function ProductDetailDefaultPage({ id }: ProductDetailPageCompon
       navigate: navigation,
       uploadMedia,
       setBreadcrumbs,
+      renderOptionExtras: (productId, optionId) => (
+        <AdminWidgetSlotRenderer
+          slot={productDetailOptionExtrasSlot}
+          props={{ productId, optionId }}
+        />
+      ),
     }),
     [messages, api, resolvedLocale, navigation, uploadMedia],
   )

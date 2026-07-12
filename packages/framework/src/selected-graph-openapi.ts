@@ -46,7 +46,6 @@ export async function buildSelectedGraphOpenApiDocuments(
   const ownership = await buildModulePathOwnership(input.app.moduleMounts ?? [], input.options)
   const source = stampModuleMetadata(merged, ownership)
   const claims = collectClaims(input.runtime)
-  validateDocumentClaims(claims)
 
   const claimedOperations = new Map<string, OpenApiClaim>()
   const documents = new Map<string, OpenApiDocument>()
@@ -55,7 +54,7 @@ export async function buildSelectedGraphOpenApiDocuments(
     let operationCount = 0
 
     for (const [path, pathItem] of Object.entries(source.paths ?? {})) {
-      if (!isWithinMount(path, claim.mount) || !isRecord(pathItem)) continue
+      if (!isRecord(pathItem)) continue
 
       const selectedItem: Record<string, unknown> = {}
       let selectedOperationCount = 0
@@ -66,6 +65,11 @@ export async function buildSelectedGraphOpenApiDocuments(
           continue
         }
         if (!isRecord(value) || !routeClaimsMethod(claim, method)) continue
+
+        const explicitApiId = value["x-voyant-api-id"]
+        if (typeof explicitApiId === "string" && explicitApiId !== claim.route.id) continue
+        if (claim.mount === "/" && explicitApiId !== claim.route.id) continue
+        if (!isWithinMount(path, claim.mount) && explicitApiId !== claim.route.id) continue
 
         const operation = `${method.toUpperCase()} ${path}`
         const previous = claimedOperations.get(operation)
@@ -96,10 +100,64 @@ export async function buildSelectedGraphOpenApiDocuments(
       )
     }
 
-    documents.set(claim.document, { ...source, paths } as OpenApiDocument)
+    const existingPaths = documents.get(claim.document)?.paths ?? {}
+    documents.set(claim.document, {
+      ...source,
+      paths: mergeDocumentPaths(existingPaths, paths),
+    } as OpenApiDocument)
+  }
+
+  const unclaimed = documentOperationKeys(source).filter(
+    ({ operation, path }) => isPublishedSurfacePath(path) && !claimedOperations.has(operation),
+  )
+  if (unclaimed.length > 0) {
+    throw new Error(
+      `Selected graph OpenAPI has unclaimed published operations: ${unclaimed
+        .map(({ operation }) => operation)
+        .join(", ")}.`,
+    )
   }
 
   return documents
+}
+
+/** Compose selected package documents into the deployment aggregate. */
+export function mergeSelectedGraphOpenApiDocuments(
+  documents: ReadonlyMap<string, OpenApiDocument>,
+): OpenApiDocument {
+  const entries = [...documents.entries()]
+  const first = entries[0]?.[1]
+  if (!first) {
+    throw new Error("Selected graph OpenAPI emitted no documents.")
+  }
+
+  const paths: Record<string, unknown> = {}
+  const owners = new Map<string, string>()
+  for (const [documentName, document] of entries) {
+    for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
+      if (!isRecord(pathItem)) continue
+      const current = isRecord(paths[path]) ? paths[path] : {}
+      const merged = { ...current }
+      for (const [key, value] of Object.entries(pathItem)) {
+        if (!HTTP_METHODS.has(key.toLowerCase())) {
+          if (!(key in merged)) merged[key] = value
+          continue
+        }
+        const operation = `${key.toUpperCase()} ${path}`
+        const previous = owners.get(operation)
+        if (previous) {
+          throw new Error(
+            `Selected graph OpenAPI operation "${operation}" is emitted by both "${previous}" and "${documentName}".`,
+          )
+        }
+        owners.set(operation, documentName)
+        merged[key] = value
+      }
+      paths[path] = merged
+    }
+  }
+
+  return { ...first, paths } as OpenApiDocument
 }
 
 function collectClaims(
@@ -126,17 +184,16 @@ function collectClaims(
     )
 }
 
-function validateDocumentClaims(claims: readonly OpenApiClaim[]): void {
-  const byDocument = new Map<string, OpenApiClaim>()
-  for (const claim of claims) {
-    const previous = byDocument.get(claim.document)
-    if (previous) {
-      throw new Error(
-        `Selected graph OpenAPI document "${claim.document}" is claimed by both "${previous.route.id}" and "${claim.route.id}".`,
-      )
-    }
-    byDocument.set(claim.document, claim)
+function mergeDocumentPaths(
+  existing: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = { ...existing }
+  for (const [path, pathItem] of Object.entries(incoming)) {
+    const current = merged[path]
+    merged[path] = isRecord(current) && isRecord(pathItem) ? { ...current, ...pathItem } : pathItem
   }
+  return merged
 }
 
 function routeClaimsMethod(claim: OpenApiClaim, method: string): boolean {
@@ -148,6 +205,25 @@ function routeClaimsMethod(claim: OpenApiClaim, method: string): boolean {
 
 function isWithinMount(path: string, mount: string): boolean {
   return mount === "/" || path === mount || path.startsWith(`${mount}/`)
+}
+
+function isPublishedSurfacePath(path: string): boolean {
+  return path.startsWith("/v1/admin/") || path.startsWith("/v1/public/")
+}
+
+function documentOperationKeys(
+  document: OpenApiDocument,
+): Array<{ operation: string; path: string }> {
+  const operations: Array<{ operation: string; path: string }> = []
+  for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
+    if (!isRecord(pathItem)) continue
+    for (const method of Object.keys(pathItem)) {
+      if (HTTP_METHODS.has(method.toLowerCase())) {
+        operations.push({ operation: `${method.toUpperCase()} ${path}`, path })
+      }
+    }
+  }
+  return operations
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -7,9 +7,9 @@ import { pathToFileURL } from "node:url"
 import { afterEach, describe, expect, it } from "vitest"
 
 import {
-  assertOperatorDeploymentGraphResourceEnv,
-  loadOperatorDeploymentGraphArtifacts,
-  validateOperatorDeploymentGraphResourceEnv,
+  assertVoyantNodeDeploymentGraphResourceEnv,
+  loadDeploymentGraphArtifacts,
+  validateVoyantNodeDeploymentGraphResourceEnv,
 } from "./deployment-graph-artifacts"
 
 const OTHER_HASH = `sha256:${"b".repeat(64)}`
@@ -20,9 +20,9 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
 })
 
-describe("loadOperatorDeploymentGraphArtifacts", () => {
+describe("loadDeploymentGraphArtifacts", () => {
   it("loads the generated operator graph artifacts", () => {
-    const summary = loadOperatorDeploymentGraphArtifacts()
+    const summary = loadDeploymentGraphArtifacts()
     const graph = JSON.parse(
       readFileSync(join(process.cwd(), ".voyant", "deployment-graph.generated.json"), "utf8"),
     ) as {
@@ -99,6 +99,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       }),
       expect.objectContaining({
         eventType: "booking.confirmed",
+        id: "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
         runtime: {
           entry: "./channel-push-subscribers",
           export: "channelPushBookingConfirmedSubscriber",
@@ -155,7 +156,15 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     expect(notifications?.subscribers).toEqual([
       expect.objectContaining({
         id: "@voyant-travel/notifications#subscriber.booking-confirmation-auto-dispatch",
-        eventType: "booking.confirmed",
+        eventType: "booking.contract.generated",
+      }),
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.document-lifecycle-booking-fully-paid",
+        eventType: "booking.fully-paid",
+        runtime: {
+          entry: "./subscriber-runtime",
+          export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
+        },
       }),
       expect.objectContaining({
         id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
@@ -196,8 +205,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       join(process.cwd(), ".voyant", "runtime/project-links.generated.ts"),
       "utf8",
     )
-    expect(projectLinks).toContain('import link0 from "../../src/links/bid-supplier.js"')
-    expect(projectLinks).toContain('import link19 from "../../src/links/session-function-space.js"')
+    expect(projectLinks).toContain(
+      'import { programRoomBlockLink as link0 } from "@voyant-travel/accommodations/standard-links"',
+    )
+    expect(projectLinks).toContain(
+      'import { sessionFunctionSpaceLink as link19 } from "@voyant-travel/mice/standard-links"',
+    )
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {
@@ -205,7 +218,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { manifestGraphHash: OTHER_HASH })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/does not match graph contentHash/)
   })
 
@@ -218,7 +231,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeJson(graphPath, graph)
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/does not match canonical graph hash/)
   })
 
@@ -227,7 +240,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { graphHash: "not-a-content-hash" })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/must match sha256:<64 lowercase hex chars>/)
   })
 
@@ -243,7 +256,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/VOYANT_GRAPH_MISSING_CAPABILITY/)
   })
 
@@ -252,33 +265,31 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { omitRequirements: true })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/deployment graph requirements must be an object/)
   })
 
   it("reports missing required resource environment before boot", () => {
     const root = fixtureRoot()
     writeFixture(root)
-    const summary = loadOperatorDeploymentGraphArtifacts(
-      pathToFileURL(join(root, "src", "server.ts")).href,
-    )
+    const summary = loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href)
 
-    expect(validateOperatorDeploymentGraphResourceEnv(summary, {})).toEqual([
+    expect(validateVoyantNodeDeploymentGraphResourceEnv(summary, {})).toEqual([
       "secret DATABASE_URL is required for database:postgres",
     ])
-    expect(validateOperatorDeploymentGraphResourceEnv(summary, { DATABASE_URL: "   " })).toEqual([
+    expect(validateVoyantNodeDeploymentGraphResourceEnv(summary, { DATABASE_URL: "   " })).toEqual([
       "secret DATABASE_URL is required for database:postgres",
     ])
     expect(
-      validateOperatorDeploymentGraphResourceEnv(summary, {
+      validateVoyantNodeDeploymentGraphResourceEnv(summary, {
         DATABASE_URL_DIRECT: "postgres://user:pass@example.test:5432/voyant",
       }),
     ).toEqual([])
     expect(
-      validateOperatorDeploymentGraphResourceEnv(summary, { DATABASE_URL: "not-a-postgres-url" }),
+      validateVoyantNodeDeploymentGraphResourceEnv(summary, { DATABASE_URL: "not-a-postgres-url" }),
     ).toEqual(["secret DATABASE_URL must be a Postgres URL for database:postgres"])
-    expect(() => assertOperatorDeploymentGraphResourceEnv(summary, {})).toThrow(
-      /Operator deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
+    expect(() => assertVoyantNodeDeploymentGraphResourceEnv(summary, {})).toThrow(
+      /Node deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
     )
   })
 
@@ -319,7 +330,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     }
 
     expect(
-      validateOperatorDeploymentGraphResourceEnv(summary, {
+      validateVoyantNodeDeploymentGraphResourceEnv(summary, {
         REDIS_URL: "https://redis.example.test",
         R2_S3_ENDPOINT: "redis://r2.example.test",
       }),
@@ -332,9 +343,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
   it("loads graph-derived scheduled jobs for provisioning", () => {
     const root = fixtureRoot()
     writeFixture(root)
-    const summary = loadOperatorDeploymentGraphArtifacts(
-      pathToFileURL(join(root, "src", "server.ts")).href,
-    )
+    const summary = loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href)
 
     expect(summary.scheduledJobs).toEqual([
       {
@@ -364,9 +373,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         ],
       },
     })
-    const summary = loadOperatorDeploymentGraphArtifacts(
-      pathToFileURL(join(root, "src", "server.ts")).href,
-    )
+    const summary = loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href)
 
     expect(summary.scheduledJobs).toEqual([
       {
@@ -402,9 +409,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
         },
       },
     })
-    const summary = loadOperatorDeploymentGraphArtifacts(
-      pathToFileURL(join(root, "src", "server.ts")).href,
-    )
+    const summary = loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href)
 
     expect(summary.providers).toEqual({
       database: "postgres",
@@ -426,7 +431,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { deployment: { target: "node", mode: "self-hosted" } })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/deployment graph deployment\.providers must be an object/)
   })
 
@@ -435,7 +440,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { omitProvisioning: true })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/deployment graph provisioning is missing/)
   })
 
@@ -455,7 +460,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/deployment graph provisioning\.scheduledJobs\[0\]\.route/)
   })
 
@@ -471,24 +476,22 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/is not present in deployment graph packageRecords/)
   })
 
   it("accepts satisfied required resource environment before boot", () => {
     const root = fixtureRoot()
     writeFixture(root)
-    const summary = loadOperatorDeploymentGraphArtifacts(
-      pathToFileURL(join(root, "src", "server.ts")).href,
-    )
+    const summary = loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href)
 
     expect(
-      validateOperatorDeploymentGraphResourceEnv(summary, {
+      validateVoyantNodeDeploymentGraphResourceEnv(summary, {
         DATABASE_URL: "postgres://user:pass@example.test:5432/voyant",
       }),
     ).toEqual([])
     expect(() =>
-      assertOperatorDeploymentGraphResourceEnv(summary, {
+      assertVoyantNodeDeploymentGraphResourceEnv(summary, {
         DATABASE_URL: "postgres://user:pass@example.test:5432/voyant",
       }),
     ).not.toThrow()
@@ -498,9 +501,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     const root = fixtureRoot()
     const graphHash = writeFixture(root)
 
-    const summary = loadOperatorDeploymentGraphArtifacts(
-      pathToFileURL(join(root, "src", "server.ts")).href,
-    )
+    const summary = loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href)
 
     expect(summary.graphHash).toBe(graphHash)
     expect(summary.moduleIds).toEqual(["@voyant-travel/bookings"])
@@ -511,7 +512,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     const graphHash = writeFixture(join(root, "dist"), { writeRuntimeEntrySource: false })
     mkdirSync(join(root, "dist", "server"), { recursive: true })
 
-    const summary = loadOperatorDeploymentGraphArtifacts(
+    const summary = loadDeploymentGraphArtifacts(
       pathToFileURL(join(root, "dist", "server", "server.js")).href,
     )
 
@@ -524,8 +525,8 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { runtimeEntry: { kind: "custom-node" } })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
-    ).toThrow(/kind must be managed-profile-node/)
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+    ).toThrow(/kind must be node/)
   })
 
   it("fails when generated runtime entry constants drift from the graph", () => {
@@ -533,7 +534,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { runtimeEntrySource: { graphHash: OTHER_HASH } })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/GENERATED_DEPLOYMENT_GRAPH_HASH/)
   })
 
@@ -542,7 +543,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
     writeFixture(root, { graphRuntimeSource: { graphHash: OTHER_HASH } })
 
     expect(() =>
-      loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
+      loadDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
     ).toThrow(/GENERATED_GRAPH_RUNTIME_HASH/)
   })
 })
@@ -573,7 +574,6 @@ function writeFixture(
 ): string {
   mkdirSync(join(root, "src"), { recursive: true })
   mkdirSync(join(root, ".voyant"), { recursive: true })
-  writeFileSync(join(root, ".voyant", "managed-profile.json"), "{}\n")
   const graphWithoutHash: Omit<FixtureDeploymentGraph, "contentHash"> = {
     schemaVersion: "voyant.resolved-graph.v1",
     diagnostics: options.diagnostics ?? [],
@@ -653,8 +653,7 @@ function writeFixture(
           target: "node",
           file: "./runtime-entry.generated.ts",
           graphHash,
-          kind: "managed-profile-node",
-          profileSnapshot: "./managed-profile.json",
+          kind: "node",
         },
         ...options.runtimeEntry,
       },
@@ -767,7 +766,6 @@ function writeGeneratedRuntimeEntrySource(
         graph.deployment.mode,
       )} as const`,
       'export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "./deployment-graph.generated.json" as const',
-      'export const GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH = "./managed-profile.json" as const',
       `export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = ${stringArrayLiteral(
         graph.modules.map((module) => module.id),
       )} as const`,

@@ -19,12 +19,9 @@ const browserRoots = [
 ]
 
 const browserFiles = [
-  "starters/operator/src/admin.destinations.generated.ts",
-  "starters/operator/src/admin.extensions.generated.ts",
-  "starters/operator/src/admin.routes.generated.tsx",
   "starters/operator/src/entry.ts",
   "starters/operator/src/lib/admin-destinations.ts",
-  "starters/operator/src/lib/admin-extensions.tsx",
+  "starters/operator/src/lib/admin-presentation.tsx",
   "starters/operator/src/lib/custom-fields.ts",
   "starters/operator/src/lib/observability.ts",
   "starters/operator/src/router.tsx",
@@ -59,8 +56,7 @@ const forbiddenImports = [
   },
   {
     module: "@voyant-travel/commerce",
-    replacement:
-      "@voyant-travel/commerce/markets/validation, @voyant-travel/commerce/sellability/validation, or @voyant-travel/commerce/promotions/validation",
+    replacement: "@voyant-travel/commerce/validation",
     reason:
       "the commerce root barrel mixes client schemas with checkout, workflow, route, and booking-engine runtime code; browser code must use narrow validation subpaths",
   },
@@ -73,14 +69,13 @@ const forbiddenImports = [
   {
     module: "@voyant-travel/operations",
     replacement:
-      "@voyant-travel/operations/validation, @voyant-travel/operations/availability/slot-timezone, or @voyant-travel/operations/places/linkables",
+      "@voyant-travel/operations/validation, @voyant-travel/operations/scheduling, or @voyant-travel/operations/linkables",
     reason:
       "the operations root and section barrels mix client schemas/static metadata with Hono routes and services; browser code must use narrow client-safe subpaths",
   },
   {
     module: "@voyant-travel/distribution",
-    replacement:
-      "@voyant-travel/distribution/external-refs/validation, @voyant-travel/distribution/validation, or @voyant-travel/distribution/suppliers/linkables",
+    replacement: "@voyant-travel/distribution/validation or @voyant-travel/distribution/linkables",
     reason:
       "the distribution root barrel mixes client schemas/static metadata with routes, services, and workflow runtime code; browser code must use narrow client-safe subpaths",
   },

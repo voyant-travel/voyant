@@ -149,6 +149,52 @@
             ]
           }
         ]
+      },
+      "BookingProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BookingItemProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierServiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "parameters": {}
@@ -156,6 +202,7 @@
   "paths": {
     "/v1/public/storefront-verification/email/start": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -348,6 +395,7 @@
     },
     "/v1/public/storefront-verification/sms/start": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -541,6 +589,7 @@
     },
     "/v1/public/storefront-verification/email/confirm": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -740,6 +789,7 @@
     },
     "/v1/public/storefront-verification/sms/confirm": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "requestBody": {
           "required": true,
           "content": {

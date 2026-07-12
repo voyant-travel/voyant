@@ -101,6 +101,21 @@ export interface WorkflowRunner {
   canRerun?: (input: unknown) => Promise<{ ok: true } | { ok: false; reason: string }>
 }
 
+let activeWorkflowRunnerRegistry: WorkflowRunnerRegistry | undefined
+
+/**
+ * Package-owned registration service used by graph-selected workflow runtimes.
+ * The app-level registry remains the read authority for admin dispatch.
+ */
+export const workflowRunnerRegistryService = {
+  register(runner: WorkflowRunner): void {
+    if (!activeWorkflowRunnerRegistry) {
+      throw new Error("WorkflowRunnerRegistry: no process registry has been bound")
+    }
+    activeWorkflowRunnerRegistry.register(runner)
+  },
+}
+
 /**
  * Process-wide registry. Templates instantiate one and pass it to
  * `mountWorkflowRunsAdminRoutes(hono, { runners })`. Bundles register
@@ -108,6 +123,10 @@ export interface WorkflowRunner {
  */
 export class WorkflowRunnerRegistry {
   private readonly runners = new Map<string, WorkflowRunner>()
+
+  constructor() {
+    activeWorkflowRunnerRegistry = this
+  }
 
   register(runner: WorkflowRunner): void {
     if (this.runners.has(runner.name)) {

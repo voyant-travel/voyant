@@ -46,9 +46,8 @@ describe("flights hono module", () => {
     expect(adapter.searchFlights).toHaveBeenCalledTimes(1)
   })
 
-  it("POST /search returns 503 when the demo adapter is unavailable", async () => {
-    const message =
-      "Flights demo service is unavailable at http://localhost:3320. Start it with `pnpm --dir apps/flights-demo-api dev` or update FLIGHTS_DEMO_API_URL."
+  it("POST /search returns 503 when the connector is unavailable", async () => {
+    const message = "Flight connector is not configured."
     const adapter = stubAdapter({
       searchFlights: vi.fn(async () => {
         throw new Error(message)

@@ -9,9 +9,9 @@ const operatorRoot = process.cwd()
 
 describe("Operator project config", () => {
   it("authors only deployment differences and external plugins", () => {
-    expect(config.modules).toHaveLength(35)
-    expect(config.extensions).toHaveLength(22)
-    expect(config.plugins).toHaveLength(2)
+    expect(config.modules).toHaveLength(38)
+    expect(config.extensions).toHaveLength(24)
+    expect(config.plugins).toHaveLength(1)
     expect(config.productBom).toEqual({
       schemaVersion: "voyant.product-bom-reference.v1",
       id: "@voyant-travel/operator-standard",
@@ -19,19 +19,24 @@ describe("Operator project config", () => {
     })
     expect(config).not.toHaveProperty("presetLineage")
     expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
+      "agent-customer",
       "agent-staff",
+      "automation",
+      "catalog-read",
       "commerce-read",
       "editor",
+      "full-access",
+      "public-catalog-reader",
+      "read-only",
     ])
 
-    expect(config.selections?.modules).toHaveLength(35)
+    expect(config.selections?.modules).toHaveLength(38)
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)
-    expect(config.selections?.extensions).toHaveLength(22)
+    expect(config.selections?.extensions).toHaveLength(24)
     expect(config.selections?.plugins.map((selection) => selection.resolve)).toEqual([
       "@voyant-travel/plugin-netopia",
-      "@voyant-travel/plugin-smartbill",
     ])
     expect(config.extensions.every((unit) => unit.schemaVersion === "voyant.extension.v1")).toBe(
       true,
@@ -51,7 +56,7 @@ describe("Operator project config", () => {
 
     expect(config.plugins[0]).not.toHaveProperty("api")
     expect(packageRecord).toMatchObject({
-      version: "0.105.20",
+      version: "0.105.21",
       metadata: {
         kind: "plugin",
         manifest: "./voyant",

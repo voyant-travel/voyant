@@ -15,6 +15,7 @@
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
+    "./storefront": "./src/storefront/index.ts",
     "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
@@ -119,6 +120,11 @@
         "types": "./dist/booking-engine/index.d.ts",
         "import": "./dist/booking-engine/index.js",
         "default": "./dist/booking-engine/index.js"
+      },
+      "./storefront": {
+        "types": "./dist/storefront/index.d.ts",
+        "import": "./dist/storefront/index.js",
+        "default": "./dist/storefront/index.js"
       },
       "./client": {
         "types": "./dist/client.d.ts",

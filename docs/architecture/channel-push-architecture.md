@@ -440,7 +440,7 @@ The doc assumes events that don't exist at the needed fidelity. Fix that first:
 - Wire `booking.confirmed` subscriber inside distribution: re-fetch booking, write pending `channel_booking_links` rows, trigger workflow. Subscriber returns in ms.
 - Each adapter call goes through `acquireToken` and `prepareOutboundEnvelope` → `webhook_deliveries`.
 - Operator dashboard: "channel sync" view backed by `channel_booking_links.push_status` + retry endpoint + delivery-log drilldown + per-channel throttling indicator (§14.5).
-- Demo adapter (in `apps/catalog-demo-api` + `@voyant-travel/plugin-catalog-demo`) gains an optional `POST /bookings` endpoint that records pushed bookings; advertises configurable rate limits to exercise the throttle path.
+- The standalone `apps/catalog-demo-api` fixture may gain an optional `POST /bookings` endpoint for integration tests; it is not selected into production composition.
 
 **Phase E — Availability push** (2-3 days):
 - `availability.slot.changed` subscriber writes/upserts `channel_availability_push_intents` rows. Resolves channels via `channel_inventory_allotments` (§7.4), NOT `channel_product_mappings`.

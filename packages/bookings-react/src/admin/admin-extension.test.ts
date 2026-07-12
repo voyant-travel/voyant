@@ -8,11 +8,14 @@ import { BookingsHost } from "./bookings-host.js"
 import {
   BookingDetailSkeleton,
   BookingsListSkeleton,
+  bookingDetailPaymentControllerSlot,
   bookingDetailSearchSchema,
   bookingsFiltersToSearch,
   bookingsIndexSearchSchema,
+  bookingsListHeaderActionsSlot,
   bookingsSearchToFilters,
   createBookingsAdminExtension,
+  createSelectedBookingsAdminExtension,
 } from "./index.js"
 
 describe("createBookingsAdminExtension", () => {
@@ -125,6 +128,17 @@ describe("createBookingsAdminExtension", () => {
     const widget = extension.widgets?.find((entry) => entry.id === "bookings-person-bookings")
     expect(widget?.slot).toBe("person.details.bookings-tab")
     expect(typeof widget?.component).toBe("function")
+  })
+
+  it("owns selected copy and cross-domain slots without host options", () => {
+    const extension = createSelectedBookingsAdminExtension({
+      navMessages: { bookings: "Rezervari" },
+    })
+    expect(
+      extension.routes?.every((route) => route.redirectTo || route.routeMessagesProvider),
+    ).toBe(true)
+    expect(bookingsListHeaderActionsSlot).toBe("bookings.list.header-actions")
+    expect(bookingDetailPaymentControllerSlot).toBe("booking.details.payment-controller")
   })
 })
 

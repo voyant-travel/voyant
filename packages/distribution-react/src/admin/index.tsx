@@ -3,7 +3,10 @@ import {
   type AdminRouteLoaderContext,
   type AdminRouteRuntime,
   adminRoutePageModule,
+  composeAdminRouteMessagesProviders,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 
 import {
@@ -115,4 +118,29 @@ export function createDistributionAdminExtension(
 
 function loaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}
+
+const distributionRouteMessagesProvider = composeAdminRouteMessagesProviders(
+  () =>
+    import("../i18n/index.js").then((module) => ({
+      default: module.DistributionUiMessagesProvider,
+    })),
+  () =>
+    import("../suppliers/i18n/index.js").then((module) => ({
+      default: module.SuppliersUiMessagesProvider,
+    })),
+)
+
+export function createSelectedDistributionAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createDistributionAdminExtension({
+      labels: {
+        channelSync: navMessages.channelSync,
+        suppliers: navMessages.suppliers,
+      },
+    }),
+    distributionRouteMessagesProvider,
+  )
 }

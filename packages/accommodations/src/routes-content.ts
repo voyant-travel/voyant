@@ -9,12 +9,12 @@
  * fallback.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import { type AccommodationContentScope, getAccommodationContent } from "./service-content.js"
 
@@ -30,10 +30,17 @@ export interface CreateAccommodationContentRoutesOptions {
   defaultAcceptMachineTranslated?: boolean
 }
 
+export const ACCOMMODATION_CONTENT_OPENAPI_API_IDS = {
+  admin: "@voyant-travel/accommodations#content-extension.api.admin",
+  public: "@voyant-travel/accommodations#content-extension.api.public",
+} as const
+
 export function createAccommodationContentRoutes(
   options: CreateAccommodationContentRoutesOptions,
-): Hono<AccommodationContentRoutesEnv> {
-  return new Hono<AccommodationContentRoutesEnv>().get("/:id/content", async (c) => {
+  apiId?: (typeof ACCOMMODATION_CONTENT_OPENAPI_API_IDS)[keyof typeof ACCOMMODATION_CONTENT_OPENAPI_API_IDS],
+): OpenAPIHono<AccommodationContentRoutesEnv> {
+  const routes = new OpenAPIHono<AccommodationContentRoutesEnv>()
+  routes.get("/:id/content", async (c) => {
     const entityId = c.req.param("id")
     const scope = parseScope(c)
     const registry = options.resolveRegistry(c)
@@ -66,6 +73,18 @@ export function createAccommodationContentRoutes(
       },
     })
   })
+  routes.openAPIRegistry.registerPath({
+    method: "get",
+    path: "/{id}/content",
+    summary: "Get accommodation content",
+    responses: {
+      200: { description: "Localized accommodation content and provenance." },
+      404: { description: "Accommodation content was not found." },
+    },
+    ...(apiId ? { "x-voyant-api-id": apiId } : {}),
+  })
+
+  return routes
 
   function parseScope(c: Context): AccommodationContentScope {
     const localeParams = c.req.queries("locale") ?? c.req.queries("locales") ?? []
@@ -111,8 +130,14 @@ export function createAccommodationContentHonoExtension(
 ): HonoExtension {
   return {
     extension: accommodationContentExtension,
-    adminRoutes: createAccommodationContentRoutes(options.admin),
-    publicRoutes: createAccommodationContentRoutes(options.public),
+    adminRoutes: createAccommodationContentRoutes(
+      options.admin,
+      ACCOMMODATION_CONTENT_OPENAPI_API_IDS.admin,
+    ),
+    publicRoutes: createAccommodationContentRoutes(
+      options.public,
+      ACCOMMODATION_CONTENT_OPENAPI_API_IDS.public,
+    ),
   }
 }
 

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import {
   legalBookingContractVoyantExtension,
@@ -16,6 +17,7 @@ describe("legal deployment manifest", () => {
           id: "@voyant-travel/legal#api.admin",
           surface: "admin",
           mount: "legal",
+          openapi: { document: "legal" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/legal",
@@ -26,6 +28,7 @@ describe("legal deployment manifest", () => {
           id: "@voyant-travel/legal#api.public",
           surface: "public",
           mount: "legal",
+          openapi: { document: "legal" },
           anonymous: true,
           transactional: true,
           runtime: {
@@ -45,10 +48,20 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#linkable.policyVersion",
       "@voyant-travel/legal#linkable.policyAcceptance",
       "@voyant-travel/legal#linkable.term",
+      "@voyant-travel/legal#link.contract-booking",
+      "@voyant-travel/legal#link.contract-organization",
+      "@voyant-travel/legal#link.contract-person",
+      "@voyant-travel/legal#link.contract-supplier",
+      "@voyant-travel/legal#link.policy-acceptance-booking",
+      "@voyant-travel/legal#link.policy-product",
     ])
     expect(legalVoyantModule.events).toContainEqual({
       id: "@voyant-travel/legal#event.booking.contract.generated",
       eventType: "booking.contract.generated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
     })
   })
 
@@ -66,6 +79,7 @@ describe("legal deployment manifest", () => {
         {
           id: "@voyant-travel/legal#contract-document.api",
           surface: "admin",
+          openapi: { document: "contract-document" },
           runtime: {
             entry: "@voyant-travel/legal/contract-document-routes",
             export: "createContractDocumentHonoModule",
@@ -73,6 +87,17 @@ describe("legal deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("marks every public OpenAPI operation with its graph API id", () => {
+    const document = JSON.parse(
+      readFileSync(new URL("../../openapi/storefront/legal.json", import.meta.url), "utf8"),
+    )
+
+    expect(publicOperationApiIds(document)).not.toHaveLength(0)
+    expect(new Set(publicOperationApiIds(document))).toEqual(
+      new Set(["@voyant-travel/legal#api.public"]),
+    )
   })
 
   it("owns the executable booking-contract subscriber on its package-owned extension", () => {
@@ -120,3 +145,12 @@ describe("legal deployment manifest", () => {
     ).toBe(true)
   })
 })
+
+function publicOperationApiIds(document: unknown): unknown[] {
+  const paths = (document as { paths?: Record<string, Record<string, unknown>> } | undefined)?.paths
+  return Object.values(paths ?? {}).flatMap((path) =>
+    Object.values(path).map(
+      (operation) => (operation as Record<string, unknown>)["x-voyant-api-id"],
+    ),
+  )
+}

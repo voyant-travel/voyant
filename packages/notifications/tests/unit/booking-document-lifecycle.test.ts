@@ -273,16 +273,9 @@ describe("bookingDocumentBundleLifecycleService", () => {
 })
 
 describe("createNotificationsHonoModule documentBundleLifecycle", () => {
-  it("wires confirmation and fully-paid events to the lifecycle service", async () => {
-    const runSpy = vi.spyOn(bookingDocumentBundleLifecycleService, "run").mockResolvedValue({
-      status: "ok",
-      bookingId: booking.id,
-      documents: [],
-      steps: [{ source: "policy", status: "skipped", reason: "test" }],
-    })
+  it("does not register lifecycle subscribers outside the selected graph", async () => {
     const eventBus = createEventBus()
     const subscribeSpy = vi.spyOn(eventBus, "subscribe")
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined)
 
     const module = createNotificationsHonoModule({
       resolveDb: () => ({}) as PostgresJsDatabase,
@@ -298,32 +291,7 @@ describe("createNotificationsHonoModule documentBundleLifecycle", () => {
       eventBus,
     })
 
-    expect(subscribeSpy.mock.calls.map((call) => call[0])).toContain("booking.confirmed")
-    expect(subscribeSpy.mock.calls.map((call) => call[0])).toContain(BOOKING_FULLY_PAID_EVENT)
-
-    await eventBus.emit("booking.confirmed", {
-      bookingId: booking.id,
-      bookingNumber: booking.bookingNumber,
-      actorId: "user_1",
-    })
-    await eventBus.emit(BOOKING_FULLY_PAID_EVENT, {
-      bookingId: booking.id,
-      paymentSessionId: "ps_123",
-      invoiceId: "inv_123",
-    })
-
-    expect(runSpy).toHaveBeenCalledTimes(2)
-    expect(runSpy.mock.calls[0]?.[2]).toEqual({
-      trigger: "booking.confirmed",
-      event: { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: "user_1" },
-    })
-    expect(runSpy.mock.calls[1]?.[2]).toEqual({
-      trigger: BOOKING_FULLY_PAID_EVENT,
-      event: { bookingId: booking.id, paymentSessionId: "ps_123", invoiceId: "inv_123" },
-    })
-
-    runSpy.mockRestore()
-    errorSpy.mockRestore()
+    expect(subscribeSpy).not.toHaveBeenCalled()
   })
 })
 

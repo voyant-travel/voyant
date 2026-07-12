@@ -2,16 +2,22 @@ import {
   type AdminExtension,
   type AdminRouteLoaderContext,
   type AdminRouteRuntime,
+  type AdminWidgetContribution,
   adminRoutePageModule,
   defineAdminExtension,
   type NavItem,
+  type SelectedAdminExtensionFactoryContext,
+  useAdminNavigate,
+  useOperatorAdminMessages,
 } from "@voyant-travel/admin"
 // Type-only: binds the bookings-react `AdminDestinations` augmentation
 // (`booking.detail`, `person.detail`, ...) into this program — the trip
 // detail page's component rows and traveler/billing cells navigate through
 // those shared keys, and `booking.detail`'s shape carries bookings-react's
 // own tab union, so re-declaring it here could not stay shape-identical.
-import type {} from "@voyant-travel/bookings-react/admin"
+import { bookingsListHeaderActionsSlot } from "@voyant-travel/bookings-react/admin"
+import { Button } from "@voyant-travel/ui/components/button"
+import { Route } from "lucide-react"
 
 // Lean static only: the client module (fetcher). Query options resolve via
 // dynamic import inside the loaders so the trips data layer
@@ -36,6 +42,18 @@ declare module "@voyant-travel/admin" {
     /** A trip's detail page; the `"new"` pseudo-id opens the composer. */
     "trip.detail": { tripId: string }
   }
+}
+
+function ComposeTripButton() {
+  const navigateTo = useAdminNavigate()
+  const label = useOperatorAdminMessages().trips.list.composeTrip
+
+  return (
+    <Button variant="outline" onClick={() => navigateTo("trip.create", {})}>
+      <Route className="size-4" aria-hidden="true" />
+      {label}
+    </Button>
+  )
 }
 
 // Packaged admin hosts (packaged-admin RFC Phase 3): the trips pages bound
@@ -87,7 +105,7 @@ export interface CreateTripsAdminExtensionOptions {
  * resolves through the semantic destinations declared above — no app RPC
  * client, no host route tree.
  *
- * WIDGETS: none contributed and no slots exposed yet.
+ * WIDGETS: contributes the Compose trip action to the Bookings list slot.
  */
 export function createTripsAdminExtension(
   options: CreateTripsAdminExtensionOptions = {},
@@ -171,6 +189,13 @@ export function createTripsAdminExtension(
         },
       },
     ],
+    widgets: [
+      {
+        id: "trips-compose-booking-action",
+        slot: bookingsListHeaderActionsSlot,
+        component: ComposeTripButton,
+      } satisfies AdminWidgetContribution,
+    ],
   })
 }
 
@@ -181,4 +206,17 @@ export function createTripsAdminExtension(
  */
 function loaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
+}
+
+export function createSelectedTripsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return createTripsAdminExtension({
+    labels: {
+      trips: navMessages.trips,
+      allTrips: navMessages.allTrips,
+      newTrip: navMessages.newTrip,
+    },
+    icon: Route,
+  })
 }

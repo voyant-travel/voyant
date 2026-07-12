@@ -1,4 +1,5 @@
-import type { InvoiceSettlementPoller, ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
+import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
 import {
   type CloudWorkflowsClientEnv,
@@ -13,10 +14,9 @@ import {
   readDocumentContentBase64,
   resolveDocumentDownloadUrl,
 } from "../lib/storage"
-import type { generateContractPdfForBooking as generateContractPdfForBookingImpl } from "./contract-document-runtime"
 
-export function operatorBindings(bindings: unknown): AppBindings {
-  return bindings as AppBindings
+export function operatorBindings(bindings: unknown): AppBindings & Record<string, unknown> {
+  return bindings as unknown as AppBindings & Record<string, unknown>
 }
 
 export function operatorPostgresDb(db: VoyantDb): PostgresJsDatabase {
@@ -45,36 +45,6 @@ export function createOperatorDocumentStorage(bindings: unknown) {
   return createDocumentStorage(operatorBindings(bindings))
 }
 
-export function resolveOperatorContractDocumentGenerator(bindings: unknown) {
-  const env = operatorBindings(bindings)
-  if (!createDocumentStorage(env)) return undefined
-
-  const generator: NonNullable<
-    ReturnType<typeof import("./contract-document-runtime").resolveContractDocumentGenerator>
-  > = async (context) => {
-    const { resolveContractDocumentGenerator } = await import("./contract-document-runtime")
-    const resolved = resolveContractDocumentGenerator(env)
-    if (!resolved) {
-      throw new Error("Contract document generator is not configured")
-    }
-    return resolved(context)
-  }
-  return generator
-}
-
-export async function createOperatorBookingPiiService(bindings: unknown) {
-  const env = operatorBindings(bindings)
-  const { buildBookingRouteRuntime, createBookingPiiService } = await import(
-    "@voyant-travel/bookings"
-  )
-  const runtime = buildBookingRouteRuntime(env)
-  try {
-    return createBookingPiiService({ kms: await runtime.getKmsProvider() })
-  } catch {
-    return null
-  }
-}
-
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
   const env = operatorBindings(bindings)
   const apiKey = resolveVoyantDataApiKey(env)
@@ -89,25 +59,6 @@ export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
       })
     }
     return resolver(input)
-  }
-}
-
-export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
-  const env = operatorBindings(bindings)
-  if (!isSmartbillConfigured(env)) return {} as Record<string, InvoiceSettlementPoller>
-
-  let poller: InvoiceSettlementPoller | undefined
-  return {
-    smartbill: async (context: Parameters<InvoiceSettlementPoller>[0]) => {
-      if (!poller) {
-        const { createSmartbillSettlementPollers } = await import("./smartbill-subscriber-runtime")
-        poller = createSmartbillSettlementPollers(env).smartbill
-      }
-      if (!poller) {
-        throw new Error("SmartBill settlement poller is not configured")
-      }
-      return poller(context)
-    },
   }
 }
 
@@ -135,22 +86,20 @@ export function createOperatorWorkflowDriver(bindings: unknown) {
 }
 
 export async function generateContractPdfForBooking(
-  ...args: Parameters<typeof generateContractPdfForBookingImpl>
-): ReturnType<typeof generateContractPdfForBookingImpl> {
-  const { generateContractPdfForBooking } = await import("./contract-document-runtime")
-  return generateContractPdfForBooking(...args)
-}
-
-function isSmartbillConfigured(env: AppBindings) {
-  return Boolean(
-    nonEmpty(env.SMARTBILL_USERNAME) &&
-      (nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)) &&
-      nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE) &&
-      (nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)),
+  primitives: VoyantRuntimeHostPrimitives,
+  bindings: unknown,
+  db: PostgresJsDatabase,
+  eventBus: EventBus | undefined,
+  bookingId: string,
+  options: { force?: boolean } = {},
+) {
+  const runtime = await import("@voyant-travel/legal/runtime")
+  return runtime.generateContractPdfForBooking(
+    primitives,
+    bindings,
+    db,
+    eventBus,
+    bookingId,
+    options,
   )
-}
-
-function nonEmpty(value: string | undefined): string | undefined {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : undefined
 }

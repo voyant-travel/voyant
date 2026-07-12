@@ -8,21 +8,19 @@ import {
   buildDeploymentGraphJson,
   buildDeploymentMigrationSources,
   buildGraphRuntimeModule,
-  buildManagedNodeRuntimeEntry,
-  buildManagedNodeRuntimeEntryArtifact,
+  buildNodeRuntimeEntry,
+  buildNodeRuntimeEntryArtifact,
 } from "../packages/framework/src/deployment-artifacts.ts"
 import type {
   ResolvedVoyantDeploymentGraph,
   VoyantGraphDiagnostic,
 } from "../packages/framework/src/deployment-graph.ts"
-import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
-import type { VoyantProjectManifest } from "../packages/framework/src/profile-types.ts"
 import {
   type ProjectArtifactWriteResult,
   writeProjectArtifacts,
 } from "../packages/framework/src/project-artifacts.ts"
 import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
-import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
+import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import {
   buildDeploymentGraphDoctorJson,
   buildDeploymentGraphDoctorReport,
@@ -38,7 +36,6 @@ interface CliOptions {
   emit: boolean
   json: boolean
   configPath: string
-  profileOutputPath: string
   manifestOutputPath: string
   graphOutputPath: string
   entryOutputPath: string
@@ -52,22 +49,17 @@ const command = "pnpm --filter operator graph:emit"
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
-  const { graph, profile, projectArtifacts } = await resolveGraph(options.configPath)
+  const { graph, projectArtifacts } = await resolveGraph(options.configPath)
   const graphText = formatGeneratedText(options.graphOutputPath, buildDeploymentGraphJson(graph))
   const graphArtifactPath = toPosixRelativePath(
     dirname(options.entryOutputPath),
     options.graphOutputPath,
   )
-  const profileSnapshotPath = toPosixRelativePath(
-    dirname(options.entryOutputPath),
-    options.profileOutputPath,
-  )
   const entryText = formatGeneratedText(
     options.entryOutputPath,
-    buildManagedNodeRuntimeEntry({
+    buildNodeRuntimeEntry({
       graph,
       graphArtifactPath,
-      profileSnapshotPath,
       command,
     }),
   )
@@ -88,18 +80,13 @@ async function main(): Promise<void> {
     graph,
     graphArtifactPath: toPosixRelativePath(manifestDirectory, options.graphOutputPath),
     runtimeEntries: [
-      buildManagedNodeRuntimeEntryArtifact({
+      buildNodeRuntimeEntryArtifact({
         graph,
         file: toPosixRelativePath(manifestDirectory, options.entryOutputPath),
-        profileSnapshot: toPosixRelativePath(manifestDirectory, options.profileOutputPath),
       }),
     ],
     migrationSources: buildDeploymentMigrationSources(graph),
   })
-  const profileText = formatGeneratedText(
-    options.profileOutputPath,
-    `${JSON.stringify(profile, null, 2)}\n`,
-  )
   const manifestText = formatGeneratedText(
     options.manifestOutputPath,
     `${JSON.stringify(manifest, null, 2)}\n`,
@@ -107,7 +94,6 @@ async function main(): Promise<void> {
   const conventionArtifacts = projectConventionArtifacts(projectArtifacts)
 
   const artifacts = [
-    { path: options.profileOutputPath, expected: profileText, facet: "managed-profile" },
     {
       path: options.manifestOutputPath,
       expected: manifestText,
@@ -193,15 +179,14 @@ async function main(): Promise<void> {
 async function resolveGraph(configPath: string) {
   const project = await loadOperatorConfig(configPath)
   const frameworkVersion = await readFrameworkVersion()
-  const profile = compatibilityManagedProfile(project, frameworkVersion)
   const resolved = await resolveOperatorDeploymentGraph({
     project,
     projectRoot: defaultOperatorRoot,
     repoRoot,
     frameworkVersion,
-    scheduledJobs: [...getManagedProfileScheduledJobs(profile), ...OPERATOR_LOCAL_SCHEDULED_JOBS],
+    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
   })
-  return { graph: resolved.graph, profile, projectArtifacts: resolved.artifacts }
+  return { graph: resolved.graph, projectArtifacts: resolved.artifacts }
 }
 
 function projectConventionArtifacts(artifacts: ResolvedProjectArtifacts): ResolvedProjectArtifacts {
@@ -249,23 +234,6 @@ async function readFrameworkVersion(): Promise<string> {
   return packageJson.version
 }
 
-function compatibilityManagedProfile(
-  project: OperatorAuthoredProject,
-  frameworkVersion: string,
-): VoyantProjectManifest {
-  return {
-    schemaVersion: "voyant.managed-profile.v1",
-    profile: "operator",
-    frameworkVersion,
-    mode: project.deployment.mode,
-    modules: [],
-    plugins: [],
-    settings: {},
-    providers: project.deployment.providers,
-    admin: { enabled: true, path: "/app" },
-  }
-}
-
 async function writeGeneratedFile(filePath: string, text: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true })
   await writeFile(filePath, text, "utf8")
@@ -286,7 +254,6 @@ function parseArgs(args: readonly string[]): CliOptions {
     emit: false,
     json: false,
     configPath: join(defaultOperatorRoot, "voyant.config.ts"),
-    profileOutputPath: join(generatedRoot, "managed-profile.json"),
     manifestOutputPath: join(generatedRoot, "deployment-artifacts.generated.json"),
     graphOutputPath: join(generatedRoot, "deployment-graph.generated.json"),
     entryOutputPath: join(generatedRoot, "runtime-entry.generated.ts"),
@@ -324,7 +291,6 @@ function outputOptionFor(
   | keyof Pick<
       CliOptions,
       | "configPath"
-      | "profileOutputPath"
       | "manifestOutputPath"
       | "graphOutputPath"
       | "entryOutputPath"
@@ -332,7 +298,6 @@ function outputOptionFor(
     >
   | null {
   if (arg === "--config") return "configPath"
-  if (arg === "--profile-output") return "profileOutputPath"
   if (arg === "--manifest-output") return "manifestOutputPath"
   if (arg === "--graph-output") return "graphOutputPath"
   if (arg === "--entry-output") return "entryOutputPath"
@@ -418,7 +383,6 @@ Options:
   --emit                    write generated artifacts instead of checking staleness
   --json                    print the graph doctor report JSON contract
   --config <path>           authored project config input
-  --profile-output <path>   compatibility profile output path
   --manifest-output <path>  deployment artifact manifest output path
   --graph-output <path>     resolved graph JSON output path
   --entry-output <path>     runtime entry metadata module output path

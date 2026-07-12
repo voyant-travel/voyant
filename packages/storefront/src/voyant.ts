@@ -1,8 +1,10 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import {
+  storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
   storefrontPaymentLinkRuntimePort,
-  storefrontRuntimePort,
   storefrontVerificationRuntimePort,
 } from "./runtime-port.js"
 
@@ -12,12 +14,17 @@ export const storefrontVoyantModule = defineModule({
   packageName: "@voyant-travel/storefront",
   localId: "storefront",
   runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
-  runtimePorts: [requirePort(storefrontRuntimePort)],
+  runtimePorts: [
+    requirePort(storefrontOffersRuntimePort),
+    requirePort(storefrontBookingIntentsRuntimePort),
+    requirePort(storefrontIntakeRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/storefront#api.admin",
       surface: "admin",
       mount: "storefront",
+      openapi: { document: "storefront" },
       runtime: {
         entry: "@voyant-travel/storefront",
         export: "createStorefrontHonoModule",
@@ -27,6 +34,7 @@ export const storefrontVoyantModule = defineModule({
       id: "@voyant-travel/storefront#api.public",
       surface: "public",
       mount: "/",
+      openapi: { document: "storefront" },
       anonymous: ["/leads", "/newsletter", "/offers"],
       runtime: {
         entry: "@voyant-travel/storefront",
@@ -56,10 +64,18 @@ export const storefrontVoyantModule = defineModule({
     {
       id: "@voyant-travel/storefront#event.customer-signal-created",
       eventType: "customer.signal.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "storefront", category: "domain" },
     },
     {
       id: "@voyant-travel/storefront#event.booking-bootstrap-requested",
       eventType: "storefront.booking.bootstrap.requested",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "storefront", category: "domain" },
     },
   ],
   subscribers: [
@@ -81,11 +97,27 @@ export const storefrontVoyantModule = defineModule({
       config: { engine: "postgres" },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/storefront#access.storefront",
+        resource: "storefront",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
   meta: {
     ownership: "package",
+    presentation: {
+      id: "@voyant-travel/storefront#presentation.customer",
+      runtime: {
+        entry: "@voyant-travel/storefront-react/storefront",
+        export: "createStorefrontPresentationContribution",
+      },
+    },
   },
 })
 
@@ -103,6 +135,7 @@ export const storefrontCustomerPortalVoyantModule = defineModule({
       id: "@voyant-travel/storefront#customer-portal.api",
       surface: "public",
       mount: "customer-portal",
+      openapi: { document: "customer-portal" },
       anonymous: ["/contact-exists"],
       runtime: {
         entry: "@voyant-travel/storefront/customer-portal",
@@ -129,6 +162,7 @@ export const storefrontVerificationVoyantModule = defineModule({
       id: "@voyant-travel/storefront#verification.api",
       surface: "public",
       mount: "storefront-verification",
+      openapi: { document: "storefront-verification" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/storefront/verification",
@@ -155,6 +189,7 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
       id: "@voyant-travel/storefront#payment-link.api",
       surface: "public",
       mount: "/",
+      openapi: { document: "payment-link" },
       anonymous: ["payment-link-config", "payment-link"],
       runtime: {
         entry: "@voyant-travel/storefront/payment-link",

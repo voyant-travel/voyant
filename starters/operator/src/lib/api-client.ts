@@ -6,7 +6,7 @@
  */
 
 import { getApiUrl } from "./env"
-import { operatorFetcher } from "./voyant-fetcher"
+import { projectFetcher } from "./voyant-fetcher"
 
 // ---------------------------------------------------------------------------
 // Legacy client — kept for incremental migration of non-module routes
@@ -49,11 +49,11 @@ async function apiCall<T = unknown>(path: string, options: ApiCallOptions = {}):
     ...customHeaders,
   })
 
-  // Goes through `operatorFetcher`: on the client this is a normal
+  // Goes through `projectFetcher`: on the client this is a normal
   // `credentials: "include"` fetch; on the server it forwards the incoming
   // request's cookie + rewrites to the request origin so the loader hits
   // the same Worker's /api/* route.
-  const response = await operatorFetcher(`${apiUrl}${path}`, {
+  const response = await projectFetcher(`${apiUrl}${path}`, {
     ...fetchOptions,
     headers,
   })

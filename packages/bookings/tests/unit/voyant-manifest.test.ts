@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { createBookingsVoyantRuntime } from "../../src/index.js"
 import { createBookingRequirementsVoyantRuntime } from "../../src/requirements/index.js"
+import { publicBookingRequirementsRoutes } from "../../src/requirements/routes-public.js"
 import {
   bookingRequirementsVoyantModule,
   bookingsSupplierVoyantPlugin,
@@ -18,17 +19,24 @@ describe("bookings deployment manifest", () => {
       id: "@voyant-travel/bookings",
       packageName: "@voyant-travel/bookings",
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
-      runtimePorts: [{ id: "bookings.runtime" }],
+      runtimePorts: [
+        { id: "bookings.configuration.runtime" },
+        { id: "bookings.accommodation.runtime" },
+        { id: "bookings.finance.runtime" },
+        { id: "bookings.relationships.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/bookings#api.admin",
           surface: "admin",
+          openapi: { document: "bookings" },
           resource: "bookings",
           runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
           surface: "public",
+          openapi: { document: "bookings" },
           resource: "bookings",
           anonymous: true,
           runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
@@ -59,10 +67,10 @@ describe("bookings deployment manifest", () => {
     expect(bookingsVoyantModule.access?.resources).toEqual([
       expect.objectContaining({
         resource: "bookings",
-        actions: [
+        actions: expect.arrayContaining([
           expect.objectContaining({ action: "read" }),
           expect.objectContaining({ action: "write" }),
-        ],
+        ]),
         legacyActions: ["cancel"],
       }),
       expect.objectContaining({
@@ -102,12 +110,13 @@ describe("bookings deployment manifest", () => {
         entry: "@voyant-travel/bookings/requirements",
         export: "createBookingRequirementsVoyantRuntime",
       },
-      runtimePorts: [{ id: "bookings.requirements.runtime" }],
+      runtimePorts: [{ id: "bookings.inventory.runtime" }],
       api: [
         {
           id: "@voyant-travel/bookings#requirements.api",
           surface: "admin",
           mount: "booking-requirements",
+          openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
             export: "createBookingRequirementsHonoModule",
@@ -117,6 +126,7 @@ describe("bookings deployment manifest", () => {
           id: "@voyant-travel/bookings#requirements.api.public",
           surface: "public",
           mount: "booking-requirements",
+          openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
             export: "createBookingRequirementsHonoModule",
@@ -134,6 +144,7 @@ describe("bookings deployment manifest", () => {
           id: "@voyant-travel/bookings#booking-supplier-extension.api",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/bookings/extensions/suppliers",
             export: "bookingsSupplierExtension",
@@ -141,6 +152,10 @@ describe("bookings deployment manifest", () => {
         },
       ],
     })
+
+    expect(readApiIds(publicBookingRequirementsRoutes)).toEqual([
+      "@voyant-travel/bookings#requirements.api.public",
+    ])
   })
 
   it("mounts only selected Bookings API surfaces", async () => {
@@ -148,14 +163,30 @@ describe("bookings deployment manifest", () => {
       unitId: "@voyant-travel/bookings",
       projectConfig: {},
       api: [{ id: "bookings.public", surface: "public" as const }],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
-      getPort: async <TProvider>() => ({ options: {} }) as unknown as TProvider,
+      getPort: async <TProvider>(port: { id: string }) => {
+        const providers: Record<string, unknown> = {
+          "bookings.configuration.runtime": { readConfig: () => undefined },
+          "bookings.accommodation.runtime": { enrichOverviewItems: async () => [] },
+          "bookings.finance.runtime": { createStaleBookingHoldsRuntime: () => ({}) },
+          "bookings.relationships.runtime": {
+            loadPersonTravelSnapshot: async () => null,
+            upsertPersonFromContact: async () => null,
+            getPersonById: async () => null,
+            getOrganizationById: async () => null,
+          },
+        }
+        return providers[port.id] as TProvider
+      },
+      getPorts: async <TProvider>() => [] as TProvider[],
     }
     const bookings = await createBookingsVoyantRuntime(context)
     const requirements = await createBookingRequirementsVoyantRuntime({
       ...context,
       unitId: "@voyant-travel/bookings#requirements",
-      getPort: async <TProvider>() => ({}) as TProvider,
+      getPort: async <TProvider>() => ({ resolveProductSnapshot: async () => null }) as TProvider,
     })
 
     expect(bookings.adminRoutes).toBeUndefined()
@@ -177,6 +208,8 @@ describe("bookings deployment manifest", () => {
         },
       ],
       slots: [
+        { id: "bookings.list.header-actions" },
+        { id: "booking.details.payment-controller" },
         { id: "booking.details.invoices-tab" },
         { id: "booking.details.finance-start" },
         { id: "booking.details.finance-end" },
@@ -214,3 +247,19 @@ describe("bookings deployment manifest", () => {
     })
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Bookings", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

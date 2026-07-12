@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { getManagedProfileAdminApiUrl, normalizeAdminApiUrl } from "../src/runtime.js"
+import { getAdminApiUrl, normalizeAdminApiUrl } from "../src/runtime.js"
 
 describe("normalizeAdminApiUrl", () => {
   it.each([
@@ -34,9 +34,9 @@ describe("normalizeAdminApiUrl", () => {
   })
 })
 
-describe("getManagedProfileAdminApiUrl", () => {
+describe("getAdminApiUrl", () => {
   it("returns an /api-suffixed absolute URL on the server", () => {
-    const url = getManagedProfileAdminApiUrl()
+    const url = getAdminApiUrl()
     expect(url).toMatch(/^https?:\/\/.+\/api$/)
   })
 })

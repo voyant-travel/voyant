@@ -1,0 +1,91 @@
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
+import { createPostgresAdvisoryLockManager } from "@voyant-travel/db/runtime"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import {
+  buildNotificationTaskRuntime,
+  createDefaultBookingDocumentAttachment,
+  type NotificationProvider,
+  type NotificationsRuntimeProvider,
+} from "./index.js"
+import { createNotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
+
+/** Build the standard Node Notifications runtime from domain-neutral host primitives. */
+export function createNotificationsRuntime(
+  primitives: VoyantRuntimeHostPrimitives,
+): NotificationsRuntimeProvider {
+  const resolveProviders = (bindings: Record<string, unknown>) =>
+    notificationProviders(primitives, bindings)
+  return {
+    resolveProviders,
+    resolvePublicCheckoutBaseUrl: (bindings) => resolvePublicBaseUrl(primitives.env(bindings)),
+    resolveDocumentAttachmentResolver: (bindings) => async (document) => {
+      if (document.storageKey) {
+        const contentBase64 = await primitives.storage.read(bindings, document.storageKey)
+        if (contentBase64) {
+          return {
+            filename: document.name,
+            contentBase64,
+            contentType: document.mimeType ?? undefined,
+          }
+        }
+        const path = await primitives.storage.downloadUrl(bindings, document.storageKey)
+        if (path) {
+          return {
+            filename: document.name,
+            path,
+            contentType: document.mimeType ?? undefined,
+          }
+        }
+      }
+      return createDefaultBookingDocumentAttachment(document)
+    },
+    resolveDb: (bindings) => primitives.database.resolve(bindings),
+    autoConfirmAndDispatch: {
+      enabled: true,
+      templateSlug: "booking-confirmation",
+    },
+    resolveReminderWorkflowRuntime: (bindings) => {
+      const env = resolveWorkflowEnvironment(primitives.env(bindings))
+      return createNotificationReminderWorkflowRuntime({
+        resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
+        resolveEnv: () => env,
+        resolveRuntimeOptions: (runtimeEnv) =>
+          buildNotificationTaskRuntime(runtimeEnv, {
+            resolveProviders: (taskEnv) => notificationProviders(primitives, taskEnv),
+            reminderSweepLockManager: resolveReminderSweepLockManager(env),
+          }),
+      })
+    },
+  }
+}
+
+function notificationProviders(
+  primitives: VoyantRuntimeHostPrimitives,
+  bindings: Record<string, unknown>,
+): ReadonlyArray<NotificationProvider> {
+  const resolver = primitives.config.read(bindings, "notificationProviders")
+  return typeof resolver === "function" ? resolver(primitives.env(bindings)) : []
+}
+
+function resolveReminderSweepLockManager(env: Readonly<Record<string, unknown>>) {
+  const connectionString = nonEmpty(env.DATABASE_URL)
+  return connectionString
+    ? createPostgresAdvisoryLockManager(connectionString, { namespace: "operator" })
+    : undefined
+}
+
+function resolvePublicBaseUrl(env: Readonly<Record<string, unknown>>): string | null {
+  for (const key of ["PUBLIC_CHECKOUT_BASE_URL", "DASH_BASE_URL", "APP_URL"] as const) {
+    const value = nonEmpty(env[key])
+    if (!value) continue
+    return key === "APP_URL" ? value.replace(/\/api\/?$/, "") : value
+  }
+  return null
+}
+
+function nonEmpty(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}

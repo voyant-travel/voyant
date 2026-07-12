@@ -42,7 +42,15 @@ import {
   resolveEffectivePaymentPolicy,
 } from "../payment-policy.js"
 import type { PaymentPolicyEntityContext } from "../payment-policy-cascade.js"
-import { financeBookingScheduleRuntimePort } from "../runtime-port.js"
+import { createFinanceBookingScheduleRuntime } from "../runtime.js"
+import {
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeHostRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+  financeOperatorSettingsRuntimePort,
+} from "../runtime-port.js"
 import { bookingPaymentSchedules } from "../schema/booking-billing.js"
 import { financeService } from "../service.js"
 
@@ -260,6 +268,7 @@ const regenerateScheduleResponseSchema = z.object({
 const regenerateScheduleRoute = createRoute({
   method: "post",
   path: "/{bookingId}/payment-schedule/regenerate",
+  "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.admin",
   request: { params: z.object({ bookingId: z.string() }) },
   responses: {
     200: {
@@ -409,6 +418,7 @@ const resolvePolicyResponseSchema = z.object({
 const resolvePolicyRoute = createRoute({
   method: "post",
   path: "/resolve",
+  "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.public",
   request: {
     body: {
       required: true,
@@ -507,7 +517,14 @@ export function createBookingScheduleHonoExtension(
 
 export const createBookingScheduleVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
-    const provider = await getPort(financeBookingScheduleRuntimePort)
+    const provider = createFinanceBookingScheduleRuntime(
+      await getPort(financeHostRuntimePort),
+      await getPort(financeOperatorSettingsRuntimePort),
+      await getPort(financeDistributionPaymentPolicyRuntimePort),
+      await getPort(financeAccommodationsPaymentPolicyRuntimePort),
+      await getPort(financeCruisesPaymentPolicyRuntimePort),
+      await getPort(financeInventoryPaymentPolicyRuntimePort),
+    )
     const configured = createBookingScheduleHonoExtension(provider.options)
     const selected: HonoExtension = {
       extension: {

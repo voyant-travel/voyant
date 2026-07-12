@@ -2,7 +2,6 @@ import type { Module } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 
 import type { ProductBrochureRoutesOptions } from "./routes-brochure.js"
-import type { ProductContentHonoExtensionOptions } from "./routes-content.js"
 
 export interface InventoryRuntime {
   bootstrap: NonNullable<Module["bootstrap"]>
@@ -21,31 +20,17 @@ export const inventoryRuntimePort = definePort<InventoryRuntime>({
   },
 })
 
-export const inventoryContentRuntimePort = definePort<ProductContentHonoExtensionOptions>({
-  id: "inventory.content-runtime",
-  test(provider) {
-    if (provider === null || typeof provider !== "object") {
-      throw new Error("inventory.content-runtime provider must be an options object.")
-    }
-    for (const surface of ["admin", "public"] as const) {
-      if (typeof provider[surface]?.resolveRegistry !== "function") {
-        throw new Error(
-          `inventory.content-runtime provider must configure ${surface}.resolveRegistry().`,
-        )
-      }
-    }
-  },
-})
+export type InventoryBrochureRuntime = Pick<ProductBrochureRoutesOptions, "resolvePrinter">
 
-export const inventoryBrochureRuntimePort = definePort<ProductBrochureRoutesOptions>({
+export const inventoryBrochureRuntimePort = definePort<InventoryBrochureRuntime>({
   id: "inventory.brochure-runtime",
   test(provider) {
     if (
       provider === null ||
       typeof provider !== "object" ||
-      typeof provider.resolveStorage !== "function"
+      typeof provider.resolvePrinter !== "function"
     ) {
-      throw new Error("inventory.brochure-runtime provider must implement resolveStorage().")
+      throw new Error("inventory.brochure-runtime provider must implement resolvePrinter().")
     }
   },
 })

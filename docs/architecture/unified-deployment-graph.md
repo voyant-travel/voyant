@@ -8,6 +8,7 @@ Related:
 - [deployment-targets.md](./deployment-targets.md)
 - [managed-profile-contract.md](./managed-profile-contract.md)
 - [managed-profile-runtime.md](./managed-profile-runtime.md)
+- [node-runtime-authority.md](./node-runtime-authority.md)
 - [migration-collector-d2.md](./migration-collector-d2.md)
 - [module-provider-plugin-taxonomy.md](./module-provider-plugin-taxonomy.md)
 - [packaged-admin-rfc.md](./packaged-admin-rfc.md)
@@ -48,6 +49,27 @@ and generated runtime entries. It does **not** by itself complete `voyant#3080`.
 The issue is complete only when selected packages own their manifests and all
 supported product surfaces are resolved from those package manifests without an
 operator-starter catalog or hand-maintained composition layer.
+
+### Commerce starter executable cutover
+
+Catalog content routes consume one host-provided source-registry capability;
+their surface defaults remain in Inventory, Cruises, and Accommodations graph
+factories. Finance registers Bookings' synchronous financial lifecycle from its
+package runtime, while Notifications owns queued reminder cleanup in its
+graph-selected cancellation and expiry subscribers. Draft reaping and promotion
+boundary processing are package workflows with package-declared schedules. The
+Node host supplies database, registry, reporting, and indexing capabilities but
+does not select these implementations by package id.
+
+### Resident Node product-authority extraction
+
+The resident Node host does not provide compatibility defaults or route loaders
+for Commerce, Catalog, Finance, Legal, or Storage. Selected package manifests
+load package-owned graph factories, and deployments provide their typed runtime
+ports. Catalog and Finance MCP services are likewise package-owned tool-context
+contributions resolved from the selected graph. The only temporary reference
+from this group is Finance payment-session assembly inside the legacy Flights
+loader, tracked by the Node product-authority ratchet.
 
 ## Non-Goals
 
@@ -224,6 +246,14 @@ Specifically:
   graph; parity, not continued central generation, is its exit criterion
 - Node host bootstraps consume a resolved graph and provider bindings; they do
   not decide product composition
+
+Tool context follows the same rule. A selected tool runtime may export the
+conventional `voyantToolContextContribution` alongside its declared tool
+exports. The MCP host loads contributions only through admitted graph tool
+references, validates them against `tools[].context`, and merges them per
+request. Node hosts may provide environment-specific resources consumed by a
+contribution, but they must not enumerate product tools or assemble package
+services directly.
 
 ## Identity
 
@@ -580,7 +610,13 @@ exposes the owning loader's normalized, JSON-safe `projectConfig`; config from
 another selected unit is never merged into it. Deselected units remain behind
 their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
-public factories have not adopted this contract.
+public factories have not adopted this contract. The Operator application does
+not expose or assemble that bridge: it passes the generated runtime one opaque
+deployment-resource object from `src/api/runtime/deployment-resources.ts`. That
+boundary may adapt Node-only database, storage, notification, workflow-registry,
+and outbound-webhook resources, but package selection and route ordering remain
+graph-derived. `src/api/composition.ts` is deleted and the runtime-port checker
+rejects its return.
 
 Progress: the Distribution channel-push extension now declares its route and
 workflow-service runtime dependency as a typed port and adapts that port through
@@ -780,6 +816,15 @@ Rules:
 - setup/seed work is modeled as idempotent data migrations with an applied-work
   ledger
 
+Graph-lowered lifecycle execution uses deterministic, host-executed steps rather
+than package callbacks. Upgrade plans migrate, detach changed runtime units,
+release only explicitly declared non-durable resources, and activate the next
+units. Uninstall plans detach removed units and retain durable data by default.
+Every step carries a stable idempotency key; durable execution state records
+completed steps and rollback progress so a retry resumes execution or rollback
+without inventing a second lifecycle path. Destructive purge remains out of
+scope.
+
 ## Admin Surface
 
 Admin composition is beyond the foundational v1 substrate but required for the
@@ -802,16 +847,19 @@ separate first-party admin catalog.
 
 ### Selected-graph admin bundle cutline
 
-The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
-`@voyant-travel/mice`, and `@voyant-travel/quotes`:
+The selected-graph admin bundle is active for every first-party admin domain,
+including Bookings, Catalog, and Inventory:
 
 - the package manifest opts its import-cheap admin extension factory into
   `admin.runtime` and retains its stable route declarations
 - project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
   from only selected units with `admin.runtime`; package page modules remain
   behind the lazy imports owned by the UI export
-- each selected package adapter owns its Operator nav-copy key and icon; Quotes
-  also owns its existing lazy route message provider
+- each selected package adapter owns its Operator nav-copy keys and icons and
+  attaches its namespaced route-message providers lazily
+- shared core pages attach their lazy package-copy providers directly to the
+  route contribution that owns the page; the generic admin host retains no
+  route-id or package-keyed provider fallback registry
 - the Operator invokes the generated selected-factory composer with one generic
   localized nav-message map, and the compatibility admin generator removes the
   migrated factory from `admin.extensions.generated.ts`
@@ -823,12 +871,12 @@ The first Phase 4 admin slices are active for `@voyant-travel/action-ledger`,
   from the selected-graph bundle, duplicated in the compatibility registry, or
   present without a selected `admin.runtime` declaration
 
-This cut does not activate admin slots or contributions, generalized namespaced
-copy lowering, or deployment copy overrides. Those remain separate admin
-authorities. The Operator factory wrappers and generated registry entries for
-all other first-party packages also remain compatibility authorities until each
-package proves equivalent nav, route, page, copy, icon, and destination behavior
-through the selected graph.
+Package-owned slots and contributions carry cross-domain admin behavior:
+Trips contributes the Bookings list action, Finance contributes the booking
+payment controller, and Operations contributes Inventory option extras. Catalog
+owns its standard deployment scope defaults. The Operator compatibility factory
+registry is deleted; graph-generated copy-provider composition and deployment
+copy overrides remain separate follow-up authorities.
 
 ## API, OpenAPI, Scopes, And RBAC
 
@@ -857,8 +905,15 @@ RBAC/API-key/tool/action-ledger unification ships.
 OpenAPI metadata belongs with route declarations. The graph resolver should
 collect it after package admission, not require a separate OpenAPI facet first.
 
-The first selected-graph OpenAPI authority is active for
-`@voyant-travel/identity#api.admin`. A route bundle opts in with a stable
+Selected-graph OpenAPI authority is active for package-owned route bundles,
+including nineteen Catalog, Commerce, and Inventory retail bundles. Overlapping
+mounts carry exact package-authored `x-voyant-api-id` metadata, and the selected
+graph loader honors explicit ownership even for package routes outside a
+bundle's primary mount.
+The Operator's committed per-module JSON remains a generated Scalar asset and
+contract-parity snapshot during the compatibility cutover; it is not the
+authority for opted-in retail bundles.
+including Identity and Notifications. A route bundle opts in with a stable
 document slug:
 
 ```ts
@@ -879,15 +934,22 @@ extensions, and plugins only. It resolves their absolute mounts through the
 same normalization used by runtime route posture, replays eager and lazy Hono
 OpenAPI registries, and emits only matching operations. Every emitted operation
 carries exact `x-voyant-api-id`, `x-voyant-unit-id`, and
-`x-voyant-package-name` ownership. Zero-operation bundles, duplicate document
-slugs, and overlapping operation claims are build failures.
+`x-voyant-package-name` ownership. Disjoint bundles may intentionally share a
+document slug; zero-operation bundles and overlapping operation claims are
+build failures.
 
-The Operator still emits compatibility documents for unmigrated bundles. Its
-`identity.json` entry is replaced by the graph-derived document only after a
+The Operator still emits compatibility documents for unmigrated bundles. A
+compatibility entry is replaced by the graph-derived document only after a
 parity check proves that paths, schemas, operation ids, and all pre-existing
 content are unchanged apart from the graph ownership extensions. Coverage uses
 exact API ids for opted-in bundles; filename/module heuristics and temporary
 allowlists remain available only to unmigrated bundles.
+
+One package document may collect multiple disjoint selected API bundles. This
+supports a package-owned document spanning admin and public surfaces without
+moving document membership back into the deployment. Bookings is the first
+multi-surface document using this convention. Duplicate operation claims remain
+a build failure even when the claims target the same document.
 
 API scopes, staff RBAC, user scopes, tool permissions, and action-ledger
 capabilities should converge toward one permission catalog, but that is a
@@ -1125,6 +1187,13 @@ The broader event catalog is beyond the foundational substrate:
 - outbound webhook subscription and delivery policy
 - event-to-OpenAPI or event-to-SDK generation
 
+The first event-contract slice allows an emitted event to carry a semantic
+version and inline JSON payload schema. Graph upgrade tooling rejects
+same-major changes that remove properties or enum values, narrow types, or make
+previously optional properties required. Breaking payload changes require a new
+major contract version. This validates package compatibility only: outbound
+webhook subscription and delivery transport remain a separate later slice.
+
 Inbound webhook routes remain API route declarations. Outbound webhook delivery
 ships after the package-owned event catalog, not inside the foundational slice.
 
@@ -1231,18 +1300,16 @@ runtime shapes:
 - package `migrations/` metadata
 - existing workflow descriptors
 - existing event subscribers
-- `FRAMEWORK_RUNTIME_MANIFEST`
-- `FRAMEWORK_EXTENSION_OWNERSHIP`
-- `FRAMEWORK_CAPABILITY_GRAPH`
+- the historical framework runtime manifest, extension ownership, and capability
+  projections during initial package-manifest migration
 
 The standard Operator distribution is now the sole first-party selection-policy
 catalog. It records stable order, required modules, and extension removal
 cascades; it does not redeclare package facets. Resolution admits each selected
 package and loads the selected graph unit from that package's public `./voyant`
-manifest. `FRAMEWORK_RUNTIME_MANIFEST`, `FRAMEWORK_EXTENSION_OWNERSHIP`,
-`FRAMEWORK_CAPABILITY_GRAPH`, and `VOYANT_PROFILE_MODULES` remain compatibility
-projections only. A repository checker rejects first-party product literals in
-those compatibility views and rejects a standard selection without a matching
+manifest. The framework runtime manifest, extension-ownership, capability-graph,
+and profile projections have been removed. A repository checker prevents those
+projections from returning and rejects a standard selection without a matching
 package-owned manifest unit.
 
 This validates the manifest against reality before third-party authors depend
@@ -1390,16 +1457,22 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | Facet | Current substrate or bridge | End-state owner and declaration | Depends on | Migration exit test | Scope |
 | --- | --- | --- | --- | --- | --- |
 | Identity, selection, package metadata, admission | Deterministic v1 graph, package records, generated operator units, managed-profile compatibility | Package exports `voyant.package.v1` plus import-cheap `./voyant`; project explicitly selects normalized module/plugin package or path references | Phase 0 | Direct package resolution matches the bridge graph; no operator package catalog is consulted | #3080 |
-| Capabilities | `FRAMEWORK_CAPABILITY_GRAPH` and generated `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | Removing the central capability entry does not change resolution or diagnostics | #3080 |
+| Capabilities | Package manifests and resolved graph `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | No central capability projection exists; package removal still produces stable resolution diagnostics | #3080 |
 | Typed ports, providers, adapters | First public-port slice plus broad `FrameworkProviders` container and starter factories | Port-owning package exports contract and conformance kit; module declares requirements; plugin-distributed providers declare provisions; deployment selects routing/defaults only where needed | Capabilities, runtime contract, test harness | Selected providers satisfy facets and kits; no package-specific starter provider entry is required | #3080, demand-driven replacement |
 | Schema and migrations | D.2 collector, generated schema manifest, operator migration-source artifact, ADR-0007 monolithic bundle | Schema-owning package declares schema and ships namespaced migrations; project owns only cross-package link/deployment-local migrations | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
 | Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |
-| Linkables and links | Existing `defineLink`, generated schema inputs, deployment-local link migrations | Package exposes linkables; package/project explicitly declares neutral pair links; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
+| Linkables and links | Selected graph link facets with symbolic named exports and deployment-local link migrations | Reference-owning package declares neutral pair links; the product BOM explicitly selects genuinely ownerless pairs; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
 | Runtime config | Managed profile settings and deployment config bridges | Package declares typed config contract; project supplies portable non-secret values | Package manifests | Defaults/values validate before build and package code no longer reads profile settings directly | #3080 |
 | Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds provider-specific sources; runtime receives typed redacted handles | Runtime config, Node host adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no provider env names | #3080 |
 | API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |
 | OpenAPI | Route-owned schemas plus shipped graph coverage report and allowlists | Package API bundle opts into documents and owns operation metadata; selected graph emits deployment-specific documents | API routes | Coverage has no unexplained allowlist and no operator OpenAPI catalog | #3080 |
 | Access resources and grants | Pass-through route scopes and existing Better Auth `Record<string, string[]>` permissions | Package owns `access.resources`; routes, tools, admin, workflows, and actions reference one `resource:action` catalog; project owns role presets | Identity, API operation ids | All references validate against one selected catalog; no central first-party permission catalog remains | #3080 |
+
+The central framework composition catalog has been deleted. Package manifests
+and their admitted runtime exports are the only product authority; generated
+project runtimes also include index-only local modules and extensions. Generic
+Hono manifest/registry helpers remain available for explicit consumer-owned
+composition, but they do not supply a standard product set.
 
 The first authority slice is documented in
 [`access-catalog-authority.md`](./access-catalog-authority.md). Bookings now proves selected resource
@@ -1411,7 +1484,7 @@ resource overrides, and project-owned preset fragments without changing stored g
 | Workflows and schedules | Existing descriptors, graph workflow/event-filter slice, stable schedule lowering, operator local workflow bridge | Package owns workflow descriptors and schedules; project owns cross-package workflows/overrides; target provisions stable schedule ids | Identity, runtime bindings | No product schedule or workflow bundle requires operator registration; cron-string dispatch is compatibility-only | #3080 |
 | Emitted events, subscribers, event filters | Existing subscribers, event descriptors, outbox, and first graph event-filter slice | Package owns emitted-event catalog, payload/visibility metadata, subscribers, workflows, and event filters | Identity, workflows, runtime bindings | Unknown event/target checks pass and subscriber/event lists are absent from starter composition | #3080 |
 | Inbound and outbound webhooks | Inbound Hono routes; outbound behavior configured outside a complete event catalog | Package owns inbound route verification metadata and declares externally deliverable events; deployment owns endpoint subscriptions and secrets | API routes, event catalog, access/visibility | Target plans validate delivery eligibility and no webhook is hidden in starter route/scheduler lists | #3080 |
-| Tools and MCP | `@voyant-travel/tools`, package `./tools` exports aggregated manually, in-deployment MCP from ADR-0011 | Package manifest references transport-neutral tool definitions/context; selected graph builds one registry and manifest; MCP remains a transport adapter | Access catalog, runtime bindings, stable ids | Tool registry follows package selection with no operator tool list; scopes/risk/context validate | #3080 |
+| Tools and MCP | `@voyant-travel/tools`, package `./tools` exports aggregated manually, in-deployment MCP from ADR-0011 | Package manifests reference transport-neutral tools/context and select the `@voyant-travel/mcp` route module; the generated graph runtime builds the registry | Access catalog, runtime bindings, stable ids | Tool registry and MCP surface follow package selection with no Operator-local module or separate eligibility catalog; scopes/risk/context validate | #3080 |
 | Action-ledger metadata | Existing ledger capabilities and explicit write helpers outside the deployment graph | Package owns action definitions bound by stable route/tool/workflow/event ids and admin copy; runtime writes remain explicit | Access, API, tools, workflows, events, admin copy | Every declared binding resolves and package actions appear without central capability registration | #3080 |
 | Install, upgrade, uninstall | Manual dependency/project edits; migrations and admission exist independently | CLI edits dependency plus selected graph; facets drive plan; uninstall detaches all surfaces and retains durable data/history by default | All detachable facets, setup ledger, diagnostics | Lifecycle diff names every affected facet and leaves no active references to removed units | #3080 |
 | Destructive purge and broad lifecycle hooks | Not supported | No broad hooks; any future purge is separately declared, backup/approval gated, and package-specific | Complete lifecycle | Explicit future ADR and end-to-end safety proof | Hardening |
@@ -1475,6 +1548,18 @@ are no longer authoritative.
 
 ### Phase 3: package-owned runtime composition and first non-Cloud target
 
+When Node is the only runtime for a domain, the domain package owns its manifest
+runtime contributor directly. It must not split that implementation into a
+`*-node` companion or publish a `standard-node` implementation namespace.
+Cross-domain runtime assembly is inverted through domain-owned typed contracts
+and package-owned unique ports. Generated graph composition statically imports
+the selected contributors, populates one typed port record, and exposes that
+record to contributors through `getRuntimePort(port)`. Runtime package/module
+loading, package-specifier registries, and host module-import primitives are
+prohibited. The starter does not provide domain capability loaders or a package
+registry. Catalog applies this rule via `@voyant-travel/catalog/runtime-contracts`,
+with its implementation kept behind the manifest contributor.
+
 API bundle posture is inspectable before package runtime imports. `anonymous:
 true` opens the resolved public mount, while an `anonymous` path array records
 route-relative anonymous exceptions. `transactional: true` selects the resolved
@@ -1491,9 +1576,31 @@ The Operator mounts both graph unions directly as `publicPaths` and
 `dbTransactionalPaths`. Its standard package bindings must not restate
 `anonymous`, `requiresTransactionalDb`, or transactional path/module metadata.
 The external Netopia plugin and root-mounted payment-link family are graph-owned.
-The deployment-local invitations unit continues to own its anonymous posture
-locally. `check-operator-route-posture` prevents graph-derived posture from
-being replaced by starter hand-lists.
+The auth-owned invitations unit declares its anonymous and transactional
+posture in the package manifest. `check-operator-route-posture` prevents that
+graph-derived posture from being replaced by starter hand-lists.
+
+The Operator's `invitations` and `team` families are package-owned graph units
+from `@voyant-travel/auth`. Their route contracts, credential issuance, and
+cloud membership proxy live in the auth package; deployments provide normalized
+auth mode, deployment URLs/credentials, notification delivery, and the request
+database through a typed runtime port and shared Hono context. The selected ids
+are `@voyant-travel/auth#invitations` and `@voyant-travel/auth#team`; no
+package-id-specific starter units duplicate them.
+
+Scheduled travel and infrastructure work follows the same ownership rule as
+routes. Distribution owns its three channel-push reconciliation workflows,
+Cruises owns external catalog refresh, and DB owns event-outbox retry/retention.
+Their package manifests declare the stable schedule ids; the Node entry only
+dispatches graph-selected workflow schedules through Workflow Runs. The
+framework managed-job list must not duplicate those package schedules.
+
+Progress: Charters and Cruises now export package-owned graph route factories.
+Cruises declares the typed `cruises.routes-runtime` port for the host's source
+adapter registry, so its package factory owns registry middleware and OpenAPI
+route assembly while the Node host supplies only connector resolution by port
+id. The starter route wrappers are deleted, and package selection remains the
+sole authority for mounting either vertical.
 
 Progress: Relationships now declares its route runtime dependency as the typed
 `relationships.route-runtime` port and exports the package-owned graph factory
@@ -1542,14 +1649,14 @@ package surfaces in `voyant#3080`.
   namespaced copy and deployment overrides
 - generate the admin bundle only from selected package exports and graph data
 
-Progress: the action-ledger, MICE, and Quotes nav/route/page factories and their
-lightweight localization/icon adapters are lowered into the selected-graph admin
-bundle. Quotes also owns its lazy route copy provider. The Operator composes
-these selected factories generically, with selection and deselection controlled
-only by the graph. Slots/contributions, generalized copy lowering, and the
-remaining first-party Operator compatibility registry are not part of this
-slice. Identity admin routes are the first package-owned selected-graph OpenAPI
-authority; other API documents remain on the Operator compatibility path.
+Progress: all fifteen first-party nav/route/page factories, their declared slots and
+contributions, and their lightweight localization/icon adapters are lowered
+into the selected-graph admin bundle. The Operator composes these factories
+generically, with selection and deselection controlled only by the graph.
+No Operator admin factory compatibility registry remains. Package-owned
+selected-graph OpenAPI authority includes Identity, Notifications, SmartBill,
+and the multi-surface Bookings document. Other API documents remain on the
+Operator compatibility path and are measured by the coverage checker.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.
@@ -1562,6 +1669,15 @@ surface without operator edits; all grants and message references validate.
   in-deployment MCP surface
 - migrate action-ledger declarations after route, tool, workflow, event, access,
   and copy ids are stable; keep ledger writes explicit
+
+Progress: outbound webhook eligibility is no longer an event-name-only allowlist.
+Every selected outbound declaration must reference an external event with a semantic
+version, JSON payload schema, and graph-owned audit source/category. Those fields lower
+into the selected webhook plan; generic composition copies the contract id/version and
+audit metadata onto the delivery envelope, and queued delivery persists the selected
+source instead of assigning all traffic to an Operator-owned source. Catalog is the
+first complete package-owned external event catalog. The Phase 5 event-authority
+checker rejects name-only outbound declarations across package manifests.
 
 Exit: package selection controls events, external delivery eligibility, agent
 tools, and audited action metadata without parallel operator catalogs.

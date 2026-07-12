@@ -1,0 +1,2258 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Operator API",
+    "version": "0.0.0",
+    "description": "Generated from the composed operator app. Do not edit by hand."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "This deployment (same origin)"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "CatalogSearchFilter": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["eq"]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              }
+            },
+            "required": ["kind", "field", "value"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["in"]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            "required": ["kind", "field", "values"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["range"]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "gte": {
+                "type": "number"
+              },
+              "lte": {
+                "type": "number"
+              }
+            },
+            "required": ["kind", "field"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["and"]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": ["kind", "clauses"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["or"]
+              },
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CatalogSearchFilter"
+                }
+              }
+            },
+            "required": ["kind", "clauses"]
+          }
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/v1/admin/promotions": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                {
+                  "type": "string",
+                  "enum": ["false"]
+                }
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "required": false,
+            "name": "code",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["auto", "code"]
+            },
+            "required": false,
+            "name": "applicationMode",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["active", "scheduled", "expired", "archived"]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "global",
+                "products",
+                "categories",
+                "destinations",
+                "markets",
+                "audiences",
+                "fare_codes",
+                "cabin_grades"
+              ]
+            },
+            "required": false,
+            "name": "scopeKind",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "validFrom",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "name": "validUntil",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of promotional offers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": ["string", "null"]
+                          },
+                          "discountType": {
+                            "type": "string",
+                            "enum": ["percentage", "fixed_amount"]
+                          },
+                          "discountPercent": {
+                            "type": ["string", "null"]
+                          },
+                          "discountAmountCents": {
+                            "type": ["integer", "null"]
+                          },
+                          "currency": {
+                            "type": ["string", "null"]
+                          },
+                          "scope": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["global"]
+                                  }
+                                },
+                                "required": ["kind"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["products"]
+                                  },
+                                  "productIds": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "productIds"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["categories"]
+                                  },
+                                  "categoryIds": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "categoryIds"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["destinations"]
+                                  },
+                                  "destinationIds": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "destinationIds"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["markets"]
+                                  },
+                                  "marketIds": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "marketIds"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["audiences"]
+                                  },
+                                  "audiences": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "enum": ["staff", "customer", "partner", "supplier"]
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "audiences"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["fare_codes"]
+                                  },
+                                  "fareCodes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "fareCodes"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["cabin_grades"]
+                                  },
+                                  "cabinGradeCodes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "required": ["kind", "cabinGradeCodes"]
+                              }
+                            ]
+                          },
+                          "conditions": {
+                            "type": "object",
+                            "properties": {
+                              "minPax": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "pastGuestOnly": {
+                                "type": "boolean"
+                              },
+                              "soloTravelerOnly": {
+                                "type": "boolean"
+                              },
+                              "childTravelerOnly": {
+                                "type": "boolean"
+                              },
+                              "familyOnly": {
+                                "type": "boolean"
+                              }
+                            }
+                          },
+                          "validFrom": {
+                            "type": ["string", "null"]
+                          },
+                          "validUntil": {
+                            "type": ["string", "null"]
+                          },
+                          "code": {
+                            "type": ["string", "null"]
+                          },
+                          "stackable": {
+                            "type": "boolean"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "metadata": {},
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "slug",
+                          "description",
+                          "discountType",
+                          "discountPercent",
+                          "discountAmountCents",
+                          "currency",
+                          "scope",
+                          "conditions",
+                          "validFrom",
+                          "validUntil",
+                          "code",
+                          "stackable",
+                          "active",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "limit", "offset"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminPromotions",
+        "summary": "GET /v1/admin/promotions",
+        "tags": ["promotions"],
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "description": "Discount fields are conditional on `discountType` (enforced server-side; violations return a 400 `invalid_request`): `percentage` requires `discountPercent` and must omit `discountAmountCents`/`currency`; `fixed_amount` requires `discountAmountCents` + `currency` and must omit `discountPercent`. These cross-field rules can't be expressed structurally in JSON Schema, so the body schema is a permissive superset.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[a-z0-9-]+$"
+                  },
+                  "description": {
+                    "type": ["string", "null"]
+                  },
+                  "discountType": {
+                    "type": "string",
+                    "enum": ["percentage", "fixed_amount"]
+                  },
+                  "discountPercent": {
+                    "type": ["number", "null"],
+                    "exclusiveMinimum": 0,
+                    "maximum": 100
+                  },
+                  "discountAmountCents": {
+                    "type": ["integer", "null"],
+                    "exclusiveMinimum": 0
+                  },
+                  "currency": {
+                    "type": ["string", "null"],
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "scope": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["global"]
+                          }
+                        },
+                        "required": ["kind"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["products"]
+                          },
+                          "productIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "productIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["categories"]
+                          },
+                          "categoryIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "categoryIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["destinations"]
+                          },
+                          "destinationIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "destinationIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["markets"]
+                          },
+                          "marketIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "marketIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["audiences"]
+                          },
+                          "audiences": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["staff", "customer", "partner", "supplier"]
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "audiences"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["fare_codes"]
+                          },
+                          "fareCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "fareCodes"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["cabin_grades"]
+                          },
+                          "cabinGradeCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "cabinGradeCodes"]
+                      }
+                    ]
+                  },
+                  "conditions": {
+                    "type": "object",
+                    "properties": {
+                      "minPax": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "pastGuestOnly": {
+                        "type": "boolean"
+                      },
+                      "soloTravelerOnly": {
+                        "type": "boolean"
+                      },
+                      "childTravelerOnly": {
+                        "type": "boolean"
+                      },
+                      "familyOnly": {
+                        "type": "boolean"
+                      }
+                    },
+                    "default": {}
+                  },
+                  "validFrom": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "validUntil": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "code": {
+                    "type": ["string", "null"],
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "stackable": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "metadata": {
+                    "type": ["object", "null"],
+                    "additionalProperties": {}
+                  }
+                },
+                "required": ["name", "slug", "discountType", "scope"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created promotional offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": ["string", "null"]
+                        },
+                        "discountType": {
+                          "type": "string",
+                          "enum": ["percentage", "fixed_amount"]
+                        },
+                        "discountPercent": {
+                          "type": ["string", "null"]
+                        },
+                        "discountAmountCents": {
+                          "type": ["integer", "null"]
+                        },
+                        "currency": {
+                          "type": ["string", "null"]
+                        },
+                        "scope": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["global"]
+                                }
+                              },
+                              "required": ["kind"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["products"]
+                                },
+                                "productIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "productIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["categories"]
+                                },
+                                "categoryIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "categoryIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["destinations"]
+                                },
+                                "destinationIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "destinationIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["markets"]
+                                },
+                                "marketIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "marketIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["audiences"]
+                                },
+                                "audiences": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": ["staff", "customer", "partner", "supplier"]
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "audiences"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["fare_codes"]
+                                },
+                                "fareCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "fareCodes"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["cabin_grades"]
+                                },
+                                "cabinGradeCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "cabinGradeCodes"]
+                            }
+                          ]
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "properties": {
+                            "minPax": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "pastGuestOnly": {
+                              "type": "boolean"
+                            },
+                            "soloTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "childTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "familyOnly": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "validFrom": {
+                          "type": ["string", "null"]
+                        },
+                        "validUntil": {
+                          "type": ["string", "null"]
+                        },
+                        "code": {
+                          "type": ["string", "null"]
+                        },
+                        "stackable": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "metadata": {},
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "description",
+                        "discountType",
+                        "discountPercent",
+                        "discountAmountCents",
+                        "currency",
+                        "scope",
+                        "conditions",
+                        "validFrom",
+                        "validUntil",
+                        "code",
+                        "stackable",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_reference: product-scoped offer references unknown product ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Active promotional offer slug or code already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminPromotions",
+        "summary": "POST /v1/admin/promotions",
+        "tags": ["promotions"],
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/promotions/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A promotional offer by id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": ["string", "null"]
+                        },
+                        "discountType": {
+                          "type": "string",
+                          "enum": ["percentage", "fixed_amount"]
+                        },
+                        "discountPercent": {
+                          "type": ["string", "null"]
+                        },
+                        "discountAmountCents": {
+                          "type": ["integer", "null"]
+                        },
+                        "currency": {
+                          "type": ["string", "null"]
+                        },
+                        "scope": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["global"]
+                                }
+                              },
+                              "required": ["kind"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["products"]
+                                },
+                                "productIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "productIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["categories"]
+                                },
+                                "categoryIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "categoryIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["destinations"]
+                                },
+                                "destinationIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "destinationIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["markets"]
+                                },
+                                "marketIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "marketIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["audiences"]
+                                },
+                                "audiences": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": ["staff", "customer", "partner", "supplier"]
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "audiences"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["fare_codes"]
+                                },
+                                "fareCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "fareCodes"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["cabin_grades"]
+                                },
+                                "cabinGradeCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "cabinGradeCodes"]
+                            }
+                          ]
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "properties": {
+                            "minPax": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "pastGuestOnly": {
+                              "type": "boolean"
+                            },
+                            "soloTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "childTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "familyOnly": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "validFrom": {
+                          "type": ["string", "null"]
+                        },
+                        "validUntil": {
+                          "type": ["string", "null"]
+                        },
+                        "code": {
+                          "type": ["string", "null"]
+                        },
+                        "stackable": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "metadata": {},
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "description",
+                        "discountType",
+                        "discountPercent",
+                        "discountAmountCents",
+                        "currency",
+                        "scope",
+                        "conditions",
+                        "validFrom",
+                        "validUntil",
+                        "code",
+                        "stackable",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Promotional offer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminPromotionsById",
+        "summary": "GET /v1/admin/promotions/{id}",
+        "tags": ["promotions"],
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Partial update. When `discountType` is supplied, the same conditional rules as create apply (enforced server-side, 400 `invalid_request` on violation): `percentage` requires `discountPercent` and omits `discountAmountCents`/`currency`; `fixed_amount` requires `discountAmountCents` + `currency` and omits `discountPercent`. These cross-field rules aren't structurally representable in JSON Schema.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[a-z0-9-]+$"
+                  },
+                  "description": {
+                    "type": ["string", "null"]
+                  },
+                  "discountType": {
+                    "type": "string",
+                    "enum": ["percentage", "fixed_amount"]
+                  },
+                  "discountPercent": {
+                    "type": ["number", "null"],
+                    "exclusiveMinimum": 0,
+                    "maximum": 100
+                  },
+                  "discountAmountCents": {
+                    "type": ["integer", "null"],
+                    "exclusiveMinimum": 0
+                  },
+                  "currency": {
+                    "type": ["string", "null"],
+                    "minLength": 3,
+                    "maxLength": 3,
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "scope": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["global"]
+                          }
+                        },
+                        "required": ["kind"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["products"]
+                          },
+                          "productIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "productIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["categories"]
+                          },
+                          "categoryIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "categoryIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["destinations"]
+                          },
+                          "destinationIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "destinationIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["markets"]
+                          },
+                          "marketIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "marketIds"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["audiences"]
+                          },
+                          "audiences": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["staff", "customer", "partner", "supplier"]
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "audiences"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["fare_codes"]
+                          },
+                          "fareCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "fareCodes"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["cabin_grades"]
+                          },
+                          "cabinGradeCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["kind", "cabinGradeCodes"]
+                      }
+                    ]
+                  },
+                  "conditions": {
+                    "type": "object",
+                    "properties": {
+                      "minPax": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "pastGuestOnly": {
+                        "type": "boolean"
+                      },
+                      "soloTravelerOnly": {
+                        "type": "boolean"
+                      },
+                      "childTravelerOnly": {
+                        "type": "boolean"
+                      },
+                      "familyOnly": {
+                        "type": "boolean"
+                      }
+                    },
+                    "default": {}
+                  },
+                  "validFrom": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "validUntil": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "code": {
+                    "type": ["string", "null"],
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "stackable": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "metadata": {
+                    "type": ["object", "null"],
+                    "additionalProperties": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated promotional offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": ["string", "null"]
+                        },
+                        "discountType": {
+                          "type": "string",
+                          "enum": ["percentage", "fixed_amount"]
+                        },
+                        "discountPercent": {
+                          "type": ["string", "null"]
+                        },
+                        "discountAmountCents": {
+                          "type": ["integer", "null"]
+                        },
+                        "currency": {
+                          "type": ["string", "null"]
+                        },
+                        "scope": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["global"]
+                                }
+                              },
+                              "required": ["kind"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["products"]
+                                },
+                                "productIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "productIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["categories"]
+                                },
+                                "categoryIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "categoryIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["destinations"]
+                                },
+                                "destinationIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "destinationIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["markets"]
+                                },
+                                "marketIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "marketIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["audiences"]
+                                },
+                                "audiences": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": ["staff", "customer", "partner", "supplier"]
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "audiences"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["fare_codes"]
+                                },
+                                "fareCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "fareCodes"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["cabin_grades"]
+                                },
+                                "cabinGradeCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "cabinGradeCodes"]
+                            }
+                          ]
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "properties": {
+                            "minPax": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "pastGuestOnly": {
+                              "type": "boolean"
+                            },
+                            "soloTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "childTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "familyOnly": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "validFrom": {
+                          "type": ["string", "null"]
+                        },
+                        "validUntil": {
+                          "type": ["string", "null"]
+                        },
+                        "code": {
+                          "type": ["string", "null"]
+                        },
+                        "stackable": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "metadata": {},
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "description",
+                        "discountType",
+                        "discountPercent",
+                        "discountAmountCents",
+                        "currency",
+                        "scope",
+                        "conditions",
+                        "validFrom",
+                        "validUntil",
+                        "code",
+                        "stackable",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid_reference: product-scoped offer references unknown product ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Promotional offer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Active promotional offer slug or code already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patchAdminPromotionsById",
+        "summary": "PATCH /v1/admin/promotions/{id}",
+        "tags": ["promotions"],
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The id of the deleted promotional offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Promotional offer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Offer has redemptions and cannot be deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteAdminPromotionsById",
+        "summary": "DELETE /v1/admin/promotions/{id}",
+        "tags": ["promotions"],
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/promotions/{id}/archive": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The archived promotional offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": ["string", "null"]
+                        },
+                        "discountType": {
+                          "type": "string",
+                          "enum": ["percentage", "fixed_amount"]
+                        },
+                        "discountPercent": {
+                          "type": ["string", "null"]
+                        },
+                        "discountAmountCents": {
+                          "type": ["integer", "null"]
+                        },
+                        "currency": {
+                          "type": ["string", "null"]
+                        },
+                        "scope": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["global"]
+                                }
+                              },
+                              "required": ["kind"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["products"]
+                                },
+                                "productIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "productIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["categories"]
+                                },
+                                "categoryIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "categoryIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["destinations"]
+                                },
+                                "destinationIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "destinationIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["markets"]
+                                },
+                                "marketIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "marketIds"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["audiences"]
+                                },
+                                "audiences": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": ["staff", "customer", "partner", "supplier"]
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "audiences"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["fare_codes"]
+                                },
+                                "fareCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "fareCodes"]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": ["cabin_grades"]
+                                },
+                                "cabinGradeCodes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "minItems": 1
+                                }
+                              },
+                              "required": ["kind", "cabinGradeCodes"]
+                            }
+                          ]
+                        },
+                        "conditions": {
+                          "type": "object",
+                          "properties": {
+                            "minPax": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "pastGuestOnly": {
+                              "type": "boolean"
+                            },
+                            "soloTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "childTravelerOnly": {
+                              "type": "boolean"
+                            },
+                            "familyOnly": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "validFrom": {
+                          "type": ["string", "null"]
+                        },
+                        "validUntil": {
+                          "type": ["string", "null"]
+                        },
+                        "code": {
+                          "type": ["string", "null"]
+                        },
+                        "stackable": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "metadata": {},
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "slug",
+                        "description",
+                        "discountType",
+                        "discountPercent",
+                        "discountAmountCents",
+                        "currency",
+                        "scope",
+                        "conditions",
+                        "validFrom",
+                        "validUntil",
+                        "code",
+                        "stackable",
+                        "active",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Promotional offer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminPromotionsByIdArchive",
+        "summary": "POST /v1/admin/promotions/{id}/archive",
+        "tags": ["promotions"],
+        "x-voyant-module": "promotions",
+        "x-voyant-surface": "admin"
+      }
+    }
+  },
+  "webhooks": {}
+}

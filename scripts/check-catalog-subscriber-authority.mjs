@@ -7,12 +7,12 @@ const rootArg = process.argv.indexOf("--root")
 const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaultRoot
 
 const read = (relativePath) => readFile(path.join(repoRoot, relativePath), "utf8")
-const [manifest, indexRuntime, snapshotRuntime, app, composition] = await Promise.all([
+const [manifest, contributor, indexRuntime, snapshotRuntime, app] = await Promise.all([
   read("packages/catalog/src/voyant.ts"),
+  read("packages/catalog/src/runtime-contributor.ts"),
   read("packages/catalog/src/index-subscriber-runtime.ts"),
   read("packages/catalog/src/booking-snapshot-subscriber-runtime.ts"),
   read("starters/operator/src/api/app.ts"),
-  read("starters/operator/src/api/composition.ts"),
 ])
 
 const failures = []
@@ -26,9 +26,9 @@ const rejectMatch = (source, pattern, message) => {
 for (const port of ["catalogProjectionRuntimePort", "catalogBookingSnapshotRuntimePort"]) {
   requireMatch(manifest, new RegExp(`requirePort\\(${port}\\)`), `Catalog must require ${port}`)
   requireMatch(
-    composition,
+    contributor,
     new RegExp(`\\[${port}\\.id\\]`),
-    `Operator must provide ${port} through the runtime port map`,
+    `Catalog contributor must provide ${port} through the runtime port map`,
   )
 }
 
@@ -56,14 +56,14 @@ requireMatch(
   "Catalog snapshot factory must register the selected snapshot port before its descriptor",
 )
 requireMatch(
-  composition,
-  /catalogProjectionRuntimePort\.id\]:[\s\S]*satisfies CatalogProjectionRuntimeProvider/,
-  "Operator projection provider must satisfy its package-owned type",
+  contributor,
+  /projection:\s*RuntimePortValue<CatalogProjectionRuntimeProvider>/,
+  "Catalog projection contribution must satisfy its package-owned type",
 )
 requireMatch(
-  composition,
-  /catalogBookingSnapshotRuntimePort\.id\]:[\s\S]*satisfies CatalogBookingSnapshotRuntimeProvider/,
-  "Operator snapshot provider must satisfy its package-owned type",
+  contributor,
+  /bookingSnapshot:\s*RuntimePortValue<CatalogBookingSnapshotRuntimeProvider>/,
+  "Catalog snapshot contribution must satisfy its package-owned type",
 )
 rejectMatch(
   app,

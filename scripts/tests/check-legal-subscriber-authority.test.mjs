@@ -21,15 +21,16 @@ runtimePorts: [requirePort(legalBookingContractSubscriberRuntimePort)]
 subscribers: [{ runtime: { export: "legalBookingContractConfirmedSubscriber" } }]
 `,
     "packages/legal/src/index.ts": "export function createLegalHonoModule() {}\n",
-    "packages/framework/src/operator-distribution.ts": `
-const extensions = [{ resolve: "@voyant-travel/legal/booking-contract-extension" }]
-`,
-    "starters/operator/src/api/composition.ts": `
+    "packages/legal/src/runtime-contributor.ts": `
 const ports = {
   [legalRuntimePort.id]: {},
   [legalBookingContractSubscriberRuntimePort.id]: {},
 }
 `,
+    "packages/framework/src/operator-distribution.ts": `
+const extensions = [{ resolve: "@voyant-travel/legal/booking-contract-extension" }]
+`,
+    "starters/operator/src/api/runtime/deployment-resources.ts": "const ports = {}\n",
     "starters/operator/voyant.config.ts": "export default defineConfig({})\n",
     ...overrides,
   }
@@ -80,11 +81,8 @@ legalBookingContractConfirmedSubscriber.register(context)
 
   it("rejects a package-id-specific Operator Legal binding", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/composition.ts": `
-const ports = {
-  [legalRuntimePort.id]: {},
-  [legalBookingContractSubscriberRuntimePort.id]: {},
-}
+      "starters/operator/src/api/runtime/deployment-resources.ts": `
+const ports = {}
 const bindings = { "@voyant-travel/legal": createLegalHonoModule }
 `,
     })

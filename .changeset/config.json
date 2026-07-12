@@ -29,12 +29,7 @@
     ]
   ],
   "linked": [],
-  "ignore": [
-    "@voyant-travel/plugin-catalog-demo",
-    "@voyant-travel/plugin-flights-demo",
-    "@voyant-travel/voyant-test-utils",
-    "@voyant-travel/voyant-typescript-config"
-  ],
+  "ignore": ["@voyant-travel/voyant-test-utils", "@voyant-travel/voyant-typescript-config"],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch"

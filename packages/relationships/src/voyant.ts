@@ -1,7 +1,11 @@
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import { relationshipsRouteRuntimePort } from "./runtime-port.js"
 
-export { relationshipsRouteRuntimePort } from "./runtime-port.js"
+export {
+  type RelationshipsMiceRuntime,
+  relationshipsMiceRuntimePort,
+  relationshipsRouteRuntimePort,
+} from "./runtime-port.js"
 
 const relationshipsAdminRuntime = {
   entry: "@voyant-travel/relationships-react/admin",
@@ -19,6 +23,7 @@ export const relationshipsVoyantModule = defineModule({
       id: "@voyant-travel/relationships#api.admin",
       surface: "admin",
       mount: "relationships",
+      openapi: { document: "relationships" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/relationships",
@@ -52,14 +57,26 @@ export const relationshipsVoyantModule = defineModule({
     {
       id: "@voyant-travel/relationships#event.customer.signal.created",
       eventType: "customer.signal.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "relationships", category: "domain" },
     },
     {
       id: "@voyant-travel/relationships#event.person.changed",
       eventType: "person.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "relationships", category: "domain" },
     },
     {
       id: "@voyant-travel/relationships#event.organization.changed",
       eventType: "organization.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "relationships", category: "domain" },
     },
   ],
   access: {
@@ -82,12 +99,14 @@ export const relationshipsVoyantModule = defineModule({
       name: "list_people",
       runtime: { entry: "@voyant-travel/relationships/tools", export: "listPeopleTool" },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
     {
       id: "@voyant-travel/relationships#tool.get-person",
       name: "get_person",
       runtime: { entry: "@voyant-travel/relationships/tools", export: "getPersonTool" },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
     {
       id: "@voyant-travel/relationships#tool.list-organizations",
@@ -97,12 +116,14 @@ export const relationshipsVoyantModule = defineModule({
         export: "listOrganizationsTool",
       },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
     {
       id: "@voyant-travel/relationships#tool.get-organization",
       name: "get_organization",
       runtime: { entry: "@voyant-travel/relationships/tools", export: "getOrganizationTool" },
       requiredScopes: ["crm:read"],
+      context: ["relationships"],
     },
   ],
   actions: [
@@ -121,6 +142,22 @@ export const relationshipsVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 20,
+    runtime: {
+      entry: "@voyant-travel/relationships-react/admin",
+      export: "createSelectedRelationshipsAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/relationships#admin.copy",
+        namespace: "relationships.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/relationships-react/i18n",
+          export: "crmUiMessageDefinitions",
+        },
+      },
+    ],
     routes: [
       {
         id: "@voyant-travel/relationships#admin.route.people-index",
@@ -140,6 +177,11 @@ export const relationshipsVoyantModule = defineModule({
       {
         id: "@voyant-travel/relationships#admin.route.organizations-detail",
         path: "/organizations/$id",
+        runtime: relationshipsAdminRuntime,
+      },
+      {
+        id: "@voyant-travel/relationships#admin.route.custom-fields",
+        path: "/settings/custom-fields",
         runtime: relationshipsAdminRuntime,
       },
     ],

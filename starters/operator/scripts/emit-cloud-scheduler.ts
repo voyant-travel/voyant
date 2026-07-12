@@ -20,7 +20,7 @@
  * then pipe to a shell or paste into your provisioning tooling. Re-running with
  * `create` fails on existing jobs; switch to `update` in your IaC as needed.
  */
-import { loadOperatorDeploymentGraphArtifacts } from "../src/deployment-graph-artifacts.js"
+import { loadDeploymentGraphArtifacts } from "../src/deployment-graph-artifacts.js"
 
 function requireEnv(name: string): string {
   const value = process.env[name]
@@ -37,7 +37,7 @@ const timeZone = process.env.SCHEDULER_TIME_ZONE ?? "Etc/UTC"
 const jobPrefix = process.env.SCHEDULER_JOB_PREFIX ?? "operator"
 const location = process.env.SCHEDULER_LOCATION
 const oidcServiceAccount = process.env.SCHEDULER_OIDC_SERVICE_ACCOUNT
-const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
+const deploymentGraphArtifacts = loadDeploymentGraphArtifacts()
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`

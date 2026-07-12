@@ -1,11 +1,10 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
-import { parseJsonBody } from "@voyant-travel/hono"
+import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import { index, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
-import { z } from "zod"
 
 // ---------- schema ----------
 
@@ -45,6 +44,72 @@ const bookingDistributionDetailSchema = z.object({
   sourceChannelId: z.string().optional().nullable(),
   fxRateSetId: z.string().optional().nullable(),
   paymentOwner: bookingDistPaymentOwnerSchema.default("operator"),
+})
+
+const bookingDistributionDetailResponseSchema = z.object({
+  bookingId: z.string(),
+  marketId: z.string().nullable(),
+  sourceChannelId: z.string().nullable(),
+  fxRateSetId: z.string().nullable(),
+  paymentOwner: bookingDistPaymentOwnerSchema,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+const bookingIdParamSchema = z.object({ bookingId: z.string() })
+const bookingDistributionApiId = "@voyant-travel/distribution#extension.api"
+
+const jsonContent = <T extends z.ZodTypeAny>(schema: T) => ({
+  content: { "application/json": { schema } },
+})
+
+const getBookingDistributionDetailsRoute = createRoute({
+  method: "get",
+  path: "/{bookingId}/distribution-details",
+  "x-voyant-api-id": bookingDistributionApiId,
+  request: { params: bookingIdParamSchema },
+  responses: {
+    200: {
+      description: "Booking distribution details",
+      ...jsonContent(z.object({ data: bookingDistributionDetailResponseSchema.nullable() })),
+    },
+  },
+})
+
+const upsertBookingDistributionDetailsRoute = createRoute({
+  method: "put",
+  path: "/{bookingId}/distribution-details",
+  "x-voyant-api-id": bookingDistributionApiId,
+  request: {
+    params: bookingIdParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: bookingDistributionDetailSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Updated booking distribution details",
+      ...jsonContent(z.object({ data: bookingDistributionDetailResponseSchema.nullable() })),
+    },
+  },
+})
+
+const deleteBookingDistributionDetailsRoute = createRoute({
+  method: "delete",
+  path: "/{bookingId}/distribution-details",
+  "x-voyant-api-id": bookingDistributionApiId,
+  request: { params: bookingIdParamSchema },
+  responses: {
+    200: {
+      description: "Booking distribution details deleted",
+      ...jsonContent(z.object({ success: z.literal(true) })),
+    },
+    404: {
+      description: "Booking distribution details not found",
+      ...jsonContent(z.object({ error: z.string() })),
+    },
+  },
 })
 
 // ---------- service ----------
@@ -105,35 +170,33 @@ type Env = {
   }
 }
 
-const bookingDistributionExtensionRoutes = new Hono<Env>()
+const bookingDistributionExtensionRoutes = new OpenAPIHono<Env>({
+  defaultHook: openApiValidationHook,
+})
 
-  .get("/:bookingId/distribution-details", async (c) => {
-    const row = await bookingDistributionExtensionService.get(c.get("db"), c.req.param("bookingId"))
+  .openapi(getBookingDistributionDetailsRoute, async (c) => {
+    const { bookingId } = c.req.valid("param")
+    const row = await bookingDistributionExtensionService.get(c.get("db"), bookingId)
     if (!row) {
       return c.json({ data: null })
     }
     return c.json({ data: row })
   })
 
-  .put("/:bookingId/distribution-details", async (c) => {
-    const data = await parseJsonBody(c, bookingDistributionDetailSchema)
-    const row = await bookingDistributionExtensionService.upsert(
-      c.get("db"),
-      c.req.param("bookingId"),
-      data,
-    )
+  .openapi(upsertBookingDistributionDetailsRoute, async (c) => {
+    const { bookingId } = c.req.valid("param")
+    const data = c.req.valid("json")
+    const row = await bookingDistributionExtensionService.upsert(c.get("db"), bookingId, data)
     return c.json({ data: row })
   })
 
-  .delete("/:bookingId/distribution-details", async (c) => {
-    const row = await bookingDistributionExtensionService.remove(
-      c.get("db"),
-      c.req.param("bookingId"),
-    )
+  .openapi(deleteBookingDistributionDetailsRoute, async (c) => {
+    const { bookingId } = c.req.valid("param")
+    const row = await bookingDistributionExtensionService.remove(c.get("db"), bookingId)
     if (!row) {
       return c.json({ error: "Not found" }, 404)
     }
-    return c.json({ success: true })
+    return c.json({ success: true }, 200)
   })
 
 // ---------- extension export ----------

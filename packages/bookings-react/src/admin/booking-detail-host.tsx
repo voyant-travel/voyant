@@ -16,7 +16,7 @@ import {
   usePaymentMutation,
 } from "@voyant-travel/finance-react"
 import { Sheet, SheetContent } from "@voyant-travel/ui/components/sheet"
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useCallback, useState } from "react"
 import {
   BookingDetailPage,
   type BookingDetailPageSlots,
@@ -30,6 +30,7 @@ import {
   bookingDetailFinanceEndSlot,
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
+  bookingDetailPaymentControllerSlot,
 } from "./slots.js"
 import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events.js"
 
@@ -58,16 +59,23 @@ export interface BookingDetailHostSlotContext {
   /** Open an invoice in the host's side sheet (stays on the booking page). */
   openInvoiceSheet: (invoiceId: string) => void
   /**
-   * Opens the host app's "Generate payment link" flow (a dialog the app
-   * owns — `@voyant-travel/finance-react/checkout-ui` depends on this package, so the host
-   * cannot import it without a cycle). Forwarded from
-   * {@link BookingDetailHostProps.onGenerateLink}; `undefined` when the app
-   * didn't wire one, in which case payment-link widgets hide the button.
+   * Opens the selected Finance package's Generate payment link flow.
    */
   onGenerateLink: (() => void) | undefined
 }
 
 export type BookingDetailHostSlot = (context: BookingDetailHostSlotContext) => ReactNode
+
+export interface BookingDetailPaymentActions {
+  onEditPayment?: (row: BookingPaymentsSummaryRow) => void
+  onGenerateLink?: () => void
+  onRecordPayment?: () => void
+}
+
+export interface BookingDetailPaymentControllerSlotContext {
+  bookingId: string
+  onActionsChange: (actions: BookingDetailPaymentActions) => void
+}
 
 /**
  * App-supplied extension points. The host owns everything package-clean
@@ -97,18 +105,13 @@ export interface BookingDetailHostProps {
   activeTab?: BookingDetailTabValue
   onTabChange?: (tab: BookingDetailTabValue) => void
   /**
-   * Opens the app's record-payment flow (a dialog owned by the host app —
-   * the payment dialogs live app-side because `@voyant-travel/finance-react/ui`
-   * depends on this package, so importing it here would be a cycle).
+   * Overrides the selected Finance package's record-payment action.
    */
   onRecordPayment?: () => void
   /** Opens the app's record-payment flow pre-filled with the row. */
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /**
-   * Opens the app's "Generate payment link" flow (a dialog owned by the
-   * host app — `@voyant-travel/finance-react/checkout-ui` depends on this package, so
-   * importing it here would be a cycle). Forwarded to slot/widget
-   * contributions via {@link BookingDetailHostSlotContext.onGenerateLink}.
+   * Overrides the selected Finance package's Generate payment link action.
    */
   onGenerateLink?: () => void
   slots?: BookingDetailHostSlots
@@ -156,6 +159,14 @@ export function BookingDetailHost({
     resolveAdminWidgets({ slot: bookingDetailInvoicesTabSlot, extensions: adminExtensions })
       .length > 0
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null)
+  const [contributedPaymentActions, setContributedPaymentActions] =
+    useState<BookingDetailPaymentActions>({})
+  const onPaymentActionsChange = useCallback((actions: BookingDetailPaymentActions) => {
+    setContributedPaymentActions(actions)
+  }, [])
+  const effectiveRecordPayment = onRecordPayment ?? contributedPaymentActions.onRecordPayment
+  const effectiveEditPayment = onEditPayment ?? contributedPaymentActions.onEditPayment
+  const effectiveGenerateLink = onGenerateLink ?? contributedPaymentActions.onGenerateLink
   const { remove: removePayment } = usePaymentMutation()
   // Mirror the booking fetch so the admin chrome can render breadcrumbs
   // without prop-drilling through the canonical page. TanStack Query
@@ -201,7 +212,7 @@ export function BookingDetailHost({
     paidAmountCents,
     fullyPaidReason,
     openInvoiceSheet: setViewingInvoiceId,
-    onGenerateLink,
+    onGenerateLink: effectiveGenerateLink,
   })
 
   // Central action-ledger entries merged into the Activity timeline —
@@ -214,6 +225,10 @@ export function BookingDetailHost({
 
   return (
     <>
+      <AdminWidgetSlotRenderer
+        slot={bookingDetailPaymentControllerSlot}
+        props={{ bookingId: id, onActionsChange: onPaymentActionsChange }}
+      />
       <BookingDetailPage
         id={id}
         locale={resolvedLocale}
@@ -225,7 +240,7 @@ export function BookingDetailHost({
         onOrganizationOpen={(organizationId) =>
           navigateTo("organization.detail", { organizationId })
         }
-        onRecordPayment={onRecordPayment ? () => onRecordPayment() : undefined}
+        onRecordPayment={effectiveRecordPayment ? () => effectiveRecordPayment() : undefined}
         recordPaymentDisabledReason={fullyPaidReason}
         addScheduleDisabledReason={fullyPaidReason}
         paidAmountCents={paidAmountCents}
@@ -241,7 +256,7 @@ export function BookingDetailHost({
         }}
         onInvoiceOpen={(invoiceId) => setViewingInvoiceId(invoiceId)}
         onViewPayment={(row) => navigateTo("payment.detail", { paymentId: row.id })}
-        onEditPayment={onEditPayment}
+        onEditPayment={effectiveEditPayment}
         onDeletePayment={async (row) => {
           await removePayment.mutateAsync(row.id)
         }}

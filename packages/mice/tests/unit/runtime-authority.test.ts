@@ -7,7 +7,7 @@ import { miceVoyantModule } from "../../src/voyant.js"
 describe("MICE deployment authority", () => {
   it("declares its package-owned runtime factory and port", () => {
     expect(miceVoyantModule).toMatchObject({
-      runtimePorts: [{ id: "mice.runtime" }],
+      runtimePorts: [{ id: "mice.runtime" }, { id: "relationships.mice.runtime" }],
       api: [{ runtime: { export: "createMiceVoyantRuntime" } }],
     })
   })
@@ -23,8 +23,11 @@ describe("MICE deployment authority", () => {
       unitId: miceVoyantModule.id,
       projectConfig: {},
       api: miceVoyantModule.api ?? [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     expect(runtime.module).toMatchObject({ name: "mice", requiresTransactionalDb: true })
     expect(runtime.adminRoutes).toBeDefined()

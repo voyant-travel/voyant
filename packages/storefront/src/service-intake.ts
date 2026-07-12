@@ -1,4 +1,14 @@
 import type { EventBus, EventSource } from "@voyant-travel/core"
+import type {
+  StorefrontIntakePersistence as SharedStorefrontIntakePersistence,
+  StorefrontIntakeSignal,
+} from "@voyant-travel/relationships-contracts/storefront-intake"
+
+export type {
+  StorefrontIntakeContext,
+  StorefrontIntakePerson,
+  StorefrontIntakeSignal,
+} from "@voyant-travel/relationships-contracts/storefront-intake"
 
 import type { StorefrontRequestContext } from "./service.js"
 import type {
@@ -8,6 +18,9 @@ import type {
   StorefrontNewsletterSubscribeInput,
   StorefrontNewsletterSubscribeResponse,
 } from "./validation.js"
+
+export type StorefrontIntakePersistence =
+  SharedStorefrontIntakePersistence<StorefrontRequestContext>
 
 export const CUSTOMER_SIGNAL_CREATED_EVENT = "customer.signal.created" as const
 
@@ -72,72 +85,6 @@ export type StorefrontNewsletterDoubleOptInHook = (input: {
   body: StorefrontNewsletterSubscribeInput
   context: StorefrontRequestContext
 }) => Promise<void> | void
-
-export interface StorefrontIntakeSignal {
-  id: string
-  personId: string
-  kind: "wishlist" | "notify" | "inquiry" | "request_offer" | "referral"
-  source: "form" | "phone" | "admin" | "abandoned_cart" | "website" | "booking"
-  status: "new" | "contacted" | "qualified" | "converted" | "lost" | "expired"
-  productId?: string | null
-  optionUnitId?: string | null
-  sourceSubmissionId?: string | null
-  metadata?: Record<string, unknown> | null
-}
-
-export interface StorefrontIntakePerson {
-  id: string
-}
-
-export interface StorefrontIntakePersistence {
-  findSignal(input: {
-    context: StorefrontRequestContext
-    kind: StorefrontIntakeSignal["kind"]
-    sourceSubmissionId: string
-  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
-  createPerson(input: {
-    context: StorefrontRequestContext
-    data: {
-      firstName: string
-      lastName: string
-      status: "active"
-      website: string | null
-      email?: string | null
-      phone?: string | null
-      source: string
-      sourceRef: string
-      tags: string[]
-    }
-  }): Promise<StorefrontIntakePerson | null> | StorefrontIntakePerson | null
-  createCustomerSignal(input: {
-    context: StorefrontRequestContext
-    data: {
-      personId: string
-      productId?: string | null
-      optionUnitId?: string | null
-      kind: StorefrontIntakeSignal["kind"]
-      source: StorefrontIntakeSignal["source"]
-      status: "new"
-      priority: "normal"
-      notes?: string | null
-      tags: string[]
-      sourceSubmissionId: string
-      metadata: Record<string, unknown>
-    }
-  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
-  updateCustomerSignal(input: {
-    context: StorefrontRequestContext
-    id: string
-    data: {
-      metadata: Record<string, unknown>
-    }
-  }): Promise<StorefrontIntakeSignal | null> | StorefrontIntakeSignal | null
-  deleteCustomerSignal(input: {
-    context: StorefrontRequestContext
-    id: string
-  }): Promise<unknown> | unknown
-  deletePerson(input: { context: StorefrontRequestContext; id: string }): Promise<unknown> | unknown
-}
 
 export type StorefrontIntakePersistenceResolver = (
   context: StorefrontRequestContext,

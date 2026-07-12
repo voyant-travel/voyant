@@ -10,10 +10,22 @@ describe("commerce deployment manifest", () => {
   it("owns the promotion workflow and event-filter runtime references", () => {
     expect(commerceVoyantModule.workflows).toEqual([
       {
-        ...bulkReindexProductsWorkflowManifest,
-        source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
+        id: "commerce.process-promotion-boundaries",
+        config: {
+          defaultRuntime: "node",
+          schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
+        },
+        source: "@voyant-travel/commerce/promotion-boundary-workflow",
         runtime: {
-          entry: "./promotions/workflow-bulk-reindex",
+          entry: "./promotion-boundary-workflow",
+          export: "promotionBoundarySchedulerWorkflow",
+        },
+      },
+      {
+        ...bulkReindexProductsWorkflowManifest,
+        source: "@voyant-travel/commerce/product-reindex-workflow",
+        runtime: {
+          entry: "./product-reindex-workflow",
           export: "bulkReindexProductsWorkflow",
         },
       },
@@ -34,9 +46,9 @@ describe("commerce deployment manifest", () => {
         eventFilterId: promotionAffectedAllFilter.id,
         workflowId: bulkReindexProductsWorkflowManifest.id,
         filter: promotionAffectedAllFilter.manifest,
-        source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest",
+        source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
         runtime: {
-          entry: "./promotions/workflow-bulk-reindex-manifest",
+          entry: "./product-reindex-workflow-manifest",
           export: "promotionAffectedAllFilter",
         },
       },

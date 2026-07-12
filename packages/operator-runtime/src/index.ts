@@ -1,15 +1,17 @@
 import { mkdir, readFile } from "node:fs/promises"
-import { createRequire } from "node:module"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
-import { serveManagedProfileAdmin } from "@voyant-travel/admin-host/serve"
-import { createVoyantGraphRuntimePortStubs } from "@voyant-travel/framework"
+import { serveAdminHost } from "@voyant-travel/admin-host/serve"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
-  loadManagedProfileRuntime,
-  type ManagedProfileRuntime,
-  type ManagedProfileRuntimeEnv,
-} from "@voyant-travel/framework/managed-runtime"
+  createVoyantNodeEnv,
+  createVoyantNodeRuntimeHostPrimitives,
+  loadVoyantNodeRuntime,
+  type VoyantNodeRuntime,
+  type VoyantNodeRuntimeEnv,
+} from "@voyant-travel/framework/node-runtime"
 import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime"
 import { tsImport } from "tsx/esm/api"
 
@@ -20,12 +22,16 @@ export interface LoadOperatorProjectOptions {
   projectRoot?: string
   env?: Record<string, string | undefined>
   adminAssetsDir?: string
+  host?: {
+    config?: Readonly<Record<string, unknown>>
+    deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
+  }
 }
 
 export interface OperatorProjectHost {
   projectRoot: string
   graphHash: string
-  runtime: ManagedProfileRuntime
+  runtime: VoyantNodeRuntime
   start(options?: { port?: number }): NodeServerHandle
 }
 
@@ -37,6 +43,9 @@ interface GeneratedProjectRuntime {
     providers: Record<string, string>
   }
   graphRuntime: import("@voyant-travel/framework").VoyantGraphRuntime
+  createRuntimePorts(host: {
+    primitives: VoyantRuntimeHostPrimitives
+  }): import("@voyant-travel/framework").VoyantGraphRuntimePorts
 }
 
 /** Load the generated graph and create the framework-owned Node/admin host. */
@@ -45,32 +54,28 @@ export async function loadOperatorProject(
 ): Promise<OperatorProjectHost> {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const generated = await loadGeneratedProjectRuntime(projectRoot)
-  await assertGraphHash(projectRoot, generated)
-  const runtime = await loadManagedProfileRuntime({
-    project: {
-      schemaVersion: "voyant.managed-profile.v1",
-      profile: "operator",
-      frameworkVersion: resolveFrameworkVersion(),
-      mode: generated.deployment.mode ?? "self-hosted",
-      modules: [],
-      plugins: [],
-      settings: {},
-      providers: generated.deployment.providers,
-      admin: { enabled: true, path: "/app" },
-    },
+  const graph = await readGeneratedDeploymentGraph(projectRoot, generated)
+  const env = createVoyantNodeEnv(options.env ?? process.env)
+  const primitives = createVoyantNodeRuntimeHostPrimitives({
+    env,
+    ...options.host,
+  })
+  const runtime = await loadVoyantNodeRuntime({
+    applicationId: path.basename(projectRoot),
+    graphRuntime: generated.graphRuntime,
     deployment: {
       mode: generated.deployment.mode ?? "self-hosted",
       providers: generated.deployment.providers,
     },
-    graphRuntime: generated.graphRuntime,
-    runtimePorts: createVoyantGraphRuntimePortStubs(generated.graphRuntime),
-    env: options.env,
+    deploymentRequirements: graph.requirements,
+    runtimePorts: generated.createRuntimePorts({ primitives }),
+    env,
   })
   const clientAssetsDir = path.resolve(
     options.adminAssetsDir ?? path.join(projectRoot, ".voyant/admin/client"),
   )
   await mkdir(clientAssetsDir, { recursive: true })
-  const web = serveManagedProfileAdmin<ManagedProfileRuntimeEnv>({
+  const web = serveAdminHost<VoyantNodeRuntimeEnv>({
     clientAssetsDir,
     app: (request, env, ctx) => runtime.app.fetch(request, env, ctx),
   })
@@ -80,7 +85,7 @@ export async function loadOperatorProject(
     graphHash: generated.graphHash,
     runtime,
     start: ({ port } = {}) =>
-      createNodeServer<ManagedProfileRuntimeEnv>({
+      createNodeServer<VoyantNodeRuntimeEnv>({
         fetch: (request, env, ctx) => web.fetch(request, env, toExecutionContext(ctx)),
         env: runtime.env,
         port,
@@ -110,38 +115,36 @@ async function loadGeneratedProjectRuntime(projectRoot: string): Promise<Generat
   if (generated.kind !== "application") {
     throw new Error(`${PROJECT_RUNTIME_ENTRY} is not a Voyant application runtime.`)
   }
+  if (typeof generated.createRuntimePorts !== "function") {
+    throw new Error(`${PROJECT_RUNTIME_ENTRY} does not expose static runtime port composition.`)
+  }
   return generated
 }
 
-async function assertGraphHash(
+async function readGeneratedDeploymentGraph(
   projectRoot: string,
   runtime: GeneratedProjectRuntime,
-): Promise<void> {
+): Promise<{
+  requirements: VoyantGraphDeploymentRequirements
+}> {
   const graph = JSON.parse(await readFile(path.join(projectRoot, PROJECT_GRAPH_ENTRY), "utf8")) as {
     contentHash?: unknown
+    requirements?: unknown
   }
   if (graph.contentHash !== runtime.graphHash) {
     throw new Error("Generated project runtime and deployment graph hashes do not match.")
   }
-}
-
-function resolveFrameworkVersion(): string {
-  const require = createRequire(import.meta.url)
-  const entry = require.resolve("@voyant-travel/framework")
-  let directory = path.dirname(entry)
-  while (directory !== path.dirname(directory)) {
-    try {
-      const packageJson = require(path.join(directory, "package.json")) as {
-        name?: string
-        version?: string
-      }
-      if (packageJson.name === "@voyant-travel/framework" && packageJson.version) {
-        return packageJson.version
-      }
-    } catch {}
-    directory = path.dirname(directory)
+  if (
+    !graph.requirements ||
+    typeof graph.requirements !== "object" ||
+    !("resources" in graph.requirements) ||
+    !Array.isArray(graph.requirements.resources)
+  ) {
+    throw new Error("Generated deployment graph requirements are missing or invalid.")
   }
-  throw new Error("Unable to resolve @voyant-travel/framework version.")
+  return {
+    requirements: graph.requirements as VoyantGraphDeploymentRequirements,
+  }
 }
 
 function toExecutionContext(

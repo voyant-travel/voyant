@@ -8,11 +8,17 @@
     "./types": "./src/types.ts",
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
+    "./runtime": "./src/runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/r2": "./src/providers/r2.ts",
     "./providers/s3": "./src/providers/s3.ts",
-    "./lib/sigv4": "./src/lib/sigv4.ts"
+    "./lib/sigv4": "./src/lib/sigv4.ts",
+    "./openapi/admin/media": "./openapi/admin/storage-media.json",
+    "./openapi/admin/uploads": "./openapi/admin/storage-uploads.json",
+    "./openapi/admin/video-upload-ticket": "./openapi/admin/storage-video-upload-ticket.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -23,7 +29,8 @@
     "prepack": "pnpm run build"
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -47,6 +54,21 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
+      },
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
@@ -72,12 +94,17 @@
         "types": "./dist/lib/sigv4.d.ts",
         "import": "./dist/lib/sigv4.js",
         "default": "./dist/lib/sigv4.js"
-      }
+      },
+      "./openapi/admin/media": "./openapi/admin/storage-media.json",
+      "./openapi/admin/uploads": "./openapi/admin/storage-uploads.json",
+      "./openapi/admin/video-upload-ticket": "./openapi/admin/storage-video-upload-ticket.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^"
   },
   "peerDependencies": {
@@ -100,6 +127,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createStorageRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

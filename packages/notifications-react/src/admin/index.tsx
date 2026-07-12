@@ -2,6 +2,8 @@ import {
   type AdminExtension,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 
 /**
@@ -180,4 +182,25 @@ export function createNotificationsAdminExtension(
       },
     ],
   })
+}
+
+export function createSelectedNotificationsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createNotificationsAdminExtension({
+      labels: {
+        templates: navMessages.notificationTemplates,
+        reminderRules: navMessages.notificationReminderRules,
+        deliveries: navMessages.notificationDeliveries,
+        reminderRuns: navMessages.notificationReminderRuns,
+        preview: navMessages.notificationPreview,
+        settings: navMessages.notificationSettings,
+      },
+    }),
+    () =>
+      import("../i18n/index.js").then((module) => ({
+        default: module.NotificationsUiMessagesProvider,
+      })),
+  )
 }

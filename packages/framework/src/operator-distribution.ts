@@ -14,17 +14,71 @@ export const STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE = {
 export const STANDARD_OPERATOR_ACCESS: VoyantGraphProjectAccessDeclaration = {
   presets: [
     {
+      id: "catalog-read",
+      kind: "api-token",
+      label: "Catalog read",
+      grants: [
+        "catalog:read",
+        "catalog:search",
+        "products:read",
+        "departures:read",
+        "itineraries:read",
+      ],
+    },
+    {
       id: "commerce-read",
       kind: "api-token",
       label: "Commerce read",
-      grants: ["bookings:read"],
+      grants: ["availability:read", "products:read", "pricing:read", "suppliers:read"],
+    },
+    {
+      id: "automation",
+      kind: "api-token",
+      label: "Automation",
+      grants: ["workflows:trigger", "webhooks:relay"],
+    },
+    {
+      id: "read-only",
+      kind: "api-token",
+      label: "Read only",
+      grants: ["*:read"],
+    },
+    {
+      id: "full-access",
+      kind: "api-token",
+      label: "Full access",
+      grants: ["*:*"],
+    },
+    {
+      id: "agent-customer",
+      kind: "api-token-grant",
+      label: "Agent (customer)",
+      grants: ["catalog:read", "catalog:search", "products:read", "trips:read", "trips:write"],
+      audience: "customer",
     },
     {
       id: "agent-staff",
       kind: "api-token-grant",
       label: "Agent (staff)",
-      grants: ["bookings:read", "bookings:write"],
+      grants: [
+        "bookings:read",
+        "bookings:write",
+        "catalog:read",
+        "catalog:search",
+        "products:read",
+        "quotes:read",
+        "quotes:write",
+        "trips:read",
+        "trips:write",
+      ],
       audience: "staff",
+    },
+    {
+      id: "public-catalog-reader",
+      kind: "api-token-grant",
+      label: "Public catalog reader",
+      grants: ["catalog:read", "catalog:search", "products:read"],
+      audience: "customer",
     },
     {
       id: "editor",
@@ -76,8 +130,6 @@ export interface ResolvedOperatorDistribution {
 
 interface StandardModuleSelection {
   resolve: string
-  /** Kept only while createVoyantApp consumes the legacy composition registry. */
-  legacyRuntime?: true
   required?: true
 }
 
@@ -85,16 +137,10 @@ interface StandardExtensionSelection {
   resolve: string
   /** Module selections whose removal also removes this extension. */
   owners: readonly string[]
-  /** Kept only while createVoyantApp consumes the legacy composition registry. */
-  legacyRuntime?: true
-  /** Historical registry key when it differs from the canonical graph selection. */
-  legacyRuntimeResolve?: string
 }
 
 export interface SelectStandardOperatorDistributionOptions {
   exclude?: readonly string[]
-  /** Restrict the projection to the createVoyantApp compatibility registry. */
-  legacyRuntimeOnly?: boolean
 }
 
 /**
@@ -112,33 +158,36 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
   id: "operator-standard",
   target: "node",
   modules: [
-    { resolve: "@voyant-travel/action-ledger", legacyRuntime: true, required: true },
-    { resolve: "@voyant-travel/relationships", legacyRuntime: true, required: true },
-    { resolve: "@voyant-travel/quotes", legacyRuntime: true },
-    { resolve: "@voyant-travel/operations", legacyRuntime: true },
-    { resolve: "@voyant-travel/identity", legacyRuntime: true, required: true },
-    { resolve: "@voyant-travel/distribution", legacyRuntime: true },
-    { resolve: "@voyant-travel/inventory/extras", legacyRuntime: true },
-    { resolve: "@voyant-travel/bookings/requirements", legacyRuntime: true },
-    { resolve: "@voyant-travel/commerce", legacyRuntime: true, required: true },
-    { resolve: "@voyant-travel/inventory", legacyRuntime: true },
-    { resolve: "@voyant-travel/catalog", legacyRuntime: true },
-    { resolve: "@voyant-travel/catalog/booking-engine", legacyRuntime: true },
-    { resolve: "@voyant-travel/accommodations", legacyRuntime: true },
-    { resolve: "@voyant-travel/bookings", legacyRuntime: true },
-    { resolve: "@voyant-travel/finance", legacyRuntime: true },
-    { resolve: "@voyant-travel/legal", legacyRuntime: true },
-    { resolve: "@voyant-travel/legal/contract-document", legacyRuntime: true },
-    { resolve: "@voyant-travel/public-document-delivery", legacyRuntime: true },
-    { resolve: "@voyant-travel/notifications", legacyRuntime: true },
-    { resolve: "@voyant-travel/storage", legacyRuntime: true },
-    { resolve: "@voyant-travel/storefront", legacyRuntime: true },
-    { resolve: "@voyant-travel/storefront/customer-portal", legacyRuntime: true },
-    { resolve: "@voyant-travel/storefront/verification", legacyRuntime: true },
-    { resolve: "@voyant-travel/storefront/payment-link", legacyRuntime: true },
-    { resolve: "@voyant-travel/trips", legacyRuntime: true },
-    { resolve: "@voyant-travel/flights", legacyRuntime: true },
-    { resolve: "@voyant-travel/operator-settings", legacyRuntime: true },
+    { resolve: "@voyant-travel/action-ledger", required: true },
+    { resolve: "@voyant-travel/mcp", required: true },
+    { resolve: "@voyant-travel/relationships", required: true },
+    { resolve: "@voyant-travel/quotes" },
+    { resolve: "@voyant-travel/operations" },
+    { resolve: "@voyant-travel/identity", required: true },
+    { resolve: "@voyant-travel/auth/invitations", required: true },
+    { resolve: "@voyant-travel/auth/team", required: true },
+    { resolve: "@voyant-travel/distribution" },
+    { resolve: "@voyant-travel/inventory/extras" },
+    { resolve: "@voyant-travel/bookings/requirements" },
+    { resolve: "@voyant-travel/commerce", required: true },
+    { resolve: "@voyant-travel/inventory" },
+    { resolve: "@voyant-travel/catalog" },
+    { resolve: "@voyant-travel/catalog/booking-engine" },
+    { resolve: "@voyant-travel/accommodations" },
+    { resolve: "@voyant-travel/bookings" },
+    { resolve: "@voyant-travel/finance" },
+    { resolve: "@voyant-travel/legal" },
+    { resolve: "@voyant-travel/legal/contract-document" },
+    { resolve: "@voyant-travel/public-document-delivery" },
+    { resolve: "@voyant-travel/notifications" },
+    { resolve: "@voyant-travel/storage" },
+    { resolve: "@voyant-travel/storefront" },
+    { resolve: "@voyant-travel/storefront/customer-portal" },
+    { resolve: "@voyant-travel/storefront/verification" },
+    { resolve: "@voyant-travel/storefront/payment-link" },
+    { resolve: "@voyant-travel/trips" },
+    { resolve: "@voyant-travel/flights" },
+    { resolve: "@voyant-travel/operator-settings" },
     { resolve: "@voyant-travel/charters" },
     { resolve: "@voyant-travel/cruises" },
     { resolve: "@voyant-travel/realtime" },
@@ -152,38 +201,30 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     {
       resolve: "@voyant-travel/bookings/booking-supplier-extension",
       owners: ["@voyant-travel/bookings"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/finance/bookings-create-extension",
       owners: ["@voyant-travel/finance", "@voyant-travel/bookings"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/inventory/booking-extension",
       owners: ["@voyant-travel/inventory", "@voyant-travel/bookings"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/inventory/authoring/extension",
       owners: ["@voyant-travel/inventory"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/quotes/booking-extension",
       owners: ["@voyant-travel/quotes", "@voyant-travel/bookings"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/distribution/extension",
       owners: ["@voyant-travel/distribution", "@voyant-travel/bookings"],
-      legacyRuntime: true,
-      legacyRuntimeResolve: "@voyant-travel/distribution",
     },
     {
       resolve: "@voyant-travel/distribution/channel-push-extension",
       owners: ["@voyant-travel/distribution"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/finance/booking-tax-extension",
@@ -192,27 +233,22 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
         "@voyant-travel/bookings",
         "@voyant-travel/operator-settings",
       ],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/inventory/content-extension",
       owners: ["@voyant-travel/inventory"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/cruises/content-extension",
       owners: ["@voyant-travel/catalog"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/accommodations/content-extension",
       owners: ["@voyant-travel/accommodations"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/inventory/brochure-extension",
       owners: ["@voyant-travel/inventory", "@voyant-travel/storage"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/finance/booking-schedule-extension",
@@ -221,12 +257,10 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
         "@voyant-travel/bookings",
         "@voyant-travel/operator-settings",
       ],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/quotes/quote-version-snapshot-extension",
       owners: ["@voyant-travel/quotes", "@voyant-travel/trips"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/commerce/booking-maintenance-extension",
@@ -235,27 +269,22 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
         "@voyant-travel/commerce",
         "@voyant-travel/operator-settings",
       ],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/action-ledger/health-extension",
       owners: ["@voyant-travel/action-ledger"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/quotes/proposal-extension",
       owners: ["@voyant-travel/quotes"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/catalog/offers-extension",
       owners: ["@voyant-travel/catalog"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/commerce/catalog-checkout-extension",
       owners: ["@voyant-travel/catalog", "@voyant-travel/commerce"],
-      legacyRuntime: true,
     },
     {
       resolve: "@voyant-travel/mice/booking-extension",
@@ -268,6 +297,14 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     {
       resolve: "@voyant-travel/legal/booking-contract-extension",
       owners: ["@voyant-travel/legal"],
+    },
+    {
+      resolve: "@voyant-travel/legal/standard-product-links",
+      owners: ["@voyant-travel/legal", "@voyant-travel/finance"],
+    },
+    {
+      resolve: "@voyant-travel/mice/standard-product-links",
+      owners: ["@voyant-travel/mice", "@voyant-travel/quotes"],
     },
   ],
 }
@@ -290,45 +327,17 @@ export const STANDARD_OPERATOR_DISTRIBUTION = {
   extensions: STANDARD_OPERATOR_PRODUCT_BOM.extensions,
 } satisfies OperatorDistributionDeclaration
 
-/** Compatibility projection for the old createVoyantApp composition registry. */
-export const STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST = {
-  modules: STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules
-    .filter((selection) => selection.legacyRuntime)
-    .map(({ resolve }) => resolve),
-  extensions: STANDARD_OPERATOR_DISTRIBUTION_POLICY.extensions
-    .filter((selection) => selection.legacyRuntime)
-    .map((selection) => selection.legacyRuntimeResolve ?? selection.resolve),
-}
-
-/** Compatibility projection for legacy required-module validation. */
-export const STANDARD_OPERATOR_REQUIRED_MODULES = STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules
-  .filter((selection) => selection.required)
-  .map(({ resolve }) => resolve)
-
-/** Compatibility projection for legacy extension-removal behavior. */
-export const STANDARD_OPERATOR_LEGACY_EXTENSION_OWNERSHIP = Object.fromEntries(
-  STANDARD_OPERATOR_DISTRIBUTION_POLICY.extensions
-    .filter((selection) => selection.legacyRuntime)
-    .map((selection) => [selection.legacyRuntimeResolve ?? selection.resolve, selection.owners]),
-) as Readonly<Record<string, readonly string[]>>
-
 /** Resolve package selectors after applying product-removal policy. */
 export function selectStandardOperatorDistribution({
   exclude = [],
-  legacyRuntimeOnly = false,
 }: SelectStandardOperatorDistributionOptions = {}): {
   modules: string[]
   extensions: string[]
 } {
-  const moduleSelections = STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.filter(
-    (selection) => !legacyRuntimeOnly || selection.legacyRuntime,
-  )
-  const extensionSelections = STANDARD_OPERATOR_DISTRIBUTION_POLICY.extensions.filter(
-    (selection) => !legacyRuntimeOnly || selection.legacyRuntime,
-  )
+  const moduleSelections = STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules
+  const extensionSelections = STANDARD_OPERATOR_DISTRIBUTION_POLICY.extensions
   const moduleResolve = (selection: (typeof moduleSelections)[number]) => selection.resolve
-  const extensionResolve = (selection: (typeof extensionSelections)[number]) =>
-    legacyRuntimeOnly ? (selection.legacyRuntimeResolve ?? selection.resolve) : selection.resolve
+  const extensionResolve = (selection: (typeof extensionSelections)[number]) => selection.resolve
   const known = new Set([
     ...moduleSelections.map(moduleResolve),
     ...extensionSelections.map(extensionResolve),

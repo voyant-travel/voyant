@@ -1,9 +1,11 @@
 // agent-quality: file-size exception -- owner: finance; existing module stays co-located until a dedicated split preserves behavior and tests.
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { registerBookingFinancialLifecycle } from "@voyant-travel/bookings"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
-
+import { financeBookingLifecycle } from "./booking-lifecycle.js"
 import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
 import {
   buildFinanceCheckoutRouteRuntime,
@@ -25,7 +27,13 @@ import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
-import { financeRuntimePort } from "./runtime-port.js"
+import { createFinanceRuntime } from "./runtime.js"
+import {
+  financeCheckoutPaymentStartersRuntimePort,
+  financeHostRuntimePort,
+  financeInvoiceSettlementPollerRuntimePort,
+  financeNotificationsRuntimePort,
+} from "./runtime-port.js"
 
 export type {
   CheckoutRouteRuntime,
@@ -141,15 +149,17 @@ export interface FinanceHonoModuleOptions
     BookingTaxRouteOptions {}
 
 export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
-  const adminRoutes = new OpenAPIHono()
-    .route("/", financeRoutes)
-    .route("/", createFinanceCheckoutAdminRoutes(options))
-    .route("/", financeActionLedgerRoutes)
-    .route("/", supplierInvoiceRoutes)
-    .route("/", createInvoiceFxRoutes(options))
-    .route("/", createFinanceAdminDocumentRoutes(options))
-    .route("/", createFinanceAdminSettlementRoutes(options))
-    .route("/", createBookingTaxRoutes(options))
+  const adminRoutes = stampOpenApiRegistryApiId(
+    new OpenAPIHono()
+      .route("/", financeRoutes)
+      .route("/", createFinanceCheckoutAdminRoutes(options))
+      .route("/", financeActionLedgerRoutes)
+      .route("/", supplierInvoiceRoutes)
+      .route("/", createInvoiceFxRoutes(options))
+      .route("/", createFinanceAdminDocumentRoutes(options))
+      .route("/", createFinanceAdminSettlementRoutes(options)),
+    "@voyant-travel/finance#api.admin",
+  ).route("/", createBookingTaxRoutes(options))
 
   const module: Module = {
     ...financeModule,
@@ -169,9 +179,12 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
     },
   }
 
-  const publicRoutes = new OpenAPIHono()
-    .route("/", createPublicFinanceRoutes(options))
-    .route("/", createFinanceCheckoutRoutes(options))
+  const publicRoutes = stampOpenApiRegistryApiId(
+    new OpenAPIHono()
+      .route("/", createPublicFinanceRoutes(options))
+      .route("/", createFinanceCheckoutRoutes(options)),
+    "@voyant-travel/finance#api.public",
+  )
 
   return {
     module,
@@ -182,18 +195,45 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 
 export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
-export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
-  const configured = createFinanceHonoModule(await getPort(financeRuntimePort))
-  const selected: HonoModule = { module: configured.module }
-  if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
-    selected.adminRoutes = configured.adminRoutes
-  }
-  if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
-    selected.publicRoutes = configured.publicRoutes
-  }
-  return selected
-})
+export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ api, getPort, getPorts, hasPort }) => {
+    const configured = createFinanceHonoModule(
+      createFinanceRuntime(
+        await getPort(financeHostRuntimePort),
+        await getPort(financeNotificationsRuntimePort),
+        hasPort(financeCheckoutPaymentStartersRuntimePort)
+          ? await getPort(financeCheckoutPaymentStartersRuntimePort)
+          : undefined,
+        await getPorts(financeInvoiceSettlementPollerRuntimePort),
+      ),
+    )
+    const bootstrap = configured.module.bootstrap
+    const selected: HonoModule = {
+      module: {
+        ...configured.module,
+        bootstrap: async (context) => {
+          registerBookingFinancialLifecycle(context.container, financeBookingLifecycle)
+          await bootstrap?.(context)
+        },
+      },
+    }
+    if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
+      selected.adminRoutes = configured.adminRoutes
+    }
+    if (api.some(({ surface }) => surface === "public") && configured.publicRoutes) {
+      selected.publicRoutes = configured.publicRoutes
+    }
+    return selected
+  },
+)
 
+export {
+  type BookingCancellationSettlementInput,
+  buildPaidBookingCancellationSettlementNote,
+  closeTerminalBookingPaymentSchedules,
+  financeBookingLifecycle,
+  recordPaidBookingCancellationSettlement,
+} from "./booking-lifecycle.js"
 export {
   type BookingTaxRouteOptions,
   type BookingTaxSettings,
@@ -305,10 +345,18 @@ export {
   type FinanceSettlementRouteOptions,
   type InvoiceSettlementPoller,
 } from "./routes-settlement.js"
+export { aggregateFinanceInvoiceSettlementPollers } from "./runtime.js"
 export {
-  financeBookingScheduleRuntimePort,
-  financeBookingTaxRuntimePort,
-  financeRuntimePort,
+  type FinanceInvoiceSettlementPollerProvider,
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCheckoutPaymentStartersRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeHostRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+  financeInvoiceSettlementPollerRuntimePort,
+  financeNotificationsRuntimePort,
+  financeOperatorSettingsRuntimePort,
 } from "./runtime-port.js"
 export type {
   BookingGuarantee,

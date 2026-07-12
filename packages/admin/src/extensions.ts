@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import type * as React from "react"
 
 import type { AdminDestinationKey, AdminDestinations } from "./navigation/destinations.js"
+import type { OperatorAdminMessages } from "./providers/operator-admin-messages.js"
 import type { NavItem } from "./types.js"
 
 /** Host-localized inputs available to graph-selected package admin factories. */
@@ -212,6 +213,36 @@ export interface AdminWidgetContribution<Props = Record<string, unknown>> {
   component: React.ComponentType<Props>
 }
 
+/** Heterogeneous widget contribution after slot-specific props are type-checked. */
+export type AnyAdminWidgetContribution = AdminWidgetContribution<never>
+
+export type AdminSettingsNavGroup = "general" | "products"
+
+/** Icon contract used by selected package settings contributions. */
+export type AdminSettingsNavIcon = React.ComponentType<{ className?: string }>
+
+/**
+ * A package-owned page mounted below the shared `/settings` layout.
+ *
+ * Selected package factories contribute these alongside their normal routes;
+ * the host folds them into the core settings route after graph selection, so
+ * route metadata, copy, icons, and loaders stay with the owning package.
+ */
+export interface AdminSettingsPageContribution {
+  id: string
+  /** Path relative to the settings base path, starting with `/`. */
+  path: string
+  title: string
+  label?: string | ((messages: OperatorAdminMessages) => string)
+  icon?: AdminSettingsNavIcon
+  group?: AdminSettingsNavGroup
+  order?: number
+  page: () => Promise<AdminRoutePageModule>
+  loader?: (ctx: AdminRouteLoaderContext) => unknown
+  routeMessagesProvider?: () => Promise<AdminRouteMessagesProviderModule>
+  ssr?: boolean | "data-only"
+}
+
 /** Shell chrome slot rendered in the workspace header's right action area. */
 export const adminWorkspaceHeaderActionsSlot = "workspace.header.actions" satisfies AdminWidgetSlot
 
@@ -225,7 +256,8 @@ export interface AdminExtension {
   id: string
   navigation?: ReadonlyArray<AdminNavigationContribution>
   routes?: ReadonlyArray<AdminUiRouteContribution>
-  widgets?: ReadonlyArray<AdminWidgetContribution>
+  settingsPages?: ReadonlyArray<AdminSettingsPageContribution>
+  widgets?: ReadonlyArray<AnyAdminWidgetContribution>
 }
 
 export function defineAdminExtension<T extends AdminExtension>(extension: T): T {
@@ -446,7 +478,7 @@ export interface ResolveAdminWidgetsOptions {
 export function resolveAdminWidgets({
   slot,
   extensions = [],
-}: ResolveAdminWidgetsOptions): AdminWidgetContribution[] {
+}: ResolveAdminWidgetsOptions): AnyAdminWidgetContribution[] {
   const widgets = extensions
     .flatMap((extension) => extension.widgets ?? [])
     .filter((widget) => widget.slot === slot)

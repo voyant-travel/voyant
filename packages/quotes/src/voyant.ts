@@ -5,17 +5,25 @@ import {
   quotesSnapshotRuntimePort,
 } from "./runtime-port.js"
 
+const tripsRoutesRuntimePortReference = { id: "trips.routes-runtime" } as const
+const checkoutInquiryRuntimePortReference = { id: "quotes.checkout-inquiry.runtime" } as const
+
 /** Import-cheap deployment declarations owned by the quotes package. */
 export const quotesVoyantModule = defineModule({
   id: "@voyant-travel/quotes",
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
-  runtimePorts: [requirePort(quotesRuntimePort)],
+  runtimePorts: [
+    requirePort(quotesRuntimePort),
+    checkoutInquiryRuntimePortReference,
+    tripsRoutesRuntimePortReference,
+  ],
   api: [
     {
       id: "@voyant-travel/quotes#api",
       surface: "admin",
       mount: "quotes",
+      openapi: { document: "quotes" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
@@ -43,9 +51,30 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   events: [
-    { id: "@voyant-travel/quotes#event.quote-created", eventType: "quote.created" },
-    { id: "@voyant-travel/quotes#event.quote-updated", eventType: "quote.updated" },
-    { id: "@voyant-travel/quotes#event.quote-deleted", eventType: "quote.deleted" },
+    {
+      id: "@voyant-travel/quotes#event.quote-created",
+      eventType: "quote.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/quotes#event.quote-updated",
+      eventType: "quote.updated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/quotes#event.quote-deleted",
+      eventType: "quote.deleted",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
   ],
   access: {
     resources: [
@@ -117,7 +146,7 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   admin: {
-    compositionOrder: 10,
+    compositionOrder: 100,
     runtime: {
       entry: "@voyant-travel/quotes-react/admin",
       export: "createSelectedQuotesAdminExtension",
@@ -169,6 +198,7 @@ export const quotesBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/quotes#booking-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "quotes-booking" },
       runtime: {
         entry: "@voyant-travel/quotes/booking-extension",
         export: "quotesBookingExtension",
@@ -185,11 +215,33 @@ export const quotesProposalVoyantPlugin = defineExtension({
   packageName: "@voyant-travel/quotes",
   localId: "quotes.proposal-extension",
   runtimePorts: [requirePort(quotesProposalRuntimePort)],
+  events: [
+    {
+      id: "@voyant-travel/quotes#event.proposal-feedback-requested",
+      eventType: "quote.proposal_feedback.requested",
+      version: "1.0.0",
+      payloadSchema: {
+        type: "object",
+        required: ["quoteId", "quoteVersionId", "activityId", "message", "proposalUrl"],
+        properties: {
+          quoteId: { type: "string", minLength: 1 },
+          quoteVersionId: { type: "string", minLength: 1 },
+          activityId: { type: "string", minLength: 1 },
+          message: { type: "string", minLength: 1, maxLength: 4000 },
+          proposalUrl: { type: "string", minLength: 1 },
+        },
+        additionalProperties: false,
+      },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
+  ],
   api: [
     {
       id: "@voyant-travel/quotes#proposal-extension.api.admin",
       surface: "admin",
       mount: "quote-versions",
+      openapi: { document: "quotes" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
@@ -202,6 +254,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
       mount: "proposals",
       anonymous: true,
       transactional: true,
+      openapi: { document: "quotes-proposal-public" },
       runtime: {
         entry: "@voyant-travel/quotes",
         export: "createQuoteProposalVoyantRuntime",
@@ -223,6 +276,7 @@ export const quotesVersionSnapshotVoyantPlugin = defineExtension({
       id: "@voyant-travel/quotes#quote-version-snapshot-extension.api",
       surface: "admin",
       mount: "trips",
+      openapi: { document: "quote-version-snapshot" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",

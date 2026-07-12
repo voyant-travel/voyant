@@ -20,7 +20,7 @@ import {
   useOperatorAdminMessages,
 } from "../providers/operator-admin-messages.js"
 import type { AdminUser } from "../types.js"
-import type { AdminBootstrapStatus, ManagedProfileAdminAuthRuntime } from "./auth-runtime.js"
+import type { AdminAuthRuntime, AdminBootstrapStatus } from "./auth-runtime.js"
 
 /**
  * Router-aware sidebar link. SidebarMenuButton with `asChild` wraps this in a
@@ -58,11 +58,11 @@ export const AdminRouterLink = forwardRef<HTMLAnchorElement, AdminNavLinkProps>(
 
 export interface CreateAdminWorkspaceBeforeLoadOptions<TUser> {
   /**
-   * The deployment's auth capability (see {@link ManagedProfileAdminAuthRuntime}).
+   * The deployment's auth capability (see {@link AdminAuthRuntime}).
    * Only the read/redirect members the guard needs are required.
    */
   auth: Pick<
-    ManagedProfileAdminAuthRuntime<TUser>,
+    AdminAuthRuntime<TUser>,
     "getCurrentUser" | "getBootstrapStatus" | "cloudAuthStartHref"
   >
   /** Where unauthenticated visitors are sent in `local` auth mode. Default `/sign-in`. */
@@ -152,7 +152,7 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
   isUserLoading?: boolean
   /**
    * The deployment's active module ids (voyant#3063). When provided, the nav is
-   * gated to these modules — a source-free managed admin composes the full nav
+   * gated to these modules — a source-free hosted admin composes the full nav
    * from one shared, framework-version-tagged image and hides modules its
    * profile doesn't activate (whose API isn't mounted). Omit to show everything.
    */

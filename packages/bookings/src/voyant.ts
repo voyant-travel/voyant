@@ -1,7 +1,13 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 
 import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
-import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "./runtime-port.js"
+import {
+  bookingsAccommodationRuntimePort,
+  bookingsConfigurationRuntimePort,
+  bookingsFinanceRuntimePort,
+  bookingsInventoryRuntimePort,
+  bookingsRelationshipsRuntimePort,
+} from "./runtime-port.js"
 
 const bookingsAdminRuntime = {
   entry: "@voyant-travel/bookings-react/admin",
@@ -17,12 +23,18 @@ export const bookingsVoyantModule = defineModule({
   packageName: "@voyant-travel/bookings",
   localId: "bookings",
   runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
-  runtimePorts: [requirePort(bookingsRuntimePort)],
+  runtimePorts: [
+    requirePort(bookingsConfigurationRuntimePort),
+    requirePort(bookingsAccommodationRuntimePort),
+    requirePort(bookingsFinanceRuntimePort),
+    requirePort(bookingsRelationshipsRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/bookings#api.admin",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       resource: "bookings",
       transactional: true,
       runtime: {
@@ -34,6 +46,7 @@ export const bookingsVoyantModule = defineModule({
       id: "@voyant-travel/bookings#api.public",
       surface: "public",
       mount: "bookings",
+      openapi: { document: "bookings" },
       resource: "bookings",
       anonymous: true,
       transactional: true,
@@ -82,17 +95,67 @@ export const bookingsVoyantModule = defineModule({
     {
       id: "@voyant-travel/bookings#event.availability.slot.changed",
       eventType: "availability.slot.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
     },
-    { id: "@voyant-travel/bookings#event.booking.confirmed", eventType: "booking.confirmed" },
-    { id: "@voyant-travel/bookings#event.booking.expired", eventType: "booking.expired" },
-    { id: "@voyant-travel/bookings#event.booking.cancelled", eventType: "booking.cancelled" },
-    { id: "@voyant-travel/bookings#event.booking.started", eventType: "booking.started" },
-    { id: "@voyant-travel/bookings#event.booking.completed", eventType: "booking.completed" },
+    {
+      id: "@voyant-travel/bookings#event.booking.confirmed",
+      eventType: "booking.confirmed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/bookings#event.booking.expired",
+      eventType: "booking.expired",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/bookings#event.booking.cancelled",
+      eventType: "booking.cancelled",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/bookings#event.booking.started",
+      eventType: "booking.started",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/bookings#event.booking.completed",
+      eventType: "booking.completed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
+    },
     {
       id: "@voyant-travel/bookings#event.booking.status-overridden",
       eventType: "booking.status_overridden",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
     },
-    { id: "@voyant-travel/bookings#event.booking.refunded", eventType: "booking.refunded" },
+    {
+      id: "@voyant-travel/bookings#event.booking.refunded",
+      eventType: "booking.refunded",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "bookings", category: "domain" },
+    },
   ],
   access: {
     resources: [
@@ -111,6 +174,11 @@ export const bookingsVoyantModule = defineModule({
             action: "write",
             label: "Manage bookings",
             description: "Create, update, confirm, or cancel bookings.",
+          },
+          {
+            action: "delete",
+            label: "Delete bookings",
+            description: "Delete booking-owned records where supported.",
           },
         ],
         legacyActions: ["cancel"],
@@ -138,16 +206,34 @@ export const bookingsVoyantModule = defineModule({
       name: "list_bookings",
       runtime: { entry: "@voyant-travel/bookings/tools", export: "listBookingsTool" },
       requiredScopes: ["bookings:read"],
+      context: ["bookings"],
     },
     {
       id: "@voyant-travel/bookings#tool.get-booking",
       name: "get_booking",
       runtime: { entry: "@voyant-travel/bookings/tools", export: "getBookingTool" },
       requiredScopes: ["bookings:read"],
+      context: ["bookings"],
     },
   ],
   actions: BOOKING_VOYANT_ACTIONS,
   admin: {
+    compositionOrder: 1,
+    runtime: {
+      entry: "@voyant-travel/bookings-react/admin",
+      export: "createSelectedBookingsAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/bookings#admin.copy",
+        namespace: "bookings.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/bookings-react/i18n",
+          export: "bookingsUiMessageDefinitions",
+        },
+      },
+    ],
     routes: [
       {
         id: "@voyant-travel/bookings#admin.route.index",
@@ -181,6 +267,15 @@ export const bookingsVoyantModule = defineModule({
       },
     ],
     slots: [
+      {
+        id: "bookings.list.header-actions",
+        routeId: "@voyant-travel/bookings#admin.route.index",
+      },
+      {
+        id: "booking.details.payment-controller",
+        routeId: "@voyant-travel/bookings#admin.route.detail",
+        contract: { bookingId: "string", onActionsChange: "function" },
+      },
       {
         id: "booking.details.invoices-tab",
         routeId: "@voyant-travel/bookings#admin.route.detail",
@@ -219,12 +314,13 @@ export const bookingRequirementsVoyantModule = defineModule({
     entry: "@voyant-travel/bookings/requirements",
     export: "createBookingRequirementsVoyantRuntime",
   },
-  runtimePorts: [requirePort(bookingRequirementsRuntimePort)],
+  runtimePorts: [requirePort(bookingsInventoryRuntimePort)],
   api: [
     {
       id: "@voyant-travel/bookings#requirements.api",
       surface: "admin",
       mount: "booking-requirements",
+      openapi: { document: "booking-requirements" },
       runtime: {
         entry: "@voyant-travel/bookings/requirements",
         export: "createBookingRequirementsHonoModule",
@@ -234,6 +330,7 @@ export const bookingRequirementsVoyantModule = defineModule({
       id: "@voyant-travel/bookings#requirements.api.public",
       surface: "public",
       mount: "booking-requirements",
+      openapi: { document: "booking-requirements" },
       runtime: {
         entry: "@voyant-travel/bookings/requirements",
         export: "createBookingRequirementsHonoModule",
@@ -254,6 +351,7 @@ export const bookingsSupplierVoyantPlugin = defineExtension({
       id: "@voyant-travel/bookings#booking-supplier-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       runtime: {
         entry: "@voyant-travel/bookings/extensions/suppliers",
         export: "bookingsSupplierExtension",

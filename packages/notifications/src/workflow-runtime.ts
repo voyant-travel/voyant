@@ -25,3 +25,10 @@ export interface NotificationReminderWorkflowRuntime {
     env: NotificationTaskEnv,
   ) => NotificationTaskRuntimeOptions | Promise<NotificationTaskRuntimeOptions>
 }
+
+/** Build the package-owned reminder runtime from deployment host capabilities. */
+export function createNotificationReminderWorkflowRuntime(
+  runtime: NotificationReminderWorkflowRuntime,
+): NotificationReminderWorkflowRuntime {
+  return runtime
+}

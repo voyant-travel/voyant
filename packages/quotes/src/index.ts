@@ -49,6 +49,7 @@ export {
   bookingQuoteExtensionService,
   quotesBookingExtension,
 } from "./booking-extension.js"
+export { createCheckoutInquiryRuntime } from "./checkout-inquiry-runtime.js"
 export type {
   AcceptPublicProposalResult,
   ApplyTripSnapshotToQuoteVersionResult,

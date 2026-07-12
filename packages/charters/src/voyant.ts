@@ -11,9 +11,10 @@ export const chartersVoyantModule = defineModule({
       surface: "admin",
       mount: "charters",
       transactional: true,
+      openapi: { document: "charters" },
       runtime: {
         entry: "@voyant-travel/charters",
-        export: "createChartersHonoModule",
+        export: "createChartersVoyantRuntime",
       },
     },
     {
@@ -22,9 +23,10 @@ export const chartersVoyantModule = defineModule({
       mount: "charters",
       anonymous: true,
       transactional: true,
+      openapi: { document: "charters" },
       runtime: {
         entry: "@voyant-travel/charters",
-        export: "createChartersHonoModule",
+        export: "createChartersVoyantRuntime",
       },
     },
   ],
@@ -71,6 +73,7 @@ export const chartersBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/charters#booking-extension.api.admin",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       runtime: {
         entry: "@voyant-travel/charters/booking-extension",
         export: "chartersBookingExtension",

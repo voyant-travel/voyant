@@ -39,7 +39,6 @@
 
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
-import type { FrameworkProviders } from "./composition-lazy.js"
 
 /** A deployment module declaration: a ready unit, or a factory that builds one. */
 export type DeploymentModuleDeclaration<TProviders> =
@@ -57,7 +56,7 @@ export type DeploymentExtensionDeclaration<TProviders> =
  * Accepts a ready {@link HonoModule} (or array) or a factory; returns a factory
  * either way. Use it as the `export default` of a `src/modules/<name>/index.ts`.
  */
-export function defineDeploymentModule<TProviders = FrameworkProviders>(
+export function defineDeploymentModule<TProviders = unknown>(
   declaration: DeploymentModuleDeclaration<TProviders>,
 ): ModuleFactory<TProviders> {
   return typeof declaration === "function" ? declaration : () => declaration
@@ -68,7 +67,7 @@ export function defineDeploymentModule<TProviders = FrameworkProviders>(
  * {@link ExtensionFactory}. Accepts a ready {@link HonoExtension} or a factory.
  * Use it as the `export default` of a `src/extensions/<name>/index.ts`.
  */
-export function defineDeploymentExtension<TProviders = FrameworkProviders>(
+export function defineDeploymentExtension<TProviders = unknown>(
   declaration: DeploymentExtensionDeclaration<TProviders>,
 ): ExtensionFactory<TProviders> {
   return typeof declaration === "function" ? declaration : () => declaration
@@ -86,7 +85,7 @@ export type EagerModuleGlob = Record<string, unknown>
  *
  * @throws if a matched file has no default export.
  */
-export function modulesFromGlob<TProviders = FrameworkProviders>(
+export function modulesFromGlob<TProviders = unknown>(
   glob: EagerModuleGlob,
 ): Record<string, ModuleFactory<TProviders>> {
   return discoverFromGlob(glob, "modules", (declaration: DeploymentModuleDeclaration<TProviders>) =>
@@ -103,7 +102,7 @@ export function modulesFromGlob<TProviders = FrameworkProviders>(
  *
  * @throws if a matched file has no default export.
  */
-export function extensionsFromGlob<TProviders = FrameworkProviders>(
+export function extensionsFromGlob<TProviders = unknown>(
   glob: EagerModuleGlob,
 ): Record<string, ExtensionFactory<TProviders>> {
   return discoverFromGlob(

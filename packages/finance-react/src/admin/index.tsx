@@ -4,6 +4,8 @@ import {
   type AdminWidgetContribution,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 // Importing the slot id also binds the bookings-ui `AdminDestinations`
 // augmentation (`booking.detail`, `person.detail`, `organization.detail`,
@@ -12,9 +14,11 @@ import {
 // peer-depends on `@voyant-travel/bookings-react/ui`, so re-declaring them here would
 // just duplicate the contract.
 import {
+  type BookingDetailPaymentControllerSlotContext,
   bookingDetailFinanceEndSlot,
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
+  bookingDetailPaymentControllerSlot,
 } from "@voyant-travel/bookings-react/admin"
 // Importing the slot id also binds the suppliers-ui `AdminDestinations`
 // augmentation (`supplier.list`, `supplier.detail`) — this package already
@@ -53,12 +57,12 @@ function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
  */
 function lazyWidget<TProps extends object>(
   load: () => Promise<{ default: ComponentType<TProps> }>,
-): ComponentType<Record<string, unknown>> {
+): React.FunctionComponent<TProps> {
   const Lazy = React.lazy(load)
-  return function LazyFinanceAdminWidget(props: Record<string, unknown>) {
+  return function LazyFinanceAdminWidget(props: TProps) {
     return (
       <React.Suspense fallback={null}>
-        <Lazy {...(props as TProps)} />
+        <Lazy {...props} />
       </React.Suspense>
     )
   }
@@ -92,6 +96,11 @@ const LazySupplierPaymentPolicyWidget = lazyWidget<SupplierPaymentPolicyWidgetPr
       default: module.SupplierPaymentPolicyWidget,
     }),
   ),
+)
+const LazyBookingPaymentController = lazyWidget<BookingDetailPaymentControllerSlotContext>(() =>
+  import("./booking-payment-controller.js").then((module) => ({
+    default: module.BookingPaymentController,
+  })),
 )
 
 /**
@@ -376,13 +385,18 @@ export function createFinanceAdminExtension(
     ],
     widgets: [
       {
+        id: "finance-booking-payment-controller",
+        slot: bookingDetailPaymentControllerSlot,
+        component: LazyBookingPaymentController,
+      } satisfies AdminWidgetContribution<BookingDetailPaymentControllerSlotContext>,
+      {
         id: "finance-booking-invoices",
         slot: bookingDetailInvoicesTabSlot,
         // The widget registry is untyped (`Record<string, unknown>` props);
         // the typed contract is `BookingDetailHostSlotContext`, which the
         // bookings host passes verbatim to this slot's widgets.
         component: LazyBookingInvoicesWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingInvoicesWidgetProps>,
       {
         id: "finance-booking-pending-payment-sessions",
         slot: bookingDetailFinanceStartSlot,
@@ -390,14 +404,14 @@ export function createFinanceAdminExtension(
         // `BookingDetailHostSlotContext`, which the bookings host passes
         // verbatim to this slot's widgets.
         component: LazyBookingPendingPaymentSessionsWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingPendingPaymentSessionsWidgetProps>,
       {
         id: "finance-booking-payment-policy",
         slot: bookingDetailFinanceEndSlot,
         // Same untyped-registry cast; the typed contract is
         // `BookingDetailHostSlotContext`.
         component: LazyBookingPaymentPolicyWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<BookingPaymentPolicyWidgetProps>,
       {
         id: "finance-supplier-payment-policy",
         slot: supplierDetailPaymentPolicySlot,
@@ -405,7 +419,27 @@ export function createFinanceAdminExtension(
         // `SupplierDetailHostSlotContext`, which the supplier detail host
         // passes verbatim to this slot's widgets.
         component: LazySupplierPaymentPolicyWidget,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<SupplierPaymentPolicyWidgetProps>,
     ],
   })
+}
+
+export function createSelectedFinanceAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createFinanceAdminExtension({
+      labels: {
+        invoices: navMessages.invoices,
+        invoiceNumberSeries: navMessages.invoiceNumberSeries,
+        payments: navMessages.payments,
+        supplierInvoices: navMessages.supplierInvoices,
+        profitability: navMessages.profitability,
+      },
+    }),
+    () =>
+      import("../i18n/index.js").then((module) => ({
+        default: module.FinanceUiMessagesProvider,
+      })),
+  )
 }

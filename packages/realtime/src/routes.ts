@@ -1,6 +1,6 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Actor, ModuleContainer } from "@voyant-travel/core"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import {
   type PortalScope,
@@ -11,6 +11,10 @@ import { createRealtimeService, type RealtimeService } from "./service.js"
 import type { RealtimeProvider } from "./types.js"
 
 export const REALTIME_ROUTE_RUNTIME_CONTAINER_KEY = "providers.realtime.runtime"
+export const REALTIME_OPENAPI_API_IDS = {
+  admin: "@voyant-travel/realtime#api.admin",
+  public: "@voyant-travel/realtime#api.public",
+} as const
 
 type Env = {
   Bindings: Record<string, unknown>
@@ -79,7 +83,10 @@ function getRuntime(c: Context<Env>): RealtimeRouteRuntime | undefined {
  * customer/partner/supplier actor, and {@link resolveRealtimeCapabilities}
  * scopes the token accordingly.
  */
-export function createRealtimeRoutes(options: RealtimeRoutesOptions = {}): Hono<Env> {
+export function createRealtimeRoutes(
+  options: RealtimeRoutesOptions = {},
+  apiId: (typeof REALTIME_OPENAPI_API_IDS)[keyof typeof REALTIME_OPENAPI_API_IDS] = REALTIME_OPENAPI_API_IDS.admin,
+): OpenAPIHono<Env> {
   // Eager runtime when providers are passed directly; otherwise rely on the
   // container runtime registered at bootstrap (bindings-derived providers).
   const eagerRuntime =
@@ -87,7 +94,8 @@ export function createRealtimeRoutes(options: RealtimeRoutesOptions = {}): Hono<
       ? buildRealtimeRouteRuntime({}, options)
       : undefined
 
-  return new Hono<Env>().post("/token", async (c) => {
+  const routes = new OpenAPIHono<Env>()
+  routes.post("/token", async (c) => {
     const runtime = eagerRuntime ?? getRuntime(c)
     if (!runtime?.service) {
       return c.json({ error: "Realtime provider is not configured" }, 503)
@@ -121,4 +129,16 @@ export function createRealtimeRoutes(options: RealtimeRoutesOptions = {}): Hono<
       },
     })
   })
+  routes.openAPIRegistry.registerPath({
+    method: "post",
+    path: "/token",
+    summary: "Mint a realtime client token",
+    responses: {
+      200: { description: "A short-lived capability-scoped client token." },
+      401: { description: "Authentication is required." },
+      503: { description: "No realtime transport is configured." },
+    },
+    "x-voyant-api-id": apiId,
+  })
+  return routes
 }

@@ -14,7 +14,15 @@ const checker = path.join(repoRoot, "scripts/check-storefront-subscriber-authori
 async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-storefront-subscriber-authority-"))
   const files = {
-    "packages/storefront/src/voyant.ts": `runtime: { entry: "./booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" }`,
+    "packages/storefront/src/voyant.ts": `
+runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
+runtimePorts: [
+  requirePort(storefrontOffersRuntimePort),
+  requirePort(storefrontBookingIntentsRuntimePort),
+  requirePort(storefrontIntakeRuntimePort),
+],
+subscribers: [{ runtime: { entry: "./booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" } }]
+`,
     "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts": `
 export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor = {
   register: ({ eventBus }) => {
@@ -26,12 +34,19 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
 `,
     "packages/storefront/src/index.ts":
       "registerStorefrontBookingBootstrapRuntime(container, runtime)\n",
-    "packages/framework/src/composition-lazy.ts":
-      "createStorefrontHonoModule({ bookingIntents: capabilities.withDb ? { withDb: (bindings, operation) => capabilities.withDb!(bindings, operation) } : undefined })\n",
-    "starters/operator/src/api/composition.ts": `
-withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation)
-"@voyant-travel/storefront": frameworkComposition.modules["@voyant-travel/storefront"]
+    "starters/operator/src/api/runtime/deployment-resources.ts": "export const resources = {}\n",
+    "packages/storefront/src/runtime-contributor.ts": `
+host.primitives.database.transaction
+[storefrontOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers()
+[storefrontBookingIntentsRuntimePort.id]: bookingIntents
+[storefrontCustomerPortalRuntimePort.id]: customerPortal
 `,
+    "packages/relationships/src/runtime-contributor.ts":
+      "[storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence()\n",
+    "packages/notifications/src/runtime-contributor.ts":
+      "[storefrontVerificationRuntimePort.id]: verification\n",
+    "packages/trips/src/runtime-contributor.ts":
+      "[storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions()\n",
     "starters/operator/src/api/app.ts": "export const app = {}\n",
     ...overrides,
   }

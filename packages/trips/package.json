@@ -8,19 +8,27 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./service": "./src/service.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./checkout": "./src/checkout/index.ts",
     "./catalog-component": "./src/catalog-component.ts",
     "./flight-component": "./src/flight-component.ts",
+    "./route-runtime": "./src/route-runtime.ts",
     "./cruise-extension": "./src/cruise-extension.ts",
     "./payment-subscribers": "./src/payment-subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/trips.json",
+    "./openapi/storefront": "./openapi/storefront/trips.json"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createTripsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -51,11 +59,16 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/flights": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/inventory": "workspace:^",
+    "@voyant-travel/operator-settings": "workspace:^",
+    "@voyant-travel/plugin-netopia": "^0.105.21",
+    "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -70,6 +83,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -97,9 +111,9 @@
         "default": "./dist/service.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./checkout": {
         "types": "./dist/checkout/index.d.ts",
@@ -116,6 +130,11 @@
         "import": "./dist/flight-component.js",
         "default": "./dist/flight-component.js"
       },
+      "./route-runtime": {
+        "types": "./dist/route-runtime.d.ts",
+        "import": "./dist/route-runtime.js",
+        "default": "./dist/route-runtime.js"
+      },
       "./cruise-extension": {
         "types": "./dist/cruise-extension.d.ts",
         "import": "./dist/cruise-extension.js",
@@ -131,11 +150,18 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/trips.json",
+      "./openapi/storefront": "./openapi/storefront/trips.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

@@ -1,9 +1,9 @@
-// agent-quality: file-size exception -- reason: first v1 deployment-graph cut keeps schema versions, diagnostics, resolver, managed-profile bridge, and author harness co-located until generated runtime lowering defines stable split points.
+// agent-quality: file-size exception -- reason: deployment graph schemas, resolution, diagnostics, hashing, and author harness remain co-located until stable split points emerge.
 import {
   defineExtension,
   defineModule,
-  definePlugin,
   defineProject,
+  isExternalWebhookPayloadSchema,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
@@ -23,6 +23,7 @@ import {
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
   type VoyantGraphProjectDeploymentMigration,
+  type VoyantGraphProjectDeploymentMode,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
@@ -40,33 +41,18 @@ import {
   type VoyantGraphWorkflow,
   type VoyantGraphWorkflowSchedule,
 } from "@voyant-travel/core/project"
+
+export { definePlugin } from "@voyant-travel/core/project"
+
 import type { AccessCatalog, AccessCatalogResource } from "@voyant-travel/types/api-keys"
-import {
-  getManagedProfileScheduledJobs,
-  getStandardProfileEventFiltersForModule,
-  getStandardProfileWorkflowManifestForModule,
-  type ManagedEventFilterEntry,
-  type ManagedScheduledJob,
-  type ManagedWorkflowManifestEntry,
-  SCHEDULED_JOB_ROUTE,
-} from "./managed-jobs.js"
-import {
-  FRAMEWORK_CAPABILITY_GRAPH,
-  FRAMEWORK_RUNTIME_MANIFEST,
-  subsetStandardManifest,
-} from "./manifest.js"
-import {
-  getVoyantProjectProviders,
-  PROVIDER_ROLES,
-  toCreateVoyantAppProfileConfig,
-  type VoyantProfileEnvRequirement,
-  type VoyantProfileResourceRequirement,
-  type VoyantProjectDeploymentMode,
-  type VoyantProjectManifest,
-  type VoyantProjectProviderRole,
-} from "./profile.js"
-import { resourceRequirementsForProvider } from "./profile-requirements.js"
-import { moduleIdFromSpecifier } from "./profile-types.js"
+import { resourceRequirementsForProvider } from "./deployment-requirements.js"
+import type {
+  VoyantDeploymentEnvRequirement,
+  VoyantDeploymentProviderRole,
+  VoyantDeploymentResourceRequirement,
+} from "./deployment-types.js"
+import { DEPLOYMENT_PROVIDER_ROLES } from "./deployment-types.js"
+import { SCHEDULED_JOB_ROUTE, type VoyantScheduledJob } from "./scheduled-jobs.js"
 
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
 export const VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION = "voyant.package.v1" as const
@@ -83,7 +69,6 @@ export {
   type DefineVoyantGraphUnitInput,
   defineExtension,
   defineModule,
-  definePlugin,
   defineProject,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
@@ -148,6 +133,10 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_ARTIFACT_STALE: "A generated deployment graph artifact is stale.",
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
   VOYANT_GRAPH_DUPLICATE_ID: "Two selected graph units resolved to the same graph id.",
+  VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA:
+    "An emitted-event payload schema is incompatible with its previous major-version contract.",
+  VOYANT_GRAPH_INCOMPATIBLE_UPGRADE:
+    "A selected package does not admit upgrades from the previous package version.",
   VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN:
     "A provides/requires capability token does not match v1 namespace rules.",
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
@@ -224,6 +213,13 @@ export interface VoyantGraphOutboundWebhookPlanEntry {
   eventId: string
   eventUnitId: string
   eventType: string
+  eventVersion: string
+  payloadSchema: VoyantGraphJsonObject
+  visibility: "external"
+  audit: {
+    sourceModule: string
+    category: "domain" | "internal"
+  }
   secretIds: readonly string[]
 }
 
@@ -237,9 +233,9 @@ export interface DefineVoyantGraphDeploymentInput {
   schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
   target: VoyantGraphRuntimeTarget
-  providers?: Partial<Record<VoyantProjectProviderRole | string, string>>
+  providers?: Partial<Record<VoyantDeploymentProviderRole | string, string>>
   migrations?: readonly VoyantGraphProjectDeploymentMigration[]
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   requirements?: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
@@ -248,16 +244,16 @@ export interface DefineVoyantGraphDeploymentInput {
 export type VoyantGraphRuntimeTarget = "node"
 
 export interface VoyantGraphDeploymentRequirements {
-  resources: readonly VoyantProfileResourceRequirement[]
+  resources: readonly VoyantDeploymentResourceRequirement[]
 }
 
 export interface VoyantGraphDeployment {
   schemaVersion: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
   target: VoyantGraphRuntimeTarget
-  providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+  providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>
   migrations?: readonly VoyantGraphProjectDeploymentMigration[]
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
@@ -267,10 +263,12 @@ export interface VoyantGraphPackageMetadata {
   kind: VoyantGraphPackageKind
   /** Import-cheap package export containing package-owned graph declarations. */
   manifest?: string
+  /** Package-owned runtime-port contributor selected and statically lowered with the graph. */
+  runtime?: Required<Pick<VoyantGraphRuntimeReference, "entry" | "export">>
   compatibleWith?: {
     framework?: string
     targets?: readonly string[]
-    modes?: readonly VoyantProjectDeploymentMode[]
+    modes?: readonly VoyantGraphProjectDeploymentMode[]
   }
   requires?: VoyantGraphCapabilityDeclaration
   /** Package schema export and its package-level migration dependencies. */
@@ -302,10 +300,10 @@ export interface ResolveDeploymentGraphInput {
     target?: VoyantGraphRuntimeTarget
   }
   packageRecords?: readonly VoyantGraphPackageRecord[]
-  scheduledJobs?: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[]
+  scheduledJobs?: readonly (VoyantScheduledJob | VoyantGraphScheduledJob)[]
   frameworkVersion?: string
   target?: VoyantGraphRuntimeTarget
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   admission?: VoyantGraphAdmissionPolicy
 }
 
@@ -321,7 +319,7 @@ export interface CreateTestDeploymentInput {
   extensions?: readonly VoyantGraphUnitManifest[]
   plugins?: readonly VoyantGraphUnitManifest[]
   target?: VoyantGraphRuntimeTarget
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   packageRecords?: readonly VoyantGraphPackageRecord[]
 }
 
@@ -372,8 +370,8 @@ export interface ResolvedVoyantDeploymentGraph {
   }
   deployment: {
     target?: VoyantGraphRuntimeTarget
-    mode?: VoyantProjectDeploymentMode
-    providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+    mode?: VoyantGraphProjectDeploymentMode
+    providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>
     migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   }
   requirements: VoyantGraphDeploymentRequirements
@@ -508,10 +506,10 @@ export function defineDeployment(input: DefineVoyantGraphDeploymentInput): Voyan
 }
 
 export function deriveDeploymentRequirements(
-  providers: Partial<Record<VoyantProjectProviderRole | string, string>> = {},
+  providers: Partial<Record<VoyantDeploymentProviderRole | string, string>> = {},
 ): VoyantGraphDeploymentRequirements {
   return normalizeDeploymentRequirements({
-    resources: PROVIDER_ROLES.flatMap((role) => {
+    resources: DEPLOYMENT_PROVIDER_ROLES.flatMap((role) => {
       const provider = providers[role]
       return typeof provider === "string" && provider.trim().length > 0
         ? resourceRequirementsForProvider(role, provider)
@@ -618,7 +616,7 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
   diagnostics.push(...validateFacetEntities(input.links, "links", source))
   diagnostics.push(...validateSubscribers(input.subscribers, source))
-  diagnostics.push(...validateFacetEntities(input.events, "events", source))
+  diagnostics.push(...validateEvents(input.events, source))
   diagnostics.push(...validateWorkflows(input.workflows, source))
   diagnostics.push(...validatePromotedFacets(input, source))
 
@@ -815,70 +813,6 @@ export async function resolveDeploymentGraphWithPackageManifests(
   return diagnostics.length > 0 ? graphWithDiagnostics(resolved, diagnostics) : resolved
 }
 
-export function defineProjectFromManagedProfile(
-  project: VoyantProjectManifest,
-): VoyantGraphProject {
-  const bridge = toCreateVoyantAppProfileConfig(project)
-  return defineProject({
-    presetLineage: `${project.profile}-standard`,
-    modules: [
-      ...generateFrameworkModuleManifests(bridge.manifest.modules),
-      ...generateCustomSourceModuleManifests(project.customSource?.modules),
-    ],
-    extensions: [
-      ...generateFrameworkExtensionManifests(bridge.manifest.extensions),
-      ...generateCustomSourceExtensionManifests(project.customSource?.extensions),
-    ],
-    plugins: project.plugins.map((specifier) =>
-      definePlugin({
-        id: graphIdFromSpecifier(specifier),
-        packageName: packageNameFromSpecifier(specifier),
-        localId: moduleIdFromSpecifier(specifier),
-      }),
-    ),
-    meta: {
-      compatibilityProfile: project.profile,
-      managedProfileSchemaVersion: project.schemaVersion,
-      frameworkVersion: project.frameworkVersion,
-    },
-  })
-}
-
-export function defineDeploymentFromManagedProfile(
-  project: VoyantProjectManifest,
-): VoyantGraphDeployment {
-  const providers = getVoyantProjectProviders(project)
-  return defineDeployment({
-    project: defineProjectFromManagedProfile(project),
-    target: "node",
-    mode: project.mode,
-    providers: { ...providers },
-    meta: {
-      compatibilityProfile: project.profile,
-      frameworkVersion: project.frameworkVersion,
-    },
-  })
-}
-
-export async function resolveManagedProfileDeploymentGraph(
-  project: VoyantProjectManifest,
-  options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
-): Promise<ResolvedVoyantDeploymentGraph> {
-  const deployment = defineDeploymentFromManagedProfile(project)
-  return resolveDeploymentGraph({
-    ...options,
-    project: deployment.project,
-    deployment,
-    packageRecords:
-      options.packageRecords ??
-      generateWorkspacePackageRecords(deployment.project, project.frameworkVersion),
-    scheduledJobs: options.scheduledJobs ?? getManagedProfileScheduledJobs(project),
-    frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
-    target: options.target ?? deployment.target,
-    mode: options.mode ?? deployment.mode,
-  })
-}
-
 export async function createTestDeployment(
   input: CreateTestDeploymentInput,
 ): Promise<TestDeployment> {
@@ -942,59 +876,6 @@ export async function createTestDeployment(
   }
 }
 
-export function generateFrameworkModuleManifests(
-  specifiers: readonly string[] = subsetStandardManifest().modules,
-): VoyantGraphUnitManifest[] {
-  return specifiers.map((specifier) => {
-    const id = graphIdFromSpecifier(specifier)
-    const capabilities = (
-      FRAMEWORK_CAPABILITY_GRAPH as Record<
-        string,
-        { provides?: readonly string[]; requires?: readonly string[] }
-      >
-    )[specifier]
-    return defineModule({
-      id,
-      packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
-      provides: normalizeCapabilities(capabilities?.provides),
-      requires: normalizeCapabilities(capabilities?.requires),
-      api: [
-        {
-          id: childGraphEntityId(id, "api"),
-          surface: "admin",
-          mount: specifier,
-        },
-      ],
-      workflows: lowerManagedWorkflowFacets(specifier),
-      events: lowerManagedEventFacets(id, specifier),
-      subscribers: lowerManagedEventFilterFacets(id, specifier),
-    })
-  })
-}
-
-export function generateFrameworkExtensionManifests(
-  specifiers: readonly string[] = subsetStandardManifest().extensions,
-): VoyantGraphUnitManifest[] {
-  const moduleIds = new Set(FRAMEWORK_RUNTIME_MANIFEST.modules.map(graphIdFromSpecifier))
-  return specifiers.map((specifier) => {
-    const baseId = graphIdFromSpecifier(specifier)
-    const id = moduleIds.has(baseId) ? childGraphEntityId(baseId, "extension") : baseId
-    return defineExtension({
-      id,
-      packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
-      api: [
-        {
-          id: childGraphEntityId(id, "api"),
-          surface: "admin",
-          mount: specifier,
-        },
-      ],
-    })
-  })
-}
-
 export function generateCustomSourceModuleManifests(
   specifiers: readonly string[] = [],
 ): VoyantGraphUnitManifest[] {
@@ -1002,8 +883,8 @@ export function generateCustomSourceModuleManifests(
     defineModule({
       id: graphIdFromSpecifier(specifier),
       packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
-      meta: { source: "managed-custom-source" },
+      localId: localIdFromSpecifier(specifier),
+      meta: { source: "custom-source" },
     }),
   )
 }
@@ -1015,14 +896,11 @@ export function generateCustomSourceExtensionManifests(
     defineExtension({
       id: graphIdFromSpecifier(specifier),
       packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
-      meta: { source: "managed-custom-source" },
+      localId: localIdFromSpecifier(specifier),
+      meta: { source: "custom-source" },
     }),
   )
 }
-
-/** @deprecated Use generateFrameworkExtensionManifests. */
-export const generateFrameworkPluginManifests = generateFrameworkExtensionManifests
 
 /** @deprecated Use generateCustomSourceExtensionManifests. */
 export const generateCustomSourcePluginManifests = generateCustomSourceExtensionManifests
@@ -1031,6 +909,10 @@ export function graphIdFromSpecifier(specifier: string): string {
   const { packageName, subpath } = splitPackageSpecifier(specifier)
   if (!subpath) return packageName
   return `${packageName}#${subpath.replaceAll("/", ".")}`
+}
+
+function localIdFromSpecifier(specifier: string): string {
+  return specifier.replace(/^@voyant-travel\//, "").replaceAll("/", ".")
 }
 
 export function packageNameFromSpecifier(specifier: string): string {
@@ -1043,11 +925,6 @@ export function childGraphEntityId(parentId: string, childId: string): string {
 
 export function canonicalJson(value: unknown): string {
   return JSON.stringify(canonicalize(value))
-}
-
-function toGraphJsonObject(value: unknown): VoyantGraphJsonObject | undefined {
-  if (!isRecord(value)) return undefined
-  return JSON.parse(JSON.stringify(value)) as VoyantGraphJsonObject
 }
 
 function toGraphJsonValue(value: unknown): VoyantGraphJsonValue | undefined {
@@ -1075,8 +952,8 @@ function normalizeDeploymentRequirements(
 }
 
 function normalizeResourceRequirement(
-  requirement: VoyantProfileResourceRequirement,
-): VoyantProfileResourceRequirement {
+  requirement: VoyantDeploymentResourceRequirement,
+): VoyantDeploymentResourceRequirement {
   return {
     resourceKey: requirement.resourceKey,
     roles: [...requirement.roles].sort(),
@@ -1095,7 +972,7 @@ function normalizeResourceRequirement(
 }
 
 function normalizeScheduledJobs(
-  jobs: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[],
+  jobs: readonly (VoyantScheduledJob | VoyantGraphScheduledJob)[],
 ): VoyantGraphScheduledJob[] {
   return jobs
     .map((job) => ({
@@ -1134,8 +1011,8 @@ function deriveWorkflowScheduledJobs(
 }
 
 function compareEnvRequirements(
-  left: VoyantProfileEnvRequirement,
-  right: VoyantProfileEnvRequirement,
+  left: VoyantDeploymentEnvRequirement,
+  right: VoyantDeploymentEnvRequirement,
 ): number {
   return (
     left.name.localeCompare(right.name) ||
@@ -1148,8 +1025,8 @@ function compareEnvRequirements(
 }
 
 function compareResourceRequirements(
-  left: VoyantProfileResourceRequirement,
-  right: VoyantProfileResourceRequirement,
+  left: VoyantDeploymentResourceRequirement,
+  right: VoyantDeploymentResourceRequirement,
 ): number {
   return (
     left.resourceKey.localeCompare(right.resourceKey) ||
@@ -1286,6 +1163,16 @@ function validateRuntimePortDeclarations(
         }),
       )
     }
+    if (port.cardinality !== undefined && port.cardinality !== "many") {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+          source,
+          facet: `runtimePorts[${index}].cardinality`,
+          message: 'Runtime port declaration cardinality must be "many" when provided.',
+        }),
+      )
+    }
   }
   return diagnostics
 }
@@ -1301,20 +1188,6 @@ function sortResolvedUnits<
         left.packageName.localeCompare(right.packageName),
     )
     .map((unit, index) => ({ ...unit, order: index }))
-}
-
-function lowerManagedWorkflowFacets(moduleSpecifier: string): VoyantGraphWorkflow[] {
-  return getStandardProfileWorkflowManifestForModule(moduleSpecifier).map((workflow) =>
-    lowerManagedWorkflowFacet(workflow),
-  )
-}
-
-function lowerManagedWorkflowFacet(workflow: ManagedWorkflowManifestEntry): VoyantGraphWorkflow {
-  const config = toGraphJsonObject(workflow.config)
-  return {
-    id: workflow.id,
-    ...(config ? { config } : {}),
-  }
 }
 
 function normalizeWorkflowScheduleFacets(
@@ -1388,40 +1261,6 @@ function normalizeScheduleEnvironments(
     (entry): entry is "production" | "preview" | "development" =>
       entry === "production" || entry === "preview" || entry === "development",
   )
-}
-
-function lowerManagedEventFacets(unitId: string, moduleSpecifier: string): VoyantGraphEvent[] {
-  const eventTypes = sortedUnique(
-    getStandardProfileEventFiltersForModule(moduleSpecifier).map((filter) => filter.eventType),
-  )
-  return eventTypes.map((eventType) => ({
-    id: childGraphEntityId(unitId, `event.${eventType}`),
-    eventType,
-  }))
-}
-
-function lowerManagedEventFilterFacets(
-  unitId: string,
-  moduleSpecifier: string,
-): VoyantGraphSubscriber[] {
-  return getStandardProfileEventFiltersForModule(moduleSpecifier).map((filter) =>
-    lowerManagedEventFilterFacet(unitId, filter),
-  )
-}
-
-function lowerManagedEventFilterFacet(
-  unitId: string,
-  filter: ManagedEventFilterEntry,
-): VoyantGraphSubscriber {
-  const manifest = toGraphJsonObject(filter.manifest)
-  const workflowId = manifest?.targetWorkflowId
-  return {
-    id: childGraphEntityId(unitId, `subscriber.${filter.id}`),
-    eventType: filter.eventType,
-    eventFilterId: filter.id,
-    ...(typeof workflowId === "string" ? { workflowId } : {}),
-    ...(manifest ? { filter: manifest } : {}),
-  }
 }
 
 function validateCapabilityDeclaration(
@@ -1498,6 +1337,16 @@ function validateCapabilityDeclaration(
         }),
       )
     }
+    if (port.cardinality !== undefined) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+          source,
+          facet: `${facet}.ports[${index}].cardinality`,
+          message: "Port cardinality is supported only for statically composed runtimePorts.",
+        }),
+      )
+    }
   }
   return diagnostics
 }
@@ -1520,6 +1369,61 @@ function validateFacetEntities(
   }
 
   return value.flatMap((entry, index) => validateEntityId(entry, `${facet}[${index}]`, source))
+}
+
+function validateEvents(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "events", source)
+  validateEntityArray(value, "events", source, diagnostics, (entry, facet) => {
+    requireNonEmptyString(entry.eventType, `${facet}.eventType`, source, diagnostics)
+    if (typeof entry.version !== "string" || !/^\d+\.\d+\.\d+$/.test(entry.version)) {
+      invalidFacet(
+        `${facet}.version`,
+        source,
+        diagnostics,
+        "Events must declare a semantic version such as 1.0.0.",
+      )
+    }
+    if (!isRecord(entry.payloadSchema)) {
+      invalidFacet(
+        `${facet}.payloadSchema`,
+        source,
+        diagnostics,
+        "Events must declare a JSON payload schema.",
+      )
+    }
+    if (entry.visibility !== "internal" && entry.visibility !== "external") {
+      invalidFacet(
+        `${facet}.visibility`,
+        source,
+        diagnostics,
+        "Events must declare internal or external visibility.",
+      )
+    }
+    if (!isRecord(entry.audit)) {
+      invalidFacet(
+        `${facet}.audit`,
+        source,
+        diagnostics,
+        "Events must declare audit sourceModule and category.",
+      )
+    } else {
+      requireNonEmptyString(
+        entry.audit.sourceModule,
+        `${facet}.audit.sourceModule`,
+        source,
+        diagnostics,
+      )
+      if (entry.audit.category !== "domain" && entry.audit.category !== "internal") {
+        invalidFacet(
+          `${facet}.audit.category`,
+          source,
+          diagnostics,
+          "Event audit category must be domain or internal.",
+        )
+      }
+    }
+  })
+  return diagnostics
 }
 
 function validatePromotedFacets(
@@ -1660,22 +1564,84 @@ function validatePromotedFacets(
       )
     }
   })
+  validateEntityArray(input.events, "events", source, diagnostics, (entry, facet) => {
+    if (entry.eventType !== undefined) {
+      requireNonEmptyString(entry.eventType, `${facet}.eventType`, source, diagnostics)
+    }
+    const hasVersion = entry.version !== undefined
+    const hasSchema = entry.payloadSchema !== undefined
+    if (hasVersion !== hasSchema) {
+      invalidFacet(
+        facet,
+        source,
+        diagnostics,
+        "Versioned events must declare both version and payloadSchema.",
+      )
+    }
+    if (hasVersion && (typeof entry.version !== "string" || parseVersion(entry.version) === null)) {
+      invalidFacet(
+        `${facet}.version`,
+        source,
+        diagnostics,
+        "Event contract versions must use semantic versioning.",
+      )
+    }
+    if (hasSchema && !isRecord(entry.payloadSchema)) {
+      invalidFacet(
+        `${facet}.payloadSchema`,
+        source,
+        diagnostics,
+        "Event payloadSchema must be a JSON Schema object.",
+      )
+    }
+  })
 
   validateAccessFacet(input.access, source, diagnostics)
   validateAdminFacet(input.admin, source, diagnostics)
   if (input.lifecycle !== undefined) {
     if (!isRecord(input.lifecycle)) {
       invalidFacet("lifecycle", source, diagnostics, "Lifecycle metadata must be an object.")
-    } else if (input.lifecycle.uninstall !== undefined) {
-      const uninstall = input.lifecycle.uninstall
-      if (!isRecord(uninstall) || uninstall.default !== "retain-data") {
-        invalidFacet(
-          "lifecycle.uninstall.default",
-          source,
-          diagnostics,
-          'Uninstall metadata must default to "retain-data".',
-        )
+    } else {
+      if (input.lifecycle.uninstall !== undefined) {
+        const uninstall = input.lifecycle.uninstall
+        if (!isRecord(uninstall) || uninstall.default !== "retain-data") {
+          invalidFacet(
+            "lifecycle.uninstall.default",
+            source,
+            diagnostics,
+            'Uninstall metadata must default to "retain-data".',
+          )
+        }
       }
+      validateEntityArray(
+        input.lifecycle.cleanup,
+        "lifecycle.cleanup",
+        source,
+        diagnostics,
+        (entry, facet) => {
+          requireNonEmptyString(entry.resourceId, `${facet}.resourceId`, source, diagnostics)
+          if (entry.action !== "release") {
+            invalidFacet(
+              `${facet}.action`,
+              source,
+              diagnostics,
+              'Lifecycle cleanup action must be "release".',
+            )
+          }
+          if (
+            !Array.isArray(entry.on) ||
+            entry.on.length === 0 ||
+            entry.on.some((operation) => operation !== "upgrade" && operation !== "uninstall")
+          ) {
+            invalidFacet(
+              `${facet}.on`,
+              source,
+              diagnostics,
+              "Lifecycle cleanup must name at least one supported operation.",
+            )
+          }
+        },
+      )
     }
   }
   return diagnostics
@@ -1713,6 +1679,18 @@ function validateAccessFacet(
             source,
             diagnostics,
           )
+          if (
+            action.wildcard !== undefined &&
+            action.wildcard !== "allow" &&
+            action.wildcard !== "explicit"
+          ) {
+            invalidFacet(
+              `${facet}.actions[${index}].wildcard`,
+              source,
+              diagnostics,
+              'Access action wildcard policy must be "allow" or "explicit".',
+            )
+          }
         } else {
           invalidFacet(
             `${facet}.actions[${index}]`,
@@ -2157,6 +2135,20 @@ function validateFacetReferences(
   const eventById = new Map(
     units.flatMap((unit) => unit.events.map((event) => [event.id, event] as const)),
   )
+  const eventTypes = new Set(
+    units.flatMap((unit) =>
+      unit.events
+        .map((event) => event.eventType?.trim())
+        .filter((eventType): eventType is string => Boolean(eventType)),
+    ),
+  )
+  const actionBindings = {
+    routes: new Set(units.flatMap((unit) => unit.api.map((entry) => entry.id))),
+    tools: new Set(units.flatMap((unit) => (unit.tools ?? []).map((entry) => entry.id))),
+    workflows: new Set(units.flatMap((unit) => unit.workflows.map((entry) => entry.id))),
+    events: new Set(units.flatMap((unit) => unit.events.map((entry) => entry.id))),
+    webhooks: new Set(units.flatMap((unit) => (unit.webhooks ?? []).map((entry) => entry.id))),
+  } as const
   const scopes = new Set(
     units.flatMap((unit) =>
       (unit.access?.resources ?? []).flatMap((resource) =>
@@ -2205,6 +2197,18 @@ function validateFacetReferences(
   }
 
   for (const unit of units) {
+    for (const subscriber of unit.subscribers) {
+      if (subscriber.eventType?.trim() && !eventTypes.has(subscriber.eventType.trim())) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+            source: unit.id,
+            facet: `${subscriber.id}.eventType`,
+            message: `Subscriber event type "${subscriber.eventType}" is not declared by an event in the selected graph.`,
+          }),
+        )
+      }
+    }
     for (const route of unit.api) {
       if (route.resource && ![...scopes].some((scope) => scope.startsWith(`${route.resource}:`))) {
         diagnostics.push(
@@ -2302,6 +2306,21 @@ function validateFacetReferences(
               message: `Outbound webhook event reference "${webhook.eventId}" must select an event with a concrete eventType.`,
             }),
           )
+        } else if (
+          event.visibility !== "external" ||
+          !event.version ||
+          !isExternalWebhookPayloadSchema(event.payloadSchema) ||
+          !event.audit?.sourceModule ||
+          !event.audit.category
+        ) {
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_INVALID_FACET",
+              source: unit.id,
+              facet: `${webhook.id}.eventId`,
+              message: `Outbound webhook event reference "${webhook.eventId}" must select an external, versioned event with an explicit object property schema and audit metadata.`,
+            }),
+          )
         }
       }
       for (const id of webhook.secretIds ?? []) {
@@ -2313,13 +2332,26 @@ function validateFacetReferences(
         reference(unit.id, `${migration.id}.dependsOn`, id)
       }
     }
+    for (const cleanup of unit.lifecycle?.cleanup ?? []) {
+      reference(unit.id, `${cleanup.id}.resourceId`, cleanup.resourceId)
+    }
     for (const action of unit.actions ?? []) {
       for (const scope of action.requiredScopes ?? []) {
         requireScope(unit.id, `${action.id}.requiredScopes`, scope)
       }
       for (const copy of action.copy ?? []) requireCopy(unit.id, `${action.id}.copy`, copy)
-      for (const [kind, ids] of Object.entries(action.from ?? {})) {
-        for (const id of ids ?? []) reference(unit.id, `${action.id}.from.${kind}`, id)
+      for (const kind of Object.keys(actionBindings) as (keyof typeof actionBindings)[]) {
+        for (const id of action.from?.[kind] ?? []) {
+          if (actionBindings[kind].has(id)) continue
+          diagnostics.push(
+            diagnostic({
+              code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+              source: unit.id,
+              facet: `${action.id}.from.${kind}`,
+              message: `Action ${kind} reference "${id}" is not a ${kind} declaration in the selected graph.`,
+            }),
+          )
+        }
       }
     }
   }
@@ -2359,6 +2391,9 @@ function compileAccessCatalog(
                     ? `${titleFromPermissionName(name)} access to ${resource.resource}.`
                     : (action.description ??
                       `${titleFromPermissionName(name)} access to ${resource.resource}.`),
+                ...(typeof action !== "string" && action.wildcard === "explicit"
+                  ? { wildcard: "explicit" as const }
+                  : {}),
               }
             })
             .sort((left, right) => left.action.localeCompare(right.action)),
@@ -2513,7 +2548,13 @@ function compileWebhookPlan(
       }
       if (webhook.direction === "outbound" && webhook.eventId) {
         const target = eventById.get(webhook.eventId)
-        if (target?.event.eventType?.trim()) {
+        if (
+          target?.event.eventType?.trim() &&
+          target.event.visibility === "external" &&
+          target.event.version &&
+          isExternalWebhookPayloadSchema(target.event.payloadSchema) &&
+          target.event.audit
+        ) {
           outbound.push({
             id: webhook.id,
             unitId: unit.id,
@@ -2521,6 +2562,10 @@ function compileWebhookPlan(
             eventId: webhook.eventId,
             eventUnitId: target.unit.id,
             eventType: target.event.eventType,
+            eventVersion: target.event.version,
+            payloadSchema: target.event.payloadSchema,
+            visibility: target.event.visibility,
+            audit: target.event.audit,
             secretIds,
           })
         }
@@ -2614,7 +2659,7 @@ function validatePackageAdmission(
   context: {
     frameworkVersion?: string
     target?: VoyantGraphRuntimeTarget
-    mode?: VoyantProjectDeploymentMode
+    mode?: VoyantGraphProjectDeploymentMode
     admission?: VoyantGraphAdmissionPolicy
   },
 ): VoyantGraphDiagnostic[] {
@@ -2639,7 +2684,7 @@ function validatePackageAdmission(
     if (
       context.frameworkVersion &&
       compatibleWith?.framework &&
-      !isFrameworkVersionCompatible(context.frameworkVersion, compatibleWith.framework)
+      !isVoyantVersionCompatible(context.frameworkVersion, compatibleWith.framework)
     ) {
       diagnostics.push(
         diagnostic({
@@ -2737,7 +2782,8 @@ function validateRuntimeReferenceAdmission(
   return diagnostics
 }
 
-function isFrameworkVersionCompatible(version: string, range: string): boolean {
+/** Deterministic semver-range subset shared by package admission and graph lifecycle planning. */
+export function isVoyantVersionCompatible(version: string, range: string): boolean {
   const parsedVersion = parseVersion(version)
   if (!parsedVersion) return version === range
   const clauses = range
@@ -2855,6 +2901,7 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...(unit.tools ?? []).map((entry) => entry.id),
     ...(unit.webhooks ?? []).map((entry) => entry.id),
     ...(unit.actions ?? []).map((entry) => entry.id),
+    ...(unit.lifecycle?.cleanup ?? []).map((entry) => entry.id),
     ...unit.workflows.flatMap((entry) => [
       entry.id,
       ...(entry.schedules ?? []).map((schedule) => schedule.id),
@@ -2894,24 +2941,6 @@ function mergePackageRecords(
     records.set(record.packageName, normalizePackageRecord(record))
   }
   return [...records.values()].sort((a, b) => a.packageName.localeCompare(b.packageName))
-}
-
-function generateWorkspacePackageRecords(
-  project: VoyantGraphProject,
-  frameworkVersion: string,
-): VoyantGraphPackageRecord[] {
-  const names = sortedUnique([
-    "@voyant-travel/framework",
-    "@voyant-travel/framework-migrations",
-    ...project.modules.map((unit) => unit.packageName ?? packageNameFromGraphId(unit.id)),
-    ...project.extensions.map((unit) => unit.packageName ?? packageNameFromGraphId(unit.id)),
-    ...project.plugins.map((unit) => unit.packageName ?? packageNameFromGraphId(unit.id)),
-  ])
-  return names.map((packageName) => ({
-    packageName,
-    ...(packageName === "@voyant-travel/framework" ? { version: frameworkVersion } : {}),
-    source: { kind: "unknown" },
-  }))
 }
 
 function normalizePackageRecord(record: VoyantGraphPackageRecord): VoyantGraphPackageRecord {
@@ -2980,12 +3009,6 @@ function sortFacetEntities<T extends { id: string }>(entities: readonly T[]): T[
 
 function sortPorts(ports: readonly VoyantGraphPortDeclaration[]): VoyantGraphPortDeclaration[] {
   return [...ports].sort((a, b) => a.id.localeCompare(b.id))
-}
-
-function normalizeCapabilities(
-  capabilities: readonly string[] | undefined,
-): VoyantGraphCapabilityDeclaration | undefined {
-  return capabilities && capabilities.length > 0 ? { capabilities } : undefined
 }
 
 function validCustomSourceSpecifiers(specifiers: readonly string[]): string[] {

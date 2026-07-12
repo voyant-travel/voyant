@@ -24,14 +24,11 @@ Make a **single canonical product-detail page** that lives in `@voyant-travel/in
 and is consumed by every template, instead of the current situation where each
 template maintains its **own fork**.
 
-### Why (the situation we found)
-- There are **three independent forks** of the product detail page:
-  - `starters/operator/src/components/voyant/products/product-detail-page.tsx` (the **richest / best** — has translations, markets, channels, brochure, activity, payment policy, departures, schedules, itinerary, day sheet, etc.)
-  - `templates/dmc/src/components/voyant/products/product-detail-page.tsx`
-  - `apps/dev/src/components/voyant/products/product-detail-page.tsx`
-- `@voyant-travel/inventory-react/ui` supersedes the old packaged Product Detail Page
-  surface that was not imported by any template.
-- Each starter route renders its **local** `product-detail-page`, not the packaged one.
+### Current state
+
+The canonical page is package-owned. Cross-domain option content composes
+through `product.details.option-extras`; starters no longer maintain a product
+detail fork.
 
 ### User directive
 > "Replace products-ui page with the operator fork as that is exactly how it should be
@@ -131,7 +128,7 @@ Files still importing `@/lib/api-client`:
   (without the opts arg — add it if any call passes options).
 
 ### 5.2 `product-options-shared.ts` (fetcher coupling)
-Uses `getApiUrl()` (`@/lib/env`) + `operatorFetcher` (`@/lib/voyant-fetcher`) to build
+Uses `getApiUrl()` (`@/lib/env`) + `projectFetcher` (`@/lib/voyant-fetcher`) to build
 `{ baseUrl, fetcher }` clients for inventory-react / commerce-react `queryOptions` helpers.
 Replace with the **react context fetcher** the app already configures:
 `useVoyantInventoryContext()` (inventory-react) — these are module-scope factories, so thread the
@@ -196,7 +193,7 @@ Migrate any remaining product pages onto the same inventory-react page + host.
 - **macOS BSD `sed`**: no `\b` word boundaries. Use literal patterns (this bit us once).
 - Cross-references between the moved files use `./<name>` (same dir) and are **unchanged** by the move.
 - Operator providers configure inventory-react / operations-react / commerce-react contexts with
-  `operatorFetcher` (cookie auth, `credentials: "include"`) + `getApiUrl()` base. So routing
+  `projectFetcher` (cookie auth, `credentials: "include"`) + `getApiUrl()` base. So routing
   data through those contexts (or the operator `api`) keeps auth working.
 - The staged copies in this dir currently make inventory-react **fail typecheck** (unresolved
   `@/...` imports remain in §5 files). This is expected mid-migration and does not affect the

@@ -11,6 +11,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#api.external-refs",
       surface: "admin",
       mount: "external-refs",
+      openapi: { document: "external-refs" },
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "externalRefsHonoModule",
@@ -20,6 +21,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#api",
       surface: "admin",
       mount: "distribution",
+      openapi: { document: "distribution" },
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "distributionHonoModule",
@@ -29,6 +31,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#api.suppliers",
       surface: "admin",
       mount: "suppliers",
+      openapi: { document: "suppliers" },
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "suppliersHonoModule",
@@ -47,31 +50,61 @@ export const distributionVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/distribution#access.suppliers",
+        resource: "suppliers",
+        actions: ["read", "write"],
+      },
+    ],
+  },
   links: [
     {
       id: "@voyant-travel/distribution#linkable.supplier",
-      source: "@voyant-travel/distribution/suppliers/linkables",
+      source: "@voyant-travel/distribution/linkables",
     },
   ],
   events: [
     {
       id: "@voyant-travel/distribution#event.product-publication-changed",
       eventType: "product.publication.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "distribution", category: "domain" },
     },
     {
       id: "@voyant-travel/distribution#event.supplier-created",
       eventType: "supplier.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "distribution", category: "domain" },
     },
     {
       id: "@voyant-travel/distribution#event.supplier-updated",
       eventType: "supplier.updated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "distribution", category: "domain" },
     },
     {
       id: "@voyant-travel/distribution#event.supplier-deleted",
       eventType: "supplier.deleted",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "distribution", category: "domain" },
     },
   ],
   admin: {
+    compositionOrder: 30,
+    runtime: {
+      entry: "@voyant-travel/distribution-react/admin",
+      export: "createSelectedDistributionAdminExtension",
+    },
     copy: [
       {
         id: "@voyant-travel/distribution#admin.copy",
@@ -134,6 +167,7 @@ export const distributionBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/distribution#extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "distribution-booking" },
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "distributionBookingExtension",
@@ -155,6 +189,7 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       id: "@voyant-travel/distribution#channel-push-extension.api",
       surface: "admin",
       mount: "distribution",
+      openapi: { document: "distribution-channel-push" },
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "createChannelPushVoyantRuntime",
@@ -216,6 +251,54 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       runtime: {
         entry: "@voyant-travel/distribution/channel-push-workflows",
         export: "channelContentPushWorkflow",
+      },
+    },
+    {
+      id: "distribution.channel-push-reconcile-booking-links",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "channel-push-booking-link",
+          workflowId: "distribution.channel-push-reconcile-booking-links",
+          cron: "*/15 * * * *",
+          name: "booking-links",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelPushBookingLinkReconcileWorkflow",
+      },
+    },
+    {
+      id: "distribution.channel-push-reconcile-availability",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "channel-push-availability",
+          workflowId: "distribution.channel-push-reconcile-availability",
+          cron: "0 * * * *",
+          name: "hourly",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelPushAvailabilityReconcileWorkflow",
+      },
+    },
+    {
+      id: "distribution.channel-push-reconcile-content",
+      config: { defaultRuntime: "node" },
+      schedules: [
+        {
+          id: "channel-push-content",
+          workflowId: "distribution.channel-push-reconcile-content",
+          cron: "0 3 * * *",
+          name: "nightly",
+        },
+      ],
+      runtime: {
+        entry: "@voyant-travel/distribution/channel-push-workflows",
+        export: "channelPushContentReconcileWorkflow",
       },
     },
   ],

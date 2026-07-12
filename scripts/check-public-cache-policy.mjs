@@ -96,9 +96,14 @@ function checkKvCacheBindings() {
   // are concrete Node providers in `src/server.ts`, while consumers still type
   // against the KVStore-compatible CACHE/RATE_LIMIT env members.
   requireContains(
-    "starters/operator/voyant.config.ts",
+    "packages/framework/src/operator-distribution.ts",
     'cache: "postgres"',
-    "operator cache backend declaration",
+    "standard Node product cache backend",
+  )
+  requireNotContains(
+    "starters/operator/voyant.config.ts",
+    "cache:",
+    "the standard cache backend must not be repeated in authored project config",
   )
   requireContains("starters/operator/env.d.ts", "CACHE: KVNamespace", "operator CACHE binding type")
   requireContains(
@@ -227,17 +232,6 @@ function checkSourceMarkers() {
       "content routes must not apply shared cache headers from route options",
     )
   }
-
-  requireNotContains(
-    "starters/operator/src/api/routes/catalog-content.ts",
-    "PUBLIC_CATALOG_CONTENT_CACHE_CONTROL",
-    "catalog content can vary by Accept-Language when locale is absent from the URL",
-  )
-  requireNotContains(
-    "starters/operator/src/api/routes/catalog-content.ts",
-    "cacheControl:",
-    "catalog content mounts must not opt into URL-only shared response cache",
-  )
 }
 
 checkPolicyDoc()

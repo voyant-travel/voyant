@@ -228,7 +228,39 @@ export function generateProjectSubscribersSource(
 
 export function generateProjectLinksSource(links: readonly ProjectLinkConvention[]): string {
   const ordered = [...links].sort(compareConventions)
-  return generatedCollectionSource(ordered, "LinkDefinition", "projectLinks", "link")
+  return generateSelectedLinksSource(ordered, [])
+}
+
+export function generateSelectedLinksSource(
+  projectLinks: readonly ProjectLinkConvention[],
+  selectedLinks: readonly Required<Pick<VoyantGraphFacetEntity, "id" | "source" | "export">>[],
+): string {
+  const orderedProjectLinks = [...projectLinks].sort(compareConventions)
+  const orderedSelectedLinks = [...selectedLinks].sort((left, right) =>
+    `${left.id}:${left.source}:${left.export}`.localeCompare(
+      `${right.id}:${right.source}:${right.export}`,
+    ),
+  )
+  const count = orderedProjectLinks.length + orderedSelectedLinks.length
+  return [
+    'import type { LinkDefinition } from "@voyant-travel/core"',
+    ...orderedProjectLinks.map(
+      ({ sourcePath }, index) =>
+        `import link${index} from ${JSON.stringify(generatedImportSpecifier(sourcePath))}`,
+    ),
+    ...orderedSelectedLinks.map(
+      (link, index) =>
+        `import { ${link.export} as link${orderedProjectLinks.length + index} } from ${JSON.stringify(link.source)}`,
+    ),
+    "",
+    ...Array.from(
+      { length: count },
+      (_, index) => `export { link${index} as projectLink${index} }`,
+    ),
+    ...(count > 0 ? [""] : []),
+    `export const projectLinks = [${Array.from({ length: count }, (_, index) => `link${index}`).join(", ")}] as const satisfies readonly LinkDefinition[]`,
+    "",
+  ].join("\n")
 }
 
 interface ModuleAnalysis {

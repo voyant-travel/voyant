@@ -149,6 +149,52 @@
             ]
           }
         ]
+      },
+      "BookingProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BookingItemProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierServiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "parameters": {}
@@ -156,6 +202,7 @@
   "paths": {
     "/v1/admin/bookings/pricing-preview": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "requestBody": {
           "required": true,
           "description": "Pricing preview selection",
@@ -257,6 +304,7 @@
     },
     "/v1/admin/bookings/aggregates": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -506,6 +554,7 @@
     },
     "/v1/admin/bookings/overview": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1028,6 +1077,7 @@
     },
     "/v1/admin/bookings/sharing-groups": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1121,6 +1171,7 @@
     },
     "/v1/admin/bookings/sharing-groups/{groupId}/travelers": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1209,6 +1260,7 @@
     },
     "/v1/admin/bookings/{id}/allocations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1366,6 +1418,7 @@
     },
     "/v1/admin/bookings/{id}/activity": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1470,6 +1523,7 @@
     },
     "/v1/admin/bookings/{id}/group": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1544,6 +1598,7 @@
     },
     "/v1/admin/bookings/reserve": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "requestBody": {
           "required": true,
           "description": "Reservation input",
@@ -2470,6 +2525,7 @@
     },
     "/v1/admin/bookings/expire-stale": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "requestBody": {
           "required": false,
           "description": "Expire-stale cutoff",
@@ -2556,6 +2612,7 @@
     },
     "/v1/admin/bookings/{id}/confirm": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3019,6 +3076,7 @@
     },
     "/v1/admin/bookings/{id}/extend-hold": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3456,6 +3514,7 @@
     },
     "/v1/admin/bookings/{id}/expire": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3916,6 +3975,7 @@
     },
     "/v1/admin/bookings/{id}/cancel": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4376,6 +4436,7 @@
     },
     "/v1/admin/bookings/{id}/start": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4836,6 +4897,7 @@
     },
     "/v1/admin/bookings/{id}/complete": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5296,6 +5358,7 @@
     },
     "/v1/admin/bookings/{id}/override-status": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5784,6 +5847,7 @@
     },
     "/v1/admin/bookings/{id}/action-ledger": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5949,6 +6013,7 @@
     },
     "/v1/admin/bookings/{id}/action-approvals/{approvalId}/decide": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6143,6 +6208,7 @@
     },
     "/v1/admin/bookings/{id}/travelers": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6276,6 +6342,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6524,6 +6591,7 @@
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}/reveal": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6719,6 +6787,7 @@
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}/travel-details": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6815,6 +6884,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7053,6 +7123,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7156,6 +7227,7 @@
     },
     "/v1/admin/bookings/{id}/travelers/with-travel-details": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7450,6 +7522,7 @@
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}/with-travel-details": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7748,6 +7821,7 @@
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7998,6 +8072,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8065,6 +8140,7 @@
     },
     "/v1/admin/bookings/{id}/items": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8322,6 +8398,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8827,6 +8904,7 @@
     },
     "/v1/admin/bookings/{id}/items/{itemId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9334,6 +9412,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9419,6 +9498,7 @@
     },
     "/v1/admin/bookings/{id}/items/{itemId}/travelers": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9503,6 +9583,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9671,6 +9752,7 @@
     },
     "/v1/admin/bookings/{id}/items/{itemId}/travelers/{linkId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9764,6 +9846,7 @@
     },
     "/v1/admin/bookings/{id}/supplier-statuses": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
         "parameters": [
           {
             "schema": {
@@ -9890,6 +9973,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
         "parameters": [
           {
             "schema": {
@@ -10112,6 +10196,7 @@
     },
     "/v1/admin/bookings/{id}/supplier-statuses/{statusId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
         "parameters": [
           {
             "schema": {
@@ -10343,6 +10428,7 @@
     },
     "/v1/admin/bookings/{id}/fulfillments": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10483,6 +10569,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10748,6 +10835,7 @@
     },
     "/v1/admin/bookings/{id}/fulfillments/{fulfillmentId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11017,6 +11105,7 @@
     },
     "/v1/admin/bookings/{id}/redemptions": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11125,6 +11214,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11331,6 +11421,7 @@
     },
     "/v1/admin/bookings/{id}/notes": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11397,6 +11488,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11519,6 +11611,7 @@
     },
     "/v1/admin/bookings/{id}/notes/{noteId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11647,6 +11740,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11714,6 +11808,7 @@
     },
     "/v1/admin/bookings/{id}/documents": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11812,6 +11907,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12000,6 +12096,7 @@
     },
     "/v1/admin/bookings/{id}/documents/{documentId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12067,6 +12164,7 @@
     },
     "/v1/admin/bookings/groups": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12242,6 +12340,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "requestBody": {
           "required": true,
           "description": "Booking group",
@@ -12404,6 +12503,7 @@
     },
     "/v1/admin/bookings/groups/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12554,6 +12654,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12739,6 +12840,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12798,6 +12900,7 @@
     },
     "/v1/admin/bookings/groups/{id}/members": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12868,6 +12971,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13023,6 +13127,7 @@
     },
     "/v1/admin/bookings/groups/{id}/members/{bookingId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13090,6 +13195,7 @@
     },
     "/v1/admin/bookings/groups/{id}/travelers": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13147,6 +13253,7 @@
     },
     "/v1/admin/bookings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13743,6 +13850,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "requestBody": {
           "required": true,
           "description": "Booking to create (manual/backoffice)",
@@ -14497,6 +14605,7 @@
     },
     "/v1/admin/bookings/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -15254,6 +15363,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16034,6 +16144,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16093,6 +16204,7 @@
     },
     "/v1/admin/bookings/from-product": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
         "requestBody": {
           "required": true,
           "description": "Product conversion input",
@@ -16764,6 +16876,7 @@
     },
     "/v1/admin/bookings/{bookingId}/rebuild-tax-lines": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/commerce#booking-maintenance-extension.api",
         "parameters": [
           {
             "schema": {
@@ -16834,8 +16947,534 @@
         "x-voyant-surface": "admin"
       }
     },
+    "/v1/admin/bookings/{bookingId}/distribution-details": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/distribution#extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking distribution details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sourceChannelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "fxRateSetId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "paymentOwner": {
+                          "type": "string",
+                          "enum": [
+                            "operator",
+                            "channel",
+                            "split"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "bookingId",
+                        "marketId",
+                        "sourceChannelId",
+                        "fxRateSetId",
+                        "paymentOwner",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdDistributionDetails",
+        "summary": "GET /v1/admin/bookings/{bookingId}/distribution-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/distribution#extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "marketId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "sourceChannelId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "fxRateSetId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "paymentOwner": {
+                    "type": "string",
+                    "enum": [
+                      "operator",
+                      "channel",
+                      "split"
+                    ],
+                    "default": "operator"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated booking distribution details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "marketId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sourceChannelId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "fxRateSetId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "paymentOwner": {
+                          "type": "string",
+                          "enum": [
+                            "operator",
+                            "channel",
+                            "split"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "bookingId",
+                        "marketId",
+                        "sourceChannelId",
+                        "fxRateSetId",
+                        "paymentOwner",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdDistributionDetails",
+        "summary": "PUT /v1/admin/bookings/{bookingId}/distribution-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/distribution#extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking distribution details deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking distribution details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdDistributionDetails",
+        "summary": "DELETE /v1/admin/bookings/{bookingId}/distribution-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/bookings/tax-settings": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "responses": {
+          "200": {
+            "description": "The effective booking tax settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "taxPriceMode": {
+                          "type": "string",
+                          "enum": [
+                            "inclusive",
+                            "exclusive"
+                          ]
+                        },
+                        "taxPolicyProfileId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "taxPriceMode",
+                        "taxPolicyProfileId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminBookingsTaxSettings",
+        "summary": "GET /v1/admin/bookings/tax-settings",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "patch": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "taxPriceMode": {
+                    "type": "string",
+                    "enum": [
+                      "inclusive",
+                      "exclusive"
+                    ]
+                  },
+                  "taxPolicyProfileId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated booking tax settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "taxPriceMode": {
+                          "type": "string",
+                          "enum": [
+                            "inclusive",
+                            "exclusive"
+                          ]
+                        },
+                        "taxPolicyProfileId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "taxPriceMode",
+                        "taxPolicyProfileId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This deployment does not support tax setting updates"
+          }
+        },
+        "operationId": "patchAdminBookingsTaxSettings",
+        "summary": "PATCH /v1/admin/bookings/tax-settings",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/bookings/tax-preview": {
+      "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "subtotalCents": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 8
+                  }
+                },
+                "required": [
+                  "productId",
+                  "subtotalCents",
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The calculated tax preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "subtotalCents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "taxCents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalCents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "taxRate": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "rateBasisPoints": {
+                              "type": "integer"
+                            },
+                            "priceMode": {
+                              "type": "string",
+                              "enum": [
+                                "inclusive",
+                                "exclusive"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "label",
+                            "rateBasisPoints",
+                            "priceMode"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "subtotalCents",
+                        "taxCents",
+                        "totalCents",
+                        "currency",
+                        "taxRate"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminBookingsTaxPreview",
+        "summary": "POST /v1/admin/bookings/tax-preview",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
     "/v1/admin/bookings/create": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#bookings-create-extension.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -17762,6 +18401,7 @@
     },
     "/v1/admin/bookings/dual-create": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#bookings-create-extension.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -19344,8 +19984,307 @@
         "x-voyant-surface": "admin"
       }
     },
+    "/v1/admin/bookings/{bookingId}/product-details": {
+      "get": {
+        "summary": "Get product details attached to a booking",
+        "x-voyant-api-id": "@voyant-travel/inventory#booking-extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking product details, or null when absent"
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdProductDetails",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "summary": "Create or replace product details on a booking",
+        "x-voyant-api-id": "@voyant-travel/inventory#booking-extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingProductDetailsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking product details were stored"
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdProductDetails",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "summary": "Remove product details from a booking",
+        "x-voyant-api-id": "@voyant-travel/inventory#booking-extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking product details were removed"
+          },
+          "404": {
+            "description": "No product details exist for the booking"
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdProductDetails",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/bookings/{bookingId}/items/{itemId}/product-details": {
+      "get": {
+        "summary": "Get product details attached to a booking item",
+        "x-voyant-api-id": "@voyant-travel/inventory#booking-extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking item product details, or null when absent"
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdItemsByItemIdProductDetails",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "summary": "Create or replace product details on a booking item",
+        "x-voyant-api-id": "@voyant-travel/inventory#booking-extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingItemProductDetailsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking item product details were stored"
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdItemsByItemIdProductDetails",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "summary": "Remove product details from a booking item",
+        "x-voyant-api-id": "@voyant-travel/inventory#booking-extension.api",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking item product details were removed"
+          },
+          "404": {
+            "description": "No product details exist for the booking item"
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdItemsByItemIdProductDetails",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/bookings/{bookingId}/mice-details": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "MICE booking detail response."
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdMiceDetails",
+        "summary": "GET /v1/admin/bookings/{bookingId}/mice-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "MICE booking detail response."
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdMiceDetails",
+        "summary": "PUT /v1/admin/bookings/{bookingId}/mice-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "MICE booking detail response."
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdMiceDetails",
+        "summary": "DELETE /v1/admin/bookings/{bookingId}/mice-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/bookings/{bookingId}/quote-details": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/quotes#booking-extension.api",
+        "responses": {
+          "200": {
+            "description": "Quote booking detail response."
+          }
+        },
+        "operationId": "getAdminBookingsByBookingIdQuoteDetails",
+        "summary": "GET /v1/admin/bookings/{bookingId}/quote-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "put": {
+        "x-voyant-api-id": "@voyant-travel/quotes#booking-extension.api",
+        "responses": {
+          "200": {
+            "description": "Quote booking detail response."
+          }
+        },
+        "operationId": "putAdminBookingsByBookingIdQuoteDetails",
+        "summary": "PUT /v1/admin/bookings/{bookingId}/quote-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      },
+      "delete": {
+        "x-voyant-api-id": "@voyant-travel/quotes#booking-extension.api",
+        "responses": {
+          "200": {
+            "description": "Quote booking detail response."
+          }
+        },
+        "operationId": "deleteAdminBookingsByBookingIdQuoteDetails",
+        "summary": "DELETE /v1/admin/bookings/{bookingId}/quote-details",
+        "tags": [
+          "bookings"
+        ],
+        "x-voyant-module": "bookings",
+        "x-voyant-surface": "admin"
+      }
+    },
     "/v1/admin/bookings/{bookingId}/payment-schedule/regenerate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.admin",
         "parameters": [
           {
             "schema": {

@@ -6,6 +6,9 @@ import {
   channelAvailabilityPushWorkflow,
   channelBookingPushWorkflow,
   channelContentPushWorkflow,
+  channelPushAvailabilityReconcileWorkflow,
+  channelPushBookingLinkReconcileWorkflow,
+  channelPushContentReconcileWorkflow,
 } from "../../src/channel-push/workflow-entry.js"
 import {
   createChannelPushExtension,
@@ -32,6 +35,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#api.external-refs",
           surface: "admin",
           mount: "external-refs",
+          openapi: { document: "external-refs" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "externalRefsHonoModule",
@@ -41,6 +45,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#api",
           surface: "admin",
           mount: "distribution",
+          openapi: { document: "distribution" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "distributionHonoModule",
@@ -50,6 +55,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#api.suppliers",
           surface: "admin",
           mount: "suppliers",
+          openapi: { document: "suppliers" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "suppliersHonoModule",
@@ -72,6 +78,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#extension.api",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "distribution-booking" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "distributionBookingExtension",
@@ -90,6 +97,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#channel-push-extension.api",
           surface: "admin",
           mount: "distribution",
+          openapi: { document: "distribution-channel-push" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "createChannelPushVoyantRuntime",
@@ -124,8 +132,11 @@ describe("distribution deployment manifests", () => {
       unitId: distributionChannelPushVoyantPlugin.id,
       projectConfig: {},
       api: distributionChannelPushVoyantPlugin.api ?? [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     const context = {
       bindings: { DATABASE_URL: "postgres://test" },
@@ -162,6 +173,18 @@ describe("distribution deployment manifests", () => {
           entry: "@voyant-travel/distribution/channel-push-workflows",
           export: "channelContentPushWorkflow",
         },
+      }),
+      expect.objectContaining({
+        id: channelPushBookingLinkReconcileWorkflow.id,
+        schedules: [expect.objectContaining({ id: "channel-push-booking-link" })],
+      }),
+      expect.objectContaining({
+        id: channelPushAvailabilityReconcileWorkflow.id,
+        schedules: [expect.objectContaining({ id: "channel-push-availability" })],
+      }),
+      expect.objectContaining({
+        id: channelPushContentReconcileWorkflow.id,
+        schedules: [expect.objectContaining({ id: "channel-push-content" })],
       }),
     ])
   })

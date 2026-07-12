@@ -3,7 +3,15 @@ export {
   TOOL_CONTRACT_VERSION,
   type ToolManifestEntry,
 } from "./binding.js"
-export type { ResolverScope, ToolContext, Visibility } from "./context.js"
+export {
+  defineToolContextContribution,
+  type ResolverScope,
+  TOOL_CONTEXT_CONTRIBUTION_EXPORT,
+  type ToolContext,
+  type ToolContextContribution,
+  type ToolContextContributionInput,
+  type Visibility,
+} from "./context.js"
 export { defineTool, type ToolDefinition } from "./define-tool.js"
 export {
   enforceAudienceAuthorization,

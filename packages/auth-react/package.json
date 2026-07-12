@@ -16,6 +16,7 @@
     "./client": "./src/client.ts",
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
+    "./local-auth-routes": "./src/local-auth-routes.tsx",
     "./account": "./src/components/account-page.tsx",
     "./organization-members": "./src/components/organization-members-page.tsx",
     "./styles.css": "./src/styles.css",
@@ -34,6 +35,7 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-router": "^1.0.0",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/auth": "workspace:^",
     "@voyant-travel/types": "workspace:^",
@@ -60,6 +62,7 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-router": "^1.170.17",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
@@ -112,6 +115,11 @@
         "types": "./dist/ui.d.ts",
         "import": "./dist/ui.js",
         "default": "./dist/ui.js"
+      },
+      "./local-auth-routes": {
+        "types": "./dist/local-auth-routes.d.ts",
+        "import": "./dist/local-auth-routes.js",
+        "default": "./dist/local-auth-routes.js"
       },
       "./account": {
         "types": "./dist/components/account-page.d.ts",

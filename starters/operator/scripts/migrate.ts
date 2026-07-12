@@ -12,8 +12,8 @@ import {
 import { config } from "dotenv"
 import type { ResolvedVoyantDeploymentGraph } from "../../../packages/framework/src/deployment-graph"
 import {
-  assertOperatorDeploymentGraphResourceEnv,
-  loadOperatorDeploymentGraphArtifacts,
+  assertVoyantNodeDeploymentGraphResourceEnv,
+  loadDeploymentGraphArtifacts,
 } from "../src/deployment-graph-artifacts"
 
 export async function runOperatorMigrations(options: {
@@ -64,8 +64,8 @@ async function main(): Promise<void> {
   config({ path: ".env", override: true })
   if (explicitDatabaseUrl) process.env.DATABASE_URL = explicitDatabaseUrl
 
-  const artifacts = loadOperatorDeploymentGraphArtifacts()
-  assertOperatorDeploymentGraphResourceEnv(artifacts, process.env)
+  const artifacts = loadDeploymentGraphArtifacts()
+  assertVoyantNodeDeploymentGraphResourceEnv(artifacts, process.env)
   const databaseUrl = process.env.DATABASE_URL_DIRECT?.trim() || process.env.DATABASE_URL?.trim()
   if (!databaseUrl) throw new Error("DATABASE_URL or DATABASE_URL_DIRECT is not set")
 

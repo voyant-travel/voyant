@@ -27,6 +27,25 @@ describe("@voyant-travel/catalog package exports", () => {
       default: "./dist/graph-runtime.js",
     })
   })
+
+  it("publishes the import-cheap content runtime port", () => {
+    expect(packageJson.exports["./runtime-port"]).toBe("./src/content-runtime-port.ts")
+    expect(packageJson.publishConfig.exports["./runtime-port"]).toEqual({
+      types: "./dist/content-runtime-port.d.ts",
+      import: "./dist/content-runtime-port.js",
+      default: "./dist/content-runtime-port.js",
+    })
+  })
+
+  it("publishes the draft-reaper workflow", () => {
+    expect(packageJson.exports["./draft-reaper-workflow"]).toBe("./src/draft-reaper-workflow.ts")
+    expect(packageJson.publishConfig.exports["./draft-reaper-workflow"]).toEqual({
+      types: "./dist/draft-reaper-workflow.d.ts",
+      import: "./dist/draft-reaper-workflow.js",
+      default: "./dist/draft-reaper-workflow.js",
+    })
+  })
+
   it("publishes the projection subscriber runtime contract", () => {
     expect(packageJson.exports["./projection-runtime"]).toBe("./src/projection-runtime.ts")
     expect(packageJson.publishConfig.exports["./projection-runtime"]).toEqual({

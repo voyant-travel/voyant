@@ -8,6 +8,7 @@ import type { CheckoutStartOptions } from "./options.js"
 import type { BookingMaintenanceRoutesOptions } from "./routes.js"
 
 export type CatalogCheckoutApiRuntime = (context: Context) => CheckoutStartOptions
+export const CATALOG_CHECKOUT_API_RUNTIME_KEY = "commerce.checkout-api-options" as const
 
 export const bookingMaintenanceRuntimePort = definePort<BookingMaintenanceRoutesOptions>({
   id: "commerce.booking-maintenance.runtime",

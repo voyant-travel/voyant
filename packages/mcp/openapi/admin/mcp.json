@@ -1,0 +1,52 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant MCP Admin API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/mcp": {
+      "post": {
+        "operationId": "callMcp",
+        "summary": "Send an MCP JSON-RPC request",
+        "tags": ["MCP"],
+        "x-voyant-api-id": "@voyant-travel/mcp#api.admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["jsonrpc", "method"],
+                "properties": {
+                  "jsonrpc": { "type": "string", "const": "2.0" },
+                  "id": { "type": ["string", "number", "null"] },
+                  "method": { "type": "string" },
+                  "params": { "type": "object", "additionalProperties": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The MCP JSON-RPC response."
+          }
+        }
+      }
+    },
+    "/v1/admin/mcp/manifest": {
+      "get": {
+        "operationId": "getMcpManifest",
+        "summary": "Get the authorized MCP tool manifest",
+        "tags": ["MCP"],
+        "x-voyant-api-id": "@voyant-travel/mcp#api.admin",
+        "responses": {
+          "200": {
+            "description": "The contract-versioned tools visible to the caller."
+          }
+        }
+      }
+    }
+  }
+}

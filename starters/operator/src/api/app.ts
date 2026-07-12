@@ -1,11 +1,10 @@
-import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import {
   composeVoyantGraphRuntime,
   lowerVoyantGraphActionsToActionLedgerRegistry,
 } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
-import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
+import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
 import { projectLinks } from "../../.voyant/runtime/project-links.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
@@ -14,13 +13,9 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import {
-  buildOperatorProviders,
-  buildOperatorRuntimePorts,
-  operatorGraphRuntimeBindings,
-} from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
+import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+import { createOperatorWorkflowDriver } from "./runtime/operator-runtime-adapter"
 
 /**
  * Process-wide registry of workflow runners. Selected package runtimes register
@@ -34,18 +29,13 @@ import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/opera
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
-const operatorProviders = buildOperatorProviders()
 const graphRuntime = createGeneratedGraphRuntime()
 export const operatorActionLedgerCapabilityRegistry =
   lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
+const deploymentResources = createOperatorDeploymentResources()
 const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
-  capabilities: operatorProviders,
-  bindings: operatorGraphRuntimeBindings,
-  ports: buildOperatorRuntimePorts(workflowRunnerRegistry, operatorProviders),
-  outboundWebhooks: {
-    enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
-  },
+  ...deploymentResources,
 })
 
 export const app = mountApp<AppBindings>({
@@ -88,7 +78,7 @@ export const app = mountApp<AppBindings>({
   // Package-owned anonymous posture comes from the selected graph.
   publicPaths: [...graphComposition.routePosture.publicPaths],
   accessResources: graphComposition.accessResources,
-  accessCatalog: effectiveAccessCatalog,
+  accessCatalog,
   auth: {
     handler: () => ({
       fetch: async (request, env, ctx) =>
@@ -100,7 +90,7 @@ export const app = mountApp<AppBindings>({
   },
   additionalRoutes: (hono) => {
     // Every domain + deployment-local route family is now composed through the
-    // registry (see composition.ts). The only thing left here is the workflow-
+    // generated graph. The only thing left here is the workflow-
     // runs admin surface, which is coupled to the app-level runner registry that
     // selected graph bootstraps populate at construction time.
 

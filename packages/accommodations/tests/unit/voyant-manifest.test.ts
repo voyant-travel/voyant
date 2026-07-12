@@ -1,7 +1,10 @@
 import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import { createAccommodationsContentVoyantRuntime } from "../../src/graph-runtime.js"
-import { createAccommodationContentHonoExtension } from "../../src/routes-content.js"
+import {
+  ACCOMMODATION_CONTENT_OPENAPI_API_IDS,
+  createAccommodationContentHonoExtension,
+} from "../../src/routes-content.js"
 import { accommodationsContentVoyantPlugin, accommodationsVoyantModule } from "../../src/voyant.js"
 
 describe("accommodations deployment manifest", () => {
@@ -16,6 +19,7 @@ describe("accommodations deployment manifest", () => {
           surface: "admin",
           mount: "accommodations",
           transactional: true,
+          openapi: { document: "accommodations" },
           runtime: {
             entry: "@voyant-travel/accommodations",
             export: "accommodationsHonoModule",
@@ -34,6 +38,9 @@ describe("accommodations deployment manifest", () => {
           id: "@voyant-travel/accommodations#linkable.roomBlock",
           source: "@voyant-travel/accommodations/linkables",
         },
+        { id: "@voyant-travel/accommodations#link.program-room-block" },
+        { id: "@voyant-travel/accommodations#link.room-block-property" },
+        { id: "@voyant-travel/accommodations#link.room-block-supplier" },
       ],
     })
   })
@@ -46,16 +53,18 @@ describe("accommodations deployment manifest", () => {
         {
           surface: "admin",
           mount: "accommodations",
+          openapi: { document: "accommodations" },
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "accommodations",
           anonymous: true,
+          openapi: { document: "accommodations-content-public" },
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "accommodations.content-runtime" }],
+      runtimePorts: [{ id: "catalog.content-runtime" }],
     })
 
     const resolveRegistry = () => ({}) as never
@@ -67,5 +76,32 @@ describe("accommodations deployment manifest", () => {
     expect(extension.adminRoutes).toBeDefined()
     expect(extension.publicRoutes).toBeDefined()
     expect(isGraphRuntimeFactory(createAccommodationsContentVoyantRuntime)).toBe(true)
+    const document = openApiDocument(extension.publicRoutes)
+    expect(readApiId(document, "/{id}/content", "get")).toBe(
+      ACCOMMODATION_CONTENT_OPENAPI_API_IDS.public,
+    )
   })
 })
+
+function openApiDocument(routes: unknown) {
+  return (routes as OpenApiDocumentSource).getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Accommodation content", version: "1" },
+  })
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, unknown>>
+  }
+}
+
+function readApiId(
+  document: { paths?: Record<string, Record<string, unknown>> },
+  path: string,
+  method: string,
+) {
+  return (document.paths?.[path]?.[method] as Record<string, unknown> | undefined)?.[
+    "x-voyant-api-id"
+  ]
+}

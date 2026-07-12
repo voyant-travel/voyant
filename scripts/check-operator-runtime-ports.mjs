@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -8,107 +9,80 @@ function argument(name, fallback) {
 
 const operatorRoot = argument("--operator-root", "starters/operator")
 const frameworkRoot = argument("--framework-root", "packages/framework")
-const composition = await readFile(path.join(operatorRoot, "src/api/composition.ts"), "utf8")
-const frameworkComposition = await readFile(
-  path.join(frameworkRoot, "src/composition-lazy.ts"),
-  "utf8",
-)
+const compositionPath = path.join(operatorRoot, "src/api/composition.ts")
+const resourcesPath = path.join(operatorRoot, "src/api/runtime/deployment-resources.ts")
+const app = await readFile(path.join(operatorRoot, "src/api/app.ts"), "utf8")
+const resources = await readFile(resourcesPath, "utf8")
 
-function section(source, start, end) {
-  const startIndex = source.indexOf(start)
-  const endIndex = source.indexOf(end, startIndex + start.length)
-  if (startIndex < 0 || endIndex < 0) {
-    throw new Error(`check-operator-runtime-ports: could not locate ${start}`)
-  }
-  return source.slice(startIndex, endIndex)
-}
-
-const runtimePorts = section(
-  composition,
-  "export function buildOperatorRuntimePorts",
-  "async function createOperatorBookingsRuntimeProvider",
-)
-const runtimeBindings = section(
-  composition,
-  "export const operatorGraphRuntimeBindings",
-  "function resolveOperatorSmartbillOptions",
-)
-
-const requiredPorts = [
-  "accommodationsContentRuntimePort",
-  "actionLedgerHealthRuntimePort",
+const migratedPorts = [
+  "actionLedgerBookingDriftRuntimePort",
+  "actionLedgerFinanceDriftRuntimePort",
+  "actionLedgerInventoryDriftRuntimePort",
   "bookingMaintenanceRuntimePort",
   "bookingRequirementsRuntimePort",
   "bookingsRuntimePort",
   "catalogBookingRuntimePort",
+  "catalogContentRuntimePort",
   "catalogOffersRuntimePort",
   "catalogSearchRuntimePort",
-  "cruisesContentRuntimePort",
   "financeBookingScheduleRuntimePort",
   "financeBookingTaxRuntimePort",
   "financeRuntimePort",
   "inventoryBrochureRuntimePort",
-  "inventoryContentRuntimePort",
   "inventoryRuntimePort",
   "legalContractDocumentRuntimePort",
   "miceRuntimePort",
   "quotesProposalRuntimePort",
   "quotesRuntimePort",
   "quotesSnapshotRuntimePort",
+  "smartbillRuntimeHostPort",
   "storefrontCustomerPortalRuntimePort",
+  "storefrontBookingIntentsRuntimePort",
+  "storefrontIntakeRuntimePort",
+  "storefrontOffersRuntimePort",
   "storefrontPaymentLinkRuntimePort",
-  "storefrontRuntimePort",
   "storefrontVerificationRuntimePort",
 ]
 
-const migratedGraphIds = [
-  "@voyant-travel/accommodations#content-extension",
-  "@voyant-travel/action-ledger#health-extension",
-  "@voyant-travel/bookings",
-  "@voyant-travel/bookings#requirements",
-  "@voyant-travel/catalog",
-  "@voyant-travel/catalog#booking-engine",
-  "@voyant-travel/catalog#offers-extension",
-  "@voyant-travel/commerce#booking-maintenance-extension",
-  "@voyant-travel/cruises#content-extension",
-  "@voyant-travel/finance",
-  "@voyant-travel/finance#booking-schedule-extension",
-  "@voyant-travel/finance#booking-tax-extension",
-  "@voyant-travel/inventory",
-  "@voyant-travel/inventory#brochure-extension",
-  "@voyant-travel/inventory#content-extension",
-  "@voyant-travel/legal#contract-document",
-  "@voyant-travel/mice",
-  "@voyant-travel/quotes",
-  "@voyant-travel/quotes#proposal-extension",
-  "@voyant-travel/quotes#quote-version-snapshot-extension",
-  "@voyant-travel/storefront",
-  "@voyant-travel/storefront#customer-portal",
-  "@voyant-travel/storefront#payment-link",
-  "@voyant-travel/storefront#verification",
-]
-
 const violations = []
-for (const port of requiredPorts) {
-  if (!runtimePorts.includes(`[${port}.id]`)) {
-    violations.push(`buildOperatorRuntimePorts must bind ${port}.id`)
-  }
+if (existsSync(compositionPath)) {
+  violations.push("starters/operator/src/api/composition.ts must stay deleted")
 }
-
-for (const graphId of migratedGraphIds) {
-  if (runtimeBindings.includes(`"${graphId}"`)) {
-    violations.push(`${graphId} must not return to package-keyed Operator bindings`)
-  }
-  if (frameworkComposition.includes(`"${graphId.replace("#", "/")}":`)) {
-    violations.push(`${graphId} must not return to frameworkComposition`)
-  }
+if (!resources.includes("export function createOperatorDeploymentResources")) {
+  violations.push("deployment-resources.ts must expose one graph deployment resource factory")
 }
-
-if (composition.includes("operatorGraphCompatibilityModules")) {
-  violations.push("operatorGraphCompatibilityModules must stay deleted")
+for (const legacyExport of [
+  "export function buildOperatorProviders",
+  "export function buildOperatorRuntimePorts",
+]) {
+  if (resources.includes(legacyExport)) violations.push(`${legacyExport} must stay private`)
 }
-if (composition.includes("operatorGraphCompatibilityExtensions")) {
-  violations.push("operatorGraphCompatibilityExtensions must stay deleted")
+for (const legacyBuilder of ["buildOperatorProviders", "buildOperatorRuntimePorts"]) {
+  if (resources.includes(legacyBuilder)) violations.push(`${legacyBuilder} must stay deleted`)
+}
+const directResourceComposition = /\.\.\.createOperatorDeploymentResources\([^)]*\)/.test(app)
+const resourceAssignment = app.match(
+  /const\s+([A-Za-z_$][\w$]*)\s*=\s*createOperatorDeploymentResources\([^)]*\)/,
+)
+const assignedResourceComposition =
+  resourceAssignment !== null && app.includes(`...${resourceAssignment[1]}`)
+if (!directResourceComposition && !assignedResourceComposition) {
+  violations.push("Operator app must compose the generated graph from deployment resources")
+}
+for (const port of migratedPorts) {
+  if (app.includes(port)) violations.push(`Operator app must not own ${port}`)
+}
+for (const symbol of [
+  "buildOperatorProviders",
+  "buildOperatorRuntimePorts",
+  "operatorGraphRuntimeBindings",
+  "deploymentLocalExtensions",
+  "bindingsFromExtensionFactories",
+]) {
+  if (app.includes(symbol)) violations.push(`${symbol} must stay out of Operator app composition`)
+}
+if (existsSync(path.join(frameworkRoot, "src/composition-lazy.ts"))) {
+  violations.push("framework composition-lazy.ts must stay deleted")
 }
 
 if (violations.length > 0) {
@@ -116,5 +90,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-runtime-ports: OK (${requiredPorts.length} package runtimes are port-bound; central package-id factories are absent)`,
+  `check-operator-runtime-ports: OK (0 product runtime-port entries in app composition; ${migratedPorts.length} resources are behind the deployment boundary)`,
 )

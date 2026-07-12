@@ -9,7 +9,10 @@
     "./service": "./src/service.ts",
     "./hono-module": "./src/hono-module.ts",
     "./routes": "./src/routes.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/operator-settings.json",
+    "./openapi/storefront": "./openapi/storefront/operator-settings.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -22,6 +25,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
@@ -38,6 +42,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -69,11 +74,18 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/operator-settings.json",
+      "./openapi/storefront": "./openapi/storefront/operator-settings.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -87,6 +99,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createOperatorSettingsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

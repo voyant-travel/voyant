@@ -132,7 +132,6 @@ async function getReleaseState() {
     hasReleasableChangesets: plannedReleases.length > 0,
     pendingPackages,
     pendingPackageNames,
-    starterReleaseNeeded: pendingPackageNames.includes("@voyant-travel/cli"),
     plannedReleases: plannedReleases.map((release) => ({
       name: release.name,
       type: release.type,
@@ -155,7 +154,6 @@ async function main() {
         pendingPackages: state.pendingPackages,
         pendingPublication,
         plannedReleases: state.plannedReleases,
-        starterReleaseNeeded: state.starterReleaseNeeded,
       },
       null,
       2,
@@ -169,7 +167,6 @@ async function main() {
   appendGithubOutput("pending_packages_json", JSON.stringify(state.pendingPackages))
   appendGithubOutput("turbo_filters", turboFilters)
   appendGithubOutput("package_filters", packageFilters)
-  appendGithubOutput("starter_release_needed", state.starterReleaseNeeded ? "true" : "false")
 }
 
 if (require.main === module) {

@@ -1,11 +1,16 @@
-# Managed profile runtime
+# Managed Profile Runtime (Retired)
 
-Status: active rule
+Status: historical
 
-`@voyant-travel/framework/managed-runtime` is the framework-owned runtime entry
-for managed product profiles. It is the source-free boundary: code in this entry
-must not import starter-local files, clone a tenant repository, or copy starter
-glue.
+> Snapshot-driven runtime composition and the
+> `@voyant-travel/framework/managed-runtime` export were removed. Generated
+> applications boot their admitted graph through the graph-native
+> [`node-runtime` authority](./node-runtime-authority.md).
+
+`@voyant-travel/framework/managed-runtime` is the compatibility runtime entry
+for managed product profiles. It re-exports the source-free Node implementation;
+runtime code must not import starter-local files, clone a tenant repository, or
+copy starter glue.
 
 The entry accepts an admitted project manifest or a compatibility JSON snapshot,
 then composes package runtime factories from the selected deployment graph. It
@@ -21,10 +26,10 @@ self-hosted profiles may still use explicit memory providers for offline/dev
 execution.
 
 The generated runtime entry supplies its deployment mode and complete provider
-map alongside the resolved resource requirements. A generic Node host passes an
-in-memory manifest and does not emit a synthetic managed-profile file. The JSON
-snapshot remains a compatibility input for older callers and cannot override
-graph-selected self-hosted providers.
+map alongside the resolved resource requirements. A generic Node host passes
+those graph-native inputs directly and does not construct a managed-profile
+manifest. The JSON snapshot remains a compatibility input for older callers
+and cannot override graph-selected self-hosted providers.
 
 The source-free managed runtime is not yet a complete managed Cloud image by
 itself. Redis-backed `CACHE`/`RATE_LIMIT` bindings, Voyant Cloud admin auth
@@ -41,4 +46,4 @@ entry.
 The self-host/demo starter may continue to provide richer deployment-local
 modules, admin shell, auth UI, and example routes. Those files are not part of
 the standard managed runtime contract unless promoted to a package export and
-consumed through `@voyant-travel/framework/managed-runtime`.
+consumed through `@voyant-travel/framework/node-runtime`.

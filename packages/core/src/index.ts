@@ -124,6 +124,7 @@ export type {
 export { createQueryContext, createQueryRunner, queryGraph } from "./query.js"
 export type { RegistryOptions } from "./registry.js"
 export { createRegistry } from "./registry.js"
+export type { VoyantRuntimeHostPrimitives } from "./runtime-host.js"
 export type {
   StepBuilder,
   StepCompensateFn,

@@ -1,10 +1,5 @@
-import { requestBodyLimit } from "@voyant-travel/hono/middleware/body-size"
-import { cors } from "@voyant-travel/hono/middleware/cors"
-import { rateLimit } from "@voyant-travel/hono/middleware/rate-limit"
-import { securityHeaders } from "@voyant-travel/hono/middleware/security-headers"
-import { createApiDispatch, lazyApp } from "@voyant-travel/runtime"
-import type { FetchApp } from "@voyant-travel/runtime/types"
-import { Hono } from "hono"
+import { createVoyantNodeApiDispatch } from "@voyant-travel/framework/node-host"
+import { lazyApp } from "@voyant-travel/runtime"
 
 /**
  * App-owned loaders for the framework-owned dispatch in
@@ -25,36 +20,9 @@ const loadOperatorAuthHandler = lazyApp<AppBindings, ExecutionContext>(() =>
   })),
 )
 
-/**
- * Lean auth app: CORS + the Better Auth handler, nothing else. Keeps
- * `/api/auth/*` (including preflight) off the full API module graph.
- */
-const loadOperatorAuthApp = lazyApp<AppBindings, ExecutionContext>(async () => {
-  const authApp = new Hono<{ Bindings: AppBindings }>()
-  authApp.use("*", cors())
-  authApp.use("*", securityHeaders())
-  authApp.use("*", requestBodyLimit({ maxBytes: 1024 * 1024 }))
-  authApp.use(
-    "*",
-    rateLimit({
-      bucket: "auth",
-      max: 10,
-      windowSeconds: 60,
-    }),
-  )
-  authApp.all("*", async (c) => {
-    const authHandler = await loadOperatorAuthHandler()
-    return authHandler.fetch(c.req.raw, c.env, c.executionCtx as ExecutionContext)
-  })
-  return authApp as FetchApp<AppBindings, ExecutionContext>
-})
-
-export const operatorApiDispatch = createApiDispatch<AppBindings, ExecutionContext>({
+export const operatorApiDispatch = createVoyantNodeApiDispatch<AppBindings, ExecutionContext>({
   loadApiApp: loadOperatorApiApp,
-  loadAuthApp: loadOperatorAuthApp,
-  // Cloud isolates are frequently evicted; auth/JWKS traffic must not kick off
-  // the full framework module graph while answering the lean auth response.
-  warmApiOnAuth: false,
+  loadAuthHandler: loadOperatorAuthHandler,
   rewriteAppPath: (pathname) =>
     pathname.startsWith("/v1/media/")
       ? pathname.replace("/v1/media/", "/v1/admin/media/")

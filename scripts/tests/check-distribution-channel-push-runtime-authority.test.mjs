@@ -23,12 +23,15 @@ async function createFixture(overrides = {}) {
       "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
     "distribution/src/channel-push/runtime-port.ts":
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
-    "operator/src/api/composition.ts":
-      "export const ports = { [channelPushRuntimePort.id]: operatorChannelPushRuntime }\n",
-    "operator/src/api/runtime/channel-push-runtime.ts":
-      'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
-    "operator/src/api/runtime/operator-workflow-services.ts":
-      "createLazyWorkflowDb\nselectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)\n",
+    "distribution/package.json":
+      '{\n  "name": "@voyant-travel/distribution",\n  "exports": { "./runtime-contributor": "./src/runtime-contributor.ts" },\n  "voyant": { "runtime": { "export": "createDistributionRuntimePortContribution" } }\n}\n',
+    "distribution/src/runtime-contributor.ts":
+      "Promise.resolve()\nhost.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
+    "distribution/src/runtime.ts":
+      "catalogRuntime.getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
+    "operator/src/api/runtime/deployment-resources.ts":
+      "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
+    "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
     ...overrides,
@@ -58,24 +61,36 @@ async function runChecker(root) {
 }
 
 describe("check-distribution-channel-push-runtime-authority", () => {
-  it("accepts package factory authority with an Operator typed-port provider", async () => {
+  it("accepts a package-owned runtime without an Operator forwarder", async () => {
     const result = await runChecker(await createFixture())
 
     assert.match(result.stdout, /check-distribution-channel-push-runtime-authority: OK/)
   })
 
+  it("rejects an eager Catalog lookup that can race Distribution extension registration", async () => {
+    const root = await createFixture({
+      "distribution/src/runtime-contributor.ts":
+        "host.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /must synchronously provide extensions and defer/)
+      return true
+    })
+  })
+
   it("rejects a package-id binding and restored compatibility route", async () => {
     const root = await createFixture({
-      "operator/src/api/composition.ts":
+      "operator/src/api/runtime/deployment-resources.ts":
         'const binding = { "@voyant-travel/distribution#channel-push-extension": createChannelPushExtension }\n',
       "operator/src/api/routes/channel-push.ts": "export const compatibilityRoute = true\n",
     })
 
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must bind the Distribution channel-push runtime port/)
+      assert.match(error.stderr, /must bind Distribution through generated contributor composition/)
       assert.match(
         error.stderr,
-        /must not restore the channel-push package-id compatibility binding/,
+        /must not restore channel-push compatibility binding or loader authority/,
       )
       assert.match(error.stderr, /channel-push\.ts must stay deleted/)
       return true
@@ -90,6 +105,18 @@ describe("check-distribution-channel-push-runtime-authority", () => {
 
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must not read the deleted channel-push route/)
+      return true
+    })
+  })
+
+  it("rejects Distribution composition restored in Operator workflow services", async () => {
+    const root = await createFixture({
+      "operator/src/api/runtime/operator-workflow-services.ts":
+        "createChannelPushWorkflowRuntimeEntries\nexport async function registerDistributionWorkflowService() {}\n",
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /must not compose Distribution channel-push/)
       return true
     })
   })

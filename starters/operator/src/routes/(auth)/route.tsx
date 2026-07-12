@@ -1,14 +1,4 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router"
-import { AuthLayout } from "@voyant-travel/auth-react/ui"
+import { createFileRoute } from "@tanstack/react-router"
+import { localAuthRouteContribution } from "@/lib/local-auth-bootstrap"
 
-export const Route = createFileRoute("/(auth)")({
-  component: AuthRouteLayout,
-})
-
-function AuthRouteLayout() {
-  return (
-    <AuthLayout>
-      <Outlet />
-    </AuthLayout>
-  )
-}
+export const Route = createFileRoute("/(auth)")(localAuthRouteContribution.routes.layout)

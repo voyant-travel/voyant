@@ -5,6 +5,11 @@ const runtime = {
   export: "createOperatorSettingsHonoModule",
 } as const
 
+const operatorSettingsAdminRuntime = {
+  entry: "@voyant-travel/operator-settings-react/settings",
+  export: "createSelectedOperatorSettingsAdminExtension",
+} as const
+
 /** Import-cheap deployment declaration owned by the operator-settings package. */
 export const operatorSettingsVoyantModule = defineModule({
   id: "@voyant-travel/operator-settings",
@@ -15,6 +20,7 @@ export const operatorSettingsVoyantModule = defineModule({
       id: "@voyant-travel/operator-settings#api.admin",
       surface: "admin",
       mount: "settings",
+      openapi: { document: "operator-settings" },
       runtime,
     },
     {
@@ -22,6 +28,7 @@ export const operatorSettingsVoyantModule = defineModule({
       surface: "public",
       mount: "operator-profile",
       anonymous: true,
+      openapi: { document: "operator-settings" },
       runtime,
     },
     {
@@ -29,6 +36,7 @@ export const operatorSettingsVoyantModule = defineModule({
       surface: "public",
       mount: "settings/operator",
       anonymous: true,
+      openapi: { document: "operator-settings" },
       runtime,
     },
   ],
@@ -52,6 +60,26 @@ export const operatorSettingsVoyantModule = defineModule({
       config: { engine: "postgres" },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/operator-settings#access.settings",
+        resource: "settings",
+        actions: ["read", "write", "delete"],
+      },
+    ],
+  },
+  admin: {
+    compositionOrder: 10,
+    runtime: operatorSettingsAdminRuntime,
+    routes: [
+      {
+        id: "@voyant-travel/operator-settings#admin.route.operator-profile",
+        path: "/settings/operator",
+        runtime: operatorSettingsAdminRuntime,
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

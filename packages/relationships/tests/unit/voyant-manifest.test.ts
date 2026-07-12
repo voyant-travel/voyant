@@ -18,6 +18,7 @@ describe("relationships deployment manifest", () => {
           id: "@voyant-travel/relationships#api.admin",
           surface: "admin",
           mount: "relationships",
+          openapi: { document: "relationships" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/relationships",
@@ -47,8 +48,11 @@ describe("relationships deployment manifest", () => {
       unitId: relationshipsVoyantModule.id,
       projectConfig: {},
       api: relationshipsVoyantModule.api ?? [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => ({ customFields })) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     const container = createContainer()
     await module.module.bootstrap?.({ bindings: {}, container, eventBus: createEventBus() })
@@ -61,20 +65,22 @@ describe("relationships deployment manifest", () => {
   })
 
   it("declares the packaged relationships admin routes and person-detail slot", () => {
-    expect(relationshipsVoyantModule.admin).toEqual({
-      routes: [
-        ["people-index", "/people"],
-        ["people-detail", "/people/$id"],
-        ["organizations-index", "/organizations"],
-        ["organizations-detail", "/organizations/$id"],
-      ].map(([id, path]) => ({
-        id: `@voyant-travel/relationships#admin.route.${id}`,
-        path,
-        runtime: {
-          entry: "@voyant-travel/relationships-react/admin",
-          export: "createRelationshipsAdminExtension",
-        },
-      })),
+    expect(relationshipsVoyantModule.admin).toMatchObject({
+      routes: expect.arrayContaining(
+        [
+          ["people-index", "/people"],
+          ["people-detail", "/people/$id"],
+          ["organizations-index", "/organizations"],
+          ["organizations-detail", "/organizations/$id"],
+        ].map(([id, path]) => ({
+          id: `@voyant-travel/relationships#admin.route.${id}`,
+          path,
+          runtime: {
+            entry: "@voyant-travel/relationships-react/admin",
+            export: "createRelationshipsAdminExtension",
+          },
+        })),
+      ),
       slots: [
         {
           id: "person.details.bookings-tab",

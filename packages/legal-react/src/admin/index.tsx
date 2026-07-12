@@ -4,6 +4,8 @@ import {
   type AdminRouteRuntime,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 // Type-only: binds the bookings-ui `AdminDestinations` augmentation
 // (`booking.detail`, `person.detail`, `organization.detail`, ...) into this
@@ -312,4 +314,21 @@ export function createLegalAdminExtension(
       },
     ],
   })
+}
+
+export function createSelectedLegalAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createLegalAdminExtension({
+      labels: {
+        contracts: navMessages.contracts,
+        contractTemplates: navMessages.contractTemplates,
+        policies: navMessages.policies,
+        numberSeries: navMessages.contractNumberSeries,
+      },
+    }),
+    () =>
+      import("../i18n/index.js").then((module) => ({ default: module.LegalUiMessagesProvider })),
+  )
 }

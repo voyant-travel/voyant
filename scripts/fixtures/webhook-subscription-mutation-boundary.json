@@ -1,0 +1,29 @@
+{
+  "allowed": [
+    {
+      "path": "packages/webhook-delivery/src/postgres-store.ts",
+      "source": "await db.insert(infraWebhookSubscriptionsTable).values(input)\nawait db.update(infraWebhookSubscriptionsTable).set(input)"
+    },
+    {
+      "path": "packages/admin-host/src/webhook-subscriptions.ts",
+      "source": "await createPostgresWebhookSubscriptionService(db, contracts).update(id, input)"
+    }
+  ],
+  "rejected": [
+    {
+      "path": "apps/dash/src/app/api/webhook-subscriptions/route.ts",
+      "source": "await db.insert(infraWebhookSubscriptionsTable).values(input)",
+      "operation": "insert"
+    },
+    {
+      "path": "packages/admin-host/src/webhook-subscriptions.ts",
+      "source": "import { infraWebhookSubscriptionsTable as subscriptions } from '@voyant-travel/db/schema/infra'\nawait db.update(subscriptions).set(input)",
+      "operation": "update"
+    },
+    {
+      "path": "starters/operator/src/api/webhook-subscriptions.ts",
+      "source": "await db.delete(infraSchema.infraWebhookSubscriptionsTable).where(eq(infraSchema.infraWebhookSubscriptionsTable.id, id))",
+      "operation": "delete"
+    }
+  ]
+}

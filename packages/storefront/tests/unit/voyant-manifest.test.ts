@@ -14,12 +14,17 @@ describe("storefront deployment manifest", () => {
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
       runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
-      runtimePorts: [{ id: "storefront.runtime" }],
+      runtimePorts: [
+        { id: "storefront.offers.runtime" },
+        { id: "storefront.booking-intents.runtime" },
+        { id: "storefront.intake.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/storefront#api.admin",
           surface: "admin",
           mount: "storefront",
+          openapi: { document: "storefront" },
           runtime: {
             entry: "@voyant-travel/storefront",
             export: "createStorefrontHonoModule",
@@ -29,6 +34,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#api.public",
           surface: "public",
           mount: "/",
+          openapi: { document: "storefront" },
           anonymous: ["/leads", "/newsletter", "/offers"],
           runtime: {
             entry: "@voyant-travel/storefront",
@@ -85,8 +91,11 @@ describe("storefront deployment manifest", () => {
       unitId: "@voyant-travel/storefront",
       projectConfig: {},
       api: [{ id: "storefront.public", surface: "public" }],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: async <TProvider>() => ({}) as TProvider,
+      getPorts: async <TProvider>() => [] as TProvider[],
     })
 
     expect(runtime.adminRoutes).toBeUndefined()
@@ -112,6 +121,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/storefront#customer-portal.api",
             surface: "public",
             mount: "customer-portal",
+            openapi: { document: "customer-portal" },
             anonymous: ["/contact-exists"],
             runtime: {
               entry: "@voyant-travel/storefront/customer-portal",
@@ -134,6 +144,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/storefront#verification.api",
             surface: "public",
             mount: "storefront-verification",
+            openapi: { document: "storefront-verification" },
             anonymous: true,
             runtime: {
               entry: "@voyant-travel/storefront/verification",
@@ -160,6 +171,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#payment-link.api",
           surface: "public",
           mount: "/",
+          openapi: { document: "payment-link" },
           anonymous: ["payment-link-config", "payment-link"],
           runtime: {
             entry: "@voyant-travel/storefront/payment-link",

@@ -1,187 +1,111 @@
+import { createIndexerService } from "@voyant-travel/catalog"
 import {
-  BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
-  type BookingsExpireStaleHoldsWorkflowRuntime,
-} from "@voyant-travel/bookings/workflow-runtime"
-import { createContainer, type ModuleContainer } from "@voyant-travel/core"
+  CATALOG_DRAFT_REAPER_RUNTIME_KEY,
+  createCatalogDraftReaperRuntime,
+} from "@voyant-travel/catalog/draft-reaper-workflow"
+import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
+import type { ModuleContainer } from "@voyant-travel/core"
+import {
+  CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
+  createCruisesExternalRefreshWorkflowRuntime,
+} from "@voyant-travel/cruises/external-refresh-workflow"
 import { createDbClient } from "@voyant-travel/db"
 import {
-  CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY,
-  type ChannelPushDeps,
-} from "@voyant-travel/distribution/channel-push-runtime"
-import { financeService } from "@voyant-travel/finance"
-import { paymentSessions } from "@voyant-travel/finance/schema"
+  createEventOutboxWorkflowRuntime,
+  EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
+  resolveWorkflowEnvironment,
+} from "@voyant-travel/db/outbox-workflow"
 import {
-  createDefaultProductBrochureTemplate,
-  loadProductBrochureTemplateContext,
-  renderProductBrochureTemplate,
-} from "@voyant-travel/inventory/tasks"
-import {
-  PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
-  type ProductsGeneratePdfWorkflowRuntime,
-} from "@voyant-travel/inventory/workflow-runtime"
-import {
-  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+  createNotificationReminderWorkflowRuntime,
   type NotificationReminderWorkflowRuntime,
 } from "@voyant-travel/notifications/workflow-runtime"
-import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
-import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
-import { closeTerminalBookingPaymentSchedules } from "../subscribers/booking-payment-cleanup.js"
-
-export const OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS = {
-  bookings: "@voyant-travel/bookings",
-  distribution: "@voyant-travel/distribution#channel-push-extension",
-  inventory: "@voyant-travel/inventory",
-  notifications: "@voyant-travel/notifications",
-} as const
+import { reportBackgroundFailure } from "../../lib/observability.js"
+import { withDbFromEnv } from "../lib/db.js"
+import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter.js"
 
 type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
 
-export function registerBookingsWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  const runtime: BookingsExpireStaleHoldsWorkflowRuntime = {
-    resolveDb: () => createWorkflowDb(env),
-    resolveRuntime: () => ({
-      expirePaymentSessionsForBooking: async (db, bookingId) => {
-        const staleSessions = await db
-          .select({ id: paymentSessions.id })
-          .from(paymentSessions)
-          .where(
-            and(
-              eq(paymentSessions.bookingId, bookingId),
-              inArray(paymentSessions.status, ["pending", "requires_redirect", "processing"]),
-            ),
-          )
-
-        for (const session of staleSessions) {
-          await financeService.expirePaymentSession(db, session.id, {
-            notes: "Booking hold expired",
-          })
-        }
-      },
-      closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
-    }),
-    userId: "system",
-  }
-  container.register(BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY, runtime)
+function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
+  return resolveWorkflowEnvironment(operatorBindings(bindings), process.env)
 }
 
-export async function registerDistributionWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): Promise<void> {
-  const env = workflowEnvironment(bindings)
-  const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
-  const runtime: ChannelPushDeps = {
-    db: createLazyWorkflowDb(() => createWorkflowDb(env)),
-    registry: await ensureBookingEngineRegistry(env),
-  }
-  container.register(CHANNEL_PUSH_WORKFLOW_RUNTIME_KEY, runtime)
-}
-
-export function registerInventoryWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  const runtime: ProductsGeneratePdfWorkflowRuntime = {
-    resolveDb: () => createWorkflowDb(env),
-    render: async (db, input) => {
-      const context = await loadProductBrochureTemplateContext(db, input.productId)
-      const rendered = await renderProductBrochureTemplate(
-        createDefaultProductBrochureTemplate(),
-        context,
-      )
-      const printed = await createProductBrochurePrinter(env)({ template: rendered, context })
-      return {
-        base64: Buffer.from(printed.body).toString("base64"),
-        filename: rendered.filename,
-        sizeBytes: printed.fileSize ?? printed.body.byteLength,
-      }
-    },
-  }
-  container.register(PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY, runtime)
-}
-
-export function registerNotificationsWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  container.register(
-    NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
-    createNotificationsWorkflowRuntime(bindings),
-  )
-}
-
+/** Deployment adapter consumed by the Notifications package bootstrap. */
 export function createNotificationsWorkflowRuntime(
   bindings: OperatorWorkflowBindings,
 ): NotificationReminderWorkflowRuntime {
   const env = workflowEnvironment(bindings)
-  return {
+  return createNotificationReminderWorkflowRuntime({
     resolveDb: () => createWorkflowDb(env),
     resolveEnv: () => env,
     resolveRuntimeOptions: (runtimeEnv) => getNotificationTaskRuntime(runtimeEnv),
-  }
+  })
 }
 
+/** Reuse graph-bootstrapped package services and add deployment-only host adapters. */
 export async function createOperatorWorkflowServiceResolver(
   bindings: OperatorWorkflowBindings,
   selectedUnitIds: ReadonlySet<string>,
 ): Promise<ModuleContainer> {
-  const container = createContainer()
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.bookings)) {
-    registerBookingsWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.inventory)) {
-    registerInventoryWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.notifications)) {
-    registerNotificationsWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)) {
-    await registerDistributionWorkflowService(container, bindings)
-  }
-  return container
-}
+  const appBindings = operatorBindings(bindings)
+  const env = workflowEnvironment(bindings)
+  const { app } = await import("../app.js")
+  await app.ready(appBindings)
+  const catalogRuntime = requireCatalogRuntimeServices()
 
-export function createLazyWorkflowDb<TDb extends object = PostgresJsDatabase>(
-  factory: () => TDb,
-): TDb {
-  let db: TDb | undefined
-  const resolveDb = () => (db ??= factory())
+  app.services.register(
+    CATALOG_DRAFT_REAPER_RUNTIME_KEY,
+    createCatalogDraftReaperRuntime({
+      withDb: (operation) => operation(createWorkflowDb(env)),
+      resolveSourceRegistry: () => catalogRuntime.ensureSourceRegistry(appBindings),
+      resolveOwnedHandlers: () => catalogRuntime.getOwnedHandlers(appBindings),
+      reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
+    }),
+  )
+  if (selectedUnitIds.has("@voyant-travel/cruises"))
+    app.services.register(
+      CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
+      createCruisesExternalRefreshWorkflowRuntime({
+        withOptions: (operation) =>
+          withDbFromEnv(appBindings, async (rawDb) => {
+            const db = operatorPostgresDb(rawDb)
+            const embeddings = catalogRuntime.buildEmbeddingProvider(env)
+            const indexer = catalogRuntime.buildTypesenseIndexer(env, embeddings)
+            if (!indexer) return operation({ db })
 
-  return new Proxy({} as TDb, {
-    get(_target, prop) {
-      const resolved = resolveDb()
-      const value = Reflect.get(resolved as object, prop, resolved)
-      return typeof value === "function" ? value.bind(resolved) : value
-    },
-    getOwnPropertyDescriptor(_target, prop) {
-      return Reflect.getOwnPropertyDescriptor(resolveDb() as object, prop)
-    },
-    has(_target, prop) {
-      return prop in (resolveDb() as object)
-    },
-    ownKeys() {
-      return Reflect.ownKeys(resolveDb() as object)
-    },
-  })
+            const indexerService = createIndexerService({
+              adapter: indexer,
+              slices: await catalogRuntime.loadSlices(rawDb),
+              registries: catalogRuntime.fieldPolicyRegistries(),
+            })
+            await indexerService.ensureCollections()
+            return operation({
+              db,
+              sourceAdapterRegistry: await catalogRuntime.ensureSourceRegistry(env),
+              indexerService,
+              fieldPolicyRegistries: catalogRuntime.fieldPolicyRegistries(),
+              wrapCatalogBuilder: (builder) => catalogRuntime.withEmbedding(builder, embeddings),
+              onCatalogProgress: (event) =>
+                console.info("[external-cruise-refresh] catalog page", event),
+            })
+          }),
+      }),
+    )
+  if (selectedUnitIds.has("@voyant-travel/db"))
+    app.services.register(
+      EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
+      createEventOutboxWorkflowRuntime({
+        withDb: (operation) =>
+          withDbFromEnv(appBindings, (db) => operation(operatorPostgresDb(db))),
+        resolveEventBus: async () => app.eventBus,
+        warn: (message) => console.warn(message),
+      }),
+    )
+  return app.services
 }
 
 function createWorkflowDb(env: NodeJS.ProcessEnv): PostgresJsDatabase {
   if (!env.DATABASE_URL) throw new Error("Workflow runtime requires DATABASE_URL")
   return createDbClient(env.DATABASE_URL, { adapter: "node" }) as PostgresJsDatabase
-}
-
-function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env }
-  for (const [key, value] of Object.entries(bindings)) {
-    if (typeof value === "string") env[key] = value
-  }
-  return env
 }

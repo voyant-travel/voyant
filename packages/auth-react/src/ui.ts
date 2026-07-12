@@ -54,6 +54,11 @@ export {
   type ResetPasswordPageProps,
 } from "./components/password-reset-pages.js"
 export {
+  RedeemInvitationPage,
+  type RedeemInvitationPageProps,
+  type RedeemInvitationStatus,
+} from "./components/redeem-invitation-page.js"
+export {
   ApiTokensPage,
   type ApiTokensPageProps,
   ServiceApiKeysPage,
@@ -93,3 +98,9 @@ export {
   useAuthUiMessages,
   useAuthUiMessagesOrDefault,
 } from "./i18n/index.js"
+export {
+  type LocalAuthRedirect,
+  type LocalAuthRoute,
+  type ResolveLocalAuthRouteOptions,
+  resolveLocalAuthRedirect,
+} from "./local-auth-bootstrap.js"

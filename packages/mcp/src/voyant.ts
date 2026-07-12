@@ -1,0 +1,26 @@
+import { defineModule } from "@voyant-travel/core/project"
+
+/** Package-owned declaration for the in-deployment MCP transport. */
+export const mcpVoyantModule = defineModule({
+  id: "@voyant-travel/mcp",
+  packageName: "@voyant-travel/mcp",
+  localId: "mcp",
+  api: [
+    {
+      id: "@voyant-travel/mcp#api.admin",
+      surface: "admin",
+      mount: "mcp",
+      methods: ["GET", "POST"],
+      openapi: { document: "mcp" },
+      runtime: {
+        entry: "@voyant-travel/mcp/runtime",
+        export: "createMcpVoyantRuntime",
+      },
+    },
+  ],
+  meta: {
+    ownership: "package",
+  },
+})
+
+export default mcpVoyantModule

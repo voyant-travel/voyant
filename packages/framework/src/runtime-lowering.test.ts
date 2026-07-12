@@ -93,6 +93,10 @@ describe("graph runtime lowering", () => {
             eventId: "@acme/hooks#event.changed",
             eventUnitId: "@acme/hooks",
             eventType: "hooks.changed",
+            eventVersion: "1.0.0",
+            payloadSchema: { type: "object", properties: {} },
+            visibility: "external",
+            audit: { sourceModule: "hooks", category: "domain" },
             secretIds: [],
           },
         ],
@@ -125,6 +129,23 @@ describe("graph runtime lowering", () => {
     const importRuntime = vi.fn(async () => ({ unitFactory, routeFactory }))
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:test",
+      accessCatalog: {
+        resources: [
+          {
+            id: "loyalty",
+            unitId: "@acme/loyalty",
+            resource: "loyalty",
+            label: "Loyalty",
+            description: "Loyalty",
+            wildcard: "allow",
+            actions: [
+              { action: "read", label: "Read", description: "Read" },
+              { action: "write", label: "Write", description: "Write" },
+            ],
+          },
+        ],
+        presets: [],
+      },
       entries: { "@acme/loyalty/runtime": importRuntime },
       modules: [
         {
@@ -132,6 +153,7 @@ describe("graph runtime lowering", () => {
           kind: "module",
           packageName: "@acme/loyalty",
           order: 0,
+          accessScopes: ["loyalty:read", "loyalty:write"],
           runtimeReferenceId: "loyalty-runtime",
           references: [
             {
@@ -341,6 +363,23 @@ describe("graph runtime lowering", () => {
     const importRuntime = vi.fn(async () => ({ adjustLoyalty: tool }))
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:test",
+      accessCatalog: {
+        resources: [
+          {
+            id: "loyalty",
+            unitId: "@acme/loyalty",
+            resource: "loyalty",
+            label: "Loyalty",
+            description: "Loyalty",
+            wildcard: "allow",
+            actions: [
+              { action: "read", label: "Read", description: "Read" },
+              { action: "write", label: "Write", description: "Write" },
+            ],
+          },
+        ],
+        presets: [],
+      },
       entries: { "@acme/loyalty/tools": importRuntime },
       modules: [
         {
@@ -393,6 +432,20 @@ describe("graph runtime lowering", () => {
     expect(() =>
       createVoyantGraphRuntime({
         graphHash: "sha256:test",
+        accessCatalog: {
+          resources: [
+            {
+              id: "loyalty",
+              unitId: "@acme/loyalty",
+              resource: "loyalty",
+              label: "Loyalty",
+              description: "Loyalty",
+              wildcard: "allow",
+              actions: [{ action: "read", label: "Read", description: "Read" }],
+            },
+          ],
+          presets: [],
+        },
         entries: { "@acme/loyalty/tools": importRuntime },
         modules: [
           {
@@ -427,6 +480,145 @@ describe("graph runtime lowering", () => {
       }),
     ).toThrow(/tool "loyalty-tool" requires undeclared access scope "loyalty:write"/)
     expect(importRuntime).not.toHaveBeenCalled()
+  })
+
+  it("rejects selected scopes when the graph access catalog is absent", () => {
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:test",
+        entries: {},
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            accessScopes: ["loyalty:read"],
+            routes: [],
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/accessCatalog is required/)
+  })
+
+  it("rejects duplicate actions and undeclared action bindings before imports", () => {
+    const importRuntime = vi.fn(async () => ({}))
+    const action = {
+      id: "loyalty.adjust",
+      unitId: "@acme/loyalty",
+      version: "v1",
+      kind: "execute" as const,
+      targetType: "loyalty-account",
+      requiredScopes: [],
+      risk: "medium" as const,
+      ledger: "required" as const,
+      from: {
+        routes: [],
+        tools: ["loyalty.missing"],
+        workflows: [],
+        events: [],
+        webhooks: [],
+      },
+    }
+
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:test",
+        entries: { "@acme/loyalty": importRuntime },
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            actions: [action],
+            routes: [],
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/action "loyalty.adjust" selects undeclared tools reference "loyalty.missing"/)
+    expect(importRuntime).not.toHaveBeenCalled()
+
+    expect(() =>
+      createVoyantGraphRuntime({
+        graphHash: "sha256:test",
+        entries: {},
+        modules: [
+          {
+            id: "@acme/loyalty",
+            kind: "module",
+            packageName: "@acme/loyalty",
+            order: 0,
+            actions: [
+              { ...action, from: { ...action.from, tools: [] } },
+              { ...action, from: { ...action.from, tools: [] } },
+            ],
+            routes: [],
+          },
+        ],
+        plugins: [],
+      }),
+    ).toThrow(/duplicate action id "loyalty.adjust"/)
+  })
+
+  it("infers declared action bindings when legacy inputs omit selectedIds", () => {
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:legacy-actions",
+      entries: { "@acme/loyalty/tools": async () => ({ adjustLoyalty: {} }) },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          references: [
+            {
+              id: "loyalty-tool-runtime",
+              unitId: "@acme/loyalty",
+              facet: "tools.runtime",
+              entityId: "loyalty-tool",
+              runtime: { entry: "./tools", export: "adjustLoyalty" },
+              importEntry: "@acme/loyalty/tools",
+            },
+          ],
+          tools: [
+            {
+              id: "loyalty-tool",
+              unitId: "@acme/loyalty",
+              name: "adjust_loyalty",
+              referenceId: "loyalty-tool-runtime",
+              requiredScopes: [],
+            },
+          ],
+          actions: [
+            {
+              id: "loyalty.adjust",
+              unitId: "@acme/loyalty",
+              version: "v1",
+              kind: "execute",
+              targetType: "loyalty-account",
+              requiredScopes: [],
+              risk: "medium",
+              ledger: "required",
+              from: {
+                routes: [],
+                tools: ["loyalty-tool"],
+                workflows: [],
+                events: [],
+                webhooks: [],
+              },
+            },
+          ],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    expect(runtime.selectedIds.tools).toEqual(["loyalty-tool"])
+    expect(runtime.actions.map(({ id }) => id)).toEqual(["loyalty.adjust"])
   })
 
   it("rejects unknown reference ids before evaluating package imports", async () => {

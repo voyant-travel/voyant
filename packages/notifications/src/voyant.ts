@@ -15,6 +15,7 @@ export const notificationsVoyantModule = defineModule({
       id: "@voyant-travel/notifications#api.admin",
       surface: "admin",
       mount: "notifications",
+      openapi: { document: "notifications" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/notifications",
@@ -101,10 +102,18 @@ export const notificationsVoyantModule = defineModule({
     {
       id: "@voyant-travel/notifications#event.booking.fully-paid",
       eventType: "booking.fully-paid",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
     },
     {
       id: "@voyant-travel/notifications#event.booking.documents.sent",
       eventType: "booking.documents.sent",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
     },
   ],
   access: {
@@ -112,7 +121,13 @@ export const notificationsVoyantModule = defineModule({
       {
         id: "@voyant-travel/notifications#access.notifications",
         resource: "notifications",
-        actions: ["read", "send"],
+        actions: [
+          "read",
+          {
+            action: "send",
+            wildcard: "explicit",
+          },
+        ],
       },
     ],
   },
@@ -125,12 +140,14 @@ export const notificationsVoyantModule = defineModule({
         export: "listDeliveriesTool",
       },
       requiredScopes: ["notifications:read"],
+      context: ["notifications"],
     },
     {
       id: "@voyant-travel/notifications#tool.get-delivery",
       name: "get_notification_delivery",
       runtime: { entry: "@voyant-travel/notifications/tools", export: "getDeliveryTool" },
       requiredScopes: ["notifications:read"],
+      context: ["notifications"],
     },
     {
       id: "@voyant-travel/notifications#tool.send-notification",
@@ -140,8 +157,47 @@ export const notificationsVoyantModule = defineModule({
         export: "sendNotificationTool",
       },
       requiredScopes: ["notifications:send"],
+      context: ["notifications"],
     },
   ],
+  admin: {
+    compositionOrder: 70,
+    runtime: {
+      entry: "@voyant-travel/notifications-react/admin",
+      export: "createSelectedNotificationsAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/notifications#admin.copy",
+        namespace: "notifications.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/notifications-react/i18n",
+          export: "notificationsUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: (
+      [
+        ["index", "/notifications"],
+        ["templates-index", "/notifications/templates"],
+        ["templates-detail", "/notifications/templates/$id"],
+        ["reminder-rules-index", "/notifications/reminder-rules"],
+        ["reminder-rules-detail", "/notifications/reminder-rules/$id"],
+        ["deliveries", "/notifications/deliveries"],
+        ["reminder-runs", "/notifications/reminder-runs"],
+        ["preview", "/notifications/preview"],
+        ["settings", "/notifications/settings"],
+      ] as const
+    ).map(([id, path]) => ({
+      id: `@voyant-travel/notifications#admin.route.${id}`,
+      path,
+      runtime: {
+        entry: "@voyant-travel/notifications-react/admin",
+        export: "createNotificationsAdminExtension",
+      },
+    })),
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
@@ -189,6 +245,15 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       runtime: {
         entry: "./subscriber-runtime",
         export: "notificationsPaymentCompletedReminderSubscriber",
+      },
+    },
+    {
+      id: "@voyant-travel/notifications#subscriber.document-lifecycle-booking-fully-paid",
+      eventType: "booking.fully-paid",
+      source: "@voyant-travel/notifications/subscriber-runtime",
+      runtime: {
+        entry: "./subscriber-runtime",
+        export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
       },
     },
     {

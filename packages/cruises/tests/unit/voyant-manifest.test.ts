@@ -1,8 +1,19 @@
-import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { assertPortConforms, isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
+import {
+  CRUISES_BOOKING_OPENAPI_API_ID,
+  cruisesBookingExtensionRoutes,
+} from "../../src/booking-extension.js"
 import { createCruisesContentVoyantRuntime } from "../../src/graph-runtime.js"
-import { createCruisesHonoModule } from "../../src/index.js"
-import { createCruiseContentHonoExtension } from "../../src/routes-content.js"
+import { createCruisesHonoModule, createCruisesVoyantRuntime } from "../../src/index.js"
+import { cruiseAdminRoutes } from "../../src/routes.js"
+import {
+  CRUISE_CONTENT_OPENAPI_API_IDS,
+  createCruiseContentHonoExtension,
+} from "../../src/routes-content.js"
+import { CRUISES_OPENAPI_API_IDS } from "../../src/routes-openapi.js"
+import { cruisePublicRoutes } from "../../src/routes-public.js"
+import { cruisesRoutesRuntimePort } from "../../src/runtime-port.js"
 import {
   cruisesBookingVoyantPlugin,
   cruisesContentVoyantPlugin,
@@ -20,16 +31,19 @@ describe("cruises deployment manifest", () => {
           surface: "admin",
           mount: "cruises",
           transactional: true,
-          runtime: { export: "createCruisesHonoModule" },
+          openapi: { document: "cruises" },
+          runtime: { export: "createCruisesVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "cruises",
           anonymous: true,
           transactional: true,
-          runtime: { export: "createCruisesHonoModule" },
+          openapi: { document: "cruises" },
+          runtime: { export: "createCruisesVoyantRuntime" },
         },
       ],
+      runtimePorts: [{ id: "cruises.routes-runtime" }],
       schema: [{ id: "@voyant-travel/cruises#schema", source: "@voyant-travel/cruises/schema" }],
       migrations: [{ id: "@voyant-travel/cruises#migrations", source: "./migrations" }],
       links: [
@@ -38,7 +52,33 @@ describe("cruises deployment manifest", () => {
         { id: "@voyant-travel/cruises#linkable.cruise_sailing" },
         { id: "@voyant-travel/cruises#linkable.cruise_ship" },
       ],
+      workflows: [
+        expect.objectContaining({
+          id: "cruises.external-catalog-refresh",
+          schedules: [expect.objectContaining({ id: "external-cruise-catalog-refresh" })],
+          runtime: {
+            entry: "@voyant-travel/cruises/external-refresh-workflow",
+            export: "cruisesExternalCatalogRefreshWorkflow",
+          },
+        }),
+      ],
     })
+    expect(isGraphRuntimeFactory(createCruisesVoyantRuntime)).toBe(true)
+    expect(new Set(readApiIds(cruiseAdminRoutes))).toEqual(new Set([CRUISES_OPENAPI_API_IDS.admin]))
+    expect(new Set(readApiIds(cruisePublicRoutes))).toEqual(
+      new Set([CRUISES_OPENAPI_API_IDS.public]),
+    )
+  })
+
+  it("validates the deployment registry contract", async () => {
+    await expect(
+      assertPortConforms(cruisesRoutesRuntimePort, {
+        resolveSourceAdapterRegistry: async () => ({}) as never,
+      }),
+    ).resolves.toBeUndefined()
+    await expect(assertPortConforms(cruisesRoutesRuntimePort, {} as never)).rejects.toThrow(
+      /resolveSourceAdapterRegistry/,
+    )
   })
 
   it("owns content and booking extensions", () => {
@@ -49,21 +89,28 @@ describe("cruises deployment manifest", () => {
         {
           surface: "admin",
           mount: "cruises",
+          openapi: { document: "cruises" },
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "cruises",
+          openapi: { document: "cruises" },
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "cruises.content-runtime" }],
+      runtimePorts: [{ id: "catalog.content-runtime" }],
     })
     expect(cruisesBookingVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/cruises#booking-extension",
       api: [
-        { surface: "admin", mount: "bookings", runtime: { export: "cruisesBookingExtension" } },
+        {
+          surface: "admin",
+          mount: "bookings",
+          openapi: { document: "bookings" },
+          runtime: { export: "cruisesBookingExtension" },
+        },
       ],
     })
 
@@ -76,6 +123,15 @@ describe("cruises deployment manifest", () => {
     expect(extension.adminRoutes).toBeDefined()
     expect(extension.publicRoutes).toBeDefined()
     expect(isGraphRuntimeFactory(createCruisesContentVoyantRuntime)).toBe(true)
+    expect(new Set(readApiIds(extension.adminRoutes as OpenApiDocumentSource))).toEqual(
+      new Set([CRUISE_CONTENT_OPENAPI_API_IDS.admin]),
+    )
+    expect(new Set(readApiIds(extension.publicRoutes as OpenApiDocumentSource))).toEqual(
+      new Set([CRUISE_CONTENT_OPENAPI_API_IDS.public]),
+    )
+    expect(readApiIds(cruisesBookingExtensionRoutes)).toEqual(
+      Array.from({ length: 6 }, () => CRUISES_BOOKING_OPENAPI_API_ID),
+    )
   })
 
   it("preserves deployment-injected lazy route bridges", () => {
@@ -87,3 +143,19 @@ describe("cruises deployment manifest", () => {
     expect(module.publicRoutes).toBeUndefined()
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Cruises", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

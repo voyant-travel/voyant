@@ -1,75 +1,30 @@
 import type { EventEnvelope } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import type { InfraWebhookDelivery } from "@voyant-travel/db/schema/infra"
-import { infraWebhookSubscriptionsTable } from "@voyant-travel/db/schema/infra"
-import { and, arrayContains, eq } from "drizzle-orm"
-
-import { enqueueOutboundEnvelope } from "./webhook-deliveries.js"
+import {
+  createSelectedExternalWebhookQueue,
+  externalContractFromEventMetadata,
+  type SelectedExternalWebhookQueue,
+  type WebhookEnqueueOutcome,
+} from "@voyant-travel/webhook-delivery"
+import { createPostgresWebhookDeliveryStore } from "@voyant-travel/webhook-delivery/postgres"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 export interface EnqueueGraphWebhookEventOptions {
-  enqueue?: typeof enqueueOutboundEnvelope
+  queue?: SelectedExternalWebhookQueue
 }
 
-/**
- * Fan a graph-approved event out to enabled subscriptions as durable pending
- * delivery records. HTTP dispatch and retry are intentionally worker-owned.
- */
+/** Persist a complete projected delivery and return without performing HTTP. */
 export async function enqueueGraphWebhookEvent(
   db: AnyDrizzleDb,
   event: EventEnvelope,
   options: EnqueueGraphWebhookEventOptions = {},
-): Promise<InfraWebhookDelivery[]> {
-  const eventId = event.metadata?.eventId
-  if (typeof eventId !== "string" || eventId.length === 0) {
-    throw new Error(`enqueueGraphWebhookEvent: event "${event.name}" has no metadata.eventId`)
-  }
-
-  const subscriptions = await db
-    .select()
-    .from(infraWebhookSubscriptionsTable)
-    .where(
-      and(
-        eq(infraWebhookSubscriptionsTable.active, true),
-        arrayContains(infraWebhookSubscriptionsTable.events, [event.name]),
-      ),
-    )
-
-  const enqueue = options.enqueue ?? enqueueOutboundEnvelope
-  return Promise.all(
-    subscriptions.map((subscription) => {
-      const idempotencyKey = `graph-webhook:${eventId}:${subscription.id}`
-      return enqueue(db, {
-        sourceModule: "operator-webhooks",
-        sourceEvent: event.name,
-        ...sourceEntity(event.data),
-        subscriptionId: subscription.id,
-        targetUrl: subscription.url,
-        targetKind: "subscription",
-        targetRef: subscription.id,
-        requestMethod: "POST",
-        requestHeaders: {
-          ...(subscription.headers ?? {}),
-          "content-type": "application/json",
-          "idempotency-key": idempotencyKey,
-          "x-voyant-event": event.name,
-        },
-        requestBody: event,
-        idempotencyKey,
-      })
-    }),
-  )
-}
-
-function sourceEntity(data: unknown): {
-  sourceEntityModule?: string
-  sourceEntityId?: string
-} {
-  if (data === null || typeof data !== "object" || Array.isArray(data)) return {}
-  const record = data as Record<string, unknown>
-  const module = record.entityModule ?? record.entity_module
-  const id = record.entityId ?? record.entity_id
-  return {
-    ...(typeof module === "string" ? { sourceEntityModule: module } : {}),
-    ...(typeof id === "string" ? { sourceEntityId: id } : {}),
-  }
+): Promise<WebhookEnqueueOutcome[]> {
+  const contract = externalContractFromEventMetadata(event)
+  const queue =
+    options.queue ??
+    createSelectedExternalWebhookQueue({
+      contracts: [contract],
+      store: createPostgresWebhookDeliveryStore(db as PostgresJsDatabase),
+    })
+  return queue.enqueue(event)
 }

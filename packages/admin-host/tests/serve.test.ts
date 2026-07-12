@@ -5,7 +5,7 @@ import { join } from "node:path"
 import type { ExecutionContext } from "hono"
 import { describe, expect, it } from "vitest"
 
-import { serveManagedProfileAdmin } from "../src/serve.js"
+import { serveAdminHost } from "../src/serve.js"
 
 function createAssetsDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "admin-host-"))
@@ -21,10 +21,10 @@ const ctx: ExecutionContext = {
   props: undefined,
 }
 
-describe("serveManagedProfileAdmin", () => {
+describe("serveAdminHost", () => {
   it("serves built client assets", async () => {
     const clientAssetsDir = createAssetsDir()
-    const web = serveManagedProfileAdmin({
+    const web = serveAdminHost({
       clientAssetsDir,
       app: () => new Response("APP", { status: 200 }),
     })
@@ -37,7 +37,7 @@ describe("serveManagedProfileAdmin", () => {
 
   it("falls through to the app for non-asset routes", async () => {
     const clientAssetsDir = createAssetsDir()
-    const web = serveManagedProfileAdmin({
+    const web = serveAdminHost({
       clientAssetsDir,
       app: () => new Response("APP", { status: 200 }),
     })

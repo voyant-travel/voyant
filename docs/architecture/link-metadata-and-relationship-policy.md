@@ -96,7 +96,10 @@ to richer relationship needs.
 Today's link runtime is intentionally neutral:
 
 - modules expose linkable entities
-- templates compose cross-module links
+- the package that stores a cross-package reference declares the neutral link in
+  its package-owned `voyant` manifest
+- genuinely ownerless standard-product pairs are selected as explicit BOM
+  extensions rather than copied into a starter
 - generated pivot tables live outside module-owned canonical tables
 
 That neutrality is valuable for simple associations.
@@ -108,6 +111,10 @@ Rule:
 
 Keep neutral ownership for pair-only links. Require explicit module ownership
 for richer relationship records.
+
+Executable link facets declare both a symbolic package `source` and named
+`export`. The selected deployment graph emits those declarations into the
+generated link runtime. Starter `src/links` directories are not an authority.
 
 ### 6. Existing link tables are not a hidden graph API
 

@@ -1,3 +1,11 @@
+import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
+import {
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
+import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
@@ -6,10 +14,18 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "../../src/checkout/runtime-ports.js"
+import { publicMarketsRoutes } from "../../src/markets/routes-public.js"
+import { publicPricingRoutes } from "../../src/pricing/routes-public.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "../../src/promotions/runtime-ports.js"
+import {
+  commerceCardPaymentRuntimePort,
+  commerceInventoryRuntimePort,
+  commerceLegalRuntimePort,
+  commerceOperatorSettingsRuntimePort,
+} from "../../src/runtime-port.js"
 import {
   commerceBookingMaintenanceVoyantPlugin,
   commerceCatalogCheckoutVoyantPlugin,
@@ -25,11 +41,22 @@ describe("commerce deployment manifest", () => {
       runtimePorts: [
         { id: promotionRedemptionDatabaseRuntimePort.id },
         { id: promotionsBulkReindexRuntimePort.id },
+        { id: commerceOperatorSettingsRuntimePort.id },
+        { id: commerceInventoryRuntimePort.id },
+        { id: commerceLegalRuntimePort.id },
+        { id: commerceCardPaymentRuntimePort.id, optional: true },
+        { id: catalogRuntimeServicesPort.id },
+        { id: financeDistributionPaymentPolicyRuntimePort.id },
+        { id: financeAccommodationsPaymentPolicyRuntimePort.id },
+        { id: financeCruisesPaymentPolicyRuntimePort.id },
+        { id: financeInventoryPaymentPolicyRuntimePort.id },
+        { id: checkoutInquiryRuntimePort.id },
       ],
       api: [
         {
           id: "@voyant-travel/commerce#api.pricing.admin",
           surface: "admin",
+          openapi: { document: "pricing" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "pricingHonoModule",
@@ -38,6 +65,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.pricing.public",
           surface: "public",
+          openapi: { document: "pricing" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "pricingHonoModule",
@@ -46,6 +74,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.markets.admin",
           surface: "admin",
+          openapi: { document: "markets" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "marketsHonoModule",
@@ -54,6 +83,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.markets.public",
           surface: "public",
+          openapi: { document: "markets" },
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/commerce",
@@ -63,6 +93,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.sellability.admin",
           surface: "admin",
+          openapi: { document: "sellability" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "sellabilityHonoModule",
@@ -71,6 +102,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.promotions.admin",
           surface: "admin",
+          openapi: { document: "promotions" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "promotionsHonoModule",
@@ -95,8 +127,25 @@ describe("commerce deployment manifest", () => {
       ],
       workflows: [
         {
+          id: "commerce.process-promotion-boundaries",
+          source: "@voyant-travel/commerce/promotion-boundary-workflow",
+          config: {
+            defaultRuntime: "node",
+            schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
+          },
+          runtime: {
+            entry: "./promotion-boundary-workflow",
+            export: "promotionBoundarySchedulerWorkflow",
+          },
+        },
+        {
           id: "promotions.reindex-all-products",
+          source: "@voyant-travel/commerce/product-reindex-workflow",
           config: { defaultRuntime: "node" },
+          runtime: {
+            entry: "./product-reindex-workflow",
+            export: "bulkReindexProductsWorkflow",
+          },
         },
       ],
       subscribers: [
@@ -122,6 +171,9 @@ describe("commerce deployment manifest", () => {
         },
       ],
     })
+
+    expect(readApiIds(publicMarketsRoutes)).toEqual(["@voyant-travel/commerce#api.markets.public"])
+    expect(readApiIds(publicPricingRoutes)).toEqual(["@voyant-travel/commerce#api.pricing.public"])
   })
 
   it("owns the catalog checkout and booking maintenance bridges", () => {
@@ -141,6 +193,7 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#catalog-checkout-extension.api",
           surface: "public",
           mount: "catalog",
+          openapi: { document: "catalog" },
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
             export: "createCatalogCheckoutGraphExtension",
@@ -184,6 +237,7 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#booking-maintenance-extension.api",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
             export: "createBookingMaintenanceHonoExtension",
@@ -194,7 +248,7 @@ describe("commerce deployment manifest", () => {
   })
 
   it("declares the promotions route, navigation, and existing copy catalog", () => {
-    expect(commerceVoyantModule.admin).toEqual({
+    expect(commerceVoyantModule.admin).toMatchObject({
       copy: [
         {
           id: "@voyant-travel/commerce#admin.copy.promotions",
@@ -236,3 +290,19 @@ describe("commerce deployment manifest", () => {
     })
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Commerce", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

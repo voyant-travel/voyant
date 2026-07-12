@@ -1,0 +1,89 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Auth Invitations Admin API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/invitations": {
+      "get": {
+        "operationId": "listAuthInvitations",
+        "summary": "List user invitations",
+        "tags": ["Auth invitations"],
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.admin",
+        "responses": {
+          "200": {
+            "description": "The most recent user invitations."
+          },
+          "403": {
+            "description": "The caller is not a super administrator."
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAuthInvitation",
+        "summary": "Create a user invitation",
+        "tags": ["Auth invitations"],
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "expiresInHours": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 720
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The invitation and its acceptance URL."
+          },
+          "403": {
+            "description": "The caller is not a super administrator."
+          },
+          "409": {
+            "description": "A user already exists for the email address."
+          }
+        }
+      }
+    },
+    "/v1/admin/invitations/{id}": {
+      "delete": {
+        "operationId": "deleteAuthInvitation",
+        "summary": "Delete a user invitation",
+        "tags": ["Auth invitations"],
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.admin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deleted invitation identifier."
+          },
+          "403": {
+            "description": "The caller is not a super administrator."
+          }
+        }
+      }
+    }
+  }
+}

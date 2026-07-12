@@ -9,6 +9,11 @@ import { fileURLToPath } from "node:url"
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
 test("operator release archive contains only the minimal authored project", () => {
+  assert.equal(
+    existsSync(join(repoRoot, "packages/cli")),
+    false,
+    "CLI implementation must remain in the separate voyant-travel/cli repository",
+  )
   const fixture = packageAndExtract()
   try {
     const files = listFiles(fixture.extractDir)
@@ -34,6 +39,7 @@ test("operator release archive contains only the minimal authored project", () =
 
     const config = readFileSync(join(fixture.extractDir, "voyant.config.ts"), "utf8")
     assert.doesNotMatch(config, /\b(?:modules|extensions|plugins|access)\s*:/)
+    assert.doesNotMatch(config, /smartbill/i)
     assert.match(config, /target:\s*"node"/)
     assert.match(config, /database:\s*"postgres"/)
 
@@ -42,6 +48,7 @@ test("operator release archive contains only the minimal authored project", () =
     assert.equal(packageJson.scripts.start, "voyant-operator start")
     assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
     assert.equal(typeof packageJson.dependencies["@voyant-travel/operator-runtime"], "string")
+    assert.equal(packageJson.dependencies["@voyant-travel/plugin-smartbill"], undefined)
     const dependencySpecs = Object.values({
       ...packageJson.dependencies,
       ...packageJson.devDependencies,

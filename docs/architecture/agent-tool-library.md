@@ -20,8 +20,8 @@ domain packages           @voyant-travel/mcp        transport adapter:
 (*/tools: tool arrays)    MCP SDK + @hono/mcp over the registry, scope-enforced
         ▲                        ▲
         └──────────┬─────────────┘
-        deployment (operator): aggregates tools into one registry, injects
-        services onto the context, mounts at /v1/admin/mcp via "operator/mcp"
+        selected graph runtime: loads package-declared tools and context contributors;
+        the selected @voyant-travel/mcp module mounts /v1/admin/mcp
 ```
 
 Dependency direction is strictly downward. `@voyant-travel/tools` imports nothing heavy
@@ -67,18 +67,16 @@ Rules:
 
 ## Deployment wiring
 
-The operator builds one registry, registers each domain's tool array, and mounts the MCP
-server (`starters/operator/src/api/runtime/mcp-runtime.ts`):
+Each package manifest declares its `tools` runtime references, required scopes, risk,
+and context keys. Runtime lowering selects those declarations with the package graph;
+`createGraphMcpHonoApp` loads only those tools and their package-owned context
+contributors. The `@voyant-travel/mcp` manifest owns the admin route and requires the
+`mcp.runtime` port. A deployment binds that port to its request context and resources;
+it does not maintain a tool list or an Operator-local MCP module.
 
-```ts
-const registry = createToolRegistry()
-registry.registerAll(tripsTools)
-registry.registerAll(inventoryTools)
-return createMcpHonoApp({ registry, buildContext })
-```
-
-`buildContext(c)` maps the request `c.var` (DB lease, `actor`, `audience`, tenant) into a
-`ToolContext` and binds each domain's services to `c.var.db`.
+The generated graph runtime is also the executable eligibility source for action
+bindings and outbound webhook plans. Separate `tools.json`, `actions.json`, and
+`webhooks.json` eligibility catalogs are not emitted.
 
 ## Authorization
 

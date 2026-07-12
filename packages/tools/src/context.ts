@@ -30,6 +30,30 @@ export interface ToolContext {
   waitUntil?(promise: Promise<unknown>): void
 }
 
+export const TOOL_CONTEXT_CONTRIBUTION_EXPORT = "voyantToolContextContribution" as const
+
+export interface ToolContextContributionInput {
+  /** Transport request context. Contributors narrow this at their package boundary. */
+  request: unknown
+  context: ToolContext
+  /** Deployment resources supplied by the generic host. */
+  resources: Readonly<Record<string, unknown>>
+}
+
+/** Package-owned enrichment for context keys declared by selected graph tools. */
+export interface ToolContextContribution {
+  context: readonly string[]
+  contribute(
+    input: ToolContextContributionInput,
+  ): Record<string, unknown> | Promise<Record<string, unknown>>
+}
+
+export function defineToolContextContribution(
+  contribution: ToolContextContribution,
+): ToolContextContribution {
+  return contribution
+}
+
 /**
  * Who a request represents. Mirrors the `Actor`/`Visibility` unions in
  * `@voyant-travel/core` / `@voyant-travel/catalog-contracts`, defined locally so

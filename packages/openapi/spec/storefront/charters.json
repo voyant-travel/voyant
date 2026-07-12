@@ -149,6 +149,52 @@
             ]
           }
         ]
+      },
+      "BookingProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BookingItemProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierServiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "parameters": {}
@@ -156,6 +202,7 @@
   "paths": {
     "/v1/public/charters": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {
@@ -291,6 +338,7 @@
     },
     "/v1/public/charters/voyages": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {
@@ -577,6 +625,7 @@
     },
     "/v1/public/charters/voyages/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {
@@ -863,6 +912,7 @@
     },
     "/v1/public/charters/voyages/{key}/quote/per-suite": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {
@@ -1028,6 +1078,7 @@
     },
     "/v1/public/charters/voyages/{key}/quote/whole-yacht": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {
@@ -1182,6 +1233,7 @@
     },
     "/v1/public/charters/yachts/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {
@@ -1275,6 +1327,7 @@
     },
     "/v1/public/charters/products/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/charters#api.public",
         "parameters": [
           {
             "schema": {

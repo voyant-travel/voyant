@@ -16,6 +16,7 @@
     "./client": "./src/client.ts",
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
+    "./storefront": "./src/storefront/index.ts",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
@@ -118,6 +119,11 @@
         "types": "./dist/ui.d.ts",
         "import": "./dist/ui.js",
         "default": "./dist/ui.js"
+      },
+      "./storefront": {
+        "types": "./dist/storefront/index.d.ts",
+        "import": "./dist/storefront/index.js",
+        "default": "./dist/storefront/index.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"

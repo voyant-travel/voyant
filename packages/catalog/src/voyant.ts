@@ -27,6 +27,28 @@ const catalogIndexSubscriberRuntimeExports = {
   "promotion.changed": "createCatalogPromotionChangedIndexSubscriberGraphRuntime",
 } as const
 
+const catalogEntityEventPayloadSchema = {
+  type: "object",
+  required: ["entity_module", "entity_id", "occurred_at"],
+  properties: {
+    entity_module: { type: "string" },
+    entity_id: { type: "string" },
+    occurred_at: { type: "string" },
+  },
+  additionalProperties: false,
+} as const
+
+const catalogSourceEventPayloadSchema = {
+  type: "object",
+  required: ["source_kind", "source_connection_id", "occurred_at"],
+  properties: {
+    source_kind: { type: "string" },
+    source_connection_id: { type: "string" },
+    occurred_at: { type: "string" },
+  },
+  additionalProperties: false,
+} as const
+
 /** Import-cheap deployment declaration owned by the catalog package. */
 export const catalogVoyantModule = defineModule({
   id: "@voyant-travel/catalog",
@@ -42,6 +64,7 @@ export const catalogVoyantModule = defineModule({
       id: "@voyant-travel/catalog#api.admin",
       surface: "admin",
       mount: "catalog",
+      openapi: { document: "catalog" },
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
         export: "createCatalogSearchVoyantRuntime",
@@ -51,6 +74,7 @@ export const catalogVoyantModule = defineModule({
       id: "@voyant-travel/catalog#api.public",
       surface: "public",
       mount: "catalog",
+      openapi: { document: "catalog" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
@@ -71,45 +95,109 @@ export const catalogVoyantModule = defineModule({
     },
   ],
   events: [
-    { id: "@voyant-travel/catalog#event.entity.created", eventType: "catalog.entity.created" },
-    { id: "@voyant-travel/catalog#event.entity.updated", eventType: "catalog.entity.updated" },
-    { id: "@voyant-travel/catalog#event.entity.archived", eventType: "catalog.entity.archived" },
-    { id: "@voyant-travel/catalog#event.entity.deleted", eventType: "catalog.entity.deleted" },
+    {
+      id: "@voyant-travel/catalog#event.entity.created",
+      eventType: "catalog.entity.created",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
+    },
+    {
+      id: "@voyant-travel/catalog#event.entity.updated",
+      eventType: "catalog.entity.updated",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
+    },
+    {
+      id: "@voyant-travel/catalog#event.entity.archived",
+      eventType: "catalog.entity.archived",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
+    },
+    {
+      id: "@voyant-travel/catalog#event.entity.deleted",
+      eventType: "catalog.entity.deleted",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
+    },
     {
       id: "@voyant-travel/catalog#event.entity.price-changed",
       eventType: "catalog.entity.price.changed",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
     },
     {
       id: "@voyant-travel/catalog#event.entity.availability-changed",
       eventType: "catalog.entity.availability.changed",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
     },
     {
       id: "@voyant-travel/catalog#event.entity.overlay-changed",
       eventType: "catalog.entity.overlay.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "catalog", category: "domain" },
     },
     {
       id: "@voyant-travel/catalog#event.entity.drift-detected",
       eventType: "catalog.entity.drift.detected",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "catalog", category: "domain" },
     },
     {
       id: "@voyant-travel/catalog#event.entity.reference-missing",
       eventType: "catalog.entity.reference.missing",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
     },
     {
       id: "@voyant-travel/catalog#event.booking.committed",
       eventType: "catalog.booking.committed",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
     },
     {
       id: "@voyant-travel/catalog#event.booking.cancelled",
       eventType: "catalog.booking.cancelled",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogEntityEventPayloadSchema,
     },
     {
       id: "@voyant-travel/catalog#event.source.disconnected",
       eventType: "catalog.source.disconnected",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogSourceEventPayloadSchema,
     },
     {
       id: "@voyant-travel/catalog#event.source.reconnected",
       eventType: "catalog.source.reconnected",
+      version: "1.0.0",
+      visibility: "external",
+      audit: { sourceModule: "catalog", category: "domain" },
+      payloadSchema: catalogSourceEventPayloadSchema,
     },
   ],
   subscribers: [
@@ -128,6 +216,20 @@ export const catalogVoyantModule = defineModule({
       },
     },
   ],
+  workflows: [
+    {
+      id: "catalog.reap-expired-booking-drafts",
+      config: {
+        defaultRuntime: "node",
+        schedule: { cron: "5 * * * *", name: "hourly-at-05" },
+      },
+      source: "@voyant-travel/catalog/draft-reaper-workflow",
+      runtime: {
+        entry: "./draft-reaper-workflow",
+        export: "catalogDraftReaperWorkflow",
+      },
+    },
+  ],
   access: {
     resources: [
       {
@@ -143,12 +245,14 @@ export const catalogVoyantModule = defineModule({
       name: "search_catalog",
       runtime: { entry: "@voyant-travel/catalog/tools", export: "searchCatalogTool" },
       requiredScopes: ["catalog:search"],
+      context: ["catalog"],
     },
     {
       id: "@voyant-travel/catalog#tool.get-catalog-entry",
       name: "get_catalog_entry",
       runtime: { entry: "@voyant-travel/catalog/tools", export: "getCatalogEntryTool" },
       requiredScopes: ["catalog:read"],
+      context: ["catalog"],
     },
   ],
   webhooks: [
@@ -209,6 +313,22 @@ export const catalogVoyantModule = defineModule({
     },
   ],
   admin: {
+    compositionOrder: 2,
+    runtime: {
+      entry: "@voyant-travel/catalog-react/admin",
+      export: "createSelectedCatalogAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/catalog#admin.copy",
+        namespace: "catalog.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/catalog-react/i18n",
+          export: "catalogUiMessageDefinitions",
+        },
+      },
+    ],
     routes: (
       [
         ["index", "/catalog"],
@@ -247,6 +367,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       id: "@voyant-travel/catalog#booking-engine.api.admin",
       surface: "admin",
       mount: "catalog",
+      openapi: { document: "catalog-booking" },
       transactional: ["/book", "/holds", "/orders", "/quote", "/quotes/batch"],
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
@@ -257,6 +378,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       id: "@voyant-travel/catalog#booking-engine.api.public",
       surface: "public",
       mount: "catalog",
+      openapi: { document: "catalog-booking" },
       transactional: ["/book", "/holds", "/quote", "/quotes/batch"],
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
@@ -279,6 +401,7 @@ export const catalogOffersVoyantPlugin = defineExtension({
       id: "@voyant-travel/catalog#offers-extension.api",
       surface: "admin",
       mount: "catalog",
+      openapi: { document: "catalog" },
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
         export: "createCatalogOffersVoyantRuntime",

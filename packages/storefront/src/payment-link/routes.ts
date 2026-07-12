@@ -32,7 +32,7 @@ import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -871,7 +871,11 @@ export function createPaymentLinkHonoModule(options: PaymentLinkRoutesOptions): 
     publicPath: "/",
     lazyRoutes: {
       paths: PAYMENT_LINK_ROUTE_PATHS,
-      load: async () => createPaymentLinkRoutes(options),
+      load: async () =>
+        stampOpenApiRegistryApiId(
+          createPaymentLinkRoutes(options),
+          "@voyant-travel/storefront#payment-link.api",
+        ),
     },
     anonymous: ["payment-link-config", "payment-link"],
   }

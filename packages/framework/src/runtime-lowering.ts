@@ -1,16 +1,17 @@
 // agent-quality: file-size exception -- owner: framework; runtime metadata normalization, validation, and lazy loader construction share one contract boundary.
-import type {
-  VoyantGraphActionBindings,
-  VoyantGraphActionDeclaration,
-  VoyantGraphConfigDeclaration,
-  VoyantGraphJsonObject,
-  VoyantGraphProviderDeclaration,
-  VoyantGraphResourceDeclaration,
-  VoyantGraphRouteBundle,
-  VoyantGraphRuntimeReference,
-  VoyantGraphSecretDeclaration,
-  VoyantGraphUnitKind,
-  VoyantGraphWorkflow,
+import {
+  isExternalWebhookPayloadSchema,
+  type VoyantGraphActionBindings,
+  type VoyantGraphActionDeclaration,
+  type VoyantGraphConfigDeclaration,
+  type VoyantGraphJsonObject,
+  type VoyantGraphProviderDeclaration,
+  type VoyantGraphResourceDeclaration,
+  type VoyantGraphRouteBundle,
+  type VoyantGraphRuntimeReference,
+  type VoyantGraphSecretDeclaration,
+  type VoyantGraphUnitKind,
+  type VoyantGraphWorkflow,
 } from "@voyant-travel/core/project"
 import type { ToolRegistry } from "@voyant-travel/tools"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
@@ -163,6 +164,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts?: readonly string[]
   runtimePorts?: readonly string[]
+  manyRuntimePorts?: readonly string[]
   requiredRuntimePorts?: readonly string[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
@@ -178,6 +180,8 @@ export interface VoyantGraphRuntimeRouteLoader extends VoyantGraphRuntimeRouteDe
 
 export interface VoyantGraphRuntimeReferenceLoader extends VoyantGraphRuntimeReferenceDefinition {
   load: <T = unknown>() => Promise<T>
+  /** Load the admitted module namespace that owns this reference. */
+  loadModule: <T extends Record<string, unknown> = Record<string, unknown>>() => Promise<T>
 }
 
 export interface VoyantGraphRuntimeToolLoader extends VoyantGraphRuntimeToolDefinition {
@@ -220,6 +224,7 @@ export interface VoyantGraphRuntimeUnitLoader
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   requiredPorts: readonly string[]
   runtimePorts: readonly string[]
+  manyRuntimePorts: readonly string[]
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
@@ -369,6 +374,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   providers: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts: readonly string[]
   runtimePorts: readonly string[]
+  manyRuntimePorts: readonly string[]
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
@@ -393,6 +399,9 @@ interface NormalizedVoyantGraphRuntimeInput
 function normalizeRuntimeDefinition(
   input: CreateVoyantGraphRuntimeInput,
 ): NormalizedVoyantGraphRuntimeInput {
+  const webhookPlan = normalizeWebhookPlan(input.webhookPlan)
+  const normalizeUnit = (unit: VoyantGraphRuntimeUnitDefinition) =>
+    normalizeRuntimeUnitDefinition(unit, webhookPlan)
   return {
     ...input,
     accessCatalog: normalizeAccessCatalog(input.accessCatalog, [
@@ -400,10 +409,10 @@ function normalizeRuntimeDefinition(
       ...(input.extensions ?? []),
       ...input.plugins,
     ]),
-    webhookPlan: normalizeWebhookPlan(input.webhookPlan),
-    modules: input.modules.map(normalizeRuntimeUnitDefinition),
-    extensions: (input.extensions ?? []).map(normalizeRuntimeUnitDefinition),
-    plugins: input.plugins.map(normalizeRuntimeUnitDefinition),
+    webhookPlan,
+    modules: input.modules.map(normalizeUnit),
+    extensions: (input.extensions ?? []).map(normalizeUnit),
+    plugins: input.plugins.map(normalizeUnit),
   }
 }
 
@@ -411,35 +420,17 @@ function normalizeAccessCatalog(
   catalog: AccessCatalog | undefined,
   units: readonly VoyantGraphRuntimeUnitDefinition[],
 ): AccessCatalog {
-  const fallbackResources = new Map<string, Set<string>>()
   if (!catalog) {
-    for (const scope of units.flatMap((unit) => unit.accessScopes ?? [])) {
-      const [resource, action] = scope.split(":")
-      if (!resource || !action) continue
-      const actions = fallbackResources.get(resource) ?? new Set<string>()
-      actions.add(action)
-      fallbackResources.set(resource, actions)
+    const declaredScopes = units.flatMap((unit) => unit.accessScopes ?? [])
+    if (declaredScopes.length > 0) {
+      throw new Error(
+        "createVoyantGraphRuntime: accessCatalog is required when selected units declare access scopes.",
+      )
     }
+    return { resources: [], presets: [] }
   }
-  const fallbackCatalog: AccessCatalog = {
-    resources: [...fallbackResources].map(([resource, actions]) => ({
-      id: `runtime:${resource}`,
-      unitId: "runtime-compatibility",
-      resource,
-      label: resource,
-      description: `Access ${resource} resources.`,
-      wildcard: "allow",
-      actions: [...actions].map((action) => ({
-        action,
-        label: action,
-        description: `${action} access to ${resource}.`,
-      })),
-    })),
-    presets: [],
-  }
-  const source = catalog ?? fallbackCatalog
   return {
-    resources: [...source.resources]
+    resources: [...catalog.resources]
       .map((resource) => ({
         ...resource,
         actions: [...resource.actions].sort((left, right) =>
@@ -450,7 +441,7 @@ function normalizeAccessCatalog(
           : {}),
       }))
       .sort((left, right) => left.resource.localeCompare(right.resource)),
-    presets: [...source.presets]
+    presets: [...catalog.presets]
       .map((preset) => ({ ...preset, grants: sortedUnique(preset.grants) }))
       .sort((left, right) => left.id.localeCompare(right.id)),
   }
@@ -458,6 +449,7 @@ function normalizeAccessCatalog(
 
 function normalizeRuntimeUnitDefinition(
   unit: VoyantGraphRuntimeUnitDefinition,
+  webhookPlan: VoyantGraphWebhookPlan,
 ): NormalizedVoyantGraphRuntimeUnitDefinition {
   const references = [...(unit.references ?? [])]
   const referenceIds = new Set(references.map((reference) => reference.id))
@@ -497,6 +489,7 @@ function normalizeRuntimeUnitDefinition(
     providers: [...(unit.providers ?? [])],
     requiredPorts: sortedUnique(unit.requiredPorts ?? []),
     runtimePorts,
+    manyRuntimePorts: sortedUnique(unit.manyRuntimePorts ?? []),
     requiredRuntimePorts:
       unit.requiredRuntimePorts === undefined
         ? runtimePorts
@@ -505,8 +498,31 @@ function normalizeRuntimeUnitDefinition(
     tools: [...(unit.tools ?? [])],
     workflows: [...(unit.workflows ?? [])],
     actions: [...(unit.actions ?? [])],
-    selectedIds: normalizeSelectedIds(unit.selectedIds),
+    selectedIds: normalizeSelectedIds(
+      unit.selectedIds ?? inferLegacySelectedIds(unit, webhookPlan),
+    ),
     routes,
+  }
+}
+
+function inferLegacySelectedIds(
+  unit: VoyantGraphRuntimeUnitDefinition,
+  webhookPlan: VoyantGraphWebhookPlan,
+): VoyantGraphRuntimeSelectedIds {
+  const ownedOutboundWebhooks = webhookPlan.outbound.filter((entry) => entry.unitId === unit.id)
+  return {
+    routes: unit.routes.map(({ route }) => route.id),
+    tools: (unit.tools ?? []).map(({ id }) => id),
+    workflows: (unit.workflows ?? []).map(({ declaration }) => declaration.id),
+    events: sortedUnique([
+      ...(unit.actions ?? []).flatMap(({ from }) => from.events),
+      ...ownedOutboundWebhooks
+        .filter((entry) => entry.eventUnitId === unit.id)
+        .map((entry) => entry.eventId),
+    ]),
+    webhooks: [...webhookPlan.inbound, ...webhookPlan.outbound]
+      .filter((entry) => entry.unitId === unit.id)
+      .map((entry) => entry.id),
   }
 }
 
@@ -559,12 +575,13 @@ function createRuntimeUnitLoader(
     }
   })
   const tools = unit.tools.map((definition) => {
-    const reference = referenceById.get(definition.referenceId)
-    if (reference?.facet !== "tools.runtime") {
-      throw new Error(
-        `createVoyantGraphRuntime: tool "${definition.id}" selects unknown tools.runtime reference "${definition.referenceId}".`,
-      )
-    }
+    const reference = requireDeclarationReference(
+      definition.unitId,
+      definition.id,
+      definition.referenceId,
+      "tools.runtime",
+      referenceById,
+    )
     return {
       ...definition,
       load: <T = unknown>() => loadDeclaredTool<T>(definition, reference),
@@ -599,6 +616,7 @@ function createRuntimeUnitLoader(
     providers,
     requiredPorts: unit.requiredPorts,
     runtimePorts: unit.runtimePorts,
+    manyRuntimePorts: unit.manyRuntimePorts,
     requiredRuntimePorts: unit.requiredRuntimePorts,
     accessScopes: unit.accessScopes,
     tools,
@@ -670,7 +688,28 @@ function createRuntimeReferenceLoader(
   return {
     ...definition,
     load: <T = unknown>() => load() as Promise<T>,
+    loadModule: <T extends Record<string, unknown> = Record<string, unknown>>() =>
+      loadRuntimeReferenceModule(definition, importEntry) as Promise<T>,
   }
+}
+
+async function loadRuntimeReferenceModule(
+  definition: VoyantGraphRuntimeReferenceDefinition,
+  importEntry: () => Promise<unknown>,
+): Promise<Record<string, unknown>> {
+  const namespace = await importEntry()
+  if (isRecord(namespace)) return namespace
+  throw new VoyantGraphRuntimeLoadError(
+    "VOYANT_GRAPH_RUNTIME_EXPORT_INVALID",
+    {
+      referenceId: definition.id,
+      unitId: definition.unitId,
+      facet: definition.facet,
+      entityId: definition.entityId,
+      entry: definition.importEntry,
+    },
+    "the package import did not return a module namespace object",
+  )
 }
 
 function uniqueRuntimeRouteLoaders(
@@ -750,9 +789,17 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
   const declarationIds = new Set<string>()
   const toolIds = new Set<string>()
   const toolNames = new Set<string>()
-  const accessScopes = new Set(
-    [...input.modules, ...input.extensions, ...input.plugins].flatMap((unit) => unit.accessScopes),
-  )
+  const actionIds = new Set<string>()
+  const units = [...input.modules, ...input.extensions, ...input.plugins]
+  const selectedIds = mergeSelectedIds(units.map((unit) => unit.selectedIds))
+  const selectedActionBindings = {
+    routes: new Set(selectedIds.routes),
+    tools: new Set(selectedIds.tools),
+    workflows: new Set(selectedIds.workflows),
+    events: new Set(selectedIds.events),
+    webhooks: new Set(selectedIds.webhooks),
+  } as const
+  const accessScopes = new Set(units.flatMap((unit) => unit.accessScopes))
   const catalogScopes = new Set(
     input.accessCatalog.resources.flatMap((resource) =>
       resource.actions.map((action) => `${resource.resource}:${action.action}`),
@@ -850,6 +897,34 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
           }
         }
       }
+      for (const action of unit.actions) {
+        if (action.unitId !== unit.id) {
+          throw new Error(
+            `createVoyantGraphRuntime: action "${action.id}" belongs to unit "${action.unitId}", not "${unit.id}".`,
+          )
+        }
+        if (actionIds.has(action.id)) {
+          throw new Error(`createVoyantGraphRuntime: duplicate action id "${action.id}".`)
+        }
+        actionIds.add(action.id)
+        for (const scope of action.requiredScopes) {
+          if (!accessScopes.has(scope)) {
+            throw new Error(
+              `createVoyantGraphRuntime: action "${action.id}" requires undeclared access scope "${scope}".`,
+            )
+          }
+        }
+        for (const kind of Object.keys(
+          selectedActionBindings,
+        ) as (keyof typeof selectedActionBindings)[]) {
+          for (const id of action.from[kind]) {
+            if (selectedActionBindings[kind].has(id)) continue
+            throw new Error(
+              `createVoyantGraphRuntime: action "${action.id}" selects undeclared ${kind} reference "${id}".`,
+            )
+          }
+        }
+      }
     }
   }
   validateRuntimeWebhookPlan(input)
@@ -889,6 +964,11 @@ function validateRuntimeWebhookPlan(input: NormalizedVoyantGraphRuntimeInput): v
     if (webhookIds.has(entry.id)) {
       throw new Error(`createVoyantGraphRuntime: duplicate webhook plan id "${entry.id}".`)
     }
+    if (!owner.selectedIds.webhooks.includes(entry.id)) {
+      throw new Error(
+        `createVoyantGraphRuntime: webhook "${entry.id}" is not declared by selected owner "${entry.unitId}".`,
+      )
+    }
     webhookIds.add(entry.id)
   }
 
@@ -908,7 +988,15 @@ function validateRuntimeWebhookPlan(input: NormalizedVoyantGraphRuntimeInput): v
   }
   for (const entry of input.webhookPlan.outbound) {
     validateOwner(entry)
-    if (!unitById.has(entry.eventUnitId) || !entry.eventType.trim()) {
+    const eventOwner = unitById.get(entry.eventUnitId)
+    if (
+      !eventOwner?.selectedIds.events.includes(entry.eventId) ||
+      !entry.eventType.trim() ||
+      !/^\d+\.\d+\.\d+$/.test(entry.eventVersion) ||
+      !isExternalWebhookPayloadSchema(entry.payloadSchema) ||
+      entry.visibility !== "external" ||
+      !entry.audit?.sourceModule.trim()
+    ) {
       throw new Error(
         `createVoyantGraphRuntime: outbound webhook "${entry.id}" selects an invalid event target.`,
       )

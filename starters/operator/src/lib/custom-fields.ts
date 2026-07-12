@@ -9,9 +9,14 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
  * Code-declared custom fields, discovered from `src/custom-fields/*.ts` at build
- * time (Vite compiles `import.meta.glob` to static imports — Workers-safe).
+ * time. Vite compiles the glob to static imports; Node workflow bundles that do
+ * not expose the Vite macro simply have no project-local field declarations.
  */
-const codeFields = customFieldsFromGlob(import.meta.glob("../custom-fields/*.ts", { eager: true }))
+const codeFields = customFieldsFromGlob(
+  typeof import.meta.glob === "function"
+    ? import.meta.glob("../custom-fields/*.ts", { eager: true })
+    : {},
+)
 
 // The unified registry merges code-declared fields with the runtime
 // `custom_field_definitions` (admin-created) — so it is resolved per request

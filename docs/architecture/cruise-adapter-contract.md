@@ -136,10 +136,10 @@ Manual operator refresh paths:
   and search slices from registered catalog source adapters.
 
 Scheduled refresh in `starters/operator` runs daily at `30 3 * * *` via
-`EXTERNAL_CRUISE_CATALOG_REFRESH_CRON`. Deployments can add adapter-specific
-webhook/event handlers that call the same `refreshExternalCruiseCatalog(...)`
-service for targeted near-real-time refreshes without coupling the framework to
-any provider.
+the `external-cruise-catalog-refresh` package workflow schedule. Deployments can
+add adapter-specific webhook/event handlers that call the same
+`refreshExternalCruiseCatalog(...)` service for targeted near-real-time
+refreshes without coupling the framework to any provider.
 
 ## Compatibility Tests
 

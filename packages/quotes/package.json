@@ -11,8 +11,13 @@
     "./routes": "./src/routes/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./proposal-routes": "./src/proposal-routes.ts",
-    "./tools": "./src/tools.ts",
-    "./voyant": "./src/voyant.ts"
+    "./tools": "./src/mcp-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/quotes.json",
+    "./openapi/admin/quotes-booking": "./openapi/admin/quotes-booking.json",
+    "./openapi/admin/quote-version-snapshot": "./openapi/admin/quote-version-snapshot.json",
+    "./openapi/storefront": "./openapi/storefront/quotes-proposal-public.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -30,6 +35,8 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/operator-settings": "workspace:^",
+    "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/trips": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -43,6 +50,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -85,15 +93,24 @@
         "default": "./dist/proposal-routes.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/quotes.json",
+      "./openapi/admin/quotes-booking": "./openapi/admin/quotes-booking.json",
+      "./openapi/admin/quote-version-snapshot": "./openapi/admin/quote-version-snapshot.json",
+      "./openapi/storefront": "./openapi/storefront/quotes-proposal-public.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -107,6 +124,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createQuotesRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

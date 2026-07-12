@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   ADMIN_INVALIDATION_PUBLICATION_RUNTIME_KEY,
   createRealtimeHonoModule,
+  REALTIME_OPENAPI_API_IDS,
   realtimeRuntimePort,
 } from "../../src/index.js"
 import { createLocalRealtimeProvider } from "../../src/providers/local.js"
@@ -23,6 +24,7 @@ describe("realtime deployment manifest", () => {
         {
           id: "@voyant-travel/realtime#api.admin",
           surface: "admin",
+          openapi: { document: "realtime-admin" },
           runtime: {
             entry: "@voyant-travel/realtime",
             export: "createRealtimeVoyantRuntime",
@@ -31,6 +33,7 @@ describe("realtime deployment manifest", () => {
         {
           id: "@voyant-travel/realtime#api.public",
           surface: "public",
+          openapi: { document: "realtime-public" },
           runtime: {
             entry: "@voyant-travel/realtime",
             export: "createRealtimeVoyantRuntime",
@@ -56,11 +59,29 @@ describe("realtime deployment manifest", () => {
     })
   })
 
-  it("stages the publication capability without activating domain subscribers", () => {
+  it("publishes distinct admin and public OpenAPI registries", () => {
+    const module = createRealtimeHonoModule()
+    const adminDocument = openApiDocument(module.adminRoutes)
+    const publicDocument = openApiDocument(module.publicRoutes)
+
+    expect(readApiId(adminDocument, "/token", "post")).toBe(REALTIME_OPENAPI_API_IDS.admin)
+    expect(readApiId(publicDocument, "/token", "post")).toBe(REALTIME_OPENAPI_API_IDS.public)
+  })
+
+  it("publishes the package-owned invalidation subscribers", () => {
     expect(realtimeVoyantModule.provides?.ports).toContainEqual({
       id: "realtime.admin-invalidation-publication",
     })
-    expect(realtimeVoyantModule.subscribers).toBeUndefined()
+    expect(realtimeVoyantModule.subscribers).toHaveLength(34)
+    expect(realtimeVoyantModule.subscribers?.map(({ eventType }) => eventType)).toEqual(
+      expect.arrayContaining([
+        "product.created",
+        "booking.confirmed",
+        "payment.completed",
+        "availability.slot.changed",
+      ]),
+    )
+    expect(realtimeVoyantModule.subscribers?.every(({ runtime }) => runtime != null)).toBe(true)
   })
 
   it("ships a conformance kit for deployment realtime providers", async () => {
@@ -100,3 +121,26 @@ describe("realtime deployment manifest", () => {
     expect(container.has(ADMIN_INVALIDATION_PUBLICATION_RUNTIME_KEY)).toBe(true)
   })
 })
+
+function openApiDocument(routes: unknown) {
+  return (routes as OpenApiDocumentSource).getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Realtime", version: "1" },
+  })
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, unknown>>
+  }
+}
+
+function readApiId(
+  document: { paths?: Record<string, Record<string, unknown>> },
+  path: string,
+  method: string,
+) {
+  return (document.paths?.[path]?.[method] as Record<string, unknown> | undefined)?.[
+    "x-voyant-api-id"
+  ]
+}

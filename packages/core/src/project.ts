@@ -56,6 +56,8 @@ export interface VoyantGraphCapabilityDeclaration {
 export interface VoyantGraphPortDeclaration {
   id: string
   optional?: boolean
+  /** Additive static contributor aggregation. Valid only in a unit's runtimePorts. */
+  cardinality?: "many"
 }
 
 export interface VoyantPort<TProvider> {
@@ -79,9 +81,13 @@ export function providePort<TProvider>(port: VoyantPort<TProvider>): VoyantGraph
 
 export function requirePort<TProvider>(
   port: VoyantPort<TProvider>,
-  options: { optional?: boolean } = {},
+  options: { optional?: boolean; cardinality?: "many" } = {},
 ): VoyantGraphPortDeclaration {
-  return { id: port.id, ...(options.optional ? { optional: true } : {}) }
+  return {
+    id: port.id,
+    ...(options.optional ? { optional: true } : {}),
+    ...(options.cardinality ? { cardinality: options.cardinality } : {}),
+  }
 }
 
 export async function assertPortConforms<TProvider>(
@@ -91,14 +97,57 @@ export async function assertPortConforms<TProvider>(
   await port.test(provider)
 }
 
+export interface VoyantGraphRuntimeFactoryGraph {
+  readonly accessCatalog: {
+    readonly resources: readonly {
+      readonly id: string
+      readonly unitId: string
+      readonly resource: string
+      readonly label: string
+      readonly description: string
+      readonly wildcard: "allow" | "explicit-resource"
+      readonly actions: readonly {
+        readonly action: string
+        readonly label: string
+        readonly description: string
+        readonly wildcard?: "allow" | "explicit"
+      }[]
+      readonly legacyActions?: readonly string[]
+    }[]
+    readonly presets: readonly {
+      readonly id: string
+      readonly kind: "api-token" | "api-token-grant" | "staff"
+      readonly label: string
+      readonly description: string
+      readonly grants: readonly string[]
+      readonly audience?: "staff" | "customer" | "partner" | "supplier"
+    }[]
+  }
+  readonly tools: readonly {
+    readonly referenceId: string
+    readonly context?: readonly string[]
+    load<T = unknown>(): Promise<T>
+  }[]
+  readonly references: readonly {
+    readonly id: string
+    readonly importEntry: string
+    loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
+  }[]
+}
+
 export interface VoyantGraphRuntimeFactoryContext {
   readonly unitId: string
   /** Validated JSON config authored on this package-scoped project selection. */
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
   /** API facets selected for this runtime unit in the resolved graph. */
   readonly api: readonly Readonly<Pick<VoyantGraphRouteBundle, "id" | "surface">>[]
+  /** Import-capable selected graph view for generic graph consumers such as MCP. */
+  readonly graph: VoyantGraphRuntimeFactoryGraph
+  /** Selected deployment providers keyed by their declared runtime-port id. */
+  readonly runtimePorts: Readonly<Record<string, unknown>>
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
+  getPorts<TProvider>(port: VoyantPort<TProvider>): Promise<readonly TProvider[]>
 }
 
 export type VoyantGraphRuntimeFactory<TResult = unknown> = (
@@ -148,10 +197,41 @@ export interface VoyantGraphRouteOpenApi {
 export interface VoyantGraphFacetEntity {
   id: string
   source?: string
+  /** Named executable export when a facet source contains multiple declarations. */
+  export?: string
 }
 
 export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
   eventType?: string
+  /** Semantic version of the emitted payload contract. Required with payloadSchema. */
+  version?: string
+  /**
+   * JSON Schema used for upgrade compatibility and external delivery projection.
+   * Object properties are allowlisted; `writeOnly` or `x-voyant-redact` fields are redacted.
+   */
+  payloadSchema?: VoyantGraphJsonObject
+  /** External events may be selected by deployment-owned outbound webhook subscriptions. */
+  visibility?: "internal" | "external"
+  /** Stable provenance copied into outbound delivery audit records. */
+  audit?: {
+    sourceModule: string
+    category: "domain" | "internal"
+  }
+}
+
+/** External delivery is deny-by-default and requires an explicit object property allowlist. */
+export function isExternalWebhookPayloadSchema(value: unknown): value is VoyantGraphJsonObject & {
+  type: "object"
+  properties: VoyantGraphJsonObject
+} {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false
+  const schema = value as Record<string, unknown>
+  return (
+    schema.type === "object" &&
+    schema.properties !== null &&
+    typeof schema.properties === "object" &&
+    !Array.isArray(schema.properties)
+  )
 }
 
 export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {

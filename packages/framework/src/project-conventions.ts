@@ -4,6 +4,7 @@ import path from "node:path"
 export type ProjectConventionKind =
   | "admin"
   | "api-route"
+  | "extension"
   | "job"
   | "link"
   | "module"
@@ -71,7 +72,7 @@ export type DiscoverProjectConventionsInput = string | DiscoverProjectConvention
 
 interface RecursiveConvention {
   directory: string
-  kind: Exclude<ProjectConventionKind, "admin" | "api-route" | "module">
+  kind: Exclude<ProjectConventionKind, "admin" | "api-route" | "extension" | "module">
   accepts: (fileName: string) => boolean
 }
 
@@ -114,7 +115,8 @@ export async function discoverProjectConventions(
       discoverRecursiveConvention(projectRoot, convention, contributions),
     ),
     discoverAdminExtensions(projectRoot, contributions),
-    discoverModules(projectRoot, contributions),
+    discoverRuntimeUnits(projectRoot, "src/modules", "module", contributions),
+    discoverRuntimeUnits(projectRoot, "src/extensions", "extension", contributions),
   ])
 
   contributions.sort(compareContributions)
@@ -186,11 +188,12 @@ async function discoverRecursiveConvention(
   }
 }
 
-async function discoverModules(
+async function discoverRuntimeUnits(
   projectRoot: string,
+  directory: "src/modules" | "src/extensions",
+  kind: "module" | "extension",
   contributions: ProjectConventionContribution[],
 ): Promise<void> {
-  const directory = "src/modules"
   for (const entry of await readDirectory(path.join(projectRoot, directory))) {
     if (!entry.isDirectory() || shouldIgnoreDirectory(entry.name)) continue
 
@@ -198,8 +201,8 @@ async function discoverModules(
     if (!(await containsFile(projectRoot, sourcePath))) continue
 
     contributions.push({
-      id: stableId("module", entry.name),
-      kind: "module",
+      id: stableId(kind, entry.name),
+      kind,
       sourcePath,
     })
   }

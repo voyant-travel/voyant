@@ -1,7 +1,6 @@
 import type { CompositionContext } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 import { describe, expect, it } from "vitest"
-import type { FrameworkProviders } from "./composition-lazy.js"
 import {
   defineDeploymentExtension,
   defineDeploymentModule,
@@ -12,7 +11,7 @@ import {
 const loyalty: HonoModule = { module: { name: "loyalty" } }
 const bookingNotes: HonoExtension = { extension: { name: "booking-notes", module: "bookings" } }
 // The factories under test ignore capabilities; cast a minimal context.
-const ctx = { capabilities: {}, options: {} } as CompositionContext<FrameworkProviders>
+const ctx = { capabilities: {}, options: {} } as CompositionContext<unknown>
 
 describe("defineDeploymentModule", () => {
   it("wraps a ready HonoModule in a factory", () => {

@@ -141,13 +141,22 @@ describe("createFinanceAdminExtension", () => {
     // arrives as a widget contribution the bookings host renders.
     const extension = createFinanceAdminExtension()
     const widgets = extension.widgets ?? []
-    expect(widgets).toHaveLength(4)
-    expect(widgets[0]?.slot).toBe("booking.details.invoices-tab")
+    expect(widgets).toHaveLength(5)
+    expect(widgets[1]?.slot).toBe("booking.details.invoices-tab")
     // The contribution mounts a Suspense-wrapped lazy loader (the card and
     // its payment stack stay out of the workspace-chrome chunk), so assert
     // it is a renderable component rather than the widget identity.
-    expect(typeof widgets[0]?.component).toBe("function")
-    expect(widgets[0]?.component).not.toBe(BookingInvoicesWidget)
+    expect(typeof widgets[1]?.component).toBe("function")
+    expect(widgets[1]?.component).not.toBe(BookingInvoicesWidget)
+  })
+
+  it("contributes the package-owned booking payment controller", () => {
+    const extension = createFinanceAdminExtension()
+    const controller = extension.widgets?.find(
+      (candidate) => candidate.id === "finance-booking-payment-controller",
+    )
+    expect(controller?.slot).toBe("booking.details.payment-controller")
+    expect(typeof controller?.component).toBe("function")
   })
 
   it("contributes the finance-tab cards on the booking detail finance slots", () => {

@@ -11,4 +11,5 @@ export type DefineVoyantPortInput<TProvider> =
   import("@voyant-travel/core/project").VoyantPort<TProvider>
 export interface RequireVoyantPortOptions {
   optional?: boolean
+  cardinality?: "many"
 }

@@ -37,16 +37,29 @@ export type VoyantGraphRuntimeBindings<TCapabilities> = Readonly<
 
 export type VoyantGraphRuntimePorts = Readonly<Record<string, unknown>>
 
+/** Typed access to the shared record populated by statically selected contributors. */
+export interface VoyantGraphRuntimePortResolver {
+  getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
+}
+
+/** Statically composed runtime-port resolution added to generated contributor hosts. */
+export type VoyantGraphRuntimeContributorHost = VoyantGraphRuntimePortResolver
+
+/** Build-time selected package hook that maps host resources to graph runtime ports. */
+export type VoyantGraphRuntimeContributor = (
+  host: VoyantGraphRuntimeContributorHost,
+) => VoyantGraphRuntimePorts
+
 /** Conforming, fail-on-use port shapes for graph inspection and boot probes. */
 export function createVoyantGraphRuntimePortStubs(
   runtime: VoyantGraphRuntime,
 ): VoyantGraphRuntimePorts {
-  const ids = new Set(
-    [...runtime.modules, ...runtime.extensions, ...runtime.plugins].flatMap(
-      (unit) => unit.requiredRuntimePorts,
-    ),
+  const units = [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
+  const ids = new Set(units.flatMap((unit) => unit.requiredRuntimePorts))
+  const manyIds = new Set(units.flatMap((unit) => unit.manyRuntimePorts))
+  return Object.fromEntries(
+    [...ids].map((id) => [id, manyIds.has(id) ? [runtimePortStub(id)] : runtimePortStub(id)]),
   )
-  return Object.fromEntries([...ids].map((id) => [id, runtimePortStub(id)]))
 }
 
 function runtimePortStub(id: string): unknown {
@@ -56,7 +69,23 @@ function runtimePortStub(id: string): unknown {
   }
   const unavailableAsync = async () => unavailable()
   const registrySurface = { resolveRegistry: unavailableAsync }
-  return {
+  const primitives = {
+    env: () => ({}),
+    database: {
+      resolve: unavailable,
+      fromContext: unavailable,
+      transaction: unavailableAsync,
+    },
+    storage: {
+      resolve: unavailable,
+      read: unavailableAsync,
+      downloadUrl: unavailableAsync,
+    },
+    events: { deliver: unavailableAsync },
+    config: { read: () => undefined },
+  }
+  const stub = {
+    primitives,
     options: {},
     booking: {},
     publicRoutes: { resolveProductSnapshot: unavailableAsync },
@@ -66,11 +95,31 @@ function runtimePortStub(id: string): unknown {
     bootstrap: async () => {},
     register: () => {},
     registerWorkflowService: () => {},
+    readConfig: () => undefined,
+    enrichOverviewItems: unavailableAsync,
+    createStaleBookingHoldsRuntime: () => runtimeServiceStub(id),
+    resolveProductSnapshot: unavailableAsync,
+    loadPersonTravelSnapshot: unavailableAsync,
+    upsertPersonFromContact: unavailableAsync,
+    getPersonById: unavailableAsync,
+    getOrganizationById: unavailableAsync,
     withDb: unavailableAsync,
     createRuntime: () => runtimeServiceStub(id),
     createService: () => runtimeServiceStub(id),
     resolveRuntime: unavailableAsync,
     resolveRegistry: unavailableAsync,
+    resolveSourceAdapterRegistry: unavailableAsync,
+    ensureSourceRegistry: unavailableAsync,
+    getSourceRegistryFromContext: unavailable,
+    getOwnedHandlers: unavailable,
+    getOwnedHandlersFromContext: unavailable,
+    buildEmbeddingProvider: () => undefined,
+    buildTypesenseIndexer: () => undefined,
+    loadSlices: unavailableAsync,
+    fieldPolicyRegistries: () => new Map(),
+    createProductsDocumentBuilder: unavailable,
+    withEmbedding: unavailable,
+    applyTaxToQuoteResult: unavailableAsync,
     getProductContent: unavailableAsync,
     listAvailabilitySlots: unavailableAsync,
     getOwnedProductById: unavailableAsync,
@@ -81,14 +130,18 @@ function runtimePortStub(id: string): unknown {
     resolveAdapter: unavailable,
     startCardPayment: unavailableAsync,
     resolveStorage: unavailable,
+    resolvePrinter: unavailable,
     signVideoUploadTicket: unavailableAsync,
     checkBookingDrift: unavailableAsync,
     checkFinanceDrift: unavailableAsync,
     checkProductDrift: unavailableAsync,
     resolveParticipantPersonById: unavailableAsync,
     resolveDelegatePersonById: unavailableAsync,
+    personExists: unavailableAsync,
     resolveDb: unavailable,
     resolveProviders: () => [],
+    resolveDeployment: unavailable,
+    sendInvitationEmail: unavailableAsync,
     resolveReminderWorkflowRuntime: () => runtimeServiceStub(id),
     resolveDocumentDownloadUrl: unavailableAsync,
     resolveDocumentStorage: unavailable,
@@ -102,14 +155,35 @@ function runtimePortStub(id: string): unknown {
     startCheckoutDeps: () => runtimeServiceStub(id),
     cancelTripComponentsDeps: () => runtimeServiceStub(id),
     resolveOperatorProfile: unavailableAsync,
+    resolveOperatorDefaultPaymentPolicy: unavailableAsync,
+    resolveBankTransferInstructions: unavailableAsync,
     resolveBookingTaxSettings: unavailableAsync,
     updateBookingTaxSettings: unavailableAsync,
+    resolveNotificationDispatcher: unavailable,
+    listBookingReminderRuns: unavailableAsync,
+    resolveSupplierPolicy: unavailableAsync,
+    resolveSupplierPolicyById: unavailableAsync,
+    resolveBookingPolicy: unavailableAsync,
+    resolveEntityPolicy: unavailableAsync,
+    resolveSupplierId: unavailableAsync,
+    createPaymentPolicyRuntime: () => runtimeServiceStub(id),
+    stampPolicySourceOnBooking: unavailableAsync,
+    readPolicySourceFromInternalNotes: unavailable,
+    resolvePaymentStarters: () => ({}),
+    getOwnedProductName: unavailableAsync,
+    listAllProductIds: unavailableAsync,
+    persistAcceptanceDraftContract: unavailableAsync,
+    generateContractPdf: unavailableAsync,
+    createStartCardPayment: unavailable,
+    provider: "inspection",
+    poller: unavailableAsync,
     getContract: unavailableAsync,
     listSignatures: unavailableAsync,
     sendContract: unavailableAsync,
     signContract: unavailableAsync,
     generate: unavailableAsync,
   }
+  return stub
 }
 
 function runtimeServiceStub(id: string): Record<string, (...args: unknown[]) => Promise<never>> {
@@ -203,7 +277,7 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     }
   }
 
-  for (const unit of [...input.runtime.extensions, ...input.runtime.plugins]) {
+  for (const unit of input.runtime.extensions) {
     const outputs = await resolveRuntimeUnit(
       input,
       unit,
@@ -216,6 +290,25 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
         throw invalidRuntimeOutput(unit, "HonoExtension", output)
       }
       extensions.push(applyExtensionRoutePosture(output, routePosture))
+    }
+  }
+
+  for (const unit of input.runtime.plugins) {
+    const outputs = await resolveRuntimeUnit(
+      input,
+      unit,
+      requireRuntimeFactoryContext(factoryContexts, unit),
+    )
+    assertWebhookRoutePosture(input.runtime, unit, outputs)
+    const routePosture = deriveUnitRoutePosture(unit)
+    for (const output of outputs) {
+      if (isHonoModule(output)) {
+        modules.push(applyModuleRoutePosture(output, routePosture))
+      } else if (isHonoExtension(output)) {
+        extensions.push(applyExtensionRoutePosture(output, routePosture))
+      } else {
+        throw invalidRuntimeOutput(unit, "HonoModule or HonoExtension", output)
+      }
     }
   }
 
@@ -381,16 +474,34 @@ function createGraphOutboundWebhookModule<TCapabilities>(
   input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
 ): HonoModule | undefined {
   const enqueue = input.outboundWebhooks?.enqueue
-  const eventTypes = input.runtime.webhooks.outboundEventTypes
-  if (!enqueue || eventTypes.length === 0) return undefined
+  if (!enqueue || input.runtime.webhooks.outbound.length === 0) return undefined
 
   return {
     module: {
       name: "graph-outbound-webhooks",
       bootstrap: ({ bindings, eventBus }) => {
-        for (const eventType of eventTypes) {
-          eventBus.subscribe(eventType, async (event) => {
-            await enqueue(event, bindings)
+        const declarations = new Map(
+          input.runtime.webhooks.outbound.map((declaration) => [
+            declaration.eventType,
+            declaration,
+          ]),
+        )
+        for (const declaration of declarations.values()) {
+          eventBus.subscribe(declaration.eventType, async (event) => {
+            await enqueue(
+              {
+                ...event,
+                metadata: {
+                  ...event.metadata,
+                  category: declaration.audit.category,
+                  graphEventId: declaration.eventId,
+                  graphEventVersion: declaration.eventVersion,
+                  graphEventPayloadSchema: declaration.payloadSchema,
+                  graphEventSourceModule: declaration.audit.sourceModule,
+                },
+              },
+              bindings,
+            )
           })
         }
       },
@@ -528,6 +639,7 @@ async function resolveRuntimeUnit<TCapabilities>(
 }
 
 function createRuntimeFactoryContext(
+  runtime: VoyantGraphRuntime,
   ports: VoyantGraphRuntimePorts | undefined,
   unit: VoyantGraphRuntimeUnitLoader,
 ): VoyantGraphRuntimeFactoryContext {
@@ -535,12 +647,19 @@ function createRuntimeFactoryContext(
     unitId: unit.id,
     projectConfig: unit.projectConfig,
     api: unit.routes.map(({ route }) => ({ id: route.id, surface: route.surface })),
+    graph: runtime,
+    runtimePorts: ports ?? {},
     hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
       assertDeclaredRuntimePort(unit, port)
       return Object.hasOwn(ports ?? {}, port.id)
     },
     getPort: async <TProvider>(port: VoyantPort<TProvider>): Promise<TProvider> => {
       assertDeclaredRuntimePort(unit, port)
+      if (unit.manyRuntimePorts.includes(port.id)) {
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" must read many-valued port "${port.id}" with getPorts().`,
+        )
+      }
       if (!Object.hasOwn(ports ?? {}, port.id)) {
         const requirement = unit.requiredRuntimePorts.includes(port.id)
           ? "requires runtime port"
@@ -553,6 +672,30 @@ function createRuntimeFactoryContext(
       await port.test(provider)
       return provider
     },
+    getPorts: async <TProvider>(port: VoyantPort<TProvider>): Promise<readonly TProvider[]> => {
+      assertDeclaredRuntimePort(unit, port)
+      if (!unit.manyRuntimePorts.includes(port.id)) {
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" cannot read one-valued port "${port.id}" with getPorts().`,
+        )
+      }
+      if (!Object.hasOwn(ports ?? {}, port.id)) {
+        if (!unit.requiredRuntimePorts.includes(port.id)) return []
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requires runtime port "${port.id}", but the deployment did not bind it.`,
+        )
+      }
+      const providers = await (ports![port.id] as
+        | readonly TProvider[]
+        | Promise<readonly TProvider[]>)
+      if (!Array.isArray(providers)) {
+        throw new Error(
+          `composeVoyantGraphRuntime: many-valued port "${port.id}" must be bound as an array.`,
+        )
+      }
+      for (const provider of providers) await port.test(provider)
+      return providers
+    },
   }
 }
 
@@ -563,7 +706,7 @@ function createRuntimeFactoryContexts(
   return new Map(
     [...runtime.modules, ...runtime.extensions, ...runtime.plugins].map((unit) => [
       unit,
-      createRuntimeFactoryContext(ports, unit),
+      createRuntimeFactoryContext(runtime, ports, unit),
     ]),
   )
 }
@@ -639,7 +782,7 @@ function isEventFilterDescriptor(value: unknown): value is EventFilterDescriptor
 
 function invalidRuntimeOutput(
   unit: VoyantGraphRuntimeUnitLoader,
-  expected: "HonoModule" | "HonoExtension",
+  expected: "HonoModule" | "HonoExtension" | "HonoModule or HonoExtension",
   output: unknown,
 ): Error {
   return new Error(

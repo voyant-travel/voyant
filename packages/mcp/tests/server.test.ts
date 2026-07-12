@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises"
 import {
   createToolRegistry,
   defineTool,
@@ -9,6 +10,38 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { createMcpHonoApp } from "../src/index.js"
+import { mcpVoyantModule } from "../src/voyant.js"
+
+const accessCatalog = {
+  resources: [
+    {
+      id: "catalog",
+      unitId: "@voyant-travel/catalog",
+      resource: "catalog",
+      label: "Catalog",
+      description: "Catalog",
+      wildcard: "allow" as const,
+      actions: [{ action: "read", label: "Read", description: "Read" }],
+    },
+    {
+      id: "notifications",
+      unitId: "@voyant-travel/notifications",
+      resource: "notifications",
+      label: "Notifications",
+      description: "Notifications",
+      wildcard: "allow" as const,
+      actions: [
+        {
+          action: "send",
+          label: "Send",
+          description: "Send",
+          wildcard: "explicit" as const,
+        },
+      ],
+    },
+  ],
+  presets: [],
+}
 
 const MCP_HEADERS = {
   "content-type": "application/json",
@@ -79,7 +112,7 @@ function appWithScopes(scopes: string[]): Hono {
   const registry = createToolRegistry()
   registry.register(echoTool)
   registry.register(sendNotificationTool)
-  const mcp = createMcpHonoApp({ registry, buildContext })
+  const mcp = createMcpHonoApp({ accessCatalog, registry, buildContext })
 
   const outer = new Hono()
   outer.use("*", async (c, next) => {
@@ -91,6 +124,52 @@ function appWithScopes(scopes: string[]): Hono {
 }
 
 describe("createMcpHonoApp", () => {
+  it("owns its concrete HTTP operations and OpenAPI document", async () => {
+    expect(mcpVoyantModule.api).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/mcp#api.admin",
+        surface: "admin",
+        mount: "mcp",
+        methods: ["GET", "POST"],
+        openapi: { document: "mcp" },
+      }),
+    ])
+
+    const document = JSON.parse(
+      await readFile(new URL("../openapi/admin/mcp.json", import.meta.url), "utf8"),
+    ) as { paths: Record<string, Record<string, Record<string, unknown>>> }
+    const claims = operationClaims(document.paths)
+    const app = createMcpHonoApp({ accessCatalog, registry: createToolRegistry(), buildContext })
+    const liveDocument = app.getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "test", version: "1.0.0" },
+    })
+    const livePaths = Object.fromEntries(
+      Object.entries(liveDocument.paths ?? {}).map(([path, item]) => [
+        `/v1/admin/mcp${path === "/" ? "" : path}`,
+        item,
+      ]),
+    ) as Record<string, Record<string, Record<string, unknown>>>
+
+    expect(operationClaims(livePaths)).toEqual(claims)
+    expect(claims).toEqual([
+      ["GET", "/v1/admin/mcp/manifest", "@voyant-travel/mcp#api.admin"],
+      ["POST", "/v1/admin/mcp", "@voyant-travel/mcp#api.admin"],
+    ])
+  })
+
+  function operationClaims(paths: Record<string, Record<string, Record<string, unknown>>>) {
+    return Object.entries(paths)
+      .flatMap(([path, pathItem]) =>
+        Object.entries(pathItem).map(([method, operation]) => [
+          method.toUpperCase(),
+          path,
+          operation["x-voyant-api-id"],
+        ]),
+      )
+      .sort((left, right) => left.join(":").localeCompare(right.join(":")))
+  }
+
   it("lists and calls a tool when the caller holds its required scopes", async () => {
     const app = appWithScopes(["catalog:read"])
 

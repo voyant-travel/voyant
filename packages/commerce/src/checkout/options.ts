@@ -20,6 +20,7 @@
  */
 
 import type { BookingTaxSettings, PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance"
+import type { CheckoutInquiryRuntime } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
@@ -36,6 +37,23 @@ export interface CheckoutBankTransferInstructions {
 export interface CheckoutAcceptedPaymentPolicy {
   policy: PaymentPolicy
   source: PaymentPolicySource
+}
+
+export interface CommerceAcceptanceDraftInput {
+  booking: {
+    id: string
+    bookingNumber: string
+    personId: string | null
+    organizationId: string | null
+  }
+  acceptance: {
+    templateId: string
+    templateSlug: string
+    acceptedAt: string
+    acceptedMarketing: boolean
+    renderedHtml: string
+  }
+  requestMeta: { clientIp?: string; userAgent?: string }
 }
 
 /**
@@ -68,6 +86,8 @@ export interface CheckoutModuleOptions {
  * bank_transfer path needs.
  */
 export interface CheckoutStartOptions extends CheckoutModuleOptions {
+  /** Package-owned Quotes adapter used by the inquiry checkout path. */
+  checkoutInquiry: CheckoutInquiryRuntime
   /**
    * Resolve the bank-transfer instructions for the bank_transfer payment
    * intent. The deployment reads its operator profile / payment
@@ -93,6 +113,10 @@ export interface CheckoutStartOptions extends CheckoutModuleOptions {
       customerPaymentPolicy: PaymentPolicy | null
     }
   }): Promise<CheckoutAcceptedPaymentPolicy | null>
+  persistAcceptanceDraftContract?(
+    db: PostgresJsDatabase,
+    input: CommerceAcceptanceDraftInput,
+  ): Promise<void>
   /**
    * Start the card-payment provider session for the `card` checkout intent.
    * INJECTED so commerce never imports a specific payment provider (which

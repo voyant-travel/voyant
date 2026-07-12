@@ -2,10 +2,19 @@ import {
   type AdminExtension,
   type AdminRouteLoaderContext,
   type AdminRouteRuntime,
+  type AdminWidgetContribution,
   adminRoutePageModule,
+  composeAdminRouteMessagesProviders,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import type {} from "@voyant-travel/bookings-react/admin"
+import {
+  type ProductDetailOptionExtrasSlotContext,
+  productDetailOptionExtrasSlot,
+} from "@voyant-travel/inventory-react/admin"
+import { createElement, lazy, Suspense } from "react"
 
 import { defaultFetcher as availabilityDefaultFetcher } from "./availability/client.js"
 import {
@@ -31,6 +40,20 @@ export {
   type CreateResourcesAdminExtensionOptions,
   createResourcesAdminExtension,
 } from "./resources/admin/index.js"
+
+const LazyOptionResourceTemplatesPanel = lazy(() =>
+  import("./availability/admin/option-resource-templates-panel.js").then((module) => ({
+    default: module.OptionResourceTemplatesPanel,
+  })),
+)
+
+function ProductOptionResourceTemplates(props: ProductDetailOptionExtrasSlotContext) {
+  return createElement(
+    Suspense,
+    { fallback: null },
+    createElement(LazyOptionResourceTemplatesPanel, props),
+  )
+}
 
 declare module "@voyant-travel/admin" {
   interface AdminDestinations {
@@ -253,6 +276,13 @@ export function createOperationsAdminExtension(
         pendingComponent: ResourceAllocationDetailSkeleton,
       },
     ],
+    widgets: [
+      {
+        id: "operations-product-option-resource-templates",
+        slot: productDetailOptionExtrasSlot,
+        component: ProductOptionResourceTemplates,
+      } satisfies AdminWidgetContribution<ProductDetailOptionExtrasSlotContext>,
+    ],
   })
 }
 
@@ -262,4 +292,33 @@ function availabilityLoaderClient(runtime: AdminRouteRuntime) {
 
 function resourcesLoaderClient(runtime: AdminRouteRuntime) {
   return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? resourcesDefaultFetcher }
+}
+
+const operationsRouteMessagesProvider = composeAdminRouteMessagesProviders(
+  () =>
+    import("./availability/i18n/index.js").then((module) => ({
+      default: module.AvailabilityUiMessagesProvider,
+    })),
+  () =>
+    import("./availability/allocation/i18n/index.js").then((module) => ({
+      default: module.AllocationUiMessagesProvider,
+    })),
+  () =>
+    import("./resources/i18n/index.js").then((module) => ({
+      default: module.ResourcesUiMessagesProvider,
+    })),
+)
+
+export function createSelectedOperationsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createOperationsAdminExtension({
+      labels: {
+        availability: navMessages.availability,
+        resources: navMessages.resources,
+      },
+    }),
+    operationsRouteMessagesProvider,
+  )
 }

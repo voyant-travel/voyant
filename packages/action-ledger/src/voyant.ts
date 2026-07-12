@@ -1,5 +1,9 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import { actionLedgerHealthRuntimePort } from "./runtime-port.js"
+import {
+  actionLedgerBookingDriftRuntimePort,
+  actionLedgerFinanceDriftRuntimePort,
+  actionLedgerInventoryDriftRuntimePort,
+} from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the action-ledger package. */
 export const actionLedgerVoyantModule = defineModule({
@@ -11,6 +15,7 @@ export const actionLedgerVoyantModule = defineModule({
       id: "@voyant-travel/action-ledger#api.admin",
       surface: "admin",
       mount: "action-ledger",
+      openapi: { document: "action-ledger" },
       runtime: {
         entry: "@voyant-travel/action-ledger",
         export: "actionLedgerHonoModule",
@@ -30,7 +35,7 @@ export const actionLedgerVoyantModule = defineModule({
     },
   ],
   admin: {
-    compositionOrder: 30,
+    compositionOrder: 120,
     runtime: {
       entry: "@voyant-travel/action-ledger-react/admin",
       export: "createSelectedActionLedgerAdminExtension",
@@ -58,12 +63,17 @@ export const actionLedgerHealthVoyantPlugin = defineExtension({
   id: "@voyant-travel/action-ledger#health-extension",
   packageName: "@voyant-travel/action-ledger",
   localId: "action-ledger.health-extension",
-  runtimePorts: [requirePort(actionLedgerHealthRuntimePort)],
+  runtimePorts: [
+    requirePort(actionLedgerBookingDriftRuntimePort),
+    requirePort(actionLedgerFinanceDriftRuntimePort),
+    requirePort(actionLedgerInventoryDriftRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/action-ledger#health-extension.api",
       surface: "admin",
       mount: "action-ledger",
+      openapi: { document: "action-ledger-health" },
       runtime: {
         entry: "@voyant-travel/action-ledger/graph-runtime",
         export: "createActionLedgerHealthVoyantRuntime",

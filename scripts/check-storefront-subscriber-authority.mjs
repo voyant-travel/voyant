@@ -10,9 +10,12 @@ const paths = {
   manifest: "packages/storefront/src/voyant.ts",
   descriptor: "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts",
   storefrontModule: "packages/storefront/src/index.ts",
-  frameworkLazy: "packages/framework/src/composition-lazy.ts",
-  operatorComposition: "starters/operator/src/api/composition.ts",
+  operatorComposition: "starters/operator/src/api/runtime/deployment-resources.ts",
   operatorApp: "starters/operator/src/api/app.ts",
+  storefrontContributor: "packages/storefront/src/runtime-contributor.ts",
+  relationshipsContributor: "packages/relationships/src/runtime-contributor.ts",
+  notificationsContributor: "packages/notifications/src/runtime-contributor.ts",
+  tripsContributor: "packages/trips/src/runtime-contributor.ts",
 }
 
 const sources = Object.fromEntries(
@@ -64,25 +67,40 @@ requireMatch(
 )
 
 requireMatch(
-  sources.frameworkLazy,
-  /bookingIntents:\s*capabilities\.withDb\s*\?\s*\{[\s\S]*?withDb:[\s\S]*?capabilities\.withDb!\(bindings/,
-  "Lazy framework composition must enable Storefront intents only through the generic database lifecycle capability",
-)
-rejectMatch(
-  sources.frameworkLazy,
-  /storefrontBookingBootstrapSubscriber|STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY|bookingIntents:\s*\{\s*resolveDb/,
-  "Lazy framework composition must not register or directly resolve the Storefront subscriber",
+  sources.manifest,
+  /runtime:\s*\{\s*entry:\s*["']@voyant-travel\/storefront["'],\s*export:\s*["']createStorefrontVoyantRuntime["']\s*\}[\s\S]*requirePort\(storefrontOffersRuntimePort\)[\s\S]*requirePort\(storefrontBookingIntentsRuntimePort\)[\s\S]*requirePort\(storefrontIntakeRuntimePort\)/,
+  "Storefront manifest must compose through its granular typed runtime ports",
 )
 
-requireMatch(
+rejectMatch(
   sources.operatorComposition,
-  /withDb:\s*\(bindings, operation\)\s*=>[\s\S]*withDbFromEnv\(bindings as AppBindings/,
-  "Operator composition must provide lifecycle-aware generic withDb",
+  /loadStorefrontRuntime|storefrontRuntimePort|createOperatorStorefrontRuntimeProvider|import\([^)]*storefront/,
+  "Operator must not retain Storefront product runtime assembly",
 )
 requireMatch(
+  sources.storefrontContributor,
+  /primitives\.database\.transaction[\s\S]*\[storefrontOffersRuntimePort\.id\]:\s*createCommerceStorefrontOfferResolvers[\s\S]*\[storefrontBookingIntentsRuntimePort\.id\]:\s*bookingIntents[\s\S]*\[storefrontCustomerPortalRuntimePort\.id\]/,
+  "Storefront contributor must statically provide offers and derive host adapters from generic primitives",
+)
+requireMatch(
+  sources.tripsContributor,
+  /\[storefrontPaymentLinkRuntimePort\.id\]:\s*createStandardPaymentLinkRouteOptions/,
+  "Trips contributor must own Storefront payment-link projection behavior",
+)
+requireMatch(
+  sources.relationshipsContributor,
+  /\[storefrontIntakeRuntimePortReference\.id\]:\s*createStorefrontIntakePersistence/,
+  "Relationships contributor must own Storefront intake persistence",
+)
+requireMatch(
+  sources.notificationsContributor,
+  /\[storefrontVerificationRuntimePort\.id\]:\s*verification/,
+  "Notifications contributor must own Storefront verification providers",
+)
+rejectMatch(
   sources.operatorComposition,
-  /["']@voyant-travel\/storefront["']:\s*frameworkComposition\.modules\[["']@voyant-travel\/storefront["']\]/,
-  "Operator must configure the selected Storefront unit through shared framework composition",
+  /["']@voyant-travel\/storefront["']\s*:/,
+  "Operator must not restore a package-id Storefront compatibility binding",
 )
 rejectMatch(
   sources.operatorComposition,

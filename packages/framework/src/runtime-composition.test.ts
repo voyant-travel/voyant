@@ -1,7 +1,11 @@
+// agent-quality: file-size exception -- owner: framework; graph unit, facet, port, route posture, and plugin output contracts share one composition harness.
 import { createEventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory, definePort } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
-import { composeVoyantGraphRuntime } from "./runtime-composition.js"
+import {
+  composeVoyantGraphRuntime,
+  createVoyantGraphRuntimePortStubs,
+} from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
@@ -36,6 +40,50 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
+  it("creates conforming non-thenable stubs for package-owned runtime ports", () => {
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:runtime-port-stub",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/identity",
+          kind: "module",
+          packageName: "@acme/identity",
+          order: 0,
+          requiredRuntimePorts: ["acme.identity-runtime"],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    const provider = createVoyantGraphRuntimePortStubs(graphRuntime)[
+      "acme.identity-runtime"
+    ] as Record<string, unknown>
+
+    expect(provider.then).toBeUndefined()
+    expect(typeof provider.resolveDeployment).toBe("function")
+    expect(typeof provider.resolveSourceAdapterRegistry).toBe("function")
+    expect(typeof provider.readConfig).toBe("function")
+    expect(typeof provider.createStaleBookingHoldsRuntime).toBe("function")
+    expect(typeof provider.resolveNotificationDispatcher).toBe("function")
+    expect(typeof provider.resolveOperatorDefaultPaymentPolicy).toBe("function")
+    expect(typeof provider.createPaymentPolicyRuntime).toBe("function")
+    expect(typeof provider.resolvePaymentStarters).toBe("function")
+    expect(typeof provider.resolvePrinter).toBe("function")
+    expect(typeof provider.personExists).toBe("function")
+    expect(typeof provider.resolveBankTransferInstructions).toBe("function")
+    expect(typeof provider.createStartCardPayment).toBe("function")
+    expect(typeof provider.ensureSourceRegistry).toBe("function")
+    expect(provider.provider).toBe("inspection")
+    expect(typeof provider.poller).toBe("function")
+    expect(provider.primitives).toMatchObject({
+      database: expect.any(Object),
+      storage: expect.any(Object),
+    })
+    expect(provider.settings).toBeUndefined()
+  })
+
   it("registers outbound subscribers from graph selections without a deployment event catalog", async () => {
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:webhook-runtime",
@@ -60,6 +108,10 @@ describe("graph runtime composition", () => {
             eventId: "@acme/catalog#event.updated",
             eventUnitId: "@acme/catalog",
             eventType: "catalog.entity.updated",
+            eventVersion: "1.0.0",
+            payloadSchema: { type: "object", properties: {} },
+            visibility: "external",
+            audit: { sourceModule: "catalog", category: "domain" },
             secretIds: [],
           },
         ],
@@ -84,7 +136,14 @@ describe("graph runtime composition", () => {
     expect(enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "catalog.entity.updated",
-        metadata: expect.objectContaining({ eventId: expect.stringMatching(/^evt_/) }),
+        metadata: expect.objectContaining({
+          eventId: expect.stringMatching(/^evt_/),
+          category: "domain",
+          graphEventId: "@acme/catalog#event.updated",
+          graphEventVersion: "1.0.0",
+          graphEventPayloadSchema: { type: "object", properties: {} },
+          graphEventSourceModule: "catalog",
+        }),
       }),
       { deployment: "node" },
     )
@@ -443,7 +502,7 @@ describe("graph runtime composition", () => {
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:without-commerce",
       entries: {
-        "@voyant-travel/commerce/promotions/workflow-bulk-reindex": importCommerce,
+        "@voyant-travel/commerce/product-reindex-workflow": importCommerce,
       },
       modules: [],
       plugins: [],
@@ -631,6 +690,53 @@ describe("graph runtime composition", () => {
     })
   })
 
+  it("reads optional many-valued runtime ports without collapsing contributors", async () => {
+    const providerPort = definePort<{ name: string }>({
+      id: "loyalty.providers",
+      test: () => {},
+    })
+    const factory = defineGraphRuntimeFactory(async ({ getPorts }) => ({
+      module: { name: (await getPorts(providerPort)).map(({ name }) => name).join(",") || "none" },
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:many-runtime-port",
+      entries: { "@acme/loyalty": async () => ({ createLoyaltyModule: factory }) },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          runtimePorts: [providerPort.id],
+          manyRuntimePorts: [providerPort.id],
+          requiredRuntimePorts: [],
+          routes: [
+            {
+              route: {
+                id: "@acme/loyalty#api",
+                surface: "admin",
+                runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+              },
+              importEntry: "@acme/loyalty",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).resolves.toMatchObject({
+      modules: [{ module: { name: "none" } }],
+    })
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime,
+        capabilities: {},
+        ports: { [providerPort.id]: [{ name: "alpha" }, { name: "zeta" }] },
+      }),
+    ).resolves.toMatchObject({ modules: [{ module: { name: "alpha,zeta" } }] })
+  })
+
   it("runs a port's conformance kit before exposing a deployment binding", async () => {
     const runtimePort = definePort<{ ready: boolean }>({
       id: "loyalty.runtime",
@@ -721,10 +827,39 @@ describe("graph runtime composition", () => {
     expect(removedBinding).not.toHaveBeenCalled()
   })
 
-  it("rejects plugin runtime exports that are not Hono extensions", async () => {
+  it("accepts plugin-owned modules and rejects invalid plugin runtime exports", async () => {
+    const moduleRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:plugin-module",
+      entries: { "@acme/billing": async () => ({ billing: { module: { name: "billing" } } }) },
+      modules: [],
+      plugins: [
+        {
+          id: "@acme/billing",
+          kind: "plugin",
+          packageName: "@acme/billing",
+          order: 0,
+          runtimeReferenceId: "@acme/billing#runtime",
+          references: [
+            {
+              id: "@acme/billing#runtime",
+              unitId: "@acme/billing",
+              facet: "runtime",
+              entityId: "@acme/billing",
+              runtime: { entry: "@acme/billing", export: "billing" },
+              importEntry: "@acme/billing",
+            },
+          ],
+          routes: [],
+        },
+      ],
+    })
+    await expect(
+      composeVoyantGraphRuntime({ runtime: moduleRuntime, capabilities: {} }),
+    ).resolves.toMatchObject({ modules: [{ module: { name: "billing" } }] })
+
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:test",
-      entries: { "@acme/audit": async () => ({ audit: { module: { name: "wrong" } } }) },
+      entries: { "@acme/audit": async () => ({ audit: { wrong: true } }) },
       modules: [],
       plugins: [
         {
@@ -747,7 +882,7 @@ describe("graph runtime composition", () => {
     })
 
     await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).rejects.toThrow(
-      /plugin "@acme\/audit" must resolve to HonoExtension/,
+      /plugin "@acme\/audit" must resolve to HonoModule or HonoExtension/,
     )
   })
 })

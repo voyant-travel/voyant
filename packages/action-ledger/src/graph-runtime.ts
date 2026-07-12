@@ -1,11 +1,25 @@
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 
 import { createActionLedgerHealthHonoExtension } from "./health-routes.js"
-import { actionLedgerHealthRuntimePort } from "./runtime-port.js"
+import {
+  actionLedgerBookingDriftRuntimePort,
+  actionLedgerFinanceDriftRuntimePort,
+  actionLedgerInventoryDriftRuntimePort,
+} from "./runtime-port.js"
 
 export const createActionLedgerHealthVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ getPort }) =>
-    createActionLedgerHealthHonoExtension(await getPort(actionLedgerHealthRuntimePort)),
+  async ({ getPort }) => {
+    const [bookings, finance, inventory] = await Promise.all([
+      getPort(actionLedgerBookingDriftRuntimePort),
+      getPort(actionLedgerFinanceDriftRuntimePort),
+      getPort(actionLedgerInventoryDriftRuntimePort),
+    ])
+    return createActionLedgerHealthHonoExtension({ ...bookings, ...finance, ...inventory })
+  },
 )
 
-export { actionLedgerHealthRuntimePort } from "./runtime-port.js"
+export {
+  actionLedgerBookingDriftRuntimePort,
+  actionLedgerFinanceDriftRuntimePort,
+  actionLedgerInventoryDriftRuntimePort,
+} from "./runtime-port.js"

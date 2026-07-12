@@ -1,4 +1,4 @@
-import { managedProfileAdminFetcher } from "@voyant-travel/admin-app/runtime"
+import { adminFetcher } from "@voyant-travel/admin-app/runtime"
 import type { VoyantFetcher } from "@voyant-travel/react"
 
-export const operatorFetcher: VoyantFetcher = managedProfileAdminFetcher
+export const projectFetcher: VoyantFetcher = adminFetcher

@@ -21,13 +21,13 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { rebuildBookingItemTaxLines } from "./materialization-tax.js"
 import type { CheckoutModuleOptions, CheckoutStartOptions } from "./options.js"
-import { bookingMaintenanceRuntimePort } from "./runtime-ports.js"
+import { bookingMaintenanceRuntimePort, CATALOG_CHECKOUT_API_RUNTIME_KEY } from "./runtime-ports.js"
 import {
   CatalogCheckoutStartError,
   type CheckoutStartRequestMeta,
@@ -135,31 +135,34 @@ const checkoutStartRoute = createRoute({
 export function createCatalogCheckoutRoutes(
   options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
 ): OpenAPIHono<CheckoutEnv> {
-  return new OpenAPIHono<CheckoutEnv>({ defaultHook: openApiValidationHook }).openapi(
-    checkoutStartRoute,
-    async (c) => {
-      const resolved = typeof options === "function" ? options(c) : options
-      const body = c.req.valid("json")
-      try {
-        const result = await startCatalogCheckout(
-          {
-            db: c.get("db"),
-            env: c.env,
-            eventBus: c.var.eventBus,
-            resolveRuntime: (key) => c.var.container?.resolve(key),
-            requestMeta: checkoutRequestMeta(c),
-            options: resolved,
-          },
-          body,
-        )
-        return c.json(result, 200)
-      } catch (err) {
-        if (err instanceof CatalogCheckoutStartError) {
-          return c.json({ error: err.code }, err.status)
+  return stampOpenApiRegistryApiId(
+    new OpenAPIHono<CheckoutEnv>({ defaultHook: openApiValidationHook }).openapi(
+      checkoutStartRoute,
+      async (c) => {
+        const resolved = typeof options === "function" ? options(c) : options
+        const body = c.req.valid("json")
+        try {
+          const result = await startCatalogCheckout(
+            {
+              db: c.get("db"),
+              env: c.env,
+              eventBus: c.var.eventBus,
+              resolveRuntime: (key) => c.var.container?.resolve(key),
+              requestMeta: checkoutRequestMeta(c),
+              options: resolved,
+            },
+            body,
+          )
+          return c.json(result, 200)
+        } catch (err) {
+          if (err instanceof CatalogCheckoutStartError) {
+            return c.json({ error: err.code }, err.status)
+          }
+          throw err
         }
-        throw err
-      }
-    },
+      },
+    ),
+    "@voyant-travel/commerce#catalog-checkout-extension.api",
   )
 }
 
@@ -198,15 +201,18 @@ const rebuildBookingTaxLinesRoute = createRoute({
 export function createBookingMaintenanceRoutes(
   options: BookingMaintenanceRoutesOptions,
 ): OpenAPIHono<CheckoutEnv> {
-  return new OpenAPIHono<CheckoutEnv>({ defaultHook: openApiValidationHook }).openapi(
-    rebuildBookingTaxLinesRoute,
-    async (c) => {
-      const db = options.resolveDb?.(c) ?? c.get("db")
-      const result = await rebuildBookingItemTaxLines(db, c.req.valid("param").bookingId, {
-        resolveBookingTaxSettings: options.resolveBookingTaxSettings,
-      })
-      return c.json({ data: result }, 200)
-    },
+  return stampOpenApiRegistryApiId(
+    new OpenAPIHono<CheckoutEnv>({ defaultHook: openApiValidationHook }).openapi(
+      rebuildBookingTaxLinesRoute,
+      async (c) => {
+        const db = options.resolveDb?.(c) ?? c.get("db")
+        const result = await rebuildBookingItemTaxLines(db, c.req.valid("param").bookingId, {
+          resolveBookingTaxSettings: options.resolveBookingTaxSettings,
+        })
+        return c.json({ data: result }, 200)
+      },
+    ),
+    "@voyant-travel/commerce#booking-maintenance-extension.api",
   )
 }
 
@@ -215,7 +221,16 @@ export function createCatalogCheckoutHonoExtension(
   options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
 ): HonoExtension {
   return {
-    extension: { name: "catalog-checkout", module: "catalog" },
+    extension: {
+      name: "catalog-checkout",
+      module: "catalog",
+      bootstrap: ({ container }) => {
+        container.register(
+          CATALOG_CHECKOUT_API_RUNTIME_KEY,
+          typeof options === "function" ? options : () => options,
+        )
+      },
+    },
     publicRoutes: createCatalogCheckoutRoutes(options),
   }
 }

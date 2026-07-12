@@ -1,0 +1,48 @@
+{
+  "availability.slot.changed": { "kind": "availability" },
+  "booking.cancelled": { "entity": "booking", "kind": "booking" },
+  "booking.confirmed": { "entity": "booking", "kind": "booking" },
+  "booking.fully-paid": { "entity": "payment", "kind": "booking" },
+  "booking.refunded": { "entity": "payment", "kind": "booking" },
+  "contract.executed": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
+  "contract.issued": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
+  "contract.sent": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
+  "contract.signed": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
+  "contract.voided": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
+  "cruise.created": { "entity": "cruise", "idKeys": ["id"], "kind": "admin" },
+  "cruise.deleted": { "entity": "cruise", "idKeys": ["id"], "kind": "admin" },
+  "cruise.updated": { "entity": "cruise", "idKeys": ["id"], "kind": "admin" },
+  "customer.signal.created": { "entity": "signal", "idKeys": ["id"], "kind": "admin" },
+  "invoice.issued": { "entity": "invoice", "idKeys": ["invoiceId", "id"], "kind": "admin" },
+  "invoice.proforma.converted": {
+    "entity": "invoice",
+    "idKeys": ["invoiceId", "id"],
+    "kind": "admin"
+  },
+  "invoice.proforma.issued": {
+    "entity": "invoice",
+    "idKeys": ["invoiceId", "id"],
+    "kind": "admin"
+  },
+  "invoice.settled": { "entity": "invoice", "idKeys": ["invoiceId", "id"], "kind": "admin" },
+  "invoice.voided": { "entity": "invoice", "idKeys": ["invoiceId", "id"], "kind": "admin" },
+  "organization.changed": { "entity": "organization", "idKeys": ["id"], "kind": "admin" },
+  "payment.completed": {
+    "entity": "payment",
+    "idKeys": ["bookingId", "paymentSessionId"],
+    "kind": "admin"
+  },
+  "person.changed": { "entity": "person", "idKeys": ["id"], "kind": "admin" },
+  "pricing.rule.changed": { "entity": "pricing", "idKeys": ["productId"], "kind": "admin" },
+  "product.content.changed": { "entity": "product", "idKeys": ["id"], "kind": "admin" },
+  "product.created": { "entity": "product", "idKeys": ["id"], "kind": "admin" },
+  "product.deleted": { "entity": "product", "idKeys": ["id"], "kind": "admin" },
+  "product.updated": { "entity": "product", "idKeys": ["id"], "kind": "admin" },
+  "promotion.changed": { "entity": "promotion", "idKeys": ["offerId"], "kind": "admin" },
+  "quote.created": { "entity": "quote", "idKeys": ["id"], "kind": "admin" },
+  "quote.deleted": { "entity": "quote", "idKeys": ["id"], "kind": "admin" },
+  "quote.updated": { "entity": "quote", "idKeys": ["id"], "kind": "admin" },
+  "supplier.created": { "entity": "supplier", "idKeys": ["id"], "kind": "admin" },
+  "supplier.deleted": { "entity": "supplier", "idKeys": ["id"], "kind": "admin" },
+  "supplier.updated": { "entity": "supplier", "idKeys": ["id"], "kind": "admin" }
+}

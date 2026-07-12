@@ -5,7 +5,7 @@ components and page-level compositions (formerly `@voyant-travel/bookings-ui`).
 
 Headless consumers (storefronts, portals) import from the root, `./hooks`,
 `./client`, or `./query-keys` — these pull no styling peers. Styled surfaces
-live under `./ui`, `./components/*`, `./journey`, `./admin`, `./i18n`, and
+live under `./ui`, `./components/*`, `./journey`, `./storefront`, `./admin`, `./i18n`, and
 `./styles.css`, whose heavier peers (`@voyant-travel/ui`, `@voyant-travel/admin`,
 `@tanstack/react-table`, `lucide-react`, the other modules' `*-react`/`*-ui`
 packages) are optional and only needed when you import those subpaths.
@@ -22,6 +22,11 @@ It now includes public storefront flow helpers alongside the admin hooks:
 
 Those helpers target the public booking session contract for wizard-state
 storage and room-selection repricing.
+
+The `./storefront` subpath owns the reusable customer booking journey. Apps
+provide route navigation, localized customer copy, and selected market scope;
+the package owns public booking and checkout, contract preview, payment-policy
+resolution, and contract-variable mapping.
 
 ## UI components
 

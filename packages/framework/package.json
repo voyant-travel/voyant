@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./deployment-artifacts": "./src/deployment-artifacts.ts",
     "./deployment-graph": "./src/deployment-graph.ts",
+    "./graph-lifecycle": "./src/graph-lifecycle.ts",
     "./selected-graph-openapi": "./src/selected-graph-openapi.ts",
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
@@ -17,9 +18,9 @@
     "./project-artifacts": "./src/project-artifacts.ts",
     "./project": "./src/project.ts",
     "./project-runtime": "./src/project-runtime.ts",
-    "./profile": "./src/profile.ts",
-    "./managed-jobs": "./src/managed-jobs.ts",
-    "./managed-runtime": "./src/managed-runtime.ts"
+    "./node-host": "./src/node-host.ts",
+    "./node-runtime": "./src/node-runtime.ts",
+    "./scheduled-jobs": "./src/scheduled-jobs.ts"
   },
   "files": [
     "dist"
@@ -50,6 +51,7 @@
     "@voyant-travel/accommodations": "workspace:*",
     "@voyant-travel/action-ledger": "workspace:*",
     "@voyant-travel/action-ledger-react": "workspace:*",
+    "@voyant-travel/auth": "workspace:*",
     "@voyant-travel/availability": "workspace:*",
     "@voyant-travel/bookings": "workspace:*",
     "@voyant-travel/bookings-react": "workspace:*",
@@ -73,31 +75,31 @@
     "@voyant-travel/inventory-react": "workspace:*",
     "@voyant-travel/legal": "workspace:*",
     "@voyant-travel/legal-react": "workspace:*",
+    "@voyant-travel/mcp": "workspace:*",
     "@voyant-travel/mice": "workspace:*",
     "@voyant-travel/mice-react": "workspace:*",
     "@voyant-travel/notifications": "workspace:*",
+    "@voyant-travel/notifications-react": "workspace:*",
     "@voyant-travel/operations": "workspace:*",
     "@voyant-travel/operations-react": "workspace:*",
     "@voyant-travel/operator-settings": "workspace:*",
-    "@voyant-travel/plugin-catalog-demo": "workspace:*",
-    "@voyant-travel/plugin-flights-demo": "workspace:*",
-    "@voyant-travel/plugin-sanity-cms": "workspace:*",
+    "@voyant-travel/operator-settings-react": "workspace:*",
     "@voyant-travel/public-document-delivery": "workspace:*",
     "@voyant-travel/quotes": "workspace:*",
     "@voyant-travel/quotes-react": "workspace:*",
     "@voyant-travel/realtime": "workspace:*",
+    "@voyant-travel/realtime-react": "workspace:*",
     "@voyant-travel/relationships": "workspace:*",
     "@voyant-travel/relationships-react": "workspace:*",
     "@voyant-travel/storage": "workspace:*",
     "@voyant-travel/storefront": "workspace:*",
+    "@voyant-travel/storefront-react": "workspace:*",
     "@voyant-travel/trips": "workspace:*",
     "@voyant-travel/trips-react": "workspace:*",
     "@voyant-travel/workflow-runs": "workspace:*",
-    "@voyant-travel/auth": "workspace:*",
     "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/connect-sdk": "0.9.1",
     "@voyant-travel/framework-migrations": "workspace:*",
-    "@voyant-travel/mcp": "workspace:*",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/runtime": "workspace:*",
     "@voyant-travel/tools": "workspace:*",
@@ -130,10 +132,6 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       },
-      "./profile": {
-        "types": "./dist/profile.d.ts",
-        "import": "./dist/profile.js"
-      },
       "./deployment-artifacts": {
         "types": "./dist/deployment-artifacts.d.ts",
         "import": "./dist/deployment-artifacts.js"
@@ -141,6 +139,10 @@
       "./deployment-graph": {
         "types": "./dist/deployment-graph.d.ts",
         "import": "./dist/deployment-graph.js"
+      },
+      "./graph-lifecycle": {
+        "types": "./dist/graph-lifecycle.d.ts",
+        "import": "./dist/graph-lifecycle.js"
       },
       "./operator-distribution": {
         "types": "./dist/operator-distribution.d.ts",
@@ -179,13 +181,17 @@
         "import": "./dist/project-runtime.js",
         "default": "./dist/project-runtime.js"
       },
-      "./managed-jobs": {
-        "types": "./dist/managed-jobs.d.ts",
-        "import": "./dist/managed-jobs.js"
+      "./node-host": {
+        "types": "./dist/node-host.d.ts",
+        "import": "./dist/node-host.js"
       },
-      "./managed-runtime": {
-        "types": "./dist/managed-runtime.d.ts",
-        "import": "./dist/managed-runtime.js"
+      "./node-runtime": {
+        "types": "./dist/node-runtime.d.ts",
+        "import": "./dist/node-runtime.js"
+      },
+      "./scheduled-jobs": {
+        "types": "./dist/scheduled-jobs.d.ts",
+        "import": "./dist/scheduled-jobs.js"
       }
     }
   },

@@ -20,7 +20,7 @@ describe("commerce runtime", () => {
     const checkout = createCatalogCheckoutHonoExtension({} as never)
     const maintenance = createBookingMaintenanceHonoExtension({} as never)
 
-    expect(checkout.extension).toEqual({ name: "catalog-checkout", module: "catalog" })
+    expect(checkout.extension).toMatchObject({ name: "catalog-checkout", module: "catalog" })
     expect(checkout.publicRoutes).toBeDefined()
     expect(isGraphRuntimeFactory(createCatalogCheckoutGraphExtension)).toBe(true)
     expect(maintenance.extension).toEqual({ name: "booking-maintenance", module: "bookings" })

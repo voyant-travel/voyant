@@ -99,16 +99,6 @@ export class CatalogCheckoutStartError extends Error {
   }
 }
 
-interface CheckoutAcceptanceMetadata {
-  templateId: string
-  templateSlug: string
-  acceptedAt: string
-  acceptedMarketing: boolean
-  clientIp?: string
-  userAgent?: string
-  renderedHtmlLength: number
-}
-
 interface AcceptedPaymentTermsSnapshot {
   kind: "accepted_payment_terms"
   policySource: PaymentPolicySource
@@ -172,12 +162,16 @@ export async function startCatalogCheckout(
   // acceptance fingerprints.
   if (body.contractAcceptance) {
     try {
-      await persistAcceptanceDraftContract(
-        db,
-        context.requestMeta ?? {},
-        booking,
-        body.contractAcceptance,
-      )
+      await context.options.persistAcceptanceDraftContract?.(db, {
+        requestMeta: context.requestMeta ?? {},
+        booking: {
+          id: booking.id,
+          bookingNumber: booking.bookingNumber,
+          personId: booking.personId ?? null,
+          organizationId: booking.organizationId ?? null,
+        },
+        acceptance: body.contractAcceptance,
+      })
     } catch (err) {
       // Acceptance recording is best-effort during checkout-start —
       // the customer still needs to reach payment even if our
@@ -225,17 +219,12 @@ async function startInquiryCheckout(
   let stageId = env.INQUIRY_STAGE_ID ?? null
 
   if (!pipelineId || !stageId) {
-    const { quotesService } = await import("@voyant-travel/quotes")
-    const pipelines = await quotesService
-      .listPipelines(db, { entityType: "quote", limit: 1, offset: 0 })
+    const selection = await context.options.checkoutInquiry
+      .resolvePipeline(db, { pipelineId, stageId })
       .catch(() => null)
-    const firstPipeline = pipelines?.data?.[0] ?? null
-    if (firstPipeline) {
-      pipelineId = pipelineId ?? firstPipeline.id
-      const stages = await quotesService
-        .listStages(db, { pipelineId: firstPipeline.id, limit: 1, offset: 0 })
-        .catch(() => null)
-      stageId = stageId ?? stages?.data?.[0]?.id ?? null
+    if (selection) {
+      pipelineId = selection.pipelineId
+      stageId = selection.stageId
     }
   }
 
@@ -251,19 +240,16 @@ async function startInquiryCheckout(
     }
   }
 
-  const { quotesService } = await import("@voyant-travel/quotes")
-  const quote = await quotesService.createQuote(db, {
+  const quote = await context.options.checkoutInquiry.createInquiry(db, {
     title: `Inquiry — booking ${booking.bookingNumber}`,
     pipelineId,
     stageId,
     personId: booking.personId,
     organizationId: booking.organizationId,
-    status: "open",
     valueAmountCents: booking.sellAmountCents ?? null,
     valueCurrency: booking.sellCurrency ?? null,
     source: "storefront-inquiry",
     sourceRef: booking.id,
-    tags: [],
   })
 
   await releaseInquiryBooking(db, booking, eventBus)
@@ -617,87 +603,4 @@ async function ensureBankTransferProformaPrerequisites(db: PostgresJsDatabase): 
 
 function bankTransferProformaSeriesError(): CatalogCheckoutStartError {
   return new CatalogCheckoutStartError("bank_transfer_proforma_number_series_missing", 422)
-}
-
-/**
- * Pre-create (or update) a draft contract carrying the acceptance
- * fingerprint in `metadata.acceptance`. Called from /checkout/start
- * when the customer accepts the contract preview, BEFORE payment
- * lands.
- *
- * The draft has:
- *   - status="draft" (no number yet — issued post-payment)
- *   - templateVersionId pointing at the slug's current version
- *   - bookingId / personId / organizationId from the booking
- *   - metadata.acceptance with templateId/Slug, acceptedAt,
- *     acceptedMarketing, ipAddress, userAgent, renderedHtmlLength
- *
- * The body is left empty; `autoGenerateContractForBooking` (fired by
- * `booking.confirmed`) detects the existing draft, fills in the
- * fully-resolved variables, then issues + generates the PDF.
- *
- * Idempotency: a re-entry of /checkout/start finds the existing draft
- * and updates its `metadata.acceptance` in place (last acceptance
- * wins — typical when customer hits Back, edits acceptance, resubmits).
- */
-async function persistAcceptanceDraftContract(
-  db: PostgresJsDatabase,
-  requestMeta: CheckoutStartRequestMeta,
-  booking: typeof bookings.$inferSelect,
-  acceptance: NonNullable<CheckoutStartInput["contractAcceptance"]>,
-): Promise<void> {
-  const { contractsService } = await import("@voyant-travel/legal/contracts")
-
-  const template = await contractsService.findTemplateBySlug(db, acceptance.templateSlug)
-  if (!template?.currentVersionId) {
-    console.warn(
-      `[catalog-checkout] persistAcceptanceDraftContract: template "${acceptance.templateSlug}" not found or has no current version; skipping.`,
-    )
-    return
-  }
-
-  const acceptanceMetadata: CheckoutAcceptanceMetadata = {
-    templateId: acceptance.templateId,
-    templateSlug: acceptance.templateSlug,
-    acceptedAt: acceptance.acceptedAt,
-    acceptedMarketing: acceptance.acceptedMarketing,
-    clientIp: requestMeta.clientIp ?? "",
-    userAgent: requestMeta.userAgent ?? "",
-    renderedHtmlLength: acceptance.renderedHtml.length,
-  }
-
-  // Look for an existing draft contract on this booking. Storefront
-  // re-submissions hit this branch.
-  const existingList = await contractsService.listContracts(db, {
-    bookingId: booking.id,
-    limit: 1,
-    offset: 0,
-  })
-  const existing = existingList.data[0]
-
-  if (existing) {
-    const prior = (existing.metadata as Record<string, unknown> | null) ?? {}
-    await contractsService.updateContract(db, existing.id, {
-      metadata: { ...prior, acceptance: acceptanceMetadata },
-    })
-    return
-  }
-
-  await contractsService.createContract(db, {
-    scope: "customer",
-    status: "draft",
-    title: `${template.name} — ${booking.bookingNumber}`,
-    templateVersionId: template.currentVersionId,
-    seriesId: null,
-    bookingId: booking.id,
-    personId: booking.personId ?? null,
-    organizationId: booking.organizationId ?? null,
-    language: template.language,
-    variables: {},
-    metadata: {
-      autoGenerated: true,
-      trigger: "storefront.checkout-acceptance",
-      acceptance: acceptanceMetadata,
-    },
-  })
 }

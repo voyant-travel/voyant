@@ -13,6 +13,7 @@
     "./customer-portal/routes": "./src/customer-portal/routes.ts",
     "./payment-link": "./src/payment-link/routes.ts",
     "./public-routes": "./src/routes-public.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./service": "./src/service.ts",
     "./transport-eligibility": "./src/transport-eligibility.ts",
     "./validation": "./src/validation.ts",
@@ -21,12 +22,21 @@
     "./verification/public-routes": "./src/verification/routes-public.ts",
     "./verification/service": "./src/verification/service.ts",
     "./verification/validation": "./src/verification/validation.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/storefront.json",
+    "./openapi/storefront": "./openapi/storefront/storefront.json",
+    "./openapi/customer-portal": "./openapi/storefront/customer-portal.json",
+    "./openapi/payment-link": "./openapi/storefront/payment-link.json",
+    "./openapi/verification": "./openapi/storefront/storefront-verification.json"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createStorefrontRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -47,6 +57,7 @@
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/",
     "test": "vitest run",
+    "verify:openapi-authority": "node scripts/check-openapi-authority.mjs",
     "build": "pnpm run clean && tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
     "prepack": "pnpm run build",
@@ -95,6 +106,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -146,6 +158,11 @@
         "import": "./dist/routes-public.js",
         "default": "./dist/routes-public.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./service": {
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
@@ -190,7 +207,12 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/storefront.json",
+      "./openapi/storefront": "./openapi/storefront/storefront.json",
+      "./openapi/customer-portal": "./openapi/storefront/customer-portal.json",
+      "./openapi/payment-link": "./openapi/storefront/payment-link.json",
+      "./openapi/verification": "./openapi/storefront/storefront-verification.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

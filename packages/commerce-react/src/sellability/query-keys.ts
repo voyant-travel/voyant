@@ -1,7 +1,7 @@
 import type {
   sellabilityPolicyScopeSchema,
   sellabilityPolicyTypeSchema,
-} from "@voyant-travel/commerce/sellability/validation"
+} from "@voyant-travel/commerce/validation"
 import type { z } from "zod"
 
 export interface SellabilityPoliciesListFilters {

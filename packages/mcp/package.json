@@ -4,10 +4,30 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime.ts",
+    "./openapi/admin": "./openapi/admin/mcp.json",
+    "./voyant": "./src/voyant.ts"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "manifest": "./voyant",
+    "compatibleWith": {
+      "framework": ">=0.38.0",
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    }
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -16,6 +36,17 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
+      },
+      "./openapi/admin": "./openapi/admin/mcp.json",
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
       }
     },
     "main": "./dist/index.js",
@@ -31,7 +62,10 @@
   },
   "dependencies": {
     "@hono/mcp": "^0.3.0",
+    "@hono/zod-openapi": "catalog:",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "hono": "catalog:",

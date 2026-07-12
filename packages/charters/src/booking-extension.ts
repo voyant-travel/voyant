@@ -1,3 +1,4 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { parseJsonBody } from "@voyant-travel/hono"
@@ -14,7 +15,6 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 import { z } from "zod"
 
 import { charterBookingModeEnum, charterSourceEnum } from "./schema-shared.js"
@@ -363,7 +363,10 @@ type Env = {
   }
 }
 
-export const chartersBookingExtensionRoutes = new Hono<Env>()
+export const CHARTERS_BOOKING_OPENAPI_API_ID = "@voyant-travel/charters#booking-extension.api.admin"
+
+export const chartersBookingExtensionRoutes = new OpenAPIHono<Env>()
+chartersBookingExtensionRoutes
   .get("/:bookingId/charter-details", async (c) => {
     const row = await bookingCharterDetailsService.get(c.get("db"), c.req.param("bookingId"))
     if (!row) return c.json({ error: "not_found" }, 404)
@@ -378,6 +381,7 @@ export const chartersBookingExtensionRoutes = new Hono<Env>()
     )
     return c.json({ data: row })
   })
+
   .delete("/:bookingId/charter-details", async (c) => {
     const ok = await bookingCharterDetailsService.remove(c.get("db"), c.req.param("bookingId"))
     if (!ok) return c.json({ error: "not_found" }, 404)
@@ -408,6 +412,21 @@ export const chartersBookingExtensionRoutes = new Hono<Env>()
     if (!row) return c.json({ error: "not_found" }, 404)
     return c.json({ data: row })
   })
+
+for (const [method, path] of [
+  ["get", "/{bookingId}/charter-details"],
+  ["put", "/{bookingId}/charter-details"],
+  ["delete", "/{bookingId}/charter-details"],
+  ["post", "/{bookingId}/charter-details/apa/payment"],
+  ["post", "/{bookingId}/charter-details/apa/reconcile"],
+] as const) {
+  chartersBookingExtensionRoutes.openAPIRegistry.registerPath({
+    method,
+    path,
+    responses: { 200: { description: "Charter booking detail response." } },
+    "x-voyant-api-id": CHARTERS_BOOKING_OPENAPI_API_ID,
+  })
+}
 
 // ---------- HonoExtension export ----------
 

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: architecture; deployment graph admission, provenance, package metadata, and generated artifact assertions share one end-to-end checker.
 import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { dirname, join, resolve } from "node:path"
@@ -7,27 +8,22 @@ import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
   buildDeploymentMigrationSources,
-  buildManagedNodeRuntimeEntry,
-  buildManagedNodeRuntimeEntryArtifact,
+  buildNodeRuntimeEntry,
+  buildNodeRuntimeEntryArtifact,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
 } from "../packages/framework/src/deployment-artifacts.ts"
 import {
   canonicalJson,
   graphIdFromSpecifier,
-  resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
-import { getManagedProfileScheduledJobs } from "../packages/framework/src/managed-jobs.ts"
-import { defineVoyantProject } from "../packages/framework/src/profile.ts"
+import { defineConfig } from "../packages/framework/src/project.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
-import { OPERATOR_LOCAL_SCHEDULED_JOBS } from "../starters/operator/src/local-scheduled-jobs.ts"
+import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
-import { readPnpmLockfilePackageRecords } from "./lib/deployment-graph-provenance.mjs"
 import {
-  OPERATOR_GRAPH_ADMISSION_POLICY,
   type OperatorAuthoredProject,
   resolveOperatorDeploymentGraph,
-  withOperatorDeploymentLocalPackageRecords,
 } from "./lib/operator-deployment-graph-package-records.ts"
 
 const failures: string[] = []
@@ -35,11 +31,6 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDirectory, "..")
 const operatorRoot = join(repoRoot, "starters", "operator")
 
-const OPERATOR_LOCAL_MODULE_IDS = [
-  "npm/operator#mcp",
-  "npm/operator#invitations",
-  "npm/operator#team",
-] as const
 const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
   "@voyant-travel/availability",
@@ -54,13 +45,6 @@ const OPERATOR_BRIDGE_MODULE_SPECIFIERS = [
 ] as const
 const OPERATOR_BRIDGE_EXTENSION_SPECIFIERS = ["@voyant-travel/mice/booking-extension"] as const
 
-const project = defineVoyantProject({
-  profile: "operator",
-  frameworkVersion: "0.26.0",
-  modules: ["bookings", "finance", "relationships"],
-  plugins: ["@voyant-travel/plugin-netopia"],
-})
-
 const OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS = new Map<string, string>([
   ["@voyant-travel/framework", "framework"],
   ["@voyant-travel/framework-migrations", "library"],
@@ -70,20 +54,39 @@ const OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS = new Map<string, string>([
 ])
 
 async function main(): Promise<void> {
-  const discoveredGraph = await resolveManagedProfileDeploymentGraph(project)
-  const packageRecords = withOperatorDeploymentLocalPackageRecords(
-    readPnpmLockfilePackageRecords({
-      packageNames: discoveredGraph.packageRecords.map((record) => record.packageName),
-    }),
-  )
-  const first = await resolveManagedProfileDeploymentGraph(project, {
-    packageRecords,
-    admission: OPERATOR_GRAPH_ADMISSION_POLICY,
+  const frameworkPackage = JSON.parse(
+    await readFile(join(repoRoot, "packages/framework/package.json"), "utf8"),
+  ) as { version: string }
+  const authoredOperatorProject = operatorProject as OperatorAuthoredProject
+  const resolvedOperator = await resolveOperatorDeploymentGraph({
+    project: authoredOperatorProject,
+    projectRoot: operatorRoot,
+    repoRoot,
+    frameworkVersion: frameworkPackage.version,
+    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
   })
-  const second = await resolveManagedProfileDeploymentGraph(project, {
-    packageRecords,
-    admission: OPERATOR_GRAPH_ADMISSION_POLICY,
+  const repeatedOperator = await resolveOperatorDeploymentGraph({
+    project: authoredOperatorProject,
+    projectRoot: operatorRoot,
+    repoRoot,
+    frameworkVersion: frameworkPackage.version,
+    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
   })
+  const smartbillOptIn = await resolveOperatorDeploymentGraph({
+    project: defineConfig({
+      plugins: [
+        { resolve: "@voyant-travel/plugin-netopia" },
+        { resolve: "@voyant-travel/plugin-smartbill" },
+      ],
+      deployment: authoredOperatorProject.deployment,
+    }) as OperatorAuthoredProject,
+    projectRoot: operatorRoot,
+    repoRoot,
+    frameworkVersion: frameworkPackage.version,
+    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
+  })
+  const first = resolvedOperator.graph
+  const second = repeatedOperator.graph
 
   if (first.schemaVersion !== "voyant.resolved-graph.v1") {
     failures.push(`expected resolved graph schema v1, got ${first.schemaVersion}`)
@@ -91,14 +94,17 @@ async function main(): Promise<void> {
 
   if (first.deployment.target !== "node") {
     failures.push(
-      `expected managed-cloud graph runtime target node, got ${first.deployment.target}`,
+      `expected standard Operator graph runtime target node, got ${first.deployment.target}`,
     )
   }
   if (
-    first.deployment.providers.auth !== "voyant-cloud" ||
-    first.deployment.providers.workflows !== "voyant-cloud"
+    first.deployment.mode !== "self-hosted" ||
+    first.deployment.providers.database !== "postgres" ||
+    first.deployment.providers.storage !== "memory" ||
+    first.deployment.providers.auth === "voyant-cloud" ||
+    first.deployment.providers.workflows === "voyant-cloud"
   ) {
-    failures.push("expected managed-cloud graph to preserve voyant-cloud auth/workflow providers")
+    failures.push("expected standard Operator graph to preserve self-hosted provider defaults")
   }
 
   if (!/^sha256:[a-f0-9]{64}$/.test(first.contentHash)) {
@@ -106,11 +112,11 @@ async function main(): Promise<void> {
   }
 
   if (first.contentHash !== second.contentHash) {
-    failures.push("expected managed profile graph hash to be deterministic across identical inputs")
+    failures.push("expected selected graph hash to be deterministic across identical inputs")
   }
 
   if (canonicalJson(first) !== canonicalJson(second)) {
-    failures.push("expected managed profile graph JSON manifest to be deterministic")
+    failures.push("expected selected graph JSON manifest to be deterministic")
   }
 
   const graphJson = buildDeploymentGraphJson(first)
@@ -122,26 +128,27 @@ async function main(): Promise<void> {
     failures.push("expected generated graph JSON artifact to preserve the graph schema version")
   }
 
-  const runtimeEntry = buildManagedNodeRuntimeEntry({
+  const runtimeEntry = buildNodeRuntimeEntry({
     graph: first,
     graphArtifactPath: "./deployment-graph.generated.json",
-    profileSnapshotPath: "./managed-profile.json",
   })
   if (!runtimeEntry.includes(first.contentHash)) {
     failures.push("expected generated runtime entry to reference the resolved graph hash")
   }
-  if (!runtimeEntry.includes("@voyant-travel/framework/managed-runtime")) {
-    failures.push("expected generated runtime entry to start from the framework managed runtime")
+  if (!runtimeEntry.includes("@voyant-travel/framework/node-runtime")) {
+    failures.push("expected generated runtime entry to start from the generic Node runtime")
+  }
+  if (runtimeEntry.includes("profileSnapshotPath:")) {
+    failures.push("expected generated runtime entry to boot directly from graph artifacts")
   }
 
   const artifactManifest = buildDeploymentArtifactManifest({
     graph: first,
     graphArtifactPath: "./deployment-graph.generated.json",
     runtimeEntries: [
-      buildManagedNodeRuntimeEntryArtifact({
+      buildNodeRuntimeEntryArtifact({
         graph: first,
         file: "./runtime-entry.generated.ts",
-        profileSnapshot: "./managed-profile.json",
       }),
     ],
     migrationSources: buildDeploymentMigrationSources(first),
@@ -167,7 +174,7 @@ async function main(): Promise<void> {
 
   if (first.diagnostics.length > 0) {
     failures.push(
-      `expected managed profile graph to resolve cleanly, got diagnostics:\n${first.diagnostics
+      `expected selected graph to resolve cleanly, got diagnostics:\n${first.diagnostics
         .map((entry) => `  - ${entry.code}: ${entry.message}`)
         .join("\n")}`,
     )
@@ -180,38 +187,13 @@ async function main(): Promise<void> {
     "@voyant-travel/finance",
     "@voyant-travel/relationships",
   ]) {
-    if (!moduleIds.has(id)) failures.push(`expected managed graph to include ${id}`)
-  }
-
-  if (moduleIds.has("@voyant-travel/flights")) {
-    failures.push("expected managed graph to honor the selected module subset and exclude flights")
+    if (!moduleIds.has(id)) failures.push(`expected selected graph to include ${id}`)
   }
 
   if (!first.plugins.some((unit) => unit.id === "@voyant-travel/plugin-netopia")) {
-    failures.push("expected managed graph to include selected plugin @voyant-travel/plugin-netopia")
+    failures.push("expected selected graph to include plugin @voyant-travel/plugin-netopia")
   }
 
-  const frameworkPackage = JSON.parse(
-    await readFile(join(repoRoot, "packages/framework/package.json"), "utf8"),
-  ) as { version: string }
-  const authoredOperatorProject = operatorProject as OperatorAuthoredProject
-  const operatorProfile = defineVoyantProject({
-    profile: "operator",
-    frameworkVersion: frameworkPackage.version,
-    mode: authoredOperatorProject.deployment.mode,
-    modules: [],
-    providers: authoredOperatorProject.deployment.providers,
-  })
-  const resolvedOperator = await resolveOperatorDeploymentGraph({
-    project: authoredOperatorProject,
-    projectRoot: operatorRoot,
-    repoRoot,
-    frameworkVersion: frameworkPackage.version,
-    scheduledJobs: [
-      ...getManagedProfileScheduledJobs(operatorProfile),
-      ...OPERATOR_LOCAL_SCHEDULED_JOBS,
-    ],
-  })
   const operatorGraph = resolvedOperator.graph
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorExtensionIds = new Set(operatorGraph.extensions.map((unit) => unit.id))
@@ -307,18 +289,27 @@ async function main(): Promise<void> {
       "expected operator graph package records to include @voyant-travel/plugin-netopia",
     )
   }
-  const smartbillRecord = operatorPackageRecords.get("@voyant-travel/plugin-smartbill")
   if (
-    smartbillRecord?.version !== "0.138.0" ||
+    operatorPackageNames.has("@voyant-travel/plugin-smartbill") ||
+    operatorPluginIds.has("@voyant-travel/plugin-smartbill")
+  ) {
+    failures.push("expected the standard Operator graph not to admit optional SmartBill")
+  }
+
+  const smartbillRecord = smartbillOptIn.graph.packageRecords.find(
+    (record) => record.packageName === "@voyant-travel/plugin-smartbill",
+  )
+  if (
+    smartbillRecord?.version !== "0.140.2" ||
     smartbillRecord.source?.kind !== "registry" ||
     smartbillRecord.metadata?.kind !== "plugin" ||
     smartbillRecord.metadata.manifest !== "./voyant"
   ) {
     failures.push(
-      "expected SmartBill 0.138.0 registry package to be admitted through its ./voyant manifest",
+      "expected explicitly selected SmartBill 0.140.2 to be admitted through its ./voyant manifest",
     )
   }
-  const smartbillUnit = operatorGraph.plugins.find(
+  const smartbillUnit = smartbillOptIn.graph.plugins.find(
     (unit) => unit.id === "@voyant-travel/plugin-smartbill",
   )
   const smartbillSubscriberIds = smartbillUnit?.subscribers
@@ -332,7 +323,9 @@ async function main(): Promise<void> {
       "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
     ])
   ) {
-    failures.push("expected SmartBill subscribers to come from the admitted package manifest")
+    failures.push(
+      "expected explicitly selected SmartBill subscribers to come from the admitted package manifest",
+    )
   }
   const bookingsRecord = operatorPackageRecords.get("@voyant-travel/bookings")
   if (bookingsRecord?.metadata?.manifest !== "./voyant") {
@@ -361,9 +354,6 @@ async function main(): Promise<void> {
   }
   if (!bookingsUnit?.links?.some((entry) => entry.source === "@voyant-travel/bookings/linkables")) {
     failures.push("expected generated bookings linkables to come from its package-owned manifest")
-  }
-  for (const id of OPERATOR_LOCAL_MODULE_IDS) {
-    if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
   for (const id of [
     "@voyant-travel/storefront#customer-portal",
@@ -486,15 +476,7 @@ async function main(): Promise<void> {
       "expected Finance booking-schedule subscriber to retain its package-owned runtime reference",
     )
   }
-  const operatorBookingScheduleSource = await readFile(
-    join(operatorRoot, "src/api/routes/booking-schedule.ts"),
-    "utf8",
-  )
-  if (
-    operatorAppSource.includes("bookingScheduleBundle") ||
-    operatorBookingScheduleSource.includes("bookingScheduleBundle") ||
-    operatorBookingScheduleSource.includes("eventBus.subscribe")
-  ) {
+  if (operatorAppSource.includes("bookingScheduleBundle")) {
     failures.push(
       "expected package-owned Finance booking-schedule subscriber to stay absent from Operator hand lists and route wiring",
     )

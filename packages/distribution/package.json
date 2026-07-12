@@ -8,12 +8,19 @@
     "./channel-push-subscribers": "./src/channel-push/subscriber-runtime.ts",
     "./channel-push-workflows": "./src/channel-push/workflow-entry.ts",
     "./channel-push-runtime": "./src/channel-push/types.ts",
-    "./external-refs/validation": "./src/external-refs/validation.ts",
-    "./suppliers/linkables": "./src/suppliers/linkables.ts",
+    "./linkables": "./src/linkables.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
-    "./voyant": "./src/voyant.ts"
+    "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/distribution.json",
+    "./openapi/admin/booking": "./openapi/admin/distribution-booking.json",
+    "./openapi/admin/channel-push": "./openapi/admin/distribution-channel-push.json",
+    "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
+    "./openapi/admin/suppliers": "./openapi/admin/suppliers.json",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -30,10 +37,12 @@
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
+    "@voyant-travel/webhook-delivery": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:",
@@ -46,6 +55,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -72,15 +82,10 @@
         "import": "./dist/channel-push/types.js",
         "default": "./dist/channel-push/types.js"
       },
-      "./external-refs/validation": {
-        "types": "./dist/external-refs/validation.d.ts",
-        "import": "./dist/external-refs/validation.js",
-        "default": "./dist/external-refs/validation.js"
-      },
-      "./suppliers/linkables": {
-        "types": "./dist/suppliers/linkables.d.ts",
-        "import": "./dist/suppliers/linkables.js",
-        "default": "./dist/suppliers/linkables.js"
+      "./linkables": {
+        "types": "./dist/linkables.d.ts",
+        "import": "./dist/linkables.js",
+        "default": "./dist/linkables.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",
@@ -97,10 +102,30 @@
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
       },
+      "./payment-policy-runtime": {
+        "types": "./dist/payment-policy-runtime.d.ts",
+        "import": "./dist/payment-policy-runtime.js",
+        "default": "./dist/payment-policy-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./openapi/admin": "./openapi/admin/distribution.json",
+      "./openapi/admin/booking": "./openapi/admin/distribution-booking.json",
+      "./openapi/admin/channel-push": "./openapi/admin/distribution-channel-push.json",
+      "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
+      "./openapi/admin/suppliers": "./openapi/admin/suppliers.json",
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
       }
     },
     "main": "./dist/index.js",
@@ -130,6 +155,10 @@
     "requiresSchemas": [
       "@voyant-travel/bookings",
       "@voyant-travel/db"
-    ]
+    ],
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createDistributionRuntimePortContribution"
+    }
   }
 }

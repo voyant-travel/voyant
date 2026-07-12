@@ -6,9 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./linkables": "./src/linkables.ts",
+    "./standard-links": "./src/standard-links.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./read-model": "./src/read-model.ts",
     "./routes": "./src/routes.ts",
     "./routes-brochure": "./src/routes-brochure.ts",
@@ -35,18 +36,27 @@
     "./routes-content": "./src/routes-content.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine.ts",
+    "./booking-engine/operator-runtime": "./src/booking-engine/product-runtime.ts",
+    "./booking-payment-policy-runtime": "./src/booking-payment-policy-runtime.ts",
     "./extras": "./src/extras.ts",
     "./authoring": "./src/authoring.ts",
     "./authoring/schema": "./src/authoring/schema.ts",
     "./authoring/spec": "./src/authoring/spec.ts",
     "./authoring/extension": "./src/authoring/extension.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/products.json",
+    "./openapi/admin/authoring": "./openapi/admin/inventory-authoring.json",
+    "./openapi/admin/booking": "./openapi/admin/inventory-booking.json",
+    "./openapi/admin/extras": "./openapi/admin/extras.json",
+    "./openapi/storefront": "./openapi/storefront/products.json",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/",
-    "test": "vitest run",
+    "test": "vitest run --exclude='dist/**'",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
@@ -55,9 +65,12 @@
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/extras-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
@@ -73,7 +86,11 @@
     "pdf-lib": "^1.17.1",
     "sanitize-html": "^2.17.5",
     "zod": "catalog:",
-    "@voyant-travel/operations": "workspace:^"
+    "@voyant-travel/operations": "workspace:^",
+    "@voyant-travel/operator-settings": "workspace:^"
+  },
+  "peerDependencies": {
+    "@voyant-travel/relationships": "workspace:^"
   },
   "devDependencies": {
     "@types/sanitize-html": "^2.16.1",
@@ -84,6 +101,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -100,6 +118,11 @@
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
       },
+      "./standard-links": {
+        "types": "./dist/standard-links.d.ts",
+        "import": "./dist/standard-links.js",
+        "default": "./dist/standard-links.js"
+      },
       "./schema": {
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js",
@@ -111,9 +134,9 @@
         "default": "./dist/validation.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./read-model": {
         "types": "./dist/read-model.d.ts",
@@ -245,6 +268,16 @@
         "import": "./dist/booking-engine.js",
         "default": "./dist/booking-engine.js"
       },
+      "./booking-engine/operator-runtime": {
+        "types": "./dist/booking-engine/product-runtime.d.ts",
+        "import": "./dist/booking-engine/product-runtime.js",
+        "default": "./dist/booking-engine/product-runtime.js"
+      },
+      "./booking-payment-policy-runtime": {
+        "types": "./dist/booking-payment-policy-runtime.d.ts",
+        "import": "./dist/booking-payment-policy-runtime.js",
+        "default": "./dist/booking-payment-policy-runtime.js"
+      },
       "./extras": {
         "types": "./dist/extras.d.ts",
         "import": "./dist/extras.js",
@@ -275,10 +308,25 @@
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./openapi/admin": "./openapi/admin/products.json",
+      "./openapi/admin/authoring": "./openapi/admin/inventory-authoring.json",
+      "./openapi/admin/booking": "./openapi/admin/inventory-booking.json",
+      "./openapi/admin/extras": "./openapi/admin/extras.json",
+      "./openapi/storefront": "./openapi/storefront/products.json",
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
       }
     },
     "main": "./dist/index.js",
@@ -293,6 +341,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createInventoryRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

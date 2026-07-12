@@ -22,6 +22,13 @@
       "when": 1783406670043,
       "tag": "0002_db_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783872000000,
+      "tag": "0003_webhook_delivery_payload",
+      "breakpoints": true
     }
   ]
 }

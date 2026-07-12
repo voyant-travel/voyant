@@ -1,6 +1,7 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook, parseQuery } from "@voyant-travel/hono"
 import type { Context } from "hono"
+import { createPricingPublicRoute } from "./routes-openapi.js"
 import { type Env, notFound } from "./routes-shared.js"
 import { publicPricingService } from "./service-public.js"
 import {
@@ -15,7 +16,7 @@ function cachePublicRead(c: Context) {
   c.header("Cache-Control", PUBLIC_CACHE_CONTROL)
 }
 
-const productPricingRoute = createRoute({
+const productPricingRoute = createPricingPublicRoute({
   method: "get",
   path: "/products/{productId}/pricing",
   request: {

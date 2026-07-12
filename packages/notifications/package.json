@@ -19,8 +19,10 @@
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
     "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
-    "./tools": "./src/tools.ts",
-    "./voyant": "./src/voyant.ts"
+    "./tools": "./src/mcp-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/notifications.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -40,6 +42,7 @@
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/legal": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -56,6 +59,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -138,15 +142,21 @@
         "default": "./dist/providers/voyant-cloud-sms.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/notifications.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -160,6 +170,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createNotificationsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

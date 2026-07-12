@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./linkables": "./src/linkables.ts",
+    "./standard-links": "./src/standard-links.ts",
     "./contract-document-routes": "./src/contract-document-routes.ts",
     "./contract-document": "./src/contracts/contract-document-service.ts",
     "./contract-variables": "./src/contracts/contract-variables.ts",
@@ -27,7 +28,14 @@
     "./policies/validation": "./src/policies/validation.ts",
     "./policies/routes": "./src/policies/routes.ts",
     "./policies/service": "./src/policies/service.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-port": "./src/runtime-port.ts",
+    "./contract-document-runtime-port": "./src/contract-document-runtime-port.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime": "./src/runtime.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/legal.json",
+    "./openapi/admin/contract-document": "./openapi/admin/contract-document.json",
+    "./openapi/storefront": "./openapi/storefront/legal.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -42,12 +50,15 @@
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
+    "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/legal-contracts": "workspace:^",
+    "@voyant-travel/operator-settings": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
@@ -55,6 +66,9 @@
     "hono": "catalog:",
     "zod": "catalog:",
     "@voyant-travel/distribution": "workspace:^"
+  },
+  "peerDependencies": {
+    "@voyant-travel/inventory": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-test-utils": "workspace:^",
@@ -65,6 +79,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -80,6 +95,11 @@
         "types": "./dist/linkables.d.ts",
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
+      },
+      "./standard-links": {
+        "types": "./dist/standard-links.d.ts",
+        "import": "./dist/standard-links.js",
+        "default": "./dist/standard-links.js"
       },
       "./contract-document-routes": {
         "types": "./dist/contract-document-routes.d.ts",
@@ -186,11 +206,34 @@
         "import": "./dist/policies/service.js",
         "default": "./dist/policies/service.js"
       },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
+      },
+      "./contract-document-runtime-port": {
+        "types": "./dist/contract-document-runtime-port.d.ts",
+        "import": "./dist/contract-document-runtime-port.js",
+        "default": "./dist/contract-document-runtime-port.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime": {
+        "types": "./dist/runtime.d.ts",
+        "import": "./dist/runtime.js",
+        "default": "./dist/runtime.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/legal.json",
+      "./openapi/admin/contract-document": "./openapi/admin/contract-document.json",
+      "./openapi/storefront": "./openapi/storefront/legal.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -204,6 +247,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createLegalRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

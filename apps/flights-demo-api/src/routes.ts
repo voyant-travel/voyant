@@ -1,7 +1,7 @@
 /**
  * REST surface for the demo flight service. Mirrors the methods on
- * `FlightConnectorAdapter` so the plugin client (`@voyant-travel/plugin-flights-demo`)
- * is a thin fetch wrapper. Each endpoint maps 1:1 to an adapter call.
+ * `FlightConnectorAdapter` so local project customizations can use it as an
+ * integration source. Each endpoint maps 1:1 to an adapter call.
  *
  *   POST   /search                       searchFlights
  *   POST   /price                        priceOffer

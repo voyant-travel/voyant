@@ -9,7 +9,7 @@
     "./schema-sourced-entries": "./src/schema-sourced-entries.ts",
     "./contract": "./src/contract.ts",
     "./provenance": "./src/provenance.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./overlay/schema": "./src/overlay/schema.ts",
     "./overlay/resolver": "./src/overlay/resolver.ts",
     "./snapshot/schema": "./src/snapshot/schema.ts",
@@ -41,8 +41,21 @@
     "./offers": "./src/offers/operator-routes.ts",
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
     "./projection-runtime": "./src/projection-runtime.ts",
+    "./operator-runtime": "./src/operator-runtime.ts",
+    "./catalog-runtime": "./src/runtime/catalog-runtime.ts",
+    "./api-runtime-ports": "./src/api-runtime-ports.ts",
+    "./subscriber-runtime-ports": "./src/subscriber-runtime-ports.ts",
+    "./booking-engine/operator-routes": "./src/booking-engine/operator-routes.ts",
+    "./runtime-port": "./src/content-runtime-port.ts",
+    "./draft-reaper-workflow": "./src/draft-reaper-workflow.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/catalog.json",
+    "./openapi/admin/booking": "./openapi/admin/catalog-booking.json",
+    "./openapi/storefront": "./openapi/storefront/catalog.json",
+    "./openapi/storefront/booking": "./openapi/storefront/catalog-booking.json",
+    "./runtime-contracts": "./src/runtime-contracts.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
@@ -62,7 +75,11 @@
     "schema": "./schema",
     "requiresSchemas": [
       "@voyant-travel/db"
-    ]
+    ],
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createCatalogRuntimePortContribution"
+    }
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -75,6 +92,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -107,9 +125,9 @@
         "default": "./dist/provenance.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./overlay/schema": {
         "types": "./dist/overlay/schema.d.ts",
@@ -266,15 +284,64 @@
         "import": "./dist/projection-runtime.js",
         "default": "./dist/projection-runtime.js"
       },
+      "./operator-runtime": {
+        "types": "./dist/operator-runtime.d.ts",
+        "import": "./dist/operator-runtime.js",
+        "default": "./dist/operator-runtime.js"
+      },
+      "./catalog-runtime": {
+        "types": "./dist/runtime/catalog-runtime.d.ts",
+        "import": "./dist/runtime/catalog-runtime.js",
+        "default": "./dist/runtime/catalog-runtime.js"
+      },
+      "./api-runtime-ports": {
+        "types": "./dist/api-runtime-ports.d.ts",
+        "import": "./dist/api-runtime-ports.js",
+        "default": "./dist/api-runtime-ports.js"
+      },
+      "./subscriber-runtime-ports": {
+        "types": "./dist/subscriber-runtime-ports.d.ts",
+        "import": "./dist/subscriber-runtime-ports.js",
+        "default": "./dist/subscriber-runtime-ports.js"
+      },
+      "./booking-engine/operator-routes": {
+        "types": "./dist/booking-engine/operator-routes.d.ts",
+        "import": "./dist/booking-engine/operator-routes.js",
+        "default": "./dist/booking-engine/operator-routes.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/content-runtime-port.d.ts",
+        "import": "./dist/content-runtime-port.js",
+        "default": "./dist/content-runtime-port.js"
+      },
+      "./draft-reaper-workflow": {
+        "types": "./dist/draft-reaper-workflow.d.ts",
+        "import": "./dist/draft-reaper-workflow.js",
+        "default": "./dist/draft-reaper-workflow.js"
+      },
       "./graph-runtime": {
         "types": "./dist/graph-runtime.d.ts",
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./openapi/admin": "./openapi/admin/catalog.json",
+      "./openapi/admin/booking": "./openapi/admin/catalog-booking.json",
+      "./openapi/storefront": "./openapi/storefront/catalog.json",
+      "./openapi/storefront/booking": "./openapi/storefront/catalog-booking.json",
+      "./runtime-contracts": {
+        "types": "./dist/runtime-contracts.d.ts",
+        "import": "./dist/runtime-contracts.js",
+        "default": "./dist/runtime-contracts.js"
       }
     },
     "main": "./dist/index.js",
@@ -283,10 +350,15 @@
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/catalog-contracts": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/connect-sdk": "0.9.1",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/tools": "workspace:^",
+    "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

@@ -145,6 +145,10 @@ describe("graph runtime factory context", () => {
     expect(contexts[0]).toBe(contexts[1])
     expect(contexts[0]?.projectConfig).toBe(runtime.modules[0]?.projectConfig)
     expect(contexts[0]?.projectConfig).toEqual(projectConfig)
+    expect(contexts[0]?.graph).toBe(runtime)
+    expect(contexts[0]?.runtimePorts).toEqual({
+      [runtimePort.id]: { moduleName: "alerts" },
+    })
   })
 
   it("rejects undeclared, missing required, and missing optional ports", async () => {

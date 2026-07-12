@@ -9,11 +9,12 @@
  * (and the legacy `/v1/markets/*`); this file adds ONLY the customer read path.
  */
 
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
+import { createMarketsPublicRoute } from "./routes-openapi.js"
 import { listPublicMarkets } from "./service-public.js"
 
 type Env = { Variables: { db: PostgresJsDatabase } }
@@ -43,7 +44,7 @@ export const publicMarketSchema = z.object({
   currencies: z.array(publicMarketCurrencySchema),
 })
 
-const listPublicMarketsRoute = createRoute({
+const listPublicMarketsRoute = createMarketsPublicRoute({
   method: "get",
   path: "/",
   responses: {

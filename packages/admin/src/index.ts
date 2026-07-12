@@ -21,6 +21,11 @@
  */
 
 export {
+  type AdminRouteMessagesProviderLoader,
+  composeAdminRouteMessagesProviders,
+  withAdminRouteMessagesProvider,
+} from "./admin-route-messages.js"
+export {
   type AdminBreadcrumbSegment,
   AdminBreadcrumbsProvider,
   type AdminBreadcrumbsProviderProps,
@@ -132,9 +137,13 @@ export {
   type AdminRoutePageModule,
   type AdminRoutePageProps,
   type AdminRouteRuntime,
+  type AdminSettingsNavGroup,
+  type AdminSettingsNavIcon,
+  type AdminSettingsPageContribution,
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
+  type AnyAdminWidgetContribution,
   adminExtensionsFromGlob,
   adminRoutePageModule,
   adminWorkspaceHeaderActionsSlot,

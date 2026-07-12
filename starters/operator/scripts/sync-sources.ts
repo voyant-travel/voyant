@@ -18,7 +18,6 @@
  *   DATABASE_URL              — catalog DB where sourced-entry rows are upserted
  *
  * Configure at least one source adapter:
- *   CATALOG_DEMO_API_URL      — demo upstream URL
  *   VOYANT_API_KEY            — Voyant API key, used for Connect + embeddings
  *   VOYANT_CONNECT_OPERATOR_ID
  *
@@ -40,11 +39,11 @@ import {
   type IndexerDocument,
 } from "@voyant-travel/catalog"
 import { type SyncSourcesSummary, syncSources } from "@voyant-travel/catalog/booking-engine"
+import { getFieldPolicyRegistries, loadCatalogSlices } from "@voyant-travel/catalog/catalog-runtime"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
-import { getFieldPolicyRegistries, loadCatalogSlices } from "../src/api/lib/catalog-runtime.js"
 import { buildSyncSourceRegistry } from "./lib/build-sync-source-registry.js"
 import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 
@@ -77,15 +76,15 @@ const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} })
 const db = drizzle(sql)
 
 // ── Registry: register every adapter the deployment supports ─────────────
-// Same wiring (demo + Connect + cruise adapters) as the live booking-engine
+// Same wiring (Connect + cruise adapters) as the live booking-engine
 // registry, factored out so it can be unit-tested without the CLI side effects.
 const registry = await buildSyncSourceRegistry(process.env)
 
 const adapterKinds = registry.kinds()
 if (adapterKinds.length === 0) {
   console.warn(
-    "[sync-sources] no SourceAdapters are registered — set CATALOG_DEMO_API_URL or wire " +
-      "another adapter to populate the index from sourced inventory.",
+    "[sync-sources] no SourceAdapters are registered — wire a connector to populate " +
+      "the index from sourced inventory.",
   )
   process.exit(0)
 }

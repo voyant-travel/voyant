@@ -64,7 +64,7 @@ export async function start() {
 
   it("allows serializable workflow manifest descriptor imports", async () => {
     const root = await createFixture({
-      "manifest.ts": `import { workflowManifest } from "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest"
+      "manifest.ts": `import { workflowManifest } from "@voyant-travel/commerce/product-reindex-workflow-manifest"
 
 export const graph = { workflows: [workflowManifest] }
 `,

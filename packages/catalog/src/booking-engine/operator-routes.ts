@@ -39,7 +39,7 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -435,12 +435,24 @@ export function mountCatalogBookingRoutes(
   hono: CatalogBookingMountTarget,
   options: CatalogBookingRouteModuleOptions,
 ): void {
-  for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
-    hono.route(prefix, createCatalogBookingRoutes(options.booking))
+  for (const [prefix, apiId] of [
+    ["/v1/admin/catalog", "@voyant-travel/catalog#booking-engine.api.admin"],
+    ["/v1/public/catalog", "@voyant-travel/catalog#booking-engine.api.public"],
+  ] as const) {
+    hono.route(
+      prefix,
+      stampOpenApiRegistryApiId(createCatalogBookingRoutes(options.booking), apiId),
+    )
   }
 
   // Admin-only — order management (list / get / cancel).
-  hono.route("/v1/admin/catalog", createCatalogBookingOrdersRoutes(options))
+  hono.route(
+    "/v1/admin/catalog",
+    stampOpenApiRegistryApiId(
+      createCatalogBookingOrdersRoutes(options),
+      "@voyant-travel/catalog#booking-engine.api.admin",
+    ),
+  )
 
   // List available departures / slots for a product. Drives the
   // storefront's departure-select on the product detail page —
@@ -450,6 +462,9 @@ export function mountCatalogBookingRoutes(
     const slotsRoute = createRoute({
       method: "get",
       path: `${prefix}/slots`,
+      "x-voyant-api-id": prefix.startsWith("/v1/admin/")
+        ? "@voyant-travel/catalog#booking-engine.api.admin"
+        : "@voyant-travel/catalog#booking-engine.api.public",
       request: { query: slotsQuerySchema },
       responses: {
         200: {
@@ -473,6 +488,7 @@ export function mountCatalogBookingRoutes(
   const catalogSnapshotRoute = createRoute({
     method: "get",
     path: "/v1/admin/bookings/{id}/catalog-snapshot",
+    "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
     request: { params: idParamSchema },
     responses: {
       200: {

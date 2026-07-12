@@ -7,11 +7,11 @@ import {
   buildGraphAdminBundleModule,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
-  buildManagedNodeRuntimeEntry,
-  buildManagedNodeRuntimeEntryArtifact,
+  buildNodeRuntimeEntry,
+  buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
-  VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
+  VOYANT_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
 import {
   defineExtension,
@@ -96,7 +96,16 @@ describe("deployment graph artifacts", () => {
     const graph = await graphWithSelectedUnits([
       defineModule({
         id: "@acme/hooks",
-        events: [{ id: "@acme/hooks#event.changed", eventType: "hooks.changed" }],
+        events: [
+          {
+            id: "@acme/hooks#event.changed",
+            eventType: "hooks.changed",
+            version: "1.0.0",
+            payloadSchema: { type: "object", properties: {} },
+            visibility: "external",
+            audit: { sourceModule: "hooks", category: "domain" },
+          },
+        ],
         webhooks: [
           {
             id: "@acme/hooks#webhook.changed",
@@ -112,6 +121,80 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
     expect(source).toContain('"eventType": "hooks.changed"')
     expect(source).toContain("webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
+  })
+
+  it("statically lowers selected package runtime contributors", async () => {
+    const resolved = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        runtimePorts: [{ id: "loyalty.provider", optional: true, cardinality: "many" }],
+      }),
+    ])
+    const graph = {
+      ...resolved,
+      packageRecords: resolved.packageRecords.map((record) => ({
+        ...record,
+        metadata: {
+          schemaVersion: "voyant.package.v1" as const,
+          kind: "module" as const,
+          runtime: {
+            entry: "./runtime-contributor",
+            export: "createLoyaltyRuntimePortContribution",
+          },
+        },
+      })),
+    }
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain(
+      'import { createLoyaltyRuntimePortContribution as GENERATED_RUNTIME_CONTRIBUTOR_0 } from "@acme/voyant-loyalty/runtime-contributor"',
+    )
+    expect(source).toContain("export function createGeneratedGraphRuntimePorts(")
+    expect(source).not.toContain("createRuntimePorts:")
+    expect(source).toContain("& Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>[0]")
+    expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
+    expect(source).toContain("getRuntimePort(port: { id: string })")
+    expect(source).toContain("contributor(contributorHost)")
+    expect(source).toContain("has multiple static contributors")
+    expect(source).toContain(
+      'GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS = [\n  "loyalty.provider",\n] as const',
+    )
+    expect(source).toContain("manyPortIds.has(id) ? [value] : value")
+    expect(source).toContain("values.push(value)")
+  })
+
+  it("selects a canonical package contributor when compatibility provenance is stale", async () => {
+    const resolved = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/auth#invitations",
+        packageName: "operator",
+      }),
+    ])
+    const graph = {
+      ...resolved,
+      packageRecords: [
+        ...resolved.packageRecords,
+        {
+          packageName: "@acme/auth",
+          source: { kind: "workspace" as const },
+          metadata: {
+            schemaVersion: "voyant.package.v1" as const,
+            kind: "module" as const,
+            runtime: {
+              entry: "./runtime-contributor",
+              export: "createAuthRuntimePortContribution",
+            },
+          },
+        },
+      ],
+    }
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain(
+      'import { createAuthRuntimePortContribution as GENERATED_RUNTIME_CONTRIBUTOR_0 } from "@acme/auth/runtime-contributor"',
+    )
   })
 
   it("lowers only opted-in package admin factories into one selected bundle", async () => {
@@ -158,10 +241,9 @@ describe("deployment graph artifacts", () => {
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {
     const graph = await sampleGraph()
-    const entry = buildManagedNodeRuntimeEntryArtifact({
+    const entry = buildNodeRuntimeEntryArtifact({
       graph,
       file: "src/runtime-entry.generated.ts",
-      profileSnapshot: "managed-profile.json",
     })
 
     expect(
@@ -184,12 +266,11 @@ describe("deployment graph artifacts", () => {
       webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {
-          id: VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
+          id: VOYANT_NODE_RUNTIME_ENTRY_ID,
           target: "node",
           file: "src/runtime-entry.generated.ts",
           graphHash: graph.contentHash,
-          kind: "managed-profile-node",
-          profileSnapshot: "managed-profile.json",
+          kind: "node",
         },
       ],
       migrationSources: [
@@ -240,10 +321,9 @@ describe("deployment graph artifacts", () => {
 
   it("builds a tiny managed Node runtime entry tied to the graph hash", async () => {
     const graph = await sampleGraph()
-    const source = buildManagedNodeRuntimeEntry({
+    const source = buildNodeRuntimeEntry({
       graph,
       graphArtifactPath: "../deployment-graph.generated.json",
-      profileSnapshotPath: "../managed-profile.json",
       command: "pnpm --filter operator graph:emit",
     })
 
@@ -253,11 +333,12 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("assertGeneratedDeploymentGraphArtifact()")
     expect(source).toContain("resolveGeneratedDeploymentRequirements")
     expect(source).toContain("resolveGeneratedRuntimeDeployment")
-    expect(source).toContain('await import("@voyant-travel/framework/managed-runtime")')
+    expect(source).toContain('await import("@voyant-travel/framework/node-runtime")')
     expect(
       source.indexOf("if (isMainModule) {\n  assertGeneratedDeploymentGraphArtifact()"),
-    ).toBeLessThan(source.indexOf('await import("@voyant-travel/framework/managed-runtime")'))
-    expect(source).toContain("startManagedProfileRuntime")
+    ).toBeLessThan(source.indexOf('await import("@voyant-travel/framework/node-runtime")'))
+    expect(source).toContain("startVoyantNodeRuntime")
+    expect(source).not.toContain("profileSnapshotPath:")
     expect(source).toContain("deployment: resolveGeneratedRuntimeDeployment()")
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
     expect(source).toContain('from "./graph-runtime.generated.js"')
@@ -435,7 +516,16 @@ describe("deployment graph artifacts", () => {
             runtime: { entry: "./runtime", export: "reconcileWorkflow" },
           },
         ],
-        events: [{ id: "loyalty.event", eventType: "loyalty.changed" }],
+        events: [
+          {
+            id: "loyalty.event",
+            eventType: "loyalty.changed",
+            version: "1.0.0",
+            payloadSchema: { type: "object" },
+            visibility: "internal",
+            audit: { sourceModule: "loyalty", category: "domain" },
+          },
+        ],
         webhooks: [
           {
             id: "loyalty.webhook",
@@ -638,20 +728,18 @@ describe("deployment graph artifacts", () => {
     const graph = await sampleGraph()
 
     expect(() =>
-      buildManagedNodeRuntimeEntryArtifact({
+      buildNodeRuntimeEntryArtifact({
         graph,
         file: "/tmp/runtime-entry.generated.ts",
-        profileSnapshot: "managed-profile.json",
       }),
     ).toThrow(/relative path/)
   })
 
   it("rejects runtime entry artifacts with a mismatched graph hash", async () => {
     const graph = await sampleGraph()
-    const entry = buildManagedNodeRuntimeEntryArtifact({
+    const entry = buildNodeRuntimeEntryArtifact({
       graph,
       file: "src/runtime-entry.generated.ts",
-      profileSnapshot: "managed-profile.json",
     })
 
     expect(() =>

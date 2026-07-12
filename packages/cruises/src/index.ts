@@ -1,8 +1,13 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
+import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { LinkableDefinition, Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import type { Hono } from "hono"
 
 import { cruiseAdminRoutes } from "./routes.js"
 import { cruisePublicRoutes } from "./routes-public.js"
+import { cruisesRoutesRuntimePort } from "./runtime-port.js"
 
 export {
   type CompatibilityMappingResult,
@@ -204,6 +209,50 @@ export function createCruisesHonoModule(options: CreateCruisesHonoModuleOptions 
 }
 
 export const cruisesHonoModule: HonoModule = createCruisesHonoModule()
+
+// biome-ignore lint/suspicious/noExplicitAny: package route bundles have distinct Env generics -- owner: cruises.
+type CruiseRouteBundle = Hono<any> | OpenAPIHono<any>
+
+function withSourceAdapterRegistry(
+  routes: CruiseRouteBundle,
+  resolveSourceAdapterRegistry: (bindings: unknown) => Promise<SourceAdapterRegistry>,
+) {
+  // biome-ignore lint/suspicious/noExplicitAny: wrapper accepts both package route Env shapes -- owner: cruises.
+  const wrapped: OpenAPIHono<any> = new OpenAPIHono()
+  wrapped.use("*", async (c, next) => {
+    c.set("sourceAdapterRegistry", await resolveSourceAdapterRegistry(c.env))
+    await next()
+  })
+  wrapped.route("/", routes)
+  return wrapped
+}
+
+/** Package-owned adapter from graph ports to registry-aware Cruise routes. */
+export const createCruisesVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
+  const runtime = await getPort(cruisesRoutesRuntimePort)
+  return {
+    module: cruisesModule,
+    ...(api.some(({ surface }) => surface === "admin")
+      ? {
+          adminRoutes: withSourceAdapterRegistry(
+            cruiseAdminRoutes,
+            runtime.resolveSourceAdapterRegistry,
+          ),
+        }
+      : {}),
+    ...(api.some(({ surface }) => surface === "public")
+      ? {
+          publicRoutes: withSourceAdapterRegistry(
+            cruisePublicRoutes,
+            runtime.resolveSourceAdapterRegistry,
+          ),
+        }
+      : {}),
+  }
+})
+
+export type { CruisesRoutesRuntime } from "./runtime-port.js"
+export { cruisesRoutesRuntimePort } from "./runtime-port.js"
 
 export type {
   CruiseCabin,

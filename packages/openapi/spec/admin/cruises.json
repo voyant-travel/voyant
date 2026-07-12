@@ -149,6 +149,52 @@
             ]
           }
         ]
+      },
+      "BookingProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BookingItemProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierServiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "parameters": {}
@@ -156,6 +202,7 @@
   "paths": {
     "/v1/admin/cruises": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -326,6 +373,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -849,6 +897,7 @@
     },
     "/v1/admin/cruises/voyage-groups": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1150,6 +1199,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -1545,6 +1595,7 @@
     },
     "/v1/admin/cruises/voyage-groups/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1940,6 +1991,7 @@
         "x-voyant-surface": "admin"
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2356,6 +2408,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2595,6 +2648,7 @@
     },
     "/v1/admin/cruises/voyage-groups/{id}/segments": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2879,6 +2933,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3230,6 +3285,7 @@
     },
     "/v1/admin/cruises/voyage-group-segments/{segmentId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3593,6 +3649,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3638,6 +3695,7 @@
     },
     "/v1/admin/cruises/enrichment/{programId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3831,6 +3889,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3876,6 +3935,7 @@
     },
     "/v1/admin/cruises/sailings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4123,6 +4183,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -4384,6 +4445,7 @@
     },
     "/v1/admin/cruises/sailings/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4475,6 +4537,7 @@
         "x-voyant-surface": "admin"
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4778,6 +4841,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/itinerary": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4858,6 +4922,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/days/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5155,6 +5220,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/pricing": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5244,6 +5310,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/pricing/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5713,6 +5780,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/quote": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5895,6 +5963,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/bookings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6231,6 +6300,7 @@
     },
     "/v1/admin/cruises/sailings/{key}/party-bookings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6305,6 +6375,7 @@
     },
     "/v1/admin/cruises/prices": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6611,6 +6682,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -6982,6 +7054,7 @@
     },
     "/v1/admin/cruises/prices/{priceId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7375,6 +7448,7 @@
     },
     "/v1/admin/cruises/ships": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7640,6 +7714,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -7981,6 +8056,7 @@
     },
     "/v1/admin/cruises/ships/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8253,6 +8329,7 @@
         "x-voyant-surface": "admin"
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8637,6 +8714,7 @@
     },
     "/v1/admin/cruises/ships/{key}/decks": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8715,6 +8793,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8865,6 +8944,7 @@
     },
     "/v1/admin/cruises/decks/{deckId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8996,6 +9076,7 @@
     },
     "/v1/admin/cruises/ships/{key}/categories": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9076,6 +9157,7 @@
     },
     "/v1/admin/cruises/ships/{key}/categories/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9489,6 +9571,7 @@
     },
     "/v1/admin/cruises/categories/{categoryId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9862,6 +9945,7 @@
     },
     "/v1/admin/cruises/categories/{categoryId}/cabins": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9962,6 +10046,7 @@
     },
     "/v1/admin/cruises/categories/{categoryId}/cabins/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10121,6 +10206,7 @@
     },
     "/v1/admin/cruises/cabins/{cabinId}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10285,6 +10371,7 @@
     },
     "/v1/admin/cruises/search-index/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -10580,6 +10667,7 @@
     },
     "/v1/admin/cruises/search-index/{crsiId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10625,6 +10713,7 @@
     },
     "/v1/admin/cruises/search-index/rebuild": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "responses": {
           "200": {
             "description": "Rebuild counts for local + external search-index entries",
@@ -10691,6 +10780,7 @@
     },
     "/v1/admin/cruises/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10782,6 +10872,7 @@
         "x-voyant-surface": "admin"
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11346,6 +11437,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11715,6 +11807,7 @@
     },
     "/v1/admin/cruises/{key}/aggregates/recompute": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12084,6 +12177,7 @@
     },
     "/v1/admin/cruises/{key}/sailings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12174,6 +12268,7 @@
     },
     "/v1/admin/cruises/{key}/days/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12446,6 +12541,7 @@
     },
     "/v1/admin/cruises/{key}/refresh": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12539,6 +12635,7 @@
     },
     "/v1/admin/cruises/{key}/detach": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12889,6 +12986,7 @@
     },
     "/v1/admin/cruises/{key}/enrichment": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13030,6 +13128,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13226,6 +13325,7 @@
     },
     "/v1/admin/cruises/{key}/enrichment/bulk": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13427,6 +13527,40 @@
         },
         "operationId": "putAdminCruisesByKeyEnrichmentBulk",
         "summary": "PUT /v1/admin/cruises/{key}/enrichment/bulk",
+        "tags": [
+          "cruises"
+        ],
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/cruises/{key}/content": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#content-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "Cruise content response."
+          }
+        },
+        "operationId": "getAdminCruisesByKeyContent",
+        "summary": "GET /v1/admin/cruises/{key}/content",
+        "tags": [
+          "cruises"
+        ],
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/cruises/{key}/sailings/{sailingExternalId}/pricing": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#content-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "Cruise content response."
+          }
+        },
+        "operationId": "getAdminCruisesByKeySailingsBySailingExternalIdPricing",
+        "summary": "GET /v1/admin/cruises/{key}/sailings/{sailingExternalId}/pricing",
         "tags": [
           "cruises"
         ],

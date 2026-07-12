@@ -22,28 +22,28 @@ package that always tracks "the framework version". A one-line fix → ~3 publis
 
 ## Maintenance
 
-The dependency list is generated from the runtime-module membership
-(`release.runtime-packages.generated.json`, produced by `scripts/check-lockstep-membership.mjs`):
+The publish dependency list is derived from the authored standard Operator
+distribution and package-owned manifests:
 
 ```sh
-node scripts/generate-framework-bom.mjs --emit   # regenerate deps + the exported list
+node scripts/generate-framework-bom.mjs --emit   # regenerate publish dependencies
 node scripts/generate-framework-bom.mjs          # check (CI gate) — fails on drift
 ```
 
 `workspace:*` deps publish as the **exact** current version (pnpm), so the published BOM is
-deterministic.
+deterministic. Generated dependency metadata is output-only. Resolver admission always uses
+selected package records and each package's `voyant.package.v1` metadata.
 
 ## Exports
 
-- `FRAMEWORK_RUNTIME_PACKAGES` — the pinned runtime-module names (e.g. for `voyant upgrade`).
-- `@voyant-travel/framework/profile` — managed profile snapshots, validation,
-  plugin/settings metadata, provider/resource requirements, migration metadata,
-  and the `createVoyantApp` profile bridge for Cloud-managed admin/API operator
-  deployments. Customer-facing site and storefront apps are separate Cloud app
-  artifacts, not managed profile fields.
+- `@voyant-travel/framework/scheduled-jobs` - graph-neutral standard scheduled
+  job declarations.
 - `@voyant-travel/framework/deployment-graph` — v1 project/deployment graph
-  declarations, resolver diagnostics, managed-profile bridging, and deterministic
-  resolved graph hashing.
+  declarations, resolver diagnostics, and deterministic resolved graph hashing.
 - `@voyant-travel/framework/deployment-artifacts` — pure lowering helpers that
   turn a resolved graph into deterministic JSON, artifact manifests, and tiny
-  managed Node runtime entry modules for build/deploy tooling.
+  Node runtime entry modules for build/deploy tooling.
+
+Profile snapshots and their managed runtime/conversion subpaths are no longer
+published. Applications author projects through `@voyant-travel/framework/project`
+and boot the admitted graph through `@voyant-travel/framework/node-runtime`.

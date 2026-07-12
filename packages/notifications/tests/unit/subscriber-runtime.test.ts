@@ -8,13 +8,18 @@ import {
   createBookingConfirmationAutoDispatchSubscriberRuntime,
   createBookingConfirmedReminderSubscriberRuntime,
   createBookingExpiredReminderSubscriberRuntime,
+  createBookingFullyPaidDocumentLifecycleSubscriberRuntime,
   createPaymentCompletedReminderSubscriberRuntime,
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   type NotificationsSubscriberRuntime,
   notificationsReminderSubscriberRuntimeDescriptors,
 } from "../../src/subscriber-runtime.js"
 
-const db = {} as PostgresJsDatabase
+const db = {
+  update: vi.fn(() => ({
+    set: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
+  })),
+} as unknown as PostgresJsDatabase
 const dispatcher = {} as NotificationService
 const attachmentResolver = vi.fn()
 
@@ -46,6 +51,10 @@ describe("Notifications subscriber runtime descriptors", () => {
       {
         id: "@voyant-travel/notifications#subscriber.reminder-payment-completed",
         eventType: "payment.completed",
+      },
+      {
+        id: "@voyant-travel/notifications#subscriber.document-lifecycle-booking-fully-paid",
+        eventType: "booking.fully-paid",
       },
       {
         id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
@@ -105,6 +114,96 @@ describe("Notifications subscriber runtime descriptors", () => {
       }),
       { documentAttachmentResolver: attachmentResolver },
     )
+  })
+
+  it("preserves confirmation and fully-paid document lifecycle handling", async () => {
+    const runDocumentBundleLifecycle = vi.fn().mockResolvedValue({
+      status: "ok",
+      bookingId: "book_1",
+      documents: [],
+      steps: [],
+    })
+    const lifecycle = {
+      enabled: true,
+      notificationPolicy: () => false as const,
+    }
+    const confirmedHarness = createHarness({ documentBundleLifecycle: lifecycle })
+    createBookingConfirmedReminderSubscriberRuntime({
+      dispatchReminderRules: vi.fn().mockResolvedValue(undefined),
+      runDocumentBundleLifecycle,
+    }).register(confirmedHarness)
+
+    await confirmedHarness.eventBus.emit("booking.confirmed", {
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+      actorId: null,
+    })
+
+    const fullyPaidHarness = createHarness({ documentBundleLifecycle: lifecycle })
+    createBookingFullyPaidDocumentLifecycleSubscriberRuntime({
+      runDocumentBundleLifecycle,
+    }).register(fullyPaidHarness)
+    await fullyPaidHarness.eventBus.emit("booking.fully-paid", {
+      bookingId: "book_1",
+      paymentSessionId: "pay_1",
+      invoiceId: null,
+      amountCents: 1000,
+      currency: "EUR",
+      provider: "test",
+    })
+
+    expect(runDocumentBundleLifecycle).toHaveBeenCalledTimes(2)
+    expect(runDocumentBundleLifecycle.mock.calls.map((call) => call[2])).toEqual([
+      {
+        trigger: "booking.confirmed",
+        event: { bookingId: "book_1", bookingNumber: "BK-1", actorId: null },
+      },
+      {
+        trigger: "booking.fully-paid",
+        event: {
+          bookingId: "book_1",
+          paymentSessionId: "pay_1",
+          invoiceId: null,
+          amountCents: 1000,
+          currency: "EUR",
+          provider: "test",
+        },
+      },
+    ])
+  })
+
+  it("emits booking.fully-paid once when a completed payment settles the booking", async () => {
+    const harness = createHarness({
+      documentBundleLifecycle: { enabled: true, notificationPolicy: () => false },
+    })
+    const fullyPaid = vi.fn()
+    harness.eventBus.subscribe("booking.fully-paid", fullyPaid)
+    createPaymentCompletedReminderSubscriberRuntime({
+      dispatchReminderRules: vi.fn().mockResolvedValue(undefined),
+      isPaidInFull: vi.fn().mockResolvedValue(true),
+    }).register(harness)
+
+    await harness.eventBus.emit("payment.completed", {
+      paymentSessionId: "pay_1",
+      bookingId: "book_1",
+      invoiceId: "invoice_1",
+      amountCents: 1000,
+      currency: "EUR",
+      provider: "test",
+    })
+
+    expect(fullyPaid).toHaveBeenCalledOnce()
+    expect(fullyPaid.mock.calls[0]?.[0]).toMatchObject({
+      data: {
+        bookingId: "book_1",
+        paymentSessionId: "pay_1",
+        invoiceId: "invoice_1",
+        amountCents: 1000,
+        currency: "EUR",
+        provider: "test",
+      },
+      metadata: { category: "domain", source: "subscriber" },
+    })
   })
 
   it("dispatches cancellation rules only for a booking leaving on_hold", async () => {

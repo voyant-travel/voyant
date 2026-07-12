@@ -32,6 +32,8 @@ describe("enqueueOutboundEnvelope", () => {
                 durationMs: null,
                 errorClass: null,
                 errorMessage: null,
+                requestPayload: null,
+                deliveryContract: null,
               },
             ],
           }

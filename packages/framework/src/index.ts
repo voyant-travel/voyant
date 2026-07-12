@@ -12,14 +12,27 @@
  * email spam), and the BOM is the single thing that always tracks "the
  * framework version".
  *
- * Beyond the BOM, the package also owns the standard runtime composition: the
- * ordered manifest (`FRAMEWORK_RUNTIME_MANIFEST`) and the standard registry
- * factories (`frameworkComposition`) a deployment spreads — Workstream B of the
- * consolidated-deployments RFC.
+ * Runtime product selection and factories are owned by package manifests and
+ * the generated deployment graph. This package retains generic Hono composition
+ * helpers for deployment-local units.
  */
 
-export { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-export { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
+export {
+  type CreateVoyantAppConfig,
+  createVoyantApp,
+  type FrameworkProviders,
+} from "./create-app.js"
+export {
+  DEFAULT_MANAGED_CLOUD_PROVIDERS,
+  DEPLOYMENT_PROVIDER_CONTRACTS,
+  DEPLOYMENT_PROVIDER_ROLES,
+  type VoyantDeploymentEnvRequirement,
+  type VoyantDeploymentEnvValueFormat,
+  type VoyantDeploymentMode,
+  type VoyantDeploymentProviderRole,
+  type VoyantDeploymentProviders,
+  type VoyantDeploymentResourceRequirement,
+} from "./deployment-types.js"
 export {
   type DeploymentExtensionDeclaration,
   type DeploymentModuleDeclaration,
@@ -35,13 +48,22 @@ export {
   type VoyantGraphActionRiskEvaluator,
 } from "./graph-action-ledger.js"
 export {
-  FRAMEWORK_CAPABILITY_GRAPH,
-  FRAMEWORK_EXTENSION_OWNERSHIP,
-  FRAMEWORK_RUNTIME_MANIFEST,
-  type FrameworkManifest,
-  ownedExtensionsForExcludedModules,
-  subsetStandardManifest,
-} from "./manifest.js"
+  type CreateVoyantGraphLifecyclePlanInput,
+  createVoyantGraphLifecyclePlan,
+  executeVoyantGraphLifecyclePlan,
+  type VoyantGraphLifecycleConsequence,
+  type VoyantGraphLifecycleExecutionState,
+  type VoyantGraphLifecycleExecutor,
+  type VoyantGraphLifecycleFacet,
+  type VoyantGraphLifecycleOperation,
+  type VoyantGraphLifecyclePlan,
+  VoyantGraphLifecyclePlanError,
+  type VoyantGraphLifecycleStateStore,
+  type VoyantGraphLifecycleStep,
+  type VoyantGraphLifecycleStepState,
+  validateVoyantGraphEventCompatibility,
+  validateVoyantGraphUpgradeCompatibility,
+} from "./graph-lifecycle.js"
 export {
   type SelectStandardOperatorDistributionOptions,
   STANDARD_OPERATOR_ACCESS,
@@ -62,40 +84,6 @@ export {
   type VoyantPort,
   type VoyantPortConformanceTest,
 } from "./ports.js"
-export {
-  type DefineVoyantProjectInput,
-  defineVoyantProject,
-  getVoyantProjectMigrationMetadata,
-  getVoyantProjectRequirements,
-  MANAGED_OPERATOR_DEFAULT_PROVIDERS,
-  PROVIDER_CONTRACTS,
-  PROVIDER_ROLES,
-  toCreateVoyantAppProfileConfig,
-  VOYANT_PROFILE_MODULES,
-  VOYANT_PROJECT_SCHEMA_VERSION,
-  type VoyantProfileAppBridge,
-  type VoyantProfileEnvRequirement,
-  type VoyantProfileMigrationMetadata,
-  type VoyantProfileModuleDefinition,
-  type VoyantProfileModuleMigrationSource,
-  type VoyantProfileRequirements,
-  type VoyantProfileResourceRequirement,
-  type VoyantProfileValidationIssue,
-  type VoyantProfileValidationResult,
-  type VoyantProjectAdminManifest,
-  type VoyantProjectCustomSourceManifest,
-  type VoyantProjectDeploymentMode,
-  type VoyantProjectJsonValue,
-  type VoyantProjectManifest,
-  type VoyantProjectModuleReference,
-  type VoyantProjectPluginReference,
-  type VoyantProjectProfileId,
-  type VoyantProjectProviderRole,
-  type VoyantProjectProviders,
-  type VoyantProjectSchemaVersion,
-  type VoyantProjectSettings,
-  validateVoyantProject,
-} from "./profile.js"
 export {
   type DefineVoyantConfigInput,
   defineConfig,
@@ -120,6 +108,9 @@ export {
   type VoyantGraphRuntimeBindingContext,
   type VoyantGraphRuntimeBindings,
   type VoyantGraphRuntimeComposition,
+  type VoyantGraphRuntimeContributor,
+  type VoyantGraphRuntimeContributorHost,
+  type VoyantGraphRuntimePortResolver,
   type VoyantGraphRuntimePorts,
 } from "./runtime-composition.js"
 export {
@@ -150,10 +141,6 @@ export {
   type VoyantGraphRuntimeWorkflowLoader,
 } from "./runtime-lowering.js"
 export {
-  FRAMEWORK_RUNTIME_PACKAGES,
-  type FrameworkRuntimePackage,
-} from "./runtime-packages.generated.js"
-export {
   type ResolvedVoyantGraphRuntimeProviders,
   type ResolveVoyantGraphRuntimeProvidersInput,
   resolveVoyantGraphRuntimeProviders,
@@ -176,6 +163,11 @@ export {
   type VoyantGraphRuntimeValueErrorCode,
   type VoyantGraphRuntimeValueIssue,
 } from "./runtime-values.js"
+export {
+  SCHEDULED_JOB_ROUTE,
+  STANDARD_OPERATOR_SCHEDULED_JOBS,
+  type VoyantScheduledJob,
+} from "./scheduled-jobs.js"
 export {
   buildStandardNodeStarterSnapshot,
   STANDARD_NODE_STARTER,

@@ -21,6 +21,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#api.admin",
       surface: "admin",
       mount: "legal",
+      openapi: { document: "legal" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/legal",
@@ -31,6 +32,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#api.public",
       surface: "public",
       mount: "legal",
+      openapi: { document: "legal" },
       anonymous: true,
       transactional: true,
       runtime: {
@@ -58,20 +60,93 @@ export const legalVoyantModule = defineModule({
     { id: "@voyant-travel/legal#linkable.policyVersion", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.policyAcceptance", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.term", source: linkableSource },
+    {
+      id: "@voyant-travel/legal#link.contract-booking",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractBookingLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.contract-organization",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractOrganizationLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.contract-person",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractPersonLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.contract-supplier",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractSupplierLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.policy-acceptance-booking",
+      source: "@voyant-travel/legal/standard-links",
+      export: "policyAcceptanceBookingLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.policy-product",
+      source: "@voyant-travel/legal/standard-links",
+      export: "policyProductLink",
+    },
   ],
   events: [
-    { id: "@voyant-travel/legal#event.contract.issued", eventType: "contract.issued" },
-    { id: "@voyant-travel/legal#event.contract.sent", eventType: "contract.sent" },
-    { id: "@voyant-travel/legal#event.contract.signed", eventType: "contract.signed" },
-    { id: "@voyant-travel/legal#event.contract.executed", eventType: "contract.executed" },
-    { id: "@voyant-travel/legal#event.contract.voided", eventType: "contract.voided" },
+    {
+      id: "@voyant-travel/legal#event.contract.issued",
+      eventType: "contract.issued",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/legal#event.contract.sent",
+      eventType: "contract.sent",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/legal#event.contract.signed",
+      eventType: "contract.signed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/legal#event.contract.executed",
+      eventType: "contract.executed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/legal#event.contract.voided",
+      eventType: "contract.voided",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
+    },
     {
       id: "@voyant-travel/legal#event.contract.document.generated",
       eventType: "contract.document.generated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
     },
     {
       id: "@voyant-travel/legal#event.booking.contract.generated",
       eventType: "booking.contract.generated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
     },
   ],
   access: {
@@ -84,6 +159,22 @@ export const legalVoyantModule = defineModule({
     ],
   },
   admin: {
+    compositionOrder: 60,
+    runtime: {
+      entry: "@voyant-travel/legal-react/admin",
+      export: "createSelectedLegalAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/legal#admin.copy",
+        namespace: "legal.admin",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/legal-react/i18n",
+          export: "legalUiMessageDefinitions",
+        },
+      },
+    ],
     routes: (
       [
         ["index", "/legal"],
@@ -122,6 +213,7 @@ export const legalContractDocumentVoyantModule = defineModule({
     {
       id: "@voyant-travel/legal#contract-document.api",
       surface: "admin",
+      openapi: { document: "contract-document" },
       runtime: {
         entry: "@voyant-travel/legal/contract-document-routes",
         export: "createContractDocumentHonoModule",
@@ -156,6 +248,21 @@ export const legalBookingContractVoyantExtension = defineExtension({
   meta: {
     ownership: "package",
   },
+})
+
+/** Neutral association selected explicitly by the standard product BOM. */
+export const legalStandardProductLinksVoyantExtension = defineExtension({
+  id: "@voyant-travel/legal#standard-product-links",
+  packageName: "@voyant-travel/legal",
+  localId: "legal.standard-product-links",
+  links: [
+    {
+      id: "@voyant-travel/legal#link.contract-invoice",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractInvoiceLink",
+    },
+  ],
+  meta: { ownership: "standard-product" },
 })
 
 export default legalVoyantModule

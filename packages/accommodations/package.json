@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./linkables": "./src/linkables.ts",
+    "./standard-links": "./src/standard-links.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
@@ -16,9 +17,15 @@
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
+    "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
-    "./voyant": "./src/voyant.ts"
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/accommodations.json",
+    "./openapi/storefront": "./openapi/storefront/accommodations-content-public.json",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -37,11 +44,16 @@
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/operations": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "@voyant-travel/distribution": "workspace:^",
+    "@voyant-travel/mice": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -51,6 +63,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -71,6 +84,11 @@
         "types": "./dist/linkables.d.ts",
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
+      },
+      "./standard-links": {
+        "types": "./dist/standard-links.d.ts",
+        "import": "./dist/standard-links.js",
+        "default": "./dist/standard-links.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",
@@ -117,6 +135,11 @@
         "import": "./dist/booking-engine/index.js",
         "default": "./dist/booking-engine/index.js"
       },
+      "./booking-engine/operator-runtime": {
+        "types": "./dist/booking-engine/operator-runtime.d.ts",
+        "import": "./dist/booking-engine/operator-runtime.js",
+        "default": "./dist/booking-engine/operator-runtime.js"
+      },
       "./routes-content": {
         "types": "./dist/routes-content.d.ts",
         "import": "./dist/routes-content.js",
@@ -127,10 +150,27 @@
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./payment-policy-runtime": {
+        "types": "./dist/payment-policy-runtime.d.ts",
+        "import": "./dist/payment-policy-runtime.js",
+        "default": "./dist/payment-policy-runtime.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./openapi/admin": "./openapi/admin/accommodations.json",
+      "./openapi/storefront": "./openapi/storefront/accommodations-content-public.json",
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
       }
     },
     "main": "./dist/index.js",
@@ -145,6 +185,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createAccommodationsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

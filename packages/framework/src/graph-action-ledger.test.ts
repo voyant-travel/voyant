@@ -17,8 +17,25 @@ const selectedIds: VoyantGraphRuntimeSelectedIds = {
 function actionRuntime(
   overrides: { accessScopes?: readonly string[]; selectedIds?: VoyantGraphRuntimeSelectedIds } = {},
 ) {
+  const accessScopes = overrides.accessScopes ?? ["loyalty:write"]
   return createVoyantGraphRuntime({
     graphHash: "sha256:actions",
+    accessCatalog: {
+      resources: accessScopes.includes("loyalty:write")
+        ? [
+            {
+              id: "loyalty",
+              unitId: "@acme/loyalty",
+              resource: "loyalty",
+              label: "Loyalty",
+              description: "Loyalty",
+              wildcard: "allow",
+              actions: [{ action: "write", label: "Write", description: "Write" }],
+            },
+          ]
+        : [],
+      presets: [],
+    },
     entries: {},
     modules: [
       {
@@ -26,7 +43,7 @@ function actionRuntime(
         kind: "module",
         packageName: "@acme/loyalty",
         order: 0,
-        accessScopes: overrides.accessScopes ?? ["loyalty:write"],
+        accessScopes,
         actions: [
           {
             id: "loyalty.points.adjust",
@@ -91,7 +108,7 @@ describe("graph action-ledger lowering", () => {
   it("rejects action scopes outside the selected graph", () => {
     expect(() =>
       lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ accessScopes: [] })),
-    ).toThrow(/requires undeclared selected-graph scope "loyalty:write"/)
+    ).toThrow(/requires undeclared access scope "loyalty:write"/)
   })
 
   it.each([
@@ -105,7 +122,7 @@ describe("graph action-ledger lowering", () => {
 
     expect(() =>
       lowerVoyantGraphActionsToActionLedgerRegistry(actionRuntime({ selectedIds: withoutBinding })),
-    ).toThrow(new RegExp(`binds unknown selected-graph ${binding} id`))
+    ).toThrow(new RegExp(`selects undeclared ${binding} reference`))
   })
 
   it("keeps the bookings manifest in parity with its canonical request registry", () => {
@@ -126,6 +143,28 @@ describe("graph action-ledger lowering", () => {
     )
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:bookings-action-parity",
+      accessCatalog: {
+        resources: (bookingsVoyantModule.access?.resources ?? []).map((resource) => ({
+          id: resource.id,
+          unitId: bookingsVoyantModule.id,
+          resource: resource.resource,
+          label: resource.label ?? resource.resource,
+          description: resource.description ?? resource.label ?? resource.resource,
+          wildcard: resource.wildcard ?? "allow",
+          actions: resource.actions.map((action) =>
+            typeof action === "string"
+              ? { action, label: action, description: action }
+              : {
+                  action: action.action,
+                  label: action.label ?? action.action,
+                  description: action.description ?? action.label ?? action.action,
+                  ...(action.wildcard ? { wildcard: action.wildcard } : {}),
+                },
+          ),
+          legacyActions: resource.legacyActions,
+        })),
+        presets: [],
+      },
       entries: {},
       modules: [
         {

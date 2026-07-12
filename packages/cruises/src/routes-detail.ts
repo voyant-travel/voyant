@@ -1,4 +1,4 @@
-import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi"
+import { type OpenAPIHono, z } from "@hono/zod-openapi"
 
 import { parseUnifiedKey } from "./lib/key.js"
 import type { CruiseRoutesEnv as Env } from "./routes-env.js"
@@ -11,6 +11,7 @@ import {
   registryNotConfigured,
   resolveExternal,
 } from "./routes-keying.js"
+import { createCruisesAdminRoute as createRoute } from "./routes-openapi.js"
 import {
   cruiseDayRowSchema,
   cruiseRowSchema,

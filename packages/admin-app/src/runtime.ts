@@ -50,7 +50,7 @@ export function normalizeAdminApiUrl(url: string): string {
  * API is embedded at /api on the same origin — no cross-origin needed.
  * Returns an absolute URL so Better Auth's `new URL(baseURL)` works during SSR.
  */
-export function getManagedProfileAdminApiUrl(): string {
+export function getAdminApiUrl(): string {
   if (typeof window !== "undefined") {
     return `${window.location.origin}/api`
   }
@@ -70,7 +70,7 @@ export function getManagedProfileAdminApiUrl(): string {
  *
  * On the server (route loaders / server functions when SSR is enabled):
  * normalizes package-emitted admin paths, forwards the incoming request's
- * `Cookie` header, and rewrites absolute `getManagedProfileAdminApiUrl()`-style
+ * `Cookie` header, and rewrites absolute `getAdminApiUrl()`-style
  * URLs onto the request origin, so the fetch loops back into this Worker and
  * hits the Hono app mounted at `/api/*` in the deployment entry.
  *
@@ -96,5 +96,5 @@ const fetcherImpl = createIsomorphicFn()
     return fetch(target, { ...init, headers })
   })
 
-export const managedProfileAdminFetcher: VoyantFetcher = (url, init) =>
+export const adminFetcher: VoyantFetcher = (url, init) =>
   fetcherImpl(url, init) as Promise<Response>

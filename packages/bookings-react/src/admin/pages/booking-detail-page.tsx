@@ -5,11 +5,9 @@ import type { BookingDetailPageComponentProps } from "../index.js"
 
 /**
  * Default packaged booking detail page (packaged-admin RFC §4.8):
- * {@link BookingDetailHost} with no app-owned dialogs wired. Hosts that need
- * to attach app-local flows (record-payment / payment-link dialogs, which
- * live app-side because the finance/checkout UI packages depend on this
- * package) substitute their own wrapper via
- * `CreateBookingsAdminExtensionOptions.detailPageComponent`.
+ * {@link BookingDetailHost} with selected-package behavior supplied through
+ * its stable widget slots. Finance owns payment dialogs without replacing
+ * this route page.
  */
 export default function BookingDetailDefaultPage({
   id,

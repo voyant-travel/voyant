@@ -4,7 +4,10 @@ import type { LazyMount, ModuleMount } from "@voyant-travel/hono/openapi"
 import { describe, expect, it } from "vitest"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
-import { buildSelectedGraphOpenApiDocuments } from "./selected-graph-openapi.js"
+import {
+  buildSelectedGraphOpenApiDocuments,
+  mergeSelectedGraphOpenApiDocuments,
+} from "./selected-graph-openapi.js"
 
 const options = { info: { title: "Selected graph", version: "1" } }
 
@@ -72,6 +75,7 @@ function unit(
     providers: [],
     requiredPorts: [],
     runtimePorts: [],
+    manyRuntimePorts: [],
     requiredRuntimePorts: [],
     accessScopes: [],
     tools: [],
@@ -119,8 +123,8 @@ function route(
 }
 
 describe("buildSelectedGraphOpenApiDocuments", () => {
-  it("follows graph selection and removal without leaking unclaimed paths", async () => {
-    const app = documentedApp(["/v1/admin/identity/contacts", "/v1/admin/bookings"])
+  it("follows graph selection and rejects unclaimed published paths", async () => {
+    const app = documentedApp(["/v1/admin/identity/contacts"])
     const identity = unit("@voyant-travel/identity", [
       route("@voyant-travel/identity#api.admin", "identity", "identity"),
     ])
@@ -136,8 +140,12 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
       "/v1/admin/identity/contacts",
     ])
     await expect(
-      buildSelectedGraphOpenApiDocuments({ runtime: runtime([]), app, options }),
-    ).resolves.toEqual(new Map())
+      buildSelectedGraphOpenApiDocuments({
+        runtime: runtime([]),
+        app: documentedApp(["/v1/admin/identity/contacts", "/v1/admin/bookings"]),
+        options,
+      }),
+    ).rejects.toThrow(/unclaimed published operations.*GET \/v1\/admin\/identity\/contacts/)
   })
 
   it("normalizes relative mounts and replays lazy route registries", async () => {
@@ -180,7 +188,7 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     ).rejects.toThrow(/matched zero operations/)
   })
 
-  it("fails duplicate document claims across all selected unit kinds", async () => {
+  it("merges disjoint selected bundles into one package-owned document", async () => {
     const app = documentedApp(["/v1/admin/identity", "/v1/admin/identity-extra"])
     const module = unit("@voyant-travel/identity", [
       route("@voyant-travel/identity#api.admin", "identity", "identity"),
@@ -191,9 +199,16 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
       "extension",
     )
 
-    await expect(
-      buildSelectedGraphOpenApiDocuments({ runtime: runtime([module], [extension]), app, options }),
-    ).rejects.toThrow(/document "identity" is claimed by both/)
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([module], [extension]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(documents.get("identity")?.paths ?? {})).toEqual([
+      "/v1/admin/identity-extra",
+      "/v1/admin/identity",
+    ])
   })
 
   it("fails overlapping mounts that claim the same path", async () => {
@@ -206,6 +221,60 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     await expect(
       buildSelectedGraphOpenApiDocuments({ runtime: runtime([identity]), app, options }),
     ).rejects.toThrow(/path "\/v1\/admin\/identity\/contacts" method "GET" is claimed by both/)
+  })
+
+  it("prefers exact operation API ids when route mount prefixes overlap", async () => {
+    const uploadsApiId = "@voyant-travel/storage#api.admin.uploads"
+    const videoApiId = "@voyant-travel/storage#api.admin.video-upload-ticket"
+    const uploadsPath = "/v1/admin/uploads"
+    const videoPath = "/v1/admin/uploads/video"
+    const app = documentedApp([])
+
+    for (const [path, apiId] of [
+      [uploadsPath, uploadsApiId],
+      [videoPath, videoApiId],
+    ] as const) {
+      app.openapi(
+        createRoute({
+          method: "post",
+          path,
+          responses: {
+            200: {
+              content: { "application/json": { schema: z.object({ ok: z.boolean() }) } },
+              description: "OK",
+            },
+          },
+          "x-voyant-api-id": apiId,
+        }),
+        (context) => context.json({ ok: true }),
+      )
+    }
+
+    const storage = unit("@voyant-travel/storage", [
+      route(uploadsApiId, "uploads", "storage-uploads", ["POST"]),
+      route(videoApiId, "uploads/video", "storage-video-upload-ticket", ["POST"]),
+    ])
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([storage]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(documents.get("storage-uploads")?.paths ?? {})).toEqual([uploadsPath])
+    expect(Object.keys(documents.get("storage-video-upload-ticket")?.paths ?? {})).toEqual([
+      videoPath,
+    ])
+
+    for (const [path, apiId] of [
+      [uploadsPath, uploadsApiId],
+      [videoPath, videoApiId],
+    ] as const) {
+      const owners = [...documents.values()].flatMap((document) => {
+        const operation = document.paths?.[path]?.post as Record<string, unknown> | undefined
+        return operation ? [operation["x-voyant-api-id"]] : []
+      })
+      expect(owners).toEqual([apiId])
+    }
   })
 
   it("allows separate bundles to claim different methods on the same path", async () => {
@@ -224,5 +293,82 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
 
     expect(Object.keys(documents.get("identity-read")?.paths?.[path] ?? {})).toEqual(["get"])
     expect(Object.keys(documents.get("identity-write")?.paths?.[path] ?? {})).toEqual(["post"])
+  })
+
+  it("merges selected documents into one aggregate without duplicate operations", async () => {
+    const path = "/v1/admin/identity/contacts"
+    const app = methodSplitApp(path)
+    const identity = unit("@voyant-travel/identity", [
+      route("@voyant-travel/identity#api.contacts.read", "identity", "identity-read", ["GET"]),
+      route("@voyant-travel/identity#api.contacts.write", "identity", "identity-write", ["POST"]),
+    ])
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([identity]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(mergeSelectedGraphOpenApiDocuments(documents).paths?.[path] ?? {})).toEqual([
+      "get",
+      "post",
+    ])
+    expect(() =>
+      mergeSelectedGraphOpenApiDocuments(
+        new Map([
+          ["first", documents.get("identity-read")!],
+          ["second", documents.get("identity-read")!],
+        ]),
+      ),
+    ).toThrow(/emitted by both/)
+  })
+
+  it("requires exact operation ownership for root-mounted bundles", async () => {
+    const apiId = "@voyant-travel/storefront#api.public"
+    const ownedPath = "/v1/public/storefront"
+    const unrelatedPath = "/v1/public/bookings"
+    const app = documentedApp([unrelatedPath])
+    app.openapi(
+      createRoute({
+        method: "get",
+        path: ownedPath,
+        responses: {
+          200: {
+            content: { "application/json": { schema: z.object({ ok: z.boolean() }) } },
+            description: "OK",
+          },
+        },
+        "x-voyant-api-id": apiId,
+      }),
+      (context) => context.json({ ok: true }),
+    )
+    const storefront = unit("@voyant-travel/storefront", [route(apiId, "/", "storefront", ["GET"])])
+
+    await expect(
+      buildSelectedGraphOpenApiDocuments({ runtime: runtime([storefront]), app, options }),
+    ).rejects.toThrow(/unclaimed published operations.*GET \/v1\/public\/bookings/)
+
+    const ownedApp = documentedApp([])
+    ownedApp.openapi(
+      createRoute({
+        method: "get",
+        path: ownedPath,
+        responses: {
+          200: {
+            content: { "application/json": { schema: z.object({ ok: z.boolean() }) } },
+            description: "OK",
+          },
+        },
+        "x-voyant-api-id": apiId,
+      }),
+      (context) => context.json({ ok: true }),
+    )
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([storefront]),
+      app: ownedApp,
+      options,
+    })
+
+    expect(Object.keys(documents.get("storefront")?.paths ?? {})).toEqual([ownedPath])
+    expect(documents.get("storefront")?.paths?.[unrelatedPath]).toBeUndefined()
   })
 })

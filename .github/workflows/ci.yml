@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=8192
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -73,14 +73,11 @@ jobs:
       # packages fan out below, then the three heavy programs run one-at-a-time
       # (concurrency=1), each alone with its own package-script heap.
       #
-      # concurrency=2 (NOT core-count / 4): `typecheck` dependsOn `^build`, so this
-      # step also builds the heavy *-react and aggregator packages. With the 8 GB
-      # per-process ceiling, >2 coincident heavy builds exceed the 16 GB runner and
-      # get OOM-killed (exit 137 → "operation was canceled", no `error TS`). This is
-      # the same coincident-heavy-build OOM that pinned the Build step to 2; the
-      # ^build deps are the same programs, so this step matches that safe ceiling.
+      # `typecheck` dependsOn `^build`, so this also executes the same multi-gigabyte
+      # *-react and aggregator builds as the Build job. Keep it serial so only one
+      # process can use the 12 GB heap allowance on the 16 GB runner.
       - name: Typecheck (packages)
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=2 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
+        run: NODE_OPTIONS=--max-old-space-size=12288 pnpm turbo run typecheck --continue --concurrency=1 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
 
       - name: Typecheck (composition points)
         # Serial (concurrency=1): operator app, openapi spec, framework composition
@@ -103,7 +100,10 @@ jobs:
         # (a public package, already installed) — no extra root dependency.
         env:
           NODE_OPTIONS: --conditions=development --max-old-space-size=8192
-        run: pnpm --filter operator db:doctor
+        working-directory: starters/operator
+        run: |
+          pnpm exec voyant build --json
+          pnpm exec voyant db doctor --fail-on-drift
 
       - name: i18n checks
         run: pnpm i18n:check
@@ -115,8 +115,8 @@ jobs:
       HUSKY: 0
       # The composed framework app's tsc build grows with each module's
       # OpenAPIHono route chain; match the heap the typecheck/db-checks jobs
-      # already use so `tsc -p` doesn't OOM at the default ~4GB (voyant#2114).
-      NODE_OPTIONS: --max-old-space-size=8192
+      # already use. Serial execution keeps this 12 GB process inside runner RAM.
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -141,18 +141,16 @@ jobs:
       # cached dist, so only the remaining packages build there.
       - name: Build (framework composition)
         # --filter builds framework AND its whole upstream dep graph; cap at
-        # concurrency=2 so a cold cache (e.g. right after a turbo-hash-invalidating
-        # change) can't coincide several heavy module builds and OOM the 16 GB
-        # runner (exit 137). framework's own build keeps its package-script heap.
-        run: pnpm turbo build --filter=@voyant-travel/framework --concurrency=2 --ui=stream --log-order=stream
+        # concurrency=1 because a cold cache can overlap multiple multi-gigabyte
+        # TypeScript builds even inside this dependency slice and exhaust the
+        # 16 GB runner. Framework's own build keeps its package-script heap.
+        run: pnpm turbo build --filter=@voyant-travel/framework --concurrency=1 --ui=stream --log-order=stream
 
       - name: Build
-        # concurrency=2: the framework dist grows with every admin route batch,
-        # which makes the downstream *-react / app builds heavier; at turbo's
-        # default (core-count) concurrency several heavy builds coincided and the
-        # OOM-killer SIGKILLed one (exit 137) on the 16 GB runner. Two-at-a-time
-        # keeps aggregate build RAM in budget. (Framework already built alone above.)
-        run: pnpm turbo build --concurrency=2 --ui=stream --log-order=stream
+        # Keep this serial as well: bookings-react alone can approach the 8 GB
+        # package heap, so any concurrent TypeScript build can exceed runner RAM.
+        # Framework already built in the preceding step and should hit cache.
+        run: pnpm turbo build --concurrency=1 --ui=stream --log-order=stream
 
       - name: Package export checks
         run: pnpm verify:package-exports
@@ -248,7 +246,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=8192
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -307,3 +305,11 @@ jobs:
           api=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://localhost:8080/api/openapi.json)
           echo "api dispatch -> $api"
           test "$api" -lt 500
+
+      - name: Packaged starter acceptance evidence
+        # Reuse the build above for bounded server/admin/boot metrics, then run one
+        # serialized packaged-starter install, graph emission, convention scan,
+        # and generic Node probe. This does not launch a second repository build.
+        run: |
+          node scripts/measure-standard-node-starter.mjs --require-build --check
+          node --test scripts/tests/minimal-starter-acceptance.test.mjs

@@ -34,12 +34,11 @@ workload class well. On Node none of it is necessary.
   adds a real per-request `waitUntil` (background work tracked + drained on
   shutdown), an origin-trust gate, an HTTP `scheduled()` hook, graceful
   SIGTERM/SIGINT drain, and serves the client build (`dist/client`).
-- **Managed Cloud entry:** `@voyant-travel/framework/managed-runtime` boots
-  managed product profiles from serialized profile snapshots without importing
-  starter-local files. Cloud packages this framework-owned entry with
-  provisioned env/secrets; storefront/site artifacts remain separate apps that
-  consume the managed API for the selected profile. Today that profile is the
-  standard managed `operator` profile, but the entry is not named after it.
+- **Managed Cloud entry:** `@voyant-travel/framework/node-runtime` boots the
+  admitted generated graph with provisioned environment and secrets. Cloud does
+  not synthesize or load a serialized product profile; the same graph-native
+  Node entry serves managed-cloud, self-hosted, and local deployment modes.
+  Storefront/site artifacts remain separate apps that consume the Node API.
 - **Bindings are real Node providers, not Cloudflare emulation.** The resolved
   deployment graph's `deployment.providers` map selects the concrete Node
   providers. `memory` uses in-process KV/object storage, `redis`/`postgres`
@@ -62,6 +61,10 @@ workload class well. On Node none of it is necessary.
   graph-declared required resource env or graph-selected provider env is
   missing. Local `.env` loading is only a source for satisfying the same graph
   contract; it is not a parallel deployment shape.
+- **Reusable host contract:** `@voyant-travel/framework/node-host` owns graph
+  artifact admission and graph-selected provider planning. An application keeps
+  only a path adapter that anchors generated artifacts to its own source tree
+  and concrete provider construction for its deployment environment.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:
   "node"`) is the production default — one resident pool per process. neon-http/WS
   remain the fallback adapters. See
@@ -119,7 +122,8 @@ Avoid:
 - `import { createStartHandler } from "@tanstack/react-start/server"` in `entry.ts`;
 - `import "./workflows.js"`.
 
-The mechanical checks live in `scripts/check-node-entrypoint.mjs` and
+The mechanical checks live in `scripts/check-node-entrypoint.mjs`,
+`scripts/check-generic-node-bootstrap-authority.mjs`, and
 `scripts/check-operator-docker-target.mjs` and are part of
 `pnpm verify:architecture`: they assert `src/server.ts` wires `createNodeServer`
 and graph artifact/resource validation, that `pnpm --filter operator dev` and

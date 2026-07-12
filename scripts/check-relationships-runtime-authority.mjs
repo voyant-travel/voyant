@@ -19,42 +19,23 @@ function readRequired(path) {
   return readFileSync(path, "utf8")
 }
 
-function section(source, start, end) {
-  const startIndex = source.indexOf(start)
-  const endIndex = source.indexOf(end, startIndex + start.length)
-  if (startIndex < 0 || endIndex < 0) {
-    throw new Error(`check-relationships-runtime-authority: could not locate ${start}`)
-  }
-  return source.slice(startIndex, endIndex)
-}
-
 const manifest = readRequired(join(relationshipsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(relationshipsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(relationshipsRoot, "src/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
-const runtimePorts = section(
-  composition,
-  "export function buildOperatorRuntimePorts",
-  "function createLazyCatalogSearchRuntime",
-)
-const runtimeBindingsStart = composition.indexOf("export const operatorGraphRuntimeBindings")
-if (runtimeBindingsStart < 0) {
-  throw new Error(
-    "check-relationships-runtime-authority: could not locate operatorGraphRuntimeBindings",
-  )
-}
-const runtimeBindings = composition.slice(runtimeBindingsStart)
+const runtimeContributor = readRequired(join(relationshipsRoot, "src/runtime-contributor.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 
 if (
   !manifest.includes("runtimePorts: [requirePort(relationshipsRouteRuntimePort)]") ||
   !manifest.includes('export: "createRelationshipsVoyantRuntime"') ||
-  !manifest.includes('export { relationshipsRouteRuntimePort } from "./runtime-port.js"')
+  !manifest.includes("relationshipsMiceRuntimePort")
 ) {
   violations.push("Relationships manifest must own and publish its route runtime dependency")
 }
 if (
   !runtimePort.includes("definePort<RelationshipsRouteRuntimeOptions>") ||
-  !runtimePort.includes('id: "relationships.route-runtime"')
+  !runtimePort.includes('id: "relationships.route-runtime"') ||
+  !runtimePort.includes('id: "relationships.mice.runtime"')
 ) {
   violations.push("Relationships must define the relationships.route-runtime typed port")
 }
@@ -68,13 +49,21 @@ if (packageIndex.includes("relationshipsHonoModule")) {
   violations.push("Relationships must not retain the preconfigured compatibility module export")
 }
 if (
-  !composition.includes('from "@voyant-travel/relationships/voyant"') ||
-  !runtimePorts.includes("[relationshipsRouteRuntimePort.id]")
+  runtimeContributor.includes("host.capabilities") ||
+  !runtimeContributor.includes('host.primitives.config.read(db, "customFields")') ||
+  !runtimeContributor.includes("[relationshipsMiceRuntimePort.id]")
 ) {
-  violations.push("Operator must bind the generic Relationships runtime port")
+  violations.push("Relationships must compose custom fields and MICE lookup package-side")
 }
-if (runtimeBindings.includes('"@voyant-travel/relationships"')) {
-  violations.push("Operator must not bind Relationships runtime behavior by package id")
+if (
+  composition.includes("relationshipsRouteRuntimePort") ||
+  composition.includes("createDeploymentCapabilities") ||
+  !composition.includes("createGeneratedGraphRuntimePorts({ primitives })")
+) {
+  violations.push("Operator must not bind Relationships-specific runtime behavior")
+}
+if (composition.includes("operatorGraphRuntimeBindings")) {
+  violations.push("Operator compatibility runtime bindings must stay deleted")
 }
 
 if (violations.length > 0) {

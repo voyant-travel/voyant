@@ -51,3 +51,9 @@ pnpm db:migrate               # collector applies bundle → deployment (incl. t
 ```
 
 See `docs/architecture/custom-modules.md` for the full guide.
+
+## Operator-owned units
+
+Keep only deployment-specific product behavior here. Reusable identity and
+access behavior, including credential invitations and cloud team management,
+is owned by `@voyant-travel/auth`; deployments supply its typed runtime port.

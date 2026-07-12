@@ -110,6 +110,13 @@ const optionalEdgeAllowlist = [
   {
     from: "@voyant-travel/bookings-react",
     type: "peerDependencies",
+    to: "@voyant-travel/inventory",
+    reason:
+      "booking admin components can attach operated Inventory runtime capabilities when a host installs them",
+  },
+  {
+    from: "@voyant-travel/bookings-react",
+    type: "peerDependencies",
     to: "@voyant-travel/inventory-react",
     reason:
       "booking admin components can attach operated Inventory summaries when a host installs them",
@@ -140,13 +147,6 @@ const optionalEdgeAllowlist = [
     to: "@voyant-travel/inventory-react",
     reason:
       "the packaged admin shell can mount operated Inventory owner-path extensions when a host installs them",
-  },
-  {
-    from: "@voyant-travel/commerce",
-    type: "peerDependencies",
-    to: "@voyant-travel/quotes",
-    reason:
-      "commerce checkout dynamically imports quotesService only on the quote-version checkout path; deployments without Quotes don't load it",
   },
 ]
 

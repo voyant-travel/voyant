@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -10,8 +11,8 @@ const paths = {
   manifest: "packages/trips/src/voyant.ts",
   packageRuntime: "packages/trips/src/index.ts",
   app: "starters/operator/src/api/app.ts",
-  tripsRuntime: "starters/operator/src/api/runtime/trips-runtime.ts",
-  composition: "starters/operator/src/api/composition.ts",
+  tripsRuntime: "packages/trips/src/runtime.ts",
+  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(
@@ -24,6 +25,9 @@ const sources = Object.fromEntries(
 )
 
 const failures = []
+if (existsSync(path.join(repoRoot, "starters/operator/src/api/runtime/trips-runtime.ts"))) {
+  failures.push("Operator Trips runtime must stay deleted")
+}
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)
 }
@@ -41,15 +45,15 @@ rejectMatch(
   /tripsPaymentBundle|trips-payment-completion/,
   "Operator app must not list a central Trips payment subscriber bundle",
 )
-rejectMatch(
-  sources.tripsRuntime,
-  /tripsPaymentBundle|payment\.completed|eventBus\.subscribe/,
-  "Operator Trips runtime must not implement payment subscriber authority",
-)
 requireMatch(
   sources.composition,
-  /\[tripsDatabaseRuntimePort\.id\]:\s*\{[\s\S]*withDb:\s*\(bindings, operation\)\s*=>\s*withDbFromEnv\(bindings as AppBindings, operation\)/,
-  "Trips payment runtime service must preserve Operator DB lifecycle handling",
+  /createGeneratedGraphRuntimePorts\(\{\s*primitives\s*\}\)/,
+  "Operator must pass only generic primitives to selected contributors",
+)
+requireMatch(
+  sources.tripsRuntime,
+  /VoyantRuntimeHostPrimitives/,
+  "Trips must own its route runtime on generic host primitives",
 )
 requireMatch(
   sources.packageRuntime,

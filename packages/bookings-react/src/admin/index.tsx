@@ -6,12 +6,13 @@ import {
   type AdminRouteRuntime,
   type AdminWidgetContribution,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 // Importing the slot id also binds the crm-ui `AdminDestinations`
 // augmentation (`person.list`, `organization.list`, ...) into this program;
 // this package already peer-depends on `@voyant-travel/relationships-react/ui`.
 import { personDetailBookingsTabSlot } from "@voyant-travel/relationships-react/admin"
-import type { ComponentType, ReactNode } from "react"
 import * as React from "react"
 import { z } from "zod"
 // Lean statics only: the client module (fetcher), query-key types, and the
@@ -98,6 +99,8 @@ export type {
   BookingDetailHostSlot,
   BookingDetailHostSlotContext,
   BookingDetailHostSlots,
+  BookingDetailPaymentActions,
+  BookingDetailPaymentControllerSlotContext,
 } from "./booking-detail-host.js"
 export { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
 export type { BookingDocumentsTableProps } from "./booking-documents-table.js"
@@ -110,6 +113,8 @@ export {
   bookingDetailFinanceEndSlot,
   bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
+  bookingDetailPaymentControllerSlot,
+  bookingsListHeaderActionsSlot,
 } from "./slots.js"
 
 const bookingsListSortBySchema = z.enum([
@@ -272,9 +277,7 @@ export type BookingJourneySearchParams = z.infer<typeof bookingJourneySearchSche
  * Props contract of the booking detail PAGE component the "bookings-detail"
  * contribution mounts — the route-state subset of `BookingDetailHostProps`.
  * The packaged default wraps {@link BookingDetailHost} with exactly these;
- * hosts substitute their own implementation via
- * {@link CreateBookingsAdminExtensionOptions.detailPageComponent} when they
- * need to compose app-owned flows around the host (e.g. payment dialogs).
+ * selected packages attach cross-domain behavior through stable widget slots.
  */
 export interface BookingDetailPageComponentProps {
   id: string
@@ -289,25 +292,6 @@ export interface CreateBookingsAdminExtensionOptions {
   labels?: {
     bookings?: string
   }
-  /**
-   * App-owned extra header action(s) rendered alongside the bookings list's
-   * primary "New booking" button (e.g. the operator's "Compose trip" link).
-   * Forwarded to {@link BookingsHost}'s `headerActions` by the index page so
-   * the packaged page doesn't hardcode other domains.
-   */
-  indexHeaderActions?: ReactNode
-  /**
-   * Substitute implementation for the booking detail page, loaded lazily so
-   * it stays in its own chunk. Defaults to the packaged page wrapping
-   * {@link BookingDetailHost}. The operator overrides this to compose the
-   * app-owned payment/payment-link dialogs around the host — those dialogs
-   * live app-side because `@voyant-travel/finance-react/ui` and
-   * `@voyant-travel/finance-react/checkout-ui` depend on this package, so importing them
-   * here would be a cycle.
-   */
-  detailPageComponent?: () => Promise<{
-    default: ComponentType<BookingDetailPageComponentProps>
-  }>
 }
 
 /** Map the host-supplied route runtime onto the bookings data client shape. */
@@ -334,16 +318,6 @@ function PersonBookingsWidgetLoader(props: PersonBookingsWidgetProps) {
     </React.Suspense>
   )
 }
-
-function adminWidgetComponent<Props extends object>(
-  Widget: ComponentType<Props>,
-): ComponentType<Record<string, unknown>> {
-  return function AdminWidgetComponent(props: Record<string, unknown>) {
-    return <Widget {...(props as Props)} />
-  }
-}
-
-const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidgetLoader)
 
 /**
  * The bookings admin contribution (packaged-admin RFC Phase 3,
@@ -386,7 +360,7 @@ const PersonBookingsWidgetContribution = adminWidgetComponent(PersonBookingsWidg
 export function createBookingsAdminExtension(
   options: CreateBookingsAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/bookings", labels = {}, indexHeaderActions, detailPageComponent } = options
+  const { basePath = "/bookings", labels = {} } = options
   const { bookings = "Bookings" } = labels
 
   return defineAdminExtension({
@@ -413,17 +387,7 @@ export function createBookingsAdminExtension(
           const { getBookingsQueryOptions } = await import("../query-options.js")
           return queryClient.ensureQueryData(getBookingsQueryOptions(loaderClient(runtime)))
         },
-        page: async () => {
-          const module = await import("./pages/bookings-index-page.js")
-          const Page = module.default
-          // Tiny wrapper only — the heavy page stays in its own chunk; this
-          // closure just threads the app-owned header actions through.
-          return {
-            default: (props: AdminRoutePageProps) => (
-              <Page {...props} headerActions={indexHeaderActions} />
-            ),
-          }
-        },
+        page: () => import("./pages/bookings-index-page.js"),
       },
       {
         id: "bookings-detail",
@@ -460,9 +424,7 @@ export function createBookingsAdminExtension(
           void queryClient.prefetchQuery(getBookingNotesQueryOptions(client, id))
         },
         page: async () => {
-          const module = await (detailPageComponent
-            ? detailPageComponent()
-            : import("./pages/booking-detail-page.js"))
+          const module = await import("./pages/booking-detail-page.js")
           const Page = module.default
           return {
             default: ({ params, search, updateSearch }: AdminRoutePageProps) => (
@@ -513,11 +475,20 @@ export function createBookingsAdminExtension(
       {
         id: "bookings-person-bookings",
         slot: personDetailBookingsTabSlot,
-        // The widget registry is untyped (`Record<string, unknown>` props);
-        // the typed contract is `PersonDetailBookingsTabContext`, which
-        // crm-ui's person detail host passes verbatim to this slot's widgets.
-        component: PersonBookingsWidgetContribution,
-      } satisfies AdminWidgetContribution,
+        component: PersonBookingsWidgetLoader,
+      } satisfies AdminWidgetContribution<PersonBookingsWidgetProps>,
     ],
   })
+}
+
+export function createSelectedBookingsAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  return withAdminRouteMessagesProvider(
+    createBookingsAdminExtension({ labels: { bookings: navMessages.bookings } }),
+    () =>
+      import("../i18n/index.js").then((module) => ({
+        default: module.BookingsUiMessagesProvider,
+      })),
+  )
 }

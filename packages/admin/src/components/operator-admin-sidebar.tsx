@@ -44,7 +44,7 @@ export interface OperatorAdminSidebarProps
   accountHref?: string
   /**
    * The deployment's active module ids (voyant#3063). When provided, the nav is
-   * gated to these modules — a source-free managed admin composes the full nav
+   * gated to these modules — a source-free hosted admin composes the full nav
    * from one shared image and hides modules its profile doesn't activate.
    * Omit (the default) to show every item.
    */
@@ -156,7 +156,7 @@ export interface OperatorAdminWorkspaceLayoutProps {
   accountHref?: string
   /**
    * The deployment's active module ids (voyant#3063). When provided, the base
-   * nav is gated to these modules so a source-free managed admin hides modules
+   * nav is gated to these modules so a source-free hosted admin hides modules
    * its profile doesn't activate. Omit to show every item.
    */
   activeModuleIds?: readonly string[]

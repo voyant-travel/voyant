@@ -1,5 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { storefrontVerificationRuntimePort } from "../runtime-port.js"
 import {
@@ -85,7 +86,10 @@ export function createStorefrontVerificationHonoModule(
 
   return {
     module,
-    publicRoutes: createStorefrontVerificationPublicRoutes(options),
+    publicRoutes: stampOpenApiRegistryApiId(
+      createStorefrontVerificationPublicRoutes(options),
+      "@voyant-travel/storefront#verification.api",
+    ),
   }
 }
 

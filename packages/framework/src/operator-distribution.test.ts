@@ -4,7 +4,6 @@ import {
   mergeOperatorDistributionDefaults,
   STANDARD_OPERATOR_DISTRIBUTION,
   STANDARD_OPERATOR_DISTRIBUTION_POLICY,
-  STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
   STANDARD_OPERATOR_PRODUCT_BOM,
   STANDARD_OPERATOR_PRODUCT_BOM_REFERENCE,
   selectStandardOperatorDistribution,
@@ -28,27 +27,27 @@ describe("standard Operator distribution", () => {
       id: "operator-standard",
       target: "node",
     })
-    expect(STANDARD_OPERATOR_DISTRIBUTION.modules).toHaveLength(35)
+    expect(STANDARD_OPERATOR_DISTRIBUTION.modules).toHaveLength(38)
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(0, 3)).toEqual([
       "@voyant-travel/action-ledger",
+      "@voyant-travel/mcp",
       "@voyant-travel/relationships",
-      "@voyant-travel/quotes",
     ])
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(-3)).toEqual([
       "@voyant-travel/availability",
       "@voyant-travel/catalog-authoring",
       "@voyant-travel/workflow-runs",
     ])
-    expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toHaveLength(22)
+    expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toHaveLength(24)
     expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toContain(
       "@voyant-travel/distribution/extension",
     )
     expect(STANDARD_OPERATOR_DISTRIBUTION.extensions.slice(-2)).toEqual([
-      "@voyant-travel/notifications/reminder-subscribers-extension",
-      "@voyant-travel/legal/booking-contract-extension",
+      "@voyant-travel/legal/standard-product-links",
+      "@voyant-travel/mice/standard-product-links",
     ])
-    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.modules).size).toBe(35)
-    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.extensions).size).toBe(22)
+    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.modules).size).toBe(38)
+    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.extensions).size).toBe(24)
     expect(STANDARD_OPERATOR_DISTRIBUTION).not.toHaveProperty("presetLineage")
   })
 
@@ -58,14 +57,6 @@ describe("standard Operator distribution", () => {
       extensions: STANDARD_OPERATOR_DISTRIBUTION.extensions,
       plugins: [],
     })
-  })
-
-  it("projects the legacy runtime catalog from the standard distribution policy", () => {
-    expect(selectStandardOperatorDistribution({ legacyRuntimeOnly: true })).toEqual(
-      STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST,
-    )
-    expect(STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST.modules).toHaveLength(27)
-    expect(STANDARD_OPERATOR_LEGACY_RUNTIME_MANIFEST.extensions).toHaveLength(19)
   })
 
   it("removes a module and every distribution extension that declares it as an owner", () => {

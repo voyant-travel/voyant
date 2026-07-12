@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { assertPortConforms } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -18,17 +19,25 @@ describe("trips deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/trips",
       packageName: "@voyant-travel/trips",
-      runtimePorts: [{ id: "trips.routes-runtime" }, { id: "trips.database-runtime" }],
+      runtimePorts: [
+        { id: "trips.routes-runtime" },
+        { id: "trips.database-runtime" },
+        { id: "catalog.runtime-services" },
+        { id: "commerce.checkout-api-options" },
+        { id: "flights.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/trips#api.admin",
           surface: "admin",
+          openapi: { document: "trips" },
           transactional: true,
           runtime: { entry: "@voyant-travel/trips", export: "createTripsVoyantRuntime" },
         },
         {
           id: "@voyant-travel/trips#api.public",
           surface: "public",
+          openapi: { document: "trips" },
           transactional: true,
           runtime: { entry: "@voyant-travel/trips", export: "createTripsVoyantRuntime" },
         },
@@ -51,6 +60,17 @@ describe("trips deployment manifest", () => {
 
   it("owns the executable payment completion runtime reference", () => {
     expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
+  })
+
+  it("marks every public OpenAPI operation with its graph API id", () => {
+    const document = JSON.parse(
+      readFileSync(new URL("../openapi/storefront/trips.json", import.meta.url), "utf8"),
+    )
+
+    expect(publicOperationApiIds(document)).not.toHaveLength(0)
+    expect(new Set(publicOperationApiIds(document))).toEqual(
+      new Set(["@voyant-travel/trips#api.public"]),
+    )
   })
 
   it.each([
@@ -83,10 +103,13 @@ describe("trips deployment manifest", () => {
       api: tripsVoyantModule.api!.filter(({ surface }) =>
         selection === "both" ? true : surface === selection,
       ),
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async (port) =>
         port.id === tripsRoutesRuntimePort.id ? routeOptions : databaseRuntime,
       ) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     const bindings = { DATABASE_URL: "postgres://test" }
     const container = createContainer()
@@ -103,3 +126,12 @@ describe("trips deployment manifest", () => {
     expect(withDb).toHaveBeenCalledWith(bindings, expect.any(Function))
   })
 })
+
+function publicOperationApiIds(document: unknown): unknown[] {
+  const paths = (document as { paths?: Record<string, Record<string, unknown>> } | undefined)?.paths
+  return Object.values(paths ?? {}).flatMap((path) =>
+    Object.values(path).map(
+      (operation) => (operation as Record<string, unknown>)["x-voyant-api-id"],
+    ),
+  )
+}

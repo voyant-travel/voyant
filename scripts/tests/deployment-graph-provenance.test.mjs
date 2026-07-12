@@ -100,6 +100,10 @@ describe("deployment graph package provenance", () => {
           schemaVersion: "voyant.package.v1",
           kind: "module",
           manifest: " ./voyant ",
+          runtime: {
+            entry: " ./runtime-contributor ",
+            export: " createBookingsRuntimePortContribution ",
+          },
           compatibleWith: {
             framework: " ^0.24.0 ",
             targets: " node ",
@@ -138,6 +142,10 @@ describe("deployment graph package provenance", () => {
           schemaVersion: "voyant.package.v1",
           kind: "module",
           manifest: "./voyant",
+          runtime: {
+            entry: "./runtime-contributor",
+            export: "createBookingsRuntimePortContribution",
+          },
           compatibleWith: {
             framework: "^0.24.0",
             targets: ["node"],

@@ -1,3 +1,4 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type {
   InsertInfraPublicDocumentDeliveryGrant,
   SelectInfraPublicDocumentDeliveryGrant,
@@ -6,13 +7,14 @@ import { infraPublicDocumentDeliveryGrantsTable } from "@voyant-travel/db/schema
 import type { StorageProvider } from "@voyant-travel/storage"
 import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 
 const DEFAULT_PUBLIC_DOCUMENT_TTL_SECONDS = 24 * 60 * 60
 const MAX_PUBLIC_DOCUMENT_TTL_SECONDS = 30 * 24 * 60 * 60
 const PUBLIC_DOCUMENT_TOKEN_BYTES = 32
 const DEFAULT_CONTENT_TYPE = "application/octet-stream"
 const DEFAULT_PUBLIC_DOCUMENT_PATH = "/v1/public/documents"
+export const PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID =
+  "@voyant-travel/public-document-delivery#api.public"
 
 export interface PublicDocumentDeliveryEnvelope {
   grantId: string
@@ -333,7 +335,8 @@ export async function revokePublicDocumentDeliveryGrant(
 export function createPublicDocumentDeliveryRoutes<
   TBindings extends object = Record<string, unknown>,
 >(options: PublicDocumentDeliveryRouteOptions<TBindings> = {}) {
-  return new Hono<Env<TBindings>>().get("/:token", async (c) => {
+  const routes = new OpenAPIHono<Env<TBindings>>()
+  routes.get("/:token", async (c) => {
     const token = c.req.param("token")
     const store = getStore(options, c.env, c.get("db"))
     const resolution = await resolvePublicDocumentDeliveryGrant(store, token)
@@ -370,6 +373,19 @@ export function createPublicDocumentDeliveryRoutes<
       },
     })
   })
+  routes.openAPIRegistry.registerPath({
+    method: "get",
+    path: "/{token}",
+    summary: "Download a public document",
+    responses: {
+      200: { description: "The granted document bytes." },
+      404: { description: "The grant or stored document does not exist." },
+      410: { description: "The grant is expired or revoked." },
+      503: { description: "Document storage is not configured." },
+    },
+    "x-voyant-api-id": PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID,
+  })
+  return routes
 }
 
 export function createPublicDocumentDeliveryHonoModule<

@@ -6,6 +6,7 @@ describe("standard Node starter contract", () => {
     expect(JSON.parse(buildStandardNodeStarterSnapshot())).toEqual(STANDARD_NODE_STARTER)
     expect(STANDARD_NODE_STARTER).toMatchInlineSnapshot(`
       {
+        "defaultPlugins": [],
         "deploymentTarget": "node",
         "optionalDirectories": [
           "src/api/admin",
@@ -31,5 +32,10 @@ describe("standard Node starter contract", () => {
 
   it("contains no Cloudflare deployment surface", () => {
     expect(buildStandardNodeStarterSnapshot()).not.toMatch(/cloudflare|worker|wrangler/i)
+  })
+
+  it("requires integrations to be selected explicitly", () => {
+    expect(STANDARD_NODE_STARTER.defaultPlugins).toEqual([])
+    expect(buildStandardNodeStarterSnapshot()).not.toMatch(/smartbill/i)
   })
 })

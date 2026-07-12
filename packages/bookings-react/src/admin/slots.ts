@@ -31,3 +31,12 @@ export const bookingDetailFinanceStartSlot = "booking.details.finance-start"
  * here. Widgets receive `BookingDetailHostSlotContext` as props.
  */
 export const bookingDetailFinanceEndSlot = "booking.details.finance-end"
+
+/** Widget slot rendered beside the primary action on the bookings list. */
+export const bookingsListHeaderActionsSlot = "bookings.list.header-actions"
+
+/**
+ * Controller slot for selected finance packages to provide payment-dialog
+ * callbacks without replacing the package-owned booking detail route.
+ */
+export const bookingDetailPaymentControllerSlot = "booking.details.payment-controller"

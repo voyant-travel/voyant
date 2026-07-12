@@ -19,20 +19,25 @@
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./booking-tax": "./src/booking-tax.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
+    "./stale-booking-holds-runtime": "./src/stale-booking-holds-runtime.ts",
     "./booking-schedule-subscriber": "./src/booking-schedule/subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
-    "./tools": "./src/tools.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./setup/vouchers": "./src/service-vouchers-migration.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/finance.json",
+    "./openapi/admin/booking-tax": "./openapi/admin/booking-tax.json",
+    "./openapi/storefront": "./openapi/storefront/finance.json"
   },
   "scripts": {
-    "typecheck": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.typecheck.json",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.typecheck.json",
     "lint": "biome check src/",
     "test": "vitest run",
-    "build": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.build.json",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build",
     "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts",
@@ -63,6 +68,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -144,10 +150,20 @@
         "import": "./dist/booking-tax.js",
         "default": "./dist/booking-tax.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./runtime-port": {
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
+      },
+      "./stale-booking-holds-runtime": {
+        "types": "./dist/stale-booking-holds-runtime.d.ts",
+        "import": "./dist/stale-booking-holds-runtime.js",
+        "default": "./dist/stale-booking-holds-runtime.js"
       },
       "./booking-schedule-subscriber": {
         "types": "./dist/booking-schedule/subscriber-runtime.d.ts",
@@ -170,15 +186,18 @@
         "default": "./dist/validation-public.js"
       },
       "./tools": {
-        "types": "./dist/tools.d.ts",
-        "import": "./dist/tools.js",
-        "default": "./dist/tools.js"
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/finance.json",
+      "./openapi/admin/booking-tax": "./openapi/admin/booking-tax.json",
+      "./openapi/storefront": "./openapi/storefront/finance.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
@@ -192,6 +211,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createFinanceRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

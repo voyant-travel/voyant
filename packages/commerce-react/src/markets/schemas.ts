@@ -3,7 +3,7 @@ import {
   insertMarketLocaleSchema,
   insertMarketProductRuleSchema,
   insertMarketSchema,
-} from "@voyant-travel/commerce/markets/validation"
+} from "@voyant-travel/commerce/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 

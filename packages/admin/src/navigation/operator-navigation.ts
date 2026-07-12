@@ -72,7 +72,7 @@ export interface CreateOperatorAdminNavigationOptions {
 /**
  * The module id each standard nav item needs mounted (voyant#3063). Used to gate
  * the base nav for a deployment that activates only a module subset — a
- * source-free managed admin composes the full nav from one shared image and
+ * source-free hosted admin composes the full nav from one shared image and
  * filters it at runtime by the active module set, so items whose API isn't
  * mounted don't render as dead links.
  *

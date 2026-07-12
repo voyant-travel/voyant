@@ -16,17 +16,25 @@ async function createFixture(overrides = {}) {
   const files = {
     "flights/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/finance": "workspace:^" },
-      voyant: { requiresSchemas: ["@voyant-travel/finance"] },
+      exports: {
+        "./runtime-contributor": "./src/runtime-contributor.ts",
+      },
+      voyant: {
+        requiresSchemas: ["@voyant-travel/finance"],
+        runtime: { export: "createFlightsRuntimePortContribution" },
+      },
     }),
     "flights/src/voyant.ts":
       'runtimePorts: [requirePort(flightsRuntimePort)]\nrequires: { capabilities: ["finance.payment-sessions"] }\nexport: "createFlightsVoyantRuntime"\n',
     "flights/src/hono.ts":
       'defineGraphRuntimeFactory(({ getPort }) => getPort(flightsRuntimePort))\ncreateOrderPaymentSessions({ targetType: "flight_order" })\n',
     "flights/src/runtime-port.ts": '["resolveAdapter", "startCardPayment"]\n',
-    "operator/src/api/composition.ts":
-      "export function buildOperatorRuntimePorts() { return { [flightsRuntimePort.id]: provider } }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = {}\nfunction resolveOperatorSmartbillOptions() {}\n",
-    "operator/src/api/runtime/flights-runtime.ts":
-      "export const operatorFlightsRuntime: FlightsRuntime = { resolveAdapter, startCardPayment }\n",
+    "flights/src/runtime-contributor.ts":
+      "primitives: VoyantRuntimeHostPrimitives\ncreateFlightsRuntime(host.primitives)\n",
+    "flights/src/runtime.ts":
+      'resolveAdapter() {}\nstartCardPayment() {}\nthrow new Error("Flight connector is not configured")\n',
+    "operator/src/api/runtime/deployment-resources.ts":
+      "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -44,6 +52,8 @@ async function runChecker(root) {
       checkerPath,
       "--flights-root",
       path.join(root, "flights"),
+      "--retired-flights-node-root",
+      path.join(root, "flights-node"),
       "--operator-root",
       path.join(root, "operator"),
     ],
@@ -54,19 +64,19 @@ async function runChecker(root) {
 describe("check-flights-runtime-authority", () => {
   it("accepts package runtime authority with Node-host port wiring", async () => {
     const result = await runChecker(await createFixture())
-    assert.match(result.stdout, /check-flights-runtime-authority: OK/)
+    assert.match(result.stdout, /Flights-owned standard Node runtime authority/)
   })
 
   it("rejects package-id bindings and compatibility route loaders", async () => {
     const root = await createFixture({
-      "operator/src/api/composition.ts":
-        'export function buildOperatorRuntimePorts() { return {} }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/flights": legacy }\nfunction resolveOperatorSmartbillOptions() {}\nconst loadFlightAdminRoutes = legacy\n',
+      "operator/src/api/runtime/deployment-resources.ts":
+        'function createDeploymentPortResources() { return {} }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/flights": legacy }\nconst loadFlightAdminRoutes = legacy\nconst loadFlightsRuntime = () => import("./flights-runtime")\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must bind Flights through flightsRuntimePort\.id/)
-      assert.match(error.stderr, /must not bind Flights by package id/)
+      assert.match(error.stderr, /compatibility runtime bindings must stay deleted/)
       assert.match(error.stderr, /must not retain the Flights compatibility route loader/)
+      assert.match(error.stderr, /must not retain a Flights runtime loader or facade/)
       return true
     })
   })

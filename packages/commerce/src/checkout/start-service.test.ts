@@ -1,3 +1,4 @@
+import { bookingsService } from "@voyant-travel/bookings"
 import * as financeModule from "@voyant-travel/finance"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
@@ -8,6 +9,10 @@ import { CatalogCheckoutStartError, startCatalogCheckout } from "./start-service
 
 function stubOptions(overrides: Partial<CheckoutStartOptions> = {}): CheckoutStartOptions {
   return {
+    checkoutInquiry: {
+      resolvePipeline: vi.fn().mockResolvedValue(null),
+      createInquiry: vi.fn().mockResolvedValue(null),
+    },
     resolveBookingTaxSettings: vi.fn(),
     getOwnedProductName: vi.fn().mockResolvedValue(null),
     resolveBankTransferInstructions: vi
@@ -89,6 +94,94 @@ describe("startCatalogCheckout", () => {
     expect(result).toEqual({ kind: "hold_placed", bookingId: "bk_1" })
   })
 
+  it("creates an inquiry through the injected Quotes runtime", async () => {
+    vi.spyOn(bookingsService, "cancelBooking").mockResolvedValue({} as never)
+    const checkoutInquiry = {
+      resolvePipeline: vi.fn().mockResolvedValue({ pipelineId: "pipeline_1", stageId: "stage_1" }),
+      createInquiry: vi.fn().mockResolvedValue({ id: "quote_1" }),
+    }
+    const emit = vi.fn().mockResolvedValue(undefined)
+    const db = stubDb([
+      {
+        id: "bk_inquiry",
+        bookingNumber: "BK-2001",
+        status: "on_hold",
+        holdExpiresAt: null,
+        personId: "person_1",
+        organizationId: null,
+        sellAmountCents: 12500,
+        sellCurrency: "EUR",
+      },
+    ])
+
+    await expect(
+      startCatalogCheckout(
+        {
+          db,
+          env: {},
+          eventBus: { emit } as never,
+          options: stubOptions({ checkoutInquiry }),
+        },
+        { bookingId: "bk_inquiry", paymentIntent: "inquiry" },
+      ),
+    ).resolves.toEqual({
+      kind: "inquiry_received",
+      bookingId: "bk_inquiry",
+      inquiryId: "quote_1",
+    })
+    expect(checkoutInquiry.resolvePipeline).toHaveBeenCalledWith(db, {
+      pipelineId: null,
+      stageId: null,
+    })
+    expect(checkoutInquiry.createInquiry).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        pipelineId: "pipeline_1",
+        stageId: "stage_1",
+        source: "storefront-inquiry",
+        sourceRef: "bk_inquiry",
+      }),
+    )
+    expect(emit).toHaveBeenCalledWith("inquiry.created", {
+      quoteId: "quote_1",
+      bookingId: "bk_inquiry",
+      bookingNumber: "BK-2001",
+      pipelineId: "pipeline_1",
+      stageId: "stage_1",
+    })
+  })
+
+  it("keeps the inquiry fallback when Quotes has no configured pipeline", async () => {
+    vi.spyOn(bookingsService, "cancelBooking").mockResolvedValue({} as never)
+    const checkoutInquiry = {
+      resolvePipeline: vi.fn().mockRejectedValue(new Error("quotes unavailable")),
+      createInquiry: vi.fn(),
+    }
+
+    const result = await startCatalogCheckout(
+      {
+        db: stubDb([
+          {
+            id: "bk_fallback",
+            bookingNumber: "BK-2002",
+            status: "on_hold",
+            holdExpiresAt: null,
+          },
+        ]),
+        env: {},
+        options: stubOptions({ checkoutInquiry }),
+      },
+      { bookingId: "bk_fallback", paymentIntent: "inquiry" },
+    )
+
+    expect(result).toMatchObject({
+      kind: "inquiry_received",
+      inquiryId: "inq-bk_fallback",
+      note: expect.stringContaining("No quote pipeline configured"),
+    })
+    expect(checkoutInquiry.createInquiry).not.toHaveBeenCalled()
+  })
+
   it("throws booking_not_found when no booking + no snapshot materializes", async () => {
     // No booking row, and the snapshot lookup (dynamic import of catalog)
     // returns nothing → materializeBookingFromSnapshot yields null.
@@ -162,31 +255,24 @@ describe("startCatalogCheckout", () => {
     }
     const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = []
     const updates: Record<string, unknown>[] = []
-    const selectRows = [[booking], [], []]
+    const selectRows = [[booking], []]
     const nextRows = () => selectRows.shift() ?? []
-    let selectCalls = 0
+    type AwaitableRows = Promise<unknown[]> & { limit: () => Promise<unknown[]> }
     type SelectChain = {
       from: () => SelectChain
-      where: () => SelectChain
-      limit: () => Promise<unknown[]>
+      where: () => AwaitableRows
     }
     const selectChain: SelectChain = {
       from: () => selectChain,
-      where: () => selectChain,
-      limit: async () => nextRows(),
+      where: () => {
+        const rows = nextRows()
+        const result = Promise.resolve(rows) as AwaitableRows
+        result.limit = async () => rows
+        return result
+      },
     }
     const db = {
-      select: () => {
-        selectCalls += 1
-        if (selectCalls === 3) {
-          return {
-            from: () => ({
-              where: async () => nextRows(),
-            }),
-          }
-        }
-        return selectChain
-      },
+      select: () => selectChain,
       insert: (table: unknown) => ({
         values: (values: Record<string, unknown>) => {
           inserts.push({ table, values })

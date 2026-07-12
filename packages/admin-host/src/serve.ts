@@ -2,8 +2,8 @@ import { serveStatic } from "@hono/node-server/serve-static"
 import type { ExecutionContext } from "hono"
 import { Hono } from "hono"
 
-/** Options for {@link serveManagedProfileAdmin}. */
-export interface ServeManagedProfileAdminOptions<Env extends object> {
+/** Options for {@link serveAdminHost}. */
+export interface ServeAdminHostOptions<Env extends object> {
   /**
    * Directory of built client assets (e.g. `dist/client`), served for
    * `/assets/*` and other public files before falling through to the app.
@@ -18,7 +18,7 @@ export interface ServeManagedProfileAdminOptions<Env extends object> {
 }
 
 /**
- * Build the Node serving seam for a managed profile admin: a Hono app that
+ * Build the Node serving seam for an admin application: a Hono app that
  * serves built client assets from `clientAssetsDir`, then falls through to the
  * combined API + SSR app for every non-asset route.
  *
@@ -27,11 +27,11 @@ export interface ServeManagedProfileAdminOptions<Env extends object> {
  * served by Vite's own middleware instead.
  *
  * This packages the static-host + fall-through that admin hosts (the operator
- * starter and the future managed admin host, voyant#3044) previously held
+ * starter and hosted admin deployments, voyant#3044) previously held
  * inline as a `web` Hono app.
  */
-export function serveManagedProfileAdmin<Env extends object = Record<string, unknown>>(
-  options: ServeManagedProfileAdminOptions<Env>,
+export function serveAdminHost<Env extends object = Record<string, unknown>>(
+  options: ServeAdminHostOptions<Env>,
 ): Hono<{ Bindings: Env }> {
   const web = new Hono<{ Bindings: Env }>()
   web.use("*", serveStatic({ root: options.clientAssetsDir }))
