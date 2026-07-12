@@ -32,6 +32,7 @@
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
     "./journey": "./src/journey/index.ts",
+    "./storefront": "./src/storefront/index.ts",
     "./extras": "./src/extras.ts",
     "./admin": "./src/admin/index.tsx",
     "./admin/*": "./src/admin/*.tsx",
@@ -50,9 +51,11 @@
     "@tanstack/react-table": "^8.0.0",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/identity-react": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
@@ -73,6 +76,9 @@
     "@voyant-travel/admin": {
       "optional": true
     },
+    "@voyant-travel/catalog": {
+      "optional": true
+    },
     "@voyant-travel/catalog-react": {
       "optional": true
     },
@@ -83,6 +89,9 @@
       "optional": true
     },
     "@voyant-travel/finance-react": {
+      "optional": true
+    },
+    "@voyant-travel/finance": {
       "optional": true
     },
     "@voyant-travel/identity-react": {
@@ -124,9 +133,11 @@
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/finance-react": "workspace:^",
     "@voyant-travel/identity-react": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
@@ -258,6 +269,11 @@
         "types": "./dist/journey/index.d.ts",
         "import": "./dist/journey/index.js",
         "default": "./dist/journey/index.js"
+      },
+      "./storefront": {
+        "types": "./dist/storefront/index.d.ts",
+        "import": "./dist/storefront/index.js",
+        "default": "./dist/storefront/index.js"
       },
       "./extras": {
         "types": "./dist/extras.d.ts",

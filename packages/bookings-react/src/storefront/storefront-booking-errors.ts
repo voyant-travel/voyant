@@ -1,4 +1,4 @@
-export type StorefrontBookErrorBody = {
+export interface StorefrontBookErrorBody {
   error?: unknown
   code?: unknown
   requestId?: unknown

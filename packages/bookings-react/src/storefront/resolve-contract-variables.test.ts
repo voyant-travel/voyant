@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { type ContractSourceContext, resolveContractVariables } from "./resolve-contract-variables"
 
-/** Minimal valid draft — the schema fills the rest with defaults. */
+/** Minimal valid draft; the schema fills the rest with defaults. */
 function makeDraft() {
   return bookingDraftV1.parse({
     entity: { module: "products", id: "cdmi_demo_dynamic_pkg_20260629", sourceKind: "owned" },

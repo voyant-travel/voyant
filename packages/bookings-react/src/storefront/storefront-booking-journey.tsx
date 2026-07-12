@@ -8,14 +8,19 @@
  * Uses `surface="public"` so the engine hits `/v1/public/catalog/*`.
  * Per booking-journey-architecture §8.1 + §10 Phase B.
  *
- * Lives in the operator starter's `(storefront)` route group as a
- * "simulated storefront" — validates the dual-surface design without
- * spinning up a separate template. A real storefront template would
- * lift this component (and the route group) verbatim.
+ * Package-owned so Node starters and dedicated storefronts share the same
+ * checkout behavior while route trees remain application-owned.
  */
 
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import {
+  computePaymentSchedule,
+  noDepositPolicy,
+  type PaymentPolicy,
+  type PaymentPolicySource,
+} from "@voyant-travel/finance/payment-policy"
+import { type VoyantFetcher, useVoyantReactContext } from "@voyant-travel/react"
+
 import {
   type BookingEntitySummary,
   BookingJourney,
@@ -23,17 +28,7 @@ import {
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
   type Draft,
-} from "@voyant-travel/bookings-react/journey"
-import {
-  computePaymentSchedule,
-  noDepositPolicy,
-  type PaymentPolicy,
-  type PaymentPolicySource,
-} from "@voyant-travel/finance/payment-policy"
-
-import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
+} from "../journey/index.js"
 import {
   type ContractSourceContext,
   type OperatorInfoVariables,
@@ -55,6 +50,30 @@ class CheckoutError extends Error {}
 
 interface PublicOperatorProfile extends OperatorInfoVariables {
   customerPaymentPolicy?: PaymentPolicy | null
+}
+
+export interface StorefrontBookingJourneyMessages {
+  checkoutFailed: string
+  requestReference: string
+  reserveFailed: string
+}
+
+export interface StorefrontBookingJourneyScope {
+  marketId?: string
+  locale?: string
+  currency?: string
+}
+
+export type StorefrontCheckoutConfirmationKind =
+  | "bank_transfer"
+  | "card_pending"
+  | "hold"
+  | "inquiry"
+
+const defaultMessages: StorefrontBookingJourneyMessages = {
+  checkoutFailed: "We couldn't complete your booking. Please review your selection or try again.",
+  requestReference: "Reference: {requestId}",
+  reserveFailed: "This selection is no longer available. Adjust it and try again.",
 }
 
 export interface StorefrontBookingJourneyProps {
@@ -109,6 +128,14 @@ export interface StorefrontBookingJourneyProps {
     acceptance: ContractAcceptanceEvent | null,
     context: BookingJourneyCheckoutContext,
   ) => void | Promise<void>
+  messages?: StorefrontBookingJourneyMessages
+  scope?: StorefrontBookingJourneyScope
+  onNavigateToShop: () => void
+  onNavigateToConfirmation: (
+    bookingId: string,
+    kind?: StorefrontCheckoutConfirmationKind,
+  ) => void
+  onRedirectToPayment?: (url: string) => void
   className?: string
 }
 
@@ -126,25 +153,27 @@ export function StorefrontBookingJourney({
   contractTemplateSlug,
   contractMarketingLabel,
   onContractAccepted,
+  messages = defaultMessages,
+  scope = {},
+  onNavigateToShop,
+  onNavigateToConfirmation,
+  onRedirectToPayment = (url) => window.location.assign(url),
   className,
 }: StorefrontBookingJourneyProps): React.ReactElement {
-  const navigate = useNavigate()
-  const messages = useStorefrontMessagesOrDefault()
+  const { baseUrl, fetcher } = useVoyantReactContext()
   // Carry the shopper's selected market/currency/locale (voyant#2643) into the
   // journey's live quote so checkout prices in the same scope as browse/detail,
   // not the default. The `(storefront)` layout provides the scope; unselected
   // fields stay undefined and the quote falls back to the surface default.
-  const scope = useStorefrontScope()
-
   // Resolve the contract template the journey will preview. The
   // per-product override wins when set; otherwise we fetch
   // whatever the operator marked as the active customer-scope
   // template in `legal/contract_templates`. A 404 means no template
   // has been seeded — the journey skips the preview dialog and
   // commits without a contract.
-  const resolvedSlug = useResolvedContractSlug(contractTemplateSlug)
-  const operatorProfile = usePublicOperatorProfile()
-  const resolvedPolicy = useResolvedPaymentPolicy(entityModule, entityId)
+  const resolvedSlug = useResolvedContractSlug(contractTemplateSlug, baseUrl, fetcher)
+  const operatorProfile = usePublicOperatorProfile(baseUrl, fetcher)
+  const resolvedPolicy = useResolvedPaymentPolicy(entityModule, entityId, baseUrl, fetcher)
 
   // Storefront-specific slot wiring. NO CRM picker — customers fill
   // an inline contact form, which is the BookingJourney's default
@@ -153,13 +182,10 @@ export function StorefrontBookingJourney({
   // upgrade-path hook (Phase E follow-up).
   const slots: Pick<BookingJourneyProps, "onCommitted" | "onCancelled"> = {
     onCommitted(result) {
-      navigate({
-        to: "/shop/confirmation/$bookingId",
-        params: { bookingId: result.bookingId },
-      })
+      onNavigateToConfirmation(result.bookingId)
     },
     onCancelled() {
-      navigate({ to: "/shop" })
+      onNavigateToShop()
     },
   }
 
@@ -188,7 +214,7 @@ export function StorefrontBookingJourney({
       // `currentQuoteId`), so a market/currency change made mid-journey books
       // the price the shopper is actually looking at rather than a stale one
       // (voyant#2643). Falls back to draft resolution when no live quote yet.
-      const bookRes = await fetch(`${getApiUrl()}/v1/public/catalog/book`, {
+      const bookRes = await fetcher(apiPath(baseUrl, "/v1/public/catalog/book"), {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
@@ -216,12 +242,12 @@ export function StorefrontBookingJourney({
             : undefined
         throw new CheckoutError(
           reason === "rates_missing"
-            ? messages.bookingJourney.reserveFailed
+            ? messages.reserveFailed
             : buildStorefrontBookFailureMessage(
                 errBody,
                 bookRes.headers.get("x-request-id"),
-                messages.bookingJourney.checkoutFailed,
-                messages.bookingJourney.requestReference,
+                messages.checkoutFailed,
+                messages.requestReference,
               ),
         )
       }
@@ -229,14 +255,14 @@ export function StorefrontBookingJourney({
       const bookingId = bookJson.bookingId
       if (!bookingId) {
         console.error("[storefront] /book returned no bookingId", bookJson)
-        throw new CheckoutError(messages.bookingJourney.checkoutFailed)
+        throw new CheckoutError(messages.checkoutFailed)
       }
 
       // Step 2 — start checkout with the payment method selected in
       // the journey's Payment step. Card goes to the PSP; bank
       // transfer returns IBAN/reference instructions; inquiry skips
       // inventory/payment.
-      const startRes = await fetch(`${getApiUrl()}/v1/public/catalog/checkout/start`, {
+      const startRes = await fetcher(apiPath(baseUrl, "/v1/public/catalog/checkout/start"), {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
@@ -284,19 +310,15 @@ export function StorefrontBookingJourney({
 
       if ("error" in json) {
         console.error("[storefront] /checkout/start error", json)
-        throw new CheckoutError(messages.bookingJourney.checkoutFailed)
+        throw new CheckoutError(messages.checkoutFailed)
       }
 
       switch (json.kind) {
         case "card_redirect":
           if (json.redirectUrl) {
-            window.location.assign(json.redirectUrl)
+            onRedirectToPayment(json.redirectUrl)
           } else {
-            navigate({
-              to: "/shop/confirmation/$bookingId",
-              params: { bookingId: json.bookingId },
-              search: { kind: "card_pending" } as never,
-            })
+            onNavigateToConfirmation(json.bookingId, "card_pending")
           }
           break
         case "bank_transfer_instructions":
@@ -307,25 +329,13 @@ export function StorefrontBookingJourney({
           if (typeof sessionStorage !== "undefined") {
             sessionStorage.setItem(`voyant.checkout.${json.bookingId}`, JSON.stringify(json))
           }
-          navigate({
-            to: "/shop/confirmation/$bookingId",
-            params: { bookingId: json.bookingId },
-            search: { kind: "bank_transfer" } as never,
-          })
+          onNavigateToConfirmation(json.bookingId, "bank_transfer")
           break
         case "inquiry_received":
-          navigate({
-            to: "/shop/confirmation/$bookingId",
-            params: { bookingId: json.bookingId },
-            search: { kind: "inquiry" } as never,
-          })
+          onNavigateToConfirmation(json.bookingId, "inquiry")
           break
         case "hold_placed":
-          navigate({
-            to: "/shop/confirmation/$bookingId",
-            params: { bookingId: json.bookingId },
-            search: { kind: "hold" } as never,
-          })
+          onNavigateToConfirmation(json.bookingId, "hold")
           break
       }
     } catch (err) {
@@ -334,7 +344,7 @@ export function StorefrontBookingJourney({
       // (voyant#2638). Preserve our own localized CheckoutError messages; wrap
       // anything else (native fetch/network error, JSON parse of an HTML 502)
       // in the generic message so raw browser/parser text never reaches the UI.
-      throw err instanceof CheckoutError ? err : new Error(messages.bookingJourney.checkoutFailed)
+      throw err instanceof CheckoutError ? err : new Error(messages.checkoutFailed)
     }
   }
 
@@ -357,9 +367,10 @@ export function StorefrontBookingJourney({
         resolvedSlug
           ? {
               templateSlug: resolvedSlug,
-              previewUrl: `${getApiUrl()}/v1/public/legal/contracts/templates/by-slug/${encodeURIComponent(
-                resolvedSlug,
-              )}/preview`,
+              previewUrl: apiPath(
+                baseUrl,
+                `/v1/public/legal/contracts/templates/by-slug/${encodeURIComponent(resolvedSlug)}/preview`,
+              ),
               acceptLanguage: typeof navigator !== "undefined" ? navigator.language : undefined,
               resolveVariables: ({ draft, pricing }) => {
                 // Use the server-resolved cascade when the public
@@ -479,15 +490,19 @@ export function buildStorefrontCommitParty(draft: Draft): Record<string, unknown
  * skips the dialog and routes Confirm straight to the
  * checkout-start handler.
  */
-function useResolvedContractSlug(override: string | undefined): string | undefined {
+function useResolvedContractSlug(
+  override: string | undefined,
+  baseUrl: string,
+  fetcher: VoyantFetcher,
+): string | undefined {
   const language = typeof navigator !== "undefined" ? navigator.language?.split("-")[0] : undefined
   const { data } = useQuery({
     queryKey: ["public-legal-default-template", "customer", language ?? "en"],
     queryFn: async (): Promise<string | null> => {
       const params = new URLSearchParams({ scope: "customer" })
       if (language) params.set("language", language)
-      const res = await fetch(
-        `${getApiUrl()}/v1/public/legal/contracts/templates/default?${params.toString()}`,
+      const res = await fetcher(
+        apiPath(baseUrl, `/v1/public/legal/contracts/templates/default?${params.toString()}`),
         { credentials: "include" },
       )
       if (!res.ok) return null
@@ -513,11 +528,14 @@ function useResolvedContractSlug(override: string | undefined): string | undefin
  * preview then renders the operator block with `-` placeholders (the
  * template renderer's missing-value substitution kicks in).
  */
-function usePublicOperatorProfile(): PublicOperatorProfile | undefined {
+function usePublicOperatorProfile(
+  baseUrl: string,
+  fetcher: VoyantFetcher,
+): PublicOperatorProfile | undefined {
   const { data } = useQuery({
     queryKey: ["public-operator-profile"],
     queryFn: async (): Promise<PublicOperatorProfile | null> => {
-      const res = await fetch(`${getApiUrl()}/v1/public/operator-profile`, {
+      const res = await fetcher(apiPath(baseUrl, "/v1/public/operator-profile"), {
         credentials: "include",
       })
       if (!res.ok) return null
@@ -547,11 +565,13 @@ function usePublicOperatorProfile(): PublicOperatorProfile | undefined {
 function useResolvedPaymentPolicy(
   entityModule: string,
   entityId: string,
+  baseUrl: string,
+  fetcher: VoyantFetcher,
 ): { policy: PaymentPolicy; source: PaymentPolicySource } | undefined {
   const { data } = useQuery({
     queryKey: ["public-payment-policy", entityModule, entityId],
     queryFn: async (): Promise<{ policy: PaymentPolicy; source: PaymentPolicySource } | null> => {
-      const res = await fetch(`${getApiUrl()}/v1/public/payment-policy/resolve`, {
+      const res = await fetcher(apiPath(baseUrl, "/v1/public/payment-policy/resolve"), {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
@@ -566,4 +586,8 @@ function useResolvedPaymentPolicy(
     staleTime: 5 * 60 * 1000,
   })
   return data ?? undefined
+}
+
+function apiPath(baseUrl: string, path: string): string {
+  return `${baseUrl.replace(/\/$/, "")}${path}`
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { buildStorefrontBookFailureMessage } from "./storefront-booking-errors"
 import { buildStorefrontCommitParty } from "./storefront-booking-journey"
 
-describe("buildStorefrontCommitParty", () => {
+describe("package-owned storefront booking journey", () => {
   it("keeps billing contact and traveler details for sourced reserve", () => {
     const party = buildStorefrontCommitParty({
       entity: { module: "products", id: "pkg_1", sourceKind: "" },

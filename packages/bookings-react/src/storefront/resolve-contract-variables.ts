@@ -1,4 +1,4 @@
-// agent-quality: file-size exception -- owner: operator; existing UI surface stays co-located until a dedicated split preserves behavior and tests.
+// agent-quality: file-size exception -- owner: bookings-react; contract variables stay centralized and behavior-tested.
 /**
  * Default mapping from a `BookingDraftV1` (+ live quote pricing +
  * resolved entity summary + operator / acceptance context) to the
@@ -40,12 +40,13 @@
  *     are populated only when `entitySummary` carries enough context.
  */
 
-import type { BookingEntitySummary } from "@voyant-travel/bookings-react/journey"
 import type { BookingDraftV1, PricingBreakdownV1 } from "@voyant-travel/catalog/booking-engine"
 import type {
   ComputedScheduleEntry,
   PaymentPolicySource,
 } from "@voyant-travel/finance/payment-policy"
+
+import type { BookingEntitySummary } from "../journey/index.js"
 
 export interface OperatorInfoVariables {
   /** Trading name shown to customers. */
@@ -108,7 +109,7 @@ export interface ContractSourceContext {
   }
 }
 
-interface ResolveContractVariablesContext {
+export interface ResolveContractVariablesContext {
   entityModule: string
   entityId: string
   entitySummary?: BookingEntitySummary

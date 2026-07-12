@@ -935,6 +935,9 @@ importers:
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
+      '@voyant-travel/catalog':
+        specifier: workspace:^
+        version: link:../catalog
       '@voyant-travel/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
@@ -944,6 +947,9 @@ importers:
       '@voyant-travel/distribution-react':
         specifier: workspace:^
         version: link:../distribution-react
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/finance-react':
         specifier: workspace:^
         version: link:../finance-react

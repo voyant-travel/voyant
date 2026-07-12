@@ -1,17 +1,20 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, redirect, useParams, useSearch } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate, useParams, useSearch } from "@tanstack/react-router"
 import type { AccommodationContent } from "@voyant-travel/accommodations/content-shape"
 import type { BookingEntitySummary } from "@voyant-travel/bookings-react/journey"
+import {
+  type ContractSourceContext,
+  StorefrontBookingJourney,
+} from "@voyant-travel/bookings-react/storefront"
 import type { CruiseContent } from "@voyant-travel/cruises/content-shape"
 import type { ProductContent } from "@voyant-travel/inventory/content-shape"
 import { getStorefrontCustomerProductDetailRoute } from "@voyant-travel/storefront-react"
 import { useMemo } from "react"
 import { z } from "zod"
 
-import type { ContractSourceContext } from "@/components/voyant/booking-journey/resolve-contract-variables"
-import { StorefrontBookingJourney } from "@/components/voyant/booking-journey/storefront-booking-journey"
 import { getApiUrl } from "@/lib/env"
 import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
+import { useStorefrontScope } from "@/lib/storefront-scope"
 
 /**
  * Storefront booking-journey route. The customer arrives here from
@@ -73,6 +76,8 @@ function ShopBookRouteComponent(): React.ReactElement {
   })
   const search = useSearch({ from: "/(storefront)/shop_/book/$entityModule/$entityId" })
   const t = useStorefrontMessagesOrDefault().bookingJourney
+  const scope = useStorefrontScope()
+  const navigate = useNavigate()
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   const initialConfigure: Record<string, unknown> = {
@@ -121,6 +126,20 @@ function ShopBookRouteComponent(): React.ReactElement {
       initialAccommodation={initialAccommodation}
       entitySummary={entitySummary}
       entitySource={entitySource}
+      messages={t}
+      scope={scope}
+      onNavigateToShop={() => void navigate({ to: "/shop" })}
+      onNavigateToConfirmation={(bookingId, kind) => {
+        if (kind) {
+          void navigate({
+            to: "/shop/confirmation/$bookingId",
+            params: { bookingId },
+            search: { kind } as never,
+          })
+          return
+        }
+        void navigate({ to: "/shop/confirmation/$bookingId", params: { bookingId } })
+      }}
       // No `contractTemplateSlug` — the wrapper resolves whichever
       // customer-scope template the operator has marked active via
       // /v1/public/legal/contracts/templates/default. Per-product
