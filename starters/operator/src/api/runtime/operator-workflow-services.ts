@@ -43,7 +43,7 @@ import {
   withEmbedding,
 } from "../lib/catalog-runtime.js"
 import { withDbFromEnv } from "../lib/db.js"
-import { operatorPostgresDb } from "./operator-runtime-adapter.js"
+import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter.js"
 
 type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
 

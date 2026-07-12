@@ -28,7 +28,7 @@ async function createFixture(overrides = {}) {
     "operator/src/api/runtime/channel-push-runtime.ts":
       'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
     "operator/src/api/runtime/operator-workflow-services.ts":
-      "createChannelPushWorkflowRuntimeEntries\nselectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)\n",
+      'import { operatorBindings } from "./operator-runtime-adapter.js"\ncreateChannelPushWorkflowRuntimeEntries\nexport async function registerDistributionWorkflowService() {}\n',
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
     ...overrides,
@@ -90,6 +90,18 @@ describe("check-distribution-channel-push-runtime-authority", () => {
 
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must not read the deleted channel-push route/)
+      return true
+    })
+  })
+
+  it("rejects a Distribution bootstrap with an unbound binding adapter reference", async () => {
+    const root = await createFixture({
+      "operator/src/api/runtime/operator-workflow-services.ts":
+        "createChannelPushWorkflowRuntimeEntries\noperatorBindings(bindings)\nexport async function registerDistributionWorkflowService() {}\n",
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /must import its binding adapter/)
       return true
     })
   })

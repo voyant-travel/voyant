@@ -77,9 +77,19 @@ if (
 }
 if (
   !workflowServices.includes("createChannelPushWorkflowRuntimeEntries") ||
-  !workflowServices.includes("selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)")
+  !workflowServices.includes("export async function registerDistributionWorkflowService")
 ) {
-  violations.push("Operator must preserve lazy DB lifecycle and selected workflow service gating")
+  violations.push("Operator must preserve the lazy DB workflow-service adapter")
+}
+if (workflowServices.includes("OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution")) {
+  violations.push("Operator must not restore central Distribution workflow selection")
+}
+if (
+  !/import\s*\{[^}]*\boperatorBindings\b[^}]*\}\s*from\s*["']\.\/operator-runtime-adapter\.js["']/.test(
+    workflowServices,
+  )
+) {
+  violations.push("Distribution workflow bootstrap must import its binding adapter")
 }
 const compatibilityRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
 if (existsSync(compatibilityRoutePath)) {
