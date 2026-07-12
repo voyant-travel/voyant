@@ -44,6 +44,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#api",
           surface: "admin",
           mount: "distribution",
+          openapi: { document: "distribution" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "distributionHonoModule",

@@ -918,7 +918,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/entries": {
@@ -1685,7 +1688,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/entries/{id}/reversals": {
@@ -2560,7 +2566,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/entries/{id}": {
@@ -3168,7 +3177,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/approvals": {
@@ -3543,7 +3555,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/approvals/request": {
@@ -4196,7 +4211,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/approvals/{id}": {
@@ -4913,7 +4931,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/approvals/{id}/decide": {
@@ -5553,7 +5574,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/delegations": {
@@ -5879,7 +5903,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/delegations/{id}": {
@@ -6020,7 +6047,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     },
     "/v1/admin/action-ledger/relay-outbox": {
@@ -6277,7 +6307,10 @@
           "action-ledger"
         ],
         "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/action-ledger",
+        "x-voyant-package-name": "@voyant-travel/action-ledger"
       }
     }
   },

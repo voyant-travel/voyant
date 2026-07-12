@@ -14,7 +14,8 @@
     "./action-ledger-capabilities": "./src/action-ledger-capabilities.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/relationships.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -47,6 +48,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -107,7 +109,8 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/relationships.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

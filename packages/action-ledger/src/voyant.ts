@@ -11,6 +11,7 @@ export const actionLedgerVoyantModule = defineModule({
       id: "@voyant-travel/action-ledger#api.admin",
       surface: "admin",
       mount: "action-ledger",
+      openapi: { document: "action-ledger" },
       runtime: {
         entry: "@voyant-travel/action-ledger",
         export: "actionLedgerHonoModule",

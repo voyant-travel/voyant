@@ -18,6 +18,7 @@ describe("relationships deployment manifest", () => {
           id: "@voyant-travel/relationships#api.admin",
           surface: "admin",
           mount: "relationships",
+          openapi: { document: "relationships" },
           transactional: true,
           runtime: {
             entry: "@voyant-travel/relationships",

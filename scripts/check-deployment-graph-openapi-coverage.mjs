@@ -19,11 +19,17 @@ import {
 
 const DEFAULT_GRAPH = "starters/operator/.voyant/deployment-graph.generated.json"
 const DEFAULT_OPENAPI_DIR = "starters/operator/openapi"
+const DEFAULT_PACKAGE_OPENAPI_DIRS = [
+  "packages/action-ledger/openapi",
+  "packages/distribution/openapi",
+  "packages/mice/openapi",
+  "packages/relationships/openapi",
+]
 const CHECKED_SURFACES = new Set(["admin", "storefront"])
 // Ratchet only. The document names and owners remain authoritative in package
 // manifests; this prevents migrated bundles from silently falling back to the
 // Operator compatibility partition.
-const MIN_PACKAGE_OWNED_API_BUNDLES = 39
+const MIN_PACKAGE_OWNED_API_BUNDLES = 43
 const HTTP_METHODS = new Set([
   "connect",
   "delete",
@@ -49,7 +55,12 @@ const graphPath = path.resolve(repoRoot, options.graph)
 const openapiDir = path.resolve(repoRoot, options.openapiDir)
 
 const graph = readJson(graphPath)
-const docs = readOpenApiCoverage(openapiDir)
+const docs = readOpenApiCoverage([
+  openapiDir,
+  ...(options.useDefaultAllowlist
+    ? DEFAULT_PACKAGE_OPENAPI_DIRS.map((directory) => path.resolve(repoRoot, directory))
+    : []),
+])
 const bundles = readApiBundles(graph)
 const failures = []
 const coveredBundles = []
@@ -159,41 +170,43 @@ function readApiBundles(resolvedGraph) {
   return bundles
 }
 
-function readOpenApiCoverage(openapiDirPath) {
-  if (!existsSync(openapiDirPath) || !statSync(openapiDirPath).isDirectory()) {
-    throw new Error(`${relativeToRepo(openapiDirPath)} is missing or is not a directory`)
-  }
-
+function readOpenApiCoverage(openapiDirPaths) {
   const keys = new Set()
   const apiIds = new Set()
   const files = []
-  for (const surfaceEntry of readdirSync(openapiDirPath, { withFileTypes: true })) {
-    if (!surfaceEntry.isDirectory()) continue
-    const fileSurface = normalizeSurface(surfaceEntry.name)
-    if (!CHECKED_SURFACES.has(fileSurface)) continue
-    const surfaceDir = path.join(openapiDirPath, surfaceEntry.name)
-    for (const fileEntry of readdirSync(surfaceDir, { withFileTypes: true })) {
-      if (!fileEntry.isFile() || !fileEntry.name.endsWith(".json")) continue
-      const filePath = path.join(surfaceDir, fileEntry.name)
-      const fileModule = fileEntry.name.replace(/\.json$/, "")
-      const doc = readJson(filePath)
-      const operations = documentedOperations(doc)
-      if (operations.length === 0) continue
+  for (const openapiDirPath of openapiDirPaths) {
+    if (!existsSync(openapiDirPath) || !statSync(openapiDirPath).isDirectory()) {
+      throw new Error(`${relativeToRepo(openapiDirPath)} is missing or is not a directory`)
+    }
 
-      let operationKeys = 0
-      for (const operation of operations) {
-        if (typeof operation["x-voyant-api-id"] === "string") {
-          apiIds.add(operation["x-voyant-api-id"])
+    for (const surfaceEntry of readdirSync(openapiDirPath, { withFileTypes: true })) {
+      if (!surfaceEntry.isDirectory()) continue
+      const fileSurface = normalizeSurface(surfaceEntry.name)
+      if (!CHECKED_SURFACES.has(fileSurface)) continue
+      const surfaceDir = path.join(openapiDirPath, surfaceEntry.name)
+      for (const fileEntry of readdirSync(surfaceDir, { withFileTypes: true })) {
+        if (!fileEntry.isFile() || !fileEntry.name.endsWith(".json")) continue
+        const filePath = path.join(surfaceDir, fileEntry.name)
+        const fileModule = fileEntry.name.replace(/\.json$/, "")
+        const doc = readJson(filePath)
+        const operations = documentedOperations(doc)
+        if (operations.length === 0) continue
+
+        let operationKeys = 0
+        for (const operation of operations) {
+          if (typeof operation["x-voyant-api-id"] === "string") {
+            apiIds.add(operation["x-voyant-api-id"])
+          }
+          const operationSurface = normalizeSurface(operation["x-voyant-surface"] ?? fileSurface)
+          const operationModule = operation["x-voyant-module"] ?? fileModule
+          if (typeof operationModule !== "string" || operationModule.length === 0) continue
+          keys.add(coverageKey(operationSurface, operationModule))
+          operationKeys += 1
         }
-        const operationSurface = normalizeSurface(operation["x-voyant-surface"] ?? fileSurface)
-        const operationModule = operation["x-voyant-module"] ?? fileModule
-        if (typeof operationModule !== "string" || operationModule.length === 0) continue
-        keys.add(coverageKey(operationSurface, operationModule))
-        operationKeys += 1
-      }
 
-      if (operationKeys === 0) keys.add(coverageKey(fileSurface, fileModule))
-      files.push(relativeToRepo(filePath))
+        if (operationKeys === 0) keys.add(coverageKey(fileSurface, fileModule))
+        files.push(relativeToRepo(filePath))
+      }
     }
   }
 

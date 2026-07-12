@@ -1,5 +1,5 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 import { type OpenApiDocument, selectSurface } from "@voyant-travel/hono/openapi"
 import { describe, expect, it } from "vitest"
 import { buildOperatorOpenApiDocuments, mergeOperatorOpenApiModuleDocuments } from "./openapi.js"
@@ -22,6 +22,13 @@ import { buildOperatorOpenApiDocuments, mergeOperatorOpenApiModuleDocuments } fr
  * (runs this file with `UPDATE_OPENAPI=1`, rewriting the artifacts).
  */
 const OUT_DIR = join(process.cwd(), "openapi")
+const REPO_ROOT = resolve(process.cwd(), "../..")
+const PACKAGE_OPENAPI_ROOTS = new Map([
+  ["action-ledger", join(REPO_ROOT, "packages/action-ledger/openapi")],
+  ["distribution", join(REPO_ROOT, "packages/distribution/openapi")],
+  ["mice", join(REPO_ROOT, "packages/mice/openapi")],
+  ["relationships", join(REPO_ROOT, "packages/relationships/openapi")],
+])
 const docs = await buildOperatorOpenApiDocuments()
 const serialize = (doc: unknown) => `${JSON.stringify(doc, null, 2)}\n`
 
@@ -54,7 +61,9 @@ if (process.env.UPDATE_OPENAPI) {
     mkdirSync(join(OUT_DIR, surface), { recursive: true })
   }
   for (const [name, doc] of Object.entries(perModule)) {
-    writeFileSync(join(OUT_DIR, name), serialize(doc))
+    const file = committedArtifactPath(name)
+    mkdirSync(dirname(file), { recursive: true })
+    writeFileSync(file, serialize(doc))
   }
 }
 
@@ -70,7 +79,19 @@ function committedPerModuleFiles(): string[] {
     }
     for (const entry of entries) if (entry.endsWith(".json")) out.push(`${surface}/${entry}`)
   }
+  for (const [document, root] of PACKAGE_OPENAPI_ROOTS) {
+    for (const surface of ["admin", "storefront"]) {
+      if (existsSync(join(root, surface, `${document}.json`))) {
+        out.push(`${surface}/${document}.json`)
+      }
+    }
+  }
   return out.sort()
+}
+
+function committedArtifactPath(name: string): string {
+  const document = name.replace(/^.*\//, "").replace(/\.json$/, "")
+  return join(PACKAGE_OPENAPI_ROOTS.get(document) ?? OUT_DIR, name)
 }
 
 describe("operator openapi spec", () => {
@@ -92,7 +113,10 @@ describe("operator openapi spec", () => {
   })
 
   it.each([
+    ["action-ledger", "@voyant-travel/action-ledger#api.admin", "@voyant-travel/action-ledger"],
     ["identity", "@voyant-travel/identity#api.admin", "@voyant-travel/identity"],
+    ["distribution", "@voyant-travel/distribution#api", "@voyant-travel/distribution"],
+    ["mice", "@voyant-travel/mice#api.admin", "@voyant-travel/mice"],
     ["notifications", "@voyant-travel/notifications#api.admin", "@voyant-travel/notifications"],
     [
       "finance",
@@ -109,6 +133,7 @@ describe("operator openapi spec", () => {
       ["@voyant-travel/trips#api.admin", "@voyant-travel/trips#api.public"],
       "@voyant-travel/trips",
     ],
+    ["relationships", "@voyant-travel/relationships#api.admin", "@voyant-travel/relationships"],
   ])("emits %s from its exact selected graph API authority", (document, apiIds, packageName) => {
     const selectedDocument = docs.modules.get(document)
     const operations = Object.values(selectedDocument?.paths ?? {}).flatMap((pathItem) =>
@@ -250,7 +275,7 @@ describe("operator openapi spec", () => {
     it(`${name} matches the committed artifact (no drift)`, () => {
       let committed: string
       try {
-        committed = readFileSync(join(OUT_DIR, name), "utf8")
+        committed = readFileSync(committedArtifactPath(name), "utf8")
       } catch {
         throw new Error(
           `${name} is missing — run \`pnpm --filter operator generate:openapi\` and commit it.`,

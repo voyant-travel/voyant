@@ -13,6 +13,7 @@ describe("action-ledger deployment manifest", () => {
         {
           id: "@voyant-travel/action-ledger#api.admin",
           surface: "admin",
+          openapi: { document: "action-ledger" },
           runtime: {
             entry: "@voyant-travel/action-ledger",
             export: "actionLedgerHonoModule",

@@ -357,7 +357,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -595,7 +598,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channels/batch-update": {
@@ -878,7 +884,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channels/batch-delete": {
@@ -980,7 +989,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channels/{id}": {
@@ -1142,7 +1154,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -1404,7 +1419,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -1464,7 +1482,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channels/{id}/contact-points": {
@@ -1591,7 +1612,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "parameters": [
@@ -1797,7 +1821,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channel-contact-points/{contactPointId}": {
@@ -2011,7 +2038,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -2071,7 +2101,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channels/{id}/contacts": {
@@ -2205,7 +2238,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "parameters": [
@@ -2426,7 +2462,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/channel-contacts/{contactId}": {
@@ -2656,7 +2695,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -2716,7 +2758,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/contracts": {
@@ -2930,7 +2975,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -3165,7 +3213,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/contracts/batch-update": {
@@ -3445,7 +3496,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/contracts/batch-delete": {
@@ -3547,7 +3601,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/contracts/{id}": {
@@ -3718,7 +3775,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -3977,7 +4037,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -4037,7 +4100,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/commission-rules": {
@@ -4226,7 +4292,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -4442,7 +4511,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/commission-rules/batch-update": {
@@ -4702,7 +4774,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/commission-rules/batch-delete": {
@@ -4804,7 +4879,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/commission-rules/{id}": {
@@ -4950,7 +5028,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -5189,7 +5270,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -5249,7 +5333,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/product-mappings": {
@@ -5448,7 +5535,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -5670,7 +5760,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/product-mappings/batch-update": {
@@ -5933,7 +6026,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/product-mappings/batch-delete": {
@@ -6035,7 +6131,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/product-mappings/{id}": {
@@ -6191,7 +6290,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -6433,7 +6535,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -6493,7 +6598,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/booking-links": {
@@ -6705,7 +6813,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -6940,7 +7051,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/booking-links/batch-update": {
@@ -7202,7 +7316,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/booking-links/batch-delete": {
@@ -7304,7 +7421,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/booking-links/{id}": {
@@ -7479,7 +7599,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -7720,7 +7843,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -7780,7 +7906,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/webhook-events": {
@@ -7942,7 +8071,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -8113,7 +8245,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/webhook-events/batch-update": {
@@ -8328,7 +8463,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/webhook-events/batch-delete": {
@@ -8430,7 +8568,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/webhook-events/{id}": {
@@ -8549,7 +8690,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -8743,7 +8887,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -8803,7 +8950,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotments": {
@@ -9013,7 +9163,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -9222,7 +9375,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotments/batch-update": {
@@ -9476,7 +9632,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotments/batch-delete": {
@@ -9578,7 +9737,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotments/{id}": {
@@ -9721,7 +9883,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -9954,7 +10119,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -10014,7 +10182,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets": {
@@ -10206,7 +10377,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -10395,7 +10569,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets/batch-update": {
@@ -10630,7 +10807,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets/batch-delete": {
@@ -10732,7 +10912,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets/{id}": {
@@ -10864,7 +11047,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -11078,7 +11264,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -11138,7 +11327,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-release-rules": {
@@ -11288,7 +11480,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -11448,7 +11643,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-release-rules/batch-update": {
@@ -11654,7 +11852,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-release-rules/batch-delete": {
@@ -11756,7 +11957,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-release-rules/{id}": {
@@ -11873,7 +12077,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -12058,7 +12265,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -12118,7 +12328,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-runs": {
@@ -12323,7 +12536,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -12567,7 +12783,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-runs/{id}": {
@@ -12728,7 +12947,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -12997,7 +13219,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -13057,7 +13282,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-items": {
@@ -13260,7 +13488,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -13484,7 +13715,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-items/{id}": {
@@ -13635,7 +13869,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -13884,7 +14121,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -13944,7 +14184,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/reconciliation-runs": {
@@ -14133,7 +14376,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -14348,7 +14594,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/reconciliation-runs/{id}": {
@@ -14494,7 +14743,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -14734,7 +14986,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -14794,7 +15049,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/reconciliation-items": {
@@ -15004,7 +15262,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -15215,7 +15476,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/reconciliation-items/{id}": {
@@ -15359,7 +15623,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -15595,7 +15862,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -15655,7 +15925,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-release-executions": {
@@ -15863,7 +16136,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -16083,7 +16359,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/inventory-release-executions/{id}": {
@@ -16232,7 +16511,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -16477,7 +16759,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -16537,7 +16822,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-policies": {
@@ -16738,7 +17026,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -16949,7 +17240,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-policies/{id}": {
@@ -17093,7 +17387,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -17329,7 +17626,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -17389,7 +17689,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/reconciliation-policies": {
@@ -17584,7 +17887,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -17784,7 +18090,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/reconciliation-policies/{id}": {
@@ -17922,7 +18231,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -18147,7 +18459,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -18207,7 +18522,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/release-schedules": {
@@ -18376,7 +18694,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -18543,7 +18864,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/release-schedules/{id}": {
@@ -18664,7 +18988,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -18856,7 +19183,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -18916,7 +19246,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/remittance-exceptions": {
@@ -19109,7 +19442,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -19320,7 +19656,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/remittance-exceptions/{id}": {
@@ -19462,7 +19801,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -19697,7 +20039,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -19757,7 +20102,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-approvals": {
@@ -19908,7 +20256,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "post": {
         "requestBody": {
@@ -20066,7 +20417,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     },
     "/v1/admin/distribution/settlement-approvals/{id}": {
@@ -20183,7 +20537,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "patch": {
         "parameters": [
@@ -20366,7 +20723,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       },
       "delete": {
         "parameters": [
@@ -20426,7 +20786,10 @@
           "distribution"
         ],
         "x-voyant-module": "distribution",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api",
+        "x-voyant-unit-id": "@voyant-travel/distribution",
+        "x-voyant-package-name": "@voyant-travel/distribution"
       }
     }
   },

@@ -14,6 +14,7 @@ describe("MICE deployment manifests", () => {
           id: "@voyant-travel/mice#api.admin",
           surface: "admin",
           mount: "mice",
+          openapi: { document: "mice" },
           transactional: true,
           runtime: { entry: "@voyant-travel/mice", export: "createMiceVoyantRuntime" },
         },

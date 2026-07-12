@@ -20,6 +20,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#api",
       surface: "admin",
       mount: "distribution",
+      openapi: { document: "distribution" },
       runtime: {
         entry: "@voyant-travel/distribution",
         export: "distributionHonoModule",
