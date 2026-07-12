@@ -285,7 +285,7 @@ function pendingAttemptValues(input: EnqueueWebhookAttemptInput) {
     requestHeaders: input.requestHeaders,
     requestBodyHash: input.requestBodyHash,
     requestBodyExcerpt: input.requestBodyExcerpt,
-    requestPayload: input.requestPayload as Record<string, unknown>,
+    requestPayload: input.requestPayload as unknown as Record<string, unknown>,
     deliveryContract: input.deliveryContract as unknown as Record<string, unknown>,
     attemptNumber: input.attemptNumber,
     parentDeliveryId: input.parentDeliveryId,
