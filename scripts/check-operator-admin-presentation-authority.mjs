@@ -7,7 +7,6 @@ const failures = []
 const starterFiles = [
   "src/components/providers.tsx",
   "src/components/providers/user-provider.tsx",
-  "src/components/realtime-live.tsx",
   "src/lib/admin-destinations.ts",
   "src/lib/admin-extensions.tsx",
   "src/lib/admin-i18n.ts",
@@ -27,7 +26,10 @@ if (lines > lineRatchet) {
   )
 }
 
-const forbidden = ["starters/operator/src/lib/dashboard-ssr-query-options.ts"]
+const forbidden = [
+  "starters/operator/src/lib/dashboard-ssr-query-options.ts",
+  "starters/operator/src/components/realtime-live.tsx",
+]
 for (const relativePath of forbidden) {
   if (existsSync(join(root, relativePath))) {
     failures.push(`package-owned admin presentation must stay deleted: ${relativePath}`)
@@ -54,6 +56,10 @@ const requiredTokens = new Map([
   [
     "packages/realtime-react/src/admin.tsx",
     ["AdminRealtimeProvider", "ADMIN_INVALIDATIONS", "hasAdminRealtimeSession"],
+  ],
+  [
+    "packages/realtime-react/src/admin-workspace.tsx",
+    ["AdminWorkspaceRealtimeProvider", "createRealtimeChannelConnector", "useSession"],
   ],
   ["packages/admin-react/src/user-bindings.tsx", ["createAdminUserBindings"]],
 ])

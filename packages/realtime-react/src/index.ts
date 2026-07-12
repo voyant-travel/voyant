@@ -4,6 +4,8 @@ export {
   adminInvalidationKeys,
   hasAdminRealtimeSession,
 } from "./admin.js"
+export type { AdminWorkspaceRealtimeProviderProps } from "./admin-workspace.js"
+export { AdminWorkspaceRealtimeProvider } from "./admin-workspace.js"
 export type {
   PresenceMember,
   RealtimeClientMessage,

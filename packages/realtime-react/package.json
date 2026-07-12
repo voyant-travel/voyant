@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./admin": "./src/admin.tsx",
+    "./admin-workspace": "./src/admin-workspace.tsx",
     "./provider": "./src/provider.tsx",
     "./connector": "./src/connector.ts",
     "./connector-cloud": "./src/connector-cloud.ts",
@@ -50,6 +51,11 @@
         "types": "./dist/admin.d.ts",
         "import": "./dist/admin.js",
         "default": "./dist/admin.js"
+      },
+      "./admin-workspace": {
+        "types": "./dist/admin-workspace.d.ts",
+        "import": "./dist/admin-workspace.js",
+        "default": "./dist/admin-workspace.js"
       },
       "./provider": {
         "types": "./dist/provider.d.ts",

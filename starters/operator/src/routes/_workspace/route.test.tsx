@@ -55,10 +55,10 @@ vi.mock("@/components/providers/user-provider", async () => {
   }
 })
 
-vi.mock("@/components/realtime-live", async () => {
+vi.mock("@voyant-travel/realtime-react", async () => {
   const React = await import("react")
   return {
-    RealtimeLiveProvider: ({ children }: { children: ReactNode }) =>
+    AdminWorkspaceRealtimeProvider: ({ children }: { children: ReactNode }) =>
       React.createElement("div", { "data-testid": "realtime-live" }, children),
   }
 })
@@ -72,7 +72,20 @@ vi.mock("@/lib/admin-extensions", () => ({
 }))
 
 vi.mock("@/lib/auth", () => ({
+  authClient: { useSession: vi.fn() },
   useSignOut: () => mocks.signOut,
+}))
+
+vi.mock("@voyant-travel/cloud-sdk", () => ({
+  RealtimeChannel: class {},
+}))
+
+vi.mock("@/lib/env", () => ({
+  getApiUrl: () => "/api",
+}))
+
+vi.mock("@/lib/voyant-fetcher", () => ({
+  projectFetcher: vi.fn(),
 }))
 
 vi.mock("@/lib/admin-auth-runtime", () => ({

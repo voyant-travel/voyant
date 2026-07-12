@@ -39,8 +39,8 @@ function firstId(e: unknown, ...keys: ReadonlyArray<string>): string | undefined
  * Maps domain events to realtime channels. The payload is an invalidation hint
  * (`{ event, entity, id }`) — connected admin screens refetch the matching React
  * Query keys over the existing authenticated HTTP path rather than receiving
- * entity data on the wire. The frontend translates `entity` → query-key roots
- * (see components/realtime-live.tsx). Deployments extend/override this freely.
+ * entity data on the wire. `@voyant-travel/realtime-react` translates `entity`
+ * into query-key roots. Deployments extend or override this freely.
  */
 export const operatorRealtimeBridgeRoutes: RealtimeRoutes = {
   // Catalog / products (inventory module)

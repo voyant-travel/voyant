@@ -3,52 +3,52 @@ import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import type { CloudRealtimeMessage, CloudRealtimePresenceEvent } from "../../src/connector-cloud.js"
+
 const mocks = vi.hoisted(() => ({
   useLiveQueries: vi.fn(),
   useSession: vi.fn(),
 }))
 
-vi.mock("@voyant-travel/cloud-sdk", () => ({
-  RealtimeChannel: class {},
+vi.mock("../../src/use-live-queries.js", () => ({
+  useLiveQueries: mocks.useLiveQueries,
 }))
 
-vi.mock("@voyant-travel/realtime-react", () => {
-  const hasAdminRealtimeSession = (session: unknown) => {
-    if (!session || typeof session !== "object") return false
-    const record = session as {
-      user?: { id?: unknown } | null
-      session?: { userId?: unknown } | null
-    }
-    return Boolean(record.user?.id || record.session?.userId)
+import { hasAdminRealtimeSession } from "../../src/admin.js"
+import { AdminWorkspaceRealtimeProvider } from "../../src/admin-workspace.js"
+
+class TestRealtimeChannel {
+  on(_event: "message", _handler: (message: CloudRealtimeMessage) => void): () => void
+  on(_event: "presence", _handler: (event: CloudRealtimePresenceEvent) => void): () => void
+  on(
+    _event: "message" | "presence",
+    _handler:
+      | ((message: CloudRealtimeMessage) => void)
+      | ((event: CloudRealtimePresenceEvent) => void),
+  ) {
+    return () => undefined
   }
 
-  return {
-    AdminRealtimeProvider: ({ children, session }: { children: ReactNode; session: unknown }) => {
-      mocks.useLiveQueries(["admin"], () => [], {
-        enabled: hasAdminRealtimeSession(session),
-      })
-      return <>{children}</>
-    },
-    createRealtimeChannelConnector: vi.fn(() => ({ subscribe: vi.fn() })),
-    hasAdminRealtimeSession,
-  }
-})
+  enterPresence(_data?: unknown) {}
 
-vi.mock("@/lib/auth", () => ({
-  authClient: {
-    useSession: mocks.useSession,
-  },
-}))
+  close() {}
+}
 
-vi.mock("@/lib/env", () => ({
-  getApiUrl: () => "/api",
-}))
+const fetcher = vi.fn(async () => new Response())
+const getApiUrl = () => "/api"
 
-vi.mock("@/lib/voyant-fetcher", () => ({
-  projectFetcher: vi.fn(),
-}))
-
-import { hasAdminRealtimeSession, RealtimeLiveProvider } from "./realtime-live"
+function RealtimeFixture({ children }: { children: ReactNode }) {
+  return (
+    <AdminWorkspaceRealtimeProvider
+      fetcher={fetcher}
+      getApiUrl={getApiUrl}
+      realtimeChannel={TestRealtimeChannel}
+      useSession={mocks.useSession}
+    >
+      {children}
+    </AdminWorkspaceRealtimeProvider>
+  )
+}
 
 describe("hasAdminRealtimeSession", () => {
   it("rejects anonymous truthy session wrappers", () => {
@@ -62,7 +62,7 @@ describe("hasAdminRealtimeSession", () => {
   })
 })
 
-describe("RealtimeLiveProvider", () => {
+describe("AdminWorkspaceRealtimeProvider", () => {
   let host: HTMLDivElement
   let root: Root
 
@@ -84,9 +84,9 @@ describe("RealtimeLiveProvider", () => {
 
     await act(async () => {
       root.render(
-        <RealtimeLiveProvider>
+        <RealtimeFixture>
           <div>Storefront</div>
-        </RealtimeLiveProvider>,
+        </RealtimeFixture>,
       )
     })
 
@@ -100,9 +100,9 @@ describe("RealtimeLiveProvider", () => {
 
     await act(async () => {
       root.render(
-        <RealtimeLiveProvider>
+        <RealtimeFixture>
           <div>Admin</div>
-        </RealtimeLiveProvider>,
+        </RealtimeFixture>,
       )
     })
 
