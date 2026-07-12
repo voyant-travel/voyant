@@ -5,7 +5,11 @@ import {
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { CustomFieldRegistryResolver } from "@voyant-travel/core/custom-fields"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
-import { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"
+import {
+  type RelationshipsMiceRuntime,
+  relationshipsMiceRuntimePort,
+  relationshipsRouteRuntimePort,
+} from "./runtime-port.js"
 import { relationshipsService } from "./service/index.js"
 import { createStorefrontIntakePersistence } from "./storefront-intake-runtime.js"
 
@@ -36,7 +40,7 @@ export function createRelationshipsRuntimePortContribution(
     [relationshipsMiceRuntimePort.id]: {
       personExists: async (db, personId) =>
         (await relationshipsService.getPersonById(db as never, personId)) != null,
-    },
+    } satisfies RelationshipsMiceRuntime,
     [bookingsRelationshipsRuntimePort.id]: {
       loadPersonTravelSnapshot: (...args) => relationshipsService.loadPersonTravelSnapshot(...args),
       upsertPersonFromContact: (...args) => relationshipsService.upsertPersonFromContact(...args),
