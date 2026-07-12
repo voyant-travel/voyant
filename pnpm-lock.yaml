@@ -608,9 +608,6 @@ importers:
       '@voyant-travel/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
-      '@voyant-travel/quotes-contracts':
-        specifier: workspace:^
-        version: link:../quotes-contracts
       '@voyant-travel/relationships-contracts':
         specifier: workspace:^
         version: link:../relationships-contracts
