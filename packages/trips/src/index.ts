@@ -77,7 +77,10 @@ export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
     module: tripsModule,
   }
   if (adminRoutes) {
-    honoModule.adminRoutes = createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin"))
+    honoModule.adminRoutes = stampOpenApiRegistryApiId(
+      createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin")),
+      "@voyant-travel/trips#api.admin",
+    )
   }
   if (publicRoutes) {
     honoModule.publicRoutes = stampOpenApiRegistryApiId(
