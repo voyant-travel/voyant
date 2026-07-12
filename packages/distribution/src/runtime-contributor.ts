@@ -28,10 +28,8 @@ export function createDistributionRuntimePortContribution(
   host: DistributionRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const channelPushRuntime = Promise.resolve()
-    .then(() => host.getRuntimePort(catalogRuntimeServicesPort))
-    .then((services: CatalogRuntimeServices) =>
-      createDistributionRuntime(host.primitives, services),
-    )
+    .then(() => host.getRuntimePort<CatalogRuntimeServices>(catalogRuntimeServicesPort))
+    .then((services) => createDistributionRuntime(host.primitives, services))
   return {
     [channelPushRuntimePort.id]: channelPushRuntime,
     [catalogDistributionRuntimeExtensionPort.id]: catalogDistributionRuntimeExtension,
