@@ -153,6 +153,7 @@ const requiredTokens = new Map([
       "StorefrontMessagesProvider",
       "StorefrontScopeProvider",
       "StorefrontShell",
+      "createStorefrontPresentationContribution",
     ],
   ],
   ["packages/storefront-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
@@ -163,31 +164,38 @@ const requiredTokens = new Map([
   ["packages/trips-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
     "starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
-    ['from "@voyant-travel/bookings-react/storefront"'],
+    ["storefrontPresentationContribution.routes.booking"],
   ],
   [
     "starters/operator/src/routes/(storefront)/shop.tsx",
-    ['from "@voyant-travel/storefront-react/storefront"'],
+    ["storefrontPresentationContribution.routes.shop"],
   ],
   [
     "starters/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
-    [
-      'from "@voyant-travel/cruises-react/storefront"',
-      'from "@voyant-travel/inventory-react/storefront"',
-      'from "@voyant-travel/storefront-react/storefront"',
-    ],
+    ["storefrontPresentationContribution.routes.productDetail"],
   ],
   [
     "starters/operator/src/routes/(storefront)/shop_.account.tsx",
-    ['from "@voyant-travel/storefront-react/storefront"'],
+    ["storefrontPresentationContribution.routes.account"],
   ],
   [
     "starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx",
-    ['from "@voyant-travel/storefront-react/storefront"'],
+    ["storefrontPresentationContribution.routes.confirmation"],
   ],
   [
     "starters/operator/src/routes/(storefront)/shop_.composer.tsx",
-    ['from "@voyant-travel/trips-react/storefront"'],
+    ["storefrontPresentationContribution.routes.composer"],
+  ],
+  [
+    "starters/operator/src/lib/storefront-messages.tsx",
+    [
+      'from "@voyant-travel/bookings-react/storefront"',
+      'from "@voyant-travel/cruises-react/storefront"',
+      'from "@voyant-travel/inventory-react/storefront"',
+      'from "@voyant-travel/storefront-react/storefront"',
+      'from "@voyant-travel/trips-react/storefront"',
+      "createStorefrontPresentationContribution",
+    ],
   ],
   [
     "starters/operator/src/routes/proposal.$quoteVersionId.tsx",

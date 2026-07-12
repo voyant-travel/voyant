@@ -1,0 +1,31 @@
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import {
+  checkStorefrontPresentationAuthority,
+  STOREFRONT_ROUTE_HOSTS,
+} from "./lib/storefront-presentation-authority.mjs"
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..")
+const read = (path) => readFileSync(join(root, path), "utf8")
+const routeDirectory = "starters/operator/src/routes/(storefront)"
+const result = checkStorefrontPresentationAuthority({
+  routeHosts: Object.fromEntries(
+    Object.keys(STOREFRONT_ROUTE_HOSTS).map((file) => [file, read(`${routeDirectory}/${file}`)]),
+  ),
+  hostAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
+  messageAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
+  intakeAdapter: read("starters/operator/src/api/runtime/storefront-intake-runtime.ts"),
+  packagePresentation: read("packages/storefront-react/src/storefront/presentation-routes.tsx"),
+  packageIntake: read("packages/storefront/src/relationships-intake-persistence.ts"),
+  graphDeclaration: read("packages/storefront/src/voyant.ts"),
+})
+
+if (result.failures.length > 0) {
+  console.error(
+    `Storefront presentation authority check failed:\n- ${result.failures.join("\n- ")}`,
+  )
+  process.exit(1)
+}
+
+console.log(`Storefront presentation authority: OK (${result.hostLines}/80 host lines)`)

@@ -78,6 +78,7 @@
     "verify:standard-distribution-authority": "node --import tsx scripts/check-standard-distribution-authority.mjs",
     "verify:standard-node-starter": "node --test scripts/tests/check-standard-node-starter.test.mjs && node scripts/check-standard-node-starter.mjs",
     "verify:storefront-subscriber-authority": "node --test scripts/tests/check-storefront-subscriber-authority.test.mjs && node scripts/check-storefront-subscriber-authority.mjs",
+    "verify:storefront-presentation-authority": "node --test scripts/tests/check-storefront-presentation-authority.test.mjs && node scripts/check-storefront-presentation-authority.mjs",
     "verify:access-catalog-authority": "pnpm --filter operator graph:emit && node --test scripts/tests/check-access-catalog-authority.test.mjs && node scripts/check-access-catalog-authority.mjs",
     "verify:v1-package-cleanup": "tsx scripts/check-v1-package-cleanup.ts",
     "verify:v1-package-cleanup:strict": "tsx scripts/check-v1-package-cleanup.ts --fail-on-temporary",

@@ -96,6 +96,13 @@ export const storefrontVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    presentation: {
+      id: "@voyant-travel/storefront#presentation.customer",
+      runtime: {
+        entry: "@voyant-travel/storefront-react/storefront",
+        export: "createStorefrontPresentationContribution",
+      },
+    },
   },
 })
 
