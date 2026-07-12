@@ -12,7 +12,7 @@ const inventoryContributor = read("packages/inventory/src/runtime-contributor.ts
 const brochureRuntime = read("packages/inventory/src/brochure-runtime.ts")
 const inventoryGraphRuntime = read("packages/inventory/src/graph-runtime.ts")
 const inventoryManifest = read("packages/inventory/src/voyant.ts")
-const storageFacade = read("starters/operator/src/api/lib/storage.ts")
+const operatorRuntimeAdapter = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
 const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
 const storagePackage = JSON.parse(read("packages/storage/package.json"))
 const inventoryPackage = JSON.parse(read("packages/inventory/package.json"))
@@ -49,11 +49,8 @@ for (const token of policy.brochureRuntimeTokens) {
   if (!brochureRuntime.includes(token)) failures.push(`Brochure runtime must preserve ${token}`)
 }
 
-if (
-  !storageFacade.includes('from "@voyant-travel/storage/runtime"') ||
-  /createR2Provider|MIME_BY_EXT|DOCUMENTS_BUCKET/.test(storageFacade)
-) {
-  failures.push("Operator storage library must remain a package re-export facade")
+if (!operatorRuntimeAdapter.includes('from "@voyant-travel/storage/runtime"')) {
+  failures.push("Operator runtime adapter must consume Storage through its supported runtime API")
 }
 if (
   storagePackage.exports["./runtime"] !== "./src/runtime.ts" ||

@@ -212,6 +212,7 @@ function inspectRepositoryAuthority(repoRoot) {
 
   for (const relativePath of [
     "starters/operator/src/api/lib/catalog-context.ts",
+    "starters/operator/src/api/lib/storage.ts",
     "starters/operator/src/api/runtime/payment-config.ts",
     "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
     "starters/operator/src/api/runtime/media-runtime.ts",

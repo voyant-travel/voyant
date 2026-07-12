@@ -16,8 +16,8 @@ const fixturePaths = [
   "packages/inventory/src/graph-runtime.ts",
   "packages/inventory/src/voyant.ts",
   "packages/inventory/package.json",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   "starters/operator/src/api/runtime/deployment-resources.ts",
-  "starters/operator/src/api/lib/storage.ts",
   "scripts/fixtures/storage-media-runtime-policy.json",
 ]
 
@@ -68,11 +68,15 @@ test("rejects an Inventory contributor that returns to a starter capability", ()
   assert.throws(() => runChecker(fixtureRoot), /Inventory/)
 })
 
-test("rejects a restored Operator media compatibility facade", () => {
-  const fixtureRoot = createFixture()
-  const facade = "starters/operator/src/api/runtime/media-runtime.ts"
-  const facadePath = path.join(fixtureRoot, facade)
-  mkdirSync(path.dirname(facadePath), { recursive: true })
-  writeFileSync(facadePath, "export const compatibilityFacade = true\n")
-  assert.throws(() => runChecker(fixtureRoot), new RegExp(`${facade} must stay deleted`))
+test("rejects restored Operator storage compatibility facades", () => {
+  for (const facade of [
+    "starters/operator/src/api/runtime/media-runtime.ts",
+    "starters/operator/src/api/lib/storage.ts",
+  ]) {
+    const fixtureRoot = createFixture()
+    const facadePath = path.join(fixtureRoot, facade)
+    mkdirSync(path.dirname(facadePath), { recursive: true })
+    writeFileSync(facadePath, "export const compatibilityFacade = true\n")
+    assert.throws(() => runChecker(fixtureRoot), new RegExp(`${facade} must stay deleted`))
+  }
 })

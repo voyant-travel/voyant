@@ -3,17 +3,17 @@ import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
 import {
+  createDocumentStorage,
+  readDocumentContentBase64,
+  resolveDocumentDownloadUrl,
+} from "@voyant-travel/storage/runtime"
+import {
   type CloudWorkflowsClientEnv,
   createCloudWorkflowDriver,
 } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveVoyantDataApiKey } from "../../lib/voyant-cloud"
-import {
-  createDocumentStorage,
-  readDocumentContentBase64,
-  resolveDocumentDownloadUrl,
-} from "../lib/storage"
 
 export function operatorBindings(bindings: unknown): AppBindings & Record<string, unknown> {
   return bindings as unknown as AppBindings & Record<string, unknown>

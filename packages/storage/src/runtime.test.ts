@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest"
 
-import { resolveDocumentDownloadUrl } from "./storage"
+import { resolveDocumentDownloadUrl, type StorageRuntimeEnv } from "./runtime.js"
 
-function env(overrides: Partial<AppBindings> = {}): AppBindings {
+function env(overrides: StorageRuntimeEnv = {}): StorageRuntimeEnv {
   return {
     DOCUMENTS_BUCKET: {},
     ...overrides,
-  } as AppBindings
+  }
 }
 
-describe("document download URL resolution", () => {
+describe("resolveDocumentDownloadUrl", () => {
   it("uses API_BASE_URL so local admin redirects keep the /api mount prefix", async () => {
     await expect(
       resolveDocumentDownloadUrl(
@@ -24,7 +24,7 @@ describe("document download URL resolution", () => {
     )
   })
 
-  it("derives the mounted API prefix from an origin-only APP_URL when API_BASE_URL is absent", async () => {
+  it("derives the mounted API prefix from an origin-only APP_URL", async () => {
     await expect(
       resolveDocumentDownloadUrl(
         env({
