@@ -5,159 +5,6 @@
 // from the migration snapshot.
 import { sql } from "drizzle-orm"
 import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
-export const relationships_person_products_product = pgTable(
-  "relationships_person_products_product",
-  {
-    id: text("id").primaryKey().notNull(),
-    "relationships_person_id": text("relationships_person_id").notNull(),
-    "products_product_id": text("products_product_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("relationships_person_products_product_pair_idx").on(t["relationships_person_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-    index("relationships_person_products_product_l_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("relationships_person_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const relationships_organization_products_product = pgTable(
-  "relationships_organization_products_product",
-  {
-    id: text("id").primaryKey().notNull(),
-    "relationships_organization_id": text("relationships_organization_id").notNull(),
-    "products_product_id": text("products_product_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("relationships_organization_products_product_pair_idx").on(t["relationships_organization_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-    index("relationships_organization_products_product_l_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("relationships_organization_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_contract_bookings_booking = pgTable(
-  "legal_contract_bookings_booking",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "bookings_booking_id": text("bookings_booking_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_bookings_booking_pair_idx").on(t["legal_contract_id"], t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_bookings_booking_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_bookings_booking_r_idx").on(t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_contract_finance_invoice = pgTable(
-  "legal_contract_finance_invoice",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "finance_invoice_id": text("finance_invoice_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_finance_invoice_pair_idx").on(t["legal_contract_id"], t["finance_invoice_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_finance_invoice_l_idx").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_finance_invoice_r_uniq").on(t["finance_invoice_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_contract_relationships_person = pgTable(
-  "legal_contract_relationships_person",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "relationships_person_id": text("relationships_person_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_relationships_person_pair_idx").on(t["legal_contract_id"], t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_relationships_person_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_relationships_person_r_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_contract_relationships_organization = pgTable(
-  "legal_contract_relationships_organization",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "relationships_organization_id": text("relationships_organization_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_relationships_organization_pair_idx").on(t["legal_contract_id"], t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_relationships_organization_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_relationships_organization_r_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_contract_suppliers_supplier = pgTable(
-  "legal_contract_suppliers_supplier",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_contract_id": text("legal_contract_id").notNull(),
-    "suppliers_supplier_id": text("suppliers_supplier_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_contract_suppliers_supplier_pair_idx").on(t["legal_contract_id"], t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_contract_suppliers_supplier_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_contract_suppliers_supplier_r_idx").on(t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_policy_products_product = pgTable(
-  "legal_policy_products_product",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_policy_id": text("legal_policy_id").notNull(),
-    "products_product_id": text("products_product_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_policy_products_product_pair_idx").on(t["legal_policy_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_policy_products_product_l_idx").on(t["legal_policy_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_policy_products_product_r_idx").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const legal_policyAcceptance_bookings_booking = pgTable(
-  "legal_policyAcceptance_bookings_booking",
-  {
-    id: text("id").primaryKey().notNull(),
-    "legal_policyAcceptance_id": text("legal_policyAcceptance_id").notNull(),
-    "bookings_booking_id": text("bookings_booking_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("legal_policyAcceptance_bookings_booking_pair_idx").on(t["legal_policyAcceptance_id"], t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("legal_policyAcceptance_bookings_booking_l_uniq").on(t["legal_policyAcceptance_id"]).where(sql`"deleted_at" IS NULL`),
-    index("legal_policyAcceptance_bookings_booking_r_idx").on(t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
 export const mice_program_accommodations_roomBlock = pgTable(
   "mice_program_accommodations_roomBlock",
   {
@@ -209,88 +56,173 @@ export const suppliers_supplier_accommodations_roomBlock = pgTable(
   ],
 )
 
-export const relationships_organization_mice_program = pgTable(
-  "relationships_organization_mice_program",
+export const relationships_organization_products_product = pgTable(
+  "relationships_organization_products_product",
   {
     id: text("id").primaryKey().notNull(),
     "relationships_organization_id": text("relationships_organization_id").notNull(),
-    "mice_program_id": text("mice_program_id").notNull(),
+    "products_product_id": text("products_product_id").notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
-    uniqueIndex("relationships_organization_mice_program_pair_idx").on(t["relationships_organization_id"], t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
-    index("relationships_organization_mice_program_l_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("relationships_organization_mice_program_r_uniq").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_organization_products_product_pair_idx").on(t["relationships_organization_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_organization_products_product_l_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_organization_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
 
-export const quotes_quote_mice_program = pgTable(
-  "quotes_quote_mice_program",
-  {
-    id: text("id").primaryKey().notNull(),
-    "quotes_quote_id": text("quotes_quote_id").notNull(),
-    "mice_program_id": text("mice_program_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("quotes_quote_mice_program_pair_idx").on(t["quotes_quote_id"], t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("quotes_quote_mice_program_l_uniq").on(t["quotes_quote_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("quotes_quote_mice_program_r_uniq").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const operations_functionSpace_mice_session = pgTable(
-  "operations_functionSpace_mice_session",
-  {
-    id: text("id").primaryKey().notNull(),
-    "operations_functionSpace_id": text("operations_functionSpace_id").notNull(),
-    "mice_session_id": text("mice_session_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("operations_functionSpace_mice_session_pair_idx").on(t["operations_functionSpace_id"], t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
-    index("operations_functionSpace_mice_session_l_idx").on(t["operations_functionSpace_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("operations_functionSpace_mice_session_r_uniq").on(t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const mice_program_operations_spaceBlock = pgTable(
-  "mice_program_operations_spaceBlock",
-  {
-    id: text("id").primaryKey().notNull(),
-    "mice_program_id": text("mice_program_id").notNull(),
-    "operations_spaceBlock_id": text("operations_spaceBlock_id").notNull(),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-    deleted_at: timestamp("deleted_at", { withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("mice_program_operations_spaceBlock_pair_idx").on(t["mice_program_id"], t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
-    index("mice_program_operations_spaceBlock_l_idx").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("mice_program_operations_spaceBlock_r_uniq").on(t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
-  ],
-)
-
-export const relationships_person_mice_delegate = pgTable(
-  "relationships_person_mice_delegate",
+export const relationships_person_products_product = pgTable(
+  "relationships_person_products_product",
   {
     id: text("id").primaryKey().notNull(),
     "relationships_person_id": text("relationships_person_id").notNull(),
-    "mice_delegate_id": text("mice_delegate_id").notNull(),
+    "products_product_id": text("products_product_id").notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
-    uniqueIndex("relationships_person_mice_delegate_pair_idx").on(t["relationships_person_id"], t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
-    index("relationships_person_mice_delegate_l_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("relationships_person_mice_delegate_r_uniq").on(t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_person_products_product_pair_idx").on(t["relationships_person_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_person_products_product_l_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_person_products_product_r_uniq").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_bookings_booking = pgTable(
+  "legal_contract_bookings_booking",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "bookings_booking_id": text("bookings_booking_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_bookings_booking_pair_idx").on(t["legal_contract_id"], t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_bookings_booking_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_bookings_booking_r_idx").on(t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_finance_invoice = pgTable(
+  "legal_contract_finance_invoice",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "finance_invoice_id": text("finance_invoice_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_finance_invoice_pair_idx").on(t["legal_contract_id"], t["finance_invoice_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_finance_invoice_l_idx").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_finance_invoice_r_uniq").on(t["finance_invoice_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_relationships_organization = pgTable(
+  "legal_contract_relationships_organization",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "relationships_organization_id": text("relationships_organization_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_relationships_organization_pair_idx").on(t["legal_contract_id"], t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_relationships_organization_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_relationships_organization_r_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_relationships_person = pgTable(
+  "legal_contract_relationships_person",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "relationships_person_id": text("relationships_person_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_relationships_person_pair_idx").on(t["legal_contract_id"], t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_relationships_person_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_relationships_person_r_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_contract_suppliers_supplier = pgTable(
+  "legal_contract_suppliers_supplier",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_contract_id": text("legal_contract_id").notNull(),
+    "suppliers_supplier_id": text("suppliers_supplier_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_contract_suppliers_supplier_pair_idx").on(t["legal_contract_id"], t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_contract_suppliers_supplier_l_uniq").on(t["legal_contract_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_contract_suppliers_supplier_r_idx").on(t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_policyAcceptance_bookings_booking = pgTable(
+  "legal_policyAcceptance_bookings_booking",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_policyAcceptance_id": text("legal_policyAcceptance_id").notNull(),
+    "bookings_booking_id": text("bookings_booking_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_policyAcceptance_bookings_booking_pair_idx").on(t["legal_policyAcceptance_id"], t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("legal_policyAcceptance_bookings_booking_l_uniq").on(t["legal_policyAcceptance_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_policyAcceptance_bookings_booking_r_idx").on(t["bookings_booking_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const legal_policy_products_product = pgTable(
+  "legal_policy_products_product",
+  {
+    id: text("id").primaryKey().notNull(),
+    "legal_policy_id": text("legal_policy_id").notNull(),
+    "products_product_id": text("products_product_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("legal_policy_products_product_pair_idx").on(t["legal_policy_id"], t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_policy_products_product_l_idx").on(t["legal_policy_id"]).where(sql`"deleted_at" IS NULL`),
+    index("legal_policy_products_product_r_idx").on(t["products_product_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const suppliers_supplier_mice_bid = pgTable(
+  "suppliers_supplier_mice_bid",
+  {
+    id: text("id").primaryKey().notNull(),
+    "suppliers_supplier_id": text("suppliers_supplier_id").notNull(),
+    "mice_bid_id": text("mice_bid_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("suppliers_supplier_mice_bid_pair_idx").on(t["suppliers_supplier_id"], t["mice_bid_id"]).where(sql`"deleted_at" IS NULL`),
+    index("suppliers_supplier_mice_bid_l_idx").on(t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("suppliers_supplier_mice_bid_r_uniq").on(t["mice_bid_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
 
@@ -311,6 +243,74 @@ export const bookings_booking_mice_delegate = pgTable(
   ],
 )
 
+export const relationships_person_mice_delegate = pgTable(
+  "relationships_person_mice_delegate",
+  {
+    id: text("id").primaryKey().notNull(),
+    "relationships_person_id": text("relationships_person_id").notNull(),
+    "mice_delegate_id": text("mice_delegate_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("relationships_person_mice_delegate_pair_idx").on(t["relationships_person_id"], t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_person_mice_delegate_l_idx").on(t["relationships_person_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_person_mice_delegate_r_uniq").on(t["mice_delegate_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const relationships_organization_mice_program = pgTable(
+  "relationships_organization_mice_program",
+  {
+    id: text("id").primaryKey().notNull(),
+    "relationships_organization_id": text("relationships_organization_id").notNull(),
+    "mice_program_id": text("mice_program_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("relationships_organization_mice_program_pair_idx").on(t["relationships_organization_id"], t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+    index("relationships_organization_mice_program_l_idx").on(t["relationships_organization_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("relationships_organization_mice_program_r_uniq").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const mice_program_operations_spaceBlock = pgTable(
+  "mice_program_operations_spaceBlock",
+  {
+    id: text("id").primaryKey().notNull(),
+    "mice_program_id": text("mice_program_id").notNull(),
+    "operations_spaceBlock_id": text("operations_spaceBlock_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("mice_program_operations_spaceBlock_pair_idx").on(t["mice_program_id"], t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
+    index("mice_program_operations_spaceBlock_l_idx").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("mice_program_operations_spaceBlock_r_uniq").on(t["operations_spaceBlock_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
+export const quotes_quote_mice_program = pgTable(
+  "quotes_quote_mice_program",
+  {
+    id: text("id").primaryKey().notNull(),
+    "quotes_quote_id": text("quotes_quote_id").notNull(),
+    "mice_program_id": text("mice_program_id").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deleted_at: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("quotes_quote_mice_program_pair_idx").on(t["quotes_quote_id"], t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("quotes_quote_mice_program_l_uniq").on(t["quotes_quote_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("quotes_quote_mice_program_r_uniq").on(t["mice_program_id"]).where(sql`"deleted_at" IS NULL`),
+  ],
+)
+
 export const accommodations_roomBlock_mice_roomingAssignment = pgTable(
   "accommodations_roomBlock_mice_roomingAssignment",
   {
@@ -328,19 +328,19 @@ export const accommodations_roomBlock_mice_roomingAssignment = pgTable(
   ],
 )
 
-export const suppliers_supplier_mice_bid = pgTable(
-  "suppliers_supplier_mice_bid",
+export const operations_functionSpace_mice_session = pgTable(
+  "operations_functionSpace_mice_session",
   {
     id: text("id").primaryKey().notNull(),
-    "suppliers_supplier_id": text("suppliers_supplier_id").notNull(),
-    "mice_bid_id": text("mice_bid_id").notNull(),
+    "operations_functionSpace_id": text("operations_functionSpace_id").notNull(),
+    "mice_session_id": text("mice_session_id").notNull(),
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deleted_at: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
-    uniqueIndex("suppliers_supplier_mice_bid_pair_idx").on(t["suppliers_supplier_id"], t["mice_bid_id"]).where(sql`"deleted_at" IS NULL`),
-    index("suppliers_supplier_mice_bid_l_idx").on(t["suppliers_supplier_id"]).where(sql`"deleted_at" IS NULL`),
-    uniqueIndex("suppliers_supplier_mice_bid_r_uniq").on(t["mice_bid_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("operations_functionSpace_mice_session_pair_idx").on(t["operations_functionSpace_id"], t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
+    index("operations_functionSpace_mice_session_l_idx").on(t["operations_functionSpace_id"]).where(sql`"deleted_at" IS NULL`),
+    uniqueIndex("operations_functionSpace_mice_session_r_uniq").on(t["mice_session_id"]).where(sql`"deleted_at" IS NULL`),
   ],
 )
