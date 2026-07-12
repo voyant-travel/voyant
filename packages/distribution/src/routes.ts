@@ -28,7 +28,7 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import {
   insertContactPointForEntitySchema,
   insertNamedContactForEntitySchema,
@@ -1128,17 +1128,18 @@ const webhookEventRoutes = new OpenAPIHono<DistributionRouteEnv>({
       : c.json({ error: "Channel webhook event not found" }, 404)
   })
 
-export const distributionRoutes = new OpenAPIHono<DistributionRouteEnv>({
-  defaultHook: openApiValidationHook,
-})
-  .route("/", channelRoutes)
-  .route("/", channelContactRoutes)
-  .route("/", contractRoutes)
-  .route("/", commissionRuleRoutes)
-  .route("/", productMappingRoutes)
-  .route("/", bookingLinkRoutes)
-  .route("/", webhookEventRoutes)
-  .route("/", inventoryRoutes)
-  .route("/", settlementRoutes)
+export const distributionRoutes = stampOpenApiRegistryApiId(
+  new OpenAPIHono<DistributionRouteEnv>({ defaultHook: openApiValidationHook })
+    .route("/", channelRoutes)
+    .route("/", channelContactRoutes)
+    .route("/", contractRoutes)
+    .route("/", commissionRuleRoutes)
+    .route("/", productMappingRoutes)
+    .route("/", bookingLinkRoutes)
+    .route("/", webhookEventRoutes)
+    .route("/", inventoryRoutes)
+    .route("/", settlementRoutes),
+  "@voyant-travel/distribution#api",
+)
 
 export type DistributionRoutes = typeof distributionRoutes
