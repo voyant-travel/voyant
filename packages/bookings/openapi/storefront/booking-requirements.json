@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -189,10 +162,7 @@
                           "type": "string"
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "hasTransport": {
                           "type": "boolean"
@@ -273,12 +243,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "booking",
-                            "lead_traveler",
-                            "traveler",
-                            "booker"
-                          ]
+                          "required": ["booking", "lead_traveler", "traveler", "booker"]
                         },
                         "requirements": {
                           "type": "array",
@@ -296,12 +261,7 @@
                               },
                               "scope": {
                                 "type": "string",
-                                "enum": [
-                                  "booking",
-                                  "lead_traveler",
-                                  "traveler",
-                                  "booker"
-                                ]
+                                "enum": ["booking", "lead_traveler", "traveler", "booker"]
                               },
                               "isRequired": {
                                 "type": "boolean"
@@ -310,19 +270,10 @@
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
-                            "required": [
-                              "fieldKey",
-                              "scope",
-                              "isRequired",
-                              "perTraveler",
-                              "notes"
-                            ]
+                            "required": ["fieldKey", "scope", "isRequired", "perTraveler", "notes"]
                           }
                         }
                       },
@@ -340,9 +291,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -358,9 +307,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -368,9 +315,7 @@
         },
         "operationId": "getPublicBookingRequirementsProductsByProductIdTransportRequirements",
         "summary": "GET /v1/public/booking-requirements/products/{productId}/transport-requirements",
-        "tags": [
-          "booking-requirements"
-        ],
+        "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
         "x-voyant-surface": "storefront"
       }

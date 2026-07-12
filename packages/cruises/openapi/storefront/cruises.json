@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -160,12 +133,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "ocean",
-                "river",
-                "expedition",
-                "coastal"
-              ]
+              "enum": ["ocean", "river", "expedition", "coastal"]
             },
             "required": false,
             "name": "cruiseType",
@@ -239,10 +207,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0
             },
             "required": false,
@@ -252,10 +217,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "local",
-                "external"
-              ]
+              "enum": ["local", "external"]
             },
             "required": false,
             "name": "source",
@@ -306,10 +268,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -336,23 +295,14 @@
                           },
                           "source": {
                             "type": "string",
-                            "enum": [
-                              "local",
-                              "external"
-                            ]
+                            "enum": ["local", "external"]
                           },
                           "sourceProvider": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sourceRef": {},
                           "localCruiseId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "slug": {
                             "type": "string"
@@ -362,12 +312,7 @@
                           },
                           "cruiseType": {
                             "type": "string",
-                            "enum": [
-                              "ocean",
-                              "river",
-                              "expedition",
-                              "coastal"
-                            ]
+                            "enum": ["ocean", "river", "expedition", "coastal"]
                           },
                           "lineName": {
                             "type": "string"
@@ -379,151 +324,91 @@
                             "type": "integer"
                           },
                           "embarkPortName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "embarkPortCanonicalPlaceId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "disembarkPortName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "disembarkPortCanonicalPlaceId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "regionIds": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "waterwayIds": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "portIds": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "countryIso": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "regions": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "waterways": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "ports": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "countries": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "themes": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
                           },
                           "earliestDeparture": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "latestDeparture": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "departureCount": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "lowestPriceCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "lowestPriceCurrency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "salesStatus": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "heroImageUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "refreshedAt": {
                             "type": "string"
@@ -582,12 +467,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -595,9 +475,7 @@
         },
         "operationId": "getPublicCruises",
         "summary": "GET /v1/public/cruises",
-        "tags": [
-          "cruises"
-        ],
+        "tags": ["cruises"],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -627,10 +505,7 @@
                       "properties": {
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "local",
-                            "external"
-                          ]
+                          "enum": ["local", "external"]
                         },
                         "sourceProvider": {
                           "type": "string"
@@ -639,15 +514,11 @@
                         "pricing": {},
                         "itinerary": {}
                       },
-                      "required": [
-                        "source"
-                      ],
+                      "required": ["source"],
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": {}
                 }
               }
@@ -664,9 +535,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -683,9 +552,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -702,9 +569,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -713,9 +578,7 @@
         },
         "operationId": "getPublicCruisesSailingsByKey",
         "summary": "GET /v1/public/cruises/sailings/{key}",
-        "tags": [
-          "cruises"
-        ],
+        "tags": ["cruises"],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -743,10 +606,7 @@
                     "type": "string"
                   },
                   "cabinCategoryRef": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   },
                   "occupancy": {
@@ -760,10 +620,7 @@
                     "maximum": 8
                   },
                   "passengerComposition": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "properties": {
                       "adults": {
                         "type": "integer",
@@ -790,40 +647,22 @@
                         "minimum": 0
                       }
                     },
-                    "required": [
-                      "adults"
-                    ],
+                    "required": ["adults"],
                     "additionalProperties": {}
                   },
                   "fareCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "fareVariant": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "cruise_only",
-                      "air_inclusive",
-                      null
-                    ]
+                    "type": ["string", "null"],
+                    "enum": ["cruise_only", "air_inclusive", null]
                   },
                   "bookingTerms": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "cabinCategoryId",
-                  "occupancy"
-                ]
+                "required": ["cabinCategoryId", "occupancy"]
               }
             }
           }
@@ -840,23 +679,14 @@
                       "type": "object",
                       "properties": {
                         "fareCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fareCodeName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fareVariant": {
                           "type": "string",
-                          "enum": [
-                            "cruise_only",
-                            "air_inclusive"
-                          ]
+                          "enum": ["cruise_only", "air_inclusive"]
                         },
                         "currency": {
                           "type": "string"
@@ -871,28 +701,16 @@
                           "type": "string"
                         },
                         "originalPricePerPerson": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "singlePricePerPerson": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "earlyBookingDeadline": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "earlyBookingBonusDescription": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "components": {
                           "type": "array",
@@ -903,10 +721,7 @@
                                 "type": "string"
                               },
                               "label": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "amount": {
                                 "type": "string"
@@ -916,11 +731,7 @@
                               },
                               "direction": {
                                 "type": "string",
-                                "enum": [
-                                  "addition",
-                                  "inclusion",
-                                  "credit"
-                                ]
+                                "enum": ["addition", "inclusion", "credit"]
                               },
                               "perPerson": {
                                 "type": "boolean"
@@ -962,9 +773,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -980,9 +789,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -999,9 +806,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1018,9 +823,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1029,9 +832,7 @@
         },
         "operationId": "postPublicCruisesSailingsByKeyQuote",
         "summary": "POST /v1/public/cruises/sailings/{key}/quote",
-        "tags": [
-          "cruises"
-        ],
+        "tags": ["cruises"],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -1073,9 +874,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1092,9 +891,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1111,9 +908,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1122,9 +917,7 @@
         },
         "operationId": "getPublicCruisesShipsByKey",
         "summary": "GET /v1/public/cruises/ships/{key}",
-        "tags": [
-          "cruises"
-        ],
+        "tags": ["cruises"],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
@@ -1154,16 +947,10 @@
                       "properties": {
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "local",
-                            "external"
-                          ]
+                          "enum": ["local", "external"]
                         },
                         "sourceProvider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceRef": {},
                         "summary": {
@@ -1174,23 +961,14 @@
                             },
                             "source": {
                               "type": "string",
-                              "enum": [
-                                "local",
-                                "external"
-                              ]
+                              "enum": ["local", "external"]
                             },
                             "sourceProvider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sourceRef": {},
                             "localCruiseId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "slug": {
                               "type": "string"
@@ -1200,12 +978,7 @@
                             },
                             "cruiseType": {
                               "type": "string",
-                              "enum": [
-                                "ocean",
-                                "river",
-                                "expedition",
-                                "coastal"
-                              ]
+                              "enum": ["ocean", "river", "expedition", "coastal"]
                             },
                             "lineName": {
                               "type": "string"
@@ -1217,151 +990,91 @@
                               "type": "integer"
                             },
                             "embarkPortName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "embarkPortCanonicalPlaceId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "disembarkPortName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "disembarkPortCanonicalPlaceId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "regionIds": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "waterwayIds": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "portIds": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "countryIso": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "regions": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "waterways": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "ports": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "countries": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "themes": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "earliestDeparture": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "latestDeparture": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "departureCount": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "lowestPriceCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "lowestPriceCurrency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "salesStatus": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "heroImageUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "refreshedAt": {
                               "type": "string"
@@ -1412,16 +1125,10 @@
                         "cruise": {},
                         "sailings": {}
                       },
-                      "required": [
-                        "source",
-                        "sourceProvider",
-                        "summary"
-                      ]
+                      "required": ["source", "sourceProvider", "summary"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1437,9 +1144,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1456,9 +1161,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1475,9 +1178,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1486,9 +1187,7 @@
         },
         "operationId": "getPublicCruisesBySlug",
         "summary": "GET /v1/public/cruises/{slug}",
-        "tags": [
-          "cruises"
-        ],
+        "tags": ["cruises"],
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }

@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -164,16 +137,10 @@
                 "type": "object",
                 "properties": {
                   "externalBookingRef": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "communicationLanguage": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 35
                   },
                   "sellCurrency": {
@@ -182,66 +149,39 @@
                     "maxLength": 3
                   },
                   "baseCurrency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 3,
                     "maxLength": 3
                   },
                   "sellAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "baseSellAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "costAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "baseCostAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "marginPercent": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "startDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "endDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "pax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "holdMinutes": {
@@ -250,10 +190,7 @@
                     "maximum": 1440
                   },
                   "holdExpiresAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "items": {
@@ -267,10 +204,7 @@
                           "maxLength": 255
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "itemType": {
                           "type": "string",
@@ -294,90 +228,51 @@
                           "default": 1
                         },
                         "sellCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "minLength": 3,
                           "maxLength": 3
                         },
                         "unitSellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ],
+                          "type": ["integer", "null"],
                           "minimum": 0
                         },
                         "totalSellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ],
+                          "type": ["integer", "null"],
                           "minimum": 0
                         },
                         "costCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "minLength": 3,
                           "maxLength": 3
                         },
                         "unitCostAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ],
+                          "type": ["integer", "null"],
                           "minimum": 0
                         },
                         "totalCostAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ],
+                          "type": ["integer", "null"],
                           "minimum": 0
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionUnitId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pricingCategoryId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "availabilitySlotId": {
@@ -386,18 +281,11 @@
                         },
                         "allocationType": {
                           "type": "string",
-                          "enum": [
-                            "unit",
-                            "pickup",
-                            "resource"
-                          ],
+                          "enum": ["unit", "pickup", "resource"],
                           "default": "unit"
                         }
                       },
-                      "required": [
-                        "title",
-                        "availabilitySlotId"
-                      ]
+                      "required": ["title", "availabilitySlotId"]
                     },
                     "minItems": 1
                   },
@@ -411,25 +299,12 @@
                         },
                         "participantType": {
                           "type": "string",
-                          "enum": [
-                            "traveler",
-                            "occupant"
-                          ],
+                          "enum": ["traveler", "occupant"],
                           "default": "traveler"
                         },
                         "travelerCategory": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "adult",
-                            "child",
-                            "infant",
-                            "senior",
-                            "other",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["adult", "child", "infant", "senior", "other", null]
                         },
                         "firstName": {
                           "type": "string",
@@ -442,54 +317,33 @@
                           "maxLength": 255
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "email"
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "maxLength": 50
                         },
                         "preferredLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "maxLength": 35
                         },
                         "specialRequests": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean",
                           "default": false
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "firstName",
-                        "lastName"
-                      ]
+                      "required": ["firstName", "lastName"]
                     }
                   }
                 },
-                "required": [
-                  "sellCurrency",
-                  "items"
-                ]
+                "required": ["sellCurrency", "items"]
               }
             }
           }
@@ -525,73 +379,40 @@
                           ]
                         },
                         "externalBookingRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "communicationLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sellCurrency": {
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "holdExpiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -603,25 +424,11 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "travelerCategory": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "adult",
-                                  "child",
-                                  "infant",
-                                  "senior",
-                                  "other",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["adult", "child", "infant", "senior", "other", null]
                               },
                               "firstName": {
                                 "type": "string"
@@ -630,37 +437,22 @@
                                 "type": "string"
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "preferredLanguage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "specialRequests": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "isPrimary": {
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -690,10 +482,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -722,22 +511,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -746,64 +526,34 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "costCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -818,23 +568,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               }
                             },
@@ -872,51 +612,29 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "availabilitySlotId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "allocationType": {
                                 "type": "string",
-                                "enum": [
-                                  "unit",
-                                  "pickup",
-                                  "resource"
-                                ]
+                                "enum": ["unit", "pickup", "resource"]
                               },
                               "status": {
                                 "type": "string",
@@ -930,22 +648,13 @@
                                 ]
                               },
                               "holdExpiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "confirmedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "releasedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -993,25 +702,17 @@
                           ]
                         },
                         "state": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "sessionId": {
                               "type": "string"
                             },
                             "stateKey": {
                               "type": "string",
-                              "enum": [
-                                "wizard"
-                              ]
+                              "enum": ["wizard"]
                             },
                             "currentStep": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedSteps": {
                               "type": "array",
@@ -1070,11 +771,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "token",
-                            "expiresAt",
-                            "actions"
-                          ]
+                          "required": ["token", "expiresAt", "actions"]
                         }
                       },
                       "required": [
@@ -1101,9 +798,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1119,9 +814,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1137,9 +830,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1147,9 +838,7 @@
         },
         "operationId": "postPublicBookingsSessions",
         "summary": "POST /v1/public/bookings/sessions",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -1197,73 +886,40 @@
                           ]
                         },
                         "externalBookingRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "communicationLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sellCurrency": {
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "holdExpiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -1275,25 +931,11 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "travelerCategory": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "adult",
-                                  "child",
-                                  "infant",
-                                  "senior",
-                                  "other",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["adult", "child", "infant", "senior", "other", null]
                               },
                               "firstName": {
                                 "type": "string"
@@ -1302,37 +944,22 @@
                                 "type": "string"
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "preferredLanguage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "specialRequests": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "isPrimary": {
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -1362,10 +989,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -1394,22 +1018,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -1418,64 +1033,34 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "costCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -1490,23 +1075,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               }
                             },
@@ -1544,51 +1119,29 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "availabilitySlotId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "allocationType": {
                                 "type": "string",
-                                "enum": [
-                                  "unit",
-                                  "pickup",
-                                  "resource"
-                                ]
+                                "enum": ["unit", "pickup", "resource"]
                               },
                               "status": {
                                 "type": "string",
@@ -1602,22 +1155,13 @@
                                 ]
                               },
                               "holdExpiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "confirmedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "releasedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -1665,25 +1209,17 @@
                           ]
                         },
                         "state": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "sessionId": {
                               "type": "string"
                             },
                             "stateKey": {
                               "type": "string",
-                              "enum": [
-                                "wizard"
-                              ]
+                              "enum": ["wizard"]
                             },
                             "currentStep": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedSteps": {
                               "type": "array",
@@ -1742,11 +1278,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "token",
-                            "expiresAt",
-                            "actions"
-                          ]
+                          "required": ["token", "expiresAt", "actions"]
                         }
                       },
                       "required": [
@@ -1773,9 +1305,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1791,9 +1321,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1801,9 +1329,7 @@
         },
         "operationId": "getPublicBookingsSessionsBySessionId",
         "summary": "GET /v1/public/bookings/sessions/{sessionId}",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       },
@@ -1826,23 +1352,14 @@
                 "type": "object",
                 "properties": {
                   "externalBookingRef": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "communicationLanguage": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 35
                   },
                   "pax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "holdMinutes": {
@@ -1851,10 +1368,7 @@
                     "maximum": 1440
                   },
                   "holdExpiresAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "travelers": {
@@ -1867,25 +1381,12 @@
                         },
                         "participantType": {
                           "type": "string",
-                          "enum": [
-                            "traveler",
-                            "occupant"
-                          ],
+                          "enum": ["traveler", "occupant"],
                           "default": "traveler"
                         },
                         "travelerCategory": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "adult",
-                            "child",
-                            "infant",
-                            "senior",
-                            "other",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["adult", "child", "infant", "senior", "other", null]
                         },
                         "firstName": {
                           "type": "string",
@@ -1898,47 +1399,29 @@
                           "maxLength": 255
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "email"
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "maxLength": 50
                         },
                         "preferredLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "maxLength": 35
                         },
                         "specialRequests": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean",
                           "default": false
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "firstName",
-                        "lastName"
-                      ]
+                      "required": ["firstName", "lastName"]
                     }
                   },
                   "removedTravelerIds": {
@@ -1984,73 +1467,40 @@
                           ]
                         },
                         "externalBookingRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "communicationLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sellCurrency": {
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "holdExpiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -2062,25 +1512,11 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "travelerCategory": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "adult",
-                                  "child",
-                                  "infant",
-                                  "senior",
-                                  "other",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["adult", "child", "infant", "senior", "other", null]
                               },
                               "firstName": {
                                 "type": "string"
@@ -2089,37 +1525,22 @@
                                 "type": "string"
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "preferredLanguage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "specialRequests": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "isPrimary": {
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -2149,10 +1570,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -2181,22 +1599,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -2205,64 +1614,34 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "costCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -2277,23 +1656,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               }
                             },
@@ -2331,51 +1700,29 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "availabilitySlotId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "allocationType": {
                                 "type": "string",
-                                "enum": [
-                                  "unit",
-                                  "pickup",
-                                  "resource"
-                                ]
+                                "enum": ["unit", "pickup", "resource"]
                               },
                               "status": {
                                 "type": "string",
@@ -2389,22 +1736,13 @@
                                 ]
                               },
                               "holdExpiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "confirmedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "releasedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -2452,25 +1790,17 @@
                           ]
                         },
                         "state": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "sessionId": {
                               "type": "string"
                             },
                             "stateKey": {
                               "type": "string",
-                              "enum": [
-                                "wizard"
-                              ]
+                              "enum": ["wizard"]
                             },
                             "currentStep": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedSteps": {
                               "type": "array",
@@ -2529,11 +1859,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "token",
-                            "expiresAt",
-                            "actions"
-                          ]
+                          "required": ["token", "expiresAt", "actions"]
                         }
                       },
                       "required": [
@@ -2560,9 +1886,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2578,9 +1902,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2596,9 +1918,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2606,9 +1926,7 @@
         },
         "operationId": "patchPublicBookingsSessionsBySessionId",
         "summary": "PATCH /v1/public/bookings/sessions/{sessionId}",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -2641,15 +1959,10 @@
                         },
                         "stateKey": {
                           "type": "string",
-                          "enum": [
-                            "wizard"
-                          ]
+                          "enum": ["wizard"]
                         },
                         "currentStep": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedSteps": {
                           "type": "array",
@@ -2684,9 +1997,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2702,9 +2013,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2712,9 +2021,7 @@
         },
         "operationId": "getPublicBookingsSessionsBySessionIdState",
         "summary": "GET /v1/public/bookings/sessions/{sessionId}/state",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       },
@@ -2737,10 +2044,7 @@
                 "type": "object",
                 "properties": {
                   "currentStep": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "completedSteps": {
@@ -2781,15 +2085,10 @@
                         },
                         "stateKey": {
                           "type": "string",
-                          "enum": [
-                            "wizard"
-                          ]
+                          "enum": ["wizard"]
                         },
                         "currentStep": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedSteps": {
                           "type": "array",
@@ -2824,9 +2123,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2842,9 +2139,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2852,9 +2147,7 @@
         },
         "operationId": "putPublicBookingsSessionsBySessionIdState",
         "summary": "PUT /v1/public/bookings/sessions/{sessionId}/state",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -2894,38 +2187,25 @@
                           "type": "string"
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionUnitId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pricingCategoryId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "quantity": {
                           "type": "integer",
                           "exclusiveMinimum": 0
                         }
                       },
-                      "required": [
-                        "itemId"
-                      ]
+                      "required": ["itemId"]
                     },
                     "minItems": 1
                   }
                 },
-                "required": [
-                  "selections"
-                ]
+                "required": ["selections"]
               }
             }
           }
@@ -2948,10 +2228,7 @@
                               "type": "string"
                             },
                             "catalogId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "currencyCode": {
                               "type": "string"
@@ -2971,40 +2248,22 @@
                                     "type": "string"
                                   },
                                   "productId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionUnitId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionUnitName": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionUnitType": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "pricingCategoryId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "quantity": {
                                     "type": "integer"
@@ -3013,16 +2272,10 @@
                                     "type": "string"
                                   },
                                   "unitSellAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "totalSellAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "warnings": {
                                     "type": "array",
@@ -3069,10 +2322,7 @@
                           ]
                         },
                         "session": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "sessionId": {
                               "type": "string"
@@ -3094,73 +2344,40 @@
                               ]
                             },
                             "externalBookingRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "communicationLanguage": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sellCurrency": {
                               "type": "string"
                             },
                             "sellAmountCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "startDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "endDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "pax": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "holdExpiresAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "confirmedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "expiredAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "cancelledAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "travelers": {
                               "type": "array",
@@ -3172,25 +2389,11 @@
                                   },
                                   "participantType": {
                                     "type": "string",
-                                    "enum": [
-                                      "traveler",
-                                      "occupant",
-                                      "other"
-                                    ]
+                                    "enum": ["traveler", "occupant", "other"]
                                   },
                                   "travelerCategory": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
-                                    "enum": [
-                                      "adult",
-                                      "child",
-                                      "infant",
-                                      "senior",
-                                      "other",
-                                      null
-                                    ]
+                                    "type": ["string", "null"],
+                                    "enum": ["adult", "child", "infant", "senior", "other", null]
                                   },
                                   "firstName": {
                                     "type": "string"
@@ -3199,37 +2402,22 @@
                                     "type": "string"
                                   },
                                   "email": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "phone": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "preferredLanguage": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "specialRequests": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "isPrimary": {
                                     "type": "boolean"
                                   },
                                   "notes": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -3259,10 +2447,7 @@
                                     "type": "string"
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "itemType": {
                                     "type": "string",
@@ -3291,22 +2476,13 @@
                                     ]
                                   },
                                   "serviceDate": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "startsAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "endsAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "quantity": {
                                     "type": "integer"
@@ -3315,64 +2491,34 @@
                                     "type": "string"
                                   },
                                   "unitSellAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "totalSellAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "costCurrency": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "unitCostAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "totalCostAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "notes": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "productId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionUnitId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "pricingCategoryId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "travelerLinks": {
                                     "type": "array",
@@ -3387,23 +2533,13 @@
                                         },
                                         "role": {
                                           "type": "string",
-                                          "enum": [
-                                            "traveler",
-                                            "occupant",
-                                            "beneficiary",
-                                            "other"
-                                          ]
+                                          "enum": ["traveler", "occupant", "beneficiary", "other"]
                                         },
                                         "isPrimary": {
                                           "type": "boolean"
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "travelerId",
-                                        "role",
-                                        "isPrimary"
-                                      ]
+                                      "required": ["id", "travelerId", "role", "isPrimary"]
                                     }
                                   }
                                 },
@@ -3441,51 +2577,29 @@
                                     "type": "string"
                                   },
                                   "bookingItemId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "productId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionUnitId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "pricingCategoryId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "availabilitySlotId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "quantity": {
                                     "type": "integer"
                                   },
                                   "allocationType": {
                                     "type": "string",
-                                    "enum": [
-                                      "unit",
-                                      "pickup",
-                                      "resource"
-                                    ]
+                                    "enum": ["unit", "pickup", "resource"]
                                   },
                                   "status": {
                                     "type": "string",
@@ -3499,22 +2613,13 @@
                                     ]
                                   },
                                   "holdExpiresAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "confirmedAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "releasedAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -3562,25 +2667,17 @@
                               ]
                             },
                             "state": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "sessionId": {
                                   "type": "string"
                                 },
                                 "stateKey": {
                                   "type": "string",
-                                  "enum": [
-                                    "wizard"
-                                  ]
+                                  "enum": ["wizard"]
                                 },
                                 "currentStep": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "completedSteps": {
                                   "type": "array",
@@ -3639,11 +2736,7 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "token",
-                                "expiresAt",
-                                "actions"
-                              ]
+                              "required": ["token", "expiresAt", "actions"]
                             }
                           },
                           "required": [
@@ -3670,15 +2763,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "pricing",
-                        "session"
-                      ]
+                      "required": ["pricing", "session"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3694,9 +2782,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3712,9 +2798,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3730,9 +2814,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3740,9 +2822,7 @@
         },
         "operationId": "postPublicBookingsSessionsBySessionIdReprice",
         "summary": "POST /v1/public/bookings/sessions/{sessionId}/reprice",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -3767,10 +2847,7 @@
                 "type": "object",
                 "properties": {
                   "note": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -3808,73 +2885,40 @@
                           ]
                         },
                         "externalBookingRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "communicationLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sellCurrency": {
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "holdExpiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -3886,25 +2930,11 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "travelerCategory": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "adult",
-                                  "child",
-                                  "infant",
-                                  "senior",
-                                  "other",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["adult", "child", "infant", "senior", "other", null]
                               },
                               "firstName": {
                                 "type": "string"
@@ -3913,37 +2943,22 @@
                                 "type": "string"
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "preferredLanguage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "specialRequests": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "isPrimary": {
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -3973,10 +2988,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -4005,22 +3017,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -4029,64 +3032,34 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "costCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -4101,23 +3074,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               }
                             },
@@ -4155,51 +3118,29 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "availabilitySlotId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "allocationType": {
                                 "type": "string",
-                                "enum": [
-                                  "unit",
-                                  "pickup",
-                                  "resource"
-                                ]
+                                "enum": ["unit", "pickup", "resource"]
                               },
                               "status": {
                                 "type": "string",
@@ -4213,22 +3154,13 @@
                                 ]
                               },
                               "holdExpiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "confirmedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "releasedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -4276,25 +3208,17 @@
                           ]
                         },
                         "state": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "sessionId": {
                               "type": "string"
                             },
                             "stateKey": {
                               "type": "string",
-                              "enum": [
-                                "wizard"
-                              ]
+                              "enum": ["wizard"]
                             },
                             "currentStep": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedSteps": {
                               "type": "array",
@@ -4353,11 +3277,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "token",
-                            "expiresAt",
-                            "actions"
-                          ]
+                          "required": ["token", "expiresAt", "actions"]
                         }
                       },
                       "required": [
@@ -4384,9 +3304,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4402,9 +3320,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4420,9 +3336,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4430,9 +3344,7 @@
         },
         "operationId": "postPublicBookingsSessionsBySessionIdConfirm",
         "summary": "POST /v1/public/bookings/sessions/{sessionId}/confirm",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -4457,10 +3369,7 @@
                 "type": "object",
                 "properties": {
                   "note": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -4498,73 +3407,40 @@
                           ]
                         },
                         "externalBookingRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "communicationLanguage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sellCurrency": {
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "holdExpiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -4576,25 +3452,11 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "travelerCategory": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "adult",
-                                  "child",
-                                  "infant",
-                                  "senior",
-                                  "other",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["adult", "child", "infant", "senior", "other", null]
                               },
                               "firstName": {
                                 "type": "string"
@@ -4603,37 +3465,22 @@
                                 "type": "string"
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "preferredLanguage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "specialRequests": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "isPrimary": {
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -4663,10 +3510,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -4695,22 +3539,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -4719,64 +3554,34 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "costCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -4791,23 +3596,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               }
                             },
@@ -4845,51 +3640,29 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "availabilitySlotId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "allocationType": {
                                 "type": "string",
-                                "enum": [
-                                  "unit",
-                                  "pickup",
-                                  "resource"
-                                ]
+                                "enum": ["unit", "pickup", "resource"]
                               },
                               "status": {
                                 "type": "string",
@@ -4903,22 +3676,13 @@
                                 ]
                               },
                               "holdExpiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "confirmedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "releasedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -4966,25 +3730,17 @@
                           ]
                         },
                         "state": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "sessionId": {
                               "type": "string"
                             },
                             "stateKey": {
                               "type": "string",
-                              "enum": [
-                                "wizard"
-                              ]
+                              "enum": ["wizard"]
                             },
                             "currentStep": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedSteps": {
                               "type": "array",
@@ -5043,11 +3799,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "token",
-                            "expiresAt",
-                            "actions"
-                          ]
+                          "required": ["token", "expiresAt", "actions"]
                         }
                       },
                       "required": [
@@ -5074,9 +3826,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5092,9 +3842,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5110,9 +3858,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5120,9 +3866,7 @@
         },
         "operationId": "postPublicBookingsSessionsBySessionIdExpire",
         "summary": "POST /v1/public/bookings/sessions/{sessionId}/expire",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -5204,46 +3948,25 @@
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -5255,11 +3978,7 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "firstName": {
                                 "type": "string"
@@ -5292,10 +4011,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -5324,22 +4040,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -5348,64 +4055,34 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "costCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCostAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "optionUnitId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricingCategoryId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -5420,23 +4097,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               },
                               "details": {}
@@ -5475,20 +4142,11 @@
                                 "type": "string"
                               },
                               "travelerId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "type": {
                                 "type": "string",
-                                "enum": [
-                                  "visa",
-                                  "insurance",
-                                  "health",
-                                  "passport_copy",
-                                  "other"
-                                ]
+                                "enum": ["visa", "insurance", "health", "passport_copy", "other"]
                               },
                               "fileName": {
                                 "type": "string"
@@ -5497,13 +4155,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "travelerId",
-                              "type",
-                              "fileName",
-                              "fileUrl"
-                            ]
+                            "required": ["id", "travelerId", "type", "fileName", "fileUrl"]
                           }
                         },
                         "fulfillments": {
@@ -5515,16 +4167,10 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "fulfillmentType": {
                                 "type": "string",
@@ -5540,29 +4186,14 @@
                               },
                               "deliveryChannel": {
                                 "type": "string",
-                                "enum": [
-                                  "download",
-                                  "email",
-                                  "api",
-                                  "wallet",
-                                  "other"
-                                ]
+                                "enum": ["download", "email", "api", "wallet", "other"]
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "pending",
-                                  "issued",
-                                  "reissued",
-                                  "revoked",
-                                  "failed"
-                                ]
+                                "enum": ["pending", "issued", "reissued", "revoked", "failed"]
                               },
                               "artifactUrl": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -5596,9 +4227,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5614,9 +4243,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5632,9 +4259,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5650,9 +4275,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5660,9 +4283,7 @@
         },
         "operationId": "getPublicBookingsOverview",
         "summary": "GET /v1/public/bookings/overview",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -5686,10 +4307,7 @@
                     "format": "email"
                   }
                 },
-                "required": [
-                  "bookingCode",
-                  "email"
-                ]
+                "required": ["bookingCode", "email"]
               }
             }
           }
@@ -5731,46 +4349,25 @@
                               "type": "string"
                             },
                             "sellAmountCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "startDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "endDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "pax": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "confirmedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "cancelledAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "travelers": {
                               "type": "array",
@@ -5782,11 +4379,7 @@
                                   },
                                   "participantType": {
                                     "type": "string",
-                                    "enum": [
-                                      "traveler",
-                                      "occupant",
-                                      "other"
-                                    ]
+                                    "enum": ["traveler", "occupant", "other"]
                                   },
                                   "firstName": {
                                     "type": "string"
@@ -5819,10 +4412,7 @@
                                     "type": "string"
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "itemType": {
                                     "type": "string",
@@ -5851,22 +4441,13 @@
                                     ]
                                   },
                                   "serviceDate": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "startsAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "endsAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "quantity": {
                                     "type": "integer"
@@ -5875,64 +4456,34 @@
                                     "type": "string"
                                   },
                                   "unitSellAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "totalSellAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "costCurrency": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "unitCostAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "totalCostAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "notes": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "productId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "optionUnitId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "pricingCategoryId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "travelerLinks": {
                                     "type": "array",
@@ -5947,23 +4498,13 @@
                                         },
                                         "role": {
                                           "type": "string",
-                                          "enum": [
-                                            "traveler",
-                                            "occupant",
-                                            "beneficiary",
-                                            "other"
-                                          ]
+                                          "enum": ["traveler", "occupant", "beneficiary", "other"]
                                         },
                                         "isPrimary": {
                                           "type": "boolean"
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "travelerId",
-                                        "role",
-                                        "isPrimary"
-                                      ]
+                                      "required": ["id", "travelerId", "role", "isPrimary"]
                                     }
                                   },
                                   "details": {}
@@ -6002,10 +4543,7 @@
                                     "type": "string"
                                   },
                                   "travelerId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "type": {
                                     "type": "string",
@@ -6024,13 +4562,7 @@
                                     "type": "string"
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "travelerId",
-                                  "type",
-                                  "fileName",
-                                  "fileUrl"
-                                ]
+                                "required": ["id", "travelerId", "type", "fileName", "fileUrl"]
                               }
                             },
                             "fulfillments": {
@@ -6042,16 +4574,10 @@
                                     "type": "string"
                                   },
                                   "bookingItemId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "travelerId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "fulfillmentType": {
                                     "type": "string",
@@ -6067,29 +4593,14 @@
                                   },
                                   "deliveryChannel": {
                                     "type": "string",
-                                    "enum": [
-                                      "download",
-                                      "email",
-                                      "api",
-                                      "wallet",
-                                      "other"
-                                    ]
+                                    "enum": ["download", "email", "api", "wallet", "other"]
                                   },
                                   "status": {
                                     "type": "string",
-                                    "enum": [
-                                      "pending",
-                                      "issued",
-                                      "reissued",
-                                      "revoked",
-                                      "failed"
-                                    ]
+                                    "enum": ["pending", "issued", "reissued", "revoked", "failed"]
                                   },
                                   "artifactUrl": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -6136,30 +4647,17 @@
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": [
-                                  "overview:read",
-                                  "payment:read",
-                                  "payment:start"
-                                ]
+                                "enum": ["overview:read", "payment:read", "payment:start"]
                               }
                             }
                           },
-                          "required": [
-                            "token",
-                            "expiresAt",
-                            "actions"
-                          ]
+                          "required": ["token", "expiresAt", "actions"]
                         }
                       },
-                      "required": [
-                        "overview",
-                        "guestBookingAccess"
-                      ]
+                      "required": ["overview", "guestBookingAccess"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6175,9 +4673,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6193,9 +4689,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6203,9 +4697,7 @@
         },
         "operationId": "postPublicBookingsGuestLookup",
         "summary": "POST /v1/public/bookings/guest-lookup",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }
@@ -6235,10 +4727,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "entityModule",
-                  "entityId"
-                ]
+                "required": ["entityModule", "entityId"]
               }
             }
           }
@@ -6262,11 +4751,7 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "none",
-                                    "percent",
-                                    "fixed_cents"
-                                  ]
+                                  "enum": ["none", "percent", "fixed_cents"]
                                 },
                                 "percent": {
                                   "type": "number",
@@ -6278,9 +4763,7 @@
                                   "minimum": 0
                                 }
                               },
-                              "required": [
-                                "kind"
-                              ]
+                              "required": ["kind"]
                             },
                             "minDaysBeforeDepartureForDeposit": {
                               "type": "integer",
@@ -6304,24 +4787,13 @@
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "booking",
-                            "listing",
-                            "category",
-                            "supplier",
-                            "operator_default"
-                          ]
+                          "enum": ["booking", "listing", "category", "supplier", "operator_default"]
                         }
                       },
-                      "required": [
-                        "policy",
-                        "source"
-                      ]
+                      "required": ["policy", "source"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6329,9 +4801,7 @@
         },
         "operationId": "postPublicPaymentPolicyResolve",
         "summary": "POST /v1/public/payment-policy/resolve",
-        "tags": [
-          "bookings"
-        ],
+        "tags": ["bookings"],
         "x-voyant-module": "bookings",
         "x-voyant-surface": "storefront"
       }

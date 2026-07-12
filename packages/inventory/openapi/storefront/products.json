@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -176,10 +149,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -208,10 +178,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "name"
-                        ]
+                        "required": ["id", "name"]
                       }
                     },
                     "total": {
@@ -224,12 +191,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -237,9 +199,7 @@
         },
         "operationId": "getPublicProductsTags",
         "summary": "GET /v1/public/products/tags",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -274,10 +234,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -303,10 +260,7 @@
                             "type": "string"
                           },
                           "parentId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "name": {
                             "type": "string"
@@ -315,23 +269,13 @@
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sortOrder": {
                             "type": "integer"
                           }
                         },
-                        "required": [
-                          "id",
-                          "parentId",
-                          "name",
-                          "slug",
-                          "description",
-                          "sortOrder"
-                        ]
+                        "required": ["id", "parentId", "name", "slug", "description", "sortOrder"]
                       }
                     },
                     "total": {
@@ -344,12 +288,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -357,9 +296,7 @@
         },
         "operationId": "getPublicProductsCategories",
         "summary": "GET /v1/public/products/categories",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -386,12 +323,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -449,10 +381,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -478,55 +407,34 @@
                             "type": "string"
                           },
                           "parentId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "slug": {
                             "type": "string"
                           },
                           "canonicalPlaceId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "name": {
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "seoTitle": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "seoDescription": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "destinationType": {
                             "type": "string"
                           },
                           "latitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "longitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "sortOrder": {
                             "type": "integer"
@@ -558,12 +466,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -571,9 +474,7 @@
         },
         "operationId": "getPublicProductsDestinations",
         "summary": "GET /v1/public/products/destinations",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -603,15 +504,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "date",
-                "date_time",
-                "open",
-                "stay",
-                "transfer",
-                "itinerary",
-                "other"
-              ]
+              "enum": ["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]
             },
             "required": false,
             "name": "bookingMode",
@@ -620,11 +513,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "free_sale",
-                "limited",
-                "on_request"
-              ]
+              "enum": ["free_sale", "limited", "on_request"]
             },
             "required": false,
             "name": "capacityMode",
@@ -719,12 +608,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "featured",
@@ -733,12 +617,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "createdAt",
-                "startDate",
-                "price"
-              ],
+              "enum": ["name", "createdAt", "startDate", "price"],
               "default": "name"
             },
             "required": false,
@@ -748,10 +627,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "required": false,
@@ -769,10 +645,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -783,12 +656,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "includeContent",
@@ -815,58 +683,31 @@
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "inclusionsHtml": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "exclusionsHtml": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "termsHtml": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "contentLanguageTag": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "slug": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "shortDescription": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "seoTitle": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "seoDescription": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "bookingMode": {
                             "type": "string"
@@ -881,40 +722,22 @@
                             "type": "string"
                           },
                           "sellAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "startDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "endDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "pax": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "contractTemplateId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "productType": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "id": {
                                 "type": "string"
@@ -926,18 +749,10 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
-                            "required": [
-                              "id",
-                              "code",
-                              "name",
-                              "description"
-                            ]
+                            "required": ["id", "code", "name", "description"]
                           },
                           "categories": {
                             "type": "array",
@@ -948,10 +763,7 @@
                                   "type": "string"
                                 },
                                 "parentId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "name": {
                                   "type": "string"
@@ -960,10 +772,7 @@
                                   "type": "string"
                                 },
                                 "description": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "sortOrder": {
                                   "type": "integer"
@@ -991,10 +800,7 @@
                                   "type": "string"
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name"
-                              ]
+                              "required": ["id", "name"]
                             }
                           },
                           "destinations": {
@@ -1006,55 +812,34 @@
                                   "type": "string"
                                 },
                                 "parentId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "slug": {
                                   "type": "string"
                                 },
                                 "canonicalPlaceId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "name": {
                                   "type": "string"
                                 },
                                 "description": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "seoTitle": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "seoDescription": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "destinationType": {
                                   "type": "string"
                                 },
                                 "latitude": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 },
                                 "longitude": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 },
                                 "sortOrder": {
                                   "type": "integer"
@@ -1091,34 +876,19 @@
                                   "type": "string"
                                 },
                                 "address": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "city": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "countryCode": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "latitude": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 },
                                 "longitude": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 },
                                 "sortOrder": {
                                   "type": "integer"
@@ -1144,10 +914,7 @@
                             }
                           },
                           "coverMedia": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "id": {
                                 "type": "string"
@@ -1162,16 +929,10 @@
                                 "type": "string"
                               },
                               "mimeType": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "altText": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -1186,10 +947,7 @@
                                 "type": "boolean"
                               },
                               "brochureVersion": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -1227,16 +985,10 @@
                                   "type": "string"
                                 },
                                 "mimeType": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "altText": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "sortOrder": {
                                   "type": "integer"
@@ -1251,10 +1003,7 @@
                                   "type": "boolean"
                                 },
                                 "brochureVersion": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ]
+                                  "type": ["integer", "null"]
                                 }
                               },
                               "required": [
@@ -1273,10 +1022,7 @@
                             }
                           },
                           "brochure": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "id": {
                                 "type": "string"
@@ -1291,16 +1037,10 @@
                                 "type": "string"
                               },
                               "mimeType": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "altText": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -1315,10 +1055,7 @@
                                 "type": "boolean"
                               },
                               "brochureVersion": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -1350,22 +1087,13 @@
                                   "type": "string"
                                 },
                                 "description": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "sortOrder": {
                                   "type": "integer"
                                 }
                               },
-                              "required": [
-                                "id",
-                                "featureType",
-                                "title",
-                                "description",
-                                "sortOrder"
-                              ]
+                              "required": ["id", "featureType", "title", "description", "sortOrder"]
                             }
                           },
                           "faqs": {
@@ -1386,19 +1114,11 @@
                                   "type": "integer"
                                 }
                               },
-                              "required": [
-                                "id",
-                                "question",
-                                "answer",
-                                "sortOrder"
-                              ]
+                              "required": ["id", "question", "answer", "sortOrder"]
                             }
                           },
                           "itinerary": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "id": {
                                 "type": "string"
@@ -1418,28 +1138,16 @@
                                       "type": "integer"
                                     },
                                     "title": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "description": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "location": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "thumbnailUrl": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "services": {
                                       "type": "array",
@@ -1456,16 +1164,10 @@
                                             "type": "string"
                                           },
                                           "description": {
-                                            "type": [
-                                              "string",
-                                              "null"
-                                            ]
+                                            "type": ["string", "null"]
                                           },
                                           "sortOrder": {
-                                            "type": [
-                                              "integer",
-                                              "null"
-                                            ]
+                                            "type": ["integer", "null"]
                                           }
                                         },
                                         "required": [
@@ -1490,11 +1192,7 @@
                                 }
                               }
                             },
-                            "required": [
-                              "id",
-                              "name",
-                              "days"
-                            ]
+                            "required": ["id", "name", "days"]
                           }
                         },
                         "required": [
@@ -1539,12 +1237,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1552,9 +1245,7 @@
         },
         "operationId": "getPublicProducts",
         "summary": "GET /v1/public/products",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -1608,58 +1299,31 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "inclusionsHtml": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "exclusionsHtml": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "termsHtml": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contentLanguageTag": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "slug": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "shortDescription": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "seoTitle": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "seoDescription": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingMode": {
                           "type": "string"
@@ -1674,40 +1338,22 @@
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "contractTemplateId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "productType": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -1719,18 +1365,10 @@
                               "type": "string"
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "id",
-                            "code",
-                            "name",
-                            "description"
-                          ]
+                          "required": ["id", "code", "name", "description"]
                         },
                         "categories": {
                           "type": "array",
@@ -1741,10 +1379,7 @@
                                 "type": "string"
                               },
                               "parentId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "name": {
                                 "type": "string"
@@ -1753,10 +1388,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -1784,10 +1416,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "name"
-                            ]
+                            "required": ["id", "name"]
                           }
                         },
                         "destinations": {
@@ -1799,55 +1428,34 @@
                                 "type": "string"
                               },
                               "parentId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "slug": {
                                 "type": "string"
                               },
                               "canonicalPlaceId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "name": {
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "seoTitle": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "seoDescription": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "destinationType": {
                                 "type": "string"
                               },
                               "latitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "longitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -1884,34 +1492,19 @@
                                 "type": "string"
                               },
                               "address": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "city": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "countryCode": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "latitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "longitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -1937,10 +1530,7 @@
                           }
                         },
                         "coverMedia": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -1955,16 +1545,10 @@
                               "type": "string"
                             },
                             "mimeType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "altText": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sortOrder": {
                               "type": "integer"
@@ -1979,10 +1563,7 @@
                               "type": "boolean"
                             },
                             "brochureVersion": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             }
                           },
                           "required": [
@@ -2020,16 +1601,10 @@
                                 "type": "string"
                               },
                               "mimeType": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "altText": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -2044,10 +1619,7 @@
                                 "type": "boolean"
                               },
                               "brochureVersion": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -2066,10 +1638,7 @@
                           }
                         },
                         "brochure": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -2084,16 +1653,10 @@
                               "type": "string"
                             },
                             "mimeType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "altText": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sortOrder": {
                               "type": "integer"
@@ -2108,10 +1671,7 @@
                               "type": "boolean"
                             },
                             "brochureVersion": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             }
                           },
                           "required": [
@@ -2143,22 +1703,13 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
                               }
                             },
-                            "required": [
-                              "id",
-                              "featureType",
-                              "title",
-                              "description",
-                              "sortOrder"
-                            ]
+                            "required": ["id", "featureType", "title", "description", "sortOrder"]
                           }
                         },
                         "faqs": {
@@ -2179,19 +1730,11 @@
                                 "type": "integer"
                               }
                             },
-                            "required": [
-                              "id",
-                              "question",
-                              "answer",
-                              "sortOrder"
-                            ]
+                            "required": ["id", "question", "answer", "sortOrder"]
                           }
                         },
                         "itinerary": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -2211,28 +1754,16 @@
                                     "type": "integer"
                                   },
                                   "title": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "location": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "thumbnailUrl": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "services": {
                                     "type": "array",
@@ -2249,16 +1780,10 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "sortOrder": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ]
+                                          "type": ["integer", "null"]
                                         }
                                       },
                                       "required": [
@@ -2283,11 +1808,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "id",
-                            "name",
-                            "days"
-                          ]
+                          "required": ["id", "name", "days"]
                         }
                       },
                       "required": [
@@ -2322,9 +1843,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2340,9 +1859,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2350,9 +1867,7 @@
         },
         "operationId": "getPublicProductsSlugBySlug",
         "summary": "GET /v1/public/products/slug/{slug}",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -2406,58 +1921,31 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "inclusionsHtml": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "exclusionsHtml": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "termsHtml": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contentLanguageTag": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "slug": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "shortDescription": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "seoTitle": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "seoDescription": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingMode": {
                           "type": "string"
@@ -2472,40 +1960,22 @@
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "contractTemplateId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "productType": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -2517,18 +1987,10 @@
                               "type": "string"
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "id",
-                            "code",
-                            "name",
-                            "description"
-                          ]
+                          "required": ["id", "code", "name", "description"]
                         },
                         "categories": {
                           "type": "array",
@@ -2539,10 +2001,7 @@
                                 "type": "string"
                               },
                               "parentId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "name": {
                                 "type": "string"
@@ -2551,10 +2010,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -2582,10 +2038,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "name"
-                            ]
+                            "required": ["id", "name"]
                           }
                         },
                         "destinations": {
@@ -2597,55 +2050,34 @@
                                 "type": "string"
                               },
                               "parentId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "slug": {
                                 "type": "string"
                               },
                               "canonicalPlaceId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "name": {
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "seoTitle": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "seoDescription": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "destinationType": {
                                 "type": "string"
                               },
                               "latitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "longitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -2682,34 +2114,19 @@
                                 "type": "string"
                               },
                               "address": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "city": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "countryCode": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "latitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "longitude": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -2735,10 +2152,7 @@
                           }
                         },
                         "coverMedia": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -2753,16 +2167,10 @@
                               "type": "string"
                             },
                             "mimeType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "altText": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sortOrder": {
                               "type": "integer"
@@ -2777,10 +2185,7 @@
                               "type": "boolean"
                             },
                             "brochureVersion": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             }
                           },
                           "required": [
@@ -2818,16 +2223,10 @@
                                 "type": "string"
                               },
                               "mimeType": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "altText": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
@@ -2842,10 +2241,7 @@
                                 "type": "boolean"
                               },
                               "brochureVersion": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -2864,10 +2260,7 @@
                           }
                         },
                         "brochure": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -2882,16 +2275,10 @@
                               "type": "string"
                             },
                             "mimeType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "altText": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sortOrder": {
                               "type": "integer"
@@ -2906,10 +2293,7 @@
                               "type": "boolean"
                             },
                             "brochureVersion": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             }
                           },
                           "required": [
@@ -2941,22 +2325,13 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sortOrder": {
                                 "type": "integer"
                               }
                             },
-                            "required": [
-                              "id",
-                              "featureType",
-                              "title",
-                              "description",
-                              "sortOrder"
-                            ]
+                            "required": ["id", "featureType", "title", "description", "sortOrder"]
                           }
                         },
                         "faqs": {
@@ -2977,19 +2352,11 @@
                                 "type": "integer"
                               }
                             },
-                            "required": [
-                              "id",
-                              "question",
-                              "answer",
-                              "sortOrder"
-                            ]
+                            "required": ["id", "question", "answer", "sortOrder"]
                           }
                         },
                         "itinerary": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -3009,28 +2376,16 @@
                                     "type": "integer"
                                   },
                                   "title": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "location": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "thumbnailUrl": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "services": {
                                     "type": "array",
@@ -3047,16 +2402,10 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "sortOrder": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ]
+                                          "type": ["integer", "null"]
                                         }
                                       },
                                       "required": [
@@ -3081,11 +2430,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "id",
-                            "name",
-                            "days"
-                          ]
+                          "required": ["id", "name", "days"]
                         }
                       },
                       "required": [
@@ -3120,9 +2465,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3138,9 +2481,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3148,9 +2489,7 @@
         },
         "operationId": "getPublicProductsById",
         "summary": "GET /v1/public/products/{id}",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -3210,16 +2549,10 @@
                           "type": "string"
                         },
                         "mimeType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "altText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sortOrder": {
                           "type": "integer"
@@ -3234,10 +2567,7 @@
                           "type": "boolean"
                         },
                         "brochureVersion": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         }
                       },
                       "required": [
@@ -3255,9 +2585,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3273,9 +2601,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3283,9 +2609,7 @@
         },
         "operationId": "getPublicProductsByIdBrochure",
         "summary": "GET /v1/public/products/{id}/brochure",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }
@@ -3329,40 +2653,22 @@
                                   "type": "string"
                                 },
                                 "description": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "inclusions_html": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "exclusions_html": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "terms_html": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "contract_template_id": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "contractTemplateId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "highlights": {
                                   "type": "array",
@@ -3371,53 +2677,29 @@
                                   }
                                 },
                                 "hero_image_url": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "duration_days": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 },
                                 "start_date": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "end_date": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "sell_currency": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "supplier": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "country": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "departure_city": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "tags": {
                                   "type": "array",
@@ -3426,10 +2708,7 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name"
-                              ]
+                              "required": ["id", "name"]
                             },
                             "options": {
                               "type": "array",
@@ -3443,16 +2722,10 @@
                                     "type": "string"
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "board_basis": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "enum": [
                                       "room_only",
                                       "bed_breakfast",
@@ -3476,23 +2749,14 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "capacity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "type"
-                                      ]
+                                      "required": ["id", "type"]
                                     },
                                     "default": []
                                   },
@@ -3504,10 +2768,7 @@
                                     "default": []
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "name"
-                                ]
+                                "required": ["id", "name"]
                               },
                               "default": []
                             },
@@ -3521,28 +2782,16 @@
                                     "exclusiveMinimum": 0
                                   },
                                   "title": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "location": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "hero_image_url": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "services": {
                                     "type": "array",
@@ -3552,9 +2801,7 @@
                                     "default": []
                                   }
                                 },
-                                "required": [
-                                  "day_number"
-                                ]
+                                "required": ["day_number"]
                               },
                               "default": []
                             },
@@ -3568,29 +2815,17 @@
                                   },
                                   "type": {
                                     "type": "string",
-                                    "enum": [
-                                      "image",
-                                      "video",
-                                      "document"
-                                    ],
+                                    "enum": ["image", "video", "document"],
                                     "default": "image"
                                   },
                                   "caption": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "alt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
-                                "required": [
-                                  "url"
-                                ]
+                                "required": ["url"]
                               },
                               "default": []
                             },
@@ -3613,10 +2848,7 @@
                                   },
                                   "rules": {}
                                 },
-                                "required": [
-                                  "kind",
-                                  "body"
-                                ]
+                                "required": ["kind", "body"]
                               },
                               "default": []
                             },
@@ -3632,62 +2864,36 @@
                                     "type": "string"
                                   },
                                   "ends_at": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "status": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "capacity": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   },
                                   "remaining": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   },
                                   "lowest_price_cents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   },
                                   "currency": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "note": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "starts_at"
-                                ]
+                                "required": ["id", "starts_at"]
                               },
                               "default": []
                             }
                           },
-                          "required": [
-                            "product"
-                          ]
+                          "required": ["product"]
                         },
                         "provenance": {
                           "type": "object",
@@ -3705,30 +2911,18 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "source_kind"
-                          ]
+                          "required": ["source_kind"]
                         },
                         "served_locale": {
                           "type": "string"
                         },
                         "match_kind": {
                           "type": "string",
-                          "enum": [
-                            "exact",
-                            "language_match",
-                            "fallback_chain",
-                            "any"
-                          ]
+                          "enum": ["exact", "language_match", "fallback_chain", "any"]
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "sourced-cache",
-                            "sourced-fresh",
-                            "synthesized",
-                            "owned"
-                          ]
+                          "enum": ["sourced-cache", "sourced-fresh", "synthesized", "owned"]
                         },
                         "served_stale": {
                           "type": "boolean"
@@ -3752,9 +2946,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3773,10 +2965,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error",
-                    "detail"
-                  ]
+                  "required": ["error", "detail"]
                 }
               }
             }
@@ -3784,9 +2973,7 @@
         },
         "operationId": "getPublicProductsByIdContent",
         "summary": "GET /v1/public/products/{id}/content",
-        "tags": [
-          "products"
-        ],
+        "tags": ["products"],
         "x-voyant-module": "products",
         "x-voyant-surface": "storefront"
       }

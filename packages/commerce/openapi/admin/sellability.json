@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -204,25 +177,17 @@
                           "maxLength": 100
                         },
                         "unitId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pricingCategoryId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "quantity": {
                           "type": "integer",
                           "minimum": 1
                         }
                       },
-                      "required": [
-                        "quantity"
-                      ]
+                      "required": ["quantity"]
                     },
                     "default": []
                   },
@@ -256,15 +221,10 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "total"
-                      ]
+                      "required": ["total"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ]
+                  "required": ["data", "meta"]
                 }
               }
             }
@@ -280,9 +240,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -290,9 +248,7 @@
         },
         "operationId": "postAdminSellabilityResolve",
         "summary": "POST /v1/admin/sellability/resolve",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -350,25 +306,17 @@
                               "maxLength": 100
                             },
                             "unitId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "pricingCategoryId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "quantity": {
                               "type": "integer",
                               "minimum": 1
                             }
                           },
-                          "required": [
-                            "quantity"
-                          ]
+                          "required": ["quantity"]
                         },
                         "default": []
                       },
@@ -381,16 +329,11 @@
                     }
                   },
                   "expiresAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   }
                 },
-                "required": [
-                  "query"
-                ]
+                "required": ["query"]
               }
             }
           }
@@ -410,66 +353,35 @@
                           "type": "string"
                         },
                         "offerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "slotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "requestedCurrencyCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceCurrencyCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fxRateSetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "resolved",
-                            "offer_constructed",
-                            "expired"
-                          ]
+                          "enum": ["resolved", "offer_constructed", "expired"]
                         },
                         "queryPayload": {
                           "type": "object",
@@ -480,10 +392,7 @@
                           "additionalProperties": {}
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -525,21 +434,13 @@
                               "type": "number"
                             }
                           },
-                          "required": [
-                            "total"
-                          ]
+                          "required": ["total"]
                         }
                       },
-                      "required": [
-                        "data",
-                        "meta"
-                      ]
+                      "required": ["data", "meta"]
                     }
                   },
-                  "required": [
-                    "snapshot",
-                    "resolved"
-                  ]
+                  "required": ["snapshot", "resolved"]
                 }
               }
             }
@@ -555,9 +456,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -565,9 +464,7 @@
         },
         "operationId": "postAdminSellabilityResolveAndPersist",
         "summary": "POST /v1/admin/sellability/resolve-and-persist",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -588,10 +485,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -650,11 +544,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "resolved",
-                "offer_constructed",
-                "expired"
-              ]
+              "enum": ["resolved", "offer_constructed", "expired"]
             },
             "required": false,
             "name": "status",
@@ -678,66 +568,35 @@
                             "type": "string"
                           },
                           "offerId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "marketId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "channelId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "productId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "optionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "slotId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "requestedCurrencyCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sourceCurrencyCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "fxRateSetId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "resolved",
-                              "offer_constructed",
-                              "expired"
-                            ]
+                            "enum": ["resolved", "offer_constructed", "expired"]
                           },
                           "queryPayload": {
                             "type": "object",
@@ -748,10 +607,7 @@
                             "additionalProperties": {}
                           },
                           "expiresAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -790,12 +646,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -803,9 +654,7 @@
         },
         "operationId": "getAdminSellabilitySnapshots",
         "summary": "GET /v1/admin/sellability/snapshots",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -837,66 +686,35 @@
                           "type": "string"
                         },
                         "offerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "slotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "requestedCurrencyCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceCurrencyCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fxRateSetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "resolved",
-                            "offer_constructed",
-                            "expired"
-                          ]
+                          "enum": ["resolved", "offer_constructed", "expired"]
                         },
                         "queryPayload": {
                           "type": "object",
@@ -907,10 +725,7 @@
                           "additionalProperties": {}
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -939,9 +754,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -957,9 +770,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -967,9 +778,7 @@
         },
         "operationId": "getAdminSellabilitySnapshotsById",
         "summary": "GET /v1/admin/sellability/snapshots/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -990,10 +799,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1068,43 +874,23 @@
                             "type": "number"
                           },
                           "productId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "optionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "slotId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "unitId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "requestRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "componentKind": {
                             "type": "string",
-                            "enum": [
-                              "base",
-                              "unit",
-                              "pickup",
-                              "start_time_adjustment"
-                            ]
+                            "enum": ["base", "unit", "pickup", "start_time_adjustment"]
                           },
                           "title": {
                             "type": "string"
@@ -1116,28 +902,16 @@
                             "type": "string"
                           },
                           "pricingCategoryId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "pricingCategoryName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "unitName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "unitType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "currencyCode": {
                             "type": "string"
@@ -1149,16 +923,10 @@
                             "type": "number"
                           },
                           "sourceRuleId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "tierId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isSelected": {
                             "type": "boolean"
@@ -1205,12 +973,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1218,9 +981,7 @@
         },
         "operationId": "getAdminSellabilitySnapshotItems",
         "summary": "GET /v1/admin/sellability/snapshot-items",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -1241,10 +1002,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1255,13 +1013,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "global",
-                "product",
-                "option",
-                "market",
-                "channel"
-              ]
+              "enum": ["global", "product", "option", "market", "channel"]
             },
             "required": false,
             "name": "scope",
@@ -1320,12 +1072,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -1353,13 +1100,7 @@
                           },
                           "scope": {
                             "type": "string",
-                            "enum": [
-                              "global",
-                              "product",
-                              "option",
-                              "market",
-                              "channel"
-                            ]
+                            "enum": ["global", "product", "option", "market", "channel"]
                           },
                           "policyType": {
                             "type": "string",
@@ -1375,28 +1116,16 @@
                             ]
                           },
                           "productId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "optionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "marketId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "channelId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "priority": {
                             "type": "number"
@@ -1413,16 +1142,10 @@
                             "additionalProperties": {}
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -1462,12 +1185,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1475,9 +1193,7 @@
         },
         "operationId": "getAdminSellabilityPolicies",
         "summary": "GET /v1/admin/sellability/policies",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -1496,13 +1212,7 @@
                   },
                   "scope": {
                     "type": "string",
-                    "enum": [
-                      "global",
-                      "product",
-                      "option",
-                      "market",
-                      "channel"
-                    ],
+                    "enum": ["global", "product", "option", "market", "channel"],
                     "default": "global"
                   },
                   "policyType": {
@@ -1520,28 +1230,16 @@
                     "default": "custom"
                   },
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "optionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "marketId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "channelId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "priority": {
                     "type": "integer",
@@ -1562,22 +1260,14 @@
                     "default": {}
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -1601,13 +1291,7 @@
                         },
                         "scope": {
                           "type": "string",
-                          "enum": [
-                            "global",
-                            "product",
-                            "option",
-                            "market",
-                            "channel"
-                          ]
+                          "enum": ["global", "product", "option", "market", "channel"]
                         },
                         "policyType": {
                           "type": "string",
@@ -1623,28 +1307,16 @@
                           ]
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "priority": {
                           "type": "number"
@@ -1661,16 +1333,10 @@
                           "additionalProperties": {}
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1700,9 +1366,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1718,9 +1382,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1728,9 +1390,7 @@
         },
         "operationId": "postAdminSellabilityPolicies",
         "summary": "POST /v1/admin/sellability/policies",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -1766,13 +1426,7 @@
                         },
                         "scope": {
                           "type": "string",
-                          "enum": [
-                            "global",
-                            "product",
-                            "option",
-                            "market",
-                            "channel"
-                          ]
+                          "enum": ["global", "product", "option", "market", "channel"]
                         },
                         "policyType": {
                           "type": "string",
@@ -1788,28 +1442,16 @@
                           ]
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "priority": {
                           "type": "number"
@@ -1826,16 +1468,10 @@
                           "additionalProperties": {}
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1865,9 +1501,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1883,9 +1517,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1893,9 +1525,7 @@
         },
         "operationId": "getAdminSellabilityPoliciesById",
         "summary": "GET /v1/admin/sellability/policies/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -1924,13 +1554,7 @@
                   },
                   "scope": {
                     "type": "string",
-                    "enum": [
-                      "global",
-                      "product",
-                      "option",
-                      "market",
-                      "channel"
-                    ],
+                    "enum": ["global", "product", "option", "market", "channel"],
                     "default": "global"
                   },
                   "policyType": {
@@ -1948,28 +1572,16 @@
                     "default": "custom"
                   },
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "optionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "marketId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "channelId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "priority": {
                     "type": "integer",
@@ -1990,16 +1602,10 @@
                     "default": {}
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2026,13 +1632,7 @@
                         },
                         "scope": {
                           "type": "string",
-                          "enum": [
-                            "global",
-                            "product",
-                            "option",
-                            "market",
-                            "channel"
-                          ]
+                          "enum": ["global", "product", "option", "market", "channel"]
                         },
                         "policyType": {
                           "type": "string",
@@ -2048,28 +1648,16 @@
                           ]
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "priority": {
                           "type": "number"
@@ -2086,16 +1674,10 @@
                           "additionalProperties": {}
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2125,9 +1707,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2143,9 +1723,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2161,9 +1739,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2171,9 +1747,7 @@
         },
         "operationId": "patchAdminSellabilityPoliciesById",
         "summary": "PATCH /v1/admin/sellability/policies/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2200,9 +1774,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2218,9 +1790,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2228,9 +1798,7 @@
         },
         "operationId": "deleteAdminSellabilityPoliciesById",
         "summary": "DELETE /v1/admin/sellability/policies/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -2251,10 +1819,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -2289,12 +1854,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "passed",
-                "blocked",
-                "warning",
-                "adjusted"
-              ]
+              "enum": ["passed", "blocked", "warning", "adjusted"]
             },
             "required": false,
             "name": "status",
@@ -2321,40 +1881,23 @@
                             "type": "string"
                           },
                           "snapshotItemId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "policyId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "candidateIndex": {
                             "type": "number"
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "passed",
-                              "blocked",
-                              "warning",
-                              "adjusted"
-                            ]
+                            "enum": ["passed", "blocked", "warning", "adjusted"]
                           },
                           "message": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "details": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -2384,12 +1927,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -2397,9 +1935,7 @@
         },
         "operationId": "getAdminSellabilityPolicyResults",
         "summary": "GET /v1/admin/sellability/policy-results",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2415,16 +1951,10 @@
                     "type": "string"
                   },
                   "snapshotItemId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "policyId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "candidateIndex": {
                     "type": "integer",
@@ -2433,31 +1963,18 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "passed",
-                      "blocked",
-                      "warning",
-                      "adjusted"
-                    ],
+                    "enum": ["passed", "blocked", "warning", "adjusted"],
                     "default": "passed"
                   },
                   "message": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "details": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "snapshotId"
-                ]
+                "required": ["snapshotId"]
               }
             }
           }
@@ -2480,40 +1997,23 @@
                           "type": "string"
                         },
                         "snapshotItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "policyId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "candidateIndex": {
                           "type": "number"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "passed",
-                            "blocked",
-                            "warning",
-                            "adjusted"
-                          ]
+                          "enum": ["passed", "blocked", "warning", "adjusted"]
                         },
                         "message": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "details": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2533,9 +2033,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2551,9 +2049,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2561,9 +2057,7 @@
         },
         "operationId": "postAdminSellabilityPolicyResults",
         "summary": "POST /v1/admin/sellability/policy-results",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -2598,40 +2092,23 @@
                           "type": "string"
                         },
                         "snapshotItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "policyId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "candidateIndex": {
                           "type": "number"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "passed",
-                            "blocked",
-                            "warning",
-                            "adjusted"
-                          ]
+                          "enum": ["passed", "blocked", "warning", "adjusted"]
                         },
                         "message": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "details": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2651,9 +2128,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2669,9 +2144,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2679,9 +2152,7 @@
         },
         "operationId": "getAdminSellabilityPolicyResultsById",
         "summary": "GET /v1/admin/sellability/policy-results/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2707,16 +2178,10 @@
                     "type": "string"
                   },
                   "snapshotItemId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "policyId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "candidateIndex": {
                     "type": "integer",
@@ -2725,25 +2190,14 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "passed",
-                      "blocked",
-                      "warning",
-                      "adjusted"
-                    ],
+                    "enum": ["passed", "blocked", "warning", "adjusted"],
                     "default": "passed"
                   },
                   "message": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "details": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2769,40 +2223,23 @@
                           "type": "string"
                         },
                         "snapshotItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "policyId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "candidateIndex": {
                           "type": "number"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "passed",
-                            "blocked",
-                            "warning",
-                            "adjusted"
-                          ]
+                          "enum": ["passed", "blocked", "warning", "adjusted"]
                         },
                         "message": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "details": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2822,9 +2259,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2840,9 +2275,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2858,9 +2291,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2868,9 +2299,7 @@
         },
         "operationId": "patchAdminSellabilityPolicyResultsById",
         "summary": "PATCH /v1/admin/sellability/policy-results/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -2897,9 +2326,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2915,9 +2342,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2925,9 +2350,7 @@
         },
         "operationId": "deleteAdminSellabilityPolicyResultsById",
         "summary": "DELETE /v1/admin/sellability/policy-results/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -2948,10 +2371,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -2978,13 +2398,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "pending",
-                "running",
-                "completed",
-                "failed",
-                "expired"
-              ]
+              "enum": ["pending", "running", "completed", "failed", "expired"]
             },
             "required": false,
             "name": "status",
@@ -3011,41 +2425,23 @@
                             "type": "string"
                           },
                           "snapshotId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "pending",
-                              "running",
-                              "completed",
-                              "failed",
-                              "expired"
-                            ]
+                            "enum": ["pending", "running", "completed", "failed", "expired"]
                           },
                           "startedAt": {
                             "type": "string"
                           },
                           "completedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3079,12 +2475,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -3092,9 +2483,7 @@
         },
         "operationId": "getAdminSellabilityOfferRefreshRuns",
         "summary": "GET /v1/admin/sellability/offer-refresh-runs",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3110,53 +2499,30 @@
                     "type": "string"
                   },
                   "snapshotId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "pending",
-                      "running",
-                      "completed",
-                      "failed",
-                      "expired"
-                    ],
+                    "enum": ["pending", "running", "completed", "failed", "expired"],
                     "default": "pending"
                   },
                   "startedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "completedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "offerId"
-                ]
+                "required": ["offerId"]
               }
             }
           }
@@ -3179,41 +2545,23 @@
                           "type": "string"
                         },
                         "snapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "pending",
-                            "running",
-                            "completed",
-                            "failed",
-                            "expired"
-                          ]
+                          "enum": ["pending", "running", "completed", "failed", "expired"]
                         },
                         "startedAt": {
                           "type": "string"
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3237,9 +2585,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3255,9 +2601,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3265,9 +2609,7 @@
         },
         "operationId": "postAdminSellabilityOfferRefreshRuns",
         "summary": "POST /v1/admin/sellability/offer-refresh-runs",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -3302,41 +2644,23 @@
                           "type": "string"
                         },
                         "snapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "pending",
-                            "running",
-                            "completed",
-                            "failed",
-                            "expired"
-                          ]
+                          "enum": ["pending", "running", "completed", "failed", "expired"]
                         },
                         "startedAt": {
                           "type": "string"
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3360,9 +2684,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3378,9 +2700,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3388,9 +2708,7 @@
         },
         "operationId": "getAdminSellabilityOfferRefreshRunsById",
         "summary": "GET /v1/admin/sellability/offer-refresh-runs/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3416,47 +2734,26 @@
                     "type": "string"
                   },
                   "snapshotId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "pending",
-                      "running",
-                      "completed",
-                      "failed",
-                      "expired"
-                    ],
+                    "enum": ["pending", "running", "completed", "failed", "expired"],
                     "default": "pending"
                   },
                   "startedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "completedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -3482,41 +2779,23 @@
                           "type": "string"
                         },
                         "snapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "pending",
-                            "running",
-                            "completed",
-                            "failed",
-                            "expired"
-                          ]
+                          "enum": ["pending", "running", "completed", "failed", "expired"]
                         },
                         "startedAt": {
                           "type": "string"
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3540,9 +2819,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3558,9 +2835,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3576,9 +2851,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3586,9 +2859,7 @@
         },
         "operationId": "patchAdminSellabilityOfferRefreshRunsById",
         "summary": "PATCH /v1/admin/sellability/offer-refresh-runs/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3615,9 +2886,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -3633,9 +2902,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3643,9 +2910,7 @@
         },
         "operationId": "deleteAdminSellabilityOfferRefreshRunsById",
         "summary": "DELETE /v1/admin/sellability/offer-refresh-runs/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -3666,10 +2931,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -3696,12 +2958,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "scheduled",
-                "expired",
-                "cancelled",
-                "superseded"
-              ]
+              "enum": ["scheduled", "expired", "cancelled", "superseded"]
             },
             "required": false,
             "name": "status",
@@ -3728,40 +2985,23 @@
                             "type": "string"
                           },
                           "snapshotId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "expiresAt": {
                             "type": "string"
                           },
                           "expiredAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "scheduled",
-                              "expired",
-                              "cancelled",
-                              "superseded"
-                            ]
+                            "enum": ["scheduled", "expired", "cancelled", "superseded"]
                           },
                           "reason": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3795,12 +3035,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -3808,9 +3043,7 @@
         },
         "operationId": "getAdminSellabilityOfferExpirationEvents",
         "summary": "GET /v1/admin/sellability/offer-expiration-events",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -3826,50 +3059,30 @@
                     "type": "string"
                   },
                   "snapshotId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "expiresAt": {
                     "type": "string",
                     "format": "date-time"
                   },
                   "expiredAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "scheduled",
-                      "expired",
-                      "cancelled",
-                      "superseded"
-                    ],
+                    "enum": ["scheduled", "expired", "cancelled", "superseded"],
                     "default": "scheduled"
                   },
                   "reason": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "offerId",
-                  "expiresAt"
-                ]
+                "required": ["offerId", "expiresAt"]
               }
             }
           }
@@ -3892,40 +3105,23 @@
                           "type": "string"
                         },
                         "snapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
                           "type": "string"
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "scheduled",
-                            "expired",
-                            "cancelled",
-                            "superseded"
-                          ]
+                          "enum": ["scheduled", "expired", "cancelled", "superseded"]
                         },
                         "reason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3949,9 +3145,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3967,9 +3161,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3977,9 +3169,7 @@
         },
         "operationId": "postAdminSellabilityOfferExpirationEvents",
         "summary": "POST /v1/admin/sellability/offer-expiration-events",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -4014,40 +3204,23 @@
                           "type": "string"
                         },
                         "snapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
                           "type": "string"
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "scheduled",
-                            "expired",
-                            "cancelled",
-                            "superseded"
-                          ]
+                          "enum": ["scheduled", "expired", "cancelled", "superseded"]
                         },
                         "reason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4071,9 +3244,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4089,9 +3260,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4099,9 +3268,7 @@
         },
         "operationId": "getAdminSellabilityOfferExpirationEventsById",
         "summary": "GET /v1/admin/sellability/offer-expiration-events/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4127,43 +3294,26 @@
                     "type": "string"
                   },
                   "snapshotId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "expiresAt": {
                     "type": "string",
                     "format": "date-time"
                   },
                   "expiredAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "scheduled",
-                      "expired",
-                      "cancelled",
-                      "superseded"
-                    ],
+                    "enum": ["scheduled", "expired", "cancelled", "superseded"],
                     "default": "scheduled"
                   },
                   "reason": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -4189,40 +3339,23 @@
                           "type": "string"
                         },
                         "snapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
                           "type": "string"
                         },
                         "expiredAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "scheduled",
-                            "expired",
-                            "cancelled",
-                            "superseded"
-                          ]
+                          "enum": ["scheduled", "expired", "cancelled", "superseded"]
                         },
                         "reason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4246,9 +3379,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4264,9 +3395,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4282,9 +3411,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4292,9 +3419,7 @@
         },
         "operationId": "patchAdminSellabilityOfferExpirationEventsById",
         "summary": "PATCH /v1/admin/sellability/offer-expiration-events/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4321,9 +3446,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -4339,9 +3462,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4349,9 +3470,7 @@
         },
         "operationId": "deleteAdminSellabilityOfferExpirationEventsById",
         "summary": "DELETE /v1/admin/sellability/offer-expiration-events/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -4372,10 +3491,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -4402,15 +3518,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "sellable",
-                "blocked",
-                "warning",
-                "pricing",
-                "allotment",
-                "pickup",
-                "policy"
-              ]
+              "enum": ["sellable", "blocked", "warning", "pricing", "allotment", "pickup", "policy"]
             },
             "required": false,
             "name": "explanationType",
@@ -4437,10 +3545,7 @@
                             "type": "string"
                           },
                           "snapshotItemId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "candidateIndex": {
                             "type": "number"
@@ -4458,19 +3563,13 @@
                             ]
                           },
                           "code": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "message": {
                             "type": "string"
                           },
                           "details": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -4500,12 +3599,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -4513,9 +3607,7 @@
         },
         "operationId": "getAdminSellabilityExplanations",
         "summary": "GET /v1/admin/sellability/explanations",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4531,10 +3623,7 @@
                     "type": "string"
                   },
                   "snapshotItemId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "candidateIndex": {
                     "type": "integer",
@@ -4555,27 +3644,18 @@
                     "default": "policy"
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "message": {
                     "type": "string",
                     "minLength": 1
                   },
                   "details": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "snapshotId",
-                  "message"
-                ]
+                "required": ["snapshotId", "message"]
               }
             }
           }
@@ -4598,10 +3678,7 @@
                           "type": "string"
                         },
                         "snapshotItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "candidateIndex": {
                           "type": "number"
@@ -4619,19 +3696,13 @@
                           ]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "message": {
                           "type": "string"
                         },
                         "details": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4651,9 +3722,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4669,9 +3738,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4679,9 +3746,7 @@
         },
         "operationId": "postAdminSellabilityExplanations",
         "summary": "POST /v1/admin/sellability/explanations",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }
@@ -4716,10 +3781,7 @@
                           "type": "string"
                         },
                         "snapshotItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "candidateIndex": {
                           "type": "number"
@@ -4737,19 +3799,13 @@
                           ]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "message": {
                           "type": "string"
                         },
                         "details": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4769,9 +3825,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4787,9 +3841,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4797,9 +3849,7 @@
         },
         "operationId": "getAdminSellabilityExplanationsById",
         "summary": "GET /v1/admin/sellability/explanations/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -4825,10 +3875,7 @@
                     "type": "string"
                   },
                   "snapshotItemId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "candidateIndex": {
                     "type": "integer",
@@ -4849,20 +3896,14 @@
                     "default": "policy"
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "message": {
                     "type": "string",
                     "minLength": 1
                   },
                   "details": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -4888,10 +3929,7 @@
                           "type": "string"
                         },
                         "snapshotItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "candidateIndex": {
                           "type": "number"
@@ -4909,19 +3947,13 @@
                           ]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "message": {
                           "type": "string"
                         },
                         "details": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4941,9 +3973,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4959,9 +3989,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4977,9 +4005,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4987,9 +4013,7 @@
         },
         "operationId": "patchAdminSellabilityExplanationsById",
         "summary": "PATCH /v1/admin/sellability/explanations/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       },
@@ -5016,9 +4040,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -5034,9 +4056,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5044,9 +4064,7 @@
         },
         "operationId": "deleteAdminSellabilityExplanationsById",
         "summary": "DELETE /v1/admin/sellability/explanations/{id}",
-        "tags": [
-          "sellability"
-        ],
+        "tags": ["sellability"],
         "x-voyant-module": "sellability",
         "x-voyant-surface": "admin"
       }

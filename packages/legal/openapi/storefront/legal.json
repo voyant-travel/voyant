@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -160,13 +133,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "customer",
-                "supplier",
-                "partner",
-                "channel",
-                "other"
-              ],
+              "enum": ["customer", "supplier", "partner", "channel", "other"],
               "default": "customer"
             },
             "required": false,
@@ -222,38 +189,23 @@
                         },
                         "scope": {
                           "type": "string",
-                          "enum": [
-                            "customer",
-                            "supplier",
-                            "partner",
-                            "channel",
-                            "other"
-                          ]
+                          "enum": ["customer", "supplier", "partner", "channel", "other"]
                         },
                         "language": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "body": {
                           "type": "string"
                         },
                         "variableSchema": {},
                         "currentVersionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "channelId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isDefault": {
                           "type": "boolean"
@@ -285,9 +237,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -303,9 +253,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -313,9 +261,7 @@
         },
         "operationId": "getPublicLegalContractsTemplatesDefault",
         "summary": "GET /v1/public/legal/contracts/templates/default",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -344,9 +290,7 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "variables"
-                ]
+                "required": ["variables"]
               }
             }
           }
@@ -364,9 +308,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -382,9 +324,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -400,9 +340,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -410,9 +348,7 @@
         },
         "operationId": "postPublicLegalContractsTemplatesByIdPreview",
         "summary": "POST /v1/public/legal/contracts/templates/{id}/preview",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -441,9 +377,7 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "variables"
-                ]
+                "required": ["variables"]
               }
             }
           }
@@ -461,9 +395,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -479,9 +411,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -497,9 +427,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -507,9 +435,7 @@
         },
         "operationId": "postPublicLegalContractsTemplatesByIdRenderPreview",
         "summary": "POST /v1/public/legal/contracts/templates/{id}/render-preview",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -538,9 +464,7 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "variables"
-                ]
+                "required": ["variables"]
               }
             }
           }
@@ -558,9 +482,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -576,9 +498,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -594,9 +514,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -604,9 +522,7 @@
         },
         "operationId": "postPublicLegalContractsTemplatesBySlugBySlugPreview",
         "summary": "POST /v1/public/legal/contracts/templates/by-slug/{slug}/preview",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -635,9 +551,7 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "variables"
-                ]
+                "required": ["variables"]
               }
             }
           }
@@ -655,9 +569,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -673,9 +585,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -691,9 +601,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -701,9 +609,7 @@
         },
         "operationId": "postPublicLegalContractsTemplatesBySlugBySlugRenderPreview",
         "summary": "POST /v1/public/legal/contracts/templates/by-slug/{slug}/render-preview",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -740,20 +646,11 @@
                       "type": "object",
                       "properties": {
                         "contractNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "scope": {
                           "type": "string",
-                          "enum": [
-                            "customer",
-                            "supplier",
-                            "partner",
-                            "channel",
-                            "other"
-                          ]
+                          "enum": ["customer", "supplier", "partner", "channel", "other"]
                         },
                         "status": {
                           "type": "string",
@@ -771,51 +668,29 @@
                           "type": "string"
                         },
                         "issuedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "executedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "voidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "language": {
                           "type": "string"
                         },
                         "renderedBodyFormat": {
                           "type": "string",
-                          "enum": [
-                            "markdown",
-                            "html",
-                            "lexical_json"
-                          ]
+                          "enum": ["markdown", "html", "lexical_json"]
                         },
                         "renderedBody": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -834,9 +709,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -852,9 +725,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -870,9 +741,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -880,9 +749,7 @@
         },
         "operationId": "getPublicLegalContractsById",
         "summary": "GET /v1/public/legal/contracts/{id}",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -920,39 +787,23 @@
                     "maxLength": 255
                   },
                   "signerEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "signerRole": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "method": {
                     "type": "string",
-                    "enum": [
-                      "manual",
-                      "electronic",
-                      "docusign",
-                      "other"
-                    ],
+                    "enum": ["manual", "electronic", "docusign", "other"],
                     "default": "manual"
                   },
                   "signatureData": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 },
-                "required": [
-                  "signerName"
-                ]
+                "required": ["signerName"]
               }
             }
           }
@@ -975,25 +826,14 @@
                               "type": "string"
                             },
                             "signerEmail": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "signerRole": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "method": {
                               "type": "string",
-                              "enum": [
-                                "manual",
-                                "electronic",
-                                "docusign",
-                                "other"
-                              ]
+                              "enum": ["manual", "electronic", "docusign", "other"]
                             },
                             "signedAt": {
                               "type": "string"
@@ -1008,14 +848,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "signature"
-                      ]
+                      "required": ["signature"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1031,9 +867,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1049,9 +883,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1067,9 +899,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1085,9 +915,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1095,9 +923,7 @@
         },
         "operationId": "postPublicLegalContractsByIdSign",
         "summary": "POST /v1/public/legal/contracts/{id}/sign",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1151,19 +977,13 @@
                               "type": "string"
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "language": {
                               "type": "string"
                             },
                             "currentVersionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "metadata": {},
                             "createdAt": {
@@ -1199,38 +1019,22 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "draft",
-                                "published",
-                                "retired"
-                              ]
+                              "enum": ["draft", "published", "retired"]
                             },
                             "title": {
                               "type": "string"
                             },
                             "body": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "publishedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "publishedBy": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "retiredAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "metadata": {},
                             "createdAt": {
@@ -1255,15 +1059,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "policy",
-                        "version"
-                      ]
+                      "required": ["policy", "version"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1279,9 +1078,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1289,9 +1086,7 @@
         },
         "operationId": "getPublicLegalPoliciesBySlug",
         "summary": "GET /v1/public/legal/policies/{slug}",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1319,22 +1114,13 @@
                     "type": "string"
                   },
                   "personId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "bookingId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "targetKind": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "enum": [
                       "booking",
                       "quote_version",
@@ -1350,9 +1136,7 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "string"
@@ -1366,9 +1150,7 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "string",
@@ -1384,9 +1166,7 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "string",
@@ -1402,9 +1182,7 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "string"
@@ -1418,9 +1196,7 @@
                     "anyOf": [
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "string"
@@ -1431,46 +1207,28 @@
                     ]
                   },
                   "acceptedBy": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "method": {
                     "type": "string",
-                    "enum": [
-                      "implicit",
-                      "explicit_checkbox",
-                      "signature"
-                    ],
+                    "enum": ["implicit", "explicit_checkbox", "signature"],
                     "default": "implicit"
                   },
                   "ipAddress": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 64
                   },
                   "userAgent": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 500
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "policyVersionId"
-                ]
+                "required": ["policyVersionId"]
               }
             }
           }
@@ -1493,22 +1251,13 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetKind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "booking",
                             "quote_version",
@@ -1521,63 +1270,35 @@
                           ]
                         },
                         "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetProvider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetSourceRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyTransactionOfferId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyTransactionOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "acceptedAt": {
                           "type": "string"
                         },
                         "acceptedBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "method": {
                           "type": "string",
-                          "enum": [
-                            "implicit",
-                            "explicit_checkbox",
-                            "signature"
-                          ]
+                          "enum": ["implicit", "explicit_checkbox", "signature"]
                         },
                         "ipAddress": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "userAgent": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {},
                         "createdAt": {
@@ -1604,9 +1325,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1622,9 +1341,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1632,9 +1349,7 @@
         },
         "operationId": "postPublicLegalPoliciesByIdAccept",
         "summary": "POST /v1/public/legal/policies/{id}/accept",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1655,10 +1370,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1759,12 +1471,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "not_required",
-                "pending",
-                "accepted",
-                "declined"
-              ]
+              "enum": ["not_required", "pending", "accepted", "declined"]
             },
             "required": false,
             "name": "acceptanceStatus",
@@ -1788,22 +1495,13 @@
                             "type": "string"
                           },
                           "contractId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "policyVersionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "targetKind": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "enum": [
                               "booking",
                               "quote_version",
@@ -1816,34 +1514,19 @@
                             ]
                           },
                           "targetId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "targetProvider": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "targetSourceRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "legacyTransactionOfferId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "legacyTransactionOrderId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "termType": {
                             "type": "string",
@@ -1864,10 +1547,7 @@
                             "type": "string"
                           },
                           "language": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "required": {
                             "type": "boolean"
@@ -1877,24 +1557,13 @@
                           },
                           "acceptanceStatus": {
                             "type": "string",
-                            "enum": [
-                              "not_required",
-                              "pending",
-                              "accepted",
-                              "declined"
-                            ]
+                            "enum": ["not_required", "pending", "accepted", "declined"]
                           },
                           "acceptedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "acceptedBy": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {},
                           "createdAt": {
@@ -1938,12 +1607,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1951,9 +1615,7 @@
         },
         "operationId": "getPublicLegalTerms",
         "summary": "GET /v1/public/legal/terms",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }
@@ -1985,22 +1647,13 @@
                           "type": "string"
                         },
                         "contractId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "policyVersionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetKind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "booking",
                             "quote_version",
@@ -2013,34 +1666,19 @@
                           ]
                         },
                         "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetProvider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetSourceRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyTransactionOfferId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyTransactionOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "termType": {
                           "type": "string",
@@ -2061,10 +1699,7 @@
                           "type": "string"
                         },
                         "language": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "required": {
                           "type": "boolean"
@@ -2074,24 +1709,13 @@
                         },
                         "acceptanceStatus": {
                           "type": "string",
-                          "enum": [
-                            "not_required",
-                            "pending",
-                            "accepted",
-                            "declined"
-                          ]
+                          "enum": ["not_required", "pending", "accepted", "declined"]
                         },
                         "acceptedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "acceptedBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {},
                         "createdAt": {
@@ -2125,9 +1749,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2143,9 +1765,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2153,9 +1773,7 @@
         },
         "operationId": "getPublicLegalTermsById",
         "summary": "GET /v1/public/legal/terms/{id}",
-        "tags": [
-          "legal"
-        ],
+        "tags": ["legal"],
         "x-voyant-module": "legal",
         "x-voyant-surface": "storefront"
       }

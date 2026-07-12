@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -162,15 +135,11 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "enum": [
-                    "true"
-                  ]
+                  "enum": ["true"]
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "false"
-                  ]
+                  "enum": ["false"]
                 }
               ]
             },
@@ -201,10 +170,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "auto",
-                "code"
-              ]
+              "enum": ["auto", "code"]
             },
             "required": false,
             "name": "applicationMode",
@@ -213,12 +179,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "scheduled",
-                "expired",
-                "archived"
-              ]
+              "enum": ["active", "scheduled", "expired", "archived"]
             },
             "required": false,
             "name": "status",
@@ -273,10 +234,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -308,35 +266,20 @@
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "discountType": {
                             "type": "string",
-                            "enum": [
-                              "percentage",
-                              "fixed_amount"
-                            ]
+                            "enum": ["percentage", "fixed_amount"]
                           },
                           "discountPercent": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "discountAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "currency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "scope": {
                             "oneOf": [
@@ -345,23 +288,17 @@
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "global"
-                                    ]
+                                    "enum": ["global"]
                                   }
                                 },
-                                "required": [
-                                  "kind"
-                                ]
+                                "required": ["kind"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "products"
-                                    ]
+                                    "enum": ["products"]
                                   },
                                   "productIds": {
                                     "type": "array",
@@ -372,19 +309,14 @@
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "productIds"
-                                ]
+                                "required": ["kind", "productIds"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "categories"
-                                    ]
+                                    "enum": ["categories"]
                                   },
                                   "categoryIds": {
                                     "type": "array",
@@ -395,19 +327,14 @@
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "categoryIds"
-                                ]
+                                "required": ["kind", "categoryIds"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "destinations"
-                                    ]
+                                    "enum": ["destinations"]
                                   },
                                   "destinationIds": {
                                     "type": "array",
@@ -418,19 +345,14 @@
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "destinationIds"
-                                ]
+                                "required": ["kind", "destinationIds"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "markets"
-                                    ]
+                                    "enum": ["markets"]
                                   },
                                   "marketIds": {
                                     "type": "array",
@@ -441,47 +363,32 @@
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "marketIds"
-                                ]
+                                "required": ["kind", "marketIds"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "audiences"
-                                    ]
+                                    "enum": ["audiences"]
                                   },
                                   "audiences": {
                                     "type": "array",
                                     "items": {
                                       "type": "string",
-                                      "enum": [
-                                        "staff",
-                                        "customer",
-                                        "partner",
-                                        "supplier"
-                                      ]
+                                      "enum": ["staff", "customer", "partner", "supplier"]
                                     },
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "audiences"
-                                ]
+                                "required": ["kind", "audiences"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "fare_codes"
-                                    ]
+                                    "enum": ["fare_codes"]
                                   },
                                   "fareCodes": {
                                     "type": "array",
@@ -492,19 +399,14 @@
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "fareCodes"
-                                ]
+                                "required": ["kind", "fareCodes"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "cabin_grades"
-                                    ]
+                                    "enum": ["cabin_grades"]
                                   },
                                   "cabinGradeCodes": {
                                     "type": "array",
@@ -515,10 +417,7 @@
                                     "minItems": 1
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "cabinGradeCodes"
-                                ]
+                                "required": ["kind", "cabinGradeCodes"]
                               }
                             ]
                           },
@@ -544,22 +443,13 @@
                             }
                           },
                           "validFrom": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "validUntil": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "code": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "stackable": {
                             "type": "boolean"
@@ -606,12 +496,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -619,9 +504,7 @@
         },
         "operationId": "getAdminPromotions",
         "summary": "GET /v1/admin/promotions",
-        "tags": [
-          "promotions"
-        ],
+        "tags": ["promotions"],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       },
@@ -646,38 +529,23 @@
                     "pattern": "^[a-z0-9-]+$"
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "discountType": {
                     "type": "string",
-                    "enum": [
-                      "percentage",
-                      "fixed_amount"
-                    ]
+                    "enum": ["percentage", "fixed_amount"]
                   },
                   "discountPercent": {
-                    "type": [
-                      "number",
-                      "null"
-                    ],
+                    "type": ["number", "null"],
                     "exclusiveMinimum": 0,
                     "maximum": 100
                   },
                   "discountAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 3,
                     "maxLength": 3,
                     "pattern": "^[A-Z]{3}$"
@@ -689,23 +557,17 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "global"
-                            ]
+                            "enum": ["global"]
                           }
                         },
-                        "required": [
-                          "kind"
-                        ]
+                        "required": ["kind"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "products"
-                            ]
+                            "enum": ["products"]
                           },
                           "productIds": {
                             "type": "array",
@@ -716,19 +578,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productIds"
-                        ]
+                        "required": ["kind", "productIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "categories"
-                            ]
+                            "enum": ["categories"]
                           },
                           "categoryIds": {
                             "type": "array",
@@ -739,19 +596,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "categoryIds"
-                        ]
+                        "required": ["kind", "categoryIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "destinations"
-                            ]
+                            "enum": ["destinations"]
                           },
                           "destinationIds": {
                             "type": "array",
@@ -762,19 +614,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "destinationIds"
-                        ]
+                        "required": ["kind", "destinationIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "markets"
-                            ]
+                            "enum": ["markets"]
                           },
                           "marketIds": {
                             "type": "array",
@@ -785,47 +632,32 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "marketIds"
-                        ]
+                        "required": ["kind", "marketIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "audiences"
-                            ]
+                            "enum": ["audiences"]
                           },
                           "audiences": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": [
-                                "staff",
-                                "customer",
-                                "partner",
-                                "supplier"
-                              ]
+                              "enum": ["staff", "customer", "partner", "supplier"]
                             },
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "audiences"
-                        ]
+                        "required": ["kind", "audiences"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "fare_codes"
-                            ]
+                            "enum": ["fare_codes"]
                           },
                           "fareCodes": {
                             "type": "array",
@@ -836,19 +668,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "fareCodes"
-                        ]
+                        "required": ["kind", "fareCodes"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "cabin_grades"
-                            ]
+                            "enum": ["cabin_grades"]
                           },
                           "cabinGradeCodes": {
                             "type": "array",
@@ -859,10 +686,7 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "cabinGradeCodes"
-                        ]
+                        "required": ["kind", "cabinGradeCodes"]
                       }
                     ]
                   },
@@ -889,24 +713,15 @@
                     "default": {}
                   },
                   "validFrom": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "validUntil": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 80,
                     "pattern": "^[A-Za-z0-9_-]+$"
@@ -920,19 +735,11 @@
                     "default": true
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "name",
-                  "slug",
-                  "discountType",
-                  "scope"
-                ]
+                "required": ["name", "slug", "discountType", "scope"]
               }
             }
           }
@@ -958,35 +765,20 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountType": {
                           "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed_amount"
-                          ]
+                          "enum": ["percentage", "fixed_amount"]
                         },
                         "discountPercent": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "scope": {
                           "oneOf": [
@@ -995,23 +787,17 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "global"
-                                  ]
+                                  "enum": ["global"]
                                 }
                               },
-                              "required": [
-                                "kind"
-                              ]
+                              "required": ["kind"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "products"
-                                  ]
+                                  "enum": ["products"]
                                 },
                                 "productIds": {
                                   "type": "array",
@@ -1022,19 +808,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "productIds"
-                              ]
+                              "required": ["kind", "productIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "categories"
-                                  ]
+                                  "enum": ["categories"]
                                 },
                                 "categoryIds": {
                                   "type": "array",
@@ -1045,19 +826,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "categoryIds"
-                              ]
+                              "required": ["kind", "categoryIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "destinations"
-                                  ]
+                                  "enum": ["destinations"]
                                 },
                                 "destinationIds": {
                                   "type": "array",
@@ -1068,19 +844,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "destinationIds"
-                              ]
+                              "required": ["kind", "destinationIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "markets"
-                                  ]
+                                  "enum": ["markets"]
                                 },
                                 "marketIds": {
                                   "type": "array",
@@ -1091,47 +862,32 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "marketIds"
-                              ]
+                              "required": ["kind", "marketIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "audiences"
-                                  ]
+                                  "enum": ["audiences"]
                                 },
                                 "audiences": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": [
-                                      "staff",
-                                      "customer",
-                                      "partner",
-                                      "supplier"
-                                    ]
+                                    "enum": ["staff", "customer", "partner", "supplier"]
                                   },
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "audiences"
-                              ]
+                              "required": ["kind", "audiences"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "fare_codes"
-                                  ]
+                                  "enum": ["fare_codes"]
                                 },
                                 "fareCodes": {
                                   "type": "array",
@@ -1142,19 +898,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "fareCodes"
-                              ]
+                              "required": ["kind", "fareCodes"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "cabin_grades"
-                                  ]
+                                  "enum": ["cabin_grades"]
                                 },
                                 "cabinGradeCodes": {
                                   "type": "array",
@@ -1165,10 +916,7 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "cabinGradeCodes"
-                              ]
+                              "required": ["kind", "cabinGradeCodes"]
                             }
                           ]
                         },
@@ -1194,22 +942,13 @@
                           }
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stackable": {
                           "type": "boolean"
@@ -1246,9 +985,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1274,9 +1011,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1302,9 +1037,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1312,9 +1045,7 @@
         },
         "operationId": "postAdminPromotions",
         "summary": "POST /v1/admin/promotions",
-        "tags": [
-          "promotions"
-        ],
+        "tags": ["promotions"],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       }
@@ -1352,35 +1083,20 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountType": {
                           "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed_amount"
-                          ]
+                          "enum": ["percentage", "fixed_amount"]
                         },
                         "discountPercent": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "scope": {
                           "oneOf": [
@@ -1389,23 +1105,17 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "global"
-                                  ]
+                                  "enum": ["global"]
                                 }
                               },
-                              "required": [
-                                "kind"
-                              ]
+                              "required": ["kind"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "products"
-                                  ]
+                                  "enum": ["products"]
                                 },
                                 "productIds": {
                                   "type": "array",
@@ -1416,19 +1126,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "productIds"
-                              ]
+                              "required": ["kind", "productIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "categories"
-                                  ]
+                                  "enum": ["categories"]
                                 },
                                 "categoryIds": {
                                   "type": "array",
@@ -1439,19 +1144,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "categoryIds"
-                              ]
+                              "required": ["kind", "categoryIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "destinations"
-                                  ]
+                                  "enum": ["destinations"]
                                 },
                                 "destinationIds": {
                                   "type": "array",
@@ -1462,19 +1162,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "destinationIds"
-                              ]
+                              "required": ["kind", "destinationIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "markets"
-                                  ]
+                                  "enum": ["markets"]
                                 },
                                 "marketIds": {
                                   "type": "array",
@@ -1485,47 +1180,32 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "marketIds"
-                              ]
+                              "required": ["kind", "marketIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "audiences"
-                                  ]
+                                  "enum": ["audiences"]
                                 },
                                 "audiences": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": [
-                                      "staff",
-                                      "customer",
-                                      "partner",
-                                      "supplier"
-                                    ]
+                                    "enum": ["staff", "customer", "partner", "supplier"]
                                   },
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "audiences"
-                              ]
+                              "required": ["kind", "audiences"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "fare_codes"
-                                  ]
+                                  "enum": ["fare_codes"]
                                 },
                                 "fareCodes": {
                                   "type": "array",
@@ -1536,19 +1216,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "fareCodes"
-                              ]
+                              "required": ["kind", "fareCodes"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "cabin_grades"
-                                  ]
+                                  "enum": ["cabin_grades"]
                                 },
                                 "cabinGradeCodes": {
                                   "type": "array",
@@ -1559,10 +1234,7 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "cabinGradeCodes"
-                              ]
+                              "required": ["kind", "cabinGradeCodes"]
                             }
                           ]
                         },
@@ -1588,22 +1260,13 @@
                           }
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stackable": {
                           "type": "boolean"
@@ -1640,9 +1303,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1658,9 +1319,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1668,9 +1327,7 @@
         },
         "operationId": "getAdminPromotionsById",
         "summary": "GET /v1/admin/promotions/{id}",
-        "tags": [
-          "promotions"
-        ],
+        "tags": ["promotions"],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       },
@@ -1705,38 +1362,23 @@
                     "pattern": "^[a-z0-9-]+$"
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "discountType": {
                     "type": "string",
-                    "enum": [
-                      "percentage",
-                      "fixed_amount"
-                    ]
+                    "enum": ["percentage", "fixed_amount"]
                   },
                   "discountPercent": {
-                    "type": [
-                      "number",
-                      "null"
-                    ],
+                    "type": ["number", "null"],
                     "exclusiveMinimum": 0,
                     "maximum": 100
                   },
                   "discountAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 3,
                     "maxLength": 3,
                     "pattern": "^[A-Z]{3}$"
@@ -1748,23 +1390,17 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "global"
-                            ]
+                            "enum": ["global"]
                           }
                         },
-                        "required": [
-                          "kind"
-                        ]
+                        "required": ["kind"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "products"
-                            ]
+                            "enum": ["products"]
                           },
                           "productIds": {
                             "type": "array",
@@ -1775,19 +1411,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "productIds"
-                        ]
+                        "required": ["kind", "productIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "categories"
-                            ]
+                            "enum": ["categories"]
                           },
                           "categoryIds": {
                             "type": "array",
@@ -1798,19 +1429,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "categoryIds"
-                        ]
+                        "required": ["kind", "categoryIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "destinations"
-                            ]
+                            "enum": ["destinations"]
                           },
                           "destinationIds": {
                             "type": "array",
@@ -1821,19 +1447,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "destinationIds"
-                        ]
+                        "required": ["kind", "destinationIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "markets"
-                            ]
+                            "enum": ["markets"]
                           },
                           "marketIds": {
                             "type": "array",
@@ -1844,47 +1465,32 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "marketIds"
-                        ]
+                        "required": ["kind", "marketIds"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "audiences"
-                            ]
+                            "enum": ["audiences"]
                           },
                           "audiences": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": [
-                                "staff",
-                                "customer",
-                                "partner",
-                                "supplier"
-                              ]
+                              "enum": ["staff", "customer", "partner", "supplier"]
                             },
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "audiences"
-                        ]
+                        "required": ["kind", "audiences"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "fare_codes"
-                            ]
+                            "enum": ["fare_codes"]
                           },
                           "fareCodes": {
                             "type": "array",
@@ -1895,19 +1501,14 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "fareCodes"
-                        ]
+                        "required": ["kind", "fareCodes"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "cabin_grades"
-                            ]
+                            "enum": ["cabin_grades"]
                           },
                           "cabinGradeCodes": {
                             "type": "array",
@@ -1918,10 +1519,7 @@
                             "minItems": 1
                           }
                         },
-                        "required": [
-                          "kind",
-                          "cabinGradeCodes"
-                        ]
+                        "required": ["kind", "cabinGradeCodes"]
                       }
                     ]
                   },
@@ -1948,24 +1546,15 @@
                     "default": {}
                   },
                   "validFrom": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "validUntil": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 80,
                     "pattern": "^[A-Za-z0-9_-]+$"
@@ -1979,10 +1568,7 @@
                     "default": true
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2011,35 +1597,20 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountType": {
                           "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed_amount"
-                          ]
+                          "enum": ["percentage", "fixed_amount"]
                         },
                         "discountPercent": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "scope": {
                           "oneOf": [
@@ -2048,23 +1619,17 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "global"
-                                  ]
+                                  "enum": ["global"]
                                 }
                               },
-                              "required": [
-                                "kind"
-                              ]
+                              "required": ["kind"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "products"
-                                  ]
+                                  "enum": ["products"]
                                 },
                                 "productIds": {
                                   "type": "array",
@@ -2075,19 +1640,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "productIds"
-                              ]
+                              "required": ["kind", "productIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "categories"
-                                  ]
+                                  "enum": ["categories"]
                                 },
                                 "categoryIds": {
                                   "type": "array",
@@ -2098,19 +1658,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "categoryIds"
-                              ]
+                              "required": ["kind", "categoryIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "destinations"
-                                  ]
+                                  "enum": ["destinations"]
                                 },
                                 "destinationIds": {
                                   "type": "array",
@@ -2121,19 +1676,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "destinationIds"
-                              ]
+                              "required": ["kind", "destinationIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "markets"
-                                  ]
+                                  "enum": ["markets"]
                                 },
                                 "marketIds": {
                                   "type": "array",
@@ -2144,47 +1694,32 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "marketIds"
-                              ]
+                              "required": ["kind", "marketIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "audiences"
-                                  ]
+                                  "enum": ["audiences"]
                                 },
                                 "audiences": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": [
-                                      "staff",
-                                      "customer",
-                                      "partner",
-                                      "supplier"
-                                    ]
+                                    "enum": ["staff", "customer", "partner", "supplier"]
                                   },
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "audiences"
-                              ]
+                              "required": ["kind", "audiences"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "fare_codes"
-                                  ]
+                                  "enum": ["fare_codes"]
                                 },
                                 "fareCodes": {
                                   "type": "array",
@@ -2195,19 +1730,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "fareCodes"
-                              ]
+                              "required": ["kind", "fareCodes"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "cabin_grades"
-                                  ]
+                                  "enum": ["cabin_grades"]
                                 },
                                 "cabinGradeCodes": {
                                   "type": "array",
@@ -2218,10 +1748,7 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "cabinGradeCodes"
-                              ]
+                              "required": ["kind", "cabinGradeCodes"]
                             }
                           ]
                         },
@@ -2247,22 +1774,13 @@
                           }
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stackable": {
                           "type": "boolean"
@@ -2299,9 +1817,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2327,9 +1843,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2345,9 +1859,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2373,9 +1885,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2383,9 +1893,7 @@
         },
         "operationId": "patchAdminPromotionsById",
         "summary": "PATCH /v1/admin/promotions/{id}",
-        "tags": [
-          "promotions"
-        ],
+        "tags": ["promotions"],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       },
@@ -2415,14 +1923,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2438,9 +1942,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2456,9 +1958,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2466,9 +1966,7 @@
         },
         "operationId": "deleteAdminPromotionsById",
         "summary": "DELETE /v1/admin/promotions/{id}",
-        "tags": [
-          "promotions"
-        ],
+        "tags": ["promotions"],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       }
@@ -2506,35 +2004,20 @@
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountType": {
                           "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed_amount"
-                          ]
+                          "enum": ["percentage", "fixed_amount"]
                         },
                         "discountPercent": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "scope": {
                           "oneOf": [
@@ -2543,23 +2026,17 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "global"
-                                  ]
+                                  "enum": ["global"]
                                 }
                               },
-                              "required": [
-                                "kind"
-                              ]
+                              "required": ["kind"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "products"
-                                  ]
+                                  "enum": ["products"]
                                 },
                                 "productIds": {
                                   "type": "array",
@@ -2570,19 +2047,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "productIds"
-                              ]
+                              "required": ["kind", "productIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "categories"
-                                  ]
+                                  "enum": ["categories"]
                                 },
                                 "categoryIds": {
                                   "type": "array",
@@ -2593,19 +2065,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "categoryIds"
-                              ]
+                              "required": ["kind", "categoryIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "destinations"
-                                  ]
+                                  "enum": ["destinations"]
                                 },
                                 "destinationIds": {
                                   "type": "array",
@@ -2616,19 +2083,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "destinationIds"
-                              ]
+                              "required": ["kind", "destinationIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "markets"
-                                  ]
+                                  "enum": ["markets"]
                                 },
                                 "marketIds": {
                                   "type": "array",
@@ -2639,47 +2101,32 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "marketIds"
-                              ]
+                              "required": ["kind", "marketIds"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "audiences"
-                                  ]
+                                  "enum": ["audiences"]
                                 },
                                 "audiences": {
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": [
-                                      "staff",
-                                      "customer",
-                                      "partner",
-                                      "supplier"
-                                    ]
+                                    "enum": ["staff", "customer", "partner", "supplier"]
                                   },
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "audiences"
-                              ]
+                              "required": ["kind", "audiences"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "fare_codes"
-                                  ]
+                                  "enum": ["fare_codes"]
                                 },
                                 "fareCodes": {
                                   "type": "array",
@@ -2690,19 +2137,14 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "fareCodes"
-                              ]
+                              "required": ["kind", "fareCodes"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "kind": {
                                   "type": "string",
-                                  "enum": [
-                                    "cabin_grades"
-                                  ]
+                                  "enum": ["cabin_grades"]
                                 },
                                 "cabinGradeCodes": {
                                   "type": "array",
@@ -2713,10 +2155,7 @@
                                   "minItems": 1
                                 }
                               },
-                              "required": [
-                                "kind",
-                                "cabinGradeCodes"
-                              ]
+                              "required": ["kind", "cabinGradeCodes"]
                             }
                           ]
                         },
@@ -2742,22 +2181,13 @@
                           }
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stackable": {
                           "type": "boolean"
@@ -2794,9 +2224,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2812,9 +2240,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2822,9 +2248,7 @@
         },
         "operationId": "postAdminPromotionsByIdArchive",
         "summary": "POST /v1/admin/promotions/{id}/archive",
-        "tags": [
-          "promotions"
-        ],
+        "tags": ["promotions"],
         "x-voyant-module": "promotions",
         "x-voyant-surface": "admin"
       }

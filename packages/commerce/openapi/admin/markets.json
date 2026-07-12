@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -170,10 +143,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -184,11 +154,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "inactive",
-                "archived"
-              ]
+              "enum": ["active", "inactive", "archived"]
             },
             "required": false,
             "name": "status",
@@ -235,23 +201,13 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "inactive",
-                              "archived"
-                            ]
+                            "enum": ["active", "inactive", "archived"]
                           },
                           "regionCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "countryCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "defaultLanguageTag": {
                             "type": "string"
@@ -260,22 +216,13 @@
                             "type": "string"
                           },
                           "timezone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "taxContext": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -312,12 +259,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -325,9 +267,7 @@
         },
         "operationId": "getAdminMarketsMarkets",
         "summary": "GET /v1/admin/markets/markets",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -351,25 +291,15 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "archived"
-                    ],
+                    "enum": ["active", "inactive", "archived"],
                     "default": "active"
                   },
                   "regionCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 20
                   },
                   "countryCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2
                   },
                   "defaultLanguageTag": {
@@ -385,33 +315,19 @@
                     "pattern": "^[A-Z]{3}$"
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "taxContext": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "code",
-                  "name",
-                  "defaultLanguageTag",
-                  "defaultCurrency"
-                ]
+                "required": ["code", "name", "defaultLanguageTag", "defaultCurrency"]
               }
             }
           }
@@ -438,23 +354,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "regionCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "countryCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "defaultLanguageTag": {
                           "type": "string"
@@ -463,22 +369,13 @@
                           "type": "string"
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "taxContext": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -505,9 +402,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -523,9 +418,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -533,9 +426,7 @@
         },
         "operationId": "postAdminMarketsMarkets",
         "summary": "POST /v1/admin/markets/markets",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -574,23 +465,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "regionCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "countryCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "defaultLanguageTag": {
                           "type": "string"
@@ -599,22 +480,13 @@
                           "type": "string"
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "taxContext": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -641,9 +513,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -659,9 +529,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -669,9 +537,7 @@
         },
         "operationId": "getAdminMarketsMarketsById",
         "summary": "GET /v1/admin/markets/markets/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -705,25 +571,15 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "archived"
-                    ],
+                    "enum": ["active", "inactive", "archived"],
                     "default": "active"
                   },
                   "regionCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 20
                   },
                   "countryCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2
                   },
                   "defaultLanguageTag": {
@@ -739,24 +595,15 @@
                     "pattern": "^[A-Z]{3}$"
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "taxContext": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -786,23 +633,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "regionCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "countryCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "defaultLanguageTag": {
                           "type": "string"
@@ -811,22 +648,13 @@
                           "type": "string"
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "taxContext": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -853,9 +681,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -871,9 +697,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -889,9 +713,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -899,9 +721,7 @@
         },
         "operationId": "patchAdminMarketsMarketsById",
         "summary": "PATCH /v1/admin/markets/markets/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -926,14 +746,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -949,9 +765,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -959,9 +773,7 @@
         },
         "operationId": "deleteAdminMarketsMarketsById",
         "summary": "DELETE /v1/admin/markets/markets/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -982,10 +794,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1015,12 +824,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -1087,12 +891,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1100,9 +899,7 @@
         },
         "operationId": "getAdminMarketsMarketLocales",
         "summary": "GET /v1/admin/markets/market-locales",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -1146,9 +943,7 @@
                     "default": true
                   }
                 },
-                "required": [
-                  "languageTag"
-                ]
+                "required": ["languageTag"]
               }
             }
           }
@@ -1201,9 +996,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1219,9 +1012,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1237,9 +1028,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1247,9 +1036,7 @@
         },
         "operationId": "postAdminMarketsMarketsByIdLocales",
         "summary": "POST /v1/admin/markets/markets/{id}/locales",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -1345,9 +1132,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1363,9 +1148,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1381,9 +1164,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1391,9 +1172,7 @@
         },
         "operationId": "patchAdminMarketsMarketLocalesById",
         "summary": "PATCH /v1/admin/markets/market-locales/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -1418,14 +1197,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -1441,9 +1216,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1451,9 +1224,7 @@
         },
         "operationId": "deleteAdminMarketsMarketLocalesById",
         "summary": "DELETE /v1/admin/markets/market-locales/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -1474,10 +1245,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1507,12 +1275,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -1587,12 +1350,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1600,9 +1358,7 @@
         },
         "operationId": "getAdminMarketsMarketCurrencies",
         "summary": "GET /v1/admin/markets/market-currencies",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -1654,9 +1410,7 @@
                     "default": true
                   }
                 },
-                "required": [
-                  "currencyCode"
-                ]
+                "required": ["currencyCode"]
               }
             }
           }
@@ -1717,9 +1471,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1735,9 +1487,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1753,9 +1503,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1763,9 +1511,7 @@
         },
         "operationId": "postAdminMarketsMarketsByIdCurrencies",
         "summary": "POST /v1/admin/markets/markets/{id}/currencies",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -1877,9 +1623,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1895,9 +1639,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1913,9 +1655,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1923,9 +1663,7 @@
         },
         "operationId": "patchAdminMarketsMarketCurrenciesById",
         "summary": "PATCH /v1/admin/markets/market-currencies/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -1950,14 +1688,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -1973,9 +1707,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1983,9 +1715,7 @@
         },
         "operationId": "deleteAdminMarketsMarketCurrenciesById",
         "summary": "DELETE /v1/admin/markets/market-currencies/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -2006,10 +1736,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -2020,14 +1747,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "manual",
-                "ecb",
-                "custom",
-                "channel",
-                "supplier",
-                "other"
-              ]
+              "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"]
             },
             "required": false,
             "name": "source",
@@ -2063,14 +1783,7 @@
                           },
                           "source": {
                             "type": "string",
-                            "enum": [
-                              "manual",
-                              "ecb",
-                              "custom",
-                              "channel",
-                              "supplier",
-                              "other"
-                            ]
+                            "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"]
                           },
                           "baseCurrency": {
                             "type": "string"
@@ -2079,28 +1792,16 @@
                             "type": "string"
                           },
                           "observedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sourceReference": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -2130,12 +1831,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -2143,9 +1839,7 @@
         },
         "operationId": "getAdminMarketsFxRateSets",
         "summary": "GET /v1/admin/markets/fx-rate-sets",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -2159,14 +1853,7 @@
                 "properties": {
                   "source": {
                     "type": "string",
-                    "enum": [
-                      "manual",
-                      "ecb",
-                      "custom",
-                      "channel",
-                      "supplier",
-                      "other"
-                    ],
+                    "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"],
                     "default": "manual"
                   },
                   "baseCurrency": {
@@ -2180,37 +1867,22 @@
                     "format": "date-time"
                   },
                   "observedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "sourceReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "baseCurrency",
-                  "effectiveAt"
-                ]
+                "required": ["baseCurrency", "effectiveAt"]
               }
             }
           }
@@ -2231,14 +1903,7 @@
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "manual",
-                            "ecb",
-                            "custom",
-                            "channel",
-                            "supplier",
-                            "other"
-                          ]
+                          "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"]
                         },
                         "baseCurrency": {
                           "type": "string"
@@ -2247,28 +1912,16 @@
                           "type": "string"
                         },
                         "observedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2288,9 +1941,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2306,9 +1957,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2316,9 +1965,7 @@
         },
         "operationId": "postAdminMarketsFxRateSets",
         "summary": "POST /v1/admin/markets/fx-rate-sets",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -2351,14 +1998,7 @@
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "manual",
-                            "ecb",
-                            "custom",
-                            "channel",
-                            "supplier",
-                            "other"
-                          ]
+                          "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"]
                         },
                         "baseCurrency": {
                           "type": "string"
@@ -2367,28 +2007,16 @@
                           "type": "string"
                         },
                         "observedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2408,9 +2036,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2426,9 +2052,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2436,9 +2060,7 @@
         },
         "operationId": "getAdminMarketsFxRateSetsById",
         "summary": "GET /v1/admin/markets/fx-rate-sets/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -2462,14 +2084,7 @@
                 "properties": {
                   "source": {
                     "type": "string",
-                    "enum": [
-                      "manual",
-                      "ecb",
-                      "custom",
-                      "channel",
-                      "supplier",
-                      "other"
-                    ],
+                    "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"],
                     "default": "manual"
                   },
                   "baseCurrency": {
@@ -2483,30 +2098,18 @@
                     "format": "date-time"
                   },
                   "observedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "sourceReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2530,14 +2133,7 @@
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "manual",
-                            "ecb",
-                            "custom",
-                            "channel",
-                            "supplier",
-                            "other"
-                          ]
+                          "enum": ["manual", "ecb", "custom", "channel", "supplier", "other"]
                         },
                         "baseCurrency": {
                           "type": "string"
@@ -2546,28 +2142,16 @@
                           "type": "string"
                         },
                         "observedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2587,9 +2171,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2605,9 +2187,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2623,9 +2203,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2633,9 +2211,7 @@
         },
         "operationId": "patchAdminMarketsFxRateSetsById",
         "summary": "PATCH /v1/admin/markets/fx-rate-sets/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -2660,14 +2236,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2683,9 +2255,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2693,9 +2263,7 @@
         },
         "operationId": "deleteAdminMarketsFxRateSetsById",
         "summary": "DELETE /v1/admin/markets/fx-rate-sets/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -2716,10 +2284,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -2787,16 +2352,10 @@
                             "type": "string"
                           },
                           "inverseRateDecimal": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "observedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -2824,12 +2383,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -2837,9 +2391,7 @@
         },
         "operationId": "getAdminMarketsExchangeRates",
         "summary": "GET /v1/admin/markets/exchange-rates",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -2880,25 +2432,15 @@
                     "pattern": "^\\d+(\\.\\d+)?$"
                   },
                   "inverseRateDecimal": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "pattern": "^\\d+(\\.\\d+)?$"
                   },
                   "observedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   }
                 },
-                "required": [
-                  "baseCurrency",
-                  "quoteCurrency",
-                  "rateDecimal"
-                ]
+                "required": ["baseCurrency", "quoteCurrency", "rateDecimal"]
               }
             }
           }
@@ -2930,16 +2472,10 @@
                           "type": "string"
                         },
                         "inverseRateDecimal": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "observedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -2957,9 +2493,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2975,9 +2509,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2993,9 +2525,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3003,9 +2533,7 @@
         },
         "operationId": "postAdminMarketsFxRateSetsByIdExchangeRates",
         "summary": "POST /v1/admin/markets/fx-rate-sets/{id}/exchange-rates",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -3046,17 +2574,11 @@
                     "pattern": "^\\d+(\\.\\d+)?$"
                   },
                   "inverseRateDecimal": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "pattern": "^\\d+(\\.\\d+)?$"
                   },
                   "observedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   }
                 }
@@ -3091,16 +2613,10 @@
                           "type": "string"
                         },
                         "inverseRateDecimal": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "observedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3118,9 +2634,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3136,9 +2650,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3154,9 +2666,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3164,9 +2674,7 @@
         },
         "operationId": "patchAdminMarketsExchangeRatesById",
         "summary": "PATCH /v1/admin/markets/exchange-rates/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -3191,14 +2699,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -3214,9 +2718,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3224,9 +2726,7 @@
         },
         "operationId": "deleteAdminMarketsExchangeRatesById",
         "summary": "DELETE /v1/admin/markets/exchange-rates/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -3247,10 +2747,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -3277,12 +2774,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -3321,16 +2813,10 @@
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3364,12 +2850,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -3377,9 +2858,7 @@
         },
         "operationId": "getAdminMarketsPriceCatalogs",
         "summary": "GET /v1/admin/markets/price-catalogs",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -3410,23 +2889,14 @@
                     "default": true
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "marketId",
-                  "priceCatalogId"
-                ]
+                "required": ["marketId", "priceCatalogId"]
               }
             }
           }
@@ -3461,16 +2931,10 @@
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3494,9 +2958,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3512,9 +2974,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3530,9 +2990,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3540,9 +2998,7 @@
         },
         "operationId": "postAdminMarketsPriceCatalogs",
         "summary": "POST /v1/admin/markets/price-catalogs",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -3589,16 +3045,10 @@
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3622,9 +3072,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3640,9 +3088,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3650,9 +3096,7 @@
         },
         "operationId": "getAdminMarketsPriceCatalogsById",
         "summary": "GET /v1/admin/markets/price-catalogs/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -3693,16 +3137,10 @@
                     "default": true
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -3740,16 +3178,10 @@
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3773,9 +3205,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3791,9 +3221,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3809,9 +3237,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3819,9 +3245,7 @@
         },
         "operationId": "patchAdminMarketsPriceCatalogsById",
         "summary": "PATCH /v1/admin/markets/price-catalogs/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -3846,14 +3270,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -3869,9 +3289,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3879,9 +3297,7 @@
         },
         "operationId": "deleteAdminMarketsPriceCatalogsById",
         "summary": "DELETE /v1/admin/markets/price-catalogs/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -3902,10 +3318,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -3940,11 +3353,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "sellable",
-                "on_request",
-                "unavailable"
-              ]
+              "enum": ["sellable", "on_request", "unavailable"]
             },
             "required": false,
             "name": "sellability",
@@ -3953,12 +3362,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -3988,62 +3392,34 @@
                             "type": "string"
                           },
                           "optionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "priceCatalogId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "visibility": {
                             "type": "string",
-                            "enum": [
-                              "public",
-                              "private",
-                              "hidden"
-                            ]
+                            "enum": ["public", "private", "hidden"]
                           },
                           "sellability": {
                             "type": "string",
-                            "enum": [
-                              "sellable",
-                              "on_request",
-                              "unavailable"
-                            ]
+                            "enum": ["sellable", "on_request", "unavailable"]
                           },
                           "channelScope": {
                             "type": "string",
-                            "enum": [
-                              "all",
-                              "b2c",
-                              "b2b",
-                              "internal"
-                            ]
+                            "enum": ["all", "b2c", "b2b", "internal"]
                           },
                           "active": {
                             "type": "boolean"
                           },
                           "availableFrom": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "availableTo": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -4080,12 +3456,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -4093,9 +3464,7 @@
         },
         "operationId": "getAdminMarketsProductRules",
         "summary": "GET /v1/admin/markets/product-rules",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -4114,43 +3483,24 @@
                     "type": "string"
                   },
                   "optionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "priceCatalogId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": [
-                      "public",
-                      "private",
-                      "hidden"
-                    ],
+                    "enum": ["public", "private", "hidden"],
                     "default": "public"
                   },
                   "sellability": {
                     "type": "string",
-                    "enum": [
-                      "sellable",
-                      "on_request",
-                      "unavailable"
-                    ],
+                    "enum": ["sellable", "on_request", "unavailable"],
                     "default": "sellable"
                   },
                   "channelScope": {
                     "type": "string",
-                    "enum": [
-                      "all",
-                      "b2c",
-                      "b2b",
-                      "internal"
-                    ],
+                    "enum": ["all", "b2c", "b2b", "internal"],
                     "default": "all"
                   },
                   "active": {
@@ -4158,30 +3508,18 @@
                     "default": true
                   },
                   "availableFrom": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "availableTo": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 },
-                "required": [
-                  "marketId",
-                  "productId"
-                ]
+                "required": ["marketId", "productId"]
               }
             }
           }
@@ -4207,62 +3545,34 @@
                           "type": "string"
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "priceCatalogId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "visibility": {
                           "type": "string",
-                          "enum": [
-                            "public",
-                            "private",
-                            "hidden"
-                          ]
+                          "enum": ["public", "private", "hidden"]
                         },
                         "sellability": {
                           "type": "string",
-                          "enum": [
-                            "sellable",
-                            "on_request",
-                            "unavailable"
-                          ]
+                          "enum": ["sellable", "on_request", "unavailable"]
                         },
                         "channelScope": {
                           "type": "string",
-                          "enum": [
-                            "all",
-                            "b2c",
-                            "b2b",
-                            "internal"
-                          ]
+                          "enum": ["all", "b2c", "b2b", "internal"]
                         },
                         "active": {
                           "type": "boolean"
                         },
                         "availableFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "availableTo": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4289,9 +3599,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4307,9 +3615,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4325,9 +3631,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4335,9 +3639,7 @@
         },
         "operationId": "postAdminMarketsProductRules",
         "summary": "POST /v1/admin/markets/product-rules",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -4375,62 +3677,34 @@
                           "type": "string"
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "priceCatalogId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "visibility": {
                           "type": "string",
-                          "enum": [
-                            "public",
-                            "private",
-                            "hidden"
-                          ]
+                          "enum": ["public", "private", "hidden"]
                         },
                         "sellability": {
                           "type": "string",
-                          "enum": [
-                            "sellable",
-                            "on_request",
-                            "unavailable"
-                          ]
+                          "enum": ["sellable", "on_request", "unavailable"]
                         },
                         "channelScope": {
                           "type": "string",
-                          "enum": [
-                            "all",
-                            "b2c",
-                            "b2b",
-                            "internal"
-                          ]
+                          "enum": ["all", "b2c", "b2b", "internal"]
                         },
                         "active": {
                           "type": "boolean"
                         },
                         "availableFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "availableTo": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4457,9 +3731,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4475,9 +3747,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4485,9 +3755,7 @@
         },
         "operationId": "getAdminMarketsProductRulesById",
         "summary": "GET /v1/admin/markets/product-rules/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -4516,43 +3784,24 @@
                     "type": "string"
                   },
                   "optionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "priceCatalogId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": [
-                      "public",
-                      "private",
-                      "hidden"
-                    ],
+                    "enum": ["public", "private", "hidden"],
                     "default": "public"
                   },
                   "sellability": {
                     "type": "string",
-                    "enum": [
-                      "sellable",
-                      "on_request",
-                      "unavailable"
-                    ],
+                    "enum": ["sellable", "on_request", "unavailable"],
                     "default": "sellable"
                   },
                   "channelScope": {
                     "type": "string",
-                    "enum": [
-                      "all",
-                      "b2c",
-                      "b2b",
-                      "internal"
-                    ],
+                    "enum": ["all", "b2c", "b2b", "internal"],
                     "default": "all"
                   },
                   "active": {
@@ -4560,24 +3809,15 @@
                     "default": true
                   },
                   "availableFrom": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "availableTo": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -4605,62 +3845,34 @@
                           "type": "string"
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "priceCatalogId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "visibility": {
                           "type": "string",
-                          "enum": [
-                            "public",
-                            "private",
-                            "hidden"
-                          ]
+                          "enum": ["public", "private", "hidden"]
                         },
                         "sellability": {
                           "type": "string",
-                          "enum": [
-                            "sellable",
-                            "on_request",
-                            "unavailable"
-                          ]
+                          "enum": ["sellable", "on_request", "unavailable"]
                         },
                         "channelScope": {
                           "type": "string",
-                          "enum": [
-                            "all",
-                            "b2c",
-                            "b2b",
-                            "internal"
-                          ]
+                          "enum": ["all", "b2c", "b2b", "internal"]
                         },
                         "active": {
                           "type": "boolean"
                         },
                         "availableFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "availableTo": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4687,9 +3899,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4705,9 +3915,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4723,9 +3931,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4733,9 +3939,7 @@
         },
         "operationId": "patchAdminMarketsProductRulesById",
         "summary": "PATCH /v1/admin/markets/product-rules/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -4760,14 +3964,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -4783,9 +3983,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4793,9 +3991,7 @@
         },
         "operationId": "deleteAdminMarketsProductRulesById",
         "summary": "DELETE /v1/admin/markets/product-rules/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -4816,10 +4012,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -4846,11 +4039,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "sellable",
-                "on_request",
-                "unavailable"
-              ]
+              "enum": ["sellable", "on_request", "unavailable"]
             },
             "required": false,
             "name": "sellability",
@@ -4859,12 +4048,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -4894,26 +4078,15 @@
                             "type": "string"
                           },
                           "priceCatalogId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "visibility": {
                             "type": "string",
-                            "enum": [
-                              "public",
-                              "private",
-                              "hidden"
-                            ]
+                            "enum": ["public", "private", "hidden"]
                           },
                           "sellability": {
                             "type": "string",
-                            "enum": [
-                              "sellable",
-                              "on_request",
-                              "unavailable"
-                            ]
+                            "enum": ["sellable", "on_request", "unavailable"]
                           },
                           "active": {
                             "type": "boolean"
@@ -4922,10 +4095,7 @@
                             "type": "integer"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -4959,12 +4129,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -4972,9 +4137,7 @@
         },
         "operationId": "getAdminMarketsChannelRules",
         "summary": "GET /v1/admin/markets/channel-rules",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -4993,27 +4156,16 @@
                     "type": "string"
                   },
                   "priceCatalogId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": [
-                      "public",
-                      "private",
-                      "hidden"
-                    ],
+                    "enum": ["public", "private", "hidden"],
                     "default": "public"
                   },
                   "sellability": {
                     "type": "string",
-                    "enum": [
-                      "sellable",
-                      "on_request",
-                      "unavailable"
-                    ],
+                    "enum": ["sellable", "on_request", "unavailable"],
                     "default": "sellable"
                   },
                   "active": {
@@ -5025,16 +4177,10 @@
                     "default": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 },
-                "required": [
-                  "marketId",
-                  "channelId"
-                ]
+                "required": ["marketId", "channelId"]
               }
             }
           }
@@ -5060,26 +4206,15 @@
                           "type": "string"
                         },
                         "priceCatalogId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "visibility": {
                           "type": "string",
-                          "enum": [
-                            "public",
-                            "private",
-                            "hidden"
-                          ]
+                          "enum": ["public", "private", "hidden"]
                         },
                         "sellability": {
                           "type": "string",
-                          "enum": [
-                            "sellable",
-                            "on_request",
-                            "unavailable"
-                          ]
+                          "enum": ["sellable", "on_request", "unavailable"]
                         },
                         "active": {
                           "type": "boolean"
@@ -5088,10 +4223,7 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5115,9 +4247,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5133,9 +4263,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5151,9 +4279,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5161,9 +4287,7 @@
         },
         "operationId": "postAdminMarketsChannelRules",
         "summary": "POST /v1/admin/markets/channel-rules",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }
@@ -5201,26 +4325,15 @@
                           "type": "string"
                         },
                         "priceCatalogId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "visibility": {
                           "type": "string",
-                          "enum": [
-                            "public",
-                            "private",
-                            "hidden"
-                          ]
+                          "enum": ["public", "private", "hidden"]
                         },
                         "sellability": {
                           "type": "string",
-                          "enum": [
-                            "sellable",
-                            "on_request",
-                            "unavailable"
-                          ]
+                          "enum": ["sellable", "on_request", "unavailable"]
                         },
                         "active": {
                           "type": "boolean"
@@ -5229,10 +4342,7 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5256,9 +4366,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5274,9 +4382,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5284,9 +4390,7 @@
         },
         "operationId": "getAdminMarketsChannelRulesById",
         "summary": "GET /v1/admin/markets/channel-rules/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -5315,27 +4419,16 @@
                     "type": "string"
                   },
                   "priceCatalogId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "visibility": {
                     "type": "string",
-                    "enum": [
-                      "public",
-                      "private",
-                      "hidden"
-                    ],
+                    "enum": ["public", "private", "hidden"],
                     "default": "public"
                   },
                   "sellability": {
                     "type": "string",
-                    "enum": [
-                      "sellable",
-                      "on_request",
-                      "unavailable"
-                    ],
+                    "enum": ["sellable", "on_request", "unavailable"],
                     "default": "sellable"
                   },
                   "active": {
@@ -5347,10 +4440,7 @@
                     "default": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -5378,26 +4468,15 @@
                           "type": "string"
                         },
                         "priceCatalogId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "visibility": {
                           "type": "string",
-                          "enum": [
-                            "public",
-                            "private",
-                            "hidden"
-                          ]
+                          "enum": ["public", "private", "hidden"]
                         },
                         "sellability": {
                           "type": "string",
-                          "enum": [
-                            "sellable",
-                            "on_request",
-                            "unavailable"
-                          ]
+                          "enum": ["sellable", "on_request", "unavailable"]
                         },
                         "active": {
                           "type": "boolean"
@@ -5406,10 +4485,7 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5433,9 +4509,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5451,9 +4525,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5469,9 +4541,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5479,9 +4549,7 @@
         },
         "operationId": "patchAdminMarketsChannelRulesById",
         "summary": "PATCH /v1/admin/markets/channel-rules/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       },
@@ -5506,14 +4574,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -5529,9 +4593,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5539,9 +4601,7 @@
         },
         "operationId": "deleteAdminMarketsChannelRulesById",
         "summary": "DELETE /v1/admin/markets/channel-rules/{id}",
-        "tags": [
-          "markets"
-        ],
+        "tags": ["markets"],
         "x-voyant-module": "markets",
         "x-voyant-surface": "admin"
       }

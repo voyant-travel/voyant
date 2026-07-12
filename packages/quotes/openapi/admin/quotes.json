@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -170,10 +143,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -184,12 +154,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "organization",
-                "person",
-                "quote",
-                "activity"
-              ]
+              "enum": ["organization", "person", "quote", "activity"]
             },
             "required": false,
             "name": "entityType",
@@ -214,12 +179,7 @@
                           },
                           "entityType": {
                             "type": "string",
-                            "enum": [
-                              "organization",
-                              "person",
-                              "quote",
-                              "activity"
-                            ]
+                            "enum": ["organization", "person", "quote", "activity"]
                           },
                           "name": {
                             "type": "string"
@@ -258,12 +218,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -271,9 +226,7 @@
         },
         "operationId": "getAdminQuotesPipelines",
         "summary": "GET /v1/admin/quotes/pipelines",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -287,12 +240,7 @@
                 "properties": {
                   "entityType": {
                     "type": "string",
-                    "enum": [
-                      "organization",
-                      "person",
-                      "quote",
-                      "activity"
-                    ],
+                    "enum": ["organization", "person", "quote", "activity"],
                     "default": "quote"
                   },
                   "name": {
@@ -308,9 +256,7 @@
                     "default": 0
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -331,12 +277,7 @@
                         },
                         "entityType": {
                           "type": "string",
-                          "enum": [
-                            "organization",
-                            "person",
-                            "quote",
-                            "activity"
-                          ]
+                          "enum": ["organization", "person", "quote", "activity"]
                         },
                         "name": {
                           "type": "string"
@@ -365,9 +306,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -383,9 +322,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -393,9 +330,7 @@
         },
         "operationId": "postAdminQuotesPipelines",
         "summary": "POST /v1/admin/quotes/pipelines",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -428,12 +363,7 @@
                         },
                         "entityType": {
                           "type": "string",
-                          "enum": [
-                            "organization",
-                            "person",
-                            "quote",
-                            "activity"
-                          ]
+                          "enum": ["organization", "person", "quote", "activity"]
                         },
                         "name": {
                           "type": "string"
@@ -462,9 +392,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -480,9 +408,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -490,9 +416,7 @@
         },
         "operationId": "getAdminQuotesPipelinesById",
         "summary": "GET /v1/admin/quotes/pipelines/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -516,12 +440,7 @@
                 "properties": {
                   "entityType": {
                     "type": "string",
-                    "enum": [
-                      "organization",
-                      "person",
-                      "quote",
-                      "activity"
-                    ],
+                    "enum": ["organization", "person", "quote", "activity"],
                     "default": "quote"
                   },
                   "name": {
@@ -557,12 +476,7 @@
                         },
                         "entityType": {
                           "type": "string",
-                          "enum": [
-                            "organization",
-                            "person",
-                            "quote",
-                            "activity"
-                          ]
+                          "enum": ["organization", "person", "quote", "activity"]
                         },
                         "name": {
                           "type": "string"
@@ -591,9 +505,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -609,9 +521,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -627,9 +537,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -637,9 +545,7 @@
         },
         "operationId": "patchAdminQuotesPipelinesById",
         "summary": "PATCH /v1/admin/quotes/pipelines/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -664,14 +570,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -687,9 +589,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -705,9 +605,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -715,9 +613,7 @@
         },
         "operationId": "deleteAdminQuotesPipelinesById",
         "summary": "DELETE /v1/admin/quotes/pipelines/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -738,10 +634,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -784,10 +677,7 @@
                             "type": "integer"
                           },
                           "probability": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "isClosed": {
                             "type": "boolean"
@@ -829,12 +719,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -842,9 +727,7 @@
         },
         "operationId": "getAdminQuotesStages",
         "summary": "GET /v1/admin/quotes/stages",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -868,10 +751,7 @@
                     "default": 0
                   },
                   "probability": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": 100
                   },
@@ -888,10 +768,7 @@
                     "default": false
                   }
                 },
-                "required": [
-                  "pipelineId",
-                  "name"
-                ]
+                "required": ["pipelineId", "name"]
               }
             }
           }
@@ -920,10 +797,7 @@
                           "type": "integer"
                         },
                         "probability": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "isClosed": {
                           "type": "boolean"
@@ -955,9 +829,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -973,9 +845,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -983,9 +853,7 @@
         },
         "operationId": "postAdminQuotesStages",
         "summary": "POST /v1/admin/quotes/stages",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -1026,10 +894,7 @@
                           "type": "integer"
                         },
                         "probability": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "isClosed": {
                           "type": "boolean"
@@ -1061,9 +926,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1079,9 +942,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1089,9 +950,7 @@
         },
         "operationId": "getAdminQuotesStagesById",
         "summary": "GET /v1/admin/quotes/stages/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -1125,10 +984,7 @@
                     "default": 0
                   },
                   "probability": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": 100
                   },
@@ -1173,10 +1029,7 @@
                           "type": "integer"
                         },
                         "probability": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "isClosed": {
                           "type": "boolean"
@@ -1208,9 +1061,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1226,9 +1077,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1244,9 +1093,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1254,9 +1101,7 @@
         },
         "operationId": "patchAdminQuotesStagesById",
         "summary": "PATCH /v1/admin/quotes/stages/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -1281,14 +1126,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -1304,9 +1145,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1314,9 +1153,7 @@
         },
         "operationId": "deleteAdminQuotesStagesById",
         "summary": "DELETE /v1/admin/quotes/stages/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -1337,10 +1174,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1391,12 +1225,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "open",
-                "won",
-                "lost",
-                "archived"
-              ]
+              "enum": ["open", "won", "lost", "archived"]
             },
             "required": false,
             "name": "status",
@@ -1431,16 +1260,10 @@
                             "type": "string"
                           },
                           "personId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "organizationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "pipelineId": {
                             "type": "string"
@@ -1449,67 +1272,35 @@
                             "type": "string"
                           },
                           "ownerId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "open",
-                              "won",
-                              "lost",
-                              "archived"
-                            ]
+                            "enum": ["open", "won", "lost", "archived"]
                           },
                           "acceptedVersionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "valueAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "valueCurrency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "paxCount": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "expectedCloseDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "source": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sourceRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "lostReason": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "tags": {
                             "type": "array",
@@ -1522,22 +1313,13 @@
                             "additionalProperties": {}
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdBy": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "updatedBy": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -1549,10 +1331,7 @@
                             "type": "string"
                           },
                           "closedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -1594,12 +1373,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1607,9 +1381,7 @@
         },
         "operationId": "getAdminQuotesQuotes",
         "summary": "GET /v1/admin/quotes/quotes",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -1626,16 +1398,10 @@
                     "minLength": 1
                   },
                   "personId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "organizationId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "pipelineId": {
                     "type": "string"
@@ -1644,76 +1410,41 @@
                     "type": "string"
                   },
                   "ownerId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "open",
-                      "won",
-                      "lost",
-                      "archived"
-                    ],
+                    "enum": ["open", "won", "lost", "archived"],
                     "default": "open"
                   },
                   "acceptedVersionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "valueAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "valueCurrency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "paxCount": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "expectedCloseDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "source": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "sourceRef": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "lostReason": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "tags": {
                     "type": "array",
@@ -1723,11 +1454,7 @@
                     "default": []
                   }
                 },
-                "required": [
-                  "title",
-                  "pipelineId",
-                  "stageId"
-                ]
+                "required": ["title", "pipelineId", "stageId"]
               }
             }
           }
@@ -1750,16 +1477,10 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pipelineId": {
                           "type": "string"
@@ -1768,67 +1489,35 @@
                           "type": "string"
                         },
                         "ownerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "open",
-                            "won",
-                            "lost",
-                            "archived"
-                          ]
+                          "enum": ["open", "won", "lost", "archived"]
                         },
                         "acceptedVersionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "valueAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "valueCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "paxCount": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "expectedCloseDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "source": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lostReason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tags": {
                           "type": "array",
@@ -1841,22 +1530,13 @@
                           "additionalProperties": {}
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "updatedBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -1868,10 +1548,7 @@
                           "type": "string"
                         },
                         "closedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1903,9 +1580,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1921,9 +1596,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1931,9 +1604,7 @@
         },
         "operationId": "postAdminQuotesQuotes",
         "summary": "POST /v1/admin/quotes/quotes",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -1968,16 +1639,10 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pipelineId": {
                           "type": "string"
@@ -1986,67 +1651,35 @@
                           "type": "string"
                         },
                         "ownerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "open",
-                            "won",
-                            "lost",
-                            "archived"
-                          ]
+                          "enum": ["open", "won", "lost", "archived"]
                         },
                         "acceptedVersionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "valueAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "valueCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "paxCount": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "expectedCloseDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "source": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lostReason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tags": {
                           "type": "array",
@@ -2059,22 +1692,13 @@
                           "additionalProperties": {}
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "updatedBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -2086,10 +1710,7 @@
                           "type": "string"
                         },
                         "closedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -2121,9 +1742,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2139,9 +1758,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2149,9 +1766,7 @@
         },
         "operationId": "getAdminQuotesQuotesById",
         "summary": "GET /v1/admin/quotes/quotes/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -2178,16 +1793,10 @@
                     "minLength": 1
                   },
                   "personId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "organizationId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "pipelineId": {
                     "type": "string"
@@ -2196,76 +1805,41 @@
                     "type": "string"
                   },
                   "ownerId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "open",
-                      "won",
-                      "lost",
-                      "archived"
-                    ],
+                    "enum": ["open", "won", "lost", "archived"],
                     "default": "open"
                   },
                   "acceptedVersionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "valueAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "valueCurrency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "paxCount": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "expectedCloseDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "source": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "sourceRef": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "lostReason": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "tags": {
                     "type": "array",
@@ -2297,16 +1871,10 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pipelineId": {
                           "type": "string"
@@ -2315,67 +1883,35 @@
                           "type": "string"
                         },
                         "ownerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "open",
-                            "won",
-                            "lost",
-                            "archived"
-                          ]
+                          "enum": ["open", "won", "lost", "archived"]
                         },
                         "acceptedVersionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "valueAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "valueCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "paxCount": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "expectedCloseDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "source": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sourceRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lostReason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tags": {
                           "type": "array",
@@ -2388,22 +1924,13 @@
                           "additionalProperties": {}
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "updatedBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -2415,10 +1942,7 @@
                           "type": "string"
                         },
                         "closedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -2450,9 +1974,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2468,9 +1990,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2486,9 +2006,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2496,9 +2014,7 @@
         },
         "operationId": "patchAdminQuotesQuotesById",
         "summary": "PATCH /v1/admin/quotes/quotes/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -2523,14 +2039,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2546,9 +2058,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2556,9 +2066,7 @@
         },
         "operationId": "deleteAdminQuotesQuotesById",
         "summary": "DELETE /v1/admin/quotes/quotes/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -2599,13 +2107,7 @@
                           },
                           "role": {
                             "type": "string",
-                            "enum": [
-                              "traveler",
-                              "booker",
-                              "decision_maker",
-                              "finance",
-                              "other"
-                            ]
+                            "enum": ["traveler", "booker", "decision_maker", "finance", "other"]
                           },
                           "isPrimary": {
                             "type": "boolean"
@@ -2614,20 +2116,11 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "quoteId",
-                          "personId",
-                          "role",
-                          "isPrimary",
-                          "createdAt"
-                        ]
+                        "required": ["id", "quoteId", "personId", "role", "isPrimary", "createdAt"]
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2635,9 +2128,7 @@
         },
         "operationId": "getAdminQuotesQuotesByIdParticipants",
         "summary": "GET /v1/admin/quotes/quotes/{id}/participants",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -2664,13 +2155,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "traveler",
-                      "booker",
-                      "decision_maker",
-                      "finance",
-                      "other"
-                    ],
+                    "enum": ["traveler", "booker", "decision_maker", "finance", "other"],
                     "default": "other"
                   },
                   "isPrimary": {
@@ -2678,9 +2163,7 @@
                     "default": false
                   }
                 },
-                "required": [
-                  "personId"
-                ]
+                "required": ["personId"]
               }
             }
           }
@@ -2707,13 +2190,7 @@
                         },
                         "role": {
                           "type": "string",
-                          "enum": [
-                            "traveler",
-                            "booker",
-                            "decision_maker",
-                            "finance",
-                            "other"
-                          ]
+                          "enum": ["traveler", "booker", "decision_maker", "finance", "other"]
                         },
                         "isPrimary": {
                           "type": "boolean"
@@ -2722,19 +2199,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "quoteId",
-                        "personId",
-                        "role",
-                        "isPrimary",
-                        "createdAt"
-                      ]
+                      "required": ["id", "quoteId", "personId", "role", "isPrimary", "createdAt"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2750,9 +2218,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2760,9 +2226,7 @@
         },
         "operationId": "postAdminQuotesQuotesByIdParticipants",
         "summary": "POST /v1/admin/quotes/quotes/{id}/participants",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -2789,14 +2253,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2812,9 +2272,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2822,9 +2280,7 @@
         },
         "operationId": "deleteAdminQuotesQuoteParticipantsById",
         "summary": "DELETE /v1/admin/quotes/quote-participants/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -2861,52 +2317,31 @@
                             "type": "string"
                           },
                           "productId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "supplierServiceId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "nameSnapshot": {
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "quantity": {
                             "type": "integer"
                           },
                           "unitPriceAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "costAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "currency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "discountAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -2933,9 +2368,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2943,9 +2376,7 @@
         },
         "operationId": "getAdminQuotesQuotesByIdProducts",
         "summary": "GET /v1/admin/quotes/quotes/{id}/products",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -2968,26 +2399,17 @@
                 "type": "object",
                 "properties": {
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "supplierServiceId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "nameSnapshot": {
                     "type": "string",
                     "minLength": 1
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "quantity": {
                     "type": "integer",
@@ -2995,33 +2417,19 @@
                     "default": 1
                   },
                   "unitPriceAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "costAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "discountAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   }
                 },
-                "required": [
-                  "nameSnapshot"
-                ]
+                "required": ["nameSnapshot"]
               }
             }
           }
@@ -3044,52 +2452,31 @@
                           "type": "string"
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierServiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "nameSnapshot": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "quantity": {
                           "type": "integer"
                         },
                         "unitPriceAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "costAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3115,9 +2502,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3133,9 +2518,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3143,9 +2526,7 @@
         },
         "operationId": "postAdminQuotesQuotesByIdProducts",
         "summary": "POST /v1/admin/quotes/quotes/{id}/products",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -3170,26 +2551,17 @@
                 "type": "object",
                 "properties": {
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "supplierServiceId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "nameSnapshot": {
                     "type": "string",
                     "minLength": 1
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "quantity": {
                     "type": "integer",
@@ -3197,28 +2569,16 @@
                     "default": 1
                   },
                   "unitPriceAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "costAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "discountAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   }
                 }
               }
@@ -3243,52 +2603,31 @@
                           "type": "string"
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierServiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "nameSnapshot": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "quantity": {
                           "type": "integer"
                         },
                         "unitPriceAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "costAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3314,9 +2653,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3332,9 +2669,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3350,9 +2685,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3360,9 +2693,7 @@
         },
         "operationId": "patchAdminQuotesQuoteProductsById",
         "summary": "PATCH /v1/admin/quotes/quote-products/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -3387,14 +2718,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -3410,9 +2737,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3420,9 +2745,7 @@
         },
         "operationId": "deleteAdminQuotesQuoteProductsById",
         "summary": "DELETE /v1/admin/quotes/quote-products/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -3468,28 +2791,16 @@
                             "type": "string"
                           },
                           "storageKey": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "mimeType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "fileSize": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "altText": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sortOrder": {
                             "type": "integer"
@@ -3518,9 +2829,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3528,9 +2837,7 @@
         },
         "operationId": "getAdminQuotesQuotesByIdMedia",
         "summary": "GET /v1/admin/quotes/quotes/{id}/media",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -3554,11 +2861,7 @@
                 "properties": {
                   "mediaType": {
                     "type": "string",
-                    "enum": [
-                      "image",
-                      "video",
-                      "document"
-                    ],
+                    "enum": ["image", "video", "document"],
                     "default": "image"
                   },
                   "name": {
@@ -3570,37 +2873,22 @@
                     "minLength": 1
                   },
                   "storageKey": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "mimeType": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "fileSize": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
+                    "type": ["integer", "null"]
                   },
                   "altText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "sortOrder": {
                     "type": "integer"
                   }
                 },
-                "required": [
-                  "name",
-                  "url"
-                ]
+                "required": ["name", "url"]
               }
             }
           }
@@ -3632,28 +2920,16 @@
                           "type": "string"
                         },
                         "storageKey": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "mimeType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fileSize": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "altText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sortOrder": {
                           "type": "integer"
@@ -3681,9 +2957,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3699,9 +2973,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3709,9 +2981,7 @@
         },
         "operationId": "postAdminQuotesQuotesByIdMedia",
         "summary": "POST /v1/admin/quotes/quotes/{id}/media",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -3738,14 +3008,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -3761,9 +3027,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3771,9 +3035,7 @@
         },
         "operationId": "deleteAdminQuotesQuoteMediaById",
         "summary": "DELETE /v1/admin/quotes/quote-media/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -3794,10 +3056,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -3816,14 +3075,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "draft",
-                "sent",
-                "accepted",
-                "declined",
-                "superseded",
-                "expired"
-              ]
+              "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
             },
             "required": false,
             "name": "status",
@@ -3850,10 +3102,7 @@
                             "type": "string"
                           },
                           "label": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
@@ -3867,22 +3116,13 @@
                             ]
                           },
                           "supersedesId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "tripSnapshotId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "validUntil": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "currency": {
                             "type": "string"
@@ -3897,28 +3137,16 @@
                             "type": "integer"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sentAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "viewedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "decidedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -3927,10 +3155,7 @@
                             "type": "string"
                           },
                           "archivedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -3965,12 +3190,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -3978,9 +3198,7 @@
         },
         "operationId": "getAdminQuotesQuoteVersions",
         "summary": "GET /v1/admin/quotes/quote-versions",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -4005,40 +3223,21 @@
                 "type": "object",
                 "properties": {
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "draft",
-                      "sent",
-                      "accepted",
-                      "declined",
-                      "superseded",
-                      "expired"
-                    ],
+                    "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"],
                     "default": "draft"
                   },
                   "supersedesId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "tripSnapshotId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "validUntil": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "currency": {
@@ -4058,36 +3257,22 @@
                     "default": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "sentAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "viewedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "decidedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   }
                 },
-                "required": [
-                  "currency"
-                ]
+                "required": ["currency"]
               }
             }
           }
@@ -4110,39 +3295,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -4157,28 +3323,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4187,10 +3341,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -4215,9 +3366,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4233,9 +3382,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4251,9 +3398,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4269,9 +3414,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4279,9 +3422,7 @@
         },
         "operationId": "postAdminQuotesQuotesByIdVersions",
         "summary": "POST /v1/admin/quotes/quotes/{id}/versions",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -4306,16 +3447,11 @@
                 "type": "object",
                 "properties": {
                   "validUntil": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   }
                 },
-                "required": [
-                  "validUntil"
-                ]
+                "required": ["validUntil"]
               }
             }
           }
@@ -4338,39 +3474,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -4385,28 +3502,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4415,10 +3520,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -4443,9 +3545,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4461,9 +3561,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4479,9 +3577,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4489,9 +3585,7 @@
         },
         "operationId": "patchAdminQuotesQuoteVersionsByIdValidity",
         "summary": "PATCH /v1/admin/quotes/quote-versions/{id}/validity",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -4526,39 +3620,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -4573,28 +3648,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4603,10 +3666,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -4631,9 +3691,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4649,9 +3707,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4667,9 +3723,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4677,9 +3731,7 @@
         },
         "operationId": "postAdminQuotesQuotesByIdVersionsSnapshot",
         "summary": "POST /v1/admin/quotes/quotes/{id}/versions/snapshot",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -4707,10 +3759,7 @@
                             "type": "string"
                           },
                           "label": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
@@ -4724,22 +3773,13 @@
                             ]
                           },
                           "supersedesId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "tripSnapshotId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "validUntil": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "currency": {
                             "type": "string"
@@ -4754,28 +3794,16 @@
                             "type": "integer"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sentAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "viewedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "decidedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -4784,10 +3812,7 @@
                             "type": "string"
                           },
                           "archivedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -4813,9 +3838,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4823,9 +3846,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsExpire",
         "summary": "POST /v1/admin/quotes/quote-versions/expire",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -4860,39 +3881,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -4907,28 +3909,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4937,10 +3927,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -4965,9 +3952,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4983,9 +3968,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4993,9 +3976,7 @@
         },
         "operationId": "getAdminQuotesQuoteVersionsById",
         "summary": "GET /v1/admin/quotes/quote-versions/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -5021,39 +4002,20 @@
                     "type": "string"
                   },
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "draft",
-                      "sent",
-                      "accepted",
-                      "declined",
-                      "superseded",
-                      "expired"
-                    ]
+                    "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                   },
                   "supersedesId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "tripSnapshotId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "validUntil": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "currency": {
@@ -5070,30 +4032,18 @@
                     "type": "integer"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "sentAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "viewedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   },
                   "decidedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date-time"
                   }
                 }
@@ -5119,39 +4069,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -5166,28 +4097,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5196,10 +4115,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -5224,9 +4140,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5242,9 +4156,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5260,9 +4172,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5278,9 +4188,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5288,9 +4196,7 @@
         },
         "operationId": "patchAdminQuotesQuoteVersionsById",
         "summary": "PATCH /v1/admin/quotes/quote-versions/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -5315,14 +4221,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -5338,9 +4240,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5356,9 +4256,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5366,9 +4264,7 @@
         },
         "operationId": "deleteAdminQuotesQuoteVersionsById",
         "summary": "DELETE /v1/admin/quotes/quote-versions/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -5418,16 +4314,10 @@
                       "type": "object",
                       "properties": {
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierServiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "description": {
                           "type": "string",
@@ -5451,24 +4341,15 @@
                           "minLength": 1
                         },
                         "componentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "description",
-                        "currency"
-                      ]
+                      "required": ["description", "currency"]
                     },
                     "default": []
                   }
                 },
-                "required": [
-                  "tripSnapshotId",
-                  "currency"
-                ]
+                "required": ["tripSnapshotId", "currency"]
               }
             }
           }
@@ -5494,10 +4375,7 @@
                               "type": "string"
                             },
                             "label": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "status": {
                               "type": "string",
@@ -5511,22 +4389,13 @@
                               ]
                             },
                             "supersedesId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "tripSnapshotId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "validUntil": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "currency": {
                               "type": "string"
@@ -5541,28 +4410,16 @@
                               "type": "integer"
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sentAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "viewedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decidedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -5571,10 +4428,7 @@
                               "type": "string"
                             },
                             "archivedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -5610,16 +4464,10 @@
                                 "type": "string"
                               },
                               "productId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "supplierServiceId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "description": {
                                 "type": "string"
@@ -5659,15 +4507,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "quoteVersion",
-                        "lines"
-                      ]
+                      "required": ["quoteVersion", "lines"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5683,9 +4526,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5701,9 +4542,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5719,9 +4558,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5729,9 +4566,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsByIdTripSnapshot",
         "summary": "POST /v1/admin/quotes/quote-versions/{id}/trip-snapshot",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -5767,39 +4602,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -5814,28 +4630,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5844,10 +4648,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -5872,9 +4673,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5890,9 +4689,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5908,9 +4705,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5918,9 +4713,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsByIdSend",
         "summary": "POST /v1/admin/quotes/quote-versions/{id}/send",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -5955,39 +4748,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -6002,28 +4776,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -6032,10 +4794,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -6060,9 +4819,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6078,9 +4835,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6088,9 +4843,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsByIdView",
         "summary": "POST /v1/admin/quotes/quote-versions/{id}/view",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -6129,16 +4882,10 @@
                               "type": "string"
                             },
                             "personId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "organizationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "pipelineId": {
                               "type": "string"
@@ -6147,67 +4894,35 @@
                               "type": "string"
                             },
                             "ownerId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "open",
-                                "won",
-                                "lost",
-                                "archived"
-                              ]
+                              "enum": ["open", "won", "lost", "archived"]
                             },
                             "acceptedVersionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "valueAmountCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "valueCurrency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "paxCount": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "expectedCloseDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "source": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sourceRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lostReason": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "tags": {
                               "type": "array",
@@ -6220,22 +4935,13 @@
                               "additionalProperties": {}
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdBy": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "updatedBy": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -6247,10 +4953,7 @@
                               "type": "string"
                             },
                             "closedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -6291,10 +4994,7 @@
                               "type": "string"
                             },
                             "label": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "status": {
                               "type": "string",
@@ -6308,22 +5008,13 @@
                               ]
                             },
                             "supersedesId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "tripSnapshotId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "validUntil": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "currency": {
                               "type": "string"
@@ -6338,28 +5029,16 @@
                               "type": "integer"
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sentAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "viewedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decidedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -6368,10 +5047,7 @@
                               "type": "string"
                             },
                             "archivedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -6407,10 +5083,7 @@
                                 "type": "string"
                               },
                               "label": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "status": {
                                 "type": "string",
@@ -6424,22 +5097,13 @@
                                 ]
                               },
                               "supersedesId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "tripSnapshotId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "validUntil": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "currency": {
                                 "type": "string"
@@ -6454,28 +5118,16 @@
                                 "type": "integer"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sentAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "viewedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "decidedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -6484,10 +5136,7 @@
                                 "type": "string"
                               },
                               "archivedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -6513,16 +5162,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "quote",
-                        "quoteVersion",
-                        "closedQuoteVersions"
-                      ]
+                      "required": ["quote", "quoteVersion", "closedQuoteVersions"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6538,9 +5181,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6556,9 +5197,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6566,9 +5205,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsByIdAccept",
         "summary": "POST /v1/admin/quotes/quote-versions/{id}/accept",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -6604,39 +5241,20 @@
                           "type": "string"
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "sent",
-                            "accepted",
-                            "declined",
-                            "superseded",
-                            "expired"
-                          ]
+                          "enum": ["draft", "sent", "accepted", "declined", "superseded", "expired"]
                         },
                         "supersedesId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "tripSnapshotId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -6651,28 +5269,16 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "viewedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -6681,10 +5287,7 @@
                           "type": "string"
                         },
                         "archivedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -6709,9 +5312,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6727,9 +5328,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6745,9 +5344,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6755,9 +5352,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsByIdDecline",
         "summary": "POST /v1/admin/quotes/quote-versions/{id}/decline",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -6794,16 +5389,10 @@
                             "type": "string"
                           },
                           "productId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "supplierServiceId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "description": {
                             "type": "string"
@@ -6843,9 +5432,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6853,9 +5440,7 @@
         },
         "operationId": "getAdminQuotesQuoteVersionsByIdLines",
         "summary": "GET /v1/admin/quotes/quote-versions/{id}/lines",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -6878,16 +5463,10 @@
                 "type": "object",
                 "properties": {
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "supplierServiceId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "description": {
                     "type": "string",
@@ -6911,10 +5490,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "description",
-                  "currency"
-                ]
+                "required": ["description", "currency"]
               }
             }
           }
@@ -6937,16 +5513,10 @@
                           "type": "string"
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierServiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "description": {
                           "type": "string"
@@ -6985,9 +5555,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -7003,9 +5571,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7021,9 +5587,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7039,9 +5603,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7049,9 +5611,7 @@
         },
         "operationId": "postAdminQuotesQuoteVersionsByIdLines",
         "summary": "POST /v1/admin/quotes/quote-versions/{id}/lines",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }
@@ -7076,16 +5636,10 @@
                 "type": "object",
                 "properties": {
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "supplierServiceId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "description": {
                     "type": "string",
@@ -7131,16 +5685,10 @@
                           "type": "string"
                         },
                         "productId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierServiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "description": {
                           "type": "string"
@@ -7179,9 +5727,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -7197,9 +5743,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7215,9 +5759,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7233,9 +5775,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7243,9 +5783,7 @@
         },
         "operationId": "patchAdminQuotesQuoteVersionLinesById",
         "summary": "PATCH /v1/admin/quotes/quote-version-lines/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       },
@@ -7270,14 +5808,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -7293,9 +5827,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7311,9 +5843,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -7321,9 +5851,7 @@
         },
         "operationId": "deleteAdminQuotesQuoteVersionLinesById",
         "summary": "DELETE /v1/admin/quotes/quote-version-lines/{id}",
-        "tags": [
-          "quotes"
-        ],
+        "tags": ["quotes"],
         "x-voyant-module": "quotes",
         "x-voyant-surface": "admin"
       }

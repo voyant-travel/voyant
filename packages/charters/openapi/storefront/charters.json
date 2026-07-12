@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -160,12 +133,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "draft",
-                "awaiting_review",
-                "live",
-                "archived"
-              ]
+              "enum": ["draft", "awaiting_review", "live", "archived"]
             },
             "required": false,
             "name": "status",
@@ -208,10 +176,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -235,16 +200,10 @@
                         "properties": {
                           "source": {
                             "type": "string",
-                            "enum": [
-                              "local",
-                              "external"
-                            ]
+                            "enum": ["local", "external"]
                           },
                           "sourceProvider": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sourceRef": {},
                           "key": {
@@ -252,11 +211,7 @@
                           },
                           "product": {}
                         },
-                        "required": [
-                          "source",
-                          "sourceProvider",
-                          "key"
-                        ]
+                        "required": ["source", "sourceProvider", "key"]
                       }
                     },
                     "total": {
@@ -269,12 +224,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -282,9 +232,7 @@
         },
         "operationId": "getPublicCharters",
         "summary": "GET /v1/public/charters",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -329,13 +277,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "open",
-                "on_request",
-                "wait_list",
-                "sold_out",
-                "closed"
-              ]
+              "enum": ["open", "on_request", "wait_list", "sold_out", "closed"]
             },
             "required": false,
             "name": "salesStatus",
@@ -344,10 +286,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "per_suite",
-                "whole_yacht"
-              ]
+              "enum": ["per_suite", "whole_yacht"]
             },
             "required": false,
             "name": "bookingMode",
@@ -366,10 +305,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -404,34 +340,19 @@
                             "type": "string"
                           },
                           "name": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "embarkPortFacilityId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "embarkPortName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "disembarkPortFacilityId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "disembarkPortName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "departureDate": {
                             "type": "string"
@@ -446,10 +367,7 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": [
-                                "per_suite",
-                                "whole_yacht"
-                              ]
+                              "enum": ["per_suite", "whole_yacht"]
                             }
                           },
                           "appointmentOnly": {
@@ -462,53 +380,29 @@
                             }
                           },
                           "apaPercentOverride": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "mybaTemplateIdOverride": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "charterAreaOverride": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "salesStatus": {
                             "type": "string",
-                            "enum": [
-                              "open",
-                              "on_request",
-                              "wait_list",
-                              "sold_out",
-                              "closed"
-                            ]
+                            "enum": ["open", "on_request", "wait_list", "sold_out", "closed"]
                           },
                           "availabilityNote": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "externalRefs": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {
                               "type": "string"
                             }
                           },
                           "lastSyncedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -555,12 +449,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -568,9 +457,7 @@
         },
         "operationId": "getPublicChartersVoyages",
         "summary": "GET /v1/public/charters/voyages",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -613,34 +500,19 @@
                               "type": "string"
                             },
                             "name": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "embarkPortFacilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "embarkPortName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "disembarkPortFacilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "disembarkPortName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "departureDate": {
                               "type": "string"
@@ -655,10 +527,7 @@
                               "type": "array",
                               "items": {
                                 "type": "string",
-                                "enum": [
-                                  "per_suite",
-                                  "whole_yacht"
-                                ]
+                                "enum": ["per_suite", "whole_yacht"]
                               }
                             },
                             "appointmentOnly": {
@@ -671,53 +540,29 @@
                               }
                             },
                             "apaPercentOverride": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "mybaTemplateIdOverride": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "charterAreaOverride": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "salesStatus": {
                               "type": "string",
-                              "enum": [
-                                "open",
-                                "on_request",
-                                "wait_list",
-                                "sold_out",
-                                "closed"
-                              ]
+                              "enum": ["open", "on_request", "wait_list", "sold_out", "closed"]
                             },
                             "availabilityNote": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "externalRefs": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {
                                 "type": "string"
                               }
                             },
                             "lastSyncedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -766,9 +611,7 @@
                           "properties": {
                             "source": {
                               "type": "string",
-                              "enum": [
-                                "external"
-                              ]
+                              "enum": ["external"]
                             },
                             "sourceProvider": {
                               "type": "string"
@@ -778,18 +621,13 @@
                             "suites": {},
                             "schedule": {}
                           },
-                          "required": [
-                            "source",
-                            "sourceProvider"
-                          ],
+                          "required": ["source", "sourceProvider"],
                           "additionalProperties": {}
                         }
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -805,9 +643,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -824,9 +660,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -843,9 +677,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -854,9 +686,7 @@
         },
         "operationId": "getPublicChartersVoyagesByKey",
         "summary": "GET /v1/public/charters/voyages/{key}",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -890,10 +720,7 @@
                     "pattern": "^[A-Z]{3}$"
                   }
                 },
-                "required": [
-                  "suiteId",
-                  "currency"
-                ]
+                "required": ["suiteId", "currency"]
               }
             }
           }
@@ -911,9 +738,7 @@
                       "properties": {
                         "mode": {
                           "type": "string",
-                          "enum": [
-                            "per_suite"
-                          ]
+                          "enum": ["per_suite"]
                         },
                         "voyageId": {
                           "type": "string"
@@ -931,10 +756,7 @@
                           "type": "string"
                         },
                         "portFee": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "total": {
                           "type": "string"
@@ -952,9 +774,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -970,9 +790,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -989,9 +807,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1008,9 +824,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1019,9 +833,7 @@
         },
         "operationId": "postPublicChartersVoyagesByKeyQuotePerSuite",
         "summary": "POST /v1/public/charters/voyages/{key}/quote/per-suite",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -1052,9 +864,7 @@
                     "pattern": "^[A-Z]{3}$"
                   }
                 },
-                "required": [
-                  "currency"
-                ]
+                "required": ["currency"]
               }
             }
           }
@@ -1072,9 +882,7 @@
                       "properties": {
                         "mode": {
                           "type": "string",
-                          "enum": [
-                            "whole_yacht"
-                          ]
+                          "enum": ["whole_yacht"]
                         },
                         "voyageId": {
                           "type": "string"
@@ -1106,9 +914,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1124,9 +930,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1143,9 +947,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1162,9 +964,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1173,9 +973,7 @@
         },
         "operationId": "postPublicChartersVoyagesByKeyQuoteWholeYacht",
         "summary": "POST /v1/public/charters/voyages/{key}/quote/whole-yacht",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -1217,9 +1015,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1236,9 +1032,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1255,9 +1049,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1266,9 +1058,7 @@
         },
         "operationId": "getPublicChartersYachtsByKey",
         "summary": "GET /v1/public/charters/yachts/{key}",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }
@@ -1310,9 +1100,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1329,9 +1117,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1340,9 +1126,7 @@
         },
         "operationId": "getPublicChartersProductsByKey",
         "summary": "GET /v1/public/charters/products/{key}",
-        "tags": [
-          "charters"
-        ],
+        "tags": ["charters"],
         "x-voyant-module": "charters",
         "x-voyant-surface": "storefront"
       }

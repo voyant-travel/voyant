@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -170,10 +143,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -200,12 +170,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -240,34 +205,20 @@
                             "type": "string"
                           },
                           "supplierId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "code": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "name": {
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "selectionType": {
                             "type": "string",
-                            "enum": [
-                              "optional",
-                              "required",
-                              "default_selected",
-                              "unavailable"
-                            ]
+                            "enum": ["optional", "required", "default_selected", "unavailable"]
                           },
                           "pricingMode": {
                             "type": "string",
@@ -297,22 +248,13 @@
                             "type": "boolean"
                           },
                           "minQuantity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "maxQuantity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "defaultQuantity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "active": {
                             "type": "boolean"
@@ -321,10 +263,7 @@
                             "type": "integer"
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -367,12 +306,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -388,9 +322,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -398,9 +330,7 @@
         },
         "operationId": "getAdminExtrasProductExtras",
         "summary": "GET /v1/admin/extras/product-extras",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -417,16 +347,10 @@
                     "type": "string"
                   },
                   "supplierId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "name": {
@@ -435,19 +359,11 @@
                     "maxLength": 255
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "selectionType": {
                     "type": "string",
-                    "enum": [
-                      "optional",
-                      "required",
-                      "default_selected",
-                      "unavailable"
-                    ],
+                    "enum": ["optional", "required", "default_selected", "unavailable"],
                     "default": "optional"
                   },
                   "pricingMode": {
@@ -468,13 +384,7 @@
                   },
                   "collectionMode": {
                     "type": "string",
-                    "enum": [
-                      "booking_total",
-                      "cash_on_trip",
-                      "external",
-                      "included",
-                      "none"
-                    ],
+                    "enum": ["booking_total", "cash_on_trip", "external", "included", "none"],
                     "default": "booking_total"
                   },
                   "showOnSlotManifest": {
@@ -482,24 +392,15 @@
                     "default": true
                   },
                   "minQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "maxQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "defaultQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "active": {
@@ -511,17 +412,11 @@
                     "default": 0
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "productId",
-                  "name"
-                ]
+                "required": ["productId", "name"]
               }
             }
           }
@@ -544,34 +439,20 @@
                           "type": "string"
                         },
                         "supplierId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "selectionType": {
                           "type": "string",
-                          "enum": [
-                            "optional",
-                            "required",
-                            "default_selected",
-                            "unavailable"
-                          ]
+                          "enum": ["optional", "required", "default_selected", "unavailable"]
                         },
                         "pricingMode": {
                           "type": "string",
@@ -589,34 +470,19 @@
                         },
                         "collectionMode": {
                           "type": "string",
-                          "enum": [
-                            "booking_total",
-                            "cash_on_trip",
-                            "external",
-                            "included",
-                            "none"
-                          ]
+                          "enum": ["booking_total", "cash_on_trip", "external", "included", "none"]
                         },
                         "showOnSlotManifest": {
                           "type": "boolean"
                         },
                         "minQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "defaultQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "active": {
                           "type": "boolean"
@@ -625,10 +491,7 @@
                           "type": "integer"
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -661,9 +524,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -679,9 +540,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -689,9 +548,7 @@
         },
         "operationId": "postAdminExtrasProductExtras",
         "summary": "POST /v1/admin/extras/product-extras",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -726,34 +583,20 @@
                           "type": "string"
                         },
                         "supplierId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "selectionType": {
                           "type": "string",
-                          "enum": [
-                            "optional",
-                            "required",
-                            "default_selected",
-                            "unavailable"
-                          ]
+                          "enum": ["optional", "required", "default_selected", "unavailable"]
                         },
                         "pricingMode": {
                           "type": "string",
@@ -771,34 +614,19 @@
                         },
                         "collectionMode": {
                           "type": "string",
-                          "enum": [
-                            "booking_total",
-                            "cash_on_trip",
-                            "external",
-                            "included",
-                            "none"
-                          ]
+                          "enum": ["booking_total", "cash_on_trip", "external", "included", "none"]
                         },
                         "showOnSlotManifest": {
                           "type": "boolean"
                         },
                         "minQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "defaultQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "active": {
                           "type": "boolean"
@@ -807,10 +635,7 @@
                           "type": "integer"
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -843,9 +668,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -861,9 +684,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -871,9 +692,7 @@
         },
         "operationId": "getAdminExtrasProductExtrasById",
         "summary": "GET /v1/admin/extras/product-extras/{id}",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -900,16 +719,10 @@
                     "type": "string"
                   },
                   "supplierId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "name": {
@@ -918,19 +731,11 @@
                     "maxLength": 255
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "selectionType": {
                     "type": "string",
-                    "enum": [
-                      "optional",
-                      "required",
-                      "default_selected",
-                      "unavailable"
-                    ],
+                    "enum": ["optional", "required", "default_selected", "unavailable"],
                     "default": "optional"
                   },
                   "pricingMode": {
@@ -951,13 +756,7 @@
                   },
                   "collectionMode": {
                     "type": "string",
-                    "enum": [
-                      "booking_total",
-                      "cash_on_trip",
-                      "external",
-                      "included",
-                      "none"
-                    ],
+                    "enum": ["booking_total", "cash_on_trip", "external", "included", "none"],
                     "default": "booking_total"
                   },
                   "showOnSlotManifest": {
@@ -965,24 +764,15 @@
                     "default": true
                   },
                   "minQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "maxQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "defaultQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "active": {
@@ -994,10 +784,7 @@
                     "default": 0
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -1023,34 +810,20 @@
                           "type": "string"
                         },
                         "supplierId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "selectionType": {
                           "type": "string",
-                          "enum": [
-                            "optional",
-                            "required",
-                            "default_selected",
-                            "unavailable"
-                          ]
+                          "enum": ["optional", "required", "default_selected", "unavailable"]
                         },
                         "pricingMode": {
                           "type": "string",
@@ -1068,34 +841,19 @@
                         },
                         "collectionMode": {
                           "type": "string",
-                          "enum": [
-                            "booking_total",
-                            "cash_on_trip",
-                            "external",
-                            "included",
-                            "none"
-                          ]
+                          "enum": ["booking_total", "cash_on_trip", "external", "included", "none"]
                         },
                         "showOnSlotManifest": {
                           "type": "boolean"
                         },
                         "minQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "defaultQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "active": {
                           "type": "boolean"
@@ -1104,10 +862,7 @@
                           "type": "integer"
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1140,9 +895,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1158,9 +911,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1176,9 +927,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1186,9 +935,7 @@
         },
         "operationId": "patchAdminExtrasProductExtrasById",
         "summary": "PATCH /v1/admin/extras/product-extras/{id}",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -1215,9 +962,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -1233,9 +978,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1243,9 +986,7 @@
         },
         "operationId": "deleteAdminExtrasProductExtrasById",
         "summary": "DELETE /v1/admin/extras/product-extras/{id}",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -1266,10 +1007,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1296,12 +1034,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "active",
@@ -1331,10 +1064,7 @@
                             "type": "string"
                           },
                           "selectionType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "enum": [
                               "optional",
                               "required",
@@ -1344,10 +1074,7 @@
                             ]
                           },
                           "pricingMode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "enum": [
                               "included",
                               "per_person",
@@ -1359,28 +1086,16 @@
                             ]
                           },
                           "pricedPerPerson": {
-                            "type": [
-                              "boolean",
-                              "null"
-                            ]
+                            "type": ["boolean", "null"]
                           },
                           "minQuantity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "maxQuantity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "defaultQuantity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "isDefault": {
                             "type": "boolean"
@@ -1392,16 +1107,10 @@
                             "type": "integer"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -1441,12 +1150,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1462,9 +1166,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1472,9 +1174,7 @@
         },
         "operationId": "getAdminExtrasOptionExtraConfigs",
         "summary": "GET /v1/admin/extras/option-extra-configs",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -1494,23 +1194,11 @@
                     "type": "string"
                   },
                   "selectionType": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "optional",
-                      "required",
-                      "default_selected",
-                      "unavailable",
-                      null
-                    ]
+                    "type": ["string", "null"],
+                    "enum": ["optional", "required", "default_selected", "unavailable", null]
                   },
                   "pricingMode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "enum": [
                       "included",
                       "per_person",
@@ -1522,30 +1210,18 @@
                     ]
                   },
                   "pricedPerPerson": {
-                    "type": [
-                      "boolean",
-                      "null"
-                    ]
+                    "type": ["boolean", "null"]
                   },
                   "minQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "maxQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "defaultQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "isDefault": {
@@ -1561,23 +1237,14 @@
                     "default": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "optionId",
-                  "productExtraId"
-                ]
+                "required": ["optionId", "productExtraId"]
               }
             }
           }
@@ -1603,23 +1270,11 @@
                           "type": "string"
                         },
                         "selectionType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "optional",
-                            "required",
-                            "default_selected",
-                            "unavailable",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["optional", "required", "default_selected", "unavailable", null]
                         },
                         "pricingMode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "included",
                             "per_person",
@@ -1631,28 +1286,16 @@
                           ]
                         },
                         "pricedPerPerson": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                          "type": ["boolean", "null"]
                         },
                         "minQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "defaultQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "isDefault": {
                           "type": "boolean"
@@ -1664,16 +1307,10 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1703,9 +1340,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1721,9 +1356,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1731,9 +1364,7 @@
         },
         "operationId": "postAdminExtrasOptionExtraConfigs",
         "summary": "POST /v1/admin/extras/option-extra-configs",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }
@@ -1771,23 +1402,11 @@
                           "type": "string"
                         },
                         "selectionType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "optional",
-                            "required",
-                            "default_selected",
-                            "unavailable",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["optional", "required", "default_selected", "unavailable", null]
                         },
                         "pricingMode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "included",
                             "per_person",
@@ -1799,28 +1418,16 @@
                           ]
                         },
                         "pricedPerPerson": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                          "type": ["boolean", "null"]
                         },
                         "minQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "defaultQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "isDefault": {
                           "type": "boolean"
@@ -1832,16 +1439,10 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1871,9 +1472,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1889,9 +1488,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1899,9 +1496,7 @@
         },
         "operationId": "getAdminExtrasOptionExtraConfigsById",
         "summary": "GET /v1/admin/extras/option-extra-configs/{id}",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -1931,23 +1526,11 @@
                     "type": "string"
                   },
                   "selectionType": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "optional",
-                      "required",
-                      "default_selected",
-                      "unavailable",
-                      null
-                    ]
+                    "type": ["string", "null"],
+                    "enum": ["optional", "required", "default_selected", "unavailable", null]
                   },
                   "pricingMode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "enum": [
                       "included",
                       "per_person",
@@ -1959,30 +1542,18 @@
                     ]
                   },
                   "pricedPerPerson": {
-                    "type": [
-                      "boolean",
-                      "null"
-                    ]
+                    "type": ["boolean", "null"]
                   },
                   "minQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "maxQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "defaultQuantity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "isDefault": {
@@ -1998,16 +1569,10 @@
                     "default": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2036,23 +1601,11 @@
                           "type": "string"
                         },
                         "selectionType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "optional",
-                            "required",
-                            "default_selected",
-                            "unavailable",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["optional", "required", "default_selected", "unavailable", null]
                         },
                         "pricingMode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "included",
                             "per_person",
@@ -2064,28 +1617,16 @@
                           ]
                         },
                         "pricedPerPerson": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                          "type": ["boolean", "null"]
                         },
                         "minQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "defaultQuantity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "isDefault": {
                           "type": "boolean"
@@ -2097,16 +1638,10 @@
                           "type": "integer"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2136,9 +1671,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2154,9 +1687,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2172,9 +1703,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2182,9 +1711,7 @@
         },
         "operationId": "patchAdminExtrasOptionExtraConfigsById",
         "summary": "PATCH /v1/admin/extras/option-extra-configs/{id}",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       },
@@ -2211,9 +1738,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2229,9 +1754,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2239,9 +1762,7 @@
         },
         "operationId": "deleteAdminExtrasOptionExtraConfigsById",
         "summary": "DELETE /v1/admin/extras/option-extra-configs/{id}",
-        "tags": [
-          "extras"
-        ],
+        "tags": ["extras"],
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin"
       }

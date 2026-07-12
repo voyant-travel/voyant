@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -169,37 +142,23 @@
                     "maxLength": 255
                   },
                   "provider": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "bookingId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 3,
                     "maxLength": 3
                   },
                   "amountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 1
                   }
                 },
-                "required": [
-                  "code"
-                ]
+                "required": ["code"]
               }
             }
           }
@@ -219,10 +178,7 @@
                           "type": "boolean"
                         },
                         "reason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "not_found",
                             "inactive",
@@ -235,10 +191,7 @@
                           ]
                         },
                         "voucher": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -247,40 +200,22 @@
                               "type": "string"
                             },
                             "label": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "provider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "currency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "amountCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "remainingAmountCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "expiresAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -295,16 +230,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "valid",
-                        "reason",
-                        "voucher"
-                      ]
+                      "required": ["valid", "reason", "voucher"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -312,9 +241,7 @@
         },
         "operationId": "postPublicFinanceVouchersValidate",
         "summary": "POST /v1/public/finance/vouchers/validate",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -335,11 +262,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "invoice",
-                "proforma",
-                "credit_note"
-              ]
+              "enum": ["invoice", "proforma", "credit_note"]
             },
             "required": false,
             "name": "invoiceType",
@@ -365,11 +288,7 @@
                         },
                         "invoiceType": {
                           "type": "string",
-                          "enum": [
-                            "invoice",
-                            "proforma",
-                            "credit_note"
-                          ]
+                          "enum": ["invoice", "proforma", "credit_note"]
                         },
                         "invoiceStatus": {
                           "type": "string",
@@ -402,63 +321,30 @@
                           "type": "string"
                         },
                         "renditionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "documentStatus": {
                           "type": "string",
-                          "enum": [
-                            "missing",
-                            "pending",
-                            "ready",
-                            "failed",
-                            "stale"
-                          ]
+                          "enum": ["missing", "pending", "ready", "failed", "stale"]
                         },
                         "format": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "html",
-                            "pdf",
-                            "xml",
-                            "json",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["html", "pdf", "xml", "json", null]
                         },
                         "language": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "generatedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fileSize": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "checksum": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "downloadUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
                           "type": "string"
@@ -487,9 +373,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -505,9 +389,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -515,9 +397,7 @@
         },
         "operationId": "getPublicFinanceDocumentsByReference",
         "summary": "GET /v1/public/finance/documents/by-reference",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -561,11 +441,7 @@
                               },
                               "invoiceType": {
                                 "type": "string",
-                                "enum": [
-                                  "invoice",
-                                  "proforma",
-                                  "credit_note"
-                                ]
+                                "enum": ["invoice", "proforma", "credit_note"]
                               },
                               "invoiceStatus": {
                                 "type": "string",
@@ -598,63 +474,30 @@
                                 "type": "string"
                               },
                               "renditionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "documentStatus": {
                                 "type": "string",
-                                "enum": [
-                                  "missing",
-                                  "pending",
-                                  "ready",
-                                  "failed",
-                                  "stale"
-                                ]
+                                "enum": ["missing", "pending", "ready", "failed", "stale"]
                               },
                               "format": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "html",
-                                  "pdf",
-                                  "xml",
-                                  "json",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["html", "pdf", "xml", "json", null]
                               },
                               "language": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "generatedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "fileSize": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "checksum": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "downloadUrl": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -680,15 +523,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "bookingId",
-                        "documents"
-                      ]
+                      "required": ["bookingId", "documents"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -704,9 +542,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -714,9 +550,7 @@
         },
         "operationId": "getPublicFinanceBookingsByBookingIdDocuments",
         "summary": "GET /v1/public/finance/bookings/{bookingId}/documents",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -745,11 +579,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "invoice",
-                "proforma",
-                "credit_note"
-              ]
+              "enum": ["invoice", "proforma", "credit_note"]
             },
             "required": false,
             "name": "invoiceType",
@@ -775,11 +605,7 @@
                         },
                         "invoiceType": {
                           "type": "string",
-                          "enum": [
-                            "invoice",
-                            "proforma",
-                            "credit_note"
-                          ]
+                          "enum": ["invoice", "proforma", "credit_note"]
                         },
                         "invoiceStatus": {
                           "type": "string",
@@ -812,63 +638,30 @@
                           "type": "string"
                         },
                         "renditionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "documentStatus": {
                           "type": "string",
-                          "enum": [
-                            "missing",
-                            "pending",
-                            "ready",
-                            "failed",
-                            "stale"
-                          ]
+                          "enum": ["missing", "pending", "ready", "failed", "stale"]
                         },
                         "format": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "html",
-                            "pdf",
-                            "xml",
-                            "json",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["html", "pdf", "xml", "json", null]
                         },
                         "language": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "generatedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "fileSize": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "checksum": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "downloadUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
                           "type": "string"
@@ -897,9 +690,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -915,9 +706,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -925,9 +714,7 @@
         },
         "operationId": "getPublicFinanceBookingsByBookingIdDocumentsByReference",
         "summary": "GET /v1/public/finance/bookings/{bookingId}/documents/by-reference",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -968,44 +755,22 @@
                               },
                               "source": {
                                 "type": "string",
-                                "enum": [
-                                  "payment",
-                                  "voucher_redemption"
-                                ],
+                                "enum": ["payment", "voucher_redemption"],
                                 "default": "payment"
                               },
                               "invoiceId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "invoiceNumber": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "invoiceType": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
-                                "enum": [
-                                  "invoice",
-                                  "proforma",
-                                  "credit_note",
-                                  null
-                                ]
+                                "type": ["string", "null"],
+                                "enum": ["invoice", "proforma", "credit_note", null]
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "pending",
-                                  "completed",
-                                  "failed",
-                                  "refunded"
-                                ]
+                                "enum": ["pending", "completed", "failed", "refunded"]
                               },
                               "paymentMethod": {
                                 "type": "string",
@@ -1028,31 +793,19 @@
                                 "type": "string"
                               },
                               "baseCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "baseAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "paymentDate": {
                                 "type": "string"
                               },
                               "referenceNumber": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -1073,15 +826,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "bookingId",
-                        "payments"
-                      ]
+                      "required": ["bookingId", "payments"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1097,9 +845,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1107,9 +853,7 @@
         },
         "operationId": "getPublicFinanceBookingsByBookingIdPayments",
         "summary": "GET /v1/public/finance/bookings/{bookingId}/payments",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -1169,10 +913,7 @@
           },
           {
             "schema": {
-              "type": [
-                "boolean",
-                "null"
-              ],
+              "type": ["boolean", "null"],
               "default": false
             },
             "required": false,
@@ -1206,10 +947,7 @@
                                 "type": "string"
                               },
                               "provider": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "instrumentType": {
                                 "type": "string",
@@ -1235,28 +973,16 @@
                                 ]
                               },
                               "brand": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "last4": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "expiryMonth": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "expiryYear": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "isDefault": {
                                 "type": "boolean"
@@ -1286,24 +1012,11 @@
                               },
                               "scheduleType": {
                                 "type": "string",
-                                "enum": [
-                                  "deposit",
-                                  "installment",
-                                  "balance",
-                                  "hold",
-                                  "other"
-                                ]
+                                "enum": ["deposit", "installment", "balance", "hold", "other"]
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "pending",
-                                  "due",
-                                  "paid",
-                                  "waived",
-                                  "cancelled",
-                                  "expired"
-                                ]
+                                "enum": ["pending", "due", "paid", "waived", "cancelled", "expired"]
                               },
                               "dueDate": {
                                 "type": "string"
@@ -1315,10 +1028,7 @@
                                 "type": "integer"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -1341,10 +1051,7 @@
                                 "type": "string"
                               },
                               "bookingPaymentScheduleId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "guaranteeType": {
                                 "type": "string"
@@ -1353,40 +1060,22 @@
                                 "type": "string"
                               },
                               "currency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "amountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "provider": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "referenceNumber": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "expiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -1404,33 +1093,17 @@
                           }
                         },
                         "recommendedTarget": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "targetType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "booking_payment_schedule",
-                                "booking_guarantee",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["booking_payment_schedule", "booking_guarantee", null]
                             },
                             "targetId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "targetType",
-                            "targetId"
-                          ]
+                          "required": ["targetType", "targetId"]
                         }
                       },
                       "required": [
@@ -1442,9 +1115,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1460,9 +1131,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1470,9 +1139,7 @@
         },
         "operationId": "getPublicFinanceBookingsByBookingIdPaymentOptions",
         "summary": "GET /v1/public/finance/bookings/{bookingId}/payment-options",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -1510,161 +1177,119 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking"
-                                  ]
+                                  "enum": ["booking"]
                                 },
                                 "bookingId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingId"
-                              ]
+                              "required": ["type", "bookingId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "invoice"
-                                  ]
+                                  "enum": ["invoice"]
                                 },
                                 "invoiceId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "invoiceId"
-                              ]
+                              "required": ["type", "invoiceId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_payment_schedule"
-                                  ]
+                                  "enum": ["booking_payment_schedule"]
                                 },
                                 "bookingPaymentScheduleId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingPaymentScheduleId"
-                              ]
+                              "required": ["type", "bookingPaymentScheduleId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_guarantee"
-                                  ]
+                                  "enum": ["booking_guarantee"]
                                 },
                                 "bookingGuaranteeId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingGuaranteeId"
-                              ]
+                              "required": ["type", "bookingGuaranteeId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "flight_order"
-                                  ]
+                                  "enum": ["flight_order"]
                                 },
                                 "flightOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "flightOrderId"
-                              ]
+                              "required": ["type", "flightOrderId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "program"
-                                  ]
+                                  "enum": ["program"]
                                 },
                                 "programId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "programId"
-                              ]
+                              "required": ["type", "programId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "supplier_settlement"
-                                  ]
+                                  "enum": ["supplier_settlement"]
                                 },
                                 "supplierSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "supplierSettlementId"
-                              ]
+                              "required": ["type", "supplierSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "channel_settlement"
-                                  ]
+                                  "enum": ["channel_settlement"]
                                 },
                                 "channelSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "channelSettlementId"
-                              ]
+                              "required": ["type", "channelSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "provider_reference"
-                                  ]
+                                  "enum": ["provider_reference"]
                                 },
                                 "provider": {
                                   "type": "string",
@@ -1677,30 +1302,21 @@
                                   "maxLength": 255
                                 }
                               },
-                              "required": [
-                                "type",
-                                "provider",
-                                "reference"
-                              ]
+                              "required": ["type", "provider", "reference"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "legacy_order"
-                                  ]
+                                  "enum": ["legacy_order"]
                                 },
                                 "legacyOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "legacyOrderId"
-                              ]
+                              "required": ["type", "legacyOrderId"]
                             },
                             {
                               "type": "null"
@@ -1708,10 +1324,7 @@
                           ]
                         },
                         "provenance": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "source": {
                               "type": "string",
@@ -1727,24 +1340,15 @@
                               "default": "operator"
                             },
                             "provider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "reference": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             }
                           }
@@ -1762,40 +1366,22 @@
                           ]
                         },
                         "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingPaymentScheduleId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingGuaranteeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
@@ -1811,34 +1397,19 @@
                           ]
                         },
                         "provider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerSessionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerPaymentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "externalReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "clientReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -1847,10 +1418,7 @@
                           "type": "integer"
                         },
                         "paymentMethod": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "bank_transfer",
                             "credit_card",
@@ -1865,64 +1433,34 @@
                           ]
                         },
                         "payerEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "payerName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "redirectUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "returnUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureMessage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1955,9 +1493,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1973,9 +1509,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1983,9 +1517,7 @@
         },
         "operationId": "getPublicFinancePaymentSessionsBySessionId",
         "summary": "GET /v1/public/finance/payment-sessions/{sessionId}",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -2024,161 +1556,119 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking"
-                            ]
+                            "enum": ["booking"]
                           },
                           "bookingId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingId"
-                        ]
+                        "required": ["type", "bookingId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "invoice"
-                            ]
+                            "enum": ["invoice"]
                           },
                           "invoiceId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "invoiceId"
-                        ]
+                        "required": ["type", "invoiceId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking_payment_schedule"
-                            ]
+                            "enum": ["booking_payment_schedule"]
                           },
                           "bookingPaymentScheduleId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingPaymentScheduleId"
-                        ]
+                        "required": ["type", "bookingPaymentScheduleId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking_guarantee"
-                            ]
+                            "enum": ["booking_guarantee"]
                           },
                           "bookingGuaranteeId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingGuaranteeId"
-                        ]
+                        "required": ["type", "bookingGuaranteeId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "flight_order"
-                            ]
+                            "enum": ["flight_order"]
                           },
                           "flightOrderId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "flightOrderId"
-                        ]
+                        "required": ["type", "flightOrderId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "program"
-                            ]
+                            "enum": ["program"]
                           },
                           "programId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "programId"
-                        ]
+                        "required": ["type", "programId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "supplier_settlement"
-                            ]
+                            "enum": ["supplier_settlement"]
                           },
                           "supplierSettlementId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "supplierSettlementId"
-                        ]
+                        "required": ["type", "supplierSettlementId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "channel_settlement"
-                            ]
+                            "enum": ["channel_settlement"]
                           },
                           "channelSettlementId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "channelSettlementId"
-                        ]
+                        "required": ["type", "channelSettlementId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "provider_reference"
-                            ]
+                            "enum": ["provider_reference"]
                           },
                           "provider": {
                             "type": "string",
@@ -2191,30 +1681,21 @@
                             "maxLength": 255
                           }
                         },
-                        "required": [
-                          "type",
-                          "provider",
-                          "reference"
-                        ]
+                        "required": ["type", "provider", "reference"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "legacy_order"
-                            ]
+                            "enum": ["legacy_order"]
                           },
                           "legacyOrderId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "legacyOrderId"
-                        ]
+                        "required": ["type", "legacyOrderId"]
                       }
                     ]
                   },
@@ -2235,40 +1716,25 @@
                         "default": "operator"
                       },
                       "provider": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       },
                       "reference": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       },
                       "idempotencyKey": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       }
                     }
                   },
                   "provider": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "paymentMethod": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "enum": [
                       "bank_transfer",
                       "credit_card",
@@ -2283,103 +1749,58 @@
                     ]
                   },
                   "paymentInstrumentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerPersonId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerOrganizationId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "payerName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "externalReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "idempotencyKey": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "clientReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "returnUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "cancelUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "callbackUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "expiresAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "providerPayload": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2408,161 +1829,119 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking"
-                                  ]
+                                  "enum": ["booking"]
                                 },
                                 "bookingId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingId"
-                              ]
+                              "required": ["type", "bookingId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "invoice"
-                                  ]
+                                  "enum": ["invoice"]
                                 },
                                 "invoiceId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "invoiceId"
-                              ]
+                              "required": ["type", "invoiceId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_payment_schedule"
-                                  ]
+                                  "enum": ["booking_payment_schedule"]
                                 },
                                 "bookingPaymentScheduleId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingPaymentScheduleId"
-                              ]
+                              "required": ["type", "bookingPaymentScheduleId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_guarantee"
-                                  ]
+                                  "enum": ["booking_guarantee"]
                                 },
                                 "bookingGuaranteeId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingGuaranteeId"
-                              ]
+                              "required": ["type", "bookingGuaranteeId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "flight_order"
-                                  ]
+                                  "enum": ["flight_order"]
                                 },
                                 "flightOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "flightOrderId"
-                              ]
+                              "required": ["type", "flightOrderId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "program"
-                                  ]
+                                  "enum": ["program"]
                                 },
                                 "programId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "programId"
-                              ]
+                              "required": ["type", "programId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "supplier_settlement"
-                                  ]
+                                  "enum": ["supplier_settlement"]
                                 },
                                 "supplierSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "supplierSettlementId"
-                              ]
+                              "required": ["type", "supplierSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "channel_settlement"
-                                  ]
+                                  "enum": ["channel_settlement"]
                                 },
                                 "channelSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "channelSettlementId"
-                              ]
+                              "required": ["type", "channelSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "provider_reference"
-                                  ]
+                                  "enum": ["provider_reference"]
                                 },
                                 "provider": {
                                   "type": "string",
@@ -2575,30 +1954,21 @@
                                   "maxLength": 255
                                 }
                               },
-                              "required": [
-                                "type",
-                                "provider",
-                                "reference"
-                              ]
+                              "required": ["type", "provider", "reference"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "legacy_order"
-                                  ]
+                                  "enum": ["legacy_order"]
                                 },
                                 "legacyOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "legacyOrderId"
-                              ]
+                              "required": ["type", "legacyOrderId"]
                             },
                             {
                               "type": "null"
@@ -2606,10 +1976,7 @@
                           ]
                         },
                         "provenance": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "source": {
                               "type": "string",
@@ -2625,24 +1992,15 @@
                               "default": "operator"
                             },
                             "provider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "reference": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             }
                           }
@@ -2660,40 +2018,22 @@
                           ]
                         },
                         "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingPaymentScheduleId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingGuaranteeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
@@ -2709,34 +2049,19 @@
                           ]
                         },
                         "provider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerSessionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerPaymentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "externalReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "clientReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -2745,10 +2070,7 @@
                           "type": "integer"
                         },
                         "paymentMethod": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "bank_transfer",
                             "credit_card",
@@ -2763,64 +2085,34 @@
                           ]
                         },
                         "payerEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "payerName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "redirectUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "returnUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureMessage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -2853,9 +2145,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2871,9 +2161,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2889,9 +2177,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2899,9 +2185,7 @@
         },
         "operationId": "postPublicFinanceBookingsByBookingIdPaymentSchedulesByScheduleIdPaymentSession",
         "summary": "POST /v1/public/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -2940,161 +2224,119 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking"
-                            ]
+                            "enum": ["booking"]
                           },
                           "bookingId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingId"
-                        ]
+                        "required": ["type", "bookingId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "invoice"
-                            ]
+                            "enum": ["invoice"]
                           },
                           "invoiceId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "invoiceId"
-                        ]
+                        "required": ["type", "invoiceId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking_payment_schedule"
-                            ]
+                            "enum": ["booking_payment_schedule"]
                           },
                           "bookingPaymentScheduleId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingPaymentScheduleId"
-                        ]
+                        "required": ["type", "bookingPaymentScheduleId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking_guarantee"
-                            ]
+                            "enum": ["booking_guarantee"]
                           },
                           "bookingGuaranteeId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingGuaranteeId"
-                        ]
+                        "required": ["type", "bookingGuaranteeId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "flight_order"
-                            ]
+                            "enum": ["flight_order"]
                           },
                           "flightOrderId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "flightOrderId"
-                        ]
+                        "required": ["type", "flightOrderId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "program"
-                            ]
+                            "enum": ["program"]
                           },
                           "programId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "programId"
-                        ]
+                        "required": ["type", "programId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "supplier_settlement"
-                            ]
+                            "enum": ["supplier_settlement"]
                           },
                           "supplierSettlementId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "supplierSettlementId"
-                        ]
+                        "required": ["type", "supplierSettlementId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "channel_settlement"
-                            ]
+                            "enum": ["channel_settlement"]
                           },
                           "channelSettlementId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "channelSettlementId"
-                        ]
+                        "required": ["type", "channelSettlementId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "provider_reference"
-                            ]
+                            "enum": ["provider_reference"]
                           },
                           "provider": {
                             "type": "string",
@@ -3107,30 +2349,21 @@
                             "maxLength": 255
                           }
                         },
-                        "required": [
-                          "type",
-                          "provider",
-                          "reference"
-                        ]
+                        "required": ["type", "provider", "reference"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "legacy_order"
-                            ]
+                            "enum": ["legacy_order"]
                           },
                           "legacyOrderId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "legacyOrderId"
-                        ]
+                        "required": ["type", "legacyOrderId"]
                       }
                     ]
                   },
@@ -3151,40 +2384,25 @@
                         "default": "operator"
                       },
                       "provider": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       },
                       "reference": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       },
                       "idempotencyKey": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       }
                     }
                   },
                   "provider": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "paymentMethod": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "enum": [
                       "bank_transfer",
                       "credit_card",
@@ -3199,103 +2417,58 @@
                     ]
                   },
                   "paymentInstrumentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerPersonId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerOrganizationId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "payerName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "externalReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "idempotencyKey": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "clientReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "returnUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "cancelUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "callbackUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "expiresAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "providerPayload": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -3324,161 +2497,119 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking"
-                                  ]
+                                  "enum": ["booking"]
                                 },
                                 "bookingId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingId"
-                              ]
+                              "required": ["type", "bookingId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "invoice"
-                                  ]
+                                  "enum": ["invoice"]
                                 },
                                 "invoiceId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "invoiceId"
-                              ]
+                              "required": ["type", "invoiceId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_payment_schedule"
-                                  ]
+                                  "enum": ["booking_payment_schedule"]
                                 },
                                 "bookingPaymentScheduleId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingPaymentScheduleId"
-                              ]
+                              "required": ["type", "bookingPaymentScheduleId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_guarantee"
-                                  ]
+                                  "enum": ["booking_guarantee"]
                                 },
                                 "bookingGuaranteeId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingGuaranteeId"
-                              ]
+                              "required": ["type", "bookingGuaranteeId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "flight_order"
-                                  ]
+                                  "enum": ["flight_order"]
                                 },
                                 "flightOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "flightOrderId"
-                              ]
+                              "required": ["type", "flightOrderId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "program"
-                                  ]
+                                  "enum": ["program"]
                                 },
                                 "programId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "programId"
-                              ]
+                              "required": ["type", "programId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "supplier_settlement"
-                                  ]
+                                  "enum": ["supplier_settlement"]
                                 },
                                 "supplierSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "supplierSettlementId"
-                              ]
+                              "required": ["type", "supplierSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "channel_settlement"
-                                  ]
+                                  "enum": ["channel_settlement"]
                                 },
                                 "channelSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "channelSettlementId"
-                              ]
+                              "required": ["type", "channelSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "provider_reference"
-                                  ]
+                                  "enum": ["provider_reference"]
                                 },
                                 "provider": {
                                   "type": "string",
@@ -3491,30 +2622,21 @@
                                   "maxLength": 255
                                 }
                               },
-                              "required": [
-                                "type",
-                                "provider",
-                                "reference"
-                              ]
+                              "required": ["type", "provider", "reference"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "legacy_order"
-                                  ]
+                                  "enum": ["legacy_order"]
                                 },
                                 "legacyOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "legacyOrderId"
-                              ]
+                              "required": ["type", "legacyOrderId"]
                             },
                             {
                               "type": "null"
@@ -3522,10 +2644,7 @@
                           ]
                         },
                         "provenance": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "source": {
                               "type": "string",
@@ -3541,24 +2660,15 @@
                               "default": "operator"
                             },
                             "provider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "reference": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             }
                           }
@@ -3576,40 +2686,22 @@
                           ]
                         },
                         "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingPaymentScheduleId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingGuaranteeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
@@ -3625,34 +2717,19 @@
                           ]
                         },
                         "provider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerSessionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerPaymentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "externalReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "clientReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -3661,10 +2738,7 @@
                           "type": "integer"
                         },
                         "paymentMethod": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "bank_transfer",
                             "credit_card",
@@ -3679,64 +2753,34 @@
                           ]
                         },
                         "payerEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "payerName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "redirectUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "returnUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureMessage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -3769,9 +2813,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3787,9 +2829,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3805,9 +2845,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3815,9 +2853,7 @@
         },
         "operationId": "postPublicFinanceBookingsByBookingIdGuaranteesByGuaranteeIdPaymentSession",
         "summary": "POST /v1/public/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -3848,161 +2884,119 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking"
-                            ]
+                            "enum": ["booking"]
                           },
                           "bookingId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingId"
-                        ]
+                        "required": ["type", "bookingId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "invoice"
-                            ]
+                            "enum": ["invoice"]
                           },
                           "invoiceId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "invoiceId"
-                        ]
+                        "required": ["type", "invoiceId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking_payment_schedule"
-                            ]
+                            "enum": ["booking_payment_schedule"]
                           },
                           "bookingPaymentScheduleId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingPaymentScheduleId"
-                        ]
+                        "required": ["type", "bookingPaymentScheduleId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "booking_guarantee"
-                            ]
+                            "enum": ["booking_guarantee"]
                           },
                           "bookingGuaranteeId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "bookingGuaranteeId"
-                        ]
+                        "required": ["type", "bookingGuaranteeId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "flight_order"
-                            ]
+                            "enum": ["flight_order"]
                           },
                           "flightOrderId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "flightOrderId"
-                        ]
+                        "required": ["type", "flightOrderId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "program"
-                            ]
+                            "enum": ["program"]
                           },
                           "programId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "programId"
-                        ]
+                        "required": ["type", "programId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "supplier_settlement"
-                            ]
+                            "enum": ["supplier_settlement"]
                           },
                           "supplierSettlementId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "supplierSettlementId"
-                        ]
+                        "required": ["type", "supplierSettlementId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "channel_settlement"
-                            ]
+                            "enum": ["channel_settlement"]
                           },
                           "channelSettlementId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "channelSettlementId"
-                        ]
+                        "required": ["type", "channelSettlementId"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "provider_reference"
-                            ]
+                            "enum": ["provider_reference"]
                           },
                           "provider": {
                             "type": "string",
@@ -4015,30 +3009,21 @@
                             "maxLength": 255
                           }
                         },
-                        "required": [
-                          "type",
-                          "provider",
-                          "reference"
-                        ]
+                        "required": ["type", "provider", "reference"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "legacy_order"
-                            ]
+                            "enum": ["legacy_order"]
                           },
                           "legacyOrderId": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "legacyOrderId"
-                        ]
+                        "required": ["type", "legacyOrderId"]
                       }
                     ]
                   },
@@ -4059,40 +3044,25 @@
                         "default": "operator"
                       },
                       "provider": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       },
                       "reference": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       },
                       "idempotencyKey": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 255
                       }
                     }
                   },
                   "provider": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "paymentMethod": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "enum": [
                       "bank_transfer",
                       "credit_card",
@@ -4107,103 +3077,58 @@
                     ]
                   },
                   "paymentInstrumentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerPersonId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerOrganizationId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "payerEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "payerName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "externalReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "idempotencyKey": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "clientReference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "returnUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "cancelUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "callbackUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "expiresAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "providerPayload": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -4232,161 +3157,119 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking"
-                                  ]
+                                  "enum": ["booking"]
                                 },
                                 "bookingId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingId"
-                              ]
+                              "required": ["type", "bookingId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "invoice"
-                                  ]
+                                  "enum": ["invoice"]
                                 },
                                 "invoiceId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "invoiceId"
-                              ]
+                              "required": ["type", "invoiceId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_payment_schedule"
-                                  ]
+                                  "enum": ["booking_payment_schedule"]
                                 },
                                 "bookingPaymentScheduleId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingPaymentScheduleId"
-                              ]
+                              "required": ["type", "bookingPaymentScheduleId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "booking_guarantee"
-                                  ]
+                                  "enum": ["booking_guarantee"]
                                 },
                                 "bookingGuaranteeId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "bookingGuaranteeId"
-                              ]
+                              "required": ["type", "bookingGuaranteeId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "flight_order"
-                                  ]
+                                  "enum": ["flight_order"]
                                 },
                                 "flightOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "flightOrderId"
-                              ]
+                              "required": ["type", "flightOrderId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "program"
-                                  ]
+                                  "enum": ["program"]
                                 },
                                 "programId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "programId"
-                              ]
+                              "required": ["type", "programId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "supplier_settlement"
-                                  ]
+                                  "enum": ["supplier_settlement"]
                                 },
                                 "supplierSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "supplierSettlementId"
-                              ]
+                              "required": ["type", "supplierSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "channel_settlement"
-                                  ]
+                                  "enum": ["channel_settlement"]
                                 },
                                 "channelSettlementId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "channelSettlementId"
-                              ]
+                              "required": ["type", "channelSettlementId"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "provider_reference"
-                                  ]
+                                  "enum": ["provider_reference"]
                                 },
                                 "provider": {
                                   "type": "string",
@@ -4399,30 +3282,21 @@
                                   "maxLength": 255
                                 }
                               },
-                              "required": [
-                                "type",
-                                "provider",
-                                "reference"
-                              ]
+                              "required": ["type", "provider", "reference"]
                             },
                             {
                               "type": "object",
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": [
-                                    "legacy_order"
-                                  ]
+                                  "enum": ["legacy_order"]
                                 },
                                 "legacyOrderId": {
                                   "type": "string",
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "type",
-                                "legacyOrderId"
-                              ]
+                              "required": ["type", "legacyOrderId"]
                             },
                             {
                               "type": "null"
@@ -4430,10 +3304,7 @@
                           ]
                         },
                         "provenance": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "source": {
                               "type": "string",
@@ -4449,24 +3320,15 @@
                               "default": "operator"
                             },
                             "provider": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "reference": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             }
                           }
@@ -4484,40 +3346,22 @@
                           ]
                         },
                         "targetId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legacyOrderId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoiceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingPaymentScheduleId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingGuaranteeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
@@ -4533,34 +3377,19 @@
                           ]
                         },
                         "provider": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerSessionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "providerPaymentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "externalReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "clientReference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "currency": {
                           "type": "string"
@@ -4569,10 +3398,7 @@
                           "type": "integer"
                         },
                         "paymentMethod": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "bank_transfer",
                             "credit_card",
@@ -4587,64 +3413,34 @@
                           ]
                         },
                         "payerEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "payerName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "redirectUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "returnUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "failureMessage": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -4677,9 +3473,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4695,9 +3489,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4713,9 +3505,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4723,9 +3513,7 @@
         },
         "operationId": "postPublicFinanceInvoicesByInvoiceIdPaymentSession",
         "summary": "POST /v1/public/finance/invoices/{invoiceId}/payment-session",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -4757,30 +3545,20 @@
                           "type": "object",
                           "properties": {
                             "from": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "to": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           }
                         },
                         "departures": {},
                         "products": {}
                       },
-                      "required": [
-                        "scope"
-                      ]
+                      "required": ["scope"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4796,9 +3574,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4814,9 +3590,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4824,9 +3598,7 @@
         },
         "operationId": "getPublicFinanceAccountantByTokenSummary",
         "summary": "GET /v1/public/finance/accountant/{token}/summary",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }
@@ -4856,9 +3628,7 @@
                       "items": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4874,9 +3644,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4892,9 +3660,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4902,9 +3668,7 @@
         },
         "operationId": "getPublicFinanceAccountantByTokenInvoices",
         "summary": "GET /v1/public/finance/accountant/{token}/invoices",
-        "tags": [
-          "finance"
-        ],
+        "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
       }

@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -196,12 +169,7 @@
                       },
                       "audience": {
                         "type": "string",
-                        "enum": [
-                          "staff",
-                          "customer",
-                          "partner",
-                          "supplier"
-                        ]
+                        "enum": ["staff", "customer", "partner", "supplier"]
                       },
                       "market": {
                         "type": "string",
@@ -226,10 +194,7 @@
                     "exclusiveMinimum": 0
                   }
                 },
-                "required": [
-                  "entityModule",
-                  "entityId"
-                ]
+                "required": ["entityModule", "entityId"]
               }
             }
           }
@@ -282,9 +247,7 @@
                         },
                         "showsReview": {
                           "type": "boolean",
-                          "enum": [
-                            true
-                          ]
+                          "enum": [true]
                         },
                         "configureSubSteps": {
                           "type": "array",
@@ -295,30 +258,21 @@
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "departure"
-                                    ]
+                                    "enum": ["departure"]
                                   },
                                   "required": {
                                     "type": "boolean",
-                                    "enum": [
-                                      true
-                                    ]
+                                    "enum": [true]
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "required"
-                                ]
+                                "required": ["kind", "required"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "product-option"
-                                    ]
+                                    "enum": ["product-option"]
                                   },
                                   "options": {
                                     "type": "array",
@@ -329,19 +283,13 @@
                                           "type": "string"
                                         },
                                         "code": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "name": {
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "isDefault": {
                                           "type": "boolean"
@@ -358,73 +306,46 @@
                                                 "type": "string"
                                               },
                                               "description": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "unitType": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "minQuantity": {
-                                                "type": [
-                                                  "integer",
-                                                  "null"
-                                                ],
+                                                "type": ["integer", "null"],
                                                 "minimum": 0
                                               },
                                               "maxQuantity": {
-                                                "type": [
-                                                  "integer",
-                                                  "null"
-                                                ],
+                                                "type": ["integer", "null"],
                                                 "minimum": 0
                                               }
                                             },
-                                            "required": [
-                                              "id",
-                                              "name"
-                                            ]
+                                            "required": ["id", "name"]
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name"
-                                      ]
+                                      "required": ["id", "name"]
                                     }
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "options"
-                                ]
+                                "required": ["kind", "options"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "option-units"
-                                    ]
+                                    "enum": ["option-units"]
                                   }
                                 },
-                                "required": [
-                                  "kind"
-                                ]
+                                "required": ["kind"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "cabin-category"
-                                    ]
+                                    "enum": ["cabin-category"]
                                   },
                                   "categories": {
                                     "type": "array",
@@ -455,26 +376,18 @@
                                           "type": "string"
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name"
-                                      ]
+                                      "required": ["id", "name"]
                                     }
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "categories"
-                                ]
+                                "required": ["kind", "categories"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "cabin-number"
-                                    ]
+                                    "enum": ["cabin-number"]
                                   },
                                   "perCategory": {
                                     "type": "object",
@@ -500,27 +413,19 @@
                                             "type": "boolean"
                                           }
                                         },
-                                        "required": [
-                                          "id",
-                                          "label"
-                                        ]
+                                        "required": ["id", "label"]
                                       }
                                     }
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "perCategory"
-                                ]
+                                "required": ["kind", "perCategory"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "date-range"
-                                    ]
+                                    "enum": ["date-range"]
                                   },
                                   "minNights": {
                                     "type": "integer",
@@ -531,20 +436,14 @@
                                     "exclusiveMinimum": 0
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "minNights",
-                                  "maxNights"
-                                ]
+                                "required": ["kind", "minNights", "maxNights"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "occupancy"
-                                    ]
+                                    "enum": ["occupancy"]
                                   },
                                   "bands": {
                                     "type": "array",
@@ -574,36 +473,24 @@
                                           "minimum": 0
                                         }
                                       },
-                                      "required": [
-                                        "code",
-                                        "label",
-                                        "minCount",
-                                        "maxCount"
-                                      ]
+                                      "required": ["code", "label", "minCount", "maxCount"]
                                     }
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "bands"
-                                ]
+                                "required": ["kind", "bands"]
                               },
                               {
                                 "type": "object",
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "air-arrangement"
-                                    ]
+                                    "enum": ["air-arrangement"]
                                   },
                                   "required": {
                                     "type": "boolean"
                                   }
                                 },
-                                "required": [
-                                  "kind"
-                                ]
+                                "required": ["kind"]
                               }
                             ]
                           }
@@ -636,12 +523,7 @@
                                 "minimum": 0
                               }
                             },
-                            "required": [
-                              "code",
-                              "label",
-                              "minCount",
-                              "maxCount"
-                            ]
+                            "required": ["code", "label", "minCount", "maxCount"]
                           }
                         },
                         "paxBandsAllowedTotal": {
@@ -654,10 +536,7 @@
                               "type": "integer"
                             }
                           },
-                          "required": [
-                            "min",
-                            "max"
-                          ]
+                          "required": ["min", "max"]
                         },
                         "paxBandDependencies": {
                           "type": "array",
@@ -672,12 +551,7 @@
                               },
                               "type": {
                                 "type": "string",
-                                "enum": [
-                                  "requires",
-                                  "limits_per_master",
-                                  "limits_sum",
-                                  "excludes"
-                                ]
+                                "enum": ["requires", "limits_per_master", "limits_sum", "excludes"]
                               },
                               "maxPerMaster": {
                                 "type": "integer",
@@ -688,11 +562,7 @@
                                 "minimum": 0
                               }
                             },
-                            "required": [
-                              "dependentCode",
-                              "masterCode",
-                              "type"
-                            ]
+                            "required": ["dependentCode", "masterCode", "type"]
                           }
                         },
                         "travelerFields": {
@@ -724,10 +594,7 @@
                                       "type": "string"
                                     }
                                   },
-                                  "required": [
-                                    "value",
-                                    "label"
-                                  ]
+                                  "required": ["value", "label"]
                                 }
                               },
                               "appliesToBands": {
@@ -737,12 +604,7 @@
                                 }
                               }
                             },
-                            "required": [
-                              "key",
-                              "label",
-                              "type",
-                              "required"
-                            ]
+                            "required": ["key", "label", "type", "required"]
                           }
                         },
                         "bookingFields": {
@@ -764,20 +626,10 @@
                               },
                               "group": {
                                 "type": "string",
-                                "enum": [
-                                  "billing",
-                                  "company",
-                                  "preferences"
-                                ]
+                                "enum": ["billing", "company", "preferences"]
                               }
                             },
-                            "required": [
-                              "key",
-                              "label",
-                              "type",
-                              "required",
-                              "group"
-                            ]
+                            "required": ["key", "label", "type", "required", "group"]
                           }
                         },
                         "accommodation": {
@@ -795,23 +647,14 @@
                                     "type": "string"
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "capacity": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   },
                                   "baseRateHint": {
-                                    "type": [
-                                      "number",
-                                      "null"
-                                    ]
+                                    "type": ["number", "null"]
                                   },
                                   "ratePlans": {
                                     "type": "array",
@@ -825,23 +668,14 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "chargeFrequency": {
                                           "type": "string",
-                                          "enum": [
-                                            "per_night",
-                                            "per_stay"
-                                          ]
+                                          "enum": ["per_night", "per_stay"]
                                         },
                                         "cancellationPolicy": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "inclusions": {
                                           "type": "array",
@@ -853,17 +687,11 @@
                                           "type": "string"
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name"
-                                      ]
+                                      "required": ["id", "name"]
                                     }
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "name"
-                                ]
+                                "required": ["id", "name"]
                               }
                             },
                             "sharedRoomAllowed": {
@@ -878,9 +706,7 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
-                                        "enum": [
-                                          "rooms"
-                                        ]
+                                        "enum": ["rooms"]
                                       },
                                       "options": {
                                         "type": "array",
@@ -894,23 +720,14 @@
                                               "type": "string"
                                             },
                                             "description": {
-                                              "type": [
-                                                "string",
-                                                "null"
-                                              ]
+                                              "type": ["string", "null"]
                                             },
                                             "capacity": {
-                                              "type": [
-                                                "integer",
-                                                "null"
-                                              ],
+                                              "type": ["integer", "null"],
                                               "minimum": 0
                                             },
                                             "baseRateHint": {
-                                              "type": [
-                                                "number",
-                                                "null"
-                                              ]
+                                              "type": ["number", "null"]
                                             },
                                             "ratePlans": {
                                               "type": "array",
@@ -924,23 +741,14 @@
                                                     "type": "string"
                                                   },
                                                   "description": {
-                                                    "type": [
-                                                      "string",
-                                                      "null"
-                                                    ]
+                                                    "type": ["string", "null"]
                                                   },
                                                   "chargeFrequency": {
                                                     "type": "string",
-                                                    "enum": [
-                                                      "per_night",
-                                                      "per_stay"
-                                                    ]
+                                                    "enum": ["per_night", "per_stay"]
                                                   },
                                                   "cancellationPolicy": {
-                                                    "type": [
-                                                      "string",
-                                                      "null"
-                                                    ]
+                                                    "type": ["string", "null"]
                                                   },
                                                   "inclusions": {
                                                     "type": "array",
@@ -952,37 +760,25 @@
                                                     "type": "string"
                                                   }
                                                 },
-                                                "required": [
-                                                  "id",
-                                                  "name"
-                                                ]
+                                                "required": ["id", "name"]
                                               }
                                             }
                                           },
-                                          "required": [
-                                            "id",
-                                            "name"
-                                          ]
+                                          "required": ["id", "name"]
                                         }
                                       },
                                       "sharedRoomAllowed": {
                                         "type": "boolean"
                                       }
                                     },
-                                    "required": [
-                                      "kind",
-                                      "options",
-                                      "sharedRoomAllowed"
-                                    ]
+                                    "required": ["kind", "options", "sharedRoomAllowed"]
                                   },
                                   {
                                     "type": "object",
                                     "properties": {
                                       "kind": {
                                         "type": "string",
-                                        "enum": [
-                                          "extensions"
-                                        ]
+                                        "enum": ["extensions"]
                                       },
                                       "options": {
                                         "type": "array",
@@ -996,37 +792,21 @@
                                               "type": "string"
                                             },
                                             "city": {
-                                              "type": [
-                                                "string",
-                                                "null"
-                                              ]
+                                              "type": ["string", "null"]
                                             },
                                             "side": {
                                               "type": "string",
-                                              "enum": [
-                                                "pre",
-                                                "post"
-                                              ]
+                                              "enum": ["pre", "post"]
                                             },
                                             "nights": {
-                                              "type": [
-                                                "integer",
-                                                "null"
-                                              ],
+                                              "type": ["integer", "null"],
                                               "minimum": 0
                                             },
                                             "pricePerPersonHint": {
-                                              "type": [
-                                                "number",
-                                                "null"
-                                              ]
+                                              "type": ["number", "null"]
                                             }
                                           },
-                                          "required": [
-                                            "id",
-                                            "name",
-                                            "side"
-                                          ]
+                                          "required": ["id", "name", "side"]
                                         }
                                       },
                                       "allowsPre": {
@@ -1036,20 +816,13 @@
                                         "type": "boolean"
                                       }
                                     },
-                                    "required": [
-                                      "kind",
-                                      "options",
-                                      "allowsPre",
-                                      "allowsPost"
-                                    ]
+                                    "required": ["kind", "options", "allowsPre", "allowsPost"]
                                   }
                                 ]
                               }
                             }
                           },
-                          "required": [
-                            "sharedRoomAllowed"
-                          ]
+                          "required": ["sharedRoomAllowed"]
                         },
                         "addons": {
                           "type": "object",
@@ -1066,54 +839,29 @@
                                     "type": "string"
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "extras",
-                                      "excursions",
-                                      "insurance"
-                                    ]
+                                    "enum": ["extras", "excursions", "insurance"]
                                   },
                                   "groupKey": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "pricingMode": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "unitAmountCents": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ]
+                                    "type": ["integer", "null"]
                                   },
                                   "currency": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "pricedPerPerson": {
-                                    "type": [
-                                      "boolean",
-                                      "null"
-                                    ]
+                                    "type": ["boolean", "null"]
                                   },
                                   "selectionType": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "enum": [
                                       "optional",
                                       "required",
@@ -1123,32 +871,19 @@
                                     ]
                                   },
                                   "minQuantity": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   },
                                   "maxQuantity": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   },
                                   "defaultQuantity": {
-                                    "type": [
-                                      "integer",
-                                      "null"
-                                    ],
+                                    "type": ["integer", "null"],
                                     "minimum": 0
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "name",
-                                  "kind"
-                                ]
+                                "required": ["id", "name", "kind"]
                               }
                             },
                             "groups": {
@@ -1158,21 +893,14 @@
                                 "properties": {
                                   "kind": {
                                     "type": "string",
-                                    "enum": [
-                                      "extras",
-                                      "excursions",
-                                      "insurance"
-                                    ]
+                                    "enum": ["extras", "excursions", "insurance"]
                                   },
                                   "label": {
                                     "type": "string"
                                   },
                                   "groupBy": {
                                     "type": "string",
-                                    "enum": [
-                                      "port",
-                                      "day"
-                                    ]
+                                    "enum": ["port", "day"]
                                   },
                                   "perGuestSelection": {
                                     "type": "boolean"
@@ -1189,54 +917,29 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "extras",
-                                            "excursions",
-                                            "insurance"
-                                          ]
+                                          "enum": ["extras", "excursions", "insurance"]
                                         },
                                         "groupKey": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "pricingMode": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "unitAmountCents": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ]
+                                          "type": ["integer", "null"]
                                         },
                                         "currency": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "pricedPerPerson": {
-                                          "type": [
-                                            "boolean",
-                                            "null"
-                                          ]
+                                          "type": ["boolean", "null"]
                                         },
                                         "selectionType": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ],
+                                          "type": ["string", "null"],
                                           "enum": [
                                             "optional",
                                             "required",
@@ -1246,41 +949,23 @@
                                           ]
                                         },
                                         "minQuantity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         },
                                         "maxQuantity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         },
                                         "defaultQuantity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name",
-                                        "kind"
-                                      ]
+                                      "required": ["id", "name", "kind"]
                                     }
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "label",
-                                  "perGuestSelection",
-                                  "items"
-                                ]
+                                "required": ["kind", "label", "perGuestSelection", "items"]
                               }
                             }
                           }
@@ -1289,13 +974,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": [
-                              "hold",
-                              "card",
-                              "bank_transfer",
-                              "ticket_on_credit",
-                              "inquiry"
-                            ]
+                            "enum": ["hold", "card", "bank_transfer", "ticket_on_credit", "inquiry"]
                           }
                         }
                       },
@@ -1355,12 +1034,7 @@
                                 "type": "boolean"
                               }
                             },
-                            "required": [
-                              "kind",
-                              "label",
-                              "unitAmount",
-                              "totalAmount"
-                            ]
+                            "required": ["kind", "label", "unitAmount", "totalAmount"]
                           }
                         },
                         "taxes": {
@@ -1389,20 +1063,10 @@
                               },
                               "scope": {
                                 "type": "string",
-                                "enum": [
-                                  "included",
-                                  "excluded",
-                                  "withheld"
-                                ]
+                                "enum": ["included", "excluded", "withheld"]
                               }
                             },
-                            "required": [
-                              "code",
-                              "label",
-                              "rate",
-                              "amount",
-                              "base"
-                            ]
+                            "required": ["code", "label", "rate", "amount", "base"]
                           }
                         },
                         "subtotal": {
@@ -1415,26 +1079,14 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "currency",
-                        "lines",
-                        "taxes",
-                        "subtotal",
-                        "taxTotal",
-                        "total"
-                      ]
+                      "required": ["currency", "lines", "taxes", "subtotal", "taxTotal", "total"]
                     },
                     "upstreamPayload": {
                       "type": "object",
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "quoteId",
-                    "quotedAt",
-                    "expiresAt",
-                    "available"
-                  ]
+                  "required": ["quoteId", "quotedAt", "expiresAt", "available"]
                 }
               }
             }
@@ -1457,9 +1109,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1482,9 +1132,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1507,9 +1155,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1532,9 +1178,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1557,9 +1201,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1567,9 +1209,7 @@
         },
         "operationId": "postAdminCatalogQuote",
         "summary": "POST /v1/admin/catalog/quote",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -1616,12 +1256,7 @@
                       },
                       "audience": {
                         "type": "string",
-                        "enum": [
-                          "staff",
-                          "customer",
-                          "partner",
-                          "supplier"
-                        ]
+                        "enum": ["staff", "customer", "partner", "supplier"]
                       },
                       "market": {
                         "type": "string",
@@ -1687,18 +1322,13 @@
                           "additionalProperties": {}
                         }
                       },
-                      "required": [
-                        "entityModule",
-                        "entityId"
-                      ]
+                      "required": ["entityModule", "entityId"]
                     },
                     "minItems": 1,
                     "maxItems": 30
                   }
                 },
-                "required": [
-                  "selections"
-                ]
+                "required": ["selections"]
               }
             }
           }
@@ -1756,9 +1386,7 @@
                               },
                               "showsReview": {
                                 "type": "boolean",
-                                "enum": [
-                                  true
-                                ]
+                                "enum": [true]
                               },
                               "configureSubSteps": {
                                 "type": "array",
@@ -1769,30 +1397,21 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "departure"
-                                          ]
+                                          "enum": ["departure"]
                                         },
                                         "required": {
                                           "type": "boolean",
-                                          "enum": [
-                                            true
-                                          ]
+                                          "enum": [true]
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "required"
-                                      ]
+                                      "required": ["kind", "required"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "product-option"
-                                          ]
+                                          "enum": ["product-option"]
                                         },
                                         "options": {
                                           "type": "array",
@@ -1803,19 +1422,13 @@
                                                 "type": "string"
                                               },
                                               "code": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "name": {
                                                 "type": "string"
                                               },
                                               "description": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "isDefault": {
                                                 "type": "boolean"
@@ -1832,73 +1445,46 @@
                                                       "type": "string"
                                                     },
                                                     "description": {
-                                                      "type": [
-                                                        "string",
-                                                        "null"
-                                                      ]
+                                                      "type": ["string", "null"]
                                                     },
                                                     "unitType": {
-                                                      "type": [
-                                                        "string",
-                                                        "null"
-                                                      ]
+                                                      "type": ["string", "null"]
                                                     },
                                                     "minQuantity": {
-                                                      "type": [
-                                                        "integer",
-                                                        "null"
-                                                      ],
+                                                      "type": ["integer", "null"],
                                                       "minimum": 0
                                                     },
                                                     "maxQuantity": {
-                                                      "type": [
-                                                        "integer",
-                                                        "null"
-                                                      ],
+                                                      "type": ["integer", "null"],
                                                       "minimum": 0
                                                     }
                                                   },
-                                                  "required": [
-                                                    "id",
-                                                    "name"
-                                                  ]
+                                                  "required": ["id", "name"]
                                                 }
                                               }
                                             },
-                                            "required": [
-                                              "id",
-                                              "name"
-                                            ]
+                                            "required": ["id", "name"]
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "options"
-                                      ]
+                                      "required": ["kind", "options"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "option-units"
-                                          ]
+                                          "enum": ["option-units"]
                                         }
                                       },
-                                      "required": [
-                                        "kind"
-                                      ]
+                                      "required": ["kind"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "cabin-category"
-                                          ]
+                                          "enum": ["cabin-category"]
                                         },
                                         "categories": {
                                           "type": "array",
@@ -1929,26 +1515,18 @@
                                                 "type": "string"
                                               }
                                             },
-                                            "required": [
-                                              "id",
-                                              "name"
-                                            ]
+                                            "required": ["id", "name"]
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "categories"
-                                      ]
+                                      "required": ["kind", "categories"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "cabin-number"
-                                          ]
+                                          "enum": ["cabin-number"]
                                         },
                                         "perCategory": {
                                           "type": "object",
@@ -1974,27 +1552,19 @@
                                                   "type": "boolean"
                                                 }
                                               },
-                                              "required": [
-                                                "id",
-                                                "label"
-                                              ]
+                                              "required": ["id", "label"]
                                             }
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "perCategory"
-                                      ]
+                                      "required": ["kind", "perCategory"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "date-range"
-                                          ]
+                                          "enum": ["date-range"]
                                         },
                                         "minNights": {
                                           "type": "integer",
@@ -2005,20 +1575,14 @@
                                           "exclusiveMinimum": 0
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "minNights",
-                                        "maxNights"
-                                      ]
+                                      "required": ["kind", "minNights", "maxNights"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "occupancy"
-                                          ]
+                                          "enum": ["occupancy"]
                                         },
                                         "bands": {
                                           "type": "array",
@@ -2048,36 +1612,24 @@
                                                 "minimum": 0
                                               }
                                             },
-                                            "required": [
-                                              "code",
-                                              "label",
-                                              "minCount",
-                                              "maxCount"
-                                            ]
+                                            "required": ["code", "label", "minCount", "maxCount"]
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "bands"
-                                      ]
+                                      "required": ["kind", "bands"]
                                     },
                                     {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "air-arrangement"
-                                          ]
+                                          "enum": ["air-arrangement"]
                                         },
                                         "required": {
                                           "type": "boolean"
                                         }
                                       },
-                                      "required": [
-                                        "kind"
-                                      ]
+                                      "required": ["kind"]
                                     }
                                   ]
                                 }
@@ -2110,12 +1662,7 @@
                                       "minimum": 0
                                     }
                                   },
-                                  "required": [
-                                    "code",
-                                    "label",
-                                    "minCount",
-                                    "maxCount"
-                                  ]
+                                  "required": ["code", "label", "minCount", "maxCount"]
                                 }
                               },
                               "paxBandsAllowedTotal": {
@@ -2128,10 +1675,7 @@
                                     "type": "integer"
                                   }
                                 },
-                                "required": [
-                                  "min",
-                                  "max"
-                                ]
+                                "required": ["min", "max"]
                               },
                               "paxBandDependencies": {
                                 "type": "array",
@@ -2162,11 +1706,7 @@
                                       "minimum": 0
                                     }
                                   },
-                                  "required": [
-                                    "dependentCode",
-                                    "masterCode",
-                                    "type"
-                                  ]
+                                  "required": ["dependentCode", "masterCode", "type"]
                                 }
                               },
                               "travelerFields": {
@@ -2198,10 +1738,7 @@
                                             "type": "string"
                                           }
                                         },
-                                        "required": [
-                                          "value",
-                                          "label"
-                                        ]
+                                        "required": ["value", "label"]
                                       }
                                     },
                                     "appliesToBands": {
@@ -2211,12 +1748,7 @@
                                       }
                                     }
                                   },
-                                  "required": [
-                                    "key",
-                                    "label",
-                                    "type",
-                                    "required"
-                                  ]
+                                  "required": ["key", "label", "type", "required"]
                                 }
                               },
                               "bookingFields": {
@@ -2238,20 +1770,10 @@
                                     },
                                     "group": {
                                       "type": "string",
-                                      "enum": [
-                                        "billing",
-                                        "company",
-                                        "preferences"
-                                      ]
+                                      "enum": ["billing", "company", "preferences"]
                                     }
                                   },
-                                  "required": [
-                                    "key",
-                                    "label",
-                                    "type",
-                                    "required",
-                                    "group"
-                                  ]
+                                  "required": ["key", "label", "type", "required", "group"]
                                 }
                               },
                               "accommodation": {
@@ -2269,23 +1791,14 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "capacity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         },
                                         "baseRateHint": {
-                                          "type": [
-                                            "number",
-                                            "null"
-                                          ]
+                                          "type": ["number", "null"]
                                         },
                                         "ratePlans": {
                                           "type": "array",
@@ -2299,23 +1812,14 @@
                                                 "type": "string"
                                               },
                                               "description": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "chargeFrequency": {
                                                 "type": "string",
-                                                "enum": [
-                                                  "per_night",
-                                                  "per_stay"
-                                                ]
+                                                "enum": ["per_night", "per_stay"]
                                               },
                                               "cancellationPolicy": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "inclusions": {
                                                 "type": "array",
@@ -2327,17 +1831,11 @@
                                                 "type": "string"
                                               }
                                             },
-                                            "required": [
-                                              "id",
-                                              "name"
-                                            ]
+                                            "required": ["id", "name"]
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name"
-                                      ]
+                                      "required": ["id", "name"]
                                     }
                                   },
                                   "sharedRoomAllowed": {
@@ -2352,9 +1850,7 @@
                                           "properties": {
                                             "kind": {
                                               "type": "string",
-                                              "enum": [
-                                                "rooms"
-                                              ]
+                                              "enum": ["rooms"]
                                             },
                                             "options": {
                                               "type": "array",
@@ -2368,23 +1864,14 @@
                                                     "type": "string"
                                                   },
                                                   "description": {
-                                                    "type": [
-                                                      "string",
-                                                      "null"
-                                                    ]
+                                                    "type": ["string", "null"]
                                                   },
                                                   "capacity": {
-                                                    "type": [
-                                                      "integer",
-                                                      "null"
-                                                    ],
+                                                    "type": ["integer", "null"],
                                                     "minimum": 0
                                                   },
                                                   "baseRateHint": {
-                                                    "type": [
-                                                      "number",
-                                                      "null"
-                                                    ]
+                                                    "type": ["number", "null"]
                                                   },
                                                   "ratePlans": {
                                                     "type": "array",
@@ -2398,23 +1885,14 @@
                                                           "type": "string"
                                                         },
                                                         "description": {
-                                                          "type": [
-                                                            "string",
-                                                            "null"
-                                                          ]
+                                                          "type": ["string", "null"]
                                                         },
                                                         "chargeFrequency": {
                                                           "type": "string",
-                                                          "enum": [
-                                                            "per_night",
-                                                            "per_stay"
-                                                          ]
+                                                          "enum": ["per_night", "per_stay"]
                                                         },
                                                         "cancellationPolicy": {
-                                                          "type": [
-                                                            "string",
-                                                            "null"
-                                                          ]
+                                                          "type": ["string", "null"]
                                                         },
                                                         "inclusions": {
                                                           "type": "array",
@@ -2426,37 +1904,25 @@
                                                           "type": "string"
                                                         }
                                                       },
-                                                      "required": [
-                                                        "id",
-                                                        "name"
-                                                      ]
+                                                      "required": ["id", "name"]
                                                     }
                                                   }
                                                 },
-                                                "required": [
-                                                  "id",
-                                                  "name"
-                                                ]
+                                                "required": ["id", "name"]
                                               }
                                             },
                                             "sharedRoomAllowed": {
                                               "type": "boolean"
                                             }
                                           },
-                                          "required": [
-                                            "kind",
-                                            "options",
-                                            "sharedRoomAllowed"
-                                          ]
+                                          "required": ["kind", "options", "sharedRoomAllowed"]
                                         },
                                         {
                                           "type": "object",
                                           "properties": {
                                             "kind": {
                                               "type": "string",
-                                              "enum": [
-                                                "extensions"
-                                              ]
+                                              "enum": ["extensions"]
                                             },
                                             "options": {
                                               "type": "array",
@@ -2470,37 +1936,21 @@
                                                     "type": "string"
                                                   },
                                                   "city": {
-                                                    "type": [
-                                                      "string",
-                                                      "null"
-                                                    ]
+                                                    "type": ["string", "null"]
                                                   },
                                                   "side": {
                                                     "type": "string",
-                                                    "enum": [
-                                                      "pre",
-                                                      "post"
-                                                    ]
+                                                    "enum": ["pre", "post"]
                                                   },
                                                   "nights": {
-                                                    "type": [
-                                                      "integer",
-                                                      "null"
-                                                    ],
+                                                    "type": ["integer", "null"],
                                                     "minimum": 0
                                                   },
                                                   "pricePerPersonHint": {
-                                                    "type": [
-                                                      "number",
-                                                      "null"
-                                                    ]
+                                                    "type": ["number", "null"]
                                                   }
                                                 },
-                                                "required": [
-                                                  "id",
-                                                  "name",
-                                                  "side"
-                                                ]
+                                                "required": ["id", "name", "side"]
                                               }
                                             },
                                             "allowsPre": {
@@ -2510,20 +1960,13 @@
                                               "type": "boolean"
                                             }
                                           },
-                                          "required": [
-                                            "kind",
-                                            "options",
-                                            "allowsPre",
-                                            "allowsPost"
-                                          ]
+                                          "required": ["kind", "options", "allowsPre", "allowsPost"]
                                         }
                                       ]
                                     }
                                   }
                                 },
-                                "required": [
-                                  "sharedRoomAllowed"
-                                ]
+                                "required": ["sharedRoomAllowed"]
                               },
                               "addons": {
                                 "type": "object",
@@ -2540,54 +1983,29 @@
                                           "type": "string"
                                         },
                                         "description": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "extras",
-                                            "excursions",
-                                            "insurance"
-                                          ]
+                                          "enum": ["extras", "excursions", "insurance"]
                                         },
                                         "groupKey": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "pricingMode": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "unitAmountCents": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ]
+                                          "type": ["integer", "null"]
                                         },
                                         "currency": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "pricedPerPerson": {
-                                          "type": [
-                                            "boolean",
-                                            "null"
-                                          ]
+                                          "type": ["boolean", "null"]
                                         },
                                         "selectionType": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ],
+                                          "type": ["string", "null"],
                                           "enum": [
                                             "optional",
                                             "required",
@@ -2597,32 +2015,19 @@
                                           ]
                                         },
                                         "minQuantity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         },
                                         "maxQuantity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         },
                                         "defaultQuantity": {
-                                          "type": [
-                                            "integer",
-                                            "null"
-                                          ],
+                                          "type": ["integer", "null"],
                                           "minimum": 0
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name",
-                                        "kind"
-                                      ]
+                                      "required": ["id", "name", "kind"]
                                     }
                                   },
                                   "groups": {
@@ -2632,21 +2037,14 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
-                                          "enum": [
-                                            "extras",
-                                            "excursions",
-                                            "insurance"
-                                          ]
+                                          "enum": ["extras", "excursions", "insurance"]
                                         },
                                         "label": {
                                           "type": "string"
                                         },
                                         "groupBy": {
                                           "type": "string",
-                                          "enum": [
-                                            "port",
-                                            "day"
-                                          ]
+                                          "enum": ["port", "day"]
                                         },
                                         "perGuestSelection": {
                                           "type": "boolean"
@@ -2663,54 +2061,29 @@
                                                 "type": "string"
                                               },
                                               "description": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "kind": {
                                                 "type": "string",
-                                                "enum": [
-                                                  "extras",
-                                                  "excursions",
-                                                  "insurance"
-                                                ]
+                                                "enum": ["extras", "excursions", "insurance"]
                                               },
                                               "groupKey": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "pricingMode": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "unitAmountCents": {
-                                                "type": [
-                                                  "integer",
-                                                  "null"
-                                                ]
+                                                "type": ["integer", "null"]
                                               },
                                               "currency": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ]
+                                                "type": ["string", "null"]
                                               },
                                               "pricedPerPerson": {
-                                                "type": [
-                                                  "boolean",
-                                                  "null"
-                                                ]
+                                                "type": ["boolean", "null"]
                                               },
                                               "selectionType": {
-                                                "type": [
-                                                  "string",
-                                                  "null"
-                                                ],
+                                                "type": ["string", "null"],
                                                 "enum": [
                                                   "optional",
                                                   "required",
@@ -2720,41 +2093,23 @@
                                                 ]
                                               },
                                               "minQuantity": {
-                                                "type": [
-                                                  "integer",
-                                                  "null"
-                                                ],
+                                                "type": ["integer", "null"],
                                                 "minimum": 0
                                               },
                                               "maxQuantity": {
-                                                "type": [
-                                                  "integer",
-                                                  "null"
-                                                ],
+                                                "type": ["integer", "null"],
                                                 "minimum": 0
                                               },
                                               "defaultQuantity": {
-                                                "type": [
-                                                  "integer",
-                                                  "null"
-                                                ],
+                                                "type": ["integer", "null"],
                                                 "minimum": 0
                                               }
                                             },
-                                            "required": [
-                                              "id",
-                                              "name",
-                                              "kind"
-                                            ]
+                                            "required": ["id", "name", "kind"]
                                           }
                                         }
                                       },
-                                      "required": [
-                                        "kind",
-                                        "label",
-                                        "perGuestSelection",
-                                        "items"
-                                      ]
+                                      "required": ["kind", "label", "perGuestSelection", "items"]
                                     }
                                   }
                                 }
@@ -2829,12 +2184,7 @@
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "kind",
-                                    "label",
-                                    "unitAmount",
-                                    "totalAmount"
-                                  ]
+                                  "required": ["kind", "label", "unitAmount", "totalAmount"]
                                 }
                               },
                               "taxes": {
@@ -2863,20 +2213,10 @@
                                     },
                                     "scope": {
                                       "type": "string",
-                                      "enum": [
-                                        "included",
-                                        "excluded",
-                                        "withheld"
-                                      ]
+                                      "enum": ["included", "excluded", "withheld"]
                                     }
                                   },
-                                  "required": [
-                                    "code",
-                                    "label",
-                                    "rate",
-                                    "amount",
-                                    "base"
-                                  ]
+                                  "required": ["code", "label", "rate", "amount", "base"]
                                 }
                               },
                               "subtotal": {
@@ -2935,25 +2275,14 @@
                                 "additionalProperties": {}
                               }
                             },
-                            "required": [
-                              "entityModule",
-                              "entityId"
-                            ]
+                            "required": ["entityModule", "entityId"]
                           }
                         },
-                        "required": [
-                          "quoteId",
-                          "quotedAt",
-                          "expiresAt",
-                          "available",
-                          "selection"
-                        ]
+                        "required": ["quoteId", "quotedAt", "expiresAt", "available", "selection"]
                       }
                     }
                   },
-                  "required": [
-                    "results"
-                  ]
+                  "required": ["results"]
                 }
               }
             }
@@ -2976,9 +2305,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3001,9 +2328,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3026,9 +2351,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3051,9 +2374,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3076,9 +2397,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3086,9 +2405,7 @@
         },
         "operationId": "postAdminCatalogQuotesBatch",
         "summary": "POST /v1/admin/catalog/quotes/batch",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -3122,52 +2439,38 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "hold"
-                            ]
+                            "enum": ["hold"]
                           }
                         },
-                        "required": [
-                          "type"
-                        ]
+                        "required": ["type"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "card"
-                            ]
+                            "enum": ["card"]
                           },
                           "tokenizedCard": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "tokenizedCard"
-                        ]
+                        "required": ["type", "tokenizedCard"]
                       },
                       {
                         "type": "object",
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "ticket_on_credit"
-                            ]
+                            "enum": ["ticket_on_credit"]
                           },
                           "agencyAccount": {
                             "type": "string",
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "agencyAccount"
-                        ]
+                        "required": ["type", "agencyAccount"]
                       }
                     ]
                   },
@@ -3205,12 +2508,7 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": [
-                        "held",
-                        "confirmed",
-                        "ticketed",
-                        "failed"
-                      ]
+                      "enum": ["held", "confirmed", "ticketed", "failed"]
                     },
                     "snapshotId": {
                       "type": "string"
@@ -3256,12 +2554,7 @@
                                 "type": "boolean"
                               }
                             },
-                            "required": [
-                              "kind",
-                              "label",
-                              "unitAmount",
-                              "totalAmount"
-                            ]
+                            "required": ["kind", "label", "unitAmount", "totalAmount"]
                           }
                         },
                         "taxes": {
@@ -3290,20 +2583,10 @@
                               },
                               "scope": {
                                 "type": "string",
-                                "enum": [
-                                  "included",
-                                  "excluded",
-                                  "withheld"
-                                ]
+                                "enum": ["included", "excluded", "withheld"]
                               }
                             },
-                            "required": [
-                              "code",
-                              "label",
-                              "rate",
-                              "amount",
-                              "base"
-                            ]
+                            "required": ["code", "label", "rate", "amount", "base"]
                           }
                         },
                         "subtotal": {
@@ -3316,26 +2599,14 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "currency",
-                        "lines",
-                        "taxes",
-                        "subtotal",
-                        "taxTotal",
-                        "total"
-                      ]
+                      "required": ["currency", "lines", "taxes", "subtotal", "taxTotal", "total"]
                     },
                     "upstreamPayload": {
                       "type": "object",
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "bookingId",
-                    "orderRef",
-                    "status",
-                    "snapshotId"
-                  ]
+                  "required": ["bookingId", "orderRef", "status", "snapshotId"]
                 }
               }
             }
@@ -3358,9 +2629,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3383,9 +2652,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3408,9 +2675,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3433,9 +2698,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3458,9 +2721,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3468,9 +2729,7 @@
         },
         "operationId": "postAdminCatalogBook",
         "summary": "POST /v1/admin/catalog/book",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -3531,9 +2790,7 @@
                     "exclusiveMinimum": 0
                   }
                 },
-                "required": [
-                  "draftPayload"
-                ]
+                "required": ["draftPayload"]
               }
             }
           }
@@ -3559,56 +2816,32 @@
                       "type": "string"
                     },
                     "source_connection_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "source_ref": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "draft_payload": {
                       "type": "object",
                       "additionalProperties": {}
                     },
                     "current_step": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "current_quote_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "hold_expires_at": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "consumed_booking_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "consumed_at": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "created_by": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "created_at": {
                       "type": "string"
@@ -3662,56 +2895,32 @@
                       "type": "string"
                     },
                     "source_connection_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "source_ref": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "draft_payload": {
                       "type": "object",
                       "additionalProperties": {}
                     },
                     "current_step": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "current_quote_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "hold_expires_at": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "consumed_booking_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "consumed_at": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "created_by": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "created_at": {
                       "type": "string"
@@ -3763,9 +2972,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3773,9 +2980,7 @@
         },
         "operationId": "putAdminCatalogDraftsById",
         "summary": "PUT /v1/admin/catalog/drafts/{id}",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       },
@@ -3811,56 +3016,32 @@
                       "type": "string"
                     },
                     "source_connection_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "source_ref": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "draft_payload": {
                       "type": "object",
                       "additionalProperties": {}
                     },
                     "current_step": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "current_quote_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "hold_expires_at": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "consumed_booking_id": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "consumed_at": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "created_by": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "created_at": {
                       "type": "string"
@@ -3912,9 +3093,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3922,9 +3101,7 @@
         },
         "operationId": "getAdminCatalogDraftsById",
         "summary": "GET /v1/admin/catalog/drafts/{id}",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       },
@@ -3946,9 +3123,7 @@
         },
         "operationId": "deleteAdminCatalogDraftsById",
         "summary": "DELETE /v1/admin/catalog/drafts/{id}",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -3983,11 +3158,7 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "entityModule",
-                  "entityId",
-                  "draftId"
-                ]
+                "required": ["entityModule", "entityId", "draftId"]
               }
             }
           }
@@ -4007,10 +3178,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "holdToken",
-                    "expiresAt"
-                  ]
+                  "required": ["holdToken", "expiresAt"]
                 }
               }
             }
@@ -4033,9 +3201,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4058,9 +3224,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4083,9 +3247,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4108,9 +3270,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4133,9 +3293,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4143,9 +3301,7 @@
         },
         "operationId": "postAdminCatalogHoldsPlace",
         "summary": "POST /v1/admin/catalog/holds/place",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -4168,10 +3324,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "entityModule",
-                  "holdToken"
-                ]
+                "required": ["entityModule", "holdToken"]
               }
             }
           }
@@ -4198,9 +3351,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4223,9 +3374,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4248,9 +3397,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4273,9 +3420,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4283,9 +3428,7 @@
         },
         "operationId": "postAdminCatalogHoldsRelease",
         "summary": "POST /v1/admin/catalog/holds/release",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -4350,9 +3493,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "rows"
-                  ]
+                  "required": ["rows"]
                 }
               }
             }
@@ -4360,9 +3501,7 @@
         },
         "operationId": "getAdminCatalogOrders",
         "summary": "GET /v1/admin/catalog/orders",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -4409,9 +3548,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4434,9 +3571,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4444,9 +3579,7 @@
         },
         "operationId": "getAdminCatalogOrdersById",
         "summary": "GET /v1/admin/catalog/orders/{id}",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -4501,9 +3634,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4526,9 +3657,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4551,9 +3680,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4576,9 +3703,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4601,9 +3726,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4626,9 +3749,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4636,9 +3757,7 @@
         },
         "operationId": "postAdminCatalogOrdersByIdCancel",
         "summary": "POST /v1/admin/catalog/orders/{id}/cancel",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -4710,10 +3829,7 @@
                             "type": "string"
                           },
                           "endsAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "timezone": {
                             "type": "string"
@@ -4725,28 +3841,16 @@
                             "type": "boolean"
                           },
                           "remainingPax": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "initialPax": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "nights": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "days": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           }
                         },
                         "required": [
@@ -4765,9 +3869,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "rows"
-                  ]
+                  "required": ["rows"]
                 }
               }
             }
@@ -4790,9 +3892,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4800,9 +3900,7 @@
         },
         "operationId": "getAdminCatalogSlots",
         "summary": "GET /v1/admin/catalog/slots",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }
@@ -4832,9 +3930,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4857,9 +3953,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4882,9 +3976,7 @@
                       "additionalProperties": {}
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4892,9 +3984,7 @@
         },
         "operationId": "getAdminBookingsByIdCatalogSnapshot",
         "summary": "GET /v1/admin/bookings/{id}/catalog-snapshot",
-        "tags": [
-          "catalog-booking"
-        ],
+        "tags": ["catalog-booking"],
         "x-voyant-module": "catalog-booking",
         "x-voyant-surface": "admin"
       }

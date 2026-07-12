@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -226,18 +199,10 @@
                               "type": "string"
                             },
                             "currencyCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "id",
-                            "code",
-                            "name",
-                            "currencyCode"
-                          ]
+                          "required": ["id", "code", "name", "currencyCode"]
                         },
                         "options": {
                           "type": "array",
@@ -251,18 +216,11 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "draft",
-                                  "active",
-                                  "archived"
-                                ]
+                                "enum": ["draft", "active", "archived"]
                               },
                               "isDefault": {
                                 "type": "boolean"
@@ -281,11 +239,7 @@
                               },
                               "capacityMode": {
                                 "type": "string",
-                                "enum": [
-                                  "free_sale",
-                                  "limited",
-                                  "on_request"
-                                ]
+                                "enum": ["free_sale", "limited", "on_request"]
                               },
                               "pricingRules": {
                                 "type": "array",
@@ -299,10 +253,7 @@
                                       "type": "string"
                                     },
                                     "description": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "pricingMode": {
                                       "type": "string",
@@ -315,31 +266,19 @@
                                       ]
                                     },
                                     "baseSellAmountCents": {
-                                      "type": [
-                                        "integer",
-                                        "null"
-                                      ]
+                                      "type": ["integer", "null"]
                                     },
                                     "minPerBooking": {
-                                      "type": [
-                                        "integer",
-                                        "null"
-                                      ]
+                                      "type": ["integer", "null"]
                                     },
                                     "maxPerBooking": {
-                                      "type": [
-                                        "integer",
-                                        "null"
-                                      ]
+                                      "type": ["integer", "null"]
                                     },
                                     "isDefault": {
                                       "type": "boolean"
                                     },
                                     "cancellationPolicyId": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "unitPrices": {
                                       "type": "array",
@@ -378,28 +317,16 @@
                                             ]
                                           },
                                           "sellAmountCents": {
-                                            "type": [
-                                              "integer",
-                                              "null"
-                                            ]
+                                            "type": ["integer", "null"]
                                           },
                                           "minQuantity": {
-                                            "type": [
-                                              "integer",
-                                              "null"
-                                            ]
+                                            "type": ["integer", "null"]
                                           },
                                           "maxQuantity": {
-                                            "type": [
-                                              "integer",
-                                              "null"
-                                            ]
+                                            "type": ["integer", "null"]
                                           },
                                           "pricingCategoryId": {
-                                            "type": [
-                                              "string",
-                                              "null"
-                                            ]
+                                            "type": ["string", "null"]
                                           },
                                           "sortOrder": {
                                             "type": "integer"
@@ -416,16 +343,10 @@
                                                   "type": "integer"
                                                 },
                                                 "maxQuantity": {
-                                                  "type": [
-                                                    "integer",
-                                                    "null"
-                                                  ]
+                                                  "type": ["integer", "null"]
                                                 },
                                                 "sellAmountCents": {
-                                                  "type": [
-                                                    "integer",
-                                                    "null"
-                                                  ]
+                                                  "type": ["integer", "null"]
                                                 },
                                                 "sortOrder": {
                                                   "type": "integer"
@@ -468,10 +389,7 @@
                                             "type": "string"
                                           },
                                           "label": {
-                                            "type": [
-                                              "string",
-                                              "null"
-                                            ]
+                                            "type": ["string", "null"]
                                           },
                                           "startTimeLocal": {
                                             "type": "string"
@@ -486,27 +404,14 @@
                                             ]
                                           },
                                           "adjustmentType": {
-                                            "type": [
-                                              "string",
-                                              "null"
-                                            ],
-                                            "enum": [
-                                              "fixed",
-                                              "percentage",
-                                              null
-                                            ]
+                                            "type": ["string", "null"],
+                                            "enum": ["fixed", "percentage", null]
                                           },
                                           "sellAdjustmentCents": {
-                                            "type": [
-                                              "integer",
-                                              "null"
-                                            ]
+                                            "type": ["integer", "null"]
                                           },
                                           "adjustmentBasisPoints": {
-                                            "type": [
-                                              "integer",
-                                              "null"
-                                            ]
+                                            "type": ["integer", "null"]
                                           }
                                         },
                                         "required": [
@@ -551,16 +456,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "productId",
-                        "catalog",
-                        "options"
-                      ]
+                      "required": ["productId", "catalog", "options"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -576,9 +475,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -586,9 +483,7 @@
         },
         "operationId": "getPublicPricingProductsByProductIdPricing",
         "summary": "GET /v1/public/pricing/products/{productId}/pricing",
-        "tags": [
-          "pricing"
-        ],
+        "tags": ["pricing"],
         "x-voyant-module": "pricing",
         "x-voyant-surface": "storefront"
       }

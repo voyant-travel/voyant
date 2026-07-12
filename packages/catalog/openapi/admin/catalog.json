@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -172,28 +145,15 @@
                   },
                   "mode": {
                     "type": "string",
-                    "enum": [
-                      "keyword",
-                      "semantic",
-                      "hybrid"
-                    ]
+                    "enum": ["keyword", "semantic", "hybrid"]
                   },
                   "sort": {
                     "type": "string",
-                    "enum": [
-                      "relevance",
-                      "price-asc",
-                      "price-desc",
-                      "departure-asc",
-                      "newest"
-                    ]
+                    "enum": ["relevance", "price-asc", "price-desc", "departure-asc", "newest"]
                   },
                   "projection": {
                     "type": "string",
-                    "enum": [
-                      "raw",
-                      "storefront-card"
-                    ]
+                    "enum": ["raw", "storefront-card"]
                   },
                   "filters": {
                     "type": "array",
@@ -215,9 +175,7 @@
                           "exclusiveMinimum": 0
                         }
                       },
-                      "required": [
-                        "field"
-                      ]
+                      "required": ["field"]
                     }
                   },
                   "pagination": {
@@ -274,11 +232,7 @@
                     },
                     "mode": {
                       "type": "string",
-                      "enum": [
-                        "keyword",
-                        "semantic",
-                        "hybrid"
-                      ]
+                      "enum": ["keyword", "semantic", "hybrid"]
                     },
                     "total": {
                       "type": "number"
@@ -317,17 +271,10 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "id",
-                              "fields"
-                            ]
+                            "required": ["id", "fields"]
                           }
                         },
-                        "required": [
-                          "id",
-                          "score",
-                          "document"
-                        ]
+                        "required": ["id", "score", "document"]
                       }
                     },
                     "cards": {
@@ -339,96 +286,52 @@
                             "type": "string"
                           },
                           "name": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "slug": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "primaryCategory": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "id": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "name": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "slug": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
-                            "required": [
-                              "id",
-                              "name",
-                              "slug"
-                            ]
+                            "required": ["id", "name", "slug"]
                           },
                           "media": {
                             "type": "object",
                             "properties": {
                               "thumbnailUrl": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "coverMediaUrl": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
-                            "required": [
-                              "thumbnailUrl",
-                              "coverMediaUrl"
-                            ]
+                            "required": ["thumbnailUrl", "coverMediaUrl"]
                           },
                           "priceFrom": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "amountCents": {
                                 "type": "number"
                               },
                               "currency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "originalAmountCents": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               }
                             },
-                            "required": [
-                              "amountCents",
-                              "currency",
-                              "originalAmountCents"
-                            ]
+                            "required": ["amountCents", "currency", "originalAmountCents"]
                           },
                           "offerBadges": {
                             "type": "array",
@@ -436,40 +339,22 @@
                               "type": "object",
                               "properties": {
                                 "id": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "name": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "discountKind": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "discountPercent": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 },
                                 "discountAmountCents": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 },
                                 "minPax": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ]
+                                  "type": ["number", "null"]
                                 }
                               },
                               "required": [
@@ -485,22 +370,13 @@
                             "type": "object",
                             "properties": {
                               "upcomingCount": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "nextDepartureAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "nextDepartureDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "months": {
                                 "type": "array",
@@ -557,19 +433,10 @@
                                 }
                               }
                             },
-                            "required": [
-                              "regions",
-                              "countries",
-                              "cities",
-                              "ids",
-                              "slugs"
-                            ]
+                            "required": ["regions", "countries", "cities", "ids", "slugs"]
                           },
                           "coordinates": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "latitude": {
                                 "type": "number"
@@ -578,10 +445,7 @@
                                 "type": "number"
                               }
                             },
-                            "required": [
-                              "latitude",
-                              "longitude"
-                            ]
+                            "required": ["latitude", "longitude"]
                           }
                         },
                         "required": [
@@ -619,21 +483,12 @@
                               "type": "number"
                             }
                           },
-                          "required": [
-                            "value",
-                            "count"
-                          ]
+                          "required": ["value", "count"]
                         }
                       }
                     }
                   },
-                  "required": [
-                    "vertical",
-                    "mode",
-                    "total",
-                    "hits",
-                    "facets"
-                  ]
+                  "required": ["vertical", "mode", "total", "hits", "facets"]
                 }
               }
             }
@@ -649,9 +504,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -667,9 +520,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -685,9 +536,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -695,9 +544,7 @@
         },
         "operationId": "postAdminCatalogSearch",
         "summary": "POST /v1/admin/catalog/search",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -732,9 +579,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "offers"
-                  ]
+                  "required": ["offers"]
                 }
               }
             }
@@ -751,9 +596,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -761,9 +604,7 @@
         },
         "operationId": "postAdminCatalogPackageOffers",
         "summary": "POST /v1/admin/catalog/package-offers",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -801,24 +642,16 @@
                           "type": "string"
                         },
                         "ref": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "connectionId",
-                        "ref"
-                      ]
+                      "required": ["connectionId", "ref"]
                     },
                     "error": {
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "offers"
-                  ]
+                  "required": ["offers"]
                 }
               }
             }
@@ -835,9 +668,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -845,9 +676,7 @@
         },
         "operationId": "postAdminCatalogPackageDetail",
         "summary": "POST /v1/admin/catalog/package-detail",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -886,10 +715,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "code",
-                          "label"
-                        ]
+                        "required": ["code", "label"]
                       }
                     },
                     "currency": {
@@ -905,9 +731,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "offers"
-                  ]
+                  "required": ["offers"]
                 }
               }
             }
@@ -924,9 +748,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -934,9 +756,7 @@
         },
         "operationId": "postAdminCatalogPackageSearch",
         "summary": "POST /v1/admin/catalog/package-search",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -971,16 +791,11 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "code",
-                          "label"
-                        ]
+                        "required": ["code", "label"]
                       }
                     }
                   },
-                  "required": [
-                    "departureAirports"
-                  ]
+                  "required": ["departureAirports"]
                 }
               }
             }
@@ -988,9 +803,7 @@
         },
         "operationId": "postAdminCatalogDepartureAirports",
         "summary": "POST /v1/admin/catalog/departure-airports",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -1014,22 +827,13 @@
                   "type": "object",
                   "properties": {
                     "fromAmountMinor": {
-                      "type": [
-                        "number",
-                        "null"
-                      ]
+                      "type": ["number", "null"]
                     },
                     "currency": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     }
                   },
-                  "required": [
-                    "fromAmountMinor",
-                    "currency"
-                  ]
+                  "required": ["fromAmountMinor", "currency"]
                 }
               }
             }
@@ -1046,9 +850,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1056,9 +858,7 @@
         },
         "operationId": "postAdminCatalogCruisePrice",
         "summary": "POST /v1/admin/catalog/cruise-price",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
@@ -1096,27 +896,17 @@
                             "type": "boolean"
                           }
                         },
-                        "required": [
-                          "code",
-                          "fromAmountMinor",
-                          "available"
-                        ]
+                        "required": ["code", "fromAmountMinor", "available"]
                       }
                     },
                     "currency": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "retryable": {
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "cabins",
-                    "currency"
-                  ]
+                  "required": ["cabins", "currency"]
                 }
               }
             }
@@ -1133,9 +923,7 @@
                     },
                     "details": {}
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1143,9 +931,7 @@
         },
         "operationId": "postAdminCatalogCruiseSailingPricing",
         "summary": "POST /v1/admin/catalog/cruise-sailing-pricing",
-        "tags": [
-          "catalog"
-        ],
+        "tags": ["catalog"],
         "x-voyant-module": "catalog",
         "x-voyant-surface": "admin"
       }
