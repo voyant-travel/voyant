@@ -27,11 +27,11 @@ describe("standard Operator distribution", () => {
       id: "operator-standard",
       target: "node",
     })
-    expect(STANDARD_OPERATOR_DISTRIBUTION.modules).toHaveLength(35)
+    expect(STANDARD_OPERATOR_DISTRIBUTION.modules).toHaveLength(38)
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(0, 3)).toEqual([
       "@voyant-travel/action-ledger",
+      "@voyant-travel/mcp",
       "@voyant-travel/relationships",
-      "@voyant-travel/quotes",
     ])
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(-3)).toEqual([
       "@voyant-travel/availability",
@@ -46,7 +46,7 @@ describe("standard Operator distribution", () => {
       "@voyant-travel/legal/standard-product-links",
       "@voyant-travel/mice/standard-product-links",
     ])
-    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.modules).size).toBe(35)
+    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.modules).size).toBe(38)
     expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.extensions).size).toBe(24)
     expect(STANDARD_OPERATOR_DISTRIBUTION).not.toHaveProperty("presetLineage")
   })

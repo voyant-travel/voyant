@@ -663,6 +663,22 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
 
   it("compiles every project source convention into graph artifacts", async () => {
     const root = projectRoot()
+    writePackage(root, {
+      name: "@fixture/health-events",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@fixture/health-events"),
+        events: [
+          {
+            id: "@fixture/health-events#event.health.updated",
+            eventType: "health.updated",
+            version: "1.0.0",
+            payloadSchema: { type: "object", additionalProperties: true },
+            visibility: "internal",
+            audit: { sourceModule: "project", category: "domain" },
+          },
+        ],
+      })}\n`,
+    })
     writeFile(
       root,
       "src/api/admin/health/route.ts",
@@ -707,7 +723,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       ].join("\n"),
     )
 
-    const resolution = await resolve(root, defineProject({ modules: [] }))
+    const resolution = await resolve(root, defineProject({ modules: ["@fixture/health-events"] }))
     const projectApi = resolution.graph.modules.find(({ localId }) => localId === "project-api")
     const projectWorkflows = resolution.graph.modules.find(
       ({ localId }) => localId === "project-workflows",

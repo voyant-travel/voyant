@@ -5,7 +5,7 @@ describe("framework project config", () => {
   it("expands an empty authored config to the standard distribution", () => {
     const project = defineConfig()
 
-    expect(project.modules).toHaveLength(35)
+    expect(project.modules).toHaveLength(38)
     expect(project.extensions).toHaveLength(24)
     expect(project.plugins).toEqual([])
     expect(project.productBom).toEqual({
@@ -15,11 +15,11 @@ describe("framework project config", () => {
     })
     expect(project.modules.map((unit) => unit.id).slice(0, 3)).toEqual([
       "@voyant-travel/action-ledger",
+      "@voyant-travel/mcp",
       "@voyant-travel/relationships",
-      "@voyant-travel/quotes",
     ])
     expect(project.extensions.map((unit) => unit.schemaVersion)).toEqual(
-      Array.from({ length: 22 }, () => "voyant.extension.v1"),
+      Array.from({ length: 24 }, () => "voyant.extension.v1"),
     )
     expect(project).not.toHaveProperty("presetLineage")
   })
@@ -36,8 +36,8 @@ describe("framework project config", () => {
       },
     })
 
-    expect(project.modules).toHaveLength(36)
-    expect(project.extensions).toHaveLength(23)
+    expect(project.modules).toHaveLength(39)
+    expect(project.extensions).toHaveLength(25)
     expect(project.plugins).toHaveLength(1)
     expect(project.modules.at(-1)).toMatchObject({
       id: "local/src.modules.team",

@@ -153,6 +153,7 @@ describe("graph runtime lowering", () => {
           kind: "module",
           packageName: "@acme/loyalty",
           order: 0,
+          accessScopes: ["loyalty:read", "loyalty:write"],
           runtimeReferenceId: "loyalty-runtime",
           references: [
             {
@@ -362,6 +363,23 @@ describe("graph runtime lowering", () => {
     const importRuntime = vi.fn(async () => ({ adjustLoyalty: tool }))
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:test",
+      accessCatalog: {
+        resources: [
+          {
+            id: "loyalty",
+            unitId: "@acme/loyalty",
+            resource: "loyalty",
+            label: "Loyalty",
+            description: "Loyalty",
+            wildcard: "allow",
+            actions: [
+              { action: "read", label: "Read", description: "Read" },
+              { action: "write", label: "Write", description: "Write" },
+            ],
+          },
+        ],
+        presets: [],
+      },
       entries: { "@acme/loyalty/tools": importRuntime },
       modules: [
         {

@@ -124,7 +124,7 @@ function route(
 
 describe("buildSelectedGraphOpenApiDocuments", () => {
   it("follows graph selection and rejects unclaimed published paths", async () => {
-    const app = documentedApp(["/v1/admin/identity/contacts", "/v1/admin/bookings"])
+    const app = documentedApp(["/v1/admin/identity/contacts"])
     const identity = unit("@voyant-travel/identity", [
       route("@voyant-travel/identity#api.admin", "identity", "identity"),
     ])
@@ -140,7 +140,11 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
       "/v1/admin/identity/contacts",
     ])
     await expect(
-      buildSelectedGraphOpenApiDocuments({ runtime: runtime([]), app, options }),
+      buildSelectedGraphOpenApiDocuments({
+        runtime: runtime([]),
+        app: documentedApp(["/v1/admin/identity/contacts", "/v1/admin/bookings"]),
+        options,
+      }),
     ).rejects.toThrow(/unclaimed published operations.*GET \/v1\/admin\/identity\/contacts/)
   })
 
@@ -202,8 +206,8 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     })
 
     expect(Object.keys(documents.get("identity")?.paths ?? {})).toEqual([
-      "/v1/admin/identity",
       "/v1/admin/identity-extra",
+      "/v1/admin/identity",
     ])
   })
 
@@ -339,9 +343,28 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     )
     const storefront = unit("@voyant-travel/storefront", [route(apiId, "/", "storefront", ["GET"])])
 
+    await expect(
+      buildSelectedGraphOpenApiDocuments({ runtime: runtime([storefront]), app, options }),
+    ).rejects.toThrow(/unclaimed published operations.*GET \/v1\/public\/bookings/)
+
+    const ownedApp = documentedApp([])
+    ownedApp.openapi(
+      createRoute({
+        method: "get",
+        path: ownedPath,
+        responses: {
+          200: {
+            content: { "application/json": { schema: z.object({ ok: z.boolean() }) } },
+            description: "OK",
+          },
+        },
+        "x-voyant-api-id": apiId,
+      }),
+      (context) => context.json({ ok: true }),
+    )
     const documents = await buildSelectedGraphOpenApiDocuments({
       runtime: runtime([storefront]),
-      app,
+      app: ownedApp,
       options,
     })
 

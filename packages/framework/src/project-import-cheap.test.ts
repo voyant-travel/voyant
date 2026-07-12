@@ -16,7 +16,7 @@ describe("framework project import boundary", () => {
       plugins: [],
     })
     const config = authoring.defineConfig()
-    expect(config.modules).toHaveLength(35)
+    expect(config.modules).toHaveLength(38)
     expect(config.extensions).toHaveLength(24)
     expect(config.plugins).toEqual([])
     expect(authoring.resolveProject).toBeTypeOf("function")
