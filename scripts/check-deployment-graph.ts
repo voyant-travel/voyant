@@ -30,7 +30,6 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDirectory, "..")
 const operatorRoot = join(repoRoot, "starters", "operator")
 
-const OPERATOR_LOCAL_MODULE_IDS = ["npm/operator#mcp"] as const
 const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
   "@voyant-travel/availability",
@@ -327,9 +326,6 @@ async function main(): Promise<void> {
   }
   if (!bookingsUnit?.links?.some((entry) => entry.source === "@voyant-travel/bookings/linkables")) {
     failures.push("expected generated bookings linkables to come from its package-owned manifest")
-  }
-  for (const id of OPERATOR_LOCAL_MODULE_IDS) {
-    if (!operatorModuleIds.has(id)) failures.push(`expected operator graph to include ${id}`)
   }
   for (const id of [
     "@voyant-travel/storefront#customer-portal",

@@ -3,6 +3,7 @@ import {
   lowerVoyantGraphActionsToActionLedgerRegistry,
 } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
+import { mcpRuntimePort } from "@voyant-travel/mcp"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
@@ -15,6 +16,10 @@ import authHandler, {
 } from "./auth/handler"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+import {
+  buildOperatorMcpBaseContext,
+  buildOperatorMcpResources,
+} from "./runtime/mcp-deployment-resources"
 import { createOperatorWorkflowDriver } from "./runtime/operator-runtime-adapter"
 
 /**
@@ -32,9 +37,18 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 const graphRuntime = createGeneratedGraphRuntime()
 export const operatorActionLedgerCapabilityRegistry =
   lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
+const deploymentResources = createOperatorDeploymentResources(workflowRunnerRegistry)
 const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
-  ...createOperatorDeploymentResources(workflowRunnerRegistry),
+  ...deploymentResources,
+  ports: {
+    ...deploymentResources.ports,
+    [mcpRuntimePort.id]: {
+      runtime: graphRuntime,
+      buildContext: buildOperatorMcpBaseContext,
+      buildResources: buildOperatorMcpResources,
+    },
+  },
 })
 
 export const app = mountApp<AppBindings>({

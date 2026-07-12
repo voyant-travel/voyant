@@ -2833,6 +2833,12 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.4.3)
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools

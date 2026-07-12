@@ -10,7 +10,6 @@ import {
   buildNodeRuntimeEntry,
   buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
-  buildSelectedGraphExecutableFacetArtifacts,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
   VOYANT_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
@@ -79,100 +78,6 @@ async function graphWithSelectedUnits(
 }
 
 describe("deployment graph artifacts", () => {
-  it("emits only selected tool, action, and outbound webhook eligibility metadata", async () => {
-    const selected = defineModule({
-      id: "@acme/selected",
-      access: {
-        resources: [{ id: "selected.access", resource: "selected", actions: ["write"] }],
-      },
-      tools: [
-        {
-          id: "selected.tool",
-          name: "selected_tool",
-          runtime: { entry: "./tools", export: "selectedTool" },
-          requiredScopes: ["selected:write"],
-          context: ["selected"],
-          risk: "high",
-        },
-      ],
-      events: [
-        {
-          id: "selected.event",
-          eventType: "selected.changed",
-          version: "1.0.0",
-          payloadSchema: { type: "object" },
-          visibility: "external",
-          audit: { sourceModule: "selected", category: "domain" },
-        },
-      ],
-      webhooks: [{ id: "selected.webhook", direction: "outbound", eventId: "selected.event" }],
-      actions: [
-        {
-          id: "selected.action",
-          capabilityId: "selected.write",
-          version: "v1",
-          kind: "execute",
-          targetType: "selected-record",
-          requiredScopes: ["selected:write"],
-          risk: "high",
-          ledger: "required",
-          approval: "conditional",
-          policy: "selected-policy",
-          reversible: true,
-          allowedActorTypes: ["staff"],
-          from: { tools: ["selected.tool"], webhooks: ["selected.webhook"] },
-        },
-      ],
-    })
-    const deselected = defineModule({
-      id: "@acme/deselected",
-      tools: [
-        {
-          id: "deselected.tool",
-          name: "deselected_tool",
-          runtime: { entry: "./tools", export: "deselectedTool" },
-        },
-      ],
-    })
-    const graph = await graphWithSelectedUnits([selected])
-
-    const artifacts = buildSelectedGraphExecutableFacetArtifacts(graph)
-    const tools = JSON.parse(artifacts.tools)
-    const actions = JSON.parse(artifacts.actions)
-    const webhooks = JSON.parse(artifacts.outboundWebhooks)
-
-    expect(tools.entries).toEqual([
-      expect.objectContaining({
-        id: "selected.tool",
-        owner: { unitId: "@acme/selected", packageName: "@acme/selected" },
-        requiredScopes: ["selected:write"],
-        context: ["selected"],
-        risk: "high",
-      }),
-    ])
-    expect(actions.entries).toEqual([
-      expect.objectContaining({
-        id: "selected.action",
-        owner: { unitId: "@acme/selected", packageName: "@acme/selected" },
-        kind: "execute",
-        ledger: "required",
-        approval: "conditional",
-        policy: "selected-policy",
-        reversible: true,
-        allowedActorTypes: ["staff"],
-      }),
-    ])
-    expect(webhooks.entries).toEqual([
-      expect.objectContaining({
-        id: "selected.webhook",
-        unitId: "@acme/selected",
-        packageName: "@acme/selected",
-        eventType: "selected.changed",
-      }),
-    ])
-    expect(JSON.stringify(artifacts)).not.toContain(deselected.id)
-  })
-
   it("builds deterministic resolved graph JSON containing the graph hash", async () => {
     const graph = await sampleGraph()
     const first = buildDeploymentGraphJson(graph)

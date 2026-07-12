@@ -17,7 +17,6 @@ import {
   buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
-  buildSelectedGraphExecutableFacetArtifacts,
   createResolvedGraphRuntime,
 } from "./deployment-artifacts.js"
 import {
@@ -63,9 +62,6 @@ import {
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
 export const VOYANT_PROJECT_MIGRATION_RUNNER = "runtime/project-migrations.generated.mjs" as const
-export const VOYANT_PROJECT_TOOLS_MANIFEST = "manifests/tools.json" as const
-export const VOYANT_PROJECT_ACTIONS_MANIFEST = "manifests/actions.json" as const
-export const VOYANT_PROJECT_WEBHOOKS_MANIFEST = "manifests/webhooks.json" as const
 
 export interface ResolveProjectInput {
   project: unknown
@@ -233,7 +229,6 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   const workflowRuntimeEntry = VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY
   const migrationRunner = VOYANT_PROJECT_MIGRATION_RUNNER
   const migrationPlan = buildMigrationPlan(targetNeutralGraph)
-  const executableFacets = buildSelectedGraphExecutableFacetArtifacts(targetNeutralGraph)
   const runtimeEntryOverrides = await buildLocalRuntimeEntryOverrides(
     targetNeutralGraph,
     materialized.packages,
@@ -268,9 +263,6 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     },
     ...projectWorkflowJobs.generatedFiles,
     ...subscriberLinkFiles,
-    { path: VOYANT_PROJECT_TOOLS_MANIFEST, contents: executableFacets.tools },
-    { path: VOYANT_PROJECT_ACTIONS_MANIFEST, contents: executableFacets.actions },
-    { path: VOYANT_PROJECT_WEBHOOKS_MANIFEST, contents: executableFacets.outboundWebhooks },
     {
       path: runtimeEntry,
       contents: buildProjectRuntimeModule({

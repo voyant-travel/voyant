@@ -65,6 +65,7 @@
     "verify:commerce-starter-executable-authority": "node scripts/check-commerce-starter-executable-authority.mjs",
     "verify:catalog-subscriber-authority": "node --test scripts/tests/check-catalog-subscriber-authority.test.mjs && node scripts/check-catalog-subscriber-authority.mjs",
     "verify:phase5-event-authority": "node --test scripts/tests/check-phase5-event-authority.test.mjs && node scripts/check-phase5-event-authority.mjs",
+    "verify:phase5-tools-mcp-authority": "node --test scripts/tests/check-phase5-tools-mcp-authority.test.mjs && node scripts/check-phase5-tools-mcp-authority.mjs",
     "verify:client-package-boundaries": "node scripts/check-client-package-boundaries.mjs",
     "verify:workflows-package-surface": "node scripts/check-workflows-package-surface.mjs",
     "verify:accommodation-resale-boundary": "node scripts/check-accommodation-resale-boundary.mjs",
