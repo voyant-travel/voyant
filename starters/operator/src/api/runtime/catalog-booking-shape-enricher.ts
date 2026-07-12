@@ -1,72 +1,15 @@
-import type { SourceAdapterContext } from "@voyant-travel/catalog"
-import type {
-  QuoteEntityResult,
-  SourceAdapterRegistry,
-} from "@voyant-travel/catalog/booking-engine"
-import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { createProductQuoteShapeEnricher } from "@voyant-travel/catalog/operator-runtime"
 import { buildProductDraftShape } from "@voyant-travel/inventory/draft-shape"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
 
-interface EnrichProductQuoteShapeInput {
-  db: AnyDrizzleDb
-  result: QuoteEntityResult
-  entityModule: string
-  entityId: string
-  locale?: string
-  market?: string
-  currency?: string
-  registry: SourceAdapterRegistry
-  adapterContext?: SourceAdapterContext
-}
-
-export async function enrichProductQuoteShape({
-  db,
-  result,
-  entityModule,
-  entityId,
-  locale,
-  market,
-  currency,
-  registry,
-  adapterContext,
-}: EnrichProductQuoteShapeInput): Promise<QuoteEntityResult> {
-  if (result.shape || !result.available || entityModule !== "products") return result
-
-  try {
-    const resolved = await getProductContent(
-      db,
+export const enrichProductQuoteShape = createProductQuoteShapeEnricher({
+  resolveContent: ({ db, entityId, locales, market, currency, registry, adapterContext }) =>
+    getProductContent(
+      db as Parameters<typeof getProductContent>[0],
       entityId,
-      {
-        preferredLocales: uniqueLocales([locale, "en-GB", "en"]),
-        market,
-        currency,
-      },
-      {
-        registry,
-        buildAdapterContext: () =>
-          adapterContext ?? {
-            connection_id: "products",
-          },
-      },
-    )
-    if (!resolved?.content) return result
-    return {
-      ...result,
-      shape: buildProductDraftShape(resolved.content, { locale }),
-    }
-  } catch (error) {
-    console.warn("[catalog-booking] product quote shape enrichment failed:", error)
-    return result
-  }
-}
-
-function uniqueLocales(locales: ReadonlyArray<string | undefined>): string[] {
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const locale of locales) {
-    if (!locale || seen.has(locale)) continue
-    seen.add(locale)
-    out.push(locale)
-  }
-  return out
-}
+      { preferredLocales: locales, market, currency },
+      { registry, buildAdapterContext: () => adapterContext },
+    ),
+  buildShape: (content, options) =>
+    buildProductDraftShape(content as Parameters<typeof buildProductDraftShape>[0], options),
+})
