@@ -101,7 +101,7 @@ function ApiDocsPage(): React.ReactElement {
   if (entries.length === 0) {
     return (
       <div style={{ padding: 24, fontFamily: "sans-serif" }}>
-        No OpenAPI specs found. Run <code>pnpm --filter operator generate:openapi</code>.
+        No OpenAPI specs are available for this deployment.
       </div>
     )
   }

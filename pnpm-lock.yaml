@@ -3354,6 +3354,9 @@ importers:
       '@voyant-travel/framework':
         specifier: workspace:^
         version: link:../framework
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
       '@voyant-travel/runtime':
         specifier: workspace:^
         version: link:../runtime
@@ -3364,6 +3367,9 @@ importers:
         specifier: 'catalog:'
         version: 4.22.4
     devDependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@types/node':
         specifier: 'catalog:'
         version: 25.5.2
