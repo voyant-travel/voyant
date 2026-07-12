@@ -30,14 +30,16 @@ const packageFactories = {
   "workflow-runs": "createWorkflowRunsRuntimePortContribution",
 }
 
-const [deploymentResources, adapter, generator, ...packageJsonSources] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
-  read("packages/framework/src/deployment-artifacts.ts"),
-  ...Object.keys(packageFactories).map((packageName) =>
-    read(`packages/${packageName}/package.json`),
-  ),
-])
+const [deploymentResources, adapter, generator, frameworkContributors, ...packageJsonSources] =
+  await Promise.all([
+    read("starters/operator/src/api/runtime/deployment-resources.ts"),
+    read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+    read("packages/framework/src/deployment-artifacts.ts"),
+    read("packages/framework/src/runtime-contributors.generated.ts"),
+    ...Object.keys(packageFactories).map((packageName) =>
+      read(`packages/${packageName}/package.json`),
+    ),
+  ])
 
 const violations = []
 if (/from\s+["'][^"']+\/runtime-contributor["']/.test(deploymentResources)) {
@@ -82,6 +84,13 @@ for (const [index, [packageName, factory]] of Object.entries(packageFactories).e
   }
   if (!packageJson.exports?.["./runtime-contributor"]) {
     violations.push(`${packageName} must export ./runtime-contributor`)
+  }
+  if (
+    !frameworkContributors.includes(
+      `export { ${factory} } from "@voyant-travel/${packageName}/runtime-contributor"`,
+    )
+  ) {
+    violations.push(`${packageName} must be reachable through the generated framework barrel`)
   }
 }
 

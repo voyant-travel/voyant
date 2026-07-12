@@ -20,6 +20,7 @@
     "./project-runtime": "./src/project-runtime.ts",
     "./node-host": "./src/node-host.ts",
     "./node-runtime": "./src/node-runtime.ts",
+    "./runtime-contributors": "./src/runtime-contributors.generated.ts",
     "./scheduled-jobs": "./src/scheduled-jobs.ts"
   },
   "files": [
@@ -192,6 +193,10 @@
       "./node-runtime": {
         "types": "./dist/node-runtime.d.ts",
         "import": "./dist/node-runtime.js"
+      },
+      "./runtime-contributors": {
+        "types": "./dist/runtime-contributors.generated.d.ts",
+        "import": "./dist/runtime-contributors.generated.js"
       },
       "./scheduled-jobs": {
         "types": "./dist/scheduled-jobs.d.ts",

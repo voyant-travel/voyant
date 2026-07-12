@@ -55,6 +55,16 @@ async function fixture(deploymentResources) {
     "packages/framework/src/deployment-artifacts.ts",
     "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\nas GENERATED_RUNTIME_CONTRIBUTOR_\n",
   )
+  await write(
+    root,
+    "packages/framework/src/runtime-contributors.generated.ts",
+    Object.entries(packageFactories)
+      .map(
+        ([packageName, factory]) =>
+          `export { ${factory} } from "@voyant-travel/${packageName}/runtime-contributor"`,
+      )
+      .join("\n"),
+  )
   for (const [packageName, factory] of Object.entries(packageFactories)) {
     await write(
       root,

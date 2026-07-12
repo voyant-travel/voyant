@@ -20,6 +20,7 @@ import {
   writeProjectArtifacts,
 } from "../packages/framework/src/project-artifacts.ts"
 import type { ResolvedProjectArtifacts } from "../packages/framework/src/project-resolver.ts"
+import { FRAMEWORK_STANDARD_PACKAGES } from "../packages/framework/src/runtime-packages.generated.ts"
 import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import {
   buildDeploymentGraphDoctorJson,
@@ -330,12 +331,22 @@ function projectRuntimeEntryOverrides(
   projectRoot: string,
   runtimeOutputPath: string,
 ): Record<string, string> {
+  const frameworkPackages = new Set<string>(FRAMEWORK_STANDARD_PACKAGES)
   const projectPackages = new Set(
     graph.packageRecords
       .filter((record) => record.source.kind === "file" && record.source.reference === ".")
       .map((record) => record.packageName),
   )
   const overrides: Record<string, string> = {}
+  for (const record of graph.packageRecords) {
+    const runtime = record.metadata?.runtime
+    if (!runtime || !frameworkPackages.has(record.packageName)) continue
+    const entry =
+      runtime.entry === "." || runtime.entry === "./"
+        ? record.packageName
+        : `${record.packageName}/${runtime.entry.slice(2)}`
+    overrides[entry] = "@voyant-travel/framework/runtime-contributors"
+  }
   for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
     if (!projectPackages.has(unit.packageName)) continue
     for (const runtime of unitRuntimeReferences(unit)) {

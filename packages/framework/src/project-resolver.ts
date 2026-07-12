@@ -58,6 +58,7 @@ import {
   PROJECT_WORKFLOWS_GENERATED_PATH,
   type ProjectWorkflowJobConventionCompilation,
 } from "./project-workflow-job-conventions.js"
+import { FRAMEWORK_STANDARD_PACKAGES } from "./runtime-packages.generated.js"
 
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
@@ -798,6 +799,14 @@ async function buildLocalRuntimeEntryOverrides(
 ): Promise<Record<string, string>> {
   const overrides: Record<string, string> = {}
   const runtimeDirectory = path.dirname(path.join(projectRoot, ".voyant", runtimeEntry))
+  const frameworkPackages = new Set<string>(FRAMEWORK_STANDARD_PACKAGES)
+
+  for (const record of graph.packageRecords) {
+    const runtime = record.metadata?.runtime
+    if (!runtime || !frameworkPackages.has(record.packageName)) continue
+    overrides[lowerOwnerRuntimeEntry(record.packageName, runtime.entry)] =
+      "@voyant-travel/framework/runtime-contributors"
+  }
 
   for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
     const inspected = packages.get(unit.packageName)
