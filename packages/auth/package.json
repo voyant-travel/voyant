@@ -157,6 +157,7 @@
   },
   "dependencies": {
     "@better-auth/api-key": "1.6.23",
+    "@hono/zod-openapi": "catalog:",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",

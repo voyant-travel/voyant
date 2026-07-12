@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@hono/mcp": "^0.3.0",
+    "@hono/zod-openapi": "catalog:",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
