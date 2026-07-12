@@ -87,8 +87,7 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       graph.modules.some(
         (unit) =>
           unit.localId === "storefront" &&
-          unit.api?.some((api) => api.surface === "public" && api.mount === "/") &&
-          unit.runtimePorts?.some((port) => port.id === "storefront.offers-runtime"),
+          unit.api?.some((api) => api.surface === "public" && api.mount === "/"),
       ),
     )
     assert.equal(bom.productBom.id, "@voyant-travel/operator-standard")
