@@ -17,7 +17,8 @@
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/distribution.json",
     "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
-    "./openapi/admin/suppliers": "./openapi/admin/suppliers.json"
+    "./openapi/admin/suppliers": "./openapi/admin/suppliers.json",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -116,7 +117,12 @@
       },
       "./openapi/admin": "./openapi/admin/distribution.json",
       "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
-      "./openapi/admin/suppliers": "./openapi/admin/suppliers.json"
+      "./openapi/admin/suppliers": "./openapi/admin/suppliers.json",
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
+      }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

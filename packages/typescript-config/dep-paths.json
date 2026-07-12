@@ -373,10 +373,6 @@
       "@voyant-travel/catalog/subscriber-runtime-ports": [
         "../catalog/dist/subscriber-runtime-ports.d.ts"
       ],
-      "@voyant-travel/catalog-node/standard-node/*": ["../catalog-node/dist/standard-node/*.d.ts"],
-      "@voyant-travel/catalog-node/runtime-contributor": [
-        "../catalog-node/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
@@ -1673,7 +1669,9 @@
       "@voyant-travel/workflows/http-ingest": ["../workflows/dist/http-ingest.d.ts"],
       "@voyant-travel/workflows/protocol": ["../workflows/dist/protocol/index.d.ts"],
       "@voyant-travel/workflows/rate-limit": ["../workflows/dist/rate-limit/index.d.ts"],
-      "@voyant-travel/workflows/testing": ["../workflows/dist/testing/index.d.ts"]
+      "@voyant-travel/workflows/testing": ["../workflows/dist/testing/index.d.ts"],
+      "@voyant-travel/catalog/runtime-contributor": ["../catalog/dist/runtime-contributor.d.ts"],
+      "@voyant-travel/catalog/runtime-contracts": ["../catalog/dist/runtime-contracts.d.ts"]
     }
   }
 }

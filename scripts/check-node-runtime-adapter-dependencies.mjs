@@ -32,18 +32,17 @@ const adapters = [
     factory: "createFinanceNodeRuntimePortContribution",
     domainPackageNames: ["@voyant-travel/finance"],
   },
-  {
-    packageName: "@voyant-travel/catalog-node",
-    directory: "catalog-node",
-    factory: "createCatalogNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/catalog", "@voyant-travel/cruises"],
-  },
 ]
 const consolidatedPackages = [
   {
     packageName: "@voyant-travel/flights",
     retiredPackageName: "@voyant-travel/flights-node",
     factory: "createFlightsRuntimePortContribution",
+  },
+  {
+    packageName: "@voyant-travel/catalog",
+    retiredPackageName: "@voyant-travel/catalog-node",
+    factory: "createCatalogRuntimePortContribution",
   },
   {
     packageName: "@voyant-travel/legal",
@@ -145,7 +144,6 @@ for (const consolidated of consolidatedPackages) {
 for (const domainPackageName of [
   "@voyant-travel/action-ledger",
   "@voyant-travel/finance",
-  "@voyant-travel/catalog",
   "@voyant-travel/cruises",
   "@voyant-travel/distribution",
 ]) {

@@ -9,11 +9,7 @@ import type {
   ResolverScope,
   Visibility,
 } from "@voyant-travel/catalog"
-import {
-  buildEmbeddingProvider,
-  buildTypesenseIndexer,
-  DEFAULT_SLICES,
-} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
+import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
 import { getResolvedExtraById } from "@voyant-travel/inventory/extras"
 import { getResolvedProductById } from "@voyant-travel/inventory/service-catalog-plane"
 import type { Context } from "hono"
@@ -41,6 +37,7 @@ export interface OperatorCatalogContext {
 }
 
 export function buildCatalogContext(c: Context): OperatorCatalogContext {
+  const catalogRuntime = requireCatalogRuntimeServices()
   const env = c.env as AppBindings & {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
@@ -58,12 +55,12 @@ export function buildCatalogContext(c: Context): OperatorCatalogContext {
   // (en-GB by default), so a Chrome-on-en-US user would otherwise hit
   // a non-existent `products__en-US__staff__default` collection. Callers
   // can still override via the request body's `locale` field.
-  const locale = DEFAULT_SLICES[0]?.locale ?? "en-GB"
+  const locale = catalogRuntime.defaultSlices[0]?.locale ?? "en-GB"
   const tenantId = env.TENANT_ID ?? "default"
   const sellerOperatorId = tenantId
 
-  const embeddings = buildEmbeddingProvider(env)
-  const indexer = buildTypesenseIndexer(env, embeddings)
+  const embeddings = catalogRuntime.buildEmbeddingProvider(env)
+  const indexer = catalogRuntime.buildTypesenseIndexer(env, embeddings)
 
   return {
     actor,

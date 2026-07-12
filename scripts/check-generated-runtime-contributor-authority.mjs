@@ -13,7 +13,7 @@ const packageFactories = {
   "action-ledger-node": "createActionLedgerNodeRuntimePortContribution",
   auth: "createAuthRuntimePortContribution",
   bookings: "createBookingsRuntimePortContribution",
-  "catalog-node": "createCatalogNodeRuntimePortContribution",
+  catalog: "createCatalogRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
   "distribution-node": "createDistributionNodeRuntimePortContribution",
   "finance-node": "createFinanceNodeRuntimePortContribution",

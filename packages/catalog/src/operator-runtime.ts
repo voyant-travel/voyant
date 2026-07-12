@@ -157,14 +157,14 @@ export interface CatalogOffersTypesenseEnv {
   TYPESENSE_API_KEY?: string
 }
 
-export interface CatalogNodeRuntimeEnv extends CatalogOffersTypesenseEnv {
+export interface CatalogRuntimeEnv extends CatalogOffersTypesenseEnv {
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
 }
 
 export function buildCatalogEmbeddingProvider(
-  env: CatalogNodeRuntimeEnv,
+  env: CatalogRuntimeEnv,
 ): EmbeddingProvider | undefined {
   const apiKey = env.VOYANT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
   if (!apiKey) return undefined
@@ -177,7 +177,7 @@ export function buildCatalogEmbeddingProvider(
 }
 
 export function buildCatalogTypesenseIndexer(
-  env: CatalogNodeRuntimeEnv,
+  env: CatalogRuntimeEnv,
   options: {
     embeddings?: EmbeddingProvider
     registries: ReadonlyMap<string, FieldPolicyRegistry>

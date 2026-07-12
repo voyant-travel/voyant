@@ -1,7 +1,6 @@
 import { bookingActivityLog, bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import {
   type BookEntityResult,
-  type CatalogAvailabilitySlotsScope,
   type CatalogBookingBookBody,
   type CatalogBookingCommittedEvent,
   type CatalogBookingRouteModuleOptions,
@@ -10,7 +9,6 @@ import {
   getOrderById,
   OWNED_SOURCE_KIND,
   type QuoteEntityResult,
-  type SlotRow,
 } from "@voyant-travel/catalog/booking-engine"
 import {
   applyCatalogTaxToQuoteResult,
@@ -19,31 +17,27 @@ import {
   createSourcedBookingNumber,
   resolveCatalogHoldTtlMs,
 } from "@voyant-travel/catalog/operator-runtime"
-import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import { createVoyantConnectClient, type PackageOffer } from "@voyant-travel/connect-sdk"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
-import { suppliers } from "@voyant-travel/distribution"
 import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyant-travel/finance"
-import { products, productsService } from "@voyant-travel/inventory"
-import { getProductContent } from "@voyant-travel/inventory/service-content"
-import { availabilitySlots } from "@voyant-travel/operations"
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
 import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
-import { and, asc, eq, gte } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
 } from "./booking-engine-runtime.js"
-import { enrichProductQuoteShape } from "./booking-shape-enricher.js"
+import { catalogRuntimeExtensions } from "./host.js"
 
 function getCatalogBookingDb(c: Context): AnyDrizzleDb {
   return (c.var as { db: AnyDrizzleDb }).db
 }
 
 function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOptions {
+  const { commerce, inventory } = catalogRuntimeExtensions()
   return {
     resolveDb: getCatalogBookingDb,
     resolveSourceRegistry: getBookingEngineRegistryFromContext,
@@ -54,7 +48,7 @@ function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOption
     // the customer-supplied promotion code fails validation, quoteEntity
     // surfaces a code_* invalidReason and tax recompute below sees no
     // discount on base_amount.
-    resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
+    resolveEvaluatePromotions: commerce.createPromotionEvaluator,
     transformQuoteResult: async ({ c, db, result, request, provenance }) => {
       const taxed = await applyOperatorTaxToQuoteResult(
         db,
@@ -63,7 +57,7 @@ function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOption
         request.entityId,
         provenance.sourceKind,
       )
-      return enrichProductQuoteShape({
+      return inventory.enrichProductQuoteShape({
         db,
         result: taxed,
         entityModule: request.entityModule,
@@ -160,49 +154,14 @@ const prepareConnectPackageBookParameters = createCatalogPackageHoldPreparer({
   },
 })
 
-async function listAvailabilitySlots(
-  db: AnyDrizzleDb,
-  productId: string,
-  todayIso: string,
-  _scope: CatalogAvailabilitySlotsScope,
-): Promise<SlotRow[]> {
-  return (db as PostgresJsDatabase)
-    .select({
-      id: availabilitySlots.id,
-      dateLocal: availabilitySlots.dateLocal,
-      startsAt: availabilitySlots.startsAt,
-      endsAt: availabilitySlots.endsAt,
-      timezone: availabilitySlots.timezone,
-      status: availabilitySlots.status,
-      unlimited: availabilitySlots.unlimited,
-      remainingPax: availabilitySlots.remainingPax,
-      initialPax: availabilitySlots.initialPax,
-      nights: availabilitySlots.nights,
-      days: availabilitySlots.days,
-    })
-    .from(availabilitySlots)
-    .where(
-      and(
-        eq(availabilitySlots.productId, productId),
-        eq(availabilitySlots.status, "open"),
-        gte(availabilitySlots.dateLocal, todayIso),
-      ),
-    )
-    .orderBy(asc(availabilitySlots.startsAt))
-    .limit(60)
-}
-
 export function createOperatorCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
+  const { inventory, operations } = catalogRuntimeExtensions()
   return {
     booking: createOperatorCatalogBookingRoutesOptions(),
     resolveRegistry: getBookingEngineRegistryFromContext,
-    getProductContent: (db, productId, scope, ctx) => getProductContent(db, productId, scope, ctx),
-    listAvailabilitySlots,
-    getOwnedProductById: async (db, productId) => {
-      const product = await productsService.getProductById(db as PostgresJsDatabase, productId)
-      if (!product) return null
-      return { name: product.name, description: product.description }
-    },
+    getProductContent: inventory.getProductContent,
+    listAvailabilitySlots: operations.listAvailabilitySlots,
+    getOwnedProductById: inventory.getOwnedProductById,
   }
 }
 
@@ -211,28 +170,12 @@ async function resolveHoldTtlMs(
   entityModule: string,
   entityId: string,
 ): Promise<number> {
+  const { distribution, inventory } = catalogRuntimeExtensions()
   return resolveCatalogHoldTtlMs({
     entityModule,
     entityId,
-    loadProduct: async (id) => {
-      const [product] = await db
-        .select({
-          supplierId: products.supplierId,
-          reservationTimeoutMinutes: products.reservationTimeoutMinutes,
-        })
-        .from(products)
-        .where(eq(products.id, id))
-        .limit(1)
-      return product ?? null
-    },
-    loadSupplier: async (id) => {
-      const [supplier] = await db
-        .select({ reservationTimeoutMinutes: suppliers.reservationTimeoutMinutes })
-        .from(suppliers)
-        .where(eq(suppliers.id, id))
-        .limit(1)
-      return supplier ?? null
-    },
+    loadProduct: (id) => inventory.loadProductReservationPolicy(db, id),
+    loadSupplier: (id) => distribution.loadSupplierReservationTimeout(db, id),
   })
 }
 

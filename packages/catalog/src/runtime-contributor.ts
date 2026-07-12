@@ -17,12 +17,10 @@ import {
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import {
-  type CruisesRoutesRuntime,
-  cruisesRoutesRuntimePort,
-} from "@voyant-travel/cruises/runtime-port"
+import { catalogRuntimeServicesPort } from "./runtime-contracts.js"
 
 type RuntimePortValue<T> = T | Promise<T>
+const CRUISES_ROUTES_RUNTIME_PORT_ID = "cruises.routes-runtime"
 
 export interface CatalogRuntimePortContribution {
   search: RuntimePortValue<CatalogSearchRuntimeOptions>
@@ -31,23 +29,25 @@ export interface CatalogRuntimePortContribution {
   content: RuntimePortValue<CatalogContentRuntime>
   projection: RuntimePortValue<CatalogProjectionRuntimeProvider>
   bookingSnapshot: RuntimePortValue<CatalogBookingSnapshotRuntimeProvider>
+  services: RuntimePortValue<import("./runtime-contracts.js").CatalogRuntimeServices>
 }
 
-export interface CatalogNodeRuntimeContributorHost {
+export interface CatalogRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
 }
 
-export function createCatalogNodeRuntimePortContribution(
-  host: CatalogNodeRuntimeContributorHost,
+export function createCatalogRuntimePortContribution(
+  host: CatalogRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const contribution = import("./standard-node-runtime.js").then((module) =>
-    module.createCatalogStandardNodeRuntime(host.primitives),
+  const contribution = import("./runtime.js").then((module) =>
+    module.createCatalogRuntime(host.primitives),
   )
-  const cruisesRoutes: CruisesRoutesRuntime = {
-    resolveSourceAdapterRegistry: (bindings) =>
-      import("./standard-node/booking-engine-runtime.js").then((runtime) =>
-        runtime.ensureBookingEngineRegistry(host.primitives.env(bindings)),
-      ),
+  const cruisesRoutes = {
+    resolveSourceAdapterRegistry: async (bindings) => {
+      await contribution
+      const runtime = await import("./runtime/booking-engine-runtime.js")
+      return runtime.ensureBookingEngineRegistry(host.primitives.env(bindings))
+    },
   }
   return {
     [catalogSearchRuntimePort.id]: contribution.then((runtime) => runtime.search),
@@ -56,6 +56,7 @@ export function createCatalogNodeRuntimePortContribution(
     [catalogContentRuntimePort.id]: contribution.then((runtime) => runtime.content),
     [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
-    [cruisesRoutesRuntimePort.id]: cruisesRoutes,
+    [catalogRuntimeServicesPort.id]: contribution.then((runtime) => runtime.services),
+    [CRUISES_ROUTES_RUNTIME_PORT_ID]: cruisesRoutes,
   }
 }

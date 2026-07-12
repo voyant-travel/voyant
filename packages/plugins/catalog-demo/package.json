@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -40,6 +41,11 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
+      },
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
       }
     },
     "main": "./dist/index.js",

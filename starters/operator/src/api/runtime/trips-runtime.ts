@@ -1,8 +1,4 @@
-import {
-  getBookingEngineRegistryFromContext,
-  getOwnedBookingHandlerRegistryFromContext,
-} from "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
-import { applyOperatorTaxToQuoteResult } from "@voyant-travel/catalog-node/standard-node/booking-runtime"
+import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import type {
   CatalogCheckoutStartResult,
@@ -34,14 +30,15 @@ import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 
 const tripsRouteRuntime = createTripsRouteRuntime({
   createCatalogAdapter(c) {
+    const catalogRuntime = requireCatalogRuntimeServices()
     const db = getDb(c)
     return createCatalogComponentAdapter({
       db,
-      registry: getBookingEngineRegistryFromContext(c),
-      ownedHandlers: getOwnedBookingHandlerRegistryFromContext(c),
+      registry: catalogRuntime.getSourceRegistryFromContext(c),
+      ownedHandlers: catalogRuntime.getOwnedHandlersFromContext(c),
       evaluatePromotions: createCatalogPromotionEvaluator(db),
       transformQuoteResult: (result, entityModule, entityId, sourceKind) =>
-        applyOperatorTaxToQuoteResult(db, result, entityModule, entityId, sourceKind),
+        catalogRuntime.applyTaxToQuoteResult(db, result, entityModule, entityId, sourceKind),
       adapterContext: (connectionId) => ({
         connection_id: connectionId ?? "engine",
         correlation_id: c.req.header("x-request-id") ?? crypto.randomUUID(),

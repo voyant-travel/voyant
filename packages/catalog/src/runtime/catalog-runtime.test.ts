@@ -1,33 +1,26 @@
-import {
-  CATALOG_VERTICALS,
-  loadCatalogSlices,
-} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
-import { marketLocales, markets } from "@voyant-travel/commerce"
-import { channels } from "@voyant-travel/distribution"
 import { describe, expect, it } from "vitest"
+import { CATALOG_VERTICALS, loadCatalogSlices } from "./catalog-runtime.js"
+import { configureCatalogRuntimeHost } from "./host.js"
 
-type TableRows = Map<object, unknown[]>
-
-function createSelectDb(rowsByTable: TableRows) {
-  return {
-    select: () => ({
-      from: (table: object) => ({
-        where: () => ({
-          orderBy: () => rowsByTable.get(table) ?? [],
-        }),
-      }),
-    }),
-  }
+function createRuntimeDb(
+  markets: readonly { id: string; defaultLanguageTag: string }[],
+  locales: readonly { marketId: string; languageTag: string }[],
+  channelIds: readonly string[],
+) {
+  const db = {} as never
+  configureCatalogRuntimeHost(
+    {} as never,
+    {
+      commerce: { loadSliceInputs: async () => ({ markets, locales }) },
+      distribution: { loadActiveChannelIds: async () => channelIds },
+    } as never,
+  )
+  return db
 }
 
 describe("loadCatalogSlices", () => {
   it("materializes channelled default-market customer slices for active channels", async () => {
-    const rowsByTable: TableRows = new Map()
-    rowsByTable.set(markets, [])
-    rowsByTable.set(marketLocales, [])
-    rowsByTable.set(channels, [{ id: "chan_website" }])
-
-    const slices = await loadCatalogSlices(createSelectDb(rowsByTable) as never)
+    const slices = await loadCatalogSlices(createRuntimeDb([], [], ["chan_website"]))
 
     for (const vertical of CATALOG_VERTICALS) {
       expect(slices).toContainEqual({
@@ -47,22 +40,23 @@ describe("loadCatalogSlices", () => {
   })
 
   it("preserves legacy unchannelled customer slices when active channels exist", async () => {
-    const rowsByTable: TableRows = new Map()
-    rowsByTable.set(markets, [
-      {
-        id: "mkt_uk",
-        defaultLanguageTag: "en-GB",
-      },
-    ])
-    rowsByTable.set(marketLocales, [
-      {
-        marketId: "mkt_uk",
-        languageTag: "fr-FR",
-      },
-    ])
-    rowsByTable.set(channels, [{ id: "chan_website" }, { id: "chan_b2b" }])
-
-    const slices = await loadCatalogSlices(createSelectDb(rowsByTable) as never)
+    const slices = await loadCatalogSlices(
+      createRuntimeDb(
+        [
+          {
+            id: "mkt_uk",
+            defaultLanguageTag: "en-GB",
+          },
+        ],
+        [
+          {
+            marketId: "mkt_uk",
+            languageTag: "fr-FR",
+          },
+        ],
+        ["chan_website", "chan_b2b"],
+      ),
+    )
     const productCustomerSlices = slices.filter(
       (slice) =>
         slice.vertical === "products" && slice.audience === "customer" && slice.market === "mkt_uk",

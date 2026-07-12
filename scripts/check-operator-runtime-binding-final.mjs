@@ -11,7 +11,7 @@ const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
   "action-ledger-node": "createActionLedgerStandardNodeRuntime",
   bookings: "bookingsConfigurationRuntimePort",
-  "catalog-node": "createCatalogStandardNodeRuntime",
+  catalog: "createCatalogRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
   "distribution-node": "configureDistributionStandardNodeRuntime",
   "finance-node": "createFinanceStandardNodeRuntime",

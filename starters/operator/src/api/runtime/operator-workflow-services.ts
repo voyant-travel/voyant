@@ -3,13 +3,7 @@ import {
   CATALOG_DRAFT_REAPER_RUNTIME_KEY,
   createCatalogDraftReaperRuntime,
 } from "@voyant-travel/catalog/draft-reaper-workflow"
-import {
-  buildEmbeddingProvider,
-  buildTypesenseIndexer,
-  getFieldPolicyRegistries,
-  loadCatalogSlices,
-  withEmbedding,
-} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
+import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
 import {
   PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
   type PromotionBoundarySchedulerRuntime,
@@ -83,19 +77,14 @@ export async function createOperatorWorkflowServiceResolver(
   const env = workflowEnvironment(bindings)
   const { app } = await import("../app.js")
   await app.ready(appBindings)
+  const catalogRuntime = requireCatalogRuntimeServices()
 
   app.services.register(
     CATALOG_DRAFT_REAPER_RUNTIME_KEY,
     createCatalogDraftReaperRuntime({
       withDb: (operation) => operation(createWorkflowDb(env)),
-      resolveSourceRegistry: () =>
-        import("@voyant-travel/catalog-node/standard-node/booking-engine-runtime").then((runtime) =>
-          runtime.ensureBookingEngineRegistry(appBindings),
-        ),
-      resolveOwnedHandlers: () =>
-        import("@voyant-travel/catalog-node/standard-node/booking-engine-runtime").then((runtime) =>
-          runtime.getOwnedBookingHandlerRegistry(appBindings),
-        ),
+      resolveSourceRegistry: () => catalogRuntime.ensureSourceRegistry(appBindings),
+      resolveOwnedHandlers: () => catalogRuntime.getOwnedHandlers(appBindings),
       reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
     }),
   )
@@ -110,25 +99,22 @@ export async function createOperatorWorkflowServiceResolver(
         withOptions: (operation) =>
           withDbFromEnv(appBindings, async (rawDb) => {
             const db = operatorPostgresDb(rawDb)
-            const embeddings = buildEmbeddingProvider(env)
-            const indexer = buildTypesenseIndexer(env, embeddings)
+            const embeddings = catalogRuntime.buildEmbeddingProvider(env)
+            const indexer = catalogRuntime.buildTypesenseIndexer(env, embeddings)
             if (!indexer) return operation({ db })
 
             const indexerService = createIndexerService({
               adapter: indexer,
-              slices: await loadCatalogSlices(rawDb),
-              registries: getFieldPolicyRegistries(),
+              slices: await catalogRuntime.loadSlices(rawDb),
+              registries: catalogRuntime.fieldPolicyRegistries(),
             })
             await indexerService.ensureCollections()
-            const { ensureBookingEngineRegistry } = await import(
-              "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
-            )
             return operation({
               db,
-              sourceAdapterRegistry: await ensureBookingEngineRegistry(env),
+              sourceAdapterRegistry: await catalogRuntime.ensureSourceRegistry(env),
               indexerService,
-              fieldPolicyRegistries: getFieldPolicyRegistries(),
-              wrapCatalogBuilder: (builder) => withEmbedding(builder, embeddings),
+              fieldPolicyRegistries: catalogRuntime.fieldPolicyRegistries(),
+              wrapCatalogBuilder: (builder) => catalogRuntime.withEmbedding(builder, embeddings),
               onCatalogProgress: (event) =>
                 console.info("[external-cruise-refresh] catalog page", event),
             })

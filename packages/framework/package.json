@@ -59,7 +59,6 @@
     "@voyant-travel/bookings-react": "workspace:*",
     "@voyant-travel/catalog": "workspace:*",
     "@voyant-travel/catalog-authoring": "workspace:*",
-    "@voyant-travel/catalog-node": "workspace:*",
     "@voyant-travel/catalog-react": "workspace:*",
     "@voyant-travel/charters": "workspace:*",
     "@voyant-travel/commerce": "workspace:*",

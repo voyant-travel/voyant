@@ -109,6 +109,9 @@ function createLegacyDeploymentCapabilities() {
 function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
   return {
     env: (bindings) => operatorBindings(bindings) as Record<string, unknown>,
+    modules: {
+      import: (specifier) => import(specifier),
+    },
     database: {
       resolve: <TDatabase>(bindings: unknown) =>
         resolveOperatorDb(bindings) as unknown as TDatabase,

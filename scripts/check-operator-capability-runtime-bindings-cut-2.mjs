@@ -9,10 +9,10 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packageRequirements = {
-  "catalog-node": ["host.primitives.env", "ensureBookingEngineRegistry"],
-  flights: ["host.capabilities.loadFlightsRuntime()"],
-  notifications: ["host.capabilities.loadNotificationsRuntime()"],
-  quotes: ["host.capabilities.loadQuoteProposalRuntime()"],
+  catalog: ["host.primitives", "ensureBookingEngineRegistry"],
+  "flights-node": ["host.primitives", "createFlightsStandardNodeRuntime"],
+  "notifications-node": ["host.primitives", "createNotificationsStandardNodeRuntime"],
+  "quotes-node": ["createQuotesStandardNodeRuntime"],
   realtime: ["host.primitives", "createRealtimeStandardNodeRuntime"],
   storage: ["host.primitives", "createStorageStandardNodeRuntime"],
   storefront: ["host.capabilities.loadStorefrontRuntime()"],

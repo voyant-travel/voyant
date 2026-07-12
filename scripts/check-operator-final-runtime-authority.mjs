@@ -25,7 +25,7 @@ const packagePorts = {
 const contributorFactories = [
   "createActionLedgerNodeRuntimePortContribution",
   "createAuthRuntimePortContribution",
-  "createCatalogNodeRuntimePortContribution",
+  "createCatalogRuntimePortContribution",
   "createDistributionNodeRuntimePortContribution",
   "createFlightsRuntimePortContribution",
   "createMiceRuntimePortContribution",
@@ -43,7 +43,7 @@ const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.a
   ...Object.keys(packagePorts).map((packageName) =>
     read(
       packageName === "cruises"
-        ? "packages/catalog-node/src/runtime-contributor.ts"
+        ? "packages/catalog/src/runtime-contributor.ts"
         : `packages/${packageName}/src/runtime-contributor.ts`,
     ),
   ),
@@ -63,7 +63,13 @@ for (const [index, [packageName, ports]] of Object.entries(packagePorts).entries
     if (deploymentResources.includes(port)) {
       violations.push(`deployment-resources.ts must not import or register ${port}`)
     }
-    if (!contributor.includes(`[${port}.id]`)) {
+    if (
+      !contributor.includes(`[${port}.id]`) &&
+      !(
+        port === "cruisesRoutesRuntimePort" &&
+        contributor.includes("CRUISES_ROUTES_RUNTIME_PORT_ID")
+      )
+    ) {
       violations.push(`${packageName} runtime contributor must own ${port}`)
     }
   }

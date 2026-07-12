@@ -1,5 +1,5 @@
-import { buildSourcedBookingRows } from "@voyant-travel/catalog-node/standard-node/booking-runtime"
 import { describe, expect, it } from "vitest"
+import { buildSourcedBookingRows } from "./booking-runtime.js"
 
 describe("buildSourcedBookingRows", () => {
   it("materializes a readable booking row for sourced catalog commits", () => {

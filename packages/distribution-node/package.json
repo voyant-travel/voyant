@@ -42,10 +42,10 @@
     "types": "./dist/runtime-contributor.d.ts"
   },
   "dependencies": {
-    "@voyant-travel/catalog-node": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
-    "@voyant-travel/distribution": "workspace:^"
+    "@voyant-travel/distribution": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",

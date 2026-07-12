@@ -17,18 +17,18 @@ const migratedRuntimeLoaders = [
   "loadCatalogRuntime",
 ]
 const migratedContributors = await Promise.all(
-  ["bookings", "finance-node", "catalog-node"].map((name) =>
+  ["bookings", "finance-node", "catalog"].map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
 )
 const movedRuntimeFactories = await Promise.all([
   read("packages/bookings/src/runtime.ts"),
   read("packages/finance-node/src/standard-node-runtime.ts"),
-  read("packages/catalog-node/src/standard-node-runtime.ts"),
-  read("packages/catalog-node/src/standard-node/booking-engine-runtime.ts"),
-  read("packages/catalog-node/src/standard-node/booking-runtime.ts"),
-  read("packages/catalog-node/src/standard-node/offers-runtime.ts"),
-  read("packages/catalog-node/src/standard-node/subscriber-runtime.ts"),
+  read("packages/catalog/src/runtime.ts"),
+  read("packages/catalog/src/runtime/booking-engine-runtime.ts"),
+  read("packages/catalog/src/runtime/booking-runtime.ts"),
+  read("packages/catalog/src/runtime/offers-runtime.ts"),
+  read("packages/catalog/src/runtime/subscriber-runtime.ts"),
 ])
 for (const loader of migratedRuntimeLoaders) {
   if (operatorResources.includes(loader)) {
@@ -67,7 +67,7 @@ for (const required of [
 if (operatorResources.includes("loadMcpAdminRoutes")) {
   violations.push("operator deployment resources must not retain dormant loadMcpAdminRoutes")
 }
-for (const primitive of ["env:", "database:", "storage:", "events:", "config:"]) {
+for (const primitive of ["env:", "modules:", "database:", "storage:", "events:", "config:"]) {
   if (!operatorResources.includes(primitive)) {
     violations.push(`operator generic Node primitive contract is missing ${primitive}`)
   }
@@ -109,15 +109,19 @@ for (const [source, required] of [
   ],
   [
     movedRuntimeFactories[3],
-    ["createVoyantConnectSources", "registerCruiseAdapters", "createOwnedBookingHandlersRegistry"],
+    [
+      "createVoyantConnectSources",
+      "catalogDemo.createSourceAdapter",
+      "createOwnedBookingHandlersRegistry",
+    ],
   ],
   [
     movedRuntimeFactories[4],
     [
       "materializeSourcedBookingForCatalogCommit",
       "applyOperatorTaxToQuoteResult",
-      "getProductContent",
-      "availabilitySlots",
+      "inventory.getProductContent",
+      "operations.listAvailabilitySlots",
     ],
   ],
   [
@@ -129,7 +133,7 @@ for (const [source, required] of [
     [
       "createCatalogProjectionRuntimeAdapter",
       "createCatalogBookingSnapshotRuntimeAdapter",
-      "buildProductSnapshotInput",
+      "inventory.buildSnapshotInput",
     ],
   ],
 ]) {
@@ -167,8 +171,7 @@ for (const removedPath of [
   "starters/operator/src/api/lib/booking-requirements-product-snapshot.ts",
   "packages/bookings-node/package.json",
   "packages/finance/src/standard-node-runtime.ts",
-  "packages/catalog/src/standard-node-runtime.ts",
-  "packages/catalog/src/standard-node",
+  "packages/catalog-node",
 ]) {
   if (existsSync(path.join(root, removedPath))) {
     violations.push(

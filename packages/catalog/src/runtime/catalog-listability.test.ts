@@ -8,8 +8,8 @@
  * customer slices, but not legacy unchannelled customer slices.
  */
 
-import { isOwnedProductStorefrontListable } from "@voyant-travel/catalog-node/standard-node/catalog-listability"
 import { describe, expect, it, vi } from "vitest"
+import { isOwnedProductStorefrontListable } from "./catalog-listability.js"
 
 describe("isOwnedProductStorefrontListable", () => {
   it("lists an owned product in the customer slice without a channel mapping", async () => {

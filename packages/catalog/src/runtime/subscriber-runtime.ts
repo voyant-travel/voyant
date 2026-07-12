@@ -9,7 +9,6 @@ import {
 } from "@voyant-travel/catalog/operator-runtime"
 import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { buildProductSnapshotInput } from "@voyant-travel/inventory/service-catalog-plane"
 import { and, eq, isNotNull } from "drizzle-orm"
 
 import {
@@ -20,7 +19,7 @@ import {
   loadCatalogSlices,
   withEmbedding,
 } from "./catalog-runtime.js"
-import { catalogStandardNodeHost } from "./host.js"
+import { catalogRuntimeExtensions, catalogRuntimeHost } from "./host.js"
 
 type CatalogSubscriberBindings = Record<string, unknown> & {
   TENANT_ID?: string
@@ -38,7 +37,7 @@ export function createOperatorCatalogProjectionRuntime(
   return createCatalogProjectionRuntimeAdapter({
     bindings: env,
     withDb: (bindings, operation) =>
-      catalogStandardNodeHost().database.transaction(bindings, (database) =>
+      catalogRuntimeHost().database.transaction(bindings, (database) =>
         operation(database as AnyDrizzleDb),
       ),
     buildContext: async (db) => {
@@ -63,7 +62,7 @@ export function createOperatorCatalogBookingSnapshotRuntime(
   return createCatalogBookingSnapshotRuntimeAdapter({
     bindings: env,
     withDb: (bindings, operation) =>
-      catalogStandardNodeHost().database.transaction(bindings, (database) =>
+      catalogRuntimeHost().database.transaction(bindings, (database) =>
         operation(database as AnyDrizzleDb),
       ),
     buildContext: async (db) => {
@@ -79,7 +78,7 @@ export function createOperatorCatalogBookingSnapshotRuntime(
           return items.map(({ productId }) => productId)
         },
         buildSnapshotInput: (productId, options) =>
-          buildProductSnapshotInput(db, productId, options),
+          catalogRuntimeExtensions().inventory.buildSnapshotInput(db, productId, options),
       }
       return context
     },

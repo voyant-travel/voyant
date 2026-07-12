@@ -7,14 +7,7 @@
  */
 
 import { createIndexerService } from "@voyant-travel/catalog"
-import {
-  buildEmbeddingProvider,
-  buildTypesenseIndexer,
-  createProductsDocumentBuilder,
-  getFieldPolicyRegistries,
-  loadCatalogSlices,
-  withEmbedding,
-} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
+import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
 import type { BulkReindexProductsService } from "@voyant-travel/commerce"
 import { products } from "@voyant-travel/inventory/schema"
 import { withDbFromEnv } from "./db.js"
@@ -38,8 +31,9 @@ export function createBulkReindexProductsService(env: BulkReindexEnv): BulkReind
     },
 
     async reindexProduct(productId: string): Promise<void> {
-      const embeddings = buildEmbeddingProvider(env)
-      const adapter = buildTypesenseIndexer(env, embeddings)
+      const catalogRuntime = requireCatalogRuntimeServices()
+      const embeddings = catalogRuntime.buildEmbeddingProvider(env)
+      const adapter = catalogRuntime.buildTypesenseIndexer(env, embeddings)
       // No indexer configured: nothing to do. The catalog plane is
       // optional — operators without Typesense get keyword-only search
       // off the relational store.
@@ -48,11 +42,11 @@ export function createBulkReindexProductsService(env: BulkReindexEnv): BulkReind
       await withDbFromEnv(env, async (db) => {
         const service = createIndexerService({
           adapter,
-          slices: await loadCatalogSlices(db),
-          registries: getFieldPolicyRegistries(),
+          slices: await catalogRuntime.loadSlices(db),
+          registries: catalogRuntime.fieldPolicyRegistries(),
         })
-        const builder = withEmbedding(
-          createProductsDocumentBuilder(db, { sellerOperatorId }),
+        const builder = catalogRuntime.withEmbedding(
+          catalogRuntime.createProductsDocumentBuilder(db, { sellerOperatorId }),
           embeddings,
         )
         // Reindex across every slice the indexer was constructed with.

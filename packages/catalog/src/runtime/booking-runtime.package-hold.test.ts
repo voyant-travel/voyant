@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { configureCatalogRuntimeHost } from "./host.js"
 
 const mocks = vi.hoisted(() => ({
   lockPackage: vi.fn(async () => ({ id: "hold_pkg_1" })),
@@ -26,7 +27,22 @@ vi.mock("@voyant-travel/plugin-voyant-connect", async () => {
   }
 })
 
-import { createOperatorCatalogBookingRouteModuleOptions } from "@voyant-travel/catalog-node/standard-node/booking-runtime"
+import { createOperatorCatalogBookingRouteModuleOptions } from "./booking-runtime.js"
+
+beforeEach(() => {
+  configureCatalogRuntimeHost(
+    {} as never,
+    {
+      commerce: { createPromotionEvaluator: vi.fn() },
+      inventory: {
+        enrichProductQuoteShape: vi.fn(),
+        getProductContent: vi.fn(),
+        getOwnedProductById: vi.fn(),
+      },
+      operations: { listAvailabilitySlots: vi.fn() },
+    } as never,
+  )
+})
 
 describe("operator Connect package hold preparation", () => {
   it("locks stored package offers that do not include hold status", async () => {

@@ -1548,6 +1548,15 @@ are no longer authoritative.
 
 ### Phase 3: package-owned runtime composition and first non-Cloud target
 
+When Node is the only runtime for a domain, the domain package owns its manifest
+runtime contributor directly. It must not split that implementation into a
+`*-node` companion or publish a `standard-node` implementation namespace.
+Cross-domain runtime assembly is inverted through domain-owned typed contracts
+and the host's generic module-import primitive; the starter does not provide
+domain capability loaders or a package registry. Catalog applies this rule via
+`@voyant-travel/catalog/runtime-contracts`, with its implementation kept behind
+the manifest contributor.
+
 API bundle posture is inspectable before package runtime imports. `anonymous:
 true` opens the resolved public mount, while an `anonymous` path array records
 route-relative anonymous exceptions. `transactional: true` selects the resolved

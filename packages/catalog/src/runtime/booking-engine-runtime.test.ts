@@ -1,5 +1,5 @@
-import type { BookingEngineEnv } from "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import type { BookingEngineEnv } from "./booking-engine-runtime.js"
 
 // Every test does a cold `vi.resetModules()` + dynamic `import()` of the runtime;
 // under full-parallel CI load that import alone can exceed the 5s default and
@@ -29,7 +29,7 @@ vi.mock("@voyant-travel/plugin-voyant-connect", () => ({
   },
 }))
 vi.mock("@voyant-travel/plugin-catalog-demo", () => ({ createDemoCatalogAdapter: vi.fn() }))
-vi.mock("@voyant-travel/catalog-node/standard-node/owned-booking-handlers", () => ({
+vi.mock("./owned-booking-handlers.js", () => ({
   createOwnedBookingHandlersRegistry: vi.fn(),
 }))
 
@@ -44,7 +44,18 @@ function genericAdapter() {
 
 async function loadRuntime() {
   vi.resetModules()
-  return import("@voyant-travel/catalog-node/standard-node/booking-engine-runtime")
+  const [runtime, host] = await Promise.all([
+    import("./booking-engine-runtime.js"),
+    import("./host.js"),
+  ])
+  host.configureCatalogRuntimeHost(
+    {} as never,
+    {
+      catalogDemo: { createSourceAdapter: vi.fn() },
+      cruises: { registerAdapters: vi.fn(), syncRegistry: vi.fn() },
+    } as never,
+  )
+  return runtime
 }
 
 beforeEach(() => {

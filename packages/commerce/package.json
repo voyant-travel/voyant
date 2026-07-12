@@ -23,7 +23,8 @@
     "./openapi/admin/promotions": "./openapi/admin/promotions.json",
     "./openapi/admin/sellability": "./openapi/admin/sellability.json",
     "./openapi/storefront/markets": "./openapi/storefront/markets.json",
-    "./openapi/storefront/pricing": "./openapi/storefront/pricing.json"
+    "./openapi/storefront/pricing": "./openapi/storefront/pricing.json",
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -156,7 +157,12 @@
       "./openapi/admin/promotions": "./openapi/admin/promotions.json",
       "./openapi/admin/sellability": "./openapi/admin/sellability.json",
       "./openapi/storefront/markets": "./openapi/storefront/markets.json",
-      "./openapi/storefront/pricing": "./openapi/storefront/pricing.json"
+      "./openapi/storefront/pricing": "./openapi/storefront/pricing.json",
+      "./catalog-runtime-extension": {
+        "types": "./dist/catalog-runtime-extension.d.ts",
+        "import": "./dist/catalog-runtime-extension.js",
+        "default": "./dist/catalog-runtime-extension.js"
+      }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

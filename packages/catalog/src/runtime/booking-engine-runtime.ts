@@ -9,7 +9,6 @@ import {
   type OwnedBookingHandlerRegistry,
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
-import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
   createVoyantConnectSources,
   type PrepareVoyantConnectSourcesOptions,
@@ -19,11 +18,7 @@ import {
   type VoyantConnectSourceConnection,
 } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
-import {
-  CRUISE_ADAPTER_READ_CACHE_TTL_MS,
-  registerCruiseAdapters,
-  syncVerticalRegistryFromCatalog,
-} from "./cruise-adapters-runtime.js"
+import { catalogRuntimeExtensions } from "./host.js"
 import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers.js"
 
 // `VoyantConnectConnectionCache` isn't re-exported from the package root (0.3.0),
@@ -46,9 +41,10 @@ let _connectWarm: Promise<void> | undefined
  */
 function ensureRegistry(env: BookingEngineEnv): SourceAdapterRegistry {
   if (!_registry) {
+    const { catalogDemo, cruises } = catalogRuntimeExtensions()
     const registry = createSourceAdapterRegistry()
     if (env.CATALOG_DEMO_API_URL) {
-      registry.register(createDemoCatalogAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
+      registry.register(catalogDemo.createSourceAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
     }
     registerVoyantConnectFallback(registry, env)
     // Single activation point for cruise adapters: register deployment-owned
@@ -56,7 +52,7 @@ function ensureRegistry(env: BookingEngineEnv): SourceAdapterRegistry {
     // un-scoped Connect cruise fallback registered just above. The per-connection
     // Connect cruise shims land later (async warm) and are back-filled again in
     // `warmBookingEngineConnectSources`.
-    registerCruiseAdapters(registry, env as Record<string, string | undefined>)
+    cruises.registerAdapters(registry, env as Record<string, string | undefined>)
     _registry = registry
   }
   return _registry
@@ -99,7 +95,7 @@ function warmBookingEngineConnectSources(env: BookingEngineEnv): Promise<void> {
       registerVoyantConnectSources(registry, sources)
       // Per-connection Connect cruise shims just landed — back-fill the vertical
       // registry so admin/public external cruise reads resolve them too.
-      syncVerticalRegistryFromCatalog(registry)
+      catalogRuntimeExtensions().cruises.syncRegistry(registry)
     })
     .catch((error) => {
       const message = error instanceof Error ? error.message : String(error)
@@ -155,7 +151,7 @@ export interface BookingEngineEnv {
 
 /** Short-TTL read cache applied to Connect cruise reads on both the fallback and
  * per-connection warm paths (plugin >= 0.3.0). Shares the owned-adapter TTL. */
-const CONNECT_CRUISE_MEMOIZE = { memoize: { ttlMs: CRUISE_ADAPTER_READ_CACHE_TTL_MS } } as const
+const CONNECT_CRUISE_MEMOIZE = { memoize: { ttlMs: 60_000 } } as const
 
 /** TTL for the cached Connect connection list (seconds). Connections change
  * infrequently; KV's minimum expirationTtl is 60s. */

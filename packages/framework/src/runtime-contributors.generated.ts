@@ -6,7 +6,7 @@ export { createAccommodationsRuntimePortContribution } from "@voyant-travel/acco
 export { createActionLedgerNodeRuntimePortContribution } from "@voyant-travel/action-ledger-node/runtime-contributor"
 export { createAuthRuntimePortContribution } from "@voyant-travel/auth/runtime-contributor"
 export { createBookingsRuntimePortContribution } from "@voyant-travel/bookings/runtime-contributor"
-export { createCatalogNodeRuntimePortContribution } from "@voyant-travel/catalog-node/runtime-contributor"
+export { createCatalogRuntimePortContribution } from "@voyant-travel/catalog/runtime-contributor"
 export { createCommerceRuntimePortContribution } from "@voyant-travel/commerce/runtime-contributor"
 export { createDistributionNodeRuntimePortContribution } from "@voyant-travel/distribution-node/runtime-contributor"
 export { createFinanceNodeRuntimePortContribution } from "@voyant-travel/finance-node/runtime-contributor"

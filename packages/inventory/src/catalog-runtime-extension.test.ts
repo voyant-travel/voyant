@@ -7,9 +7,7 @@ const buildProductDraftShape = vi.hoisted(() => vi.fn())
 vi.mock("@voyant-travel/inventory/service-content", () => ({ getProductContent }))
 vi.mock("@voyant-travel/inventory/draft-shape", () => ({ buildProductDraftShape }))
 
-const { enrichProductQuoteShape } = await import(
-  "@voyant-travel/catalog-node/standard-node/booking-shape-enricher"
-)
+const { enrichProductQuoteShape } = await import("./catalog-runtime-extension.js")
 
 const productShape = {
   showsConfigure: true,

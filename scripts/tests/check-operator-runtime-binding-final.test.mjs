@@ -13,7 +13,7 @@ const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-fina
 const contributors = {
   "action-ledger-node": "createActionLedgerStandardNodeRuntime",
   bookings: "bookingsConfigurationRuntimePort",
-  "catalog-node": "createCatalogStandardNodeRuntime",
+  catalog: "createCatalogRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
   "distribution-node": "configureDistributionStandardNodeRuntime",
   "finance-node": "createFinanceStandardNodeRuntime",

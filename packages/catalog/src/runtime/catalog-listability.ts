@@ -12,35 +12,6 @@
  */
 
 import type { IndexerSlice } from "@voyant-travel/catalog/indexer/contract"
-import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { channelProductMappings, channels } from "@voyant-travel/distribution"
-import { and, eq } from "drizzle-orm"
-
-/**
- * True when the product has at least one active `channel_product_mappings`
- * row pointing at an active channel — i.e. it is published to a sales channel.
- */
-export async function hasActiveSalesChannelMapping(
-  db: AnyDrizzleDb,
-  productId: string,
-  channelId?: string,
-): Promise<boolean> {
-  const conditions = [
-    eq(channelProductMappings.productId, productId),
-    eq(channelProductMappings.active, true),
-    eq(channels.status, "active"),
-  ]
-  if (channelId) conditions.push(eq(channelProductMappings.channelId, channelId))
-
-  const rows = await db
-    .select({ id: channelProductMappings.id })
-    .from(channelProductMappings)
-    .innerJoin(channels, eq(channels.id, channelProductMappings.channelId))
-    .where(and(...conditions))
-    .limit(1)
-
-  return rows.length > 0
-}
 
 export type OwnedProductStorefrontListabilityInput = {
   audience: IndexerSlice["audience"]
