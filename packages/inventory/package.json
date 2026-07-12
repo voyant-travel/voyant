@@ -45,6 +45,7 @@
     "./authoring/extension": "./src/authoring/extension.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./standard-node/brochure-runtime": "./src/standard-node-brochure-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/products.json",
     "./openapi/admin/extras": "./openapi/admin/extras.json",
@@ -64,6 +65,7 @@
     "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
@@ -308,6 +310,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./standard-node/brochure-runtime": {
+        "types": "./dist/standard-node-brochure-runtime.d.ts",
+        "import": "./dist/standard-node-brochure-runtime.js",
+        "default": "./dist/standard-node-brochure-runtime.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

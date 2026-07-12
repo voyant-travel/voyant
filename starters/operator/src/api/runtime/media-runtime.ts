@@ -6,38 +6,22 @@
  *   - product brochure generation in `@voyant-travel/inventory`
  *     (`createProductBrochureRoutes`).
  *
- * This file supplies the deployment-specific access those packages can't import
- * statically:
- *   - the R2-backed `StorageProvider` (`./lib/storage` → `createMediaStorage`),
- *   - the video upload ticket signer (`../lib/video-uploads`),
- *   - the Voyant Cloud browser printer for brochures (`../lib/brochure-printer`,
- *     only when Cloud is configured).
- *
- * Swapping storage backends, the video provider, or the brochure printer is a
- * change here — never in the route implementations.
+ * Package-owned standard Node runtimes now supply provider policy. This file is
+ * only a compatibility facade for callers that have not yet switched to graph
+ * runtime factories.
  */
 
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { createProductBrochureRoutes } from "@voyant-travel/inventory/routes-brochure"
-import { createMediaHonoModule, type VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
-import type { Context } from "hono"
+import { createInventoryBrochureStandardNodeRuntime } from "@voyant-travel/inventory/standard-node/brochure-runtime"
+import { createMediaHonoModule } from "@voyant-travel/storage/routes"
+import { createStorageStandardNodeRuntime } from "@voyant-travel/storage/standard-node"
 
-import { createProductBrochurePrinter } from "../../lib/brochure-printer"
-import { createVideoUploadTicket } from "../../lib/video-uploads"
-import { tryGetCloudClient } from "../../lib/voyant-cloud"
-import { createMediaStorage, guessMimeType } from "../lib/storage"
-
-export const operatorStorageMediaRuntime = {
-  resolveStorage: (c: Context) => createMediaStorage(c.env),
-  guessServedMimeType: guessMimeType,
-  signVideoUploadTicket: (c: Context, input: VideoUploadTicketRequest) =>
-    createVideoUploadTicket(c.env, input),
+const directEnvPrimitives = {
+  env: (bindings: unknown) => bindings as Readonly<Record<string, unknown>>,
 }
 
-/** Resolve the R2-backed media storage provider for a request (or null → 503). */
-function resolveStorage(c: Context) {
-  return createMediaStorage(c.env)
-}
+export const operatorStorageMediaRuntime = createStorageStandardNodeRuntime(directEnvPrimitives)
 
 /** Build the upload + serve routes (`/v1/admin/uploads`, `/v1/admin/media/*`, …). */
 function buildMediaUploadAndServeModule() {
@@ -45,13 +29,8 @@ function buildMediaUploadAndServeModule() {
 }
 
 /** Build the brochure route (`/v1/admin/products/:id/brochure/generate`). */
-export const operatorInventoryBrochureRuntime = {
-  resolveStorage,
-  // Use the Voyant Cloud browser printer only when Cloud is configured;
-  // otherwise the task falls back to its built-in pdf-lib printer.
-  resolvePrinter: (c: Context) =>
-    tryGetCloudClient(c.env) ? createProductBrochurePrinter(c.env) : null,
-}
+export const operatorInventoryBrochureRuntime =
+  createInventoryBrochureStandardNodeRuntime(directEnvPrimitives)
 
 function buildBrochureRoutes() {
   return createProductBrochureRoutes(operatorInventoryBrochureRuntime)

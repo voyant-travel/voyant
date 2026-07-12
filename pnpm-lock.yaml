@@ -2651,6 +2651,9 @@ importers:
       '@voyant-travel/catalog':
         specifier: workspace:^
         version: link:../catalog
+      '@voyant-travel/cloud-sdk':
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/commerce':
         specifier: workspace:^
         version: link:../commerce
@@ -4097,6 +4100,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/cloud-sdk':
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core

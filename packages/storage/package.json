@@ -9,6 +9,7 @@
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./standard-node": "./src/standard-node-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/r2": "./src/providers/r2.ts",
@@ -58,6 +59,11 @@
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
       },
+      "./standard-node": {
+        "types": "./dist/standard-node-runtime.d.ts",
+        "import": "./dist/standard-node-runtime.js",
+        "default": "./dist/standard-node-runtime.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -92,6 +98,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^"
   },
   "peerDependencies": {
