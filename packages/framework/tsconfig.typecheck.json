@@ -1395,14 +1395,6 @@
       "@voyant-travel/operator-settings/schema": ["../operator-settings/dist/schema.d.ts"],
       "@voyant-travel/operator-settings/service": ["../operator-settings/dist/service.d.ts"],
       "@voyant-travel/operator-settings/voyant": ["../operator-settings/dist/voyant.d.ts"],
-      "@voyant-travel/plugin-catalog-demo": ["../plugins/catalog-demo/dist/index.d.ts"],
-      "@voyant-travel/plugin-catalog-demo/catalog-runtime-extension": [
-        "../plugins/catalog-demo/dist/catalog-runtime-extension.d.ts"
-      ],
-      "@voyant-travel/plugin-catalog-demo/runtime-contributor": [
-        "../plugins/catalog-demo/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/plugin-catalog-demo/voyant": ["../plugins/catalog-demo/dist/voyant.d.ts"],
       "@voyant-travel/plugin-sanity-cms": ["../plugins/sanity-cms/dist/index.d.ts"],
       "@voyant-travel/plugin-sanity-cms/client": ["../plugins/sanity-cms/dist/client.d.ts"],
       "@voyant-travel/plugin-sanity-cms/plugin": ["../plugins/sanity-cms/dist/plugin.d.ts"],

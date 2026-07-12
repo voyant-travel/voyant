@@ -26,7 +26,6 @@ import {
   catalogChartersRuntimeExtensionPort,
   catalogCommerceRuntimeExtensionPort,
   catalogCruisesRuntimeExtensionPort,
-  catalogDemoRuntimeExtensionPort,
   catalogDistributionRuntimeExtensionPort,
   catalogInventoryRuntimeExtensionPort,
   catalogOperationsRuntimeExtensionPort,
@@ -64,7 +63,6 @@ export function createCatalogRuntimePortContribution(
         host.getRuntimePort(catalogCruisesRuntimeExtensionPort),
         host.getRuntimePort(catalogInventoryRuntimeExtensionPort),
         host.getRuntimePort(catalogOperationsRuntimeExtensionPort),
-        host.getRuntimePort(catalogDemoRuntimeExtensionPort),
         host.getRuntimePort(financeOperatorSettingsRuntimePort),
       ]),
     )
@@ -77,7 +75,6 @@ export function createCatalogRuntimePortContribution(
         cruises,
         inventory,
         operations,
-        catalogDemo,
         settings,
       ]) =>
         createCatalogRuntime(
@@ -90,7 +87,6 @@ export function createCatalogRuntimePortContribution(
             cruises,
             inventory,
             operations,
-            catalogDemo,
           },
           settings,
         ),

@@ -1800,16 +1800,6 @@
       "@voyant-travel/operator-settings/voyant": [
         "../../packages/operator-settings/dist/voyant.d.ts"
       ],
-      "@voyant-travel/plugin-catalog-demo": ["../../packages/plugins/catalog-demo/dist/index.d.ts"],
-      "@voyant-travel/plugin-catalog-demo/catalog-runtime-extension": [
-        "../../packages/plugins/catalog-demo/dist/catalog-runtime-extension.d.ts"
-      ],
-      "@voyant-travel/plugin-catalog-demo/runtime-contributor": [
-        "../../packages/plugins/catalog-demo/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/plugin-catalog-demo/voyant": [
-        "../../packages/plugins/catalog-demo/dist/voyant.d.ts"
-      ],
       "@voyant-travel/plugin-sanity-cms": ["../../packages/plugins/sanity-cms/dist/index.d.ts"],
       "@voyant-travel/plugin-sanity-cms/client": [
         "../../packages/plugins/sanity-cms/dist/client.d.ts"

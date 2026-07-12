@@ -5117,9 +5117,6 @@ importers:
       '@voyant-travel/operator-settings-react':
         specifier: workspace:^
         version: link:../../packages/operator-settings-react
-      '@voyant-travel/plugin-catalog-demo':
-        specifier: workspace:^
-        version: link:../../packages/plugins/catalog-demo
       '@voyant-travel/plugin-netopia':
         specifier: ^0.105.20
         version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))

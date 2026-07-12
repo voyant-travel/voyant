@@ -566,7 +566,7 @@ Per Rule 4 (§overview), every piece of the journey except the wired-up route co
 | Per-vertical owned handlers (e.g. `createProductsBookingHandler`) | each vertical's `<vertical>/src/booking-engine/handler.ts` | New per vertical, lands incrementally per phase |
 | Adapter contract bits not already in `SourceAdapter` (`describeShape`, hold metadata) | `@voyant-travel/catalog/adapter` | Existing — extend |
 | Per-vertical descriptor builders (e.g. cruise-specific shape construction) | each vertical's `service-catalog-plane.ts` (cruises, products, accommodations, etc.) | Existing — extend |
-| Demo upstream + plugin (already shipping in the tracer) | `apps/catalog-demo-api` + `@voyant-travel/plugin-catalog-demo` | Existing |
+| Standalone upstream contract fixture | `apps/catalog-demo-api` | Existing; not part of the product graph |
 
 #### Slot injection — the seam between operator and storefront
 

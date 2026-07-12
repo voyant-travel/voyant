@@ -28,7 +28,6 @@ vi.mock("@voyant-travel/plugin-voyant-connect", () => ({
     }
   },
 }))
-vi.mock("@voyant-travel/plugin-catalog-demo", () => ({ createDemoCatalogAdapter: vi.fn() }))
 vi.mock("./owned-booking-handlers.js", () => ({
   createOwnedBookingHandlersRegistry: vi.fn(),
 }))
@@ -51,7 +50,6 @@ async function loadRuntime() {
   host.configureCatalogRuntimeHost(
     {} as never,
     {
-      catalogDemo: { createSourceAdapter: vi.fn() },
       cruises: { registerAdapters: vi.fn(), syncRegistry: vi.fn() },
     } as never,
   )

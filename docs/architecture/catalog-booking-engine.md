@@ -156,9 +156,9 @@ The booking engine's `quoteEntity` / `bookEntity` / `cancelEntity` look up `regi
 
 The registry is intentionally not a dependency-injection container — it's a `Map<string, SourceAdapter>` with a fluent API. Adapters that need credentials, HTTP clients, or DB handles get them through their constructor; the registry just stores the wired instances.
 
-## 5. The demo: separate app + thin plugin
+## 5. Standalone contract fixture
 
-The demo uses a standalone HTTP service to simulate the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing: operator starters ship **zero demo state**. No demo tables live in the operator's DB and no demo seed lives in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely a project integration change.
+The demo API is a standalone upstream simulator for contract and integration tests. It is not a package, plugin, standard product dependency, or Operator runtime option. Operator starters ship **zero demo state and zero demo wiring**.
 
 ### 5.1. `apps/catalog-demo-api` — standalone upstream simulator
 
@@ -171,27 +171,15 @@ Hono Node service with its own Postgres. Owns:
 
 The service is launched separately (`pnpm -F catalog-demo-api dev`) and listens on `:3330` by default. A real upstream (TUI's API, Voyant Connect's edge) plays the same role — it just happens to live in a different repo and run on different infrastructure. The contract is the same.
 
-### 5.2. `@voyant-travel/plugin-catalog-demo` — thin HTTP client
-
-Pure `SourceAdapter` implementation, zero state. `createDemoCatalogAdapter({ baseUrl })` returns an adapter whose lifecycle methods all round-trip to `apps/catalog-demo-api`:
-
-- `connect` / `getState` ping `/health`.
-- `discover` POSTs to `/discover` with the cursor + verticals filter.
-- `liveResolve` POSTs to `/live-resolve`.
-- `reserve` POSTs to `/reserve`.
-- `cancel` POSTs to `/cancel`.
-
-The plugin contains no business logic. Replacing it with `@voyant-travel/plugin-voyant-connect` or `@voyant-travel/plugin-hotelbeds` is the typical upgrade path — same shape, different upstream.
-
-### 5.3. Why this split matters
+### 5.2. Why the fixture stays separate
 
 Three reasons the demo is structured this way rather than embedded in the operator starter:
 
-1. **Adapter authors get a target.** Building a real adapter against an in-process demo with shared DB tables is misleading — the actual upstream is over a network and owns its own state. The demo-api models the real shape so the gap between demo and prod is just URLs and credentials.
-2. **Starters stay clean.** Adding a vertical's demo to the operator starter means schemas, migrations, seed code, and dependencies leak into every operator deployment that doesn't actually want the demo. With the app-and-plugin split, the demo simply isn't deployed unless the operator wants it.
-3. **The contract gets exercised over the wire.** A demo that bypasses HTTP can satisfy the type signature without satisfying the actual operational shape (timeouts, partial responses, JSON parsing). The standalone service forces every contract change to hold up over real HTTP.
+1. **Adapter authors get a target.** The service models a network-owned upstream without sharing Operator database state.
+2. **Starters stay clean.** Demo schemas, configuration, dependencies, and runtime ports never enter production composition.
+3. **The contract gets exercised over the wire.** Integration tests can verify timeouts, partial responses, and JSON parsing against real HTTP.
 
-The demo doubles as the integration test fixture: booking-engine integration tests boot the demo-api against a test Postgres, register the plugin pointing at it, and exercise the full lifecycle without mocking.
+Tests that need the upstream simulator may start the app and construct a test-local client. Production packages must not depend on it.
 
 ## 6. Owned-vs-sourced: why this isn't a special case
 
@@ -216,11 +204,6 @@ packages/catalog/src/booking-engine/
   errors.ts                      NO_ADAPTER_REGISTERED, QUOTE_EXPIRED, etc.
   index.ts                       exports
 
-packages/plugins/catalog-demo/   thin HTTP client plugin
-  src/adapter.ts                 createDemoCatalogAdapter({ baseUrl }) → SourceAdapter
-  src/index.ts                   barrel
-  README.md
-
 apps/catalog-demo-api/           standalone upstream simulator
   src/schema.ts                  catalog_demo_inventory + catalog_demo_orders
   src/store.ts                   DB ops
@@ -235,7 +218,7 @@ apps/catalog-demo-api/           standalone upstream simulator
   README.md
 ```
 
-Starters that want the booking engine register `@voyant-travel/catalog/booking-engine` routes and conditionally register adapters based on env. The operator starter registers `@voyant-travel/plugin-catalog-demo` if `CATALOG_DEMO_API_URL` is set, otherwise the booking engine reports `NO_ADAPTER_REGISTERED` for any `demo` row — the operator's primary DB stays clean either way.
+Selected connector packages provide booking-engine adapters through the graph. If no selected connector provides an adapter for a sourced row, the booking engine reports `NO_ADAPTER_REGISTERED`.
 
 ## 8. Open questions
 

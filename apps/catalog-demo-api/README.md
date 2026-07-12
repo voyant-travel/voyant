@@ -1,15 +1,11 @@
 # `catalog-demo-api`
 
-Standalone HTTP service that mocks an upstream catalog source so starters
-and examples can exercise the full booking lifecycle (`quote → book →
-cancel`) without external credentials. Mirrors `SourceAdapter` 1:1 over
-REST; the `@voyant-travel/plugin-catalog-demo` package is a thin fetch client
-that implements the adapter interface against this service.
+Standalone HTTP service that mocks an upstream catalog source for contract and
+integration testing. It mirrors the `SourceAdapter` lifecycle over REST without
+participating in the standard product graph or Operator starter.
 
 Owns its own Postgres database — inventory and orders persist here, not
-in the operator starter's primary DB. Replace it with a real upstream
-(TUI direct, Hotelbeds, a Voyant Connect peer) by swapping the plugin —
-no starter tables to drop.
+in an Operator deployment's primary database.
 
 ## Run
 
@@ -18,12 +14,6 @@ cp .env.example .env        # default points at the docker-compose Postgres
 docker compose up -d        # spins up Postgres on :5437
 pnpm db:migrate             # creates catalog_demo_inventory + catalog_demo_orders
 pnpm dev                    # listens on :3330 by default
-```
-
-Then in your operator starter (e.g. `starters/operator/.env`):
-
-```
-CATALOG_DEMO_API_URL=http://localhost:3330
 ```
 
 When `AUTO_SEED=true` (the default in `.env.example`), the service seeds

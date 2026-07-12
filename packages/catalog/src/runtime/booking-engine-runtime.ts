@@ -33,19 +33,16 @@ let _connectWarm: Promise<void> | undefined
 
 /**
  * Build (once per isolate) the registry with everything resolvable
- * synchronously: the demo adapter and the un-scoped Voyant Connect default
- * adapter pair. The default pair is the cold-window fallback — `bookEntity`
+ * synchronously: the un-scoped Voyant Connect default adapter pair. The
+ * default pair is the cold-window fallback — `bookEntity`
  * resolves by `source_connection_id` first and falls back to this by-kind
  * adapter, so sourced bookings still dispatch before the per-connection warm
  * (see `warmBookingEngineConnectSources`) completes.
  */
 function ensureRegistry(env: BookingEngineEnv): SourceAdapterRegistry {
   if (!_registry) {
-    const { catalogDemo, cruises } = catalogRuntimeExtensions()
+    const { cruises } = catalogRuntimeExtensions()
     const registry = createSourceAdapterRegistry()
-    if (env.CATALOG_DEMO_API_URL) {
-      registry.register(catalogDemo.createSourceAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
-    }
     registerVoyantConnectFallback(registry, env)
     // Single activation point for cruise adapters: register deployment-owned
     // connectors into both planes and back-fill the vertical registry from the
@@ -133,7 +130,6 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
 }
 
 export interface BookingEngineEnv {
-  CATALOG_DEMO_API_URL?: string
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CONNECT_API_KEY?: string

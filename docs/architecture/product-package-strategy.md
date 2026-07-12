@@ -1372,7 +1372,6 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyant-travel/plugin-catalog-demo` | Keep as a demo/source plugin package. | This is an integration example and seed connector, not a domain Module. Its public shape may change when Catalog and Inventory settle, but it should remain a plugin. |
 | `@voyant-travel/plugin-netopia` | Keep as a finance/payment plugin. | Payment-provider logic belongs outside Finance core and should attach through provider/plugin seams. |
 | `@voyant-travel/plugin-smartbill` | Keep as a finance/accounting plugin. | Accounting-provider logic belongs outside Finance core and should attach through provider/plugin seams. |
 | `@voyant-travel/plugin-sanity-cms` plus external `@voyant-travel/plugin-payload-cms` | Keep as content/source plugins. | CMS-specific implementation should stay outside catalog core and expose provider/plugin integration points. |

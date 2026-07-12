@@ -26,11 +26,6 @@ const ownerContributors = [
     "createOperationsRuntimePortContribution",
     "catalogOperationsRuntimeExtensionPort",
   ],
-  [
-    "plugins/catalog-demo",
-    "createCatalogDemoRuntimePortContribution",
-    "catalogDemoRuntimeExtensionPort",
-  ],
 ]
 
 const catalog = json("packages/catalog/package.json")
@@ -42,7 +37,6 @@ const cyclicPackages = [
   "@voyant-travel/distribution",
   "@voyant-travel/inventory",
   "@voyant-travel/operations",
-  "@voyant-travel/plugin-catalog-demo",
 ]
 
 if (existsSync(path.join(root, "packages/catalog-node"))) {
@@ -131,7 +125,6 @@ for (const [directory, exportName] of [
   ["distribution", "catalogDistributionRuntimeExtension"],
   ["inventory", "catalogInventoryRuntimeExtension"],
   ["operations", "catalogOperationsRuntimeExtension"],
-  ["plugins/catalog-demo", "catalogDemoRuntimeExtension"],
 ]) {
   const manifest = json(`packages/${directory}/package.json`)
   if (!manifest.exports?.["./catalog-runtime-extension"]) {

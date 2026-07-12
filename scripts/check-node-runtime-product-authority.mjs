@@ -111,14 +111,7 @@ for (const [source, required] of [
       "createOperatorCatalogBookingSnapshotRuntime",
     ],
   ],
-  [
-    movedRuntimeFactories[3],
-    [
-      "createVoyantConnectSources",
-      "catalogDemo.createSourceAdapter",
-      "createOwnedBookingHandlersRegistry",
-    ],
-  ],
+  [movedRuntimeFactories[3], ["createVoyantConnectSources", "createOwnedBookingHandlersRegistry"]],
   [
     movedRuntimeFactories[4],
     [

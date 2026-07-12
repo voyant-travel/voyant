@@ -1,7 +1,7 @@
 import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { SourceAdapter, SourceAdapterContext } from "./adapter/contract.js"
+import type { SourceAdapterContext } from "./adapter/contract.js"
 import type {
   OwnedBookingHandlerRegistry,
   QuoteEntityResult,
@@ -143,10 +143,6 @@ export interface CatalogOperationsRuntimeExtension {
   createDeparturesProjectionExtension(): CatalogProjectionExtension
 }
 
-export interface CatalogDemoRuntimeExtension {
-  createSourceAdapter(options: { baseUrl: string }): SourceAdapter
-}
-
 export interface CatalogRuntimeExtensions {
   accommodations: CatalogAccommodationsRuntimeExtension
   charters: CatalogChartersRuntimeExtension
@@ -155,7 +151,6 @@ export interface CatalogRuntimeExtensions {
   cruises: CatalogCruisesRuntimeExtension
   inventory: CatalogInventoryRuntimeExtension
   operations: CatalogOperationsRuntimeExtension
-  catalogDemo: CatalogDemoRuntimeExtension
 }
 
 function extensionPort<T extends object>(id: string) {
@@ -187,9 +182,6 @@ export const catalogInventoryRuntimeExtensionPort = extensionPort<CatalogInvento
 )
 export const catalogOperationsRuntimeExtensionPort =
   extensionPort<CatalogOperationsRuntimeExtension>("catalog.extension.operations")
-export const catalogDemoRuntimeExtensionPort =
-  extensionPort<CatalogDemoRuntimeExtension>("catalog.extension.demo")
-
 export type CatalogBookingSnapshotRuntimeFactory = (
   bindings: unknown,
 ) => CatalogBookingSnapshotRuntime

@@ -1,7 +1,7 @@
 /**
  * Build the `SourceAdapterRegistry` used by the source discovery sync CLI
  * (`scripts/sync-sources.ts`). Extracted so tests can assert the registry wiring
- * — demo + Connect + cruise adapters — without executing the CLI's DB/Typesense
+ * — Connect + cruise adapters — without executing the CLI's DB/Typesense
  * side effects.
  *
  * Uses the SAME `registerCruiseAdapters` seam as the live booking-engine registry
@@ -13,7 +13,6 @@ import {
   createSourceAdapterRegistry,
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
-import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
   prepareVoyantConnectSources,
   registerVoyantConnectSources,
@@ -28,11 +27,6 @@ export async function buildSyncSourceRegistry(
   env: NodeJS.ProcessEnv,
 ): Promise<SourceAdapterRegistry> {
   const registry = createSourceAdapterRegistry()
-
-  const catalogDemoUrl = env.CATALOG_DEMO_API_URL
-  if (catalogDemoUrl) {
-    registry.register(createDemoCatalogAdapter({ baseUrl: catalogDemoUrl }))
-  }
 
   // Voyant Connect: enumerate the operator's active connections and register one
   // generic + structured-cruise (+ TUI package) adapter set per connection, keyed
