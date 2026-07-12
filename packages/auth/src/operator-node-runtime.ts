@@ -747,9 +747,12 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
         }
       }
 
+      const organizationMembersDb = db as Parameters<
+        typeof handleOrganizationMembersRequest
+      >[2]["db"]
       return (
         (await handleOrganizationMembersRequest(c.req.raw, betterAuth, {
-          db,
+          db: organizationMembersDb,
         })) ?? c.json({ error: "Not found" }, 404)
       )
     } finally {
