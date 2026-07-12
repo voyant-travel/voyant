@@ -155,6 +155,30 @@ test("rejects restored checked-in starter compatibility authority", () => {
   }
 })
 
+test("rejects restored Catalog operational authority in the checked-in starter", () => {
+  for (const relativePath of [
+    "starters/operator/scripts/reindex.ts",
+    "starters/operator/scripts/sync-sources.ts",
+    "starters/operator/scripts/lib/reindex-stale-documents.ts",
+    "starters/operator/scripts/lib/typesense-sdk-client.ts",
+    "starters/operator/scripts/lib/build-sync-source-registry.ts",
+  ]) {
+    const starter = fixture()
+    const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+    roots.push(root)
+    const script = join(root, relativePath)
+    mkdirSync(dirname(script), { recursive: true })
+    writeFileSync(script, "export const catalogAuthority = true\n")
+    assert.throws(
+      () => run(starter, root),
+      (error) =>
+        String(error.stderr).includes(
+          `Catalog operational authority must stay package-owned: ${relativePath}`,
+        ),
+    )
+  }
+})
+
 function run(starterDir, root = repoRoot) {
   return execFileSync(process.execPath, [checker, "--root", root, "--starter-dir", starterDir], {
     cwd: repoRoot,

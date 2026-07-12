@@ -221,6 +221,18 @@ function inspectRepositoryAuthority(repoRoot) {
     }
   }
 
+  for (const relativePath of [
+    "starters/operator/scripts/reindex.ts",
+    "starters/operator/scripts/sync-sources.ts",
+    "starters/operator/scripts/lib/reindex-stale-documents.ts",
+    "starters/operator/scripts/lib/typesense-sdk-client.ts",
+    "starters/operator/scripts/lib/build-sync-source-registry.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`Catalog operational authority must stay package-owned: ${relativePath}`)
+    }
+  }
+
   const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
   const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
   if (existsSync(operatorRuntimePath) && existsSync(deploymentArtifactsPath)) {

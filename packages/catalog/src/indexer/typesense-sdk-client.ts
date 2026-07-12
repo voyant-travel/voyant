@@ -13,8 +13,12 @@
  * raw results rather than throwing.
  */
 
-import type { TypesenseClient } from "@voyant-travel/catalog"
-import type { Client as TypesenseSdkClient } from "typesense"
+import type { TypesenseClient } from "./typesense.js"
+
+/** Structural surface implemented by the official Typesense Node SDK client. */
+export interface TypesenseSdkClientLike {
+  collections(name?: string): unknown
+}
 
 /** The SDK's ImportError carries the parsed per-row results here. */
 function importResultsFromError(err: unknown): unknown[] | undefined {
@@ -25,8 +29,8 @@ function importResultsFromError(err: unknown): unknown[] | undefined {
   return undefined
 }
 
-export function asTypesenseClient(client: TypesenseSdkClient): TypesenseClient {
-  const sdk = client as { collections(name?: string): unknown }
+export function asTypesenseClient(client: TypesenseSdkClientLike): TypesenseClient {
+  const sdk = client
   return {
     collections(name?: string) {
       // Delegate explicitly (rather than spreading) so the SDK's prototype

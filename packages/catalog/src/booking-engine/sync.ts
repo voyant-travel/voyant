@@ -3,9 +3,8 @@
  * `SourceAdapter` and pushes them into the deployment's indexer so
  * sourced inventory shows up in the catalog UI alongside owned rows.
  *
- * Mirrors the bulk reindex flow (`scripts/reindex.ts` in operator
- * templates) for owned rows, except the data comes from
- * `adapter.discover()` instead of a Drizzle table scan.
+ * Mirrors the deployment tooling's bulk reindex flow for owned rows, except the
+ * data comes from `adapter.discover()` instead of a Drizzle table scan.
  *
  * The orchestrator is pure: it takes the registry, the indexer service,
  * and the per-vertical field-policy registries, and returns a summary

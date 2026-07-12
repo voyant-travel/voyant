@@ -744,9 +744,10 @@ does.
 `registerCruiseAdapters` seam registers each configured `CruiseAdapter` into both
 the vertical registry (above) and the catalog `SourceAdapterRegistry` (via
 `cruiseAdapterToSourceAdapter`), and back-fills the vertical registry from any
-Connect cruise shims. The same seam runs in the live API, the
-external-cruise-refresh cron, and the `sync:sources` CLI, so admin, public,
-content, booking, and sync paths share one configuration. See the starter README's
+Connect cruise shims. The same seam runs in the live API and the
+external-cruise-refresh cron, while deployment tooling composes source sync from
+the selected graph. Admin, public, content, booking, and sync paths therefore
+share one configuration. See the starter README's
 "External cruise adapters" section.
 
 ### Where the adapter sits at request time
