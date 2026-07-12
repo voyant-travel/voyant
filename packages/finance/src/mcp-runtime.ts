@@ -1,5 +1,5 @@
 import { defineToolContextContribution } from "@voyant-travel/tools"
-import { financeService } from "./service/index.js"
+import { financeService } from "./service.js"
 
 export * from "./tools.js"
 

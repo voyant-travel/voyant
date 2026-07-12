@@ -148,10 +148,7 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
-import {
-  type CreateVoyantAppConfig,
-  createVoyantApp,
-} from "./create-app.js"
+import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import {
   resolveManagedCustomExtensions,
   resolveManagedCustomModules,
@@ -170,10 +167,7 @@ import {
   validateVoyantProject,
 } from "./profile.js"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
-import {
-  registerVoyantGraphTools,
-  type VoyantGraphRuntime,
-} from "./runtime-lowering.js"
+import { registerVoyantGraphTools, type VoyantGraphRuntime } from "./runtime-lowering.js"
 import {
   type ResolvedVoyantGraphRuntimeValues,
   resolveVoyantGraphRuntimeValues,
@@ -324,10 +318,7 @@ export interface ManagedProfileRuntimeOptions {
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
   providers?: Partial<ManagedProfileProviders>
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>,
-      "providers"
-    >
+    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>, "providers">
   >
   /**
    * Override how snapshot `plugins` specifiers are imported. Defaults to dynamic
@@ -611,10 +602,7 @@ export function createManagedProfileApp(options: {
   providers?: Partial<ManagedProfileProviders>
   graphRuntime?: VoyantGraphRuntime
   app?: Partial<
-    Omit<
-      CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>,
-      "providers"
-    >
+    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>, "providers">
   >
   /**
    * Plugins resolved from the snapshot's `plugins` list (see
@@ -1810,8 +1798,7 @@ function lazyRelationshipsService(): ManagedRelationshipsService {
   let servicePromise: Promise<ManagedRelationshipsService> | undefined
   const load = async () => {
     servicePromise ??= import("@voyant-travel/relationships").then(
-      (m) =>
-        m.relationshipsService as AsyncMethodProvider<ManagedRelationshipsService>,
+      (m) => m.relationshipsService as AsyncMethodProvider<ManagedRelationshipsService>,
     )
     return servicePromise
   }

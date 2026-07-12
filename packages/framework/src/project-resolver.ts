@@ -465,8 +465,7 @@ function syntheticProjectRuntimeUnit(
 ): VoyantGraphUnitManifest {
   const name = path.basename(path.dirname(contribution.sourcePath))
   return {
-    schemaVersion:
-      contribution.kind === "extension" ? "voyant.extension.v1" : "voyant.module.v1",
+    schemaVersion: contribution.kind === "extension" ? "voyant.extension.v1" : "voyant.module.v1",
     id: graphIdForSelection(packageName, `${packageName}#${name}`),
     packageName,
     localId: name,
