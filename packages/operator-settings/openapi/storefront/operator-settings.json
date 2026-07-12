@@ -236,7 +236,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.operator-profile"
       }
     },
     "/v1/public/settings/operator": {
@@ -321,7 +322,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.settings"
       }
     }
   },

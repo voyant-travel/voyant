@@ -35,6 +35,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#api.external-refs",
           surface: "admin",
           mount: "external-refs",
+          openapi: { document: "external-refs" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "externalRefsHonoModule",
@@ -54,6 +55,7 @@ describe("distribution deployment manifests", () => {
           id: "@voyant-travel/distribution#api.suppliers",
           surface: "admin",
           mount: "suppliers",
+          openapi: { document: "suppliers" },
           runtime: {
             entry: "@voyant-travel/distribution",
             export: "suppliersHonoModule",

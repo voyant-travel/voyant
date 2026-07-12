@@ -271,7 +271,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -488,7 +489,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/contact-points/{contactPointId}": {
@@ -713,7 +715,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -770,7 +773,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/contacts": {
@@ -898,7 +902,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -1131,7 +1136,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/contacts/{contactId}": {
@@ -1373,7 +1379,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -1430,7 +1437,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/addresses": {
@@ -1601,7 +1609,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -1907,7 +1916,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/addresses/{addressId}": {
@@ -2225,7 +2235,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -2282,7 +2293,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/services": {
@@ -2404,7 +2416,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -2625,7 +2638,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/services/{serviceId}": {
@@ -2852,7 +2866,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -2917,7 +2932,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/services/{serviceId}/rates": {
@@ -3043,7 +3059,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -3274,7 +3291,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/services/{serviceId}/rates/{rateId}": {
@@ -3509,7 +3527,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -3582,7 +3601,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/notes": {
@@ -3650,7 +3670,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -3769,7 +3790,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/availability": {
@@ -3862,7 +3884,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -4030,7 +4053,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/contracts": {
@@ -4136,7 +4160,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "parameters": [
@@ -4327,7 +4352,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}/contracts/{contractId}": {
@@ -4525,7 +4551,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -4590,7 +4617,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/aggregates": {
@@ -4705,7 +4733,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers": {
@@ -5019,7 +5048,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "post": {
         "requestBody": {
@@ -5410,7 +5440,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     },
     "/v1/admin/suppliers/{id}": {
@@ -5620,7 +5651,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "patch": {
         "parameters": [
@@ -6033,7 +6065,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       },
       "delete": {
         "parameters": [
@@ -6090,7 +6123,8 @@
           "suppliers"
         ],
         "x-voyant-module": "suppliers",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
       }
     }
   },

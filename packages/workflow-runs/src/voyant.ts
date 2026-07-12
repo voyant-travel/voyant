@@ -10,6 +10,7 @@ export const workflowRunsVoyantModule = defineModule({
       id: "@voyant-travel/workflow-runs#api.admin",
       surface: "admin",
       mount: "workflow-runs",
+      openapi: { document: "workflow-runs" },
       runtime: {
         entry: "@voyant-travel/workflow-runs/hono-module",
         export: "createWorkflowRunsHonoModule",

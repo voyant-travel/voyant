@@ -364,7 +364,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       },
       "post": {
         "requestBody": {
@@ -569,7 +570,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       }
     },
     "/v1/admin/external-refs/refs/{id}": {
@@ -703,7 +705,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       },
       "patch": {
         "parameters": [
@@ -929,7 +932,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       },
       "delete": {
         "parameters": [
@@ -989,7 +993,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       }
     },
     "/v1/admin/external-refs/entities/{entityType}/{entityId}/refs": {
@@ -1218,7 +1223,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       },
       "post": {
         "parameters": [
@@ -1429,7 +1435,8 @@
           "external-refs"
         ],
         "x-voyant-module": "external-refs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
       }
     }
   },

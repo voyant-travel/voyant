@@ -285,7 +285,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -529,7 +530,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     },
     "/v1/admin/settings/operator-payment-instructions": {
@@ -607,7 +609,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -719,7 +722,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     },
     "/v1/admin/settings/operator-payment-defaults": {
@@ -784,7 +788,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -922,7 +927,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     },
     "/v1/admin/settings/operator": {
@@ -1084,7 +1090,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -1443,7 +1450,8 @@
           "operator-settings"
         ],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     }
   },

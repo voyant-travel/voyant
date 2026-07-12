@@ -224,9 +224,12 @@ const err = (description: string) => json(errorResponseSchema, description)
 // Route definitions
 // ──────────────────────────────────────────────────────────────────
 
+export const WORKFLOW_RUNS_OPENAPI_API_ID = "@voyant-travel/workflow-runs#api.admin"
+
 const listRunsRoute = createRoute({
   method: "get",
   path: "/v1/admin/workflow-runs",
+  "x-voyant-api-id": WORKFLOW_RUNS_OPENAPI_API_ID,
   responses: {
     200: json(listRunsResponseSchema, "Recorded workflow runs (filtered + paginated)"),
     400: err("invalid_query: filter/pagination query failed validation"),
@@ -237,6 +240,7 @@ const listRunsRoute = createRoute({
 const getRunRoute = createRoute({
   method: "get",
   path: "/v1/admin/workflow-runs/{id}",
+  "x-voyant-api-id": WORKFLOW_RUNS_OPENAPI_API_ID,
   request: { params: idParamSchema },
   responses: {
     200: json(runDetailResponseSchema, "The run with its ordered steps"),
@@ -248,6 +252,7 @@ const getRunRoute = createRoute({
 const triggerWorkflowRoute = createRoute({
   method: "post",
   path: "/v1/admin/workflows/{name}/runs",
+  "x-voyant-api-id": WORKFLOW_RUNS_OPENAPI_API_ID,
   request: { params: nameParamSchema },
   responses: {
     202: json(triggerResponseSchema, "Run queued"),
@@ -262,6 +267,7 @@ const triggerWorkflowRoute = createRoute({
 const rerunRunRoute = createRoute({
   method: "post",
   path: "/v1/admin/workflow-runs/{id}/rerun",
+  "x-voyant-api-id": WORKFLOW_RUNS_OPENAPI_API_ID,
   request: { params: idParamSchema },
   responses: {
     202: json(rerunResponseSchema, "Rerun queued"),
@@ -277,6 +283,7 @@ const rerunRunRoute = createRoute({
 const resumeRunRoute = createRoute({
   method: "post",
   path: "/v1/admin/workflow-runs/{id}/resume",
+  "x-voyant-api-id": WORKFLOW_RUNS_OPENAPI_API_ID,
   request: { params: idParamSchema },
   responses: {
     202: json(resumeResponseSchema, "Resume queued"),

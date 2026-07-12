@@ -9,7 +9,9 @@
     "./service": "./src/service.ts",
     "./hono-module": "./src/hono-module.ts",
     "./routes": "./src/routes.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/operator-settings.json",
+    "./openapi/storefront": "./openapi/storefront/operator-settings.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -38,6 +40,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -73,7 +76,9 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/operator-settings.json",
+      "./openapi/storefront": "./openapi/storefront/operator-settings.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

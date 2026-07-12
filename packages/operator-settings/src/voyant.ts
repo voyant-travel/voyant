@@ -15,6 +15,7 @@ export const operatorSettingsVoyantModule = defineModule({
       id: "@voyant-travel/operator-settings#api.admin",
       surface: "admin",
       mount: "settings",
+      openapi: { document: "operator-settings" },
       runtime,
     },
     {
@@ -22,6 +23,7 @@ export const operatorSettingsVoyantModule = defineModule({
       surface: "public",
       mount: "operator-profile",
       anonymous: true,
+      openapi: { document: "operator-settings" },
       runtime,
     },
     {
@@ -29,6 +31,7 @@ export const operatorSettingsVoyantModule = defineModule({
       surface: "public",
       mount: "settings/operator",
       anonymous: true,
+      openapi: { document: "operator-settings" },
       runtime,
     },
   ],

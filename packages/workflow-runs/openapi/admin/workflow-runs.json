@@ -362,7 +362,8 @@
           "workflow-runs"
         ],
         "x-voyant-module": "workflow-runs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
       }
     },
     "/v1/admin/workflow-runs/{id}": {
@@ -664,7 +665,8 @@
           "workflow-runs"
         ],
         "x-voyant-module": "workflow-runs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
       }
     },
     "/v1/admin/workflows/{name}/runs": {
@@ -816,7 +818,8 @@
           "workflow-runs"
         ],
         "x-voyant-module": "workflow-runs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
       }
     },
     "/v1/admin/workflow-runs/{id}/rerun": {
@@ -983,7 +986,8 @@
           "workflow-runs"
         ],
         "x-voyant-module": "workflow-runs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
       }
     },
     "/v1/admin/workflow-runs/{id}/resume": {
@@ -1135,7 +1139,8 @@
           "workflow-runs"
         ],
         "x-voyant-module": "workflow-runs",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
       }
     }
   },

@@ -16,7 +16,9 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts",
-    "./openapi/admin": "./openapi/admin/distribution.json"
+    "./openapi/admin": "./openapi/admin/distribution.json",
+    "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
+    "./openapi/admin/suppliers": "./openapi/admin/suppliers.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -117,7 +119,9 @@
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
       },
-      "./openapi/admin": "./openapi/admin/distribution.json"
+      "./openapi/admin": "./openapi/admin/distribution.json",
+      "./openapi/admin/external-refs": "./openapi/admin/external-refs.json",
+      "./openapi/admin/suppliers": "./openapi/admin/suppliers.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

@@ -34,6 +34,7 @@ describe("storage deployment manifest", () => {
         ["media", "storage-media"],
       ].map(([mount, document]) =>
         expect.objectContaining({
+          id: expect.stringMatching(/^@voyant-travel\/storage#api\.admin\./),
           surface: "admin",
           mount,
           openapi: { document },

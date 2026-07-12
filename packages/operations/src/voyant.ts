@@ -15,6 +15,7 @@ export const operationsVoyantModule = defineModule({
       id: "@voyant-travel/operations#api.admin",
       surface: "admin",
       mount: "operations",
+      openapi: { document: "operations" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/operations",

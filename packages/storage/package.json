@@ -13,7 +13,10 @@
     "./providers/local": "./src/providers/local.ts",
     "./providers/r2": "./src/providers/r2.ts",
     "./providers/s3": "./src/providers/s3.ts",
-    "./lib/sigv4": "./src/lib/sigv4.ts"
+    "./lib/sigv4": "./src/lib/sigv4.ts",
+    "./openapi/admin/media": "./openapi/admin/storage-media.json",
+    "./openapi/admin/uploads": "./openapi/admin/storage-uploads.json",
+    "./openapi/admin/video-upload-ticket": "./openapi/admin/storage-video-upload-ticket.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -24,7 +27,8 @@
     "prepack": "pnpm run build"
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -78,7 +82,10 @@
         "types": "./dist/lib/sigv4.d.ts",
         "import": "./dist/lib/sigv4.js",
         "default": "./dist/lib/sigv4.js"
-      }
+      },
+      "./openapi/admin/media": "./openapi/admin/storage-media.json",
+      "./openapi/admin/uploads": "./openapi/admin/storage-uploads.json",
+      "./openapi/admin/video-upload-ticket": "./openapi/admin/storage-video-upload-ticket.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
