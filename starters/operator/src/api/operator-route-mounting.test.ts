@@ -17,10 +17,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
-import {
-  buildOperatorProviders,
-  buildOperatorRuntimePorts,
-} from "./composition"
+import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never

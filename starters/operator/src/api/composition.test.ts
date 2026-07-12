@@ -70,10 +70,7 @@ import {
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "../../.voyant/runtime/graph-runtime.generated"
-import {
-  buildOperatorProviders,
-  buildOperatorRuntimePorts,
-} from "./composition"
+import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
 
@@ -693,7 +690,6 @@ describe("operator graph runtime composition", () => {
     expect(byName("mice-booking")?.extension.module).toBe("bookings")
     expect(byName("booking-schedule")?.publicPath).toBe("payment-policy")
     expect(byName("proposal")?.publicPath).toBe("proposals")
-
   })
 
   it("binds host runtimes by package-declared ports instead of package ids", async () => {

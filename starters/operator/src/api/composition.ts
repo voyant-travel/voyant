@@ -66,9 +66,7 @@ import {
   financeRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { flightsRuntimePort } from "@voyant-travel/flights"
-import {
-  type VoyantGraphRuntimePorts,
-} from "@voyant-travel/framework"
+import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
 import {
   inventoryBrochureRuntimePort,
@@ -195,8 +193,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
     resolveBankTransferDetails,
     relationshipsService: lazyProvider<OperatorRelationshipsService>(async () =>
       import("@voyant-travel/relationships").then(
-        (m) =>
-          m.relationshipsService as AsyncMethodProvider<OperatorRelationshipsService>,
+        (m) => m.relationshipsService as AsyncMethodProvider<OperatorRelationshipsService>,
       ),
     ),
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
@@ -470,9 +467,7 @@ async function createOperatorStorefrontRuntimeProvider(capabilities: OperatorCap
     offers: commerce.createCommerceStorefrontOfferResolvers(),
     bookingIntents: {
       withDb: (bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<unknown>) =>
-        withDbFromEnv(bindings as AppBindings, (db) =>
-          operation(db as unknown as PostgresJsDatabase),
-        ),
+        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
     },
     intake: { persistence: capabilities.storefrontIntakePersistence },
   }
@@ -492,7 +487,7 @@ function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRunt
 
 const createOperatorTripsRoutesOptions: import("@voyant-travel/trips").TripsRoutesOptionsProvider =
   () =>
-  import("./runtime/trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
+    import("./runtime/trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
 
 function createLazyCatalogSearchRuntime(
   c: Parameters<OperatorCapabilities["resolveCatalogRuntime"]>[0],
