@@ -15,13 +15,21 @@ export interface FinanceRuntimePortContribution {
   bookingTax: RuntimePortValue<BookingTaxRouteOptions>
 }
 
+export interface FinanceRuntimeContributorHost {
+  capabilities: {
+    loadFinanceRuntime(): RuntimePortValue<FinanceHonoModuleOptions>
+    loadBookingScheduleRuntime(): RuntimePortValue<FinanceBookingScheduleRuntime>
+    loadBookingTaxRuntime(): RuntimePortValue<BookingTaxRouteOptions>
+  }
+}
+
 /** Package-owned registration map for Finance deployment adapters. */
 export function createFinanceRuntimePortContribution(
-  contribution: FinanceRuntimePortContribution,
+  host: FinanceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   return {
-    [financeRuntimePort.id]: contribution.finance,
-    [financeBookingScheduleRuntimePort.id]: contribution.bookingSchedule,
-    [financeBookingTaxRuntimePort.id]: contribution.bookingTax,
+    [financeRuntimePort.id]: host.capabilities.loadFinanceRuntime(),
+    [financeBookingScheduleRuntimePort.id]: host.capabilities.loadBookingScheduleRuntime(),
+    [financeBookingTaxRuntimePort.id]: host.capabilities.loadBookingTaxRuntime(),
   }
 }

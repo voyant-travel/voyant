@@ -12,12 +12,19 @@ export interface InventoryRuntimePortContribution {
   brochure: RuntimePortValue<ProductBrochureRoutesOptions>
 }
 
+export interface InventoryRuntimeContributorHost {
+  capabilities: {
+    loadInventoryRuntime(): RuntimePortValue<InventoryRuntimePortContribution>
+  }
+}
+
 /** Package-owned registration map for Inventory deployment adapters. */
 export function createInventoryRuntimePortContribution(
-  contribution: InventoryRuntimePortContribution,
+  host: InventoryRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const contribution = Promise.resolve(host.capabilities.loadInventoryRuntime())
   return {
-    [inventoryRuntimePort.id]: contribution.inventory,
-    [inventoryBrochureRuntimePort.id]: contribution.brochure,
+    [inventoryRuntimePort.id]: contribution.then((runtime) => runtime.inventory),
+    [inventoryBrochureRuntimePort.id]: contribution.then((runtime) => runtime.brochure),
   }
 }

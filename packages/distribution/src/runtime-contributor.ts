@@ -6,9 +6,17 @@ export interface DistributionRuntimePortContribution {
   channelPush: RuntimePortValue<ChannelPushRuntime>
 }
 
+export interface DistributionRuntimeContributorHost {
+  capabilities: {
+    loadDistributionChannelPushRuntime(): RuntimePortValue<ChannelPushRuntime>
+  }
+}
+
 /** Package-owned registration map for Distribution deployment adapters. */
 export function createDistributionRuntimePortContribution(
-  contribution: DistributionRuntimePortContribution,
+  host: DistributionRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [channelPushRuntimePort.id]: contribution.channelPush }
+  return {
+    [channelPushRuntimePort.id]: host.capabilities.loadDistributionChannelPushRuntime(),
+  }
 }

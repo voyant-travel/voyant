@@ -25,16 +25,23 @@ export interface CatalogRuntimePortContribution {
   bookingSnapshot: RuntimePortValue<CatalogBookingSnapshotRuntimeProvider>
 }
 
+export interface CatalogRuntimeContributorHost {
+  capabilities: {
+    loadCatalogRuntime(): RuntimePortValue<CatalogRuntimePortContribution>
+  }
+}
+
 /** Package-owned registration map for Catalog's deployment-supplied runtime adapters. */
 export function createCatalogRuntimePortContribution(
-  contribution: CatalogRuntimePortContribution,
+  host: CatalogRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const contribution = Promise.resolve(host.capabilities.loadCatalogRuntime())
   return {
-    [catalogSearchRuntimePort.id]: contribution.search,
-    [catalogBookingRuntimePort.id]: contribution.booking,
-    [catalogOffersRuntimePort.id]: contribution.offers,
-    [catalogContentRuntimePort.id]: contribution.content,
-    [catalogProjectionRuntimePort.id]: contribution.projection,
-    [catalogBookingSnapshotRuntimePort.id]: contribution.bookingSnapshot,
+    [catalogSearchRuntimePort.id]: contribution.then((runtime) => runtime.search),
+    [catalogBookingRuntimePort.id]: contribution.then((runtime) => runtime.booking),
+    [catalogOffersRuntimePort.id]: contribution.then((runtime) => runtime.offers),
+    [catalogContentRuntimePort.id]: contribution.then((runtime) => runtime.content),
+    [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
+    [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
   }
 }

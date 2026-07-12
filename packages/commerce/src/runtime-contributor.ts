@@ -29,17 +29,32 @@ export interface CommerceRuntimePortContribution {
   promotionsBulkReindex: RuntimePortValue<PromotionsBulkReindexRuntime>
 }
 
+export interface CommerceRuntimeContributorHost {
+  capabilities: {
+    loadCommerceRuntime(): RuntimePortValue<CommerceRuntimePortContribution>
+  }
+}
+
 /** Package-owned registration map for Commerce's deployment-supplied runtime adapters. */
 export function createCommerceRuntimePortContribution(
-  contribution: CommerceRuntimePortContribution,
+  host: CommerceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const contribution = Promise.resolve(host.capabilities.loadCommerceRuntime())
   return {
-    [bookingMaintenanceRuntimePort.id]: contribution.bookingMaintenance,
-    [catalogCheckoutApiRuntimePort.id]: contribution.checkoutApi,
-    [catalogCheckoutDatabaseRuntimePort.id]: contribution.checkoutDatabase,
-    [catalogCheckoutLegalRuntimePort.id]: contribution.checkoutLegal,
-    [catalogCheckoutContractPdfRuntimePort.id]: contribution.checkoutContractPdf,
-    [promotionRedemptionDatabaseRuntimePort.id]: contribution.promotionRedemptionDatabase,
-    [promotionsBulkReindexRuntimePort.id]: contribution.promotionsBulkReindex,
+    [bookingMaintenanceRuntimePort.id]: contribution.then((runtime) => runtime.bookingMaintenance),
+    [catalogCheckoutApiRuntimePort.id]: contribution.then((runtime) => runtime.checkoutApi),
+    [catalogCheckoutDatabaseRuntimePort.id]: contribution.then(
+      (runtime) => runtime.checkoutDatabase,
+    ),
+    [catalogCheckoutLegalRuntimePort.id]: contribution.then((runtime) => runtime.checkoutLegal),
+    [catalogCheckoutContractPdfRuntimePort.id]: contribution.then(
+      (runtime) => runtime.checkoutContractPdf,
+    ),
+    [promotionRedemptionDatabaseRuntimePort.id]: contribution.then(
+      (runtime) => runtime.promotionRedemptionDatabase,
+    ),
+    [promotionsBulkReindexRuntimePort.id]: contribution.then(
+      (runtime) => runtime.promotionsBulkReindex,
+    ),
   }
 }

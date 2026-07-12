@@ -80,7 +80,7 @@ type OperatorCapabilities = ReturnType<typeof createDeploymentCapabilities>
  * Build the operator provider container (gathers deployment resolvers/loaders).
  * Providers are bindings-deferred closures, so no `env` is needed here.
  */
-function createDeploymentCapabilities() {
+function createBaseDeploymentCapabilities() {
   const storefrontIntakePersistence = lazyProvider<StorefrontIntakePersistence>(async () =>
     import("./storefront-intake-runtime").then(
       (m) =>
@@ -170,45 +170,93 @@ function createDeploymentCapabilities() {
   }
 }
 
+function createDeploymentCapabilities(workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime) {
+  const capabilities = createBaseDeploymentCapabilities()
+  return {
+    ...capabilities,
+    resolveWorkflowRunnerRegistry: () => workflowRunnerRegistry,
+    loadBookingsRuntime: () => createOperatorBookingsRuntimeProvider(capabilities),
+    loadBookingRequirementsRuntime: () => ({
+      publicRoutes: {
+        resolveProductSnapshot: capabilities.resolveBookingRequirementsProductSnapshot,
+      },
+    }),
+    loadFinanceRuntime: () => createOperatorFinanceRuntimeProvider(capabilities),
+    loadBookingScheduleRuntime: createOperatorBookingScheduleRuntime,
+    loadBookingTaxRuntime: createOperatorBookingTaxRuntime,
+    loadCatalogRuntime: () => createOperatorCatalogRuntime(capabilities),
+    loadCommerceRuntime: createOperatorCommerceRuntime,
+    loadInventoryRuntime: createOperatorInventoryRuntime,
+    loadLegalRuntime: createOperatorLegalRuntime,
+    loadActionLedgerHealthRuntime: () =>
+      import("./action-ledger-health-runtime").then((runtime) =>
+        runtime.createOperatorActionLedgerHealthRuntime(),
+      ),
+    loadDistributionChannelPushRuntime: () =>
+      import("./channel-push-runtime").then((runtime) => runtime.operatorChannelPushRuntime),
+  }
+}
+
 /** Deployment implementations for package-declared runtime ports. */
 function createDeploymentPortResources(
-  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
   capabilities: OperatorCapabilities = createDeploymentCapabilities(),
 ) {
   return createGeneratedGraphRuntimePorts({
     capabilities,
-    workflowRunnerRegistry,
+    // @voyant-travel/plugin-smartbill is external and its generated contributor
+    // irreducibly requires resolveDatabase, resolveConfig, and resolveDocumentStorage.
     host: operatorSmartbillRuntimeHost,
-    bookings: createOperatorBookingsRuntimeProvider(capabilities),
-    requirements: {
-      publicRoutes: {
-        resolveProductSnapshot: capabilities.resolveBookingRequirementsProductSnapshot,
-      },
+  })
+}
+
+/** All host-owned inputs passed to graph composition as one opaque resource set. */
+export function createOperatorDeploymentResources(
+  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
+) {
+  const capabilities = createDeploymentCapabilities(workflowRunnerRegistry)
+  return {
+    capabilities,
+    ports: createDeploymentPortResources(capabilities),
+    outboundWebhooks: {
+      enqueue: (event: Parameters<typeof enqueueGraphWebhookEvent>[1], bindings: unknown) =>
+        enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
     },
-    finance: createOperatorFinanceRuntimeProvider(capabilities),
-    bookingSchedule: Promise.all([
-      import("@voyant-travel/operator-settings"),
-      import("./booking-payment-policy-runtime"),
-    ]).then(([settings, runtime]) => ({
-      options: {
-        resolveDb: (context) => operatorPostgresDb(context.get("db")),
-        resolveOperatorDefaultPaymentPolicy: settings.resolveOperatorDefaultPaymentPolicy,
-        resolveSupplierPolicy: runtime.resolveSupplierPolicy,
-        resolveCategoryPolicy: runtime.resolveCategoryPolicy,
-        resolveListingPolicy: runtime.resolveListingPolicy,
-        resolveListingPolicyForEntity: runtime.resolveListingPolicyForEntity,
-        resolveCategoryPolicyForEntity: runtime.resolveCategoryPolicyForEntity,
-        resolveSupplierPolicyForEntity: runtime.resolveSupplierPolicyForEntity,
-        stampPolicySourceOnBooking: runtime.stampPolicySourceOnBooking,
-        readPolicySourceFromInternalNotes: runtime.readPolicySourceFromInternalNotes,
-      },
-      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
-        withDbFromEnv(bindings as AppBindings, operation),
-    })),
-    bookingTax: import("@voyant-travel/operator-settings").then((settings) => ({
-      resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-      updateBookingTaxSettings: settings.updateBookingTaxSettings,
-    })),
+  }
+}
+
+function createOperatorBookingScheduleRuntime() {
+  return Promise.all([
+    import("@voyant-travel/operator-settings"),
+    import("./booking-payment-policy-runtime"),
+  ]).then(([settings, runtime]) => ({
+    options: {
+      resolveDb: (context) => operatorPostgresDb(context.get("db")),
+      resolveOperatorDefaultPaymentPolicy: settings.resolveOperatorDefaultPaymentPolicy,
+      resolveSupplierPolicy: runtime.resolveSupplierPolicy,
+      resolveCategoryPolicy: runtime.resolveCategoryPolicy,
+      resolveListingPolicy: runtime.resolveListingPolicy,
+      resolveListingPolicyForEntity: runtime.resolveListingPolicyForEntity,
+      resolveCategoryPolicyForEntity: runtime.resolveCategoryPolicyForEntity,
+      resolveSupplierPolicyForEntity: runtime.resolveSupplierPolicyForEntity,
+      stampPolicySourceOnBooking: runtime.stampPolicySourceOnBooking,
+      readPolicySourceFromInternalNotes: runtime.readPolicySourceFromInternalNotes,
+    },
+    withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+      withDbFromEnv(bindings as AppBindings, operation),
+  }))
+}
+
+function createOperatorBookingTaxRuntime() {
+  return import("@voyant-travel/operator-settings").then((settings) => ({
+    resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
+    updateBookingTaxSettings: settings.updateBookingTaxSettings,
+  }))
+}
+
+function createOperatorCatalogRuntime(
+  capabilities: ReturnType<typeof createBaseDeploymentCapabilities>,
+) {
+  return {
     search: {
       resolveRuntime: capabilities.resolveCatalogRuntime,
     },
@@ -223,11 +271,16 @@ function createDeploymentPortResources(
     },
     projection: createOperatorCatalogProjectionRuntimeProvider(),
     bookingSnapshot: {
-      createRuntime: (bindings) =>
+      createRuntime: (bindings: unknown) =>
         import("./catalog-subscriber-runtime").then((runtime) =>
           runtime.createOperatorCatalogBookingSnapshotRuntime(bindings),
         ),
     },
+  }
+}
+
+function createOperatorCommerceRuntime() {
+  return {
     bookingMaintenance: import("@voyant-travel/operator-settings").then((settings) => ({
       resolveDb: (context) => operatorPostgresDb(context.get("db")),
       resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
@@ -264,14 +317,21 @@ function createDeploymentPortResources(
           runtime.createBulkReindexProductsService(operatorBindings(bindings)),
         ),
     },
+  }
+}
+
+function createOperatorInventoryRuntime() {
+  return {
     inventory: {
       bootstrap: ({ container, bindings }) =>
         registerInventoryWorkflowService(container, bindings as AppBindings),
     },
     brochure: import("./media-runtime").then((runtime) => runtime.operatorInventoryBrochureRuntime),
-    health: import("./action-ledger-health-runtime").then((runtime) =>
-      runtime.createOperatorActionLedgerHealthRuntime(),
-    ),
+  }
+}
+
+function createOperatorLegalRuntime() {
+  return {
     legal: {
       resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
       resolveDocumentStorage: createOperatorDocumentStorage,
@@ -309,29 +369,11 @@ function createDeploymentPortResources(
         }
       },
     },
-    channelPush: import("./channel-push-runtime").then(
-      (runtime) => runtime.operatorChannelPushRuntime,
-    ),
-  })
-}
-
-/** All host-owned inputs passed to graph composition as one opaque resource set. */
-export function createOperatorDeploymentResources(
-  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
-) {
-  const capabilities = createDeploymentCapabilities()
-  return {
-    capabilities,
-    ports: createDeploymentPortResources(workflowRunnerRegistry, capabilities),
-    outboundWebhooks: {
-      enqueue: (event: Parameters<typeof enqueueGraphWebhookEvent>[1], bindings: unknown) =>
-        enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
-    },
   }
 }
 
 async function createOperatorBookingsRuntimeProvider(
-  capabilities: OperatorCapabilities,
+  capabilities: ReturnType<typeof createBaseDeploymentCapabilities>,
 ): Promise<BookingsRuntimeProvider> {
   const accommodationsOverview = await import(
     "@voyant-travel/accommodations/booking-overview-enricher"
@@ -498,7 +540,9 @@ function createLazyCatalogIndexer(
   }
 }
 
-async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabilities) {
+async function createOperatorFinanceRuntimeProvider(
+  capabilities: ReturnType<typeof createBaseDeploymentCapabilities>,
+) {
   const [notifications, settings] = await Promise.all([
     import("@voyant-travel/notifications"),
     import("@voyant-travel/operator-settings"),

@@ -5,9 +5,10 @@ import {
 
 /** Package-owned optional registration for the process-local workflow runner registry. */
 export function createWorkflowRunsRuntimePortContribution(host: {
-  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime
+  capabilities: {
+    resolveWorkflowRunnerRegistry(): WorkflowRunnerRegistryRuntime | undefined
+  }
 }): Readonly<Record<string, unknown>> {
-  return host.workflowRunnerRegistry
-    ? { [workflowRunnerRegistryRuntimePort.id]: host.workflowRunnerRegistry }
-    : {}
+  const registry = host.capabilities.resolveWorkflowRunnerRegistry()
+  return registry ? { [workflowRunnerRegistryRuntimePort.id]: registry } : {}
 }

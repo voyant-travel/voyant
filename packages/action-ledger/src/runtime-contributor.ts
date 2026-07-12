@@ -7,9 +7,17 @@ export interface ActionLedgerRuntimePortContribution {
   health: RuntimePortValue<ActionLedgerHealthRoutesOptions>
 }
 
+export interface ActionLedgerRuntimeContributorHost {
+  capabilities: {
+    loadActionLedgerHealthRuntime(): RuntimePortValue<ActionLedgerHealthRoutesOptions>
+  }
+}
+
 /** Package-owned registration map for Action Ledger deployment adapters. */
 export function createActionLedgerRuntimePortContribution(
-  contribution: ActionLedgerRuntimePortContribution,
+  host: ActionLedgerRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [actionLedgerHealthRuntimePort.id]: contribution.health }
+  return {
+    [actionLedgerHealthRuntimePort.id]: host.capabilities.loadActionLedgerHealthRuntime(),
+  }
 }

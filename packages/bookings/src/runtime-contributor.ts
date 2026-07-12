@@ -12,12 +12,19 @@ export interface BookingsRuntimePortContribution {
   requirements: RuntimePortValue<BookingRequirementsHonoModuleOptions>
 }
 
+export interface BookingsRuntimeContributorHost {
+  capabilities: {
+    loadBookingsRuntime(): RuntimePortValue<BookingsRuntimeProvider>
+    loadBookingRequirementsRuntime(): RuntimePortValue<BookingRequirementsHonoModuleOptions>
+  }
+}
+
 /** Package-owned registration map for Bookings deployment adapters. */
 export function createBookingsRuntimePortContribution(
-  contribution: BookingsRuntimePortContribution,
+  host: BookingsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   return {
-    [bookingsRuntimePort.id]: contribution.bookings,
-    [bookingRequirementsRuntimePort.id]: contribution.requirements,
+    [bookingsRuntimePort.id]: host.capabilities.loadBookingsRuntime(),
+    [bookingRequirementsRuntimePort.id]: host.capabilities.loadBookingRequirementsRuntime(),
   }
 }

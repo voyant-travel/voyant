@@ -15,13 +15,22 @@ export interface LegalRuntimePortContribution {
   bookingContractSubscriber: RuntimePortValue<LegalBookingContractSubscriberHost>
 }
 
+export interface LegalRuntimeContributorHost {
+  capabilities: {
+    loadLegalRuntime(): RuntimePortValue<LegalRuntimePortContribution>
+  }
+}
+
 /** Package-owned registration map for Legal deployment adapters. */
 export function createLegalRuntimePortContribution(
-  contribution: LegalRuntimePortContribution,
+  host: LegalRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const contribution = Promise.resolve(host.capabilities.loadLegalRuntime())
   return {
-    [legalRuntimePort.id]: contribution.legal,
-    [legalContractDocumentRuntimePort.id]: contribution.contractDocument,
-    [legalBookingContractSubscriberRuntimePort.id]: contribution.bookingContractSubscriber,
+    [legalRuntimePort.id]: contribution.then((runtime) => runtime.legal),
+    [legalContractDocumentRuntimePort.id]: contribution.then((runtime) => runtime.contractDocument),
+    [legalBookingContractSubscriberRuntimePort.id]: contribution.then(
+      (runtime) => runtime.bookingContractSubscriber,
+    ),
   }
 }
