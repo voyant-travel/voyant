@@ -207,6 +207,27 @@ export const quotesProposalVoyantPlugin = defineExtension({
   packageName: "@voyant-travel/quotes",
   localId: "quotes.proposal-extension",
   runtimePorts: [requirePort(quotesProposalRuntimePort)],
+  events: [
+    {
+      id: "@voyant-travel/quotes#event.proposal-feedback-requested",
+      eventType: "quote.proposal_feedback.requested",
+      version: "1.0.0",
+      payloadSchema: {
+        type: "object",
+        required: ["quoteId", "quoteVersionId", "activityId", "message", "proposalUrl"],
+        properties: {
+          quoteId: { type: "string", minLength: 1 },
+          quoteVersionId: { type: "string", minLength: 1 },
+          activityId: { type: "string", minLength: 1 },
+          message: { type: "string", minLength: 1, maxLength: 4000 },
+          proposalUrl: { type: "string", minLength: 1 },
+        },
+        additionalProperties: false,
+      },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
+  ],
   api: [
     {
       id: "@voyant-travel/quotes#proposal-extension.api.admin",

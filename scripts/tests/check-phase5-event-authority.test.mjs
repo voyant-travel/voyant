@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFile } from "node:child_process"
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { describe, it } from "node:test"
@@ -38,6 +38,36 @@ async function runFixture(source) {
 }
 
 describe("Phase 5 event authority checker", () => {
+  it("pins the package-owned Quotes proposal feedback event contract", async () => {
+    const manifest = await readFile(path.join(repoRoot, "packages/quotes/src/voyant.ts"), "utf8")
+    const runtime = await readFile(path.join(repoRoot, "packages/quotes/src/runtime.ts"), "utf8")
+    const contract = manifest.match(
+      /\{\s*id: "@voyant-travel\/quotes#event\.proposal-feedback-requested",[\s\S]*?\n\s{4}\},/,
+    )?.[0]
+    const emittedPayload = runtime.match(
+      /"quote\.proposal_feedback\.requested",\s*\{([\s\S]*?)\n\s{10}\},\s*\{ category:/,
+    )?.[1]
+
+    assert.ok(contract, "Quotes must own the proposal feedback event declaration")
+    assert.ok(emittedPayload, "Quotes must emit the declared proposal feedback event")
+    assert.match(contract, /eventType: "quote\.proposal_feedback\.requested"/)
+    assert.match(contract, /version: "1\.0\.0"/)
+    assert.match(
+      contract,
+      /required: \["quoteId", "quoteVersionId", "activityId", "message", "proposalUrl"\]/,
+    )
+    const properties = ["quoteId", "quoteVersionId", "activityId", "message", "proposalUrl"]
+    assert.deepEqual(
+      [...emittedPayload.matchAll(/^\s+(\w+):/gm)].map((match) => match[1]),
+      properties,
+    )
+    for (const property of properties) assert.match(contract, new RegExp(`${property}: \\{`))
+    assert.match(contract, /message: \{ type: "string", minLength: 1, maxLength: 4000 \}/)
+    assert.match(contract, /additionalProperties: false/)
+    assert.match(contract, /visibility: "internal"/)
+    assert.match(contract, /audit: \{ sourceModule: "quotes", category: "domain" \}/)
+  })
+
   it("accepts an external versioned event with schema and audit metadata", async () => {
     const result = await runFixture(validManifest)
     assert.match(result.stdout, /Phase 5 event authority: OK/)
