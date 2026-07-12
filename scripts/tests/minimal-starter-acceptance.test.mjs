@@ -107,7 +107,9 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
 function useInstalledCliArtifact(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  const installedCli = realpathSync(join(repoRoot, "node_modules/@voyant-travel/cli"))
+  const installedCli = realpathSync(
+    join(repoRoot, "starters/operator/node_modules/@voyant-travel/cli"),
+  )
   packageJson.devDependencies["@voyant-travel/cli"] = `link:${installedCli}`
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
 }
