@@ -9,6 +9,41 @@ import {
 
 export type VoyantGraphLifecycleOperation = "upgrade" | "uninstall"
 
+export type VoyantGraphLifecycleFacet =
+  | "runtime"
+  | "api"
+  | "schema"
+  | "migration"
+  | "link"
+  | "subscriber"
+  | "event"
+  | "workflow"
+  | "schedule"
+  | "setup-migration"
+  | "config"
+  | "secret"
+  | "resource"
+  | "provider"
+  | "access-resource"
+  | "access-role"
+  | "admin-runtime"
+  | "admin-copy"
+  | "admin-route"
+  | "admin-nav"
+  | "admin-slot"
+  | "admin-contribution"
+  | "tool"
+  | "webhook"
+  | "action"
+
+export interface VoyantGraphLifecycleConsequence {
+  id: string
+  unitId: string
+  facet: VoyantGraphLifecycleFacet
+  entityId: string
+  action: "detach" | "activate" | "retain-data" | "release"
+}
+
 export interface VoyantGraphLifecycleStep {
   id: string
   idempotencyKey: string
@@ -26,6 +61,8 @@ export interface VoyantGraphLifecyclePlan {
   operation: VoyantGraphLifecycleOperation
   fromGraphHash: string
   toGraphHash: string
+  /** Complete graph-derived surface and data consequences for review and doctor output. */
+  consequences: readonly VoyantGraphLifecycleConsequence[]
   steps: readonly VoyantGraphLifecycleStep[]
 }
 
@@ -94,11 +131,29 @@ export function createVoyantGraphLifecyclePlan(
 
   const previous = unitsById(input.previous)
   const next = unitsById(input.next)
+  const previousPackages = packageRecordsByName(input.previous)
+  const nextPackages = packageRecordsByName(input.next)
   const removedOrChanged = [...previous.values()]
-    .filter((unit) => !sameUnit(unit, next.get(unit.id)))
+    .filter(
+      (unit) =>
+        !sameUnit(
+          unit,
+          next.get(unit.id),
+          previousPackages.get(unit.packageName),
+          nextPackages.get(unit.packageName),
+        ),
+    )
     .sort(compareUnits)
   const addedOrChanged = [...next.values()]
-    .filter((unit) => !sameUnit(unit, previous.get(unit.id)))
+    .filter(
+      (unit) =>
+        !sameUnit(
+          unit,
+          previous.get(unit.id),
+          nextPackages.get(unit.packageName),
+          previousPackages.get(unit.packageName),
+        ),
+    )
     .sort(compareUnits)
 
   if (input.operation === "uninstall" && addedOrChanged.length > 0) {
@@ -126,7 +181,7 @@ export function createVoyantGraphLifecyclePlan(
   for (const unit of addedOrChanged) {
     steps.push(step(input, "activate-unit", unit.id, true, { unitId: unit.id }))
   }
-  return plan(input, steps)
+  return plan(input, steps, lifecycleConsequences(input, removedOrChanged, addedOrChanged))
 }
 
 export async function executeVoyantGraphLifecyclePlan(
@@ -317,6 +372,7 @@ function incompatibleSchemaChanges(
 function plan(
   input: CreateVoyantGraphLifecyclePlanInput,
   steps: VoyantGraphLifecycleStep[],
+  consequences: VoyantGraphLifecycleConsequence[] = [],
 ): VoyantGraphLifecyclePlan {
   return {
     schemaVersion: "voyant.graph-lifecycle-plan.v1",
@@ -324,8 +380,109 @@ function plan(
     operation: input.operation,
     fromGraphHash: input.previous.contentHash,
     toGraphHash: input.next.contentHash,
+    consequences,
     steps,
   }
+}
+
+function lifecycleConsequences(
+  input: CreateVoyantGraphLifecyclePlanInput,
+  removedOrChanged: readonly ResolvedVoyantGraphUnit[],
+  addedOrChanged: readonly ResolvedVoyantGraphUnit[],
+): VoyantGraphLifecycleConsequence[] {
+  const consequences = removedOrChanged.flatMap((unit) => [
+    ...unitFacetEntities(unit).map(({ facet, entityId }) =>
+      consequence(unit.id, facet, entityId, "detach"),
+    ),
+    ...retainedDataConsequences(input.operation, unit),
+    ...(unit.lifecycle?.cleanup ?? [])
+      .filter((cleanup) => cleanup.on.includes(input.operation))
+      .map((cleanup) => consequence(unit.id, "resource", cleanup.resourceId, "release")),
+  ])
+  consequences.push(
+    ...addedOrChanged.flatMap((unit) =>
+      unitFacetEntities(unit).map(({ facet, entityId }) =>
+        consequence(unit.id, facet, entityId, "activate"),
+      ),
+    ),
+  )
+  return consequences.sort((left, right) => left.id.localeCompare(right.id))
+}
+
+function retainedDataConsequences(
+  operation: VoyantGraphLifecycleOperation,
+  unit: ResolvedVoyantGraphUnit,
+): VoyantGraphLifecycleConsequence[] {
+  if (operation !== "uninstall") return []
+  const releasedResources = new Set(
+    (unit.lifecycle?.cleanup ?? [])
+      .filter((cleanup) => cleanup.on.includes("uninstall"))
+      .map((cleanup) => cleanup.resourceId),
+  )
+  return unitFacetEntities(unit)
+    .filter(
+      ({ facet, entityId }) =>
+        facet === "schema" ||
+        facet === "migration" ||
+        facet === "setup-migration" ||
+        (facet === "resource" && !releasedResources.has(entityId)),
+    )
+    .map(({ facet, entityId }) => consequence(unit.id, facet, entityId, "retain-data"))
+}
+
+function consequence(
+  unitId: string,
+  facet: VoyantGraphLifecycleFacet,
+  entityId: string,
+  action: VoyantGraphLifecycleConsequence["action"],
+): VoyantGraphLifecycleConsequence {
+  return {
+    id: `${action}:${facet}:${entityId}`,
+    unitId,
+    facet,
+    entityId,
+    action,
+  }
+}
+
+function unitFacetEntities(
+  unit: ResolvedVoyantGraphUnit,
+): Array<{ facet: VoyantGraphLifecycleFacet; entityId: string }> {
+  const entities: Array<{ facet: VoyantGraphLifecycleFacet; entityId: string }> = []
+  const add = (facet: VoyantGraphLifecycleFacet, values: readonly { id: string }[] | undefined) => {
+    for (const value of values ?? []) entities.push({ facet, entityId: value.id })
+  }
+  if (unit.runtime) entities.push({ facet: "runtime", entityId: `${unit.id}#runtime` })
+  add("api", unit.api)
+  add("schema", unit.schema)
+  add("migration", unit.migrations)
+  add("link", unit.links)
+  add("subscriber", unit.subscribers)
+  add("event", unit.events)
+  add("workflow", unit.workflows)
+  for (const workflow of unit.workflows) add("schedule", workflow.schedules)
+  add("setup-migration", unit.setupMigrations)
+  add("config", unit.config)
+  add("secret", unit.secrets)
+  add("resource", unit.resources)
+  add("provider", unit.providers)
+  add("access-resource", unit.access?.resources)
+  add("access-role", unit.access?.roles)
+  if (unit.admin?.runtime) {
+    entities.push({ facet: "admin-runtime", entityId: `${unit.id}#admin.runtime` })
+  }
+  add("admin-copy", unit.admin?.copy)
+  add("admin-route", unit.admin?.routes)
+  add("admin-nav", unit.admin?.nav)
+  add("admin-slot", unit.admin?.slots)
+  add("admin-contribution", unit.admin?.contributions)
+  add("tool", unit.tools)
+  add("webhook", unit.webhooks)
+  add("action", unit.actions)
+  return entities.sort(
+    (left, right) =>
+      left.facet.localeCompare(right.facet) || left.entityId.localeCompare(right.entityId),
+  )
 }
 
 function step(
@@ -351,6 +508,12 @@ function unitsById(graph: ResolvedVoyantDeploymentGraph): Map<string, ResolvedVo
   return new Map(allUnits(graph).map((unit) => [unit.id, unit]))
 }
 
+function packageRecordsByName(
+  graph: ResolvedVoyantDeploymentGraph,
+): Map<string, ResolvedVoyantDeploymentGraph["packageRecords"][number]> {
+  return new Map(graph.packageRecords.map((record) => [record.packageName, record]))
+}
+
 function allUnits(graph: ResolvedVoyantDeploymentGraph): ResolvedVoyantGraphUnit[] {
   return [...graph.modules, ...graph.extensions, ...graph.plugins]
 }
@@ -358,11 +521,16 @@ function allUnits(graph: ResolvedVoyantDeploymentGraph): ResolvedVoyantGraphUnit
 function sameUnit(
   left: ResolvedVoyantGraphUnit,
   right: ResolvedVoyantGraphUnit | undefined,
+  leftPackage: ResolvedVoyantDeploymentGraph["packageRecords"][number] | undefined,
+  rightPackage: ResolvedVoyantDeploymentGraph["packageRecords"][number] | undefined,
 ): boolean {
   if (!right) return false
   const { order: _leftOrder, ...leftContract } = left
   const { order: _rightOrder, ...rightContract } = right
-  return canonicalJson(leftContract) === canonicalJson(rightContract)
+  return (
+    canonicalJson(leftContract) === canonicalJson(rightContract) &&
+    canonicalJson(leftPackage ?? null) === canonicalJson(rightPackage ?? null)
+  )
 }
 
 function compareUnits(left: ResolvedVoyantGraphUnit, right: ResolvedVoyantGraphUnit): number {

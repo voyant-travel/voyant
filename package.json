@@ -66,6 +66,7 @@
     "verify:catalog-subscriber-authority": "node --test scripts/tests/check-catalog-subscriber-authority.test.mjs && node scripts/check-catalog-subscriber-authority.mjs",
     "verify:phase5-event-authority": "node --test scripts/tests/check-phase5-event-authority.test.mjs && node scripts/check-phase5-event-authority.mjs",
     "verify:phase5-tools-mcp-authority": "node --test scripts/tests/check-phase5-tools-mcp-authority.test.mjs && node scripts/check-phase5-tools-mcp-authority.mjs",
+    "verify:graph-lifecycle-authority": "node --test scripts/tests/check-graph-lifecycle-authority.test.mjs && node scripts/check-graph-lifecycle-authority.mjs",
     "verify:client-package-boundaries": "node scripts/check-client-package-boundaries.mjs",
     "verify:workflows-package-surface": "node scripts/check-workflows-package-surface.mjs",
     "verify:accommodation-resale-boundary": "node scripts/check-accommodation-resale-boundary.mjs",
