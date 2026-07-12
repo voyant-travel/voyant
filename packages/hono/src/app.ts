@@ -129,6 +129,8 @@ export interface ModuleMount {
  * around) keep working without a wrapper.
  */
 export interface VoyantAppExtensions<TBindings = unknown> {
+  /** Shared service registry populated by selected package bootstraps. */
+  services: import("@voyant-travel/core").ModuleContainer
   /**
    * Resolves once the lazy bootstrap completes. Idempotent — multiple
    * calls share the same promise. Use from tests + node sibling
@@ -900,6 +902,7 @@ export function mountApp<TBindings extends VoyantBindings>(
   // traffic. Binding-dependent drivers that want eager boot must pass
   // the real `env`.
   const augmented = app as Hono<MountEnv<TBindings>> & VoyantAppExtensions<TBindings>
+  augmented.services = container
   augmented.eventBus = eventBus
   augmented.lazyMounts = lazyMounts
   augmented.moduleMounts = moduleMounts

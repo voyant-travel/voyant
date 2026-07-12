@@ -19,6 +19,13 @@ export interface CruisesExternalRefreshWorkflowRuntime {
   }): Promise<void>
 }
 
+/** Build the package-owned external refresh runtime from deployment host capabilities. */
+export function createCruisesExternalRefreshWorkflowRuntime(
+  runtime: CruisesExternalRefreshWorkflowRuntime,
+): CruisesExternalRefreshWorkflowRuntime {
+  return runtime
+}
+
 export const cruisesExternalCatalogRefreshWorkflow = workflow({
   id: "cruises.external-catalog-refresh",
   async run(_input, ctx) {

@@ -12,6 +12,24 @@ export interface EventOutboxWorkflowRuntime {
   warn(message: string): void
 }
 
+/** Build the package-owned outbox runtime from deployment host capabilities. */
+export function createEventOutboxWorkflowRuntime(
+  runtime: EventOutboxWorkflowRuntime,
+): EventOutboxWorkflowRuntime {
+  return runtime
+}
+
+/** Merge string deployment bindings into the Node process environment. */
+export function resolveNodeWorkflowEnvironment(
+  bindings: Record<string, unknown>,
+): NodeJS.ProcessEnv {
+  const environment: NodeJS.ProcessEnv = { ...process.env }
+  for (const [key, value] of Object.entries(bindings)) {
+    if (typeof value === "string") environment[key] = value
+  }
+  return environment
+}
+
 export const eventOutboxDrainWorkflow = workflow({
   id: "infrastructure.event-outbox-drain",
   async run(_input, ctx) {

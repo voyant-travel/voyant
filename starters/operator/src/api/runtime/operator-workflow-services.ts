@@ -2,21 +2,22 @@ import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "@voyant-travel/bookings
 import { createIndexerService } from "@voyant-travel/catalog"
 import {
   CATALOG_DRAFT_REAPER_RUNTIME_KEY,
-  type CatalogDraftReaperRuntime,
+  createCatalogDraftReaperRuntime,
 } from "@voyant-travel/catalog/draft-reaper-workflow"
 import {
   PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
   type PromotionBoundarySchedulerRuntime,
 } from "@voyant-travel/commerce/promotions/workflow-boundary-scheduler"
-import { createContainer, type ModuleContainer } from "@voyant-travel/core"
+import type { ModuleContainer } from "@voyant-travel/core"
 import {
   CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
-  type CruisesExternalRefreshWorkflowRuntime,
+  createCruisesExternalRefreshWorkflowRuntime,
 } from "@voyant-travel/cruises/external-refresh-workflow"
 import { createDbClient } from "@voyant-travel/db"
 import {
+  createEventOutboxWorkflowRuntime,
   EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
-  type EventOutboxWorkflowRuntime,
+  resolveNodeWorkflowEnvironment,
 } from "@voyant-travel/db/outbox-workflow"
 import { createChannelPushWorkflowRuntimeEntries } from "@voyant-travel/distribution/channel-push-workflows"
 import { createFinanceStaleBookingHoldsRuntime } from "@voyant-travel/finance/stale-booking-holds-runtime"
@@ -25,7 +26,7 @@ import {
   PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
 } from "@voyant-travel/inventory/workflow-runtime"
 import {
-  NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
+  createNotificationReminderWorkflowRuntime,
   type NotificationReminderWorkflowRuntime,
 } from "@voyant-travel/notifications/workflow-runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -33,7 +34,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
 import { reportBackgroundFailure } from "../../lib/observability.js"
-import { ensureBookingEngineRegistry } from "../lib/booking-engine-runtime.js"
 import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
 import {
   buildEmbeddingProvider,
@@ -45,34 +45,44 @@ import {
 import { withDbFromEnv } from "../lib/db.js"
 import { operatorPostgresDb } from "./operator-runtime-adapter.js"
 
-export const OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS = {
-  bookings: "@voyant-travel/bookings",
-  cruises: "@voyant-travel/cruises",
-  db: "@voyant-travel/db",
-  distribution: "@voyant-travel/distribution#channel-push-extension",
-  inventory: "@voyant-travel/inventory",
-  notifications: "@voyant-travel/notifications",
-} as const
-
 type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
 
+/** Deployment adapter consumed by the Bookings package bootstrap. */
 export function registerBookingsWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): void {
-  const env = workflowEnvironment(bindings)
-  const runtime = createFinanceStaleBookingHoldsRuntime({
-    resolveDb: () => createWorkflowDb(env),
-    userId: "system",
-  })
-  container.register(BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY, runtime)
+  const env = resolveNodeWorkflowEnvironment(bindings)
+  container.register(
+    BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
+    createFinanceStaleBookingHoldsRuntime({
+      resolveDb: () => createWorkflowDb(env),
+      userId: "system",
+    }),
+  )
 }
 
+/** Deployment adapter consumed by the Inventory package bootstrap. */
+export function registerInventoryWorkflowService(
+  container: ModuleContainer,
+  bindings: OperatorWorkflowBindings,
+): void {
+  const env = resolveNodeWorkflowEnvironment(bindings)
+  container.register(
+    PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
+    createProductsGeneratePdfWorkflowRuntime({
+      resolveDb: () => createWorkflowDb(env),
+      resolvePrinter: () => createProductBrochurePrinter(env),
+    }),
+  )
+}
+
+/** Deployment adapter consumed by the Distribution package bootstrap. */
 export async function registerDistributionWorkflowService(
   container: ModuleContainer,
   bindings: OperatorWorkflowBindings,
 ): Promise<void> {
-  const env = workflowEnvironment(bindings)
+  const env = resolveNodeWorkflowEnvironment(bindings)
   const appBindings = operatorBindings(bindings)
   const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
   const entries = await createChannelPushWorkflowRuntimeEntries({
@@ -80,165 +90,94 @@ export async function registerDistributionWorkflowService(
     withDb: (operation) => withDbFromEnv(appBindings, operation),
     resolveRegistry: () => ensureBookingEngineRegistry(env),
   })
-  for (const [key, runtime] of entries) {
-    container.register(key, runtime)
-  }
+  for (const [key, runtime] of entries) container.register(key, runtime)
 }
 
-export function registerInventoryWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  const runtime = createProductsGeneratePdfWorkflowRuntime({
-    resolveDb: () => createWorkflowDb(env),
-    resolvePrinter: () => createProductBrochurePrinter(env),
-  })
-  container.register(PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY, runtime)
-}
-
-export function registerNotificationsWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  container.register(
-    NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY,
-    createNotificationsWorkflowRuntime(bindings),
-  )
-}
-
-export function registerCruisesWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  const appBindings = operatorBindings(bindings)
-  const runtime: CruisesExternalRefreshWorkflowRuntime = {
-    withOptions: (operation) =>
-      withDbFromEnv(appBindings, async (rawDb) => {
-        const db = operatorPostgresDb(rawDb)
-        const embeddings = buildEmbeddingProvider(env)
-        const indexer = buildTypesenseIndexer(env, embeddings)
-        if (!indexer) return operation({ db })
-
-        const indexerService = createIndexerService({
-          adapter: indexer,
-          slices: await loadCatalogSlices(rawDb),
-          registries: getFieldPolicyRegistries(),
-        })
-        await indexerService.ensureCollections()
-        return operation({
-          db,
-          sourceAdapterRegistry: await ensureBookingEngineRegistry(env),
-          indexerService,
-          fieldPolicyRegistries: getFieldPolicyRegistries(),
-          wrapCatalogBuilder: (builder) => withEmbedding(builder, embeddings),
-          onCatalogProgress(event) {
-            console.info("[external-cruise-refresh] catalog page", event)
-          },
-        })
-      }),
-  }
-  container.register(CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY, runtime)
-}
-
-export function registerEventOutboxWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const appBindings = operatorBindings(bindings)
-  const runtime: EventOutboxWorkflowRuntime = {
-    withDb: (operation) => withDbFromEnv(appBindings, (db) => operation(operatorPostgresDb(db))),
-    async resolveEventBus() {
-      const { app } = await import("../app.js")
-      await app.ready(appBindings)
-      return app.eventBus
-    },
-    warn: (message) => console.warn(message),
-  }
-  container.register(EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY, runtime)
-}
-
+/** Deployment adapter consumed by the Notifications package bootstrap. */
 export function createNotificationsWorkflowRuntime(
   bindings: OperatorWorkflowBindings,
 ): NotificationReminderWorkflowRuntime {
-  const env = workflowEnvironment(bindings)
-  return {
+  const env = resolveNodeWorkflowEnvironment(bindings)
+  return createNotificationReminderWorkflowRuntime({
     resolveDb: () => createWorkflowDb(env),
     resolveEnv: () => env,
     resolveRuntimeOptions: (runtimeEnv) => getNotificationTaskRuntime(runtimeEnv),
-  }
+  })
 }
 
+/** Reuse graph-bootstrapped package services and add deployment-only host adapters. */
 export async function createOperatorWorkflowServiceResolver(
   bindings: OperatorWorkflowBindings,
   selectedUnitIds: ReadonlySet<string>,
 ): Promise<ModuleContainer> {
-  const container = createContainer()
-  registerCatalogDraftReaperWorkflowService(container, bindings)
-  registerPromotionBoundaryWorkflowService(container, bindings)
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.bookings)) {
-    registerBookingsWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.cruises)) {
-    registerCruisesWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.db)) {
-    registerEventOutboxWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.inventory)) {
-    registerInventoryWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.notifications)) {
-    registerNotificationsWorkflowService(container, bindings)
-  }
-  if (selectedUnitIds.has(OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS.distribution)) {
-    await registerDistributionWorkflowService(container, bindings)
-  }
-  return container
-}
+  const appBindings = operatorBindings(bindings)
+  const env = resolveNodeWorkflowEnvironment(bindings)
+  const { app } = await import("../app.js")
+  await app.ready(appBindings)
 
-function registerCatalogDraftReaperWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  const runtime: CatalogDraftReaperRuntime = {
+  app.services.register(
+    CATALOG_DRAFT_REAPER_RUNTIME_KEY,
+    createCatalogDraftReaperRuntime({
+      withDb: (operation) => operation(createWorkflowDb(env)),
+      resolveSourceRegistry: () =>
+        import("../lib/booking-engine-runtime.js").then((runtime) =>
+          runtime.ensureBookingEngineRegistry(appBindings),
+        ),
+      resolveOwnedHandlers: () =>
+        import("../lib/booking-engine-runtime.js").then((runtime) =>
+          runtime.getOwnedBookingHandlerRegistry(appBindings),
+        ),
+      reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
+    }),
+  )
+  app.services.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, {
     withDb: (operation) => operation(createWorkflowDb(env)),
-    resolveSourceRegistry: () =>
-      import("../lib/booking-engine-runtime.js").then((module) =>
-        module.ensureBookingEngineRegistry(env as AppBindings),
-      ),
-    resolveOwnedHandlers: () =>
-      import("../lib/booking-engine-runtime.js").then((module) =>
-        module.getOwnedBookingHandlerRegistry(env as AppBindings),
-      ),
-    reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
-  }
-  container.register(CATALOG_DRAFT_REAPER_RUNTIME_KEY, runtime)
-}
+    createReindexService: () => createBulkReindexProductsService(appBindings),
+  } satisfies PromotionBoundarySchedulerRuntime)
+  if (selectedUnitIds.has("@voyant-travel/cruises"))
+    app.services.register(
+      CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
+      createCruisesExternalRefreshWorkflowRuntime({
+        withOptions: (operation) =>
+          withDbFromEnv(appBindings, async (rawDb) => {
+            const db = operatorPostgresDb(rawDb)
+            const embeddings = buildEmbeddingProvider(env)
+            const indexer = buildTypesenseIndexer(env, embeddings)
+            if (!indexer) return operation({ db })
 
-function registerPromotionBoundaryWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  const runtime: PromotionBoundarySchedulerRuntime = {
-    withDb: (operation) => operation(createWorkflowDb(env)),
-    createReindexService: () => createBulkReindexProductsService(env as AppBindings),
-  }
-  container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, runtime)
+            const indexerService = createIndexerService({
+              adapter: indexer,
+              slices: await loadCatalogSlices(rawDb),
+              registries: getFieldPolicyRegistries(),
+            })
+            await indexerService.ensureCollections()
+            const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
+            return operation({
+              db,
+              sourceAdapterRegistry: await ensureBookingEngineRegistry(env),
+              indexerService,
+              fieldPolicyRegistries: getFieldPolicyRegistries(),
+              wrapCatalogBuilder: (builder) => withEmbedding(builder, embeddings),
+              onCatalogProgress: (event) =>
+                console.info("[external-cruise-refresh] catalog page", event),
+            })
+          }),
+      }),
+    )
+  if (selectedUnitIds.has("@voyant-travel/db"))
+    app.services.register(
+      EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
+      createEventOutboxWorkflowRuntime({
+        withDb: (operation) =>
+          withDbFromEnv(appBindings, (db) => operation(operatorPostgresDb(db))),
+        resolveEventBus: async () => app.eventBus,
+        warn: (message) => console.warn(message),
+      }),
+    )
+  return app.services
 }
 
 function createWorkflowDb(env: NodeJS.ProcessEnv): PostgresJsDatabase {
   if (!env.DATABASE_URL) throw new Error("Workflow runtime requires DATABASE_URL")
   return createDbClient(env.DATABASE_URL, { adapter: "node" }) as PostgresJsDatabase
-}
-
-function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env }
-  for (const [key, value] of Object.entries(bindings)) {
-    if (typeof value === "string") env[key] = value
-  }
-  return env
 }

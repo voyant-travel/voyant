@@ -18,6 +18,17 @@ export interface CatalogDraftReaperRuntime {
   now?(): number
 }
 
+export interface CatalogDraftReaperRuntimeOptions extends Omit<CatalogDraftReaperRuntime, "now"> {
+  now?: () => number
+}
+
+/** Build the package-owned draft reaper runtime from deployment host capabilities. */
+export function createCatalogDraftReaperRuntime(
+  options: CatalogDraftReaperRuntimeOptions,
+): CatalogDraftReaperRuntime {
+  return options
+}
+
 export interface DraftReaperResult {
   scanned: number
   released: number
