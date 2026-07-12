@@ -8,6 +8,8 @@ const graphNativeFiles = [
   "packages/framework/src/index.ts",
   "packages/framework/src/deployment-artifacts.ts",
   "packages/framework/src/deployment-graph.ts",
+  "packages/framework/src/node-deployment-artifacts.ts",
+  "packages/framework/src/node-provider-plan.ts",
   "packages/framework/src/deployment-requirements.ts",
   "packages/framework/src/deployment-types.ts",
   "packages/framework/src/scheduled-jobs.ts",

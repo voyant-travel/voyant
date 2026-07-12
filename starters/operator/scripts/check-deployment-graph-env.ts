@@ -1,11 +1,11 @@
 import {
-  assertOperatorDeploymentGraphResourceEnv,
-  loadOperatorDeploymentGraphArtifacts,
-} from "../src/deployment-graph-artifacts"
+  resolveVoyantNodeProviderPlan,
+  validateVoyantNodeProviderPlanEnv,
+} from "@voyant-travel/framework/node-host"
 import {
-  resolveOperatorNodeProviderPlan,
-  validateOperatorNodeProviderPlanEnv,
-} from "../src/operator-node-provider-plan"
+  assertVoyantNodeDeploymentGraphResourceEnv,
+  loadDeploymentGraphArtifacts,
+} from "../src/deployment-graph-artifacts"
 
 function loadLocalEnv(): void {
   try {
@@ -21,13 +21,13 @@ function loadLocalEnv(): void {
 function main(): void {
   loadLocalEnv()
 
-  const summary = loadOperatorDeploymentGraphArtifacts()
-  assertOperatorDeploymentGraphResourceEnv(summary, process.env)
-  const providerPlan = resolveOperatorNodeProviderPlan(summary.providers)
-  const providerPlanIssues = validateOperatorNodeProviderPlanEnv(providerPlan, process.env)
+  const summary = loadDeploymentGraphArtifacts()
+  assertVoyantNodeDeploymentGraphResourceEnv(summary, process.env)
+  const providerPlan = resolveVoyantNodeProviderPlan(summary.providers)
+  const providerPlanIssues = validateVoyantNodeProviderPlanEnv(providerPlan, process.env)
   if (providerPlanIssues.length > 0) {
     throw new Error(
-      `Operator deployment graph provider plan requirements are not satisfied:\n${formatIssues(
+      `Node deployment graph provider plan requirements are not satisfied:\n${formatIssues(
         providerPlanIssues,
       )}`,
     )

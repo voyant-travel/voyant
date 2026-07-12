@@ -4,8 +4,8 @@
 // POST `/__voyant/scheduled?schedule=<id>&cron=<expr>` on the Node runtime.
 
 import {
-  loadOperatorDeploymentGraphArtifacts,
-  type OperatorDeploymentGraphScheduledJob,
+  loadDeploymentGraphArtifacts,
+  type VoyantNodeDeploymentGraphScheduledJob,
 } from "./deployment-graph-artifacts"
 
 /** One scheduled job: a stable id, its cron expression, and what it does. */
@@ -22,7 +22,7 @@ export interface CronJob {
   input?: unknown
 }
 
-const GRAPH_OPERATOR_CRON_JOBS = loadOperatorDeploymentGraphArtifacts().scheduledJobs
+const GRAPH_OPERATOR_CRON_JOBS = loadDeploymentGraphArtifacts().scheduledJobs
 
 function standardCron(id: string): string {
   const job = GRAPH_OPERATOR_CRON_JOBS.find((entry) => entry.id === id)
@@ -46,7 +46,7 @@ export const OUTBOX_DRAIN_CRON = standardCron("outbox-drain")
  */
 export const OPERATOR_CRON_JOBS: readonly CronJob[] = GRAPH_OPERATOR_CRON_JOBS.map(toCronJob)
 
-function toCronJob(job: OperatorDeploymentGraphScheduledJob): CronJob {
+function toCronJob(job: VoyantNodeDeploymentGraphScheduledJob): CronJob {
   return {
     id: job.id,
     cron: job.cron,

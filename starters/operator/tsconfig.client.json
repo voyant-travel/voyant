@@ -1112,6 +1112,7 @@
       "@voyant-travel/framework/managed-runtime": [
         "../../packages/framework/dist/managed-runtime.d.ts"
       ],
+      "@voyant-travel/framework/node-host": ["../../packages/framework/dist/node-host.d.ts"],
       "@voyant-travel/framework/operator-distribution": [
         "../../packages/framework/dist/operator-distribution.d.ts"
       ],

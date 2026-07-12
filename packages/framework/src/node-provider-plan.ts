@@ -1,18 +1,18 @@
-export type OperatorNodeObjectStorageProvider = "memory" | "r2" | "s3"
-export type OperatorNodeKvProvider = "memory" | "postgres" | "redis"
+export type VoyantNodeObjectStorageProvider = "memory" | "r2" | "s3"
+export type VoyantNodeKvProvider = "memory" | "postgres" | "redis"
 
-export interface OperatorNodeProviderPlan {
-  storage: OperatorNodeObjectStorageProvider
-  cache: OperatorNodeKvProvider
-  sharedState: OperatorNodeKvProvider
-  rateLimit: OperatorNodeKvProvider
+export interface VoyantNodeProviderPlan {
+  storage: VoyantNodeObjectStorageProvider
+  cache: VoyantNodeKvProvider
+  sharedState: VoyantNodeKvProvider
+  rateLimit: VoyantNodeKvProvider
 }
 
 const KV_PROVIDER_ROLES = ["cache", "sharedState", "rateLimit"] as const
 
-export function resolveOperatorNodeProviderPlan(
+export function resolveVoyantNodeProviderPlan(
   providers: Readonly<Record<string, string>>,
-): OperatorNodeProviderPlan {
+): VoyantNodeProviderPlan {
   return {
     storage: objectStorageProvider(providers, "storage"),
     cache: kvProvider(providers, "cache"),
@@ -21,8 +21,8 @@ export function resolveOperatorNodeProviderPlan(
   }
 }
 
-export function validateOperatorNodeProviderPlanEnv(
-  plan: OperatorNodeProviderPlan,
+export function validateVoyantNodeProviderPlanEnv(
+  plan: VoyantNodeProviderPlan,
   env: Record<string, unknown>,
 ): string[] {
   const required = new Set<string>()
@@ -42,11 +42,9 @@ export function validateOperatorNodeProviderPlanEnv(
 
   const issues = Array.from(required)
     .filter((name) => !present(env[name]))
-    .map((name) => `env ${name} is required by the operator Node provider plan`)
+    .map((name) => `env ${name} is required by the Node provider plan`)
   if (requiresPostgresUrl && !present(env.DATABASE_URL) && !present(env.DATABASE_URL_DIRECT)) {
-    issues.push(
-      "env DATABASE_URL or DATABASE_URL_DIRECT is required by the operator Node provider plan",
-    )
+    issues.push("env DATABASE_URL or DATABASE_URL_DIRECT is required by the Node provider plan")
   }
   return issues
 }
@@ -54,24 +52,24 @@ export function validateOperatorNodeProviderPlanEnv(
 function objectStorageProvider(
   providers: Readonly<Record<string, string>>,
   role: "storage",
-): OperatorNodeObjectStorageProvider {
+): VoyantNodeObjectStorageProvider {
   const provider = requireProvider(providers, role)
   if (provider === "none" || provider === "memory") return "memory"
   if (provider === "r2" || provider === "s3") return provider
   throw new Error(
-    `deployment graph providers.${role}=${provider} is not supported by the operator Node runtime`,
+    `deployment graph providers.${role}=${provider} is not supported by the Node runtime`,
   )
 }
 
 function kvProvider(
   providers: Readonly<Record<string, string>>,
   role: (typeof KV_PROVIDER_ROLES)[number],
-): OperatorNodeKvProvider {
+): VoyantNodeKvProvider {
   const provider = requireProvider(providers, role)
   if (provider === "none" || provider === "memory") return "memory"
   if (provider === "redis" || provider === "postgres") return provider
   throw new Error(
-    `deployment graph providers.${role}=${provider} is not supported by the operator Node runtime`,
+    `deployment graph providers.${role}=${provider} is not supported by the Node runtime`,
   )
 }
 

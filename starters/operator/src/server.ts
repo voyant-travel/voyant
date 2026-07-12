@@ -6,6 +6,13 @@ import {
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
 } from "@voyant-travel/db/runtime"
+import {
+  resolveVoyantNodeProviderPlan,
+  type VoyantNodeKvProvider,
+  type VoyantNodeObjectStorageProvider,
+  type VoyantNodeProviderPlan,
+  validateVoyantNodeProviderPlanEnv,
+} from "@voyant-travel/framework/node-host"
 import { createMemoryRateLimitStore, createRedisRateLimitStore } from "@voyant-travel/hono"
 import {
   composeNodeEnv,
@@ -20,19 +27,11 @@ import {
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
-
 import {
-  assertOperatorDeploymentGraphResourceEnv,
-  loadOperatorDeploymentGraphArtifacts,
+  assertVoyantNodeDeploymentGraphResourceEnv,
+  loadDeploymentGraphArtifacts,
 } from "./deployment-graph-artifacts"
 import { fetch as appFetch, scheduled } from "./entry"
-import {
-  type OperatorNodeKvProvider,
-  type OperatorNodeObjectStorageProvider,
-  type OperatorNodeProviderPlan,
-  resolveOperatorNodeProviderPlan,
-  validateOperatorNodeProviderPlanEnv,
-} from "./operator-node-provider-plan"
 
 /**
  * Node entry for the operator (voyant#2966). This file is also TanStack Start's
@@ -57,14 +56,14 @@ import {
 /** Built client assets (`dist/client`), served for `/assets/*` and public files. */
 const CLIENT_DIR =
   process.env.CLIENT_ASSETS_DIR ?? fileURLToPath(new URL("../client", import.meta.url))
-const deploymentGraphArtifacts = loadOperatorDeploymentGraphArtifacts()
-const deploymentProviderPlan = resolveOperatorNodeProviderPlan(deploymentGraphArtifacts.providers)
-assertOperatorNodeProviderPlanEnv(deploymentProviderPlan, process.env)
+const deploymentGraphArtifacts = loadDeploymentGraphArtifacts()
+const deploymentProviderPlan = resolveVoyantNodeProviderPlan(deploymentGraphArtifacts.providers)
+assertVoyantNodeProviderPlanEnv(deploymentProviderPlan, process.env)
 
 function objectStore(
   bucketEnvName: string,
   bucketEnv: string | undefined,
-  provider: OperatorNodeObjectStorageProvider = deploymentProviderPlan.storage,
+  provider: VoyantNodeObjectStorageProvider = deploymentProviderPlan.storage,
 ): R2BucketShim {
   switch (provider) {
     case "memory":
@@ -107,7 +106,7 @@ function resolveSharedStoreDb(role: string) {
   return sharedStoreDb
 }
 
-function createRuntimeStores(plan: OperatorNodeProviderPlan = deploymentProviderPlan): {
+function createRuntimeStores(plan: VoyantNodeProviderPlan = deploymentProviderPlan): {
   CACHE: KVStore
   RATE_LIMIT: KVStore
   RATE_LIMIT_STORE: NonNullable<AppBindings["RATE_LIMIT_STORE"]>
@@ -124,7 +123,7 @@ function createRuntimeStores(plan: OperatorNodeProviderPlan = deploymentProvider
 
 function createKvStoreForProvider(
   role: "cache" | "rateLimit",
-  provider: OperatorNodeKvProvider,
+  provider: VoyantNodeKvProvider,
   l1Store: KVStore,
 ): KVStore {
   switch (provider) {
@@ -144,7 +143,7 @@ function createKvStoreForProvider(
 }
 
 function createRateLimitStoreForProvider(
-  provider: OperatorNodeKvProvider,
+  provider: VoyantNodeKvProvider,
 ): NonNullable<AppBindings["RATE_LIMIT_STORE"]> {
   switch (provider) {
     case "memory":
@@ -225,7 +224,7 @@ export default {
 // spawn a second listener — only a direct `node dist/server/server.js` run does.
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
-  assertOperatorDeploymentGraphResourceEnv(deploymentGraphArtifacts, process.env)
+  assertVoyantNodeDeploymentGraphResourceEnv(deploymentGraphArtifacts, process.env)
 
   const handle = createNodeServer<AppBindings>({
     fetch: (request, bindings, ctx) => web.fetch(request, bindings, toExecutionContext(ctx)),
@@ -241,16 +240,14 @@ if (isMainModule) {
   )
 }
 
-function assertOperatorNodeProviderPlanEnv(
-  plan: OperatorNodeProviderPlan,
+function assertVoyantNodeProviderPlanEnv(
+  plan: VoyantNodeProviderPlan,
   envValues: Record<string, unknown>,
 ): void {
-  const issues = validateOperatorNodeProviderPlanEnv(plan, envValues)
+  const issues = validateVoyantNodeProviderPlanEnv(plan, envValues)
   if (issues.length === 0) return
   throw new Error(
-    `Operator deployment graph provider plan requirements are not satisfied:\n${formatIssues(
-      issues,
-    )}`,
+    `Node deployment graph provider plan requirements are not satisfied:\n${formatIssues(issues)}`,
   )
 }
 

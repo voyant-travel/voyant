@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { loadOperatorDeploymentGraphArtifacts } from "./deployment-graph-artifacts"
+import { loadDeploymentGraphArtifacts } from "./deployment-graph-artifacts"
 import {
   CHANNEL_PUSH_AVAILABILITY_CRON,
   OUTBOX_DRAIN_CRON,
@@ -61,7 +61,7 @@ describe("resolveOperatorCronJob", () => {
   })
 
   it("can dispatch every graph-derived scheduled job", () => {
-    const graph = loadOperatorDeploymentGraphArtifacts()
+    const graph = loadDeploymentGraphArtifacts()
 
     for (const job of graph.scheduledJobs) {
       expect(resolveOperatorCronJob({ scheduleId: job.id })).toMatchObject({

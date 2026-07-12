@@ -62,6 +62,10 @@ workload class well. On Node none of it is necessary.
   graph-declared required resource env or graph-selected provider env is
   missing. Local `.env` loading is only a source for satisfying the same graph
   contract; it is not a parallel deployment shape.
+- **Reusable host contract:** `@voyant-travel/framework/node-host` owns graph
+  artifact admission and graph-selected provider planning. An application keeps
+  only a path adapter that anchors generated artifacts to its own source tree
+  and concrete provider construction for its deployment environment.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:
   "node"`) is the production default — one resident pool per process. neon-http/WS
   remain the fallback adapters. See
@@ -119,7 +123,8 @@ Avoid:
 - `import { createStartHandler } from "@tanstack/react-start/server"` in `entry.ts`;
 - `import "./workflows.js"`.
 
-The mechanical checks live in `scripts/check-node-entrypoint.mjs` and
+The mechanical checks live in `scripts/check-node-entrypoint.mjs`,
+`scripts/check-generic-node-bootstrap-authority.mjs`, and
 `scripts/check-operator-docker-target.mjs` and are part of
 `pnpm verify:architecture`: they assert `src/server.ts` wires `createNodeServer`
 and graph artifact/resource validation, that `pnpm --filter operator dev` and

@@ -93,8 +93,8 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
   }
   if (
     !nodeEntrySource.includes('from "./deployment-graph-artifacts"') ||
-    !nodeEntrySource.includes("loadOperatorDeploymentGraphArtifacts") ||
-    !/^const\s+\w+\s*=\s*loadOperatorDeploymentGraphArtifacts\(\s*\)/m.test(nodeEntrySource)
+    !nodeEntrySource.includes("loadDeploymentGraphArtifacts") ||
+    !/^const\s+\w+\s*=\s*loadDeploymentGraphArtifacts\(\s*\)/m.test(nodeEntrySource)
   ) {
     violations.push({
       file: NODE_ENTRY,
@@ -107,8 +107,8 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
     })
   }
   if (
-    !nodeEntrySource.includes("assertOperatorDeploymentGraphResourceEnv") ||
-    !/assertOperatorDeploymentGraphResourceEnv\(\s*\w+\s*,\s*process\.env\s*\)/m.test(
+    !nodeEntrySource.includes("assertVoyantNodeDeploymentGraphResourceEnv") ||
+    !/assertVoyantNodeDeploymentGraphResourceEnv\(\s*\w+\s*,\s*process\.env\s*\)/m.test(
       nodeEntrySource,
     )
   ) {
@@ -135,9 +135,10 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
     })
   }
   if (
-    !nodeEntrySource.includes("resolveOperatorNodeProviderPlan") ||
+    !nodeEntrySource.includes('from "@voyant-travel/framework/node-host"') ||
+    !nodeEntrySource.includes("resolveVoyantNodeProviderPlan") ||
     !nodeEntrySource.includes("deploymentGraphArtifacts.providers") ||
-    !/^const\s+\w+\s*=\s*resolveOperatorNodeProviderPlan\(\s*deploymentGraphArtifacts\.providers\s*\)/m.test(
+    !/^const\s+\w+\s*=\s*resolveVoyantNodeProviderPlan\(\s*deploymentGraphArtifacts\.providers\s*\)/m.test(
       nodeEntrySource,
     )
   ) {
@@ -152,8 +153,8 @@ if (!existsSync(join(ROOT, NODE_ENTRY))) {
     })
   }
   if (
-    !nodeEntrySource.includes("validateOperatorNodeProviderPlanEnv") ||
-    !nodeEntrySource.includes("assertOperatorNodeProviderPlanEnv")
+    !nodeEntrySource.includes("validateVoyantNodeProviderPlanEnv") ||
+    !nodeEntrySource.includes("assertVoyantNodeProviderPlanEnv")
   ) {
     violations.push({
       file: NODE_ENTRY,
@@ -247,8 +248,8 @@ if (!existsSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK))) {
 } else {
   const graphEnvSource = readFileSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK), "utf-8")
   if (
-    !graphEnvSource.includes("loadOperatorDeploymentGraphArtifacts") ||
-    !graphEnvSource.includes("assertOperatorDeploymentGraphResourceEnv") ||
+    !graphEnvSource.includes("loadDeploymentGraphArtifacts") ||
+    !graphEnvSource.includes("assertVoyantNodeDeploymentGraphResourceEnv") ||
     !graphEnvSource.includes("process.env")
   ) {
     violations.push({
@@ -262,8 +263,8 @@ if (!existsSync(join(ROOT, OPERATOR_GRAPH_ENV_CHECK))) {
     })
   }
   if (
-    !graphEnvSource.includes("resolveOperatorNodeProviderPlan") ||
-    !graphEnvSource.includes("validateOperatorNodeProviderPlanEnv")
+    !graphEnvSource.includes("resolveVoyantNodeProviderPlan") ||
+    !graphEnvSource.includes("validateVoyantNodeProviderPlanEnv")
   ) {
     violations.push({
       file: OPERATOR_GRAPH_ENV_CHECK,
@@ -290,9 +291,11 @@ if (!existsSync(join(ROOT, OPERATOR_MIGRATE_SCRIPT))) {
 } else {
   const migrateSource = readFileSync(join(ROOT, OPERATOR_MIGRATE_SCRIPT), "utf-8")
   if (
-    !migrateSource.includes("loadOperatorDeploymentGraphArtifacts") ||
-    !migrateSource.includes("assertOperatorDeploymentGraphResourceEnv") ||
-    !/assertOperatorDeploymentGraphResourceEnv\(\s*\w+\s*,\s*process\.env\s*\)/m.test(migrateSource)
+    !migrateSource.includes("loadDeploymentGraphArtifacts") ||
+    !migrateSource.includes("assertVoyantNodeDeploymentGraphResourceEnv") ||
+    !/assertVoyantNodeDeploymentGraphResourceEnv\(\s*\w+\s*,\s*process\.env\s*\)/m.test(
+      migrateSource,
+    )
   ) {
     violations.push({
       file: OPERATOR_MIGRATE_SCRIPT,

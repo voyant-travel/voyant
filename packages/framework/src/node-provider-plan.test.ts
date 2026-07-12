@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  resolveOperatorNodeProviderPlan,
-  validateOperatorNodeProviderPlanEnv,
-} from "./operator-node-provider-plan"
+  resolveVoyantNodeProviderPlan,
+  validateVoyantNodeProviderPlanEnv,
+} from "./node-provider-plan"
 
-describe("resolveOperatorNodeProviderPlan", () => {
+describe("resolveVoyantNodeProviderPlan", () => {
   it("keeps memory providers even when external provider env is present", () => {
-    const plan = resolveOperatorNodeProviderPlan({
+    const plan = resolveVoyantNodeProviderPlan({
       storage: "memory",
       cache: "memory",
       sharedState: "memory",
@@ -21,7 +21,7 @@ describe("resolveOperatorNodeProviderPlan", () => {
       rateLimit: "memory",
     })
     expect(
-      validateOperatorNodeProviderPlanEnv(plan, {
+      validateVoyantNodeProviderPlanEnv(plan, {
         REDIS_URL: "redis://example.test:6379",
         DATABASE_URL: "postgres://user:pass@example.test:5432/voyant",
         R2_S3_ENDPOINT: "https://r2.example.test",
@@ -34,7 +34,7 @@ describe("resolveOperatorNodeProviderPlan", () => {
   })
 
   it("maps redis, postgres, and object storage graph providers to the Node plan", () => {
-    const plan = resolveOperatorNodeProviderPlan({
+    const plan = resolveVoyantNodeProviderPlan({
       storage: "r2",
       cache: "redis",
       sharedState: "redis",
@@ -50,26 +50,26 @@ describe("resolveOperatorNodeProviderPlan", () => {
   })
 
   it("validates env required by the selected graph providers", () => {
-    const plan = resolveOperatorNodeProviderPlan({
+    const plan = resolveVoyantNodeProviderPlan({
       storage: "s3",
       cache: "redis",
       sharedState: "redis",
       rateLimit: "postgres",
     })
 
-    expect(validateOperatorNodeProviderPlanEnv(plan, {})).toEqual([
-      "env R2_S3_ENDPOINT is required by the operator Node provider plan",
-      "env R2_ACCESS_KEY_ID is required by the operator Node provider plan",
-      "env R2_SECRET_ACCESS_KEY is required by the operator Node provider plan",
-      "env R2_BUCKET_MEDIA is required by the operator Node provider plan",
-      "env R2_BUCKET_DOCUMENTS is required by the operator Node provider plan",
-      "env REDIS_URL is required by the operator Node provider plan",
-      "env DATABASE_URL or DATABASE_URL_DIRECT is required by the operator Node provider plan",
+    expect(validateVoyantNodeProviderPlanEnv(plan, {})).toEqual([
+      "env R2_S3_ENDPOINT is required by the Node provider plan",
+      "env R2_ACCESS_KEY_ID is required by the Node provider plan",
+      "env R2_SECRET_ACCESS_KEY is required by the Node provider plan",
+      "env R2_BUCKET_MEDIA is required by the Node provider plan",
+      "env R2_BUCKET_DOCUMENTS is required by the Node provider plan",
+      "env REDIS_URL is required by the Node provider plan",
+      "env DATABASE_URL or DATABASE_URL_DIRECT is required by the Node provider plan",
     ])
   })
 
   it("accepts DATABASE_URL_DIRECT for Postgres provider roles", () => {
-    const plan = resolveOperatorNodeProviderPlan({
+    const plan = resolveVoyantNodeProviderPlan({
       storage: "memory",
       cache: "postgres",
       sharedState: "memory",
@@ -77,7 +77,7 @@ describe("resolveOperatorNodeProviderPlan", () => {
     })
 
     expect(
-      validateOperatorNodeProviderPlanEnv(plan, {
+      validateVoyantNodeProviderPlanEnv(plan, {
         DATABASE_URL_DIRECT: "postgres://user:pass@example.test:5432/voyant",
       }),
     ).toEqual([])
@@ -85,7 +85,7 @@ describe("resolveOperatorNodeProviderPlan", () => {
 
   it("rejects unsupported graph providers", () => {
     expect(() =>
-      resolveOperatorNodeProviderPlan({
+      resolveVoyantNodeProviderPlan({
         storage: "local-disk",
         cache: "memory",
         sharedState: "memory",
@@ -93,7 +93,7 @@ describe("resolveOperatorNodeProviderPlan", () => {
       }),
     ).toThrow(/providers\.storage=local-disk/)
     expect(() =>
-      resolveOperatorNodeProviderPlan({
+      resolveVoyantNodeProviderPlan({
         storage: "memory",
         cache: "memcached",
         sharedState: "memory",
@@ -104,7 +104,7 @@ describe("resolveOperatorNodeProviderPlan", () => {
 
   it("requires explicit graph provider roles used by the Node runtime", () => {
     expect(() =>
-      resolveOperatorNodeProviderPlan({
+      resolveVoyantNodeProviderPlan({
         storage: "memory",
         cache: "memory",
         rateLimit: "memory",
