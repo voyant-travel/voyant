@@ -1,5 +1,5 @@
-import type { IndexerSlice } from "@voyant-travel/catalog"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import type { IndexerSlice } from "./contract.js"
 
 import {
   createTypesenseCollectionAdmin,
@@ -8,7 +8,7 @@ import {
   listStaleDocuments,
   TypesenseCollectionAdminError,
   TypesenseDocumentSearchError,
-} from "./reindex-stale-documents"
+} from "./typesense-maintenance.js"
 
 const customerProductsSlice: IndexerSlice = {
   vertical: "products",

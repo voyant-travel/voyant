@@ -1,4 +1,5 @@
-import { collectionName, type IndexerSlice } from "@voyant-travel/catalog"
+import type { IndexerSlice } from "./contract.js"
+import { collectionName } from "./typesense.js"
 
 interface TypesenseCollectionSummary {
   name?: string

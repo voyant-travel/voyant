@@ -169,8 +169,9 @@ both the **vertical** registry (admin/public external cruise detail, refresh,
 detach, external booking — `cruiseAdminRoutes` / `cruisePublicRoutes`, mounted at
 `/v1/{admin,public}/cruises`) and the **catalog** `SourceAdapterRegistry` (content,
 discovery/sync, snapshot capture, booking-engine sourced inventory). The same seam
-runs in the live API (`booking-engine-runtime.ts`), the external-cruise-refresh
-cron, and the `sync:sources` CLI, so all paths stay consistent.
+runs in the live API and the external-cruise-refresh workflow. Bulk source sync is
+an operational command composed from the selected deployment graph; it is not
+implemented inside the standard project starter.
 
 Owned adapters are wrapped with a short-TTL read cache (`memoizeCruiseAdapter`,
 60s) automatically — push the **raw** adapter, don't pre-wrap. Repeated
