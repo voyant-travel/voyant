@@ -126,8 +126,11 @@ async function main(): Promise<void> {
   if (!runtimeEntry.includes(first.contentHash)) {
     failures.push("expected generated runtime entry to reference the resolved graph hash")
   }
-  if (!runtimeEntry.includes("@voyant-travel/framework/managed-runtime")) {
-    failures.push("expected generated runtime entry to start from the framework managed runtime")
+  if (!runtimeEntry.includes("@voyant-travel/framework/node-runtime")) {
+    failures.push("expected generated runtime entry to start from the generic Node runtime")
+  }
+  if (runtimeEntry.includes("profileSnapshotPath:")) {
+    failures.push("expected generated runtime entry to boot directly from graph artifacts")
   }
 
   const artifactManifest = buildDeploymentArtifactManifest({

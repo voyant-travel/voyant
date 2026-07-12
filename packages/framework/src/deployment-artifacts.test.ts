@@ -339,11 +339,12 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("assertGeneratedDeploymentGraphArtifact()")
     expect(source).toContain("resolveGeneratedDeploymentRequirements")
     expect(source).toContain("resolveGeneratedRuntimeDeployment")
-    expect(source).toContain('await import("@voyant-travel/framework/managed-runtime")')
+    expect(source).toContain('await import("@voyant-travel/framework/node-runtime")')
     expect(
       source.indexOf("if (isMainModule) {\n  assertGeneratedDeploymentGraphArtifact()"),
-    ).toBeLessThan(source.indexOf('await import("@voyant-travel/framework/managed-runtime")'))
-    expect(source).toContain("startManagedProfileRuntime")
+    ).toBeLessThan(source.indexOf('await import("@voyant-travel/framework/node-runtime")'))
+    expect(source).toContain("startVoyantNodeRuntime")
+    expect(source).not.toContain("profileSnapshotPath:")
     expect(source).toContain("deployment: resolveGeneratedRuntimeDeployment()")
     expect(source).toContain("deploymentRequirements: resolveGeneratedDeploymentRequirements()")
     expect(source).toContain('from "./graph-runtime.generated.js"')

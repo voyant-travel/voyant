@@ -547,7 +547,7 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
-import type { ManagedProfileRuntimeDeployment } from "@voyant-travel/framework/managed-runtime"
+import type { VoyantNodeRuntimeDeployment } from "@voyant-travel/framework/node-runtime"
 import { createGeneratedGraphRuntime } from ${quote(graphRuntimePath)}
 
 export const GENERATED_DEPLOYMENT_GRAPH_SCHEMA_VERSION = ${quote(input.graph.schemaVersion)} as const
@@ -630,7 +630,7 @@ export function resolveGeneratedDeploymentRequirements(): VoyantGraphDeploymentR
   return candidate as VoyantGraphDeploymentRequirements
 }
 
-export function resolveGeneratedRuntimeDeployment(): ManagedProfileRuntimeDeployment {
+export function resolveGeneratedRuntimeDeployment(): VoyantNodeRuntimeDeployment {
   const deployment = readGeneratedDeploymentGraph().deployment
   if (!deployment || typeof deployment !== "object" || Array.isArray(deployment)) {
     throw new Error("Generated deployment graph deployment is missing or invalid")
@@ -646,7 +646,7 @@ export function resolveGeneratedRuntimeDeployment(): ManagedProfileRuntimeDeploy
   if (!isGeneratedRecord(candidate.providers)) {
     throw new Error("Generated deployment graph deployment.providers is missing or invalid")
   }
-  const providers: ManagedProfileRuntimeDeployment["providers"] = ${formatRuntimeDeploymentProviders()}
+  const providers: VoyantNodeRuntimeDeployment["providers"] = ${formatRuntimeDeploymentProviders()}
   return {
     mode: candidate.mode,
     providers,
@@ -654,18 +654,18 @@ export function resolveGeneratedRuntimeDeployment(): ManagedProfileRuntimeDeploy
 }
 
 function requireGeneratedDeploymentProvider<
-  Role extends keyof ManagedProfileRuntimeDeployment["providers"],
+  Role extends keyof VoyantNodeRuntimeDeployment["providers"],
 >(
   providers: Record<string, unknown>,
   role: Role,
-): ManagedProfileRuntimeDeployment["providers"][Role] {
+): VoyantNodeRuntimeDeployment["providers"][Role] {
   const provider = providers[role]
   if (typeof provider !== "string" || provider.trim().length === 0) {
     throw new Error(
       \`Generated deployment graph deployment.providers.\${role} must be a non-empty string\`,
     )
   }
-  return provider as ManagedProfileRuntimeDeployment["providers"][Role]
+  return provider as VoyantNodeRuntimeDeployment["providers"][Role]
 }
 
 function isGeneratedRecord(value: unknown): value is Record<string, unknown> {
@@ -696,15 +696,14 @@ function readGeneratedDeploymentGraph(): {
 const isMainModule = import.meta.url === pathToFileURL(process.argv[1] ?? "").href
 if (isMainModule) {
   assertGeneratedDeploymentGraphArtifact()
-  const { startManagedProfileRuntime } = await import("@voyant-travel/framework/managed-runtime")
-  const handle = await startManagedProfileRuntime({
-    profileSnapshotPath: resolveGeneratedProfileSnapshotPath(),
+  const { startVoyantNodeRuntime } = await import("@voyant-travel/framework/node-runtime")
+  const handle = await startVoyantNodeRuntime({
     deployment: resolveGeneratedRuntimeDeployment(),
     deploymentRequirements: resolveGeneratedDeploymentRequirements(),
     graphRuntime: createGeneratedGraphRuntime(),
   })
   console.info(
-    \`[managed-runtime] Node runtime listening on :\${handle.port} (\${GENERATED_DEPLOYMENT_GRAPH_HASH})\`,
+    \`[node-runtime] Node runtime listening on :\${handle.port} (\${GENERATED_DEPLOYMENT_GRAPH_HASH})\`,
   )
 }
 

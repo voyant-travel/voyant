@@ -8,6 +8,7 @@ Related:
 - [deployment-targets.md](./deployment-targets.md)
 - [managed-profile-contract.md](./managed-profile-contract.md)
 - [managed-profile-runtime.md](./managed-profile-runtime.md)
+- [node-runtime-authority.md](./node-runtime-authority.md)
 - [migration-collector-d2.md](./migration-collector-d2.md)
 - [module-provider-plugin-taxonomy.md](./module-provider-plugin-taxonomy.md)
 - [packaged-admin-rfc.md](./packaged-admin-rfc.md)

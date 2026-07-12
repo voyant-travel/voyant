@@ -869,6 +869,7 @@
       "@voyant-travel/framework/graph-lifecycle": ["./dist/graph-lifecycle.d.ts"],
       "@voyant-travel/framework/managed-jobs": ["./dist/managed-jobs.d.ts"],
       "@voyant-travel/framework/managed-runtime": ["./dist/managed-runtime.d.ts"],
+      "@voyant-travel/framework/node-runtime": ["./dist/node-runtime.d.ts"],
       "@voyant-travel/framework/operator-distribution": ["./dist/operator-distribution.d.ts"],
       "@voyant-travel/framework/profile": ["./dist/profile.d.ts"],
       "@voyant-travel/framework/project": ["./dist/project.d.ts"],

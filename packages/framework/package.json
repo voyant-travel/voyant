@@ -18,6 +18,7 @@
     "./project-artifacts": "./src/project-artifacts.ts",
     "./project": "./src/project.ts",
     "./project-runtime": "./src/project-runtime.ts",
+    "./node-runtime": "./src/node-runtime.ts",
     "./profile": "./src/profile.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
     "./managed-runtime": "./src/managed-runtime.ts"
@@ -184,6 +185,10 @@
         "types": "./dist/project-runtime.d.ts",
         "import": "./dist/project-runtime.js",
         "default": "./dist/project-runtime.js"
+      },
+      "./node-runtime": {
+        "types": "./dist/node-runtime.d.ts",
+        "import": "./dist/node-runtime.js"
       },
       "./managed-jobs": {
         "types": "./dist/managed-jobs.d.ts",
