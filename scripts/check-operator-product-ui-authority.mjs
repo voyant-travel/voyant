@@ -11,8 +11,8 @@ const failures = []
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
 )
-if (starterFiles.length > 194) {
-  failures.push(`operator starter source grew to ${starterFiles.length} files; ratchet is 194`)
+if (starterFiles.length > 162) {
+  failures.push(`operator starter source grew to ${starterFiles.length} files; ratchet is 162`)
 }
 
 for (const relativePath of [
@@ -21,9 +21,21 @@ for (const relativePath of [
   "starters/operator/src/components/voyant/booking-journey/storefront-booking-errors.ts",
   "starters/operator/src/components/voyant/booking-journey/storefront-booking-journey.test.ts",
   "starters/operator/src/components/voyant/booking-journey/storefront-booking-journey.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-accommodations-ui.test.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-accommodations.test.ts",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-accommodations.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-content.test.ts",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-content.ts",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-cruises.test.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-cruises.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-products.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-shared.tsx",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-slots.test.ts",
+  "starters/operator/src/routes/(storefront)/shop-product-detail-slots.ts",
+  "starters/operator/src/routes/(storefront)/shop.test.ts",
 ]) {
   if (existsSync(join(root, relativePath))) {
-    failures.push(`package-owned storefront booking code must stay deleted: ${relativePath}`)
+    failures.push(`package-owned storefront product UI must stay deleted: ${relativePath}`)
   }
 }
 
@@ -45,8 +57,34 @@ const requiredTokens = new Map([
   ],
   ["packages/bookings-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
+    "packages/catalog-react/src/storefront/index.ts",
+    ["fetchContent", "buildPublicCatalogSlotsUrl"],
+  ],
+  ["packages/catalog-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  ["packages/cruises-react/src/storefront/index.ts", ["CruiseDetailPage"]],
+  ["packages/cruises-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  ["packages/inventory-react/src/storefront/index.ts", ["ProductDetailPageProducts"]],
+  ["packages/inventory-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  [
+    "packages/storefront-react/src/storefront/index.ts",
+    ["StorefrontBrowsePage", "AccommodationDetailPage", "StorefrontUiProvider"],
+  ],
+  ["packages/storefront-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  [
     "starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
     ['from "@voyant-travel/bookings-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/(storefront)/shop.tsx",
+    ['from "@voyant-travel/storefront-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
+    [
+      'from "@voyant-travel/cruises-react/storefront"',
+      'from "@voyant-travel/inventory-react/storefront"',
+      'from "@voyant-travel/storefront-react/storefront"',
+    ],
   ],
   [
     "starters/operator/src/lib/admin-extensions.tsx",
@@ -76,4 +114,4 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
-console.log(`Operator product UI authority: OK (${starterFiles.length}/194 starter source files)`)
+console.log(`Operator product UI authority: OK (${starterFiles.length}/162 starter source files)`)

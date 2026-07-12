@@ -4,7 +4,7 @@ import {
   buildPublicCatalogSlotsUrl,
   publicCatalogSlotsQueryKey,
   resolveSelectedCatalogSlotId,
-} from "./shop-product-detail-slots"
+} from "./slots.js"
 
 describe("public catalog slots helpers", () => {
   it("includes storefront scope in the React Query key", () => {

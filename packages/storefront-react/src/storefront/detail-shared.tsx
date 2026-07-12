@@ -1,14 +1,13 @@
-import { Link } from "@tanstack/react-router"
+import type { ContentResolution } from "@voyant-travel/catalog-react/storefront"
 import { Button } from "@voyant-travel/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { Label } from "@voyant-travel/ui/components/label"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import type React from "react"
 
-import { type StorefrontMessages, useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import type { ContentResolution } from "./shop-product-detail-content"
+import { StorefrontLink, useStorefrontUi } from "./context.js"
 
-type DetailSharedMessages = StorefrontMessages["shopDetailShared"]
+type DetailSharedMessages = Record<string, string>
 
 export interface AvailabilitySlot {
   id: string
@@ -62,7 +61,7 @@ export function BookingSidebar({
   disabled: boolean
   onBook: () => void
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailShared
+  const t = useStorefrontUi().messages.shopDetailShared
   const priceLabel =
     totalCents > 0 && currency
       ? t.priceFrom.replace("{amount}", formatMoney(totalCents, currency))
@@ -135,7 +134,7 @@ export function DepartureSelect({
   value: string | undefined
   onChange: (id: string) => void
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailShared
+  const t = useStorefrontUi().messages.shopDetailShared
   return (
     <div className="space-y-1">
       <Label htmlFor="departure-select">{t.departure}</Label>
@@ -180,7 +179,7 @@ export function PaxBlock({
   setInfant: (n: number) => void
   showInfants?: boolean
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailShared
+  const t = useStorefrontUi().messages.shopDetailShared
   return (
     <div className="space-y-3">
       <Label>{t.travelers}</Label>
@@ -265,7 +264,7 @@ export function ContentResolutionHint({
 }: {
   resolution: ContentResolution | null
 }): React.ReactElement | null {
-  const t = useStorefrontMessagesOrDefault().shopDetailShared
+  const t = useStorefrontUi().messages.shopDetailShared
   if (!resolution) return null
   const hints: string[] = []
   if (resolution.match_kind && resolution.match_kind !== "exact" && resolution.served_locale) {
@@ -293,12 +292,12 @@ export function HeroImage({ url, alt }: { url: string; alt: string }): React.Rea
 }
 
 export function BackLink(): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailShared
+  const t = useStorefrontUi().messages.shopDetailShared
   return (
     <p>
-      <Link to="/shop" className="text-sm underline">
+      <StorefrontLink href="/shop" to="/shop" className="text-sm underline">
         {t.backToAll}
-      </Link>
+      </StorefrontLink>
     </p>
   )
 }
@@ -323,7 +322,7 @@ export function BodyMissing({
   entityModule: string
   entityId: string
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailShared
+  const t = useStorefrontUi().messages.shopDetailShared
   return (
     <Card>
       <CardHeader>

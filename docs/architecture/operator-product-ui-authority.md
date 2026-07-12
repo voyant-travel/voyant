@@ -22,9 +22,10 @@ from the standard Node Operator and a dedicated storefront.
 
 `node scripts/check-operator-product-ui-authority.mjs` enforces:
 
-- at most 194 files under `starters/operator/src`;
+- at most 162 files under `starters/operator/src`;
 - deleted booking-journey copies cannot return;
-- the package storefront subpath and thin route adapter remain connected;
+- deleted storefront browse and product-detail copies cannot return;
+- package storefront subpaths and thin route adapters remain connected;
 - generated selected-graph admin loading remains authoritative; and
 - `src/admin`, `src/custom-fields`, `src/extensions`, and `src/modules` remain
   available for project overrides.
@@ -33,10 +34,22 @@ New generic product UI must deepen an existing package React/admin surface and
 lower this ratchet when starter files are removed. Framework Node runtime, auth
 invitations/team, and starter link definitions are outside this extraction.
 
+## Second extraction: storefront product discovery
+
+`@voyant-travel/catalog-react/storefront` owns public content resolution and
+catalog-slot helpers. `@voyant-travel/storefront-react/storefront` owns the
+host-neutral storefront context, catalog browse page, shared detail primitives,
+and accommodation detail page. Product and cruise details are exposed from the
+matching `@voyant-travel/inventory-react/storefront` and
+`@voyant-travel/cruises-react/storefront` package surfaces.
+
+The Operator browse and detail route files only validate or read TanStack Router
+state, supply API URL, selected storefront scope, localized messages, and
+navigation, then render package components. Package code does not import starter
+aliases, environment helpers, message contexts, or TanStack Router.
+
 ## Remaining product UI clusters
 
-- Storefront browse and public product details: product, cruise, and
-  accommodation detail implementations plus slot/content helpers.
 - Storefront customer shell: market scope, customer messages, market selector,
   account pages, confirmation, and trip composer.
 - Public document/payment pages: proposal, payment-link, and accountant-token

@@ -17,6 +17,7 @@
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
     "./styles.css": "./src/styles.css",
+    "./storefront": "./src/storefront/index.ts",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
@@ -33,7 +34,9 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@voyant-travel/catalog-react": "workspace:^",
+    "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/cruises": "workspace:^",
+    "@voyant-travel/storefront-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -41,6 +44,12 @@
   },
   "peerDependenciesMeta": {
     "@voyant-travel/catalog-react": {
+      "optional": true
+    },
+    "@voyant-travel/catalog-contracts": {
+      "optional": true
+    },
+    "@voyant-travel/storefront-react": {
       "optional": true
     },
     "@voyant-travel/ui": {
@@ -56,7 +65,9 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/catalog-react": "workspace:^",
+    "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/cruises": "workspace:^",
+    "@voyant-travel/storefront-react": "workspace:^",
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/types": "workspace:^",
@@ -108,6 +119,11 @@
       },
       "./styles.css": {
         "default": "./src/styles.css"
+      },
+      "./storefront": {
+        "types": "./dist/storefront/index.d.ts",
+        "import": "./dist/storefront/index.js",
+        "default": "./dist/storefront/index.js"
       },
       "./i18n": {
         "types": "./dist/i18n/index.d.ts",

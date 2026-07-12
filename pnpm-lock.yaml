@@ -1526,9 +1526,15 @@ importers:
       '@voyant-travel/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyant-travel/cruises':
         specifier: workspace:^
         version: link:../cruises
+      '@voyant-travel/storefront-react':
+        specifier: workspace:^
+        version: link:../storefront-react
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -2566,6 +2572,9 @@ importers:
       '@voyant-travel/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyant-travel/finance':
         specifier: workspace:^
         version: link:../finance
@@ -2575,6 +2584,9 @@ importers:
       '@voyant-travel/inventory':
         specifier: workspace:^
         version: link:../inventory
+      '@voyant-travel/storefront-react':
+        specifier: workspace:^
+        version: link:../storefront-react
       '@voyant-travel/ui':
         specifier: workspace:^
         version: link:../ui
@@ -3962,6 +3974,15 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
+      '@voyant-travel/accommodations':
+        specifier: workspace:^
+        version: link:../accommodations
+      '@voyant-travel/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
+      '@voyant-travel/catalog-react':
+        specifier: workspace:^
+        version: link:../catalog-react
       '@voyant-travel/storefront':
         specifier: workspace:^
         version: link:../storefront

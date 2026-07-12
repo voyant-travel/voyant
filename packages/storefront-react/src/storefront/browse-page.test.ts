@@ -1,7 +1,7 @@
-import { storefrontCustomerBookableProductVerticals } from "@voyant-travel/storefront-react"
 import { describe, expect, it } from "vitest"
 
-import { shopSearchSchema } from "./shop"
+import { storefrontCustomerBookableProductVerticals } from "../routing.js"
+import { shopSearchSchema } from "./browse-page.js"
 
 /**
  * Storefront search must only surface verticals that have a working customer

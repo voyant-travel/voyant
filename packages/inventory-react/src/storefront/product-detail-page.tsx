@@ -1,18 +1,17 @@
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import {
   type BookingDraftV1,
   bookingDraftV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import { useBookingQuote } from "@voyant-travel/catalog-react/booking-engine"
+import {
+  buildPublicCatalogSlotsUrl,
+  type ContentResolution,
+  fetchContent,
+  publicCatalogSlotsQueryKey,
+  resolveSelectedCatalogSlotId,
+} from "@voyant-travel/catalog-react/storefront"
 import type { ProductContent } from "@voyant-travel/inventory/content-shape"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
-import { useEffect, useMemo, useState } from "react"
-
-import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
-import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   type AvailabilitySlot,
   BackLink,
@@ -24,12 +23,10 @@ import {
   DetailLayout,
   HeroImage,
   PaxBlock,
-} from "./shop-product-detail-shared"
-import {
-  buildPublicCatalogSlotsUrl,
-  publicCatalogSlotsQueryKey,
-  resolveSelectedCatalogSlotId,
-} from "./shop-product-detail-slots"
+  useStorefrontUi,
+} from "@voyant-travel/storefront-react/storefront"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
+import { useEffect, useMemo, useState } from "react"
 
 export function ProductDetailPageProducts({
   entityModule,
@@ -38,8 +35,7 @@ export function ProductDetailPageProducts({
   entityModule: string
   entityId: string
 }): React.ReactElement {
-  const navigate = useNavigate()
-  const scope = useStorefrontScope()
+  const { apiUrl, navigate, scope } = useStorefrontUi()
 
   const slots = useQuery({
     queryKey: publicCatalogSlotsQueryKey(entityModule, entityId, {
@@ -49,7 +45,7 @@ export function ProductDetailPageProducts({
     }),
     queryFn: async (): Promise<{ rows: AvailabilitySlot[] }> => {
       const res = await fetch(
-        buildPublicCatalogSlotsUrl(getApiUrl(), entityModule, entityId, {
+        buildPublicCatalogSlotsUrl(apiUrl, entityModule, entityId, {
           market: scope.marketId,
           locale: scope.locale,
           currency: scope.currency,
@@ -73,7 +69,7 @@ export function ProductDetailPageProducts({
     ],
     queryFn: () =>
       fetchContent<ProductContent>(
-        `${getApiUrl()}/v1/public/products/${encodeURIComponent(entityId)}/content`,
+        `${apiUrl}/v1/public/products/${encodeURIComponent(entityId)}/content`,
         { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
@@ -183,7 +179,7 @@ function ProductDetailBody({
   resolution: ContentResolution | null
   isLoading: boolean
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailProducts
+  const t = useStorefrontUi().messages.shopDetailProducts
   if (isLoading) return <BodySkeleton />
   if (!content) return <BodyMissing entityModule={entityModule} entityId={entityId} />
 

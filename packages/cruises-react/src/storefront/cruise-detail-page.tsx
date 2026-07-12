@@ -1,20 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import {
   type BookingDraftV1,
   bookingDraftV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import { useBookingQuote } from "@voyant-travel/catalog-react/booking-engine"
+import { type ContentResolution, fetchContent } from "@voyant-travel/catalog-react/storefront"
 import type { CruiseContent } from "@voyant-travel/cruises/content-shape"
-import { Badge } from "@voyant-travel/ui/components/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
-import { Label } from "@voyant-travel/ui/components/label"
-import { useEffect, useMemo, useState } from "react"
-
-import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
-import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
 import {
   BackLink,
   BodyMissing,
@@ -25,18 +16,22 @@ import {
   formatSailingDate,
   HeroImage,
   PaxStepper,
-} from "./shop-product-detail-shared"
+  useStorefrontUi,
+} from "@voyant-travel/storefront-react/storefront"
+import { Badge } from "@voyant-travel/ui/components/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
+import { Label } from "@voyant-travel/ui/components/label"
+import { useEffect, useMemo, useState } from "react"
 
 export function CruiseDetailPage({ entityId }: { entityId: string }): React.ReactElement {
-  const navigate = useNavigate()
-  const t = useStorefrontMessagesOrDefault().shopDetailCruises
-  const scope = useStorefrontScope()
+  const { apiUrl, messages, navigate, scope } = useStorefrontUi()
+  const t = messages.shopDetailCruises
 
   const content = useQuery({
     queryKey: ["public-cruise-content", entityId, scope.marketId, scope.locale, scope.currency],
     queryFn: () =>
       fetchContent<CruiseContent>(
-        `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`,
+        `${apiUrl}/v1/public/cruises/${encodeURIComponent(entityId)}/content`,
         { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
@@ -155,7 +150,7 @@ function CruiseDetailBody({
   onSelectCabinCategory: (id: string) => void
   occupancy: number
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailCruises
+  const t = useStorefrontUi().messages.shopDetailCruises
   return (
     <div className="space-y-4">
       {content.cruise.hero_image_url ? (
@@ -265,7 +260,7 @@ function CruiseDetailBody({
 }
 
 function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> }) {
-  const t = useStorefrontMessagesOrDefault().shopDetailCruises
+  const t = useStorefrontUi().messages.shopDetailCruises
   const deckPlanImages = [
     ...(ship.deck_plan_url ? [ship.deck_plan_url] : []),
     ...(ship.deck_plans ?? []).flatMap((deck) => (deck.image_url ? [deck.image_url] : [])),
@@ -342,7 +337,7 @@ function CruiseCabinCategorySummary({
 }: {
   category: CruiseContent["cabin_categories"][number]
 }) {
-  const t = useStorefrontMessagesOrDefault().shopDetailCruises
+  const t = useStorefrontUi().messages.shopDetailCruises
   const meta = [
     category.type,
     category.square_feet ? `${category.square_feet} sqft` : null,

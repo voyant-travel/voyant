@@ -7,23 +7,24 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (config: unknown) => config,
+  createFileRoute: () => (config: object) => ({ ...config, useNavigate: () => vi.fn() }),
   useParams: () => mocks.params,
 }))
 
-vi.mock("./shop-product-detail-accommodations", () => ({
+vi.mock("@voyant-travel/storefront-react/storefront", () => ({
+  StorefrontUiProvider: ({ children }: { children: React.ReactNode }) => children,
   AccommodationDetailPage: ({ entityId }: { entityId: string }) => (
     <div data-testid="accommodation-detail">{entityId}</div>
   ),
 }))
 
-vi.mock("./shop-product-detail-cruises", () => ({
+vi.mock("@voyant-travel/cruises-react/storefront", () => ({
   CruiseDetailPage: ({ entityId }: { entityId: string }) => (
     <div data-testid="cruise-detail">{entityId}</div>
   ),
 }))
 
-vi.mock("./shop-product-detail-products", () => ({
+vi.mock("@voyant-travel/inventory-react/storefront", () => ({
   ProductDetailPageProducts: ({
     entityModule,
     entityId,

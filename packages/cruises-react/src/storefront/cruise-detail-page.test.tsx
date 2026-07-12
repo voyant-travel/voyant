@@ -1,4 +1,3 @@
-import type { ReactNode } from "react"
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -13,23 +12,14 @@ vi.mock("@tanstack/react-query", () => ({
   useQuery: mocks.useQuery,
 }))
 
-vi.mock("@tanstack/react-router", async () => {
-  const React = await import("react")
-  return {
-    Link: ({ children, className, to }: { children: ReactNode; className?: string; to: string }) =>
-      React.createElement("a", { className, href: to }, children),
-    useNavigate: () => mocks.navigate,
-  }
-})
-
 vi.mock("@voyant-travel/catalog-react/booking-engine", () => ({
   useBookingQuote: mocks.useBookingQuote,
 }))
 
-import { StorefrontScopeProvider } from "@/lib/storefront-scope"
-import { AccommodationDetailPage } from "./shop-product-detail-accommodations"
+import { StorefrontUiProvider } from "@voyant-travel/storefront-react/storefront"
+import { CruiseDetailPage } from "./cruise-detail-page.js"
 
-describe("AccommodationDetailPage", () => {
+describe("CruiseDetailPage", () => {
   let host: HTMLDivElement
   let root: Root
 
@@ -48,14 +38,14 @@ describe("AccommodationDetailPage", () => {
     host.remove()
   })
 
-  it("shows unavailable detail content without a booking sidebar when accommodation content cannot resolve", async () => {
+  it("shows unavailable detail content without a booking sidebar when cruise content cannot resolve", async () => {
     mocks.useQuery.mockReturnValue({ data: null, isLoading: false })
 
     await act(async () => {
       root.render(
-        <StorefrontScopeProvider>
-          <AccommodationDetailPage entityId="cdmi_demo_hotel_20260629" />
-        </StorefrontScopeProvider>,
+        <StorefrontUiProvider value={testStorefrontUiValue()}>
+          <CruiseDetailPage entityId="cdmi_demo_cruise_20260629" />
+        </StorefrontUiProvider>,
       )
     })
 
@@ -65,3 +55,23 @@ describe("AccommodationDetailPage", () => {
     expect(host.querySelector("aside")).toBeNull()
   })
 })
+
+function testStorefrontUiValue() {
+  return {
+    apiUrl: "https://example.test",
+    navigate: mocks.navigate,
+    scope: {},
+    messages: {
+      shop: {},
+      shopDetailProducts: {},
+      shopDetailAccommodations: {},
+      shopDetailCruises: {},
+      shopDetailShared: {
+        backToAll: "Back to all",
+        bookThis: "Book this",
+        detailUnavailable: "Detail content isn't available for this item yet.",
+        subtotal: "Subtotal",
+      },
+    },
+  }
+}

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import {
   getAccommodationRatePlansForRoom,
   resolveInitialAccommodationSelection,
-} from "./shop-product-detail-accommodations"
+} from "./accommodation-detail-page.js"
 
 describe("storefront accommodation detail selection", () => {
   it("preserves a room-level route id instead of defaulting to another room", () => {

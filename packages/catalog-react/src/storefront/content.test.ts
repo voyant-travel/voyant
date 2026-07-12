@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { fetchContent } from "./shop-product-detail-content"
+import { fetchContent } from "./content.js"
 
 describe("fetchContent", () => {
   afterEach(() => {

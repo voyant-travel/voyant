@@ -1,20 +1,17 @@
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import type { AccommodationContent } from "@voyant-travel/accommodations/content-shape"
 import {
   type BookingDraftV1,
   bookingDraftV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import { useBookingQuote } from "@voyant-travel/catalog-react/booking-engine"
+import { type ContentResolution, fetchContent } from "@voyant-travel/catalog-react/storefront"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { DatePicker } from "@voyant-travel/ui/components/date-picker"
 import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useMemo, useState } from "react"
 
-import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
-import { type ContentResolution, fetchContent } from "./shop-product-detail-content"
+import { useStorefrontUi } from "./context.js"
 import {
   BackLink,
   BodyMissing,
@@ -24,12 +21,11 @@ import {
   DetailLayout,
   HeroImage,
   PaxBlock,
-} from "./shop-product-detail-shared"
+} from "./detail-shared.js"
 
 export function AccommodationDetailPage({ entityId }: { entityId: string }): React.ReactElement {
-  const navigate = useNavigate()
-  const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
-  const scope = useStorefrontScope()
+  const { apiUrl, messages, navigate, scope } = useStorefrontUi()
+  const t = messages.shopDetailAccommodations
 
   const content = useQuery({
     queryKey: [
@@ -41,7 +37,7 @@ export function AccommodationDetailPage({ entityId }: { entityId: string }): Rea
     ],
     queryFn: () =>
       fetchContent<AccommodationContent>(
-        `${getApiUrl()}/v1/public/accommodations/${encodeURIComponent(entityId)}/content`,
+        `${apiUrl}/v1/public/accommodations/${encodeURIComponent(entityId)}/content`,
         { locale: scope.locale, market: scope.marketId, currency: scope.currency },
       ),
     staleTime: 30_000,
@@ -281,7 +277,7 @@ function AccommodationUnavailableSidebar({
 }: {
   reason: "noRooms" | "noRatePlan" | "quoteFailed"
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
+  const t = useStorefrontUi().messages.shopDetailAccommodations
   const body =
     reason === "noRooms"
       ? t.unavailableNoRooms
@@ -318,7 +314,7 @@ function AccommodationDetailBody({
   onSelectRatePlan: (id: string) => void
   ratePlansForRoom: ReadonlyArray<AccommodationContent["rate_plans"][number]>
 }): React.ReactElement {
-  const t = useStorefrontMessagesOrDefault().shopDetailAccommodations
+  const t = useStorefrontUi().messages.shopDetailAccommodations
   return (
     <div className="space-y-4">
       {content.hotel.hero_image_url ? (
