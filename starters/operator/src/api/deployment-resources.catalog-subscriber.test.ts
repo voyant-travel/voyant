@@ -65,13 +65,11 @@ describe("Operator Catalog subscriber composition", () => {
 
   it("shares one Catalog projection runtime across all selected index subscribers", async () => {
     const provider = (await buildOperatorRuntimePorts()[catalogProjectionRuntimePort.id]) as {
-      createRuntime(bindings: unknown): Promise<unknown>
+      createRuntime(bindings: unknown): unknown
     }
     const bindings = { TYPESENSE_HOST: "http://localhost:8108" }
 
-    await expect(provider.createRuntime(bindings)).resolves.toBe(
-      await provider.createRuntime(bindings),
-    )
+    expect(provider.createRuntime(bindings)).toBe(provider.createRuntime(bindings))
   })
 
   it("does not lower or require Catalog subscriber ports when Catalog is deselected", async () => {

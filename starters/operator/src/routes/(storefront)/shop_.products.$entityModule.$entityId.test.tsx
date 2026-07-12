@@ -16,6 +16,7 @@ vi.mock("@voyant-travel/storefront-react/storefront", () => ({
     () =>
     ({ children }: { children: React.ReactNode }) =>
       children,
+  createStorefrontPresentationContribution: <T,>(contribution: T) => contribution,
   StorefrontUiProvider: ({ children }: { children: React.ReactNode }) => children,
   AccommodationDetailPage: ({ entityId }: { entityId: string }) => (
     <div data-testid="accommodation-detail">{entityId}</div>

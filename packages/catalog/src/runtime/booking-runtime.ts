@@ -20,7 +20,10 @@ import {
 import { createVoyantConnectClient, type PackageOffer } from "@voyant-travel/connect-sdk"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
-import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyant-travel/finance"
+import {
+  computeBookingItemTaxLine,
+  resolveBookingSellTaxRate,
+} from "@voyant-travel/finance/booking-tax"
 import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
 import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
 import { eq } from "drizzle-orm"

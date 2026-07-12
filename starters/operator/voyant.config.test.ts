@@ -19,15 +19,15 @@ describe("Operator project config", () => {
     })
     expect(config).not.toHaveProperty("presetLineage")
     expect(config.access?.presets?.map((preset) => preset.id)).toEqual([
-      "catalog-read",
-      "commerce-read",
-      "automation",
-      "read-only",
-      "full-access",
       "agent-customer",
       "agent-staff",
-      "public-catalog-reader",
+      "automation",
+      "catalog-read",
+      "commerce-read",
       "editor",
+      "full-access",
+      "public-catalog-reader",
+      "read-only",
     ])
 
     expect(config.selections?.modules).toHaveLength(38)
