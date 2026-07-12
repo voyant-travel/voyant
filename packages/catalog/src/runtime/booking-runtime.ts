@@ -26,6 +26,7 @@ import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
+import { requireCatalogRuntimeServices } from "../runtime-contracts.js"
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
@@ -50,7 +51,7 @@ function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOption
     // discount on base_amount.
     resolveEvaluatePromotions: commerce.createPromotionEvaluator,
     transformQuoteResult: async ({ c, db, result, request, provenance }) => {
-      const taxed = await applyOperatorTaxToQuoteResult(
+      const taxed = await requireCatalogRuntimeServices().applyTaxToQuoteResult(
         db,
         result,
         request.entityModule,
