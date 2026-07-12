@@ -1,23 +1,15 @@
 import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/operator-node-runtime"
-import { openNodeDatabase } from "@voyant-travel/db/runtime"
-import type { VoyantDb } from "@voyant-travel/hono"
 import { accessCatalog } from "../../../.voyant/access/selected-access-catalog.generated"
 
 import type { CurrentUser } from "../../lib/current-user-model"
 import { resolveEmailReplyTo } from "../../lib/notifications"
 import { OPERATOR_APP_NAME, operatorReporter } from "../../lib/observability"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
-import { buildBetterAuthCookieAdvancedOptions } from "./cookie-domain"
 
 const runtime = createOperatorAuthNodeRuntime<AppBindings>({
   accessCatalog,
   appName: OPERATOR_APP_NAME,
   reporter: operatorReporter,
-  openDatabase: (env) => {
-    const resource = openNodeDatabase(env)
-    return { db: resource.db as VoyantDb, dispose: resource.dispose }
-  },
-  cookieAdvanced: buildBetterAuthCookieAdvancedOptions,
   resolveEmailSender: (env) => {
     const cloud = tryGetCloudClient(env)
     if (!cloud) return null

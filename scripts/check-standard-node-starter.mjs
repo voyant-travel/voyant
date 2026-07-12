@@ -217,6 +217,8 @@ function inspectRepositoryAuthority(repoRoot) {
     "starters/operator/src/api/runtime/media-runtime.ts",
     "starters/operator/src/api/lib/db.ts",
     "starters/operator/src/api/lib/db.test.ts",
+    "starters/operator/src/api/auth/cookie-domain.ts",
+    "starters/operator/src/api/auth/cookie-domain.test.ts",
   ]) {
     if (existsSync(join(repoRoot, relativePath))) {
       violations.push(`checked-in starter authority must stay deleted: ${relativePath}`)
