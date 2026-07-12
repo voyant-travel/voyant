@@ -43,9 +43,8 @@ export type {
  *   from the page's own client-side queries; hosts with SSR aggregates
  *   supply a loader via {@link AdminCoreDashboardOptions.loader} (the
  *   loader and the page share the dashboard query keys).
- * - `/account` — `AccountPage` from `@voyant-travel/auth-react`. Localized when
- *   the host mounts `AuthUiMessagesProvider` (e.g. through the shell's
- *   `domainMessageProviders`); otherwise English defaults.
+ * - `/account` — `AccountPage` from `@voyant-travel/auth-react`, with its lazy
+ *   route-local `AuthUiMessagesProvider` metadata owned here.
  * - `/settings` — layout route (grouped sub-nav + outlet) with nested
  *   children (the first nested contributions — hosts bind them via
  *   `adminExtensionRouteOptions` for the statically known children plus
@@ -154,6 +153,10 @@ export function createAdminCoreExtension(
         }
         return { default: CoreAccountPage }
       },
+      routeMessagesProvider: () =>
+        import("@voyant-travel/auth-react/i18n").then((module) => ({
+          default: module.AuthUiMessagesProvider,
+        })),
     })
   }
 
@@ -241,6 +244,10 @@ function createBuiltInSettingsPage(
     case "api-tokens":
       return {
         ...base,
+        routeMessagesProvider: () =>
+          import("@voyant-travel/auth-react/i18n").then((module) => ({
+            default: module.AuthUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/auth-react/components/service-api-keys-page").then((module) => {
             function ApiTokensPage() {
@@ -253,6 +260,10 @@ function createBuiltInSettingsPage(
       return {
         ...base,
         ssr: "data-only",
+        routeMessagesProvider: () =>
+          import("@voyant-travel/distribution-react/i18n").then((module) => ({
+            default: module.DistributionUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/distribution-react/components/channels-page").then((module) =>
             adminRoutePageModule(module.ChannelsPage),
@@ -270,6 +281,10 @@ function createBuiltInSettingsPage(
     case "taxes":
       return {
         ...base,
+        routeMessagesProvider: () =>
+          import("@voyant-travel/finance-react/i18n").then((module) => ({
+            default: module.FinanceUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/finance-react/components/taxes-page").then((module) =>
             adminRoutePageModule(module.TaxesPage),
@@ -278,6 +293,10 @@ function createBuiltInSettingsPage(
     case "cost-categories":
       return {
         ...base,
+        routeMessagesProvider: () =>
+          import("@voyant-travel/finance-react/i18n").then((module) => ({
+            default: module.FinanceUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/finance-react/components/cost-categories-page").then((module) =>
             adminRoutePageModule(module.CostCategoriesPage),
@@ -287,6 +306,10 @@ function createBuiltInSettingsPage(
       return {
         ...base,
         ssr: "data-only",
+        routeMessagesProvider: () =>
+          import("@voyant-travel/commerce-react/i18n").then((module) => ({
+            default: module.CommerceUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/commerce-react/pricing/components/pricing-categories-page").then(
             (module) => adminRoutePageModule(module.PricingCategoriesPage),
@@ -304,6 +327,10 @@ function createBuiltInSettingsPage(
       return {
         ...base,
         ssr: "data-only",
+        routeMessagesProvider: () =>
+          import("@voyant-travel/commerce-react/i18n").then((module) => ({
+            default: module.CommerceUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/commerce-react/pricing/components/price-catalogs-page").then(
             (module) => adminRoutePageModule(module.PriceCatalogsPage),
@@ -321,6 +348,10 @@ function createBuiltInSettingsPage(
       return {
         ...base,
         ssr: "data-only",
+        routeMessagesProvider: () =>
+          import("@voyant-travel/inventory-react/i18n").then((module) => ({
+            default: module.ProductsUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/inventory-react/components/product-types-page").then((module) =>
             adminRoutePageModule(module.ProductTypesPage),
@@ -336,6 +367,10 @@ function createBuiltInSettingsPage(
       return {
         ...base,
         ssr: "data-only",
+        routeMessagesProvider: () =>
+          import("@voyant-travel/inventory-react/i18n").then((module) => ({
+            default: module.ProductsUiMessagesProvider,
+          })),
         page: () =>
           import("@voyant-travel/inventory-react/components/product-tags-page").then((module) =>
             adminRoutePageModule(module.ProductTagsPage),

@@ -857,6 +857,9 @@ including Bookings, Catalog, and Inventory:
   behind the lazy imports owned by the UI export
 - each selected package adapter owns its Operator nav-copy keys and icons and
   attaches its namespaced route-message providers lazily
+- shared core pages attach their lazy package-copy providers directly to the
+  route contribution that owns the page; the generic admin host retains no
+  route-id or package-keyed provider fallback registry
 - the Operator invokes the generated selected-factory composer with one generic
   localized nav-message map, and the compatibility admin generator removes the
   migrated factory from `admin.extensions.generated.ts`
