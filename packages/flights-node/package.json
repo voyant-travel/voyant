@@ -15,7 +15,9 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {
@@ -59,8 +61,14 @@
     },
     "compatibleWith": {
       "framework": ">=0.26.0",
-      "targets": ["node"],
-      "modes": ["local", "managed-cloud", "self-hosted"]
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
     }
   }
 }

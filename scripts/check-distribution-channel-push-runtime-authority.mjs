@@ -37,7 +37,6 @@ const adapterPackage = readRequired(join(distributionNodeRoot, "package.json"))
 const adapterContributor = readRequired(join(distributionNodeRoot, "src/runtime-contributor.ts"))
 const standardRuntime = readRequired(join(distributionNodeRoot, "src/standard-node-runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
-const provider = readRequired(join(operatorRoot, "src/api/runtime/channel-push-runtime.ts"))
 const workflowServices = readRequired(
   join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
 )
@@ -95,16 +94,15 @@ if (
 }
 if (
   composition.includes('"@voyant-travel/distribution#channel-push-extension"') ||
-  composition.includes("createChannelPushExtension")
+  composition.includes("createChannelPushExtension") ||
+  composition.includes("loadDistributionChannelPushRuntime")
 ) {
-  violations.push("Operator must not restore the channel-push package-id compatibility binding")
+  violations.push(
+    "Operator must not restore channel-push compatibility binding or loader authority",
+  )
 }
-if (
-  !provider.includes('from "@voyant-travel/distribution-node/standard-node-runtime"') ||
-  provider.includes("getBookingEngineRegistryFromContext") ||
-  provider.includes("registerDistributionWorkflowService")
-) {
-  violations.push("Operator channel-push compatibility entrypoint must only forward the adapter")
+if (existsSync(join(operatorRoot, "src/api/runtime/channel-push-runtime.ts"))) {
+  violations.push("Operator channel-push compatibility entrypoint must stay deleted")
 }
 if (
   workflowServices.includes("createChannelPushWorkflowRuntimeEntries") ||
@@ -139,6 +137,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log(
-  "check-distribution-channel-push-runtime-authority: OK (BOM-selected Node adapter; Operator forwarding-only)",
-)
+console.log("check-distribution-channel-push-runtime-authority: OK (BOM-selected Node adapter)")

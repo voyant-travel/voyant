@@ -14,6 +14,7 @@ const checker = path.join(
   "scripts/check-action-distribution-workflow-runtime-authority.mjs",
 )
 const fixturePaths = [
+  "starters/operator/src/api/runtime/deployment-resources.ts",
   "packages/action-ledger/package.json",
   "packages/action-ledger-node/package.json",
   "packages/action-ledger-node/src/runtime-contributor.ts",
@@ -23,7 +24,6 @@ const fixturePaths = [
   "packages/distribution-node/src/runtime-contributor.ts",
   "packages/workflow-runs/src/runtime-contributor.ts",
   "packages/workflow-runs/src/runner.ts",
-  "starters/operator/src/api/runtime/action-ledger-health-runtime.ts",
 ]
 
 async function fixture() {

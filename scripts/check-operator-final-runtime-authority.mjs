@@ -9,10 +9,10 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packagePorts = {
-  "action-ledger": ["actionLedgerHealthRuntimePort"],
+  "action-ledger-node": ["actionLedgerHealthRuntimePort"],
   auth: ["identityAccessRuntimePort"],
   cruises: ["cruisesRoutesRuntimePort"],
-  distribution: ["channelPushRuntimePort"],
+  "distribution-node": ["channelPushRuntimePort"],
   "flights-node": ["flightsRuntimePort"],
   mice: ["miceRuntimePort"],
   "notifications-node": ["notificationsRuntimePort"],
@@ -23,10 +23,10 @@ const packagePorts = {
   "workflow-runs": ["workflowRunnerRegistryRuntimePort"],
 }
 const contributorFactories = [
-  "createActionLedgerRuntimePortContribution",
+  "createActionLedgerNodeRuntimePortContribution",
   "createAuthRuntimePortContribution",
   "createCatalogNodeRuntimePortContribution",
-  "createDistributionRuntimePortContribution",
+  "createDistributionNodeRuntimePortContribution",
   "createFlightsNodeRuntimePortContribution",
   "createMiceRuntimePortContribution",
   "createNotificationsNodeRuntimePortContribution",

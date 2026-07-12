@@ -71,8 +71,8 @@ import {
 import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
 
 const buildOperatorProviders = () => createOperatorDeploymentResources().capabilities
-const buildOperatorRuntimePorts = (registry?: WorkflowRunnerRegistry) =>
-  createOperatorDeploymentResources(registry).ports
+const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
+  createOperatorDeploymentResources().ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   const workflowRunnerRegistry = new WorkflowRunnerRegistry()

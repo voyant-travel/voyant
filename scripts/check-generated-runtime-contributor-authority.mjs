@@ -9,12 +9,12 @@ function argument(name, fallback) {
 const root = path.resolve(argument("--root", "."))
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packageFactories = {
-  "action-ledger": "createActionLedgerRuntimePortContribution",
+  "action-ledger-node": "createActionLedgerNodeRuntimePortContribution",
   auth: "createAuthRuntimePortContribution",
   "bookings-node": "createBookingsNodeRuntimePortContribution",
   "catalog-node": "createCatalogNodeRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
-  distribution: "createDistributionRuntimePortContribution",
+  "distribution-node": "createDistributionNodeRuntimePortContribution",
   "finance-node": "createFinanceNodeRuntimePortContribution",
   "flights-node": "createFlightsNodeRuntimePortContribution",
   inventory: "createInventoryRuntimePortContribution",

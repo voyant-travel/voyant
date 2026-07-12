@@ -32,7 +32,7 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 const graphRuntime = createGeneratedGraphRuntime()
 export const operatorActionLedgerCapabilityRegistry =
   lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
-const deploymentResources = createOperatorDeploymentResources(workflowRunnerRegistry)
+const deploymentResources = createOperatorDeploymentResources()
 const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   ...deploymentResources,

@@ -12,7 +12,6 @@
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { mountApp } from "@voyant-travel/hono"
-import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import { effectiveAccessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
@@ -98,7 +97,7 @@ async function responseWithSessionActor(
 function buildGraphComposition() {
   return composeVoyantGraphRuntime({
     runtime: createGeneratedGraphRuntime(),
-    ...createOperatorDeploymentResources(new WorkflowRunnerRegistry()),
+    ...createOperatorDeploymentResources(),
   })
 }
 

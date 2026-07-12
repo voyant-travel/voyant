@@ -32,8 +32,6 @@ async function createFixture(overrides = {}) {
       "getBookingEngineRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
     "operator/src/api/runtime/deployment-resources.ts":
       "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
-    "operator/src/api/runtime/channel-push-runtime.ts":
-      'export { distributionStandardNodeRuntime } from "@voyant-travel/distribution-node/standard-node-runtime"\n',
     "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
@@ -66,7 +64,7 @@ async function runChecker(root) {
 }
 
 describe("check-distribution-channel-push-runtime-authority", () => {
-  it("accepts a BOM-selected adapter with an Operator forwarder", async () => {
+  it("accepts a BOM-selected adapter without an Operator forwarder", async () => {
     const result = await runChecker(await createFixture())
 
     assert.match(result.stdout, /check-distribution-channel-push-runtime-authority: OK/)
@@ -83,7 +81,7 @@ describe("check-distribution-channel-push-runtime-authority", () => {
       assert.match(error.stderr, /must bind Distribution through generated contributor composition/)
       assert.match(
         error.stderr,
-        /must not restore the channel-push package-id compatibility binding/,
+        /must not restore channel-push compatibility binding or loader authority/,
       )
       assert.match(error.stderr, /channel-push\.ts must stay deleted/)
       return true

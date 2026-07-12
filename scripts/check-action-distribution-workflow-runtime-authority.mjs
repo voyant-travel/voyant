@@ -10,11 +10,11 @@ const read = (relativePath) => {
 }
 
 const sources = {
+  deploymentResources: read("starters/operator/src/api/runtime/deployment-resources.ts"),
   actionPackage: read("packages/action-ledger/package.json"),
   actionAdapterPackage: read("packages/action-ledger-node/package.json"),
   actionContributor: read("packages/action-ledger-node/src/runtime-contributor.ts"),
   actionRuntime: read("packages/action-ledger-node/src/standard-node-runtime.ts"),
-  actionForwarder: read("starters/operator/src/api/runtime/action-ledger-health-runtime.ts"),
   distributionPackage: read("packages/distribution/package.json"),
   distributionAdapterPackage: read("packages/distribution-node/package.json"),
   distributionContributor: read("packages/distribution-node/src/runtime-contributor.ts"),
@@ -70,9 +70,6 @@ for (const required of [
 if (!sources.actionContributor.includes("createActionLedgerStandardNodeRuntime")) {
   violations.push("Action Ledger Node contributor must load the standard runtime")
 }
-if (!sources.actionForwarder.includes("@voyant-travel/action-ledger-node/standard-node-runtime")) {
-  violations.push("Operator Action Ledger compatibility entrypoint must forward the adapter")
-}
 if (!sources.distributionContributor.includes("host.primitives")) {
   violations.push("Distribution Node contributor must use generic host primitives")
 }
@@ -81,6 +78,14 @@ if (
   !sources.workflowRunner.includes("activeWorkflowRunnerRegistry = this")
 ) {
   violations.push("Workflow Runs must bind its package registry service to the app registry")
+}
+for (const compatibilityPath of [
+  "starters/operator/src/api/runtime/action-ledger-health-runtime.ts",
+  "starters/operator/src/api/runtime/channel-push-runtime.ts",
+]) {
+  if (existsSync(path.join(root, compatibilityPath))) {
+    violations.push(`${compatibilityPath} must stay deleted`)
+  }
 }
 
 if (violations.length > 0) {

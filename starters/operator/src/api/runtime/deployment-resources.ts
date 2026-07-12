@@ -11,7 +11,6 @@ import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import { lazyProvider } from "@voyant-travel/hono"
-import type { WorkflowRunnerRegistryRuntime } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph-runtime.generated"
 import { resolveOperatorCustomFields } from "../../lib/custom-fields"
@@ -98,21 +97,12 @@ function createBaseDeploymentCapabilities() {
   }
 }
 
-function createLegacyDeploymentCapabilities(
-  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
-) {
+function createLegacyDeploymentCapabilities() {
   const capabilities = createBaseDeploymentCapabilities()
   return {
     ...capabilities,
-    resolveWorkflowRunnerRegistry: () => workflowRunnerRegistry,
     loadCommerceRuntime: createOperatorCommerceRuntime,
     loadInventoryRuntime: createOperatorInventoryRuntime,
-    loadActionLedgerHealthRuntime: () =>
-      import("./action-ledger-health-runtime").then((runtime) =>
-        runtime.createOperatorActionLedgerHealthRuntime(),
-      ),
-    loadDistributionChannelPushRuntime: () =>
-      import("./channel-push-runtime").then((runtime) => runtime.operatorChannelPushRuntime),
   }
 }
 
@@ -167,10 +157,8 @@ function createDeploymentPortResources(
 }
 
 /** All host-owned inputs passed to graph composition as one opaque resource set. */
-export function createOperatorDeploymentResources(
-  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
-) {
-  const capabilities = createLegacyDeploymentCapabilities(workflowRunnerRegistry)
+export function createOperatorDeploymentResources() {
+  const capabilities = createLegacyDeploymentCapabilities()
   const primitives = createNodeRuntimePrimitives()
   return {
     capabilities,
