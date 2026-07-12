@@ -7,7 +7,7 @@ import type {
   WorkflowDescriptor,
 } from "@voyant-travel/core"
 import type { WorkflowDriver } from "@voyant-travel/workflows/driver"
-import { type BuildManifestArgs, buildManifest } from "@voyant-travel/workflows/events"
+import type { BuildManifestArgs } from "@voyant-travel/workflows/events"
 
 import type { VoyantAppConfig } from "./types.js"
 
@@ -42,6 +42,10 @@ export interface WireWorkflowRuntimeArgs {
  * EventBus subscriber per unique eventType seen across the manifest's filters.
  */
 export async function wireWorkflowRuntime(args: WireWorkflowRuntimeArgs): Promise<void> {
+  // Keep app composition importable before workspace packages are built. The
+  // workflow implementation is needed only when a configured app boots.
+  const { buildManifest } = await import("@voyant-travel/workflows/events")
+
   // The descriptors collected from modules + plugins use core's structural
   // types (`{ id, eventType }` only - see `EventFilterDescriptor` in core);
   // the manifest builder needs the runtime shape with `.manifest` populated.

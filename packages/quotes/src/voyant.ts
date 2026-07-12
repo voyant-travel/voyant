@@ -1,17 +1,18 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import { tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
   quotesSnapshotRuntimePort,
 } from "./runtime-port.js"
 
+const tripsRoutesRuntimePortReference = { id: "trips.routes-runtime" } as const
+
 /** Import-cheap deployment declarations owned by the quotes package. */
 export const quotesVoyantModule = defineModule({
   id: "@voyant-travel/quotes",
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
-  runtimePorts: [requirePort(quotesRuntimePort), requirePort(tripsRoutesRuntimePort)],
+  runtimePorts: [requirePort(quotesRuntimePort), tripsRoutesRuntimePortReference],
   api: [
     {
       id: "@voyant-travel/quotes#api",
