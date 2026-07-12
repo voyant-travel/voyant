@@ -13,7 +13,7 @@ const packageRequirements = {
   flights: ["host.capabilities.loadFlightsRuntime()"],
   notifications: ["host.capabilities.loadNotificationsRuntime()"],
   quotes: ["host.capabilities.loadQuoteProposalRuntime()"],
-  realtime: ["host.capabilities.loadRealtimeRuntime()"],
+  realtime: ["host.primitives", "createRealtimeStandardNodeRuntime"],
   storage: ["host.capabilities.loadStorageMediaRuntime()"],
   storefront: ["host.capabilities.loadStorefrontRuntime()"],
   trips: ["host.capabilities.createTripsRoutesOptions", "host.capabilities.withDb"],
@@ -66,5 +66,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-operator-capability-runtime-bindings-cut-2: OK (8 families derived from host capabilities)",
+  "check-operator-capability-runtime-bindings-cut-2: OK (8 package-owned families from generic host resources)",
 )

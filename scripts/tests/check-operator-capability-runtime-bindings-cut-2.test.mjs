@@ -15,7 +15,7 @@ const requirements = {
   flights: "host.capabilities.loadFlightsRuntime()",
   notifications: "host.capabilities.loadNotificationsRuntime()",
   quotes: "host.capabilities.loadQuoteProposalRuntime()",
-  realtime: "host.capabilities.loadRealtimeRuntime()",
+  realtime: "host.primitives\ncreateRealtimeStandardNodeRuntime",
   storage: "host.capabilities.loadStorageMediaRuntime()",
   storefront: "host.capabilities.loadStorefrontRuntime()",
   trips: "host.capabilities.createTripsRoutesOptions\nhost.capabilities.withDb",
@@ -45,7 +45,7 @@ async function fixture(deploymentResources) {
 it("accepts the second capability-derived binding cut", async () => {
   const root = await fixture("return createGeneratedGraphRuntimePorts({ capabilities, host })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /8 families derived from host capabilities/)
+  assert.match(result.stdout, /8 package-owned families from generic host resources/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {
