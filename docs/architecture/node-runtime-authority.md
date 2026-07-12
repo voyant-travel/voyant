@@ -18,24 +18,20 @@ deployment contract intentionally has no edge/Workers target:
 unified Voyant applications remain Node-only, while independently deployed
 storefront and federated surfaces keep their existing target-specific hosts.
 
-## Product Authority Ratchet
+## Product Authority
 
-Commerce checkout and booking maintenance, Catalog search/booking/offers,
-Finance booking schedules, Legal contract documents, and Storage media routes
-are composed from their package-owned graph factories. Their deployment
-behavior enters through the typed ports declared by those packages; none of
-their compatibility route loaders or provider defaults belongs in
-`ManagedProfileProviders`.
+Accommodations, Bookings, Catalog, Commerce, Finance, Flights, Inventory,
+Legal, Notifications, Quotes, Relationships, Storage, Storefront, and Trips are
+composed from package-owned graph factories. Their deployment behavior enters
+through typed ports declared by those packages. The Node host exposes only a
+generic resource record for deployment-local factories and a generic runtime
+port record for selected package factories; it has no product-shaped provider
+container, compatibility route loaders, or product provider defaults.
 
-Graph-selected MCP tools follow the same rule. Tool packages export context
-contributors from their declared tool runtime entry. The generic MCP host gives
-those contributors the request context and deployment runtime-port resources;
-it does not import Catalog or Finance services to construct product contexts.
-
-The remaining selected-group reference in `node-runtime.ts` is
-`@voyant-travel/finance/order-payment-sessions`, used only by the legacy Flights
-route loader. That residual is outside this extraction and must disappear when
-Flights compatibility assembly moves behind its typed runtime port.
+Graph-selected tools follow the same rule. Tool packages export context
+contributors from their declared tool runtime entries, and the MCP host supplies
+request context and deployment runtime-port resources without the Node runtime
+importing product services or assembling product tool contexts.
 
 ## Compatibility Boundary
 
@@ -54,8 +50,9 @@ names exist only on the admin-host compatibility subpath.
 `scripts/check-node-runtime-authority.mjs` enforces the public subpath, direct
 graph boot in generated entries, and the absence of managed-profile synthesis
 from `packages/operator-runtime`.
-`scripts/check-node-runtime-product-authority.mjs` separately caps first-party
-references at 44, forbids the extracted provider fields, verifies package
-runtime authority, and permits only the documented Finance/Flights residual.
-`scripts/check-profile-compatibility-boundary.mjs` enforces this retirement
-boundary.
+`scripts/check-node-runtime-product-authority.mjs` separately requires zero
+first-party product imports, exact and justified infrastructure import
+exceptions, absence of the retired product provider surface, and package-owned
+runtime authority for the selected product set.
+`scripts/check-profile-compatibility-boundary.mjs` enforces the snapshot
+compatibility retirement boundary.

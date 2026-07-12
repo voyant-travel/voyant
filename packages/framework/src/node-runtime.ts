@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- this entry is the resident Node runtime
 // composition boundary. Graph boot, legacy profile adaptation, environment
-// binding assembly, and provider defaults stay together while compatibility is
-// retired incrementally.
+// binding assembly, and generic Node infrastructure stay together while
+// compatibility is retired incrementally.
 import { readFile } from "node:fs/promises"
 
 import {
@@ -19,51 +19,20 @@ import {
 } from "@voyant-travel/auth/cloud-broker"
 import { createBetterAuth } from "@voyant-travel/auth/server"
 import {
-  bookingsService,
-  redactBookingContact,
-  shouldRevealBookingPii,
-} from "@voyant-travel/bookings"
-import { submitBookingReservationPlan } from "@voyant-travel/bookings/reservation-plans"
-import type { BookingsToolServices } from "@voyant-travel/bookings/tools"
-import { getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
-import type { EventBus } from "@voyant-travel/core"
-import {
   createDbClient,
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
 } from "@voyant-travel/db/runtime"
 import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
-import type { FlightConnectorAdapter } from "@voyant-travel/flights"
 import {
   createMemoryRateLimitStore,
   createRedisRateLimitStore,
-  isStaffRbacEnforced,
+  type RateLimitStore,
   type VoyantAuthIntegration,
   type VoyantBindings,
   type VoyantDb,
 } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
-import { productsService } from "@voyant-travel/inventory"
-import type { InventoryToolServices } from "@voyant-travel/inventory/tools"
-import { createGraphMcpHonoApp, createMcpHonoApp } from "@voyant-travel/mcp"
-import {
-  createNotificationService,
-  createVoyantCloudEmailProvider,
-  createVoyantCloudSmsProvider,
-  type NotificationProvider,
-  notificationsService,
-} from "@voyant-travel/notifications"
-import type { NotificationsToolServices } from "@voyant-travel/notifications/tools"
-import { getOperatorSettings, toPublicOperatorSettings } from "@voyant-travel/operator-settings"
-import {
-  createQuoteProposalAdminRoutes,
-  createQuoteProposalPublicRoutes,
-  type QuoteProposalRoutesOptions,
-  quotesService,
-} from "@voyant-travel/quotes"
-import type { QuotesToolServices } from "@voyant-travel/quotes/tools"
-import { relationshipsService } from "@voyant-travel/relationships"
-import type { RelationshipsToolServices } from "@voyant-travel/relationships/tools"
 import {
   type CreateNodeServerOptions,
   composeNodeEnv,
@@ -76,14 +45,6 @@ import {
   type NodeServerHandle,
   type R2BucketShim,
 } from "@voyant-travel/runtime"
-import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
-import {
-  type CancelTripComponentsDeps,
-  type ReserveTripDeps,
-  type StartCheckoutDeps,
-  type TripsToolServices,
-  tripsService,
-} from "@voyant-travel/trips"
 import { scopesForRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
@@ -91,7 +52,6 @@ import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import { eq, sql } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
@@ -134,7 +94,6 @@ export {
 } from "./plugin-resolution.js"
 
 export interface ManagedProfileRuntimeEnv extends VoyantBindings {
-  TENANT_ID?: string
   DATABASE_URL_DIRECT?: string
   DATABASE_URL_REPLICAS?: string
   R2_S3_ENDPOINT?: string
@@ -147,20 +106,7 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   MEDIA_PUBLIC_BASE_URL?: string
   API_BASE_URL?: string
   REDIS_URL?: string
-  RATE_LIMIT_STORE?: import("@voyant-travel/hono").RateLimitStore
-  EMAIL_FROM?: string
-  EMAIL_REPLY_TO?: string
-  PUBLIC_CHECKOUT_BASE_URL?: string
-  VOYANT_API_KEY?: string
-  VOYANT_CLOUD_API_KEY?: string
-  VOYANT_CLOUD_API_URL?: string
-  VOYANT_CONNECT_API_KEY?: string
-  VOYANT_CONNECT_OPERATOR_ID?: string
-  VOYANT_CONNECT_API_URL?: string
-  VOYANT_DATA_API_KEY?: string
-  TYPESENSE_HOST?: string
-  TYPESENSE_ADMIN_API_KEY?: string
-  TYPESENSE_API_KEY?: string
+  RATE_LIMIT_STORE?: RateLimitStore
   VOYANT_ADMIN_AUTH_MODE?: string
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
   VOYANT_CLOUD_ADMIN_AUTH_START_URL?: string
@@ -175,46 +121,17 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?: string
   VOYANT_CLOUD_APP_SLUG?: string
   VOYANT_CLOUD_ENVIRONMENT?: "production" | "preview" | "development"
-  BANK_TRANSFER_BANK_NAME?: string
-  BANK_TRANSFER_BENEFICIARY?: string
-  BANK_TRANSFER_IBAN?: string
-  BANK_TRANSFER_NOTES?: string
-  STOREFRONT_BANK_BENEFICIARY?: string
-  STOREFRONT_BANK_IBAN?: string
-  STOREFRONT_BANK_NAME?: string
   ORIGIN_TRUST_SECRET?: string
   PORT?: string
 }
 
 export type VoyantNodeRuntimeEnv = ManagedProfileRuntimeEnv
 
-type ManagedRelationshipsService = Pick<
-  typeof relationshipsService,
-  "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
->
+/** Generic host resources available only to deployment-local factories. */
+export type VoyantNodeRuntimeResources = Readonly<Record<string, unknown>>
 
-export interface ManagedProfileProviders {
-  relationshipsService: ManagedRelationshipsService
-  createTripsRoutesOptions: import("@voyant-travel/trips").TripsRoutesOptionsProvider
-  resolveNotificationProviders: (bindings: unknown) => NotificationProvider[]
-  resolvePublicCheckoutBaseUrl: (bindings: unknown) => string | null
-  resolveDb: (bindings: unknown) => VoyantDb
-  createBookingPiiService: () => Promise<null>
-  autoGenerateContractOnConfirmed: { enabled: boolean; templateSlug: string }
-  resolveBookingRequirementsProductSnapshot: (...args: never[]) => Promise<null>
-  withDb: <T>(bindings: unknown, operation: (db: VoyantDb) => Promise<T>) => Promise<T>
-  storefrontIntakePersistence: import("@voyant-travel/storefront").StorefrontIntakePersistence
-  loadFlightAdminRoutes: typeof createManagedFlightAdminRoutes
-  loadMcpAdminRoutes: () => Promise<Hono>
-  loadQuoteVersionSnapshotRoutes: typeof createManagedQuoteVersionSnapshotRoutes
-  loadProposalAdminRoutes: typeof createManagedProposalAdminRoutes
-  loadProposalPublicRoutes: typeof createManagedProposalPublicRoutes
-}
-
-export type VoyantNodeRuntimeProviders = ManagedProfileProviders
-
-type ManagedProfileAppModules = Record<string, ModuleFactory<ManagedProfileProviders>>
-type ManagedProfileAppExtensions = Record<string, ExtensionFactory<ManagedProfileProviders>>
+type ManagedProfileAppModules = Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
+type ManagedProfileAppExtensions = Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>
 
 export interface ManagedProfileRuntimeOptions {
   /** Existing compatibility input for callers that persist a profile snapshot. */
@@ -235,11 +152,14 @@ export interface ManagedProfileRuntimeOptions {
   graphRuntime?: VoyantGraphRuntime
   /** Host implementations for graph-selected package runtime ports. */
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
+  /** Generic resources available to deployment-local factories. */
+  resources?: VoyantNodeRuntimeResources
   env?: Record<string, unknown> | VoyantNodeRuntimeEnv
   auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
-  providers?: Partial<VoyantNodeRuntimeProviders>
+  /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
+  providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeProviders>, "providers">
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
   /**
    * Override how snapshot `plugins` specifiers are imported. Defaults to dynamic
@@ -288,12 +208,15 @@ export interface VoyantNodeRuntimeOptions {
   deployment: VoyantNodeRuntimeDeployment
   deploymentRequirements: VoyantGraphDeploymentRequirements
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
+  /** Generic resources available to deployment-local factories. */
+  resources?: VoyantNodeRuntimeResources
   applicationId?: string
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
-  providers?: Partial<ManagedProfileProviders>
+  /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
+  providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>, "providers">
+    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
 }
 
@@ -312,12 +235,6 @@ export interface VoyantNodeRuntime {
     ctx?: ExecutionContextLike,
   ) => Response | Promise<Response>
   start: (options?: Partial<CreateNodeServerOptions<ManagedProfileRuntimeEnv>>) => NodeServerHandle
-}
-
-type AsyncMethodProvider<T extends object> = {
-  [K in keyof T]: T[K] extends (...args: infer Args) => infer Result
-    ? (...args: Args) => Promise<Awaited<Result>>
-    : never
 }
 
 let pooledDb: { url: string; db: VoyantDb } | undefined
@@ -344,7 +261,7 @@ const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
 interface ManagedSharedStores {
   CACHE: KVStore
   RATE_LIMIT: KVStore
-  RATE_LIMIT_STORE: import("@voyant-travel/hono").RateLimitStore
+  RATE_LIMIT_STORE: RateLimitStore
 }
 
 /** Boot a generated application graph without constructing a profile compatibility manifest. */
@@ -363,14 +280,10 @@ export async function loadVoyantNodeRuntime(
     auth: options.app?.auth ?? options.auth,
     activeModules,
   })
-  const providers = createManagedProfileProviders(
-    options.providers,
-    options.graphRuntime,
-    options.runtimePorts,
-  )
+  const resources = { ...(options.providers ?? {}), ...(options.resources ?? {}) }
   const graphComposition = await composeVoyantGraphRuntime({
     runtime: options.graphRuntime,
-    capabilities: providers,
+    capabilities: resources,
     ports: options.runtimePorts,
   })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
@@ -388,7 +301,7 @@ export async function loadVoyantNodeRuntime(
     activeModules,
     env,
     auth,
-    providers,
+    resources,
     app: {
       ...options.app,
       publicPaths: [
@@ -483,27 +396,23 @@ export async function loadManagedProfileRuntime(
   const customSourceOptions = options.importCustomSourceModule
     ? { importModule: options.importCustomSourceModule }
     : {}
-  const customModules = await resolveManagedCustomModules<ManagedProfileProviders>(
+  const customModules = await resolveManagedCustomModules<VoyantNodeRuntimeResources>(
     project,
     toPluginEnvRecord(env),
     customSourceOptions,
   )
-  const providers = createManagedProfileProviders(
-    options.providers,
-    options.graphRuntime,
-    options.runtimePorts,
-  )
+  const resources = { ...(options.providers ?? {}), ...(options.resources ?? {}) }
   const graphComposition = options.graphRuntime
     ? await composeVoyantGraphRuntime({
         runtime: options.graphRuntime,
-        capabilities: providers,
+        capabilities: resources,
         ports: options.runtimePorts,
       })
     : undefined
   const actionLedgerCapabilities = options.graphRuntime
     ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)
     : createActionLedgerCapabilityRegistry([])
-  const customExtensions = await resolveManagedCustomExtensions<ManagedProfileProviders>(
+  const customExtensions = await resolveManagedCustomExtensions<VoyantNodeRuntimeResources>(
     project,
     toPluginEnvRecord(env),
     customSourceOptions,
@@ -528,7 +437,7 @@ export async function loadManagedProfileRuntime(
     project,
     env,
     auth,
-    providers,
+    resources,
     app: graphComposition
       ? {
           ...options.app,
@@ -636,9 +545,11 @@ export function createVoyantNodeApp(options: {
   activeModules: readonly string[]
   env?: VoyantNodeRuntimeEnv
   auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
-  providers?: Partial<VoyantNodeRuntimeProviders>
+  resources?: VoyantNodeRuntimeResources
+  /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
+  providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeProviders>, "providers">
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
   modules?: ManagedProfileAppModules
   extensions?: ManagedProfileAppExtensions
@@ -648,7 +559,7 @@ export function createVoyantNodeApp(options: {
     auth: options.app?.auth ?? options.auth,
     activeModules: options.activeModules,
   })
-  return createVoyantApp<VoyantNodeRuntimeEnv, VoyantNodeRuntimeProviders>({
+  return createVoyantApp<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>({
     db: dbFromEnvForApp,
     dbTransactional: dbFromEnvForApp,
     outbox: true,
@@ -669,7 +580,7 @@ export function createVoyantNodeApp(options: {
     },
     basePath: options.app?.basePath ?? "/api",
     auth,
-    providers: createManagedProfileProviders(options.providers),
+    providers: { ...(options.providers ?? {}), ...(options.resources ?? {}) },
   })
 }
 
@@ -700,10 +611,12 @@ export function createManagedProfileApp(options: {
   project: VoyantProjectManifest
   env?: ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
-  providers?: Partial<ManagedProfileProviders>
+  resources?: VoyantNodeRuntimeResources
+  /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
+  providers?: VoyantNodeRuntimeResources
   graphRuntime?: VoyantGraphRuntime
   app?: Partial<
-    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>, "providers">
+    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
   /**
    * Plugins resolved from the snapshot's `plugins` list (see
@@ -747,7 +660,7 @@ export function createManagedProfileApp(options: {
     hasResolvedCustomModules: Object.keys(mergedModules).length > 0,
     hasResolvedCustomExtensions: Object.keys(mergedExtensions).length > 0,
   })
-  return createVoyantApp<ManagedProfileRuntimeEnv, ManagedProfileProviders>({
+  return createVoyantApp<ManagedProfileRuntimeEnv, VoyantNodeRuntimeResources>({
     db: dbFromEnvForApp,
     dbTransactional: dbFromEnvForApp,
     outbox: true,
@@ -766,42 +679,14 @@ export function createManagedProfileApp(options: {
     // (routes) both flatten through `registerPlugins` at `createApp` boot.
     plugins: mergedPlugins as CreateVoyantAppConfig<
       ManagedProfileRuntimeEnv,
-      ManagedProfileProviders
+      VoyantNodeRuntimeResources
     >["plugins"],
     modules: mergedModules,
     extensions: mergedExtensions,
     basePath: options.app?.basePath ?? "/api",
     auth,
-    providers: createManagedProfileProviders(options.providers, options.graphRuntime),
+    providers: { ...(options.providers ?? {}), ...(options.resources ?? {}) },
   })
-}
-
-export function createManagedProfileProviders(
-  overrides: Partial<ManagedProfileProviders> = {},
-  graphRuntime?: VoyantGraphRuntime,
-  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts,
-): ManagedProfileProviders {
-  const defaults: ManagedProfileProviders = {
-    resolveNotificationProviders: resolveManagedNotificationProviders,
-    resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrl,
-    resolveDb: resolveDb,
-    createBookingPiiService: async () => null,
-    autoGenerateContractOnConfirmed: {
-      enabled: false,
-      templateSlug: "customer-sales-agreement",
-    },
-    relationshipsService: lazyRelationshipsService(),
-    resolveBookingRequirementsProductSnapshot: async () => null,
-    createTripsRoutesOptions: async () => ({}),
-    withDb: async (bindings, operation) => operation(resolveDb(bindings)),
-    storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
-    loadFlightAdminRoutes: createManagedFlightAdminRoutes,
-    loadMcpAdminRoutes: () => createManagedMcpAdminRoutes(graphRuntime, runtimePorts),
-    loadQuoteVersionSnapshotRoutes: createManagedQuoteVersionSnapshotRoutes,
-    loadProposalAdminRoutes: createManagedProposalAdminRoutes,
-    loadProposalPublicRoutes: createManagedProposalPublicRoutes,
-  }
-  return { ...defaults, ...overrides }
 }
 
 export function createManagedProfileNodeEnv(
@@ -1566,189 +1451,6 @@ function isR2Bucket(value: unknown): value is R2BucketShim {
   return typeof value === "object" && value !== null && "get" in value && "put" in value
 }
 
-function resolvePublicCheckoutBaseUrl(bindings: unknown): string | null {
-  const env = bindings as ManagedProfileRuntimeEnv
-  return (
-    env.PUBLIC_CHECKOUT_BASE_URL?.trim() ||
-    env.DASH_BASE_URL?.trim() ||
-    env.APP_URL?.trim().replace(/\/api\/?$/, "") ||
-    null
-  )
-}
-
-function resolveManagedNotificationProviders(bindings: unknown) {
-  const env = bindings as ManagedProfileRuntimeEnv
-  const apiKey = env.VOYANT_API_KEY?.trim() || env.VOYANT_CLOUD_API_KEY?.trim()
-  if (!apiKey) return []
-  const cloud = getVoyantCloudClient(
-    {
-      VOYANT_CLOUD_API_KEY: apiKey,
-      ...(env.VOYANT_CLOUD_API_URL ? { VOYANT_CLOUD_API_URL: env.VOYANT_CLOUD_API_URL } : {}),
-    },
-    { apiKey },
-  )
-  const from = env.EMAIL_FROM?.trim() || "Voyant <noreply@voyantcloud.app>"
-  const replyTo = resolveEmailReplyTo(env.EMAIL_REPLY_TO)
-  const providers: NotificationProvider[] = [
-    createVoyantCloudEmailProvider({
-      client: cloud,
-      from,
-      ...(replyTo ? { replyTo } : {}),
-    }),
-    createVoyantCloudSmsProvider({ client: cloud }),
-  ]
-  return providers
-}
-
-function resolveEmailReplyTo(value: string | undefined): string[] | null {
-  if (!value) return null
-  const addresses = value
-    .split(",")
-    .map((address) => address.trim())
-    .filter(Boolean)
-  return addresses.length > 0 ? addresses : null
-}
-
-type ManagedMcpToolContext = ToolContext & {
-  trips: TripsToolServices
-  inventory: InventoryToolServices
-  bookings: BookingsToolServices
-  quotes: QuotesToolServices
-  relationships: RelationshipsToolServices
-  notifications: NotificationsToolServices
-}
-
-type BookingContactRow = {
-  contactFirstName?: string | null
-  contactLastName?: string | null
-  contactTaxId?: string | null
-  contactEmail?: string | null
-  contactPhone?: string | null
-  contactAddressLine1?: string | null
-  contactAddressLine2?: string | null
-  contactPostalCode?: string | null
-  [key: string]: unknown
-}
-
-async function createManagedMcpAdminRoutes(
-  graphRuntime?: VoyantGraphRuntime,
-  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts,
-): Promise<Hono> {
-  if (graphRuntime) {
-    return createGraphMcpHonoApp({
-      runtime: graphRuntime,
-      buildContext: buildManagedToolContext,
-      buildResources: () => runtimePorts ?? {},
-      providedContext: [
-        "bookings",
-        "inventory",
-        "notifications",
-        "quotes",
-        "relationships",
-        "trips",
-      ],
-    })
-  }
-  const registry = createToolRegistry()
-  return createMcpHonoApp({ registry, buildContext: buildManagedToolContext })
-}
-
-function buildManagedToolContext(c: Context): ManagedMcpToolContext {
-  const env = managedEnv(c)
-  const actor = (c.var.actor ?? "staff") as ToolContext["actor"]
-  const audience = (c.var.audience ?? actor) as ToolContext["audience"]
-  return {
-    db: c.var.db,
-    actor,
-    audience,
-    tenantId: env.TENANT_ID ?? env.VOYANT_CLOUD_DEPLOYMENT_ID ?? "default",
-    resolverScope: { locale: "en-GB", audience, market: "default", actor },
-    trips: createManagedTripsToolServices(c),
-    inventory: createManagedInventoryToolServices(c),
-    bookings: createManagedBookingsToolServices(c),
-    quotes: {
-      listQuotes: (query) => quotesService.listQuotes(c.var.db, query),
-      getQuoteById: (id) => quotesService.getQuoteById(c.var.db, id),
-      acceptQuoteVersion: (quoteVersionId) =>
-        quotesService.acceptQuoteVersion(c.var.db, quoteVersionId),
-    },
-    relationships: {
-      listPeople: (query) => relationshipsService.listPeople(c.var.db, query),
-      getPersonById: (id) => relationshipsService.getPersonById(c.var.db, id),
-      listOrganizations: (query) => relationshipsService.listOrganizations(c.var.db, query),
-      getOrganizationById: (id) => relationshipsService.getOrganizationById(c.var.db, id),
-    },
-    notifications: {
-      listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
-      getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
-      sendTemplated: (input) =>
-        notificationsService.sendNotification(
-          c.var.db,
-          createNotificationService(resolveManagedNotificationProviders(c.env)),
-          { ...input, targetType: "other" },
-        ),
-    },
-  }
-}
-
-function createManagedTripsToolServices(c: Context): TripsToolServices {
-  return {
-    createTrip: (input) => tripsService.createTrip(c.var.db, input),
-    addComponent: (input) => tripsService.addComponent(c.var.db, input),
-    removeComponent: (componentId) => tripsService.removeComponent(c.var.db, componentId),
-    priceTrip: async () => {
-      throw new Error("Trips price dependencies are not configured for this managed runtime")
-    },
-    reserveTrip: async () => {
-      throw new Error("Trips reserve dependencies are not configured for this managed runtime")
-    },
-  }
-}
-
-function createManagedInventoryToolServices(c: Context): InventoryToolServices {
-  return {
-    listProducts: (query) => productsService.listProducts(c.var.db, query),
-    getProductById: (id) => productsService.getProductById(c.var.db, id),
-  }
-}
-
-function createManagedBookingsToolServices(c: Context): BookingsToolServices {
-  const reveal = shouldRevealBookingPii({
-    actor: c.var.actor,
-    scopes: c.var.scopes,
-    callerType: c.var.callerType,
-    isInternalRequest: c.var.isInternalRequest,
-    enforceRbac: isStaffRbacEnforced(c.env),
-  })
-
-  return {
-    async listBookings(query) {
-      const result = await bookingsService.listBookings(c.var.db, query)
-      if (reveal) return result
-      return redactBookingListResult(result)
-    },
-    async getBookingById(id) {
-      const row = await bookingsService.getBookingById(c.var.db, id)
-      if (reveal || !row) return row
-      return redactBookingRow(row)
-    },
-  }
-}
-
-function redactBookingListResult<T>(result: T): T {
-  if (!isRecord(result) || !Array.isArray(result.data)) return result
-  return { ...result, data: result.data.map((row) => redactBookingRow(row)) }
-}
-
-function redactBookingRow<T>(row: T): T {
-  if (!isRecord(row)) return row
-  return redactBookingContact(row as BookingContactRow) as T
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
 function createManagedProfileWorkflowDriver(env: ManagedProfileRuntimeEnv, defaultAppSlug: string) {
   if (env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()) {
     return () =>
@@ -1764,41 +1466,6 @@ function createManagedProfileWorkflowDriver(env: ManagedProfileRuntimeEnv, defau
   return createInMemoryDriver()
 }
 
-function lazyRelationshipsService(): ManagedRelationshipsService {
-  let servicePromise: Promise<ManagedRelationshipsService> | undefined
-  const load = async () => {
-    servicePromise ??= import("@voyant-travel/relationships").then(
-      (m) => m.relationshipsService as AsyncMethodProvider<ManagedRelationshipsService>,
-    )
-    return servicePromise
-  }
-  return {
-    getPersonById: async (...args) => (await load()).getPersonById(...args),
-    getOrganizationById: async (...args) => (await load()).getOrganizationById(...args),
-    loadPersonTravelSnapshot: async (...args) => (await load()).loadPersonTravelSnapshot(...args),
-    upsertPersonFromContact: async (...args) => (await load()).upsertPersonFromContact(...args),
-  }
-}
-
-function createNoopStorefrontIntakePersistence(): ManagedProfileProviders["storefrontIntakePersistence"] {
-  return {
-    findSignal: async () => null,
-    createPerson: async () => null,
-    createCustomerSignal: async () => null,
-    updateCustomerSignal: async () => null,
-    deleteCustomerSignal: async () => {},
-    deletePerson: async () => {},
-  }
-}
-
-function dbFromContext(c: Context): PostgresJsDatabase {
-  return c.get("db") as PostgresJsDatabase
-}
-
-function managedEnv(c: Context): ManagedProfileRuntimeEnv {
-  return (c.env ?? {}) as ManagedProfileRuntimeEnv
-}
-
 /**
  * Flatten the runtime env bag (string vars + provider bindings) into a plain
  * record for plugin factories to read secrets/connection config from. A real
@@ -1806,185 +1473,6 @@ function managedEnv(c: Context): ManagedProfileRuntimeEnv {
  */
 function toPluginEnvRecord(env: ManagedProfileRuntimeEnv): Record<string, unknown> {
   return Object.fromEntries(Object.entries(env))
-}
-
-async function createManagedQuoteVersionSnapshotRoutes() {
-  const { createQuoteVersionSnapshotRoutes } = await import("@voyant-travel/quotes")
-  return createQuoteVersionSnapshotRoutes({
-    resolveDb: dbFromContext,
-  })
-}
-
-async function createManagedProposalAdminRoutes() {
-  return createQuoteProposalAdminRoutes(createManagedQuoteProposalRoutesOptions())
-}
-
-async function createManagedProposalPublicRoutes() {
-  return createQuoteProposalPublicRoutes(createManagedQuoteProposalRoutesOptions())
-}
-
-function createManagedQuoteProposalRoutesOptions(): QuoteProposalRoutesOptions {
-  return {
-    resolveDb: dbFromContext,
-    resolvePublicProposalBaseUrl: (c) => resolvePublicCheckoutBaseUrl(c.env),
-    reserveTripDeps: createManagedReserveTripDeps,
-    startCheckoutDeps: createManagedStartCheckoutDeps,
-    cancelTripComponentsDeps: createManagedCancelTripComponentsDeps,
-    resolveOperatorProfile: async (db) => {
-      const operatorSettings = await getOperatorSettings(db)
-      return operatorSettings ? toPublicOperatorSettings(operatorSettings) : null
-    },
-    recordPublicProposalFeedback: async (db, input, c) => {
-      const activity = await db.transaction(async (tx) => {
-        const row = await relationshipsService.createActivity(tx, {
-          subject: "Customer requested proposal edits",
-          type: "note",
-          status: "done",
-          completedAt: new Date().toISOString(),
-          description: input.message,
-        })
-        if (!row) throw new Error("Failed to record proposal feedback activity")
-        await relationshipsService.createActivityLink(tx, row.id, {
-          entityType: "quote",
-          entityId: input.quoteId,
-          role: "primary",
-        })
-        return { id: row.id }
-      })
-
-      await getManagedEventBus(c)?.emit(
-        "quote.proposal_feedback.requested",
-        {
-          quoteId: input.quoteId,
-          quoteVersionId: input.quoteVersionId,
-          activityId: activity.id,
-          message: input.message,
-          proposalUrl: input.proposalUrl,
-        },
-        { category: "domain", source: "route" },
-      )
-
-      return activity
-    },
-  }
-}
-
-function createManagedReserveTripDeps(): ReserveTripDeps {
-  return {
-    submitReservationPlan: async (input) => {
-      const submitted = await submitBookingReservationPlan(
-        {
-          reservationPlanId: input.reservationPlan.id,
-          idempotencyKey: input.idempotencyKey,
-          origin: {
-            source: "trips",
-            tripEnvelopeId: input.envelope.id,
-          },
-          envelope: input.envelope,
-          lines: input.components.map((component) => ({
-            planLineId: component.componentId,
-            componentId: component.componentId,
-            kind: component.reservationKind,
-            line: component.component,
-          })),
-        },
-        {
-          reserveCatalogBackedLine: async () => {
-            throw new Error(
-              "Managed proposal reservation requires a catalog-backed reserve adapter",
-            )
-          },
-          reserveNonCatalogLine: async () => {
-            throw new Error("Managed proposal reservation requires a non-catalog reserve adapter")
-          },
-          releaseReservedLine: async () => ({
-            released: false,
-            reason: "release_not_configured",
-          }),
-        },
-      )
-
-      return {
-        reservationPlanId: submitted.reservationPlanId,
-        status: submitted.status,
-        reserved: submitted.reserved.map((item) => ({
-          componentId: item.componentId,
-          status: item.status,
-          result: item.result,
-        })),
-        failures: submitted.failures,
-        compensations: submitted.compensations,
-        warnings: submitted.warnings,
-      }
-    },
-  }
-}
-
-function createManagedStartCheckoutDeps(): StartCheckoutDeps {
-  return {
-    startComponentCheckout: async () => {
-      throw new Error("Managed proposal checkout requires a payment checkout adapter")
-    },
-  }
-}
-
-function createManagedCancelTripComponentsDeps(): CancelTripComponentsDeps {
-  return {
-    previewComponentCancellation: async (input) => ({
-      componentId: input.component.id,
-      action: "staff_remediation",
-      currentStatus: input.component.status,
-      staffActionRequired: true,
-      reason: "Managed proposal cancellation requires a component cancellation adapter",
-    }),
-    cancelComponent: async () => ({
-      status: "failed",
-      reason: "Managed proposal cancellation requires a component cancellation adapter",
-    }),
-  }
-}
-
-function getManagedEventBus(c: Context): EventBus | undefined {
-  return (c.var as { eventBus?: EventBus }).eventBus
-}
-
-async function createManagedFlightAdminRoutes() {
-  const [
-    { createFlightAdminRoutes, createFlightOrderPaymentIntegration },
-    { createOrderPaymentSessions },
-  ] = await Promise.all([
-    import("@voyant-travel/flights"),
-    import("@voyant-travel/finance/order-payment-sessions"),
-  ])
-
-  return createFlightAdminRoutes({
-    resolveAdapter: resolveManagedFlightAdapter,
-    payment: createFlightOrderPaymentIntegration({
-      orderPaymentSessions: createOrderPaymentSessions({ targetType: "flight_order" }),
-    }),
-  })
-}
-
-function resolveManagedFlightAdapter(): FlightConnectorAdapter {
-  return managedFlightConnectorNotConfiguredAdapter
-}
-
-const managedFlightConnectorNotConfiguredAdapter: FlightConnectorAdapter = {
-  capabilities: {
-    provider: "unconfigured",
-    declared: [],
-  },
-  searchFlights: rejectManagedFlightConnectorRequest,
-  priceOffer: rejectManagedFlightConnectorRequest,
-  bookFlight: rejectManagedFlightConnectorRequest,
-  getOrder: rejectManagedFlightConnectorRequest,
-  cancelOrder: rejectManagedFlightConnectorRequest,
-}
-
-async function rejectManagedFlightConnectorRequest(): Promise<never> {
-  throw new Error(
-    "Flight connector is not configured for this managed runtime. Override loadFlightAdminRoutes with a deployment flight connector.",
-  )
 }
 
 function createNoopExecutionContext(): ExecutionContextLike {
