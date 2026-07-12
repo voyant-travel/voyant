@@ -61,6 +61,8 @@ for (const required of [
   "Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_",
   "createGeneratedGraphRuntimePorts",
   "record.metadata?.runtime",
+  "input.runtimeEntryOverrides?.[entry]",
+  "contributor.importEntry",
 ]) {
   if (!generator.includes(required)) {
     violations.push(`graph runtime generator must contain ${required}`)

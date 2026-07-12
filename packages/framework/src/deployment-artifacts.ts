@@ -287,10 +287,12 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
           `buildGraphRuntimeModule: package runtime export "${runtime.export}" for ${record.packageName} is invalid.`,
         )
       }
+      const entry = `${record.packageName}/${runtime.entry.slice(2)}`
       return [
         {
           packageName: record.packageName,
-          entry: `${record.packageName}/${runtime.entry.slice(2)}`,
+          entry,
+          importEntry: input.runtimeEntryOverrides?.[entry] ?? entry,
           exportName: runtime.export,
         },
       ]
@@ -299,7 +301,7 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
   const contributorImports = contributors
     .map(
       (contributor, index) =>
-        `import { ${contributor.exportName} as GENERATED_RUNTIME_CONTRIBUTOR_${index} } from ${quote(contributor.entry)}`,
+        `import { ${contributor.exportName} as GENERATED_RUNTIME_CONTRIBUTOR_${index} } from ${quote(contributor.importEntry)}`,
     )
     .join("\n")
   const contributorFactories = contributors
