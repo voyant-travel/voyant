@@ -99,7 +99,7 @@
     "@voyant-travel/operations-react": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
     "@voyant-travel/operator-settings-react": "workspace:^",
-    "@voyant-travel/plugin-netopia": "^0.105.20",
+    "@voyant-travel/plugin-netopia": "^0.105.21",
     "@voyant-travel/plugin-smartbill": "^0.140.2",
     "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/public-document-delivery": "workspace:^",

@@ -1972,8 +1972,8 @@ importers:
         specifier: workspace:^
         version: link:../hono
       '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.20
-        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
+        specifier: ^0.105.21
+        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -4247,8 +4247,8 @@ importers:
         specifier: workspace:^
         version: link:../operator-settings
       '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.20
-        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
+        specifier: ^0.105.21
+        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/storefront':
         specifier: workspace:^
         version: link:../storefront
@@ -5108,8 +5108,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/operator-settings-react
       '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.20
-        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
+        specifier: ^0.105.21
+        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/plugin-smartbill':
         specifier: ^0.140.2
         version: 0.140.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@tanstack/react-query@5.101.2(react@19.2.7))(@types/pg@8.20.0)(@upstash/redis@1.38.0)(@voyant-travel/finance-react@packages+finance-react)(@voyant-travel/ui@packages+ui)(kysely@0.29.2)(lucide-react@1.23.0(react@19.2.7))(postgres@3.4.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -8138,8 +8138,8 @@ packages:
   '@voyant-travel/operator-settings@0.3.4':
     resolution: {integrity: sha512-cwUgNlCoOvWAlkqEqGdXKKsuKd6MjB8iQuiwMk8YC2FFRKjMA9yXbL4RYPnl9oFG3wP2duxcOkZJ5xL756Njag==}
 
-  '@voyant-travel/plugin-netopia@0.105.20':
-    resolution: {integrity: sha512-BUOfdOkYFWZROLa6rZxlKF2X2fycFFYv5w3A2mLO/joZrWNV0RzIuTI3NxblHuQ7paRNWpJIqBiti6VhBH7uig==}
+  '@voyant-travel/plugin-netopia@0.105.21':
+    resolution: {integrity: sha512-HuG/0kO73DaefLkCxDW530saGx9b6P1BECf9DN0hl3uouAsjtvBwhxMfjwxu4Jrf59GZykLZwUJ9LVjnoL5a0Q==}
     engines: {node: '>=20'}
 
   '@voyant-travel/plugin-smartbill@0.140.2':
@@ -16215,8 +16215,9 @@ snapshots:
       - sql.js
       - sqlite3
 
-  '@voyant-travel/plugin-netopia@0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))':
+  '@voyant-travel/plugin-netopia@0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))':
     dependencies:
+      '@hono/zod-openapi': 1.4.0(hono@4.12.25)(zod@4.4.3)
       '@voyant-travel/core': 0.111.0
       '@voyant-travel/finance': 0.137.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
       '@voyant-travel/hono': 0.118.0(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)

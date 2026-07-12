@@ -67,7 +67,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
-    "@voyant-travel/plugin-netopia": "^0.105.20",
+    "@voyant-travel/plugin-netopia": "^0.105.21",
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",

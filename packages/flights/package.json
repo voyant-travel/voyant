@@ -147,7 +147,7 @@
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
-    "@voyant-travel/plugin-netopia": "^0.105.20",
+    "@voyant-travel/plugin-netopia": "^0.105.21",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
