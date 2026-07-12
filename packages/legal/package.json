@@ -29,7 +29,10 @@
     "./policies/routes": "./src/policies/routes.ts",
     "./policies/service": "./src/policies/service.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/legal.json",
+    "./openapi/admin/contract-document": "./openapi/admin/contract-document.json",
+    "./openapi/storefront": "./openapi/storefront/legal.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -70,6 +73,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -205,7 +209,10 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/legal.json",
+      "./openapi/admin/contract-document": "./openapi/admin/contract-document.json",
+      "./openapi/storefront": "./openapi/storefront/legal.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

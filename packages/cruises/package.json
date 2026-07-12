@@ -28,7 +28,9 @@
     "./service-pricing": "./src/service-pricing.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/cruises.json",
+    "./openapi/storefront": "./openapi/storefront/cruises.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -63,6 +65,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -193,7 +196,9 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/cruises.json",
+      "./openapi/storefront": "./openapi/storefront/cruises.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

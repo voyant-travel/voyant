@@ -46,7 +46,11 @@
     "./runtime-port": "./src/content-runtime-port.ts",
     "./draft-reaper-workflow": "./src/draft-reaper-workflow.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/catalog.json",
+    "./openapi/admin/booking": "./openapi/admin/catalog-booking.json",
+    "./openapi/storefront": "./openapi/storefront/catalog.json",
+    "./openapi/storefront/booking": "./openapi/storefront/catalog-booking.json"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
@@ -83,6 +87,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -303,7 +308,11 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/catalog.json",
+      "./openapi/admin/booking": "./openapi/admin/catalog-booking.json",
+      "./openapi/storefront": "./openapi/storefront/catalog.json",
+      "./openapi/storefront/booking": "./openapi/storefront/catalog-booking.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

@@ -28,7 +28,9 @@
     "./public-validation": "./src/validation-public.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./setup/vouchers": "./src/service-vouchers-migration.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/finance.json",
+    "./openapi/storefront": "./openapi/storefront/finance.json"
   },
   "scripts": {
     "typecheck": "NODE_OPTIONS=--max-old-space-size=4096 tsc -p tsconfig.typecheck.json",
@@ -65,6 +67,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -190,7 +193,9 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/finance.json",
+      "./openapi/storefront": "./openapi/storefront/finance.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

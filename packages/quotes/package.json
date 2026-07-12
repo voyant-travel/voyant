@@ -14,6 +14,7 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/quotes.json",
     "./openapi/storefront": "./openapi/storefront/quotes-proposal-public.json"
   },
   "scripts": {
@@ -102,6 +103,7 @@
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
       },
+      "./openapi/admin": "./openapi/admin/quotes.json",
       "./openapi/storefront": "./openapi/storefront/quotes-proposal-public.json"
     },
     "main": "./dist/index.js",

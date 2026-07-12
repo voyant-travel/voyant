@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Cross-checks the resolved deployment graph's API bundles against the
- * committed operator OpenAPI documents.
+ * committed package-owned OpenAPI documents.
  *
  * The graph is now the deploy-time source of API bundle declarations, while the
  * OpenAPI artifacts are the browsable/public contract. This checker keeps those
@@ -18,13 +18,21 @@ import {
 } from "./lib/deployment-graph-openapi-coverage-report.mjs"
 
 const DEFAULT_GRAPH = "starters/operator/.voyant/deployment-graph.generated.json"
-const DEFAULT_OPENAPI_DIR = "starters/operator/openapi"
+const DEFAULT_OPENAPI_DIR = "packages"
 const DEFAULT_PACKAGE_OPENAPI_DIRS = [
   "packages/accommodations/openapi",
   "packages/action-ledger/openapi",
+  "packages/bookings/openapi",
+  "packages/catalog/openapi",
+  "packages/charters/openapi",
+  "packages/commerce/openapi",
+  "packages/cruises/openapi",
   "packages/distribution/openapi",
+  "packages/finance/openapi",
   "packages/flights/openapi",
   "packages/identity/openapi",
+  "packages/inventory/openapi",
+  "packages/legal/openapi",
   "packages/mice/openapi",
   "packages/notifications/openapi",
   "packages/operations/openapi",
@@ -35,6 +43,7 @@ const DEFAULT_PACKAGE_OPENAPI_DIRS = [
   "packages/relationships/openapi",
   "packages/storage/openapi",
   "packages/storefront/openapi",
+  "packages/trips/openapi",
   "packages/workflow-runs/openapi",
 ]
 const CHECKED_SURFACES = new Set(["admin", "storefront"])

@@ -45,7 +45,10 @@
     "./authoring/extension": "./src/authoring/extension.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/products.json",
+    "./openapi/admin/extras": "./openapi/admin/extras.json",
+    "./openapi/storefront": "./openapi/storefront/products.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -94,6 +97,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -309,7 +313,10 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/products.json",
+      "./openapi/admin/extras": "./openapi/admin/extras.json",
+      "./openapi/storefront": "./openapi/storefront/products.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

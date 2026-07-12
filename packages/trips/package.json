@@ -17,7 +17,9 @@
     "./payment-subscribers": "./src/payment-subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/trips.json",
+    "./openapi/storefront": "./openapi/storefront/trips.json"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
@@ -76,6 +78,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -151,7 +154,9 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/trips.json",
+      "./openapi/storefront": "./openapi/storefront/trips.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"

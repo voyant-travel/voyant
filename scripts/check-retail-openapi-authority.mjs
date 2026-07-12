@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 
 const manifests = [
@@ -102,5 +103,65 @@ for (const [file, [apiId, expectedCount]] of exactOperationOwners) {
 
 const coverageChecker = readFileSync("scripts/check-deployment-graph-openapi-coverage.mjs", "utf8")
 assert.match(coverageChecker, /MIN_PACKAGE_OWNED_API_BUNDLES = 73/)
+
+const packageDocuments = new Map([
+  [
+    "packages/bookings",
+    [
+      "admin/booking-requirements",
+      "admin/bookings",
+      "storefront/booking-requirements",
+      "storefront/bookings",
+    ],
+  ],
+  [
+    "packages/catalog",
+    ["admin/catalog-booking", "admin/catalog", "storefront/catalog-booking", "storefront/catalog"],
+  ],
+  ["packages/charters", ["admin/charters", "storefront/charters"]],
+  [
+    "packages/commerce",
+    [
+      "admin/markets",
+      "admin/pricing",
+      "admin/promotions",
+      "admin/sellability",
+      "storefront/markets",
+      "storefront/pricing",
+    ],
+  ],
+  ["packages/cruises", ["admin/cruises", "storefront/cruises"]],
+  ["packages/finance", ["admin/finance", "storefront/finance"]],
+  ["packages/inventory", ["admin/extras", "admin/products", "storefront/products"]],
+  ["packages/legal", ["admin/contract-document", "admin/legal", "storefront/legal"]],
+  ["packages/quotes", ["admin/quotes"]],
+  ["packages/trips", ["admin/trips", "storefront/trips"]],
+])
+
+for (const [packageRoot, documents] of packageDocuments) {
+  const packageJson = JSON.parse(readFileSync(`${packageRoot}/package.json`, "utf8"))
+  assert(packageJson.files.includes("openapi"), `${packageRoot} must publish its OpenAPI root`)
+  for (const document of documents) {
+    const artifact = `./openapi/${document}.json`
+    assert.doesNotThrow(() =>
+      JSON.parse(readFileSync(`${packageRoot}/${artifact.slice(2)}`, "utf8")),
+    )
+    assert(
+      Object.values(packageJson.exports).includes(artifact),
+      `${packageRoot} must export ${artifact}`,
+    )
+    assert(
+      Object.values(packageJson.publishConfig.exports).includes(artifact),
+      `${packageRoot} must publish ${artifact}`,
+    )
+  }
+}
+
+const starterOpenApiJson = execFileSync(
+  "git",
+  ["ls-files", "starters/operator/openapi/**/*.json", "starters/operator/openapi/*.json"],
+  { encoding: "utf8" },
+).trim()
+assert.equal(starterOpenApiJson, "", "starter OpenAPI must contain zero tracked JSON files")
 
 console.log(`check-retail-openapi-authority: OK (${claims.size} package-owned API bundles)`)

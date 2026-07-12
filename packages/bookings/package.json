@@ -32,7 +32,11 @@
     "./status-dispatch": "./src/status-dispatch.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./tools": "./src/mcp-runtime.ts",
-    "./voyant": "./src/voyant.ts"
+    "./voyant": "./src/voyant.ts",
+    "./openapi/admin": "./openapi/admin/bookings.json",
+    "./openapi/admin/booking-requirements": "./openapi/admin/booking-requirements.json",
+    "./openapi/storefront": "./openapi/storefront/bookings.json",
+    "./openapi/storefront/booking-requirements": "./openapi/storefront/booking-requirements.json"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -65,6 +69,7 @@
   },
   "files": [
     "dist",
+    "openapi",
     "migrations/*.sql",
     "migrations/meta/_journal.json"
   ],
@@ -215,7 +220,11 @@
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
-      }
+      },
+      "./openapi/admin": "./openapi/admin/bookings.json",
+      "./openapi/admin/booking-requirements": "./openapi/admin/booking-requirements.json",
+      "./openapi/storefront": "./openapi/storefront/bookings.json",
+      "./openapi/storefront/booking-requirements": "./openapi/storefront/booking-requirements.json"
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
