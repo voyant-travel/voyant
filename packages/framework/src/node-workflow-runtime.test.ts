@@ -47,7 +47,7 @@ function unitWithRuntime(
       { facet: "subscribers.runtime", load: async () => filter },
       { facet: "routes.runtime", load: async () => ({}) },
     ],
-  } as VoyantGraphRuntimeUnitLoader
+  } as unknown as VoyantGraphRuntimeUnitLoader
 }
 
 function graphWithUnit(unit: VoyantGraphRuntimeUnitLoader): VoyantGraphRuntime {
