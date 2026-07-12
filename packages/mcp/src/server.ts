@@ -51,6 +51,8 @@ export interface GraphMcpHonoAppOptions {
   runtime: GraphMcpRuntime
   buildContext(c: Context): ToolContext
   buildResources?(c: Context): Readonly<Record<string, unknown>>
+  /** Context keys supplied by the deployment while packages migrate to contributions. */
+  providedContext?: readonly string[]
   serverInfo?: McpServerInfo
 }
 
@@ -144,7 +146,10 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
     }
   }
   const contributedContext = new Set(contextOwners.keys())
-  const missing = [...requiredContext].filter((key) => !contributedContext.has(key)).sort()
+  const providedContext = new Set(options.providedContext ?? [])
+  const missing = [...requiredContext]
+    .filter((key) => !contributedContext.has(key) && !providedContext.has(key))
+    .sort()
   if (missing.length > 0) {
     throw new Error(`Selected MCP tools have no context contribution for: ${missing.join(", ")}.`)
   }

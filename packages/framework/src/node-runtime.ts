@@ -4,8 +4,6 @@
 // retired incrementally.
 import { readFile } from "node:fs/promises"
 
-import { OpenAPIHono } from "@hono/zod-openapi"
-import { createAccommodationContentRoutes } from "@voyant-travel/accommodations/routes-content"
 import {
   type ActionLedgerCapabilityRegistry,
   createActionLedgerCapabilityRegistry,
@@ -27,47 +25,14 @@ import {
 } from "@voyant-travel/bookings"
 import { submitBookingReservationPlan } from "@voyant-travel/bookings/reservation-plans"
 import type { BookingsToolServices } from "@voyant-travel/bookings/tools"
-import {
-  type CatalogSearchRuntime,
-  type CatalogToolServices,
-  executeSemanticSearch,
-} from "@voyant-travel/catalog"
-import {
-  type CatalogAvailabilitySlotsScope,
-  type CatalogBookingRouteModuleOptions,
-  createOwnedBookingHandlerRegistry,
-  createSourceAdapterRegistry,
-  mountCatalogBookingRoutes as mountPackageCatalogBookingRoutes,
-  type OwnedBookingHandlerRegistry,
-  type SlotRow,
-  type SourceAdapterRegistry,
-} from "@voyant-travel/catalog/booking-engine"
-import type {
-  CatalogOffersAirportLabel,
-  CatalogOffersConnectClient,
-  CatalogOffersIndexFields,
-  CatalogOffersRouteModuleOptions,
-  CatalogOffersSearchDestination,
-} from "@voyant-travel/catalog/offers"
-import { type CreateVideoUploadInput, getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
-import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
+import { getVoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { EventBus } from "@voyant-travel/core"
-import { createCruiseContentRoutes } from "@voyant-travel/cruises/routes-content"
 import {
   createDbClient,
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
 } from "@voyant-travel/db/runtime"
 import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
-import {
-  type BookingScheduleRoutesOptions,
-  financeService,
-  type PaymentPolicy,
-  type PaymentPolicyEntityContext,
-  type ResolveInvoiceExchangeRate,
-  readPolicySourceFromInternalNotes,
-} from "@voyant-travel/finance"
-import type { FinanceToolServices } from "@voyant-travel/finance/tools"
 import type { FlightConnectorAdapter } from "@voyant-travel/flights"
 import {
   createMemoryRateLimitStore,
@@ -79,17 +44,8 @@ import {
 } from "@voyant-travel/hono"
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import { productsService } from "@voyant-travel/inventory"
-import { createProductContentRoutes } from "@voyant-travel/inventory/routes-content"
-import { getProductContent } from "@voyant-travel/inventory/service-content"
 import type { InventoryToolServices } from "@voyant-travel/inventory/tools"
-import {
-  type ContractDocumentGeneratorContext,
-  createContractDocumentRoutes,
-  createContractDocumentService,
-  createPdfContractDocumentGenerator,
-} from "@voyant-travel/legal"
-import { buildContractVariableBindings } from "@voyant-travel/legal/contract-variables"
-import { createMcpHonoApp } from "@voyant-travel/mcp"
+import { createGraphMcpHonoApp, createMcpHonoApp } from "@voyant-travel/mcp"
 import {
   createNotificationService,
   createVoyantCloudEmailProvider,
@@ -98,15 +54,7 @@ import {
   notificationsService,
 } from "@voyant-travel/notifications"
 import type { NotificationsToolServices } from "@voyant-travel/notifications/tools"
-import { availabilitySlots } from "@voyant-travel/operations"
-import {
-  getOperatorPaymentInstructions,
-  getOperatorProfile,
-  getOperatorSettings,
-  resolveBookingTaxSettings,
-  resolveOperatorDefaultPaymentPolicy,
-  toPublicOperatorSettings,
-} from "@voyant-travel/operator-settings"
+import { getOperatorSettings, toPublicOperatorSettings } from "@voyant-travel/operator-settings"
 import {
   createQuoteProposalAdminRoutes,
   createQuoteProposalPublicRoutes,
@@ -128,10 +76,7 @@ import {
   type NodeServerHandle,
   type R2BucketShim,
 } from "@voyant-travel/runtime"
-import { createR2Provider, type R2BucketLike } from "@voyant-travel/storage/providers/r2"
-import type { VideoUploadTicketRequest } from "@voyant-travel/storage/routes"
-import type { PaymentLinkRoutesOptions } from "@voyant-travel/storefront/payment-link"
-import { createToolRegistry, type ToolContext, ToolError } from "@voyant-travel/tools"
+import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import {
   type CancelTripComponentsDeps,
   type ReserveTripDeps,
@@ -145,7 +90,7 @@ import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
-import { and, asc, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
@@ -168,7 +113,7 @@ import {
   validateVoyantProject,
 } from "./profile.js"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
-import { registerVoyantGraphTools, type VoyantGraphRuntime } from "./runtime-lowering.js"
+import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 import {
   type ResolvedVoyantGraphRuntimeValues,
   resolveVoyantGraphRuntimeValues,
@@ -253,46 +198,17 @@ export interface ManagedProfileProviders {
   createTripsRoutesOptions: import("@voyant-travel/trips").TripsRoutesOptionsProvider
   resolveNotificationProviders: (bindings: unknown) => NotificationProvider[]
   resolvePublicCheckoutBaseUrl: (bindings: unknown) => string | null
-  resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
-  readDocumentContentBase64: (bindings: unknown, storageKey: string) => Promise<string | null>
   resolveDb: (bindings: unknown) => VoyantDb
-  createOperatorDocumentStorage: typeof createDocumentStorage
-  resolveContractDocumentGenerator: () => undefined
   createBookingPiiService: () => Promise<null>
   autoGenerateContractOnConfirmed: { enabled: boolean; templateSlug: string }
-  resolveBankTransferDetails: typeof resolveBankTransferDetails
-  closePaymentSchedulesForBooking: (...args: never[]) => Promise<void>
-  recordCancellationFinancialSettlement: (...args: never[]) => Promise<null>
   resolveBookingRequirementsProductSnapshot: (...args: never[]) => Promise<null>
-  resolveCatalogRuntime: typeof resolveManagedCatalogRuntime
-  createInvoiceExchangeRateResolver: typeof createInvoiceExchangeRateResolver
-  createInvoiceSettlementPollers: () => Record<string, never>
   withDb: <T>(bindings: unknown, operation: (db: VoyantDb) => Promise<T>) => Promise<T>
   storefrontIntakePersistence: import("@voyant-travel/storefront").StorefrontIntakePersistence
-  resolvePaymentStarters: () => Record<string, never>
-  resolveCardPaymentStarter: (
-    bindings: unknown,
-  ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
   loadFlightAdminRoutes: typeof createManagedFlightAdminRoutes
   loadMcpAdminRoutes: () => Promise<Hono>
-  loadCatalogBookingRoutes: typeof createManagedCatalogBookingRoutes
-  loadInventoryContentRoutes: typeof createManagedInventoryContentRoutes
-  loadCruisesContentRoutes: typeof createManagedCruisesContentRoutes
-  loadAccommodationsContentRoutes: typeof createManagedAccommodationsContentRoutes
-  loadStorageRoutes: typeof createManagedStorageRoutes
-  loadInventoryBrochureRoutes: typeof createManagedInventoryBrochureRoutes
-  loadPaymentLinkRoutes: () => Promise<Hono>
-  loadContractDocumentRoutes: typeof createManagedContractDocumentRoutes
-  createBookingScheduleRoutesOptions: typeof createManagedBookingScheduleRoutesOptions
-  loadBookingScheduleAdminRoutes: typeof createManagedBookingScheduleAdminRoutes
-  loadPaymentPolicyPublicRoutes: typeof createManagedPaymentPolicyPublicRoutes
   loadQuoteVersionSnapshotRoutes: typeof createManagedQuoteVersionSnapshotRoutes
-  loadBookingMaintenanceRoutes: typeof createManagedBookingMaintenanceRoutes
-  loadActionLedgerHealthRoutes: typeof createManagedActionLedgerHealthRoutes
   loadProposalAdminRoutes: typeof createManagedProposalAdminRoutes
   loadProposalPublicRoutes: typeof createManagedProposalPublicRoutes
-  loadCatalogOffersRoutes: typeof createManagedCatalogOffersRoutes
-  loadCatalogCheckoutRoutes: typeof createManagedCatalogCheckoutRoutes
 }
 
 export type VoyantNodeRuntimeProviders = ManagedProfileProviders
@@ -404,13 +320,7 @@ type AsyncMethodProvider<T extends object> = {
     : never
 }
 
-interface DestinationNameResolver {
-  resolve(code: string): Promise<string | null | undefined>
-}
-
 let pooledDb: { url: string; db: VoyantDb } | undefined
-let managedSourceAdapterRegistry: SourceAdapterRegistry | undefined
-let managedOwnedBookingHandlers: OwnedBookingHandlerRegistry | undefined
 const MANAGED_CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
   "/auth/get-session",
   "/auth/jwks",
@@ -453,7 +363,11 @@ export async function loadVoyantNodeRuntime(
     auth: options.app?.auth ?? options.auth,
     activeModules,
   })
-  const providers = createManagedProfileProviders(options.providers, options.graphRuntime)
+  const providers = createManagedProfileProviders(
+    options.providers,
+    options.graphRuntime,
+    options.runtimePorts,
+  )
   const graphComposition = await composeVoyantGraphRuntime({
     runtime: options.graphRuntime,
     capabilities: providers,
@@ -574,7 +488,11 @@ export async function loadManagedProfileRuntime(
     toPluginEnvRecord(env),
     customSourceOptions,
   )
-  const providers = createManagedProfileProviders(options.providers, options.graphRuntime)
+  const providers = createManagedProfileProviders(
+    options.providers,
+    options.graphRuntime,
+    options.runtimePorts,
+  )
   const graphComposition = options.graphRuntime
     ? await composeVoyantGraphRuntime({
         runtime: options.graphRuntime,
@@ -861,58 +779,29 @@ export function createManagedProfileApp(options: {
 export function createManagedProfileProviders(
   overrides: Partial<ManagedProfileProviders> = {},
   graphRuntime?: VoyantGraphRuntime,
+  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts,
 ): ManagedProfileProviders {
-  let providers: ManagedProfileProviders
   const defaults: ManagedProfileProviders = {
     resolveNotificationProviders: resolveManagedNotificationProviders,
     resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrl,
-    resolveDocumentDownloadUrl: resolveDocumentDownloadUrl,
-    readDocumentContentBase64: readDocumentContentBase64,
     resolveDb: resolveDb,
-    createOperatorDocumentStorage: createDocumentStorage,
-    resolveContractDocumentGenerator: () => undefined,
     createBookingPiiService: async () => null,
     autoGenerateContractOnConfirmed: {
       enabled: false,
       templateSlug: "customer-sales-agreement",
     },
-    resolveBankTransferDetails,
     relationshipsService: lazyRelationshipsService(),
-    closePaymentSchedulesForBooking: async () => {},
-    recordCancellationFinancialSettlement: async () => null,
     resolveBookingRequirementsProductSnapshot: async () => null,
-    resolveCatalogRuntime: resolveManagedCatalogRuntime,
-    createInvoiceExchangeRateResolver: createInvoiceExchangeRateResolver,
-    createInvoiceSettlementPollers: () => ({}),
     createTripsRoutesOptions: async () => ({}),
     withDb: async (bindings, operation) => operation(resolveDb(bindings)),
     storefrontIntakePersistence: createNoopStorefrontIntakePersistence(),
-    resolvePaymentStarters: () => ({}),
-    resolveCardPaymentStarter: () => null,
     loadFlightAdminRoutes: createManagedFlightAdminRoutes,
-    loadMcpAdminRoutes: () => createManagedMcpAdminRoutes(graphRuntime),
-    loadCatalogBookingRoutes: createManagedCatalogBookingRoutes,
-    loadInventoryContentRoutes: createManagedInventoryContentRoutes,
-    loadCruisesContentRoutes: createManagedCruisesContentRoutes,
-    loadAccommodationsContentRoutes: createManagedAccommodationsContentRoutes,
-    loadStorageRoutes: createManagedStorageRoutes,
-    loadInventoryBrochureRoutes: createManagedInventoryBrochureRoutes,
-    loadPaymentLinkRoutes: async () =>
-      createManagedPaymentLinkRoutes(providers.resolveCardPaymentStarter),
-    loadContractDocumentRoutes: async () => createManagedContractDocumentRoutes(),
-    createBookingScheduleRoutesOptions: createManagedBookingScheduleRoutesOptions,
-    loadBookingScheduleAdminRoutes: createManagedBookingScheduleAdminRoutes,
-    loadPaymentPolicyPublicRoutes: createManagedPaymentPolicyPublicRoutes,
+    loadMcpAdminRoutes: () => createManagedMcpAdminRoutes(graphRuntime, runtimePorts),
     loadQuoteVersionSnapshotRoutes: createManagedQuoteVersionSnapshotRoutes,
-    loadBookingMaintenanceRoutes: createManagedBookingMaintenanceRoutes,
-    loadActionLedgerHealthRoutes: createManagedActionLedgerHealthRoutes,
     loadProposalAdminRoutes: createManagedProposalAdminRoutes,
     loadProposalPublicRoutes: createManagedProposalPublicRoutes,
-    loadCatalogOffersRoutes: createManagedCatalogOffersRoutes,
-    loadCatalogCheckoutRoutes: createManagedCatalogCheckoutRoutes,
   }
-  providers = { ...defaults, ...overrides }
-  return providers
+  return { ...defaults, ...overrides }
 }
 
 export function createManagedProfileNodeEnv(
@@ -1677,60 +1566,6 @@ function isR2Bucket(value: unknown): value is R2BucketShim {
   return typeof value === "object" && value !== null && "get" in value && "put" in value
 }
 
-function createStorageProvider(bucket: R2BucketLike | undefined, publicBaseUrl?: string) {
-  if (!bucket) return null
-  return createR2Provider({
-    bucket,
-    ...(publicBaseUrl ? { publicBaseUrl } : {}),
-  })
-}
-
-function createDocumentStorage(bindings: unknown) {
-  return createStorageProvider((bindings as ManagedProfileRuntimeEnv).DOCUMENTS_BUCKET)
-}
-
-function createMediaStorage(bindings: unknown) {
-  const env = bindings as ManagedProfileRuntimeEnv
-  const base = resolveManagedApiBaseUrl(env)
-  return createStorageProvider(env.MEDIA_BUCKET, base ? `${base}/v1/admin/media/` : undefined)
-}
-
-function resolveManagedApiBaseUrl(env: ManagedProfileRuntimeEnv): string | null {
-  const base = env.API_BASE_URL?.trim() || env.APP_URL?.trim()
-  return base ? base.replace(/\/+$/, "") : null
-}
-
-async function readDocumentContentBase64(
-  bindings: unknown,
-  storageKey: string,
-): Promise<string | null> {
-  const object = await (bindings as ManagedProfileRuntimeEnv).DOCUMENTS_BUCKET?.get(storageKey)
-  if (!object) return null
-  return arrayBufferToBase64(await object.arrayBuffer())
-}
-
-async function resolveDocumentDownloadUrl(
-  bindings: unknown,
-  storageKey: string,
-): Promise<string | null> {
-  const env = bindings as ManagedProfileRuntimeEnv
-  const base = env.API_BASE_URL?.trim() || env.APP_URL?.trim()
-  if (!base) return null
-  return `${base.replace(/\/+$/, "")}/v1/admin/documents/files/${encodeURIComponent(storageKey)}`
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  if (typeof Buffer !== "undefined") {
-    return Buffer.from(buffer).toString("base64")
-  }
-  const bytes = new Uint8Array(buffer)
-  let binary = ""
-  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
-  }
-  return btoa(binary)
-}
-
 function resolvePublicCheckoutBaseUrl(bindings: unknown): string | null {
   const env = bindings as ManagedProfileRuntimeEnv
   return (
@@ -1739,18 +1574,6 @@ function resolvePublicCheckoutBaseUrl(bindings: unknown): string | null {
     env.APP_URL?.trim().replace(/\/api\/?$/, "") ||
     null
   )
-}
-
-function resolveBankTransferDetails(bindings: unknown) {
-  const env = bindings as ManagedProfileRuntimeEnv
-  if (!env.BANK_TRANSFER_BENEFICIARY || !env.BANK_TRANSFER_IBAN) return null
-  return {
-    provider: "bank-transfer" as const,
-    beneficiary: env.BANK_TRANSFER_BENEFICIARY,
-    iban: env.BANK_TRANSFER_IBAN,
-    bankName: env.BANK_TRANSFER_BANK_NAME ?? null,
-    notes: env.BANK_TRANSFER_NOTES ?? null,
-  }
 }
 
 function resolveManagedNotificationProviders(bindings: unknown) {
@@ -1787,11 +1610,9 @@ function resolveEmailReplyTo(value: string | undefined): string[] | null {
 }
 
 type ManagedMcpToolContext = ToolContext & {
-  catalog: CatalogToolServices
   trips: TripsToolServices
   inventory: InventoryToolServices
   bookings: BookingsToolServices
-  finance: FinanceToolServices
   quotes: QuotesToolServices
   relationships: RelationshipsToolServices
   notifications: NotificationsToolServices
@@ -1809,21 +1630,26 @@ type BookingContactRow = {
   [key: string]: unknown
 }
 
-function resolveManagedCatalogRuntime(c: Context): CatalogSearchRuntime {
-  return {
-    indexer: undefined,
-    embeddings: undefined,
-    defaultScope: {
-      locale: "en-GB",
-      audience: c.var.actor === "staff" ? "staff" : (c.var.actor ?? "customer"),
-      market: "default",
-    },
+async function createManagedMcpAdminRoutes(
+  graphRuntime?: VoyantGraphRuntime,
+  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts,
+): Promise<Hono> {
+  if (graphRuntime) {
+    return createGraphMcpHonoApp({
+      runtime: graphRuntime,
+      buildContext: buildManagedToolContext,
+      buildResources: () => runtimePorts ?? {},
+      providedContext: [
+        "bookings",
+        "inventory",
+        "notifications",
+        "quotes",
+        "relationships",
+        "trips",
+      ],
+    })
   }
-}
-
-async function createManagedMcpAdminRoutes(graphRuntime?: VoyantGraphRuntime): Promise<Hono> {
   const registry = createToolRegistry()
-  if (graphRuntime) await registerVoyantGraphTools(graphRuntime, registry)
   return createMcpHonoApp({ registry, buildContext: buildManagedToolContext })
 }
 
@@ -1837,15 +1663,9 @@ function buildManagedToolContext(c: Context): ManagedMcpToolContext {
     audience,
     tenantId: env.TENANT_ID ?? env.VOYANT_CLOUD_DEPLOYMENT_ID ?? "default",
     resolverScope: { locale: "en-GB", audience, market: "default", actor },
-    catalog: createManagedCatalogToolServices(c),
     trips: createManagedTripsToolServices(c),
     inventory: createManagedInventoryToolServices(c),
     bookings: createManagedBookingsToolServices(c),
-    finance: {
-      listInvoices: (query) => financeService.listInvoices(c.var.db, query),
-      getInvoiceById: (id) => financeService.getInvoiceById(c.var.db, id),
-      voidInvoice: (id, input) => financeService.voidInvoice(c.var.db, id, input),
-    },
     quotes: {
       listQuotes: (query) => quotesService.listQuotes(c.var.db, query),
       getQuoteById: (id) => quotesService.getQuoteById(c.var.db, id),
@@ -1867,41 +1687,6 @@ function buildManagedToolContext(c: Context): ManagedMcpToolContext {
           createNotificationService(resolveManagedNotificationProviders(c.env)),
           { ...input, targetType: "other" },
         ),
-    },
-  }
-}
-
-function createManagedCatalogToolServices(c: Context): CatalogToolServices {
-  const runtime = resolveManagedCatalogRuntime(c)
-  return {
-    async search({ slice, request }) {
-      const indexer = runtime.indexer
-      if (!indexer) {
-        throw new ToolError(
-          "Catalog search indexer is not configured for this managed runtime.",
-          "PROVIDER_ERROR",
-        )
-      }
-      if (request.mode === "keyword") return indexer.search(slice, request)
-
-      try {
-        return await executeSemanticSearch({
-          adapter: indexer,
-          slice,
-          request,
-        })
-      } catch {
-        const keywordRequest = {
-          ...request,
-          mode: "keyword" as const,
-          query_embedding: undefined,
-          query_embedding_model_id: undefined,
-        }
-        return indexer.search(slice, keywordRequest)
-      }
-    },
-    async getEntry() {
-      return null
     },
   }
 }
@@ -1964,21 +1749,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-function createInvoiceExchangeRateResolver(
-  bindings: unknown,
-): ResolveInvoiceExchangeRate | undefined {
-  const env = bindings as ManagedProfileRuntimeEnv
-  const apiKey = env.VOYANT_DATA_API_KEY?.trim() || env.VOYANT_API_KEY?.trim()
-  if (!apiKey) return undefined
-  return async (input) => {
-    const { createVoyantDataFxExchangeRateResolver } = await import("@voyant-travel/finance")
-    return createVoyantDataFxExchangeRateResolver({
-      apiKey,
-      baseUrl: env.VOYANT_CLOUD_API_URL,
-    })(input)
-  }
-}
-
 function createManagedProfileWorkflowDriver(env: ManagedProfileRuntimeEnv, defaultAppSlug: string) {
   if (env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()) {
     return () =>
@@ -2036,344 +1806,6 @@ function managedEnv(c: Context): ManagedProfileRuntimeEnv {
  */
 function toPluginEnvRecord(env: ManagedProfileRuntimeEnv): Record<string, unknown> {
   return Object.fromEntries(Object.entries(env))
-}
-
-function connectApiKey(env: ManagedProfileRuntimeEnv): string | undefined {
-  return env.VOYANT_API_KEY ?? env.VOYANT_CONNECT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
-}
-
-const CATALOG_OFFERS_INDEX_LOOKUP_BATCH = 80
-type ConnectRequestMethod = "DELETE" | "GET" | "PATCH" | "POST" | "PUT"
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = []
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
-  return out
-}
-
-function resolveCatalogOffersConnectClient(c: Context): CatalogOffersConnectClient | null {
-  const env = managedEnv(c)
-  const apiKey = connectApiKey(env)
-  const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
-  if (!apiKey || !operatorId) return null
-
-  const options = {
-    apiKey,
-    operatorId,
-    ...(env.VOYANT_CONNECT_API_URL ? { baseUrl: env.VOYANT_CONNECT_API_URL } : {}),
-  }
-  const client = createVoyantConnectClient(options)
-  return {
-    transport: {
-      request: (path, init) =>
-        client.transport.request<unknown>(path, {
-          method: toConnectRequestMethod(init.method),
-          ...(init.body !== undefined ? { body: toConnectRequestBody(init.body) } : {}),
-          ...(init.unwrapData !== undefined ? { unwrapData: init.unwrapData } : {}),
-        }),
-    },
-    accommodations: {
-      getOnConnection: (connectionId, externalId, options) =>
-        client.accommodations.getOnConnection(connectionId, externalId, options),
-    },
-    cruises: {
-      getOnConnection: (connectionId, externalId) =>
-        client.cruises.getOnConnection(connectionId, externalId),
-      listSailingPricing: (connectionId, sailingRef) =>
-        client.cruises.listSailingPricing(connectionId, sailingRef),
-    },
-  }
-}
-
-function toConnectRequestMethod(method: string): ConnectRequestMethod {
-  const normalized = method.toUpperCase()
-  switch (normalized) {
-    case "DELETE":
-    case "GET":
-    case "PATCH":
-    case "POST":
-    case "PUT":
-      return normalized
-    default:
-      throw new TypeError(`Unsupported Connect request method: ${method}`)
-  }
-}
-
-function toConnectRequestBody(body: unknown): object | BodyInit | null {
-  if (body === null || typeof body === "string") return body
-  if (typeof body === "object") return body
-  throw new TypeError("Catalog offers Connect requests must use object, string, or null bodies")
-}
-
-async function fetchCatalogOffersIndexFields(
-  c: Context,
-  ids: string[],
-): Promise<Map<string, CatalogOffersIndexFields>> {
-  const env = managedEnv(c)
-  const out = new Map<string, CatalogOffersIndexFields>()
-  const host = env.TYPESENSE_HOST
-  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!host || !key || ids.length === 0) return out
-
-  const base = host.startsWith("http") ? host.replace(/\/$/, "") : `https://${host}`
-  const distinct = [...new Set(ids)]
-  for (const batch of chunk(distinct, CATALOG_OFFERS_INDEX_LOOKUP_BATCH)) {
-    const filter = `id:=[${batch.map((id) => `\`${id}\``).join(",")}]`
-    const url =
-      `${base}/collections/products__en-GB__staff__default/documents/search` +
-      `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}&per_page=${batch.length}` +
-      `&include_fields=id,name,thumbnailUrl,stars,destinations,countryCodes`
-    try {
-      const res = (await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key } }).then((r) =>
-        r.json(),
-      )) as { hits?: Array<{ document?: CatalogOffersIndexFields & { id?: string } }> }
-      for (const hit of res.hits ?? []) {
-        if (hit.document?.id) out.set(hit.document.id, hit.document)
-      }
-    } catch {
-      // Enrichment is best-effort; cards still render from the offer payload.
-    }
-  }
-  return out
-}
-
-async function resolveCatalogOffersDynamicHotelIds(
-  c: Context,
-  destination: CatalogOffersSearchDestination,
-  limit: number,
-): Promise<string[]> {
-  const env = managedEnv(c)
-  const host = env.TYPESENSE_HOST
-  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!host || !key) return []
-
-  const base = host.startsWith("http") ? host.replace(/\/$/, "") : `https://${host}`
-  const filters = ["supplyModel:=dynamic"]
-  if (destination.countryCode) filters.push(`countryCodes:=[\`${destination.countryCode}\`]`)
-  if (destination.city) filters.push(`destinations:=[\`${destination.city}\`]`)
-  const filter = filters.join(" && ")
-  const url =
-    `${base}/collections/products__en-GB__staff__default/documents/search` +
-    `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}` +
-    `&per_page=${Math.min(limit, 250)}&include_fields=id`
-  try {
-    const res = (await fetch(url, { headers: { "X-TYPESENSE-API-KEY": key } }).then((r) =>
-      r.json(),
-    )) as { hits?: Array<{ document?: { id?: string } }> }
-    return (res.hits ?? []).map((hit) => hit.document?.id).filter((id): id is string => Boolean(id))
-  } catch {
-    return []
-  }
-}
-
-async function resolveCatalogOffersAirportLabels(
-  c: Context,
-  codes: string[],
-): Promise<CatalogOffersAirportLabel[]> {
-  const env = managedEnv(c)
-  const sorted = [...new Set(codes)].sort()
-  const apiKey = connectApiKey(env)
-  if (!apiKey || sorted.length === 0) return sorted.map((code) => ({ code, label: code }))
-
-  let resolver: DestinationNameResolver | null = null
-  try {
-    const { createDestinationNameResolver } = await import("@voyant-travel/plugin-voyant-connect")
-    resolver = createDestinationNameResolver({ apiKey })
-  } catch {
-    resolver = null
-  }
-
-  return Promise.all(
-    sorted.map(async (code) => {
-      if (!resolver) return { code, label: code }
-      try {
-        const city = await resolver.resolve(code)
-        return { code, label: city && city !== code ? `${city} (${code})` : code }
-      } catch {
-        return { code, label: code }
-      }
-    }),
-  )
-}
-
-function createManagedCatalogOffersRouteOptions(): CatalogOffersRouteModuleOptions {
-  return {
-    resolveConnectClient: resolveCatalogOffersConnectClient,
-    fetchIndexFields: fetchCatalogOffersIndexFields,
-    resolveDynamicHotelIds: resolveCatalogOffersDynamicHotelIds,
-    resolveAirportLabels: resolveCatalogOffersAirportLabels,
-  }
-}
-
-async function createManagedCatalogBookingRoutes() {
-  const app = new OpenAPIHono()
-  mountPackageCatalogBookingRoutes(app, createManagedCatalogBookingRouteModuleOptions())
-  return app
-}
-
-function createManagedCatalogBookingRouteModuleOptions(): CatalogBookingRouteModuleOptions {
-  return {
-    booking: {
-      resolveDb: dbFromContext,
-      resolveSourceRegistry: resolveManagedSourceAdapterRegistry,
-      resolveOwnedHandlers: resolveManagedOwnedBookingHandlers,
-      onDraftConsumedError: ({ error }) => {
-        console.warn("[catalog-booking] markDraftConsumed failed:", error)
-      },
-    },
-    resolveRegistry: resolveManagedSourceAdapterRegistry,
-    getProductContent: (db, productId, scope, ctx) => getProductContent(db, productId, scope, ctx),
-    listAvailabilitySlots: listManagedAvailabilitySlots,
-    getOwnedProductById: getManagedOwnedProductById,
-  }
-}
-
-async function createManagedInventoryContentRoutes() {
-  const app = new OpenAPIHono()
-  app.route(
-    "/v1/admin/products",
-    createProductContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: false,
-    }),
-  )
-  app.route(
-    "/v1/public/products",
-    createProductContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: true,
-    }),
-  )
-  return app
-}
-
-async function createManagedCruisesContentRoutes() {
-  const app = new OpenAPIHono()
-  app.route(
-    "/v1/admin/cruises",
-    createCruiseContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: false,
-      allowOwnedKeys: true,
-    }),
-  )
-  app.route(
-    "/v1/public/cruises",
-    createCruiseContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: true,
-      allowOwnedKeys: true,
-    }),
-  )
-  return app
-}
-
-async function createManagedAccommodationsContentRoutes() {
-  const app = new OpenAPIHono()
-  app.route(
-    "/v1/admin/accommodations",
-    createAccommodationContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: false,
-    }),
-  )
-  app.route(
-    "/v1/public/accommodations",
-    createAccommodationContentRoutes({
-      resolveRegistry: resolveManagedSourceAdapterRegistry,
-      defaultAcceptMachineTranslated: true,
-    }),
-  )
-  return app
-}
-
-async function createManagedCatalogOffersRoutes() {
-  const { createCatalogOffersAdminRoutes } = await import("@voyant-travel/catalog/offers")
-  return createCatalogOffersAdminRoutes(createManagedCatalogOffersRouteOptions())
-}
-
-async function listManagedAvailabilitySlots(
-  db: unknown,
-  productId: string,
-  todayIso: string,
-  _scope: CatalogAvailabilitySlotsScope,
-): Promise<SlotRow[]> {
-  return (db as PostgresJsDatabase)
-    .select({
-      id: availabilitySlots.id,
-      dateLocal: availabilitySlots.dateLocal,
-      startsAt: availabilitySlots.startsAt,
-      endsAt: availabilitySlots.endsAt,
-      timezone: availabilitySlots.timezone,
-      status: availabilitySlots.status,
-      unlimited: availabilitySlots.unlimited,
-      remainingPax: availabilitySlots.remainingPax,
-      initialPax: availabilitySlots.initialPax,
-      nights: availabilitySlots.nights,
-      days: availabilitySlots.days,
-    })
-    .from(availabilitySlots)
-    .where(
-      and(
-        eq(availabilitySlots.productId, productId),
-        eq(availabilitySlots.status, "open"),
-        gte(availabilitySlots.dateLocal, todayIso),
-      ),
-    )
-    .orderBy(asc(availabilitySlots.startsAt))
-    .limit(60)
-}
-
-async function getManagedOwnedProductById(
-  db: unknown,
-  productId: string,
-): Promise<{ name: string | null; description: string | null } | null> {
-  const product = await productsService.getProductById(db as PostgresJsDatabase, productId)
-  if (!product) return null
-  return { name: product.name, description: product.description }
-}
-
-async function getManagedOwnedProductName(
-  db: PostgresJsDatabase,
-  entityModule: string,
-  entityId: string,
-): Promise<string | null> {
-  if (entityModule !== "products") return null
-  const { productsService } = await import("@voyant-travel/inventory")
-  const product = await productsService.getProductById(db, entityId)
-  return product?.name ?? null
-}
-
-async function resolveManagedCheckoutBankTransferInstructions(
-  db: PostgresJsDatabase,
-  env: Record<string, string | undefined>,
-) {
-  const [operatorProfile, paymentInstructions] = await Promise.all([
-    getOperatorProfile(db),
-    getOperatorPaymentInstructions(db),
-  ])
-
-  return {
-    beneficiary:
-      paymentInstructions?.bankTransferBeneficiary ||
-      operatorProfile?.legalName ||
-      operatorProfile?.name ||
-      env.BANK_TRANSFER_BENEFICIARY ||
-      env.STOREFRONT_BANK_BENEFICIARY ||
-      "-",
-    iban: paymentInstructions?.iban || env.BANK_TRANSFER_IBAN || env.STOREFRONT_BANK_IBAN || "-",
-    bankName:
-      paymentInstructions?.bank || env.BANK_TRANSFER_BANK_NAME || env.STOREFRONT_BANK_NAME || "-",
-  }
-}
-
-async function createManagedCatalogCheckoutRoutes() {
-  const { createCatalogCheckoutRoutes } = await import("@voyant-travel/commerce/checkout")
-  return createCatalogCheckoutRoutes({
-    resolveBookingTaxSettings,
-    getOwnedProductName: getManagedOwnedProductName,
-    resolveBankTransferInstructions: resolveManagedCheckoutBankTransferInstructions,
-  })
 }
 
 async function createManagedQuoteVersionSnapshotRoutes() {
@@ -2516,236 +1948,6 @@ function getManagedEventBus(c: Context): EventBus | undefined {
   return (c.var as { eventBus?: EventBus }).eventBus
 }
 
-function createManagedBookingScheduleRoutesOptions(): BookingScheduleRoutesOptions {
-  return {
-    resolveDb: dbFromContext,
-    resolveOperatorDefaultPaymentPolicy,
-    resolveSupplierPolicy: resolveManagedSupplierPaymentPolicy,
-    resolveCategoryPolicy: resolveManagedCategoryPaymentPolicy,
-    resolveListingPolicy: resolveManagedListingPaymentPolicy,
-    resolveListingPolicyForEntity: resolveManagedListingPaymentPolicyForEntity,
-    resolveCategoryPolicyForEntity: resolveManagedCategoryPaymentPolicyForEntity,
-    resolveSupplierPolicyForEntity: resolveManagedSupplierPaymentPolicyForEntity,
-    stampPolicySourceOnBooking: async (db, bookingId, source) => {
-      const { stampPolicySourceOnBooking } = await import("@voyant-travel/finance")
-      await stampPolicySourceOnBooking(db, bookingId, source)
-    },
-    readPolicySourceFromInternalNotes,
-  }
-}
-
-async function createManagedBookingScheduleAdminRoutes() {
-  const { createBookingScheduleAdminRoutes } = await import("@voyant-travel/finance")
-  return createBookingScheduleAdminRoutes(createManagedBookingScheduleRoutesOptions())
-}
-
-async function createManagedPaymentPolicyPublicRoutes() {
-  const { createPaymentPolicyPublicRoutes } = await import("@voyant-travel/finance")
-  return createPaymentPolicyPublicRoutes(createManagedBookingScheduleRoutesOptions())
-}
-
-async function resolveManagedSupplierPaymentPolicy(
-  db: PostgresJsDatabase,
-  bookingId: string,
-): Promise<PaymentPolicy | null> {
-  const [{ bookingSupplierStatuses }, { supplierServices, suppliers }] = await Promise.all([
-    import("@voyant-travel/bookings/schema"),
-    import("@voyant-travel/distribution"),
-  ])
-  const [row] = await db
-    .select({ policy: suppliers.customerPaymentPolicy })
-    .from(bookingSupplierStatuses)
-    .innerJoin(supplierServices, eq(supplierServices.id, bookingSupplierStatuses.supplierServiceId))
-    .innerJoin(suppliers, eq(suppliers.id, supplierServices.supplierId))
-    .where(eq(bookingSupplierStatuses.bookingId, bookingId))
-    .orderBy(asc(bookingSupplierStatuses.createdAt))
-    .limit(1)
-
-  return paymentPolicyOrNull(row?.policy)
-}
-
-async function resolveManagedCategoryPaymentPolicy(
-  db: PostgresJsDatabase,
-  bookingId: string,
-): Promise<PaymentPolicy | null> {
-  const [{ bookingItems }, { productCategories, productCategoryProducts }] = await Promise.all([
-    import("@voyant-travel/bookings/schema"),
-    import("@voyant-travel/inventory/schema"),
-  ])
-  const productRows = await db
-    .select({ productId: bookingItems.productId })
-    .from(bookingItems)
-    .where(eq(bookingItems.bookingId, bookingId))
-  const productIds = productRows
-    .map((row) => row.productId)
-    .filter((id): id is string => Boolean(id))
-  if (productIds.length === 0) return null
-
-  const [row] = await db
-    .select({ policy: productCategories.customerPaymentPolicy })
-    .from(productCategoryProducts)
-    .innerJoin(productCategories, eq(productCategories.id, productCategoryProducts.categoryId))
-    .where(
-      and(
-        inArray(productCategoryProducts.productId, productIds),
-        isNotNull(productCategories.customerPaymentPolicy),
-      ),
-    )
-    .orderBy(asc(productCategoryProducts.sortOrder), asc(productCategoryProducts.createdAt))
-    .limit(1)
-
-  return paymentPolicyOrNull(row?.policy)
-}
-
-async function resolveManagedListingPaymentPolicy(
-  db: PostgresJsDatabase,
-  bookingId: string,
-): Promise<PaymentPolicy | null> {
-  return (
-    (await resolveManagedAccommodationListingPaymentPolicy(db, bookingId)) ??
-    resolveManagedProductListingPaymentPolicy(db, bookingId)
-  )
-}
-
-async function resolveManagedAccommodationListingPaymentPolicy(
-  db: PostgresJsDatabase,
-  bookingId: string,
-): Promise<PaymentPolicy | null> {
-  const [{ bookingItems }, { ratePlans, stayBookingItems }] = await Promise.all([
-    import("@voyant-travel/bookings/schema"),
-    import("@voyant-travel/accommodations/schema"),
-  ])
-  const [row] = await db
-    .select({ policy: ratePlans.customerPaymentPolicy })
-    .from(stayBookingItems)
-    .innerJoin(bookingItems, eq(bookingItems.id, stayBookingItems.bookingItemId))
-    .innerJoin(ratePlans, eq(ratePlans.id, stayBookingItems.ratePlanId))
-    .where(and(eq(bookingItems.bookingId, bookingId), isNotNull(ratePlans.customerPaymentPolicy)))
-    .orderBy(asc(stayBookingItems.createdAt))
-    .limit(1)
-
-  return paymentPolicyOrNull(row?.policy)
-}
-
-async function resolveManagedProductListingPaymentPolicy(
-  db: PostgresJsDatabase,
-  bookingId: string,
-): Promise<PaymentPolicy | null> {
-  const [{ bookingItems }, { products }] = await Promise.all([
-    import("@voyant-travel/bookings/schema"),
-    import("@voyant-travel/inventory/schema"),
-  ])
-  const [row] = await db
-    .select({ policy: products.customerPaymentPolicy })
-    .from(bookingItems)
-    .innerJoin(products, eq(products.id, bookingItems.productId))
-    .where(and(eq(bookingItems.bookingId, bookingId), isNotNull(products.customerPaymentPolicy)))
-    .orderBy(asc(bookingItems.createdAt))
-    .limit(1)
-
-  return paymentPolicyOrNull(row?.policy)
-}
-
-async function resolveManagedListingPaymentPolicyForEntity(
-  db: PostgresJsDatabase,
-  ctx: PaymentPolicyEntityContext,
-): Promise<PaymentPolicy | null> {
-  if (ctx.entityModule === "accommodations" && ctx.ratePlanId) {
-    const { ratePlans } = await import("@voyant-travel/accommodations/schema")
-    const [row] = await db
-      .select({ policy: ratePlans.customerPaymentPolicy })
-      .from(ratePlans)
-      .where(eq(ratePlans.id, ctx.ratePlanId))
-      .limit(1)
-    return paymentPolicyOrNull(row?.policy)
-  }
-
-  if (ctx.entityModule === "products") {
-    const { products } = await import("@voyant-travel/inventory/schema")
-    const [row] = await db
-      .select({ policy: products.customerPaymentPolicy })
-      .from(products)
-      .where(eq(products.id, ctx.entityId))
-      .limit(1)
-    return paymentPolicyOrNull(row?.policy)
-  }
-
-  return null
-}
-
-async function resolveManagedCategoryPaymentPolicyForEntity(
-  db: PostgresJsDatabase,
-  ctx: PaymentPolicyEntityContext,
-): Promise<PaymentPolicy | null> {
-  if (ctx.entityModule !== "products") return null
-  const { productCategories, productCategoryProducts } = await import(
-    "@voyant-travel/inventory/schema"
-  )
-  const [row] = await db
-    .select({ policy: productCategories.customerPaymentPolicy })
-    .from(productCategoryProducts)
-    .innerJoin(productCategories, eq(productCategories.id, productCategoryProducts.categoryId))
-    .where(
-      and(
-        eq(productCategoryProducts.productId, ctx.entityId),
-        isNotNull(productCategories.customerPaymentPolicy),
-      ),
-    )
-    .orderBy(asc(productCategoryProducts.sortOrder), asc(productCategoryProducts.createdAt))
-    .limit(1)
-
-  return paymentPolicyOrNull(row?.policy)
-}
-
-async function resolveManagedSupplierPaymentPolicyForEntity(
-  db: PostgresJsDatabase,
-  ctx: PaymentPolicyEntityContext,
-): Promise<PaymentPolicy | null> {
-  if (ctx.entityModule !== "products") return null
-  const [{ products }, { suppliers }] = await Promise.all([
-    import("@voyant-travel/inventory/schema"),
-    import("@voyant-travel/distribution"),
-  ])
-  const [product] = await db
-    .select({ supplierId: products.supplierId })
-    .from(products)
-    .where(eq(products.id, ctx.entityId))
-    .limit(1)
-  if (!product?.supplierId) return null
-
-  const [supplier] = await db
-    .select({ policy: suppliers.customerPaymentPolicy })
-    .from(suppliers)
-    .where(eq(suppliers.id, product.supplierId))
-    .limit(1)
-
-  return paymentPolicyOrNull(supplier?.policy)
-}
-
-function paymentPolicyOrNull(value: unknown): PaymentPolicy | null {
-  return value ? (value as PaymentPolicy) : null
-}
-
-async function createManagedActionLedgerHealthRoutes() {
-  const [
-    { createActionLedgerHealthRoutes },
-    { checkBookingActionLedgerDrift },
-    { checkFinanceActionLedgerDrift },
-    { checkProductActionLedgerDrift },
-  ] = await Promise.all([
-    import("@voyant-travel/action-ledger/health"),
-    import("@voyant-travel/bookings/action-ledger-drift"),
-    import("@voyant-travel/finance/action-ledger-drift"),
-    import("@voyant-travel/inventory/action-ledger-drift"),
-  ])
-
-  return createActionLedgerHealthRoutes({
-    checkBookingDrift: checkBookingActionLedgerDrift,
-    checkFinanceDrift: checkFinanceActionLedgerDrift,
-    checkProductDrift: checkProductActionLedgerDrift,
-  })
-}
-
 async function createManagedFlightAdminRoutes() {
   const [
     { createFlightAdminRoutes, createFlightOrderPaymentIntegration },
@@ -2783,344 +1985,6 @@ async function rejectManagedFlightConnectorRequest(): Promise<never> {
   throw new Error(
     "Flight connector is not configured for this managed runtime. Override loadFlightAdminRoutes with a deployment flight connector.",
   )
-}
-
-async function createManagedPaymentLinkRoutes(
-  resolveCardPaymentStarter: ManagedProfileProviders["resolveCardPaymentStarter"],
-) {
-  const { createPaymentLinkRoutes } = await import("@voyant-travel/storefront/payment-link")
-  return createPaymentLinkRoutes({
-    resolveBankTransferDetails: async (c) => {
-      const details = resolveBankTransferDetails(c.env)
-      if (!details) return null
-      return {
-        beneficiary: details.beneficiary,
-        iban: details.iban,
-        bankName: details.bankName,
-      }
-    },
-    resolvePublicCheckoutBaseUrl: (c) => resolvePublicCheckoutBaseUrl(c.env),
-    startCardPayment: (c, session) =>
-      startManagedPaymentLinkCardPayment(c, session, resolveCardPaymentStarter),
-    resolveTripData: resolveManagedPaymentLinkTripData,
-  })
-}
-
-async function startManagedPaymentLinkCardPayment(
-  c: Context,
-  session: Parameters<PaymentLinkRoutesOptions["startCardPayment"]>[1],
-  resolveCardPaymentStarter: ManagedProfileProviders["resolveCardPaymentStarter"],
-): ReturnType<PaymentLinkRoutesOptions["startCardPayment"]> {
-  const starter = resolveCardPaymentStarter?.(c.env) ?? null
-  if (!starter) return { configured: false }
-
-  const [first, ...rest] = (session.payerName ?? "").trim().split(/\s+/)
-  const last = rest.length > 0 ? rest.join(" ") : "Customer"
-  const result = await starter(c, {
-    db: dbFromContext(c),
-    sessionId: session.id,
-    billing: {
-      email: session.payerEmail ?? "tbd@example.com",
-      phone: "0000000000",
-      firstName: first || "Customer",
-      lastName: last,
-      city: "TBD",
-      country: 642,
-      state: "TBD",
-      postalCode: "00000",
-      details: "Pending - customer to confirm at payment.",
-    },
-    description: session.notes ?? `Payment ${session.id}`,
-  })
-
-  if (!result) return { configured: false }
-  return { configured: true, redirectUrl: result.redirectUrl }
-}
-
-const resolveManagedPaymentLinkTripData: NonNullable<
-  PaymentLinkRoutesOptions["resolveTripData"]
-> = async (c, tripEnvelopeId, session) => {
-  const [{ productMedia, products }, { tripsService }, { tripComponents, tripEnvelopes }] =
-    await Promise.all([
-      import("@voyant-travel/inventory/schema"),
-      import("@voyant-travel/trips"),
-      import("@voyant-travel/trips/schema"),
-    ])
-  const db = dbFromContext(c)
-
-  const [envelope] = await db
-    .select()
-    .from(tripEnvelopes)
-    .where(eq(tripEnvelopes.id, tripEnvelopeId))
-    .limit(1)
-  if (!envelope) return null
-
-  if (session.status === "paid" && envelope.status !== "booked") {
-    try {
-      await tripsService.completeTripCheckout(db, {
-        envelopeId: envelope.id,
-        paymentSessionId: session.id,
-        payload: {
-          source: "payment_link_trip_summary_reconcile",
-          amountCents: session.amountCents,
-          currency: session.currency,
-          provider: session.provider,
-        },
-      })
-    } catch (err) {
-      console.error("[trips] payment summary reconciliation failed", err)
-    }
-  }
-
-  const components = await db
-    .select()
-    .from(tripComponents)
-    .where(eq(tripComponents.envelopeId, tripEnvelopeId))
-    .orderBy(asc(tripComponents.sequence), asc(tripComponents.createdAt))
-  const visibleComponents = components.filter(
-    (component) => component.status !== "removed" && component.status !== "cancelled",
-  )
-  const productIds = Array.from(
-    new Set(
-      visibleComponents
-        .map((component) => component.entityId)
-        .filter((value): value is string => typeof value === "string" && value.length > 0),
-    ),
-  )
-
-  const productNameById = new Map<string, string>()
-  const mediaByProductId = new Map<string, { url: string; altText: string | null }>()
-  if (productIds.length > 0) {
-    const productRows = await db
-      .select({ id: products.id, name: products.name })
-      .from(products)
-      .where(inArray(products.id, productIds))
-    for (const row of productRows) productNameById.set(row.id, row.name)
-
-    const mediaRows = await db
-      .select({
-        productId: productMedia.productId,
-        url: productMedia.url,
-        altText: productMedia.altText,
-        isCover: productMedia.isCover,
-        sortOrder: productMedia.sortOrder,
-        mediaType: productMedia.mediaType,
-      })
-      .from(productMedia)
-      .where(and(inArray(productMedia.productId, productIds), eq(productMedia.mediaType, "image")))
-      .orderBy(asc(productMedia.productId), desc(productMedia.isCover), asc(productMedia.sortOrder))
-    for (const row of mediaRows) {
-      if (!mediaByProductId.has(row.productId)) {
-        mediaByProductId.set(row.productId, { url: row.url, altText: row.altText })
-      }
-    }
-  }
-
-  return {
-    envelope: { id: envelope.id, status: envelope.status },
-    components: visibleComponents.map((component) => ({
-      id: component.id,
-      kind: component.kind,
-      entityModule: component.entityModule,
-      entityId: component.entityId,
-      description: component.description,
-      status: component.status,
-      sequence: component.sequence,
-      componentTotalAmountCents: component.componentTotalAmountCents,
-      componentCurrency: component.componentCurrency,
-      metadata: metadataRecord(component.metadata),
-    })),
-    productNameById,
-    mediaByProductId,
-  }
-}
-
-function metadataRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>
-  }
-  return null
-}
-
-async function createManagedStorageRoutes() {
-  const { createMediaRoutes } = await import("@voyant-travel/storage/routes")
-  const app = new OpenAPIHono()
-  app.route(
-    "/",
-    createMediaRoutes({
-      resolveStorage: (c) => createMediaStorage(c.env),
-      guessServedMimeType: guessMimeType,
-      signVideoUploadTicket: createManagedVideoUploadTicket,
-    }),
-  )
-  return app
-}
-
-async function createManagedInventoryBrochureRoutes() {
-  const { createProductBrochureRoutes } = await import("@voyant-travel/inventory/routes-brochure")
-  const app = new OpenAPIHono()
-  app.route(
-    "/v1/admin/products",
-    createProductBrochureRoutes({
-      resolveStorage: (c) => createMediaStorage(c.env),
-      resolvePrinter: () => null,
-    }),
-  )
-  return app
-}
-
-function createManagedVideoUploadTicket(
-  c: Context,
-  input: VideoUploadTicketRequest,
-): Promise<unknown> {
-  const env = c.env as ManagedProfileRuntimeEnv
-  const apiKey = env.VOYANT_API_KEY?.trim() || env.VOYANT_CLOUD_API_KEY?.trim()
-  if (!apiKey) {
-    throw new Error("Voyant Cloud video upload provider is not configured.")
-  }
-  const cloud = getVoyantCloudClient(
-    {
-      VOYANT_CLOUD_API_KEY: apiKey,
-      ...(env.VOYANT_CLOUD_API_URL ? { VOYANT_CLOUD_API_URL: env.VOYANT_CLOUD_API_URL } : {}),
-    },
-    { apiKey },
-  )
-  return cloud.video.videos.createUpload(toCreateVideoUploadInput(input))
-}
-
-function toCreateVideoUploadInput(input: VideoUploadTicketRequest): CreateVideoUploadInput {
-  const output: CreateVideoUploadInput = {
-    fileSize: input.fileSize,
-    maxDurationSeconds: input.maxDurationSeconds,
-  }
-  if (input.name !== undefined) output.name = input.name
-  if (input.requireSignedUrls !== undefined) output.requireSignedUrls = input.requireSignedUrls
-  if (input.allowedOrigins !== undefined) output.allowedOrigins = input.allowedOrigins
-  if (input.thumbnailTimestampPct !== undefined) {
-    output.thumbnailTimestampPct = input.thumbnailTimestampPct
-  }
-  if (input.meta !== undefined) output.meta = input.meta
-  return output
-}
-
-async function createManagedBookingMaintenanceRoutes() {
-  const { createBookingMaintenanceRoutes } = await import("@voyant-travel/commerce/checkout")
-  return createBookingMaintenanceRoutes({
-    resolveDb: dbFromContext,
-    resolveBookingTaxSettings,
-  })
-}
-
-async function createManagedContractDocumentRoutes() {
-  return createContractDocumentRoutes({
-    generateContract: (env, db, eventBus, bookingId, opts) =>
-      managedContractDocumentService(env).generate(
-        db as PostgresJsDatabase,
-        eventBus as EventBus | undefined,
-        bookingId,
-        opts,
-      ),
-    previewContract: (env, db, bookingId) =>
-      managedContractDocumentService(env).preview(db as PostgresJsDatabase, bookingId),
-    resolveStorage: createDocumentStorage,
-    guessMimeType,
-  })
-}
-
-const MANAGED_CONTRACT_SERIES_NAME = "customer-contracts"
-
-function managedContractDocumentService(env: unknown) {
-  return createContractDocumentService({
-    resolveGenerator: () => resolveManagedContractDocumentGenerator(env),
-    autoGenerateOptions: {
-      enabled: true,
-      templateSlug: "customer-sales-agreement",
-      scope: "customer",
-      language: "en",
-      seriesName: MANAGED_CONTRACT_SERIES_NAME,
-      resolveVariables: buildManagedContractVariables(),
-    },
-    defaultSeriesName: MANAGED_CONTRACT_SERIES_NAME,
-    resolveBindings: () => contractDocumentBindings(env),
-    resolveBookingPiiService: () => null,
-  })
-}
-
-function buildManagedContractVariables() {
-  return buildContractVariableBindings({
-    resolveOperatorProfile: (db) => getOperatorProfile(db),
-    resolveOperatorPaymentInstructions: (db) => getOperatorPaymentInstructions(db),
-  })
-}
-
-function contractDocumentBindings(env: unknown): Record<string, unknown> {
-  const bindings = env as ManagedProfileRuntimeEnv
-  return {
-    APP_URL: bindings.APP_URL,
-    DOCUMENTS_BASE_URL: bindings.API_BASE_URL ?? bindings.APP_URL,
-  }
-}
-
-function resolveManagedContractDocumentGenerator(env: unknown) {
-  const storage = createDocumentStorage(env)
-  if (!storage) return null
-  return (context: ContractDocumentGeneratorContext) =>
-    createPdfContractDocumentGenerator({ storage })(context)
-}
-
-function guessMimeType(key: string): string {
-  const ext = key.split(".").pop()?.toLowerCase()
-  switch (ext) {
-    case "pdf":
-      return "application/pdf"
-    case "png":
-      return "image/png"
-    case "jpg":
-    case "jpeg":
-      return "image/jpeg"
-    case "gif":
-      return "image/gif"
-    case "webp":
-      return "image/webp"
-    case "svg":
-      return "image/svg+xml"
-    case "mp4":
-      return "video/mp4"
-    case "webm":
-      return "video/webm"
-    case "mov":
-      return "video/quicktime"
-    case "json":
-      return "application/json"
-    case "txt":
-      return "text/plain"
-    case "csv":
-      return "text/csv"
-    case "xml":
-      return "application/xml"
-    case "zip":
-      return "application/zip"
-    case "doc":
-      return "application/msword"
-    case "docx":
-      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    case "xls":
-      return "application/vnd.ms-excel"
-    case "xlsx":
-      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    default:
-      return "application/octet-stream"
-  }
-}
-
-function resolveManagedSourceAdapterRegistry(): SourceAdapterRegistry {
-  managedSourceAdapterRegistry ??= createSourceAdapterRegistry()
-  return managedSourceAdapterRegistry
-}
-
-function resolveManagedOwnedBookingHandlers(): OwnedBookingHandlerRegistry {
-  managedOwnedBookingHandlers ??= createOwnedBookingHandlerRegistry()
-  return managedOwnedBookingHandlers
 }
 
 function createNoopExecutionContext(): ExecutionContextLike {

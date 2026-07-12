@@ -61,6 +61,16 @@ boundary processing are package workflows with package-declared schedules. The
 Node host supplies database, registry, reporting, and indexing capabilities but
 does not select these implementations by package id.
 
+### Resident Node product-authority extraction
+
+The resident Node host does not provide compatibility defaults or route loaders
+for Commerce, Catalog, Finance, Legal, or Storage. Selected package manifests
+load package-owned graph factories, and deployments provide their typed runtime
+ports. Catalog and Finance MCP services are likewise package-owned tool-context
+contributions resolved from the selected graph. The only temporary reference
+from this group is Finance payment-session assembly inside the legacy Flights
+loader, tracked by the Node product-authority ratchet.
+
 ## Non-Goals
 
 The foundational v1 graph does not need every facet discussed in the RFC

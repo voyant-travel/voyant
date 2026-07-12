@@ -1,36 +1,32 @@
 import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
+import type { Context } from "hono"
+
+import {
+  catalogSearchRuntimePort,
+  type CatalogSearchRuntimeOptions,
+} from "./api-runtime-ports.js"
 import { executeSemanticSearch } from "./search/semantic.js"
 import type { CatalogToolServices } from "./tools.js"
-
-type CatalogMcpResource = {
-  catalog: {
-    indexer?: Parameters<typeof executeSemanticSearch>[0]["adapter"]
-    embeddings?: Parameters<typeof executeSemanticSearch>[0]["embeddings"]
-    resolveEntity?: (
-      vertical: string,
-      id: string,
-      scope: Parameters<CatalogToolServices["getEntry"]>[0]["scope"],
-    ) => Promise<{
-      vertical: string
-      entityId: string
-      fields: Record<string, unknown>
-      provenance?: Record<string, { locale: string; audience: string; market: string } | null>
-    } | null>
-  }
-}
 
 export * from "./tools.js"
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["catalog"],
-  contribute: ({ resources }) => {
-    const resource = requireService(
-      resources.catalog as CatalogMcpResource | undefined,
-      "catalog MCP resource",
+  async contribute({ request, resources }) {
+    const provider = await Promise.resolve(
+      requireService(
+        resources[catalogSearchRuntimePort.id] as
+          | CatalogSearchRuntimeOptions
+          | Promise<CatalogSearchRuntimeOptions>
+          | undefined,
+        catalogSearchRuntimePort.id,
+      ),
     )
+    catalogSearchRuntimePort.test(provider)
+    const runtime = provider.resolveRuntime(request as Context)
     const catalog: CatalogToolServices = {
       async search({ slice, request }) {
-        const indexer = resource.catalog.indexer
+        const indexer = runtime.indexer
         if (!indexer) {
           throw new ToolError(
             "Catalog search indexer is not configured for this deployment.",
@@ -41,7 +37,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
         try {
           return await executeSemanticSearch({
             adapter: indexer,
-            embeddings: resource.catalog.embeddings,
+            embeddings: runtime.embeddings,
             slice,
             request,
           })
@@ -54,16 +50,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
           })
         }
       },
-      async getEntry({ vertical, id, scope }) {
-        const entry = await resource.catalog.resolveEntity?.(vertical, id, scope)
-        return entry
-          ? {
-              vertical: entry.vertical,
-              id: entry.entityId,
-              fields: entry.fields,
-              provenance: entry.provenance,
-            }
-          : null
+      async getEntry() {
+        return null
       },
     }
     return { catalog }
