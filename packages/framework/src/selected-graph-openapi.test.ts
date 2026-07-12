@@ -4,7 +4,10 @@ import type { LazyMount, ModuleMount } from "@voyant-travel/hono/openapi"
 import { describe, expect, it } from "vitest"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
-import { buildSelectedGraphOpenApiDocuments } from "./selected-graph-openapi.js"
+import {
+  buildSelectedGraphOpenApiDocuments,
+  mergeSelectedGraphOpenApiDocuments,
+} from "./selected-graph-openapi.js"
 
 const options = { info: { title: "Selected graph", version: "1" } }
 
@@ -120,7 +123,7 @@ function route(
 }
 
 describe("buildSelectedGraphOpenApiDocuments", () => {
-  it("follows graph selection and removal without leaking unclaimed paths", async () => {
+  it("follows graph selection and rejects unclaimed published paths", async () => {
     const app = documentedApp(["/v1/admin/identity/contacts", "/v1/admin/bookings"])
     const identity = unit("@voyant-travel/identity", [
       route("@voyant-travel/identity#api.admin", "identity", "identity"),
@@ -138,7 +141,7 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     ])
     await expect(
       buildSelectedGraphOpenApiDocuments({ runtime: runtime([]), app, options }),
-    ).resolves.toEqual(new Map())
+    ).rejects.toThrow(/unclaimed published operations.*GET \/v1\/admin\/identity\/contacts/)
   })
 
   it("normalizes relative mounts and replays lazy route registries", async () => {
@@ -286,6 +289,33 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
 
     expect(Object.keys(documents.get("identity-read")?.paths?.[path] ?? {})).toEqual(["get"])
     expect(Object.keys(documents.get("identity-write")?.paths?.[path] ?? {})).toEqual(["post"])
+  })
+
+  it("merges selected documents into one aggregate without duplicate operations", async () => {
+    const path = "/v1/admin/identity/contacts"
+    const app = methodSplitApp(path)
+    const identity = unit("@voyant-travel/identity", [
+      route("@voyant-travel/identity#api.contacts.read", "identity", "identity-read", ["GET"]),
+      route("@voyant-travel/identity#api.contacts.write", "identity", "identity-write", ["POST"]),
+    ])
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([identity]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(mergeSelectedGraphOpenApiDocuments(documents).paths?.[path] ?? {})).toEqual([
+      "get",
+      "post",
+    ])
+    expect(() =>
+      mergeSelectedGraphOpenApiDocuments(
+        new Map([
+          ["first", documents.get("identity-read")!],
+          ["second", documents.get("identity-read")!],
+        ]),
+      ),
+    ).toThrow(/emitted by both/)
   })
 
   it("requires exact operation ownership for root-mounted bundles", async () => {

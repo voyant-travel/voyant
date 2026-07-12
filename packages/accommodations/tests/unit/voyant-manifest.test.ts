@@ -53,14 +53,14 @@ describe("accommodations deployment manifest", () => {
         {
           surface: "admin",
           mount: "accommodations",
-          openapi: { document: "accommodations-content" },
+          openapi: { document: "accommodations" },
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "accommodations",
           anonymous: true,
-          openapi: { document: "accommodations-content" },
+          openapi: { document: "accommodations-content-public" },
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
       ],

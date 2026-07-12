@@ -82,13 +82,13 @@ describe("cruises deployment manifest", () => {
         {
           surface: "admin",
           mount: "cruises",
-          openapi: { document: "cruises-content" },
+          openapi: { document: "cruises" },
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "cruises",
-          openapi: { document: "cruises-content" },
+          openapi: { document: "cruises" },
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
       ],

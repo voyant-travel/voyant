@@ -119,7 +119,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#content-extension.api.admin",
       surface: "admin",
       mount: "cruises",
-      openapi: { document: "cruises-content" },
+      openapi: { document: "cruises" },
       runtime: {
         entry: "@voyant-travel/cruises/graph-runtime",
         export: "createCruisesContentVoyantRuntime",
@@ -129,7 +129,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#content-extension.api.public",
       surface: "public",
       mount: "cruises",
-      openapi: { document: "cruises-content" },
+      openapi: { document: "cruises" },
       runtime: {
         entry: "@voyant-travel/cruises/graph-runtime",
         export: "createCruisesContentVoyantRuntime",

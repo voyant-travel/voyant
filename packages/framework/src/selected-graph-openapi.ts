@@ -107,7 +107,57 @@ export async function buildSelectedGraphOpenApiDocuments(
     } as OpenApiDocument)
   }
 
+  const unclaimed = documentOperationKeys(source).filter(
+    ({ operation, path }) => isPublishedSurfacePath(path) && !claimedOperations.has(operation),
+  )
+  if (unclaimed.length > 0) {
+    throw new Error(
+      `Selected graph OpenAPI has unclaimed published operations: ${unclaimed
+        .map(({ operation }) => operation)
+        .join(", ")}.`,
+    )
+  }
+
   return documents
+}
+
+/** Compose selected package documents into the deployment aggregate. */
+export function mergeSelectedGraphOpenApiDocuments(
+  documents: ReadonlyMap<string, OpenApiDocument>,
+): OpenApiDocument {
+  const entries = [...documents.entries()]
+  const first = entries[0]?.[1]
+  if (!first) {
+    throw new Error("Selected graph OpenAPI emitted no documents.")
+  }
+
+  const paths: Record<string, unknown> = {}
+  const owners = new Map<string, string>()
+  for (const [documentName, document] of entries) {
+    for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
+      if (!isRecord(pathItem)) continue
+      const current = isRecord(paths[path]) ? paths[path] : {}
+      const merged = { ...current }
+      for (const [key, value] of Object.entries(pathItem)) {
+        if (!HTTP_METHODS.has(key.toLowerCase())) {
+          if (!(key in merged)) merged[key] = value
+          continue
+        }
+        const operation = `${key.toUpperCase()} ${path}`
+        const previous = owners.get(operation)
+        if (previous) {
+          throw new Error(
+            `Selected graph OpenAPI operation "${operation}" is emitted by both "${previous}" and "${documentName}".`,
+          )
+        }
+        owners.set(operation, documentName)
+        merged[key] = value
+      }
+      paths[path] = merged
+    }
+  }
+
+  return { ...first, paths } as OpenApiDocument
 }
 
 function collectClaims(
@@ -155,6 +205,25 @@ function routeClaimsMethod(claim: OpenApiClaim, method: string): boolean {
 
 function isWithinMount(path: string, mount: string): boolean {
   return mount === "/" || path === mount || path.startsWith(`${mount}/`)
+}
+
+function isPublishedSurfacePath(path: string): boolean {
+  return path.startsWith("/v1/admin/") || path.startsWith("/v1/public/")
+}
+
+function documentOperationKeys(
+  document: OpenApiDocument,
+): Array<{ operation: string; path: string }> {
+  const operations: Array<{ operation: string; path: string }> = []
+  for (const [path, pathItem] of Object.entries(document.paths ?? {})) {
+    if (!isRecord(pathItem)) continue
+    for (const method of Object.keys(pathItem)) {
+      if (HTTP_METHODS.has(method.toLowerCase())) {
+        operations.push({ operation: `${method.toUpperCase()} ${path}`, path })
+      }
+    }
+  }
+  return operations
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

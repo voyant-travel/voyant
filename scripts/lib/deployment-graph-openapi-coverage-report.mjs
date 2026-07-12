@@ -34,6 +34,52 @@ export function buildDeploymentGraphOpenApiCoverageReport(input, relativePath) {
           message: `No documented OpenAPI paths match ${failure.bundle.apiId}.`,
         }
       }
+      if (failure.kind === "unknown-docs") {
+        return {
+          code: "VOYANT_GRAPH_OPENAPI_UNKNOWN_AUTHORITY",
+          severity: "error",
+          id: failure.apiId,
+          files: failure.files,
+          message: `${failure.apiId} is documented but is not selected by the deployment graph.`,
+        }
+      }
+      if (failure.kind === "mismatched-docs") {
+        return {
+          code: "VOYANT_GRAPH_OPENAPI_MISMATCHED_AUTHORITY",
+          severity: "error",
+          id: failure.apiId,
+          expected: failure.expected,
+          files: failure.files,
+          message: `${failure.apiId} is stamped into an artifact outside its manifest document claim.`,
+        }
+      }
+      if (failure.kind === "unknown-document") {
+        return {
+          code: "VOYANT_GRAPH_OPENAPI_UNKNOWN_DOCUMENT",
+          severity: "error",
+          id: failure.document,
+          files: failure.files,
+          message: `${failure.document} has no selected graph document claim.`,
+        }
+      }
+      if (failure.kind === "duplicate-docs") {
+        return {
+          code: "VOYANT_GRAPH_OPENAPI_DUPLICATE_AUTHORITY",
+          severity: "error",
+          id: failure.apiId,
+          files: failure.files,
+          message: `${failure.apiId} is documented by multiple artifacts.`,
+        }
+      }
+      if (failure.kind === "duplicate-document-owner") {
+        return {
+          code: "VOYANT_GRAPH_OPENAPI_DUPLICATE_DOCUMENT_OWNER",
+          severity: "error",
+          id: failure.document,
+          owners: failure.owners,
+          message: `${failure.document} is owned by multiple packages.`,
+        }
+      }
       if (failure.bundle) {
         return {
           code: "VOYANT_GRAPH_OPENAPI_STALE_ALLOWLIST",
@@ -87,6 +133,21 @@ export function formatDeploymentGraphOpenApiCoverageFailure(failure) {
     return `[deployment-graph-openapi-coverage:authority-regression] selected graph owns ${failure.actual} OpenAPI API bundles; expected at least ${failure.minimum}`
   }
   if (failure.kind === "missing-docs") return formatGap(failure.bundle)
+  if (failure.kind === "unknown-docs") {
+    return `[deployment-graph-openapi-coverage:unknown-authority] ${failure.apiId} is documented by ${failure.files.join(", ")} but is absent from the selected graph`
+  }
+  if (failure.kind === "mismatched-docs") {
+    return `[deployment-graph-openapi-coverage:mismatched-authority] ${failure.apiId} expected ${failure.expected} but is stamped into ${failure.files.join(", ")}`
+  }
+  if (failure.kind === "unknown-document") {
+    return `[deployment-graph-openapi-coverage:unknown-document] ${failure.document} has no selected graph claim: ${failure.files.join(", ")}`
+  }
+  if (failure.kind === "duplicate-docs") {
+    return `[deployment-graph-openapi-coverage:duplicate-authority] ${failure.apiId} is documented by multiple artifacts: ${failure.files.join(", ")}`
+  }
+  if (failure.kind === "duplicate-document-owner") {
+    return `[deployment-graph-openapi-coverage:duplicate-document-owner] ${failure.document} is owned by multiple packages: ${failure.owners.join(", ")}`
+  }
   if (failure.bundle) {
     return `[deployment-graph-openapi-coverage:stale-allowlist] ${failure.bundle.apiId} is allowlisted but now has documented ${failure.bundle.surface} paths for one of: ${failure.bundle.candidateModules.join(", ")}`
   }

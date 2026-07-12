@@ -19,33 +19,6 @@ import {
 
 const DEFAULT_GRAPH = "starters/operator/.voyant/deployment-graph.generated.json"
 const DEFAULT_OPENAPI_DIR = "packages"
-const DEFAULT_PACKAGE_OPENAPI_DIRS = [
-  "packages/accommodations/openapi",
-  "packages/action-ledger/openapi",
-  "packages/bookings/openapi",
-  "packages/catalog/openapi",
-  "packages/charters/openapi",
-  "packages/commerce/openapi",
-  "packages/cruises/openapi",
-  "packages/distribution/openapi",
-  "packages/finance/openapi",
-  "packages/flights/openapi",
-  "packages/identity/openapi",
-  "packages/inventory/openapi",
-  "packages/legal/openapi",
-  "packages/mice/openapi",
-  "packages/notifications/openapi",
-  "packages/operations/openapi",
-  "packages/operator-settings/openapi",
-  "packages/public-document-delivery/openapi",
-  "packages/quotes/openapi",
-  "packages/realtime/openapi",
-  "packages/relationships/openapi",
-  "packages/storage/openapi",
-  "packages/storefront/openapi",
-  "packages/trips/openapi",
-  "packages/workflow-runs/openapi",
-]
 const CHECKED_SURFACES = new Set(["admin", "storefront"])
 // Ratchet only. The document names and owners remain authoritative in package
 // manifests; this prevents migrated bundles from silently falling back to the
@@ -76,13 +49,14 @@ const graphPath = path.resolve(repoRoot, options.graph)
 const openapiDir = path.resolve(repoRoot, options.openapiDir)
 
 const graph = readJson(graphPath)
-const docs = readOpenApiCoverage([
-  openapiDir,
-  ...(options.useDefaultAllowlist
-    ? DEFAULT_PACKAGE_OPENAPI_DIRS.map((directory) => path.resolve(repoRoot, directory))
-    : []),
-])
+const docs = readOpenApiCoverage(discoverOpenApiRoots(openapiDir))
 const bundles = readApiBundles(graph)
+const bundlesById = new Map(bundles.map((bundle) => [bundle.apiId, bundle]))
+const documentClaims = new Set(
+  bundles
+    .filter((bundle) => bundle.openapiDocument)
+    .map((bundle) => coverageKey(bundle.surface, bundle.openapiDocument)),
+)
 const failures = []
 const coveredBundles = []
 const allowlistedGaps = []
@@ -106,9 +80,7 @@ for (const bundle of bundles) {
     continue
   }
 
-  const matched = bundle.openapiDocument
-    ? docs.apiIds.has(bundle.apiId)
-    : bundle.candidateModules.some((module) => docs.keys.has(coverageKey(bundle.surface, module)))
+  const matched = docs.documents.has(coverageKey(bundle.surface, bundle.openapiDocument))
   if (matched) {
     coveredBundles.push(bundle)
     if (allowlist.has(bundle.apiId)) {
@@ -122,6 +94,42 @@ for (const bundle of bundles) {
     allowlistedGaps.push({ bundle, reason })
   } else {
     failures.push({ kind: "missing-docs", bundle })
+  }
+}
+
+for (const [apiId, claims] of docs.apiIds) {
+  const bundle = bundlesById.get(apiId)
+  if (!bundle) {
+    failures.push({ kind: "unknown-docs", apiId, files: claims.map((claim) => claim.file) })
+  } else if (
+    claims.some(
+      (claim) =>
+        claim.document !== bundle.openapiDocument ||
+        claim.surface !== normalizeSurface(bundle.surface),
+    )
+  ) {
+    failures.push({
+      kind: "mismatched-docs",
+      apiId,
+      expected: coverageKey(bundle.surface, bundle.openapiDocument),
+      files: claims.map((claim) => claim.file),
+    })
+  }
+  const files = new Set(claims.map((claim) => claim.file))
+  if (files.size > 1) {
+    failures.push({ kind: "duplicate-docs", apiId, files: [...files].sort() })
+  }
+}
+
+for (const [document, artifact] of docs.documents) {
+  if (!documentClaims.has(document)) {
+    failures.push({ kind: "unknown-document", document, files: artifact.files })
+  }
+}
+
+for (const [document, owners] of docs.documentOwners) {
+  if (owners.size > 1) {
+    failures.push({ kind: "duplicate-document-owner", document, owners: [...owners].sort() })
   }
 }
 
@@ -193,7 +201,9 @@ function readApiBundles(resolvedGraph) {
 
 function readOpenApiCoverage(openapiDirPaths) {
   const keys = new Set()
-  const apiIds = new Set()
+  const apiIds = new Map()
+  const documentOwners = new Map()
+  const documents = new Map()
   const files = []
   for (const openapiDirPath of openapiDirPaths) {
     if (!existsSync(openapiDirPath) || !statSync(openapiDirPath).isDirectory()) {
@@ -209,6 +219,15 @@ function readOpenApiCoverage(openapiDirPaths) {
         if (!fileEntry.isFile() || !fileEntry.name.endsWith(".json")) continue
         const filePath = path.join(surfaceDir, fileEntry.name)
         const fileModule = fileEntry.name.replace(/\.json$/, "")
+        const documentKey = coverageKey(fileSurface, fileModule)
+        const document = documents.get(documentKey) ?? { files: [] }
+        document.files.push(relativeToRepo(filePath))
+        documents.set(documentKey, document)
+        const packageRoot = path.dirname(openapiDirPath)
+        const documentOwnerKey = fileModule
+        const owners = documentOwners.get(documentOwnerKey) ?? new Set()
+        owners.add(relativeToRepo(packageRoot))
+        documentOwners.set(documentOwnerKey, owners)
         const doc = readJson(filePath)
         const operations = documentedOperations(doc)
         if (operations.length === 0) continue
@@ -216,7 +235,14 @@ function readOpenApiCoverage(openapiDirPaths) {
         let operationKeys = 0
         for (const operation of operations) {
           if (typeof operation["x-voyant-api-id"] === "string") {
-            apiIds.add(operation["x-voyant-api-id"])
+            const apiId = operation["x-voyant-api-id"]
+            const claims = apiIds.get(apiId) ?? []
+            claims.push({
+              document: fileModule,
+              file: relativeToRepo(filePath),
+              surface: fileSurface,
+            })
+            apiIds.set(apiId, claims)
           }
           const operationSurface = normalizeSurface(operation["x-voyant-surface"] ?? fileSurface)
           const operationModule = operation["x-voyant-module"] ?? fileModule
@@ -231,7 +257,32 @@ function readOpenApiCoverage(openapiDirPaths) {
     }
   }
 
-  return { files, keys, apiIds }
+  return { files, keys, apiIds, documentOwners, documents }
+}
+
+function discoverOpenApiRoots(root) {
+  const hasSurfaceDirectories = ["admin", "storefront"].some((surface) =>
+    containsOpenApiDocument(path.join(root, surface)),
+  )
+  if (hasSurfaceDirectories) return [root]
+
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(root, entry.name, "openapi"))
+    .filter((directory) => existsSync(directory) && statSync(directory).isDirectory())
+    .sort()
+}
+
+function containsOpenApiDocument(directory) {
+  if (!existsSync(directory) || !statSync(directory).isDirectory()) return false
+  return readdirSync(directory, { withFileTypes: true }).some((entry) => {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) return false
+    try {
+      return typeof readJson(path.join(directory, entry.name)).openapi === "string"
+    } catch {
+      return false
+    }
+  })
 }
 
 function documentedOperations(doc) {
