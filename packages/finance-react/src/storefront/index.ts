@@ -1,6 +1,6 @@
 export {
-  PaymentLinkResolverPage,
   type PaymentLinkResolverMessages,
+  PaymentLinkResolverPage,
   type PaymentLinkResolverPageProps,
 } from "./payment-link-resolver-page.js"
 export {

@@ -137,10 +137,7 @@ const requiredTokens = new Map([
     "starters/operator/src/routes/proposal.$quoteVersionId.tsx",
     ['from "@voyant-travel/quotes-react/storefront"'],
   ],
-  [
-    "starters/operator/src/routes/pay.tsx",
-    ['from "@voyant-travel/finance-react/storefront"'],
-  ],
+  ["starters/operator/src/routes/pay.tsx", ['from "@voyant-travel/finance-react/storefront"']],
   [
     "starters/operator/src/routes/pay_.$sessionId.tsx",
     ['from "@voyant-travel/finance-react/storefront"'],

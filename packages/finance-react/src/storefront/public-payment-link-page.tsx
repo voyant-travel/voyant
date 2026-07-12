@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import type { ReactNode } from "react"
 
-import { PaymentLinkLandingPage, type BankTransferInstructions } from "../checkout-ui.js"
+import { type BankTransferInstructions, PaymentLinkLandingPage } from "../checkout-ui.js"
 import { usePublicPaymentSession } from "../hooks/use-public-payment-session.js"
 import { useVoyantFinanceContext } from "../provider.js"
 import {
