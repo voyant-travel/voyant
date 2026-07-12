@@ -1656,6 +1656,9 @@ importers:
       '@voyant-travel/suppliers-contracts':
         specifier: workspace:^
         version: link:../suppliers-contracts
+      '@voyant-travel/webhook-delivery':
+        specifier: workspace:^
+        version: link:../webhook-delivery
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types

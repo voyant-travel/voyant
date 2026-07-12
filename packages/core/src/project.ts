@@ -156,7 +156,10 @@ export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
   eventType?: string
   /** Semantic version of the emitted payload contract. Required with payloadSchema. */
   version?: string
-  /** JSON Schema used by graph tooling to validate payload compatibility before upgrade. */
+  /**
+   * JSON Schema used for upgrade compatibility and external delivery projection.
+   * Object properties are allowlisted; `writeOnly` or `x-voyant-redact` fields are redacted.
+   */
   payloadSchema?: VoyantGraphJsonObject
   /** External events may be selected by deployment-owned outbound webhook subscriptions. */
   visibility?: "internal" | "external"

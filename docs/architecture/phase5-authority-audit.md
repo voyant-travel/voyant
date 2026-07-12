@@ -18,6 +18,13 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
   manifest-owned contracts and subscribers, and reports graph-wide coverage counts.
 - Selected-graph validation rejects executable subscribers when their event contract owner is
   absent from the selected graph.
+- Subscription create/update validation accepts only event types in the selected external
+  webhook plan; internal, unknown, and deselected event types fail before persistence.
+- External payload delivery is schema-projected with package-owned property allowlists.
+  Undeclared fields are dropped, while `writeOnly` and `x-voyant-redact` properties are
+  replaced with a redaction marker.
+- Distribution's queued graph path delegates contract validation, projection, headers, and
+  fan-out semantics to `@voyant-travel/webhook-delivery`.
 
 ## Existing Phase 5 Authority
 
@@ -34,12 +41,9 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
 
 ## Residual Checklist
 
-- Model field-level visibility or package-owned redaction transforms for payloads that
-  cannot be externally delivered in full.
-- Validate webhook subscription create/update requests against the selected external
-  event catalog; reject unknown, internal, or deselected event names before persistence.
 - Converge queued dispatch and `@voyant-travel/webhook-delivery` so one implementation
-  owns signing, retries, visibility decisions, audit callbacks, and dead-letter state.
+  owns signing, retries, visibility decisions, audit callbacks, and dead-letter state. Contract
+  validation and queued fan-out are shared; worker execution and retry state still need one owner.
 - Activate Realtime's package-owned invalidation declarations and remove its remaining
   Operator bridge without duplicate subscriptions.
 - Move Notifications' `booking.fully-paid` module-bootstrap subscription behind a selected

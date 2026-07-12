@@ -238,6 +238,8 @@ export interface VoyantGraphRuntimeWebhookPlan extends VoyantGraphWebhookPlan {
   outboundEventTypes: readonly string[]
   isInboundApi: (apiId: string) => boolean
   isOutboundEventEligible: (eventType: string) => boolean
+  assertSubscriptionCreateEvents: (eventTypes: readonly string[]) => void
+  assertSubscriptionUpdateEvents: (eventTypes: readonly string[] | undefined) => void
 }
 
 export interface VoyantGraphRuntime {
@@ -1027,6 +1029,29 @@ function createRuntimeWebhookPlan(plan: VoyantGraphWebhookPlan): VoyantGraphRunt
     outboundEventTypes,
     isInboundApi: (apiId) => inbound.has(apiId),
     isOutboundEventEligible: (eventType) => outbound.has(eventType),
+    assertSubscriptionCreateEvents: (eventTypes) =>
+      assertSelectedExternalSubscriptionEvents(eventTypes, outbound, "create"),
+    assertSubscriptionUpdateEvents: (eventTypes) => {
+      if (eventTypes !== undefined) {
+        assertSelectedExternalSubscriptionEvents(eventTypes, outbound, "update")
+      }
+    },
+  }
+}
+
+function assertSelectedExternalSubscriptionEvents(
+  eventTypes: readonly string[],
+  selected: ReadonlySet<string>,
+  operation: "create" | "update",
+): void {
+  if (eventTypes.length === 0) {
+    throw new Error(`Webhook subscription ${operation} requires at least one event.`)
+  }
+  const unknown = [...new Set(eventTypes.filter((eventType) => !selected.has(eventType)))].sort()
+  if (unknown.length > 0) {
+    throw new Error(
+      `Webhook subscription ${operation} requested events outside the selected external catalog: ${unknown.join(", ")}.`,
+    )
   }
 }
 

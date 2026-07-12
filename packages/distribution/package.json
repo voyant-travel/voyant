@@ -40,6 +40,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
+    "@voyant-travel/webhook-delivery": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:",

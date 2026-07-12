@@ -124,6 +124,7 @@ describe("graph runtime composition", () => {
           category: "domain",
           graphEventId: "@acme/catalog#event.updated",
           graphEventVersion: "1.0.0",
+          graphEventPayloadSchema: { type: "object" },
           graphEventSourceModule: "catalog",
         }),
       }),

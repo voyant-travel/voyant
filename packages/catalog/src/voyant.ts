@@ -35,7 +35,7 @@ const catalogEntityEventPayloadSchema = {
     entity_id: { type: "string" },
     occurred_at: { type: "string" },
   },
-  additionalProperties: true,
+  additionalProperties: false,
 } as const
 
 const catalogSourceEventPayloadSchema = {
@@ -46,7 +46,7 @@ const catalogSourceEventPayloadSchema = {
     source_connection_id: { type: "string" },
     occurred_at: { type: "string" },
   },
-  additionalProperties: true,
+  additionalProperties: false,
 } as const
 
 /** Import-cheap deployment declaration owned by the catalog package. */

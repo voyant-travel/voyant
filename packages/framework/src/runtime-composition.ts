@@ -434,6 +434,7 @@ function createGraphOutboundWebhookModule<TCapabilities>(
                   category: declaration.audit.category,
                   graphEventId: declaration.eventId,
                   graphEventVersion: declaration.eventVersion,
+                  graphEventPayloadSchema: declaration.payloadSchema,
                   graphEventSourceModule: declaration.audit.sourceModule,
                 },
               },

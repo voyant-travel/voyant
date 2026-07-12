@@ -1,4 +1,18 @@
+export type {
+  ExternalWebhookEventContract,
+  WebhookSubscriptionEventInput,
+} from "./contracts.js"
+export {
+  assertWebhookSubscriptionCreateEvents,
+  assertWebhookSubscriptionUpdateEvents,
+  prepareExternalWebhookEvent,
+} from "./contracts.js"
 export { createWebhookDeliveryEngine } from "./engine.js"
+export type {
+  QueuedWebhookSubscription,
+  QueueExternalWebhookAttemptInput,
+} from "./queue.js"
+export { queueExternalWebhookEvent } from "./queue.js"
 export {
   hashWebhookPayload,
   redactWebhookHeaders,

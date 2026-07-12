@@ -40,7 +40,22 @@ describe("enqueueGraphWebhookEvent", () => {
     const event = {
       name: "catalog.entity.updated",
       data: { entity_module: "products", entity_id: "prod_123", email: "private@test.io" },
-      metadata: { eventId: "evt_123", category: "domain" as const },
+      metadata: {
+        eventId: "evt_123",
+        category: "domain" as const,
+        graphEventId: "@voyant-travel/catalog#event.entity.updated",
+        graphEventVersion: "1.0.0",
+        graphEventSourceModule: "catalog",
+        graphEventPayloadSchema: {
+          type: "object",
+          required: ["entity_module", "entity_id"],
+          properties: {
+            entity_module: { type: "string" },
+            entity_id: { type: "string" },
+          },
+          additionalProperties: false,
+        },
+      },
       emittedAt: "2026-07-10T12:00:00.000Z",
     }
 
@@ -56,7 +71,9 @@ describe("enqueueGraphWebhookEvent", () => {
         subscriptionId: "hksub_one",
         targetUrl: "https://one.example.test/hooks",
         idempotencyKey: "graph-webhook:evt_123:hksub_one",
-        requestBody: event,
+        requestBody: expect.objectContaining({
+          data: { entity_module: "products", entity_id: "prod_123" },
+        }),
       }),
     )
   })
@@ -66,8 +83,13 @@ describe("enqueueGraphWebhookEvent", () => {
       enqueueGraphWebhookEvent(dbReturning([]), {
         name: "catalog.entity.updated",
         data: {},
+        metadata: {
+          graphEventId: "@voyant-travel/catalog#event.entity.updated",
+          graphEventVersion: "1.0.0",
+          graphEventPayloadSchema: { type: "object", properties: {} },
+        },
         emittedAt: "2026-07-10T12:00:00.000Z",
       }),
-    ).rejects.toThrow(/has no metadata\.eventId/)
+    ).rejects.toThrow(/requires metadata\.eventId/)
   })
 })
