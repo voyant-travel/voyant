@@ -72,7 +72,8 @@ export function createCruiseContentRoutes(
   options: CreateCruiseContentRoutesOptions,
   apiId?: (typeof CRUISE_CONTENT_OPENAPI_API_IDS)[keyof typeof CRUISE_CONTENT_OPENAPI_API_IDS],
 ): OpenAPIHono<CruiseContentRoutesEnv> {
-  const routes = new OpenAPIHono<CruiseContentRoutesEnv>().get("/:key/content", async (c) => {
+  const routes = new OpenAPIHono<CruiseContentRoutesEnv>()
+  routes.get("/:key/content", async (c) => {
     const rawKey = c.req.param("key")
     const parsed = parseUnifiedKey(rawKey)
 
@@ -146,7 +147,7 @@ export function createCruiseContentRoutes(
     })
   }
 
-  return routes.get("/:key/sailings/:sailingExternalId/pricing", async (c) => {
+  routes.get("/:key/sailings/:sailingExternalId/pricing", async (c) => {
     // Live per-sailing cabin pricing for the detail sheet's Departures tab.
     // Fetched fresh from the adapter (price is volatile-live), not cached.
     const rawKey = c.req.param("key")
@@ -201,6 +202,8 @@ export function createCruiseContentRoutes(
       acceptMachineTranslated,
     }
   }
+
+  return routes
 }
 
 export interface CruiseContentHonoExtensionOptions {
