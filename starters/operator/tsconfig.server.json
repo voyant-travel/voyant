@@ -2117,7 +2117,6 @@
     "src/hooks/**",
     "src/routeTree.gen.ts",
     "src/router.tsx",
-    "src/lib/admin-i18n.ts",
-    "src/lib/dashboard-ssr-query-options.ts"
+    "src/lib/admin-i18n.ts"
   ]
 }

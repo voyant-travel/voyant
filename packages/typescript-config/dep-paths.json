@@ -64,6 +64,8 @@
       "@voyant-travel/admin-client": ["../admin-client/dist/index.d.ts"],
       "@voyant-travel/admin-contracts": ["../admin-contracts/dist/index.d.ts"],
       "@voyant-travel/admin-host": ["../admin-host/dist/index.d.ts"],
+      "@voyant-travel/admin-host/destinations": ["../admin-host/dist/admin-destinations.d.ts"],
+      "@voyant-travel/admin-host/presentation": ["../admin-host/dist/admin-presentation.d.ts"],
       "@voyant-travel/admin-host/serve": ["../admin-host/dist/serve.d.ts"],
       "@voyant-travel/admin-host/ssr": ["../admin-host/dist/ssr.d.ts"],
       "@voyant-travel/admin-react": ["../admin-react/dist/index.d.ts"],
@@ -71,6 +73,7 @@
       "@voyant-travel/admin-react/provider": ["../admin-react/dist/provider.d.ts"],
       "@voyant-travel/admin-react/query-keys": ["../admin-react/dist/query-keys.d.ts"],
       "@voyant-travel/admin-react/user": ["../admin-react/dist/user.d.ts"],
+      "@voyant-travel/admin-react/user-bindings": ["../admin-react/dist/user-bindings.d.ts"],
       "@voyant-travel/admin/app": ["../admin/dist/app/index.d.ts"],
       "@voyant-travel/admin/app/extension-routes": ["../admin/dist/app/extension-routes.d.ts"],
       "@voyant-travel/admin/app/root": ["../admin/dist/app/root.d.ts"],
@@ -1365,6 +1368,7 @@
       "@voyant-travel/react/provider": ["../react/dist/provider.d.ts"],
       "@voyant-travel/realtime": ["../realtime/dist/index.d.ts"],
       "@voyant-travel/realtime-react": ["../realtime-react/dist/index.d.ts"],
+      "@voyant-travel/realtime-react/admin": ["../realtime-react/dist/admin.d.ts"],
       "@voyant-travel/realtime-react/connector": ["../realtime-react/dist/connector.d.ts"],
       "@voyant-travel/realtime-react/connector-cloud": [
         "../realtime-react/dist/connector-cloud.d.ts"

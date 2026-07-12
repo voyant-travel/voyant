@@ -14,7 +14,8 @@
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks.ts",
     "./query-keys": "./src/query-keys.ts",
-    "./user": "./src/user.tsx"
+    "./user": "./src/user.tsx",
+    "./user-bindings": "./src/user-bindings.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -74,6 +75,11 @@
         "types": "./dist/user.d.ts",
         "import": "./dist/user.js",
         "default": "./dist/user.js"
+      },
+      "./user-bindings": {
+        "types": "./dist/user-bindings.d.ts",
+        "import": "./dist/user-bindings.js",
+        "default": "./dist/user-bindings.js"
       }
     },
     "main": "./dist/index.js",

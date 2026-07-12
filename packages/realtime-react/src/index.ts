@@ -1,3 +1,9 @@
+export type { AdminRealtimeProviderProps } from "./admin.js"
+export {
+  AdminRealtimeProvider,
+  adminInvalidationKeys,
+  hasAdminRealtimeSession,
+} from "./admin.js"
 export type {
   PresenceMember,
   RealtimeClientMessage,

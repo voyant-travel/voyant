@@ -12,11 +12,27 @@ vi.mock("@voyant-travel/cloud-sdk", () => ({
   RealtimeChannel: class {},
 }))
 
-vi.mock("@voyant-travel/realtime-react", () => ({
-  createRealtimeChannelConnector: vi.fn(() => ({ subscribe: vi.fn() })),
-  RealtimeReactProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-  useLiveQueries: mocks.useLiveQueries,
-}))
+vi.mock("@voyant-travel/realtime-react", () => {
+  const hasAdminRealtimeSession = (session: unknown) => {
+    if (!session || typeof session !== "object") return false
+    const record = session as {
+      user?: { id?: unknown } | null
+      session?: { userId?: unknown } | null
+    }
+    return Boolean(record.user?.id || record.session?.userId)
+  }
+
+  return {
+    AdminRealtimeProvider: ({ children, session }: { children: ReactNode; session: unknown }) => {
+      mocks.useLiveQueries(["admin"], () => [], {
+        enabled: hasAdminRealtimeSession(session),
+      })
+      return <>{children}</>
+    },
+    createRealtimeChannelConnector: vi.fn(() => ({ subscribe: vi.fn() })),
+    hasAdminRealtimeSession,
+  }
+})
 
 vi.mock("@/lib/auth", () => ({
   authClient: {
