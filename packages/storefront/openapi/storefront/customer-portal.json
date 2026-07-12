@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -171,114 +144,60 @@
                           "type": "string"
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "email"
                         },
                         "phoneNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "emailVerified": {
                           "type": "boolean"
                         },
                         "firstName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "middleName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lastName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "avatarUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "locale": {
                           "type": "string"
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "seatingPreference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "aisle",
-                            "window",
-                            "middle",
-                            "no_preference",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["aisle", "window", "middle", "no_preference", null]
                         },
                         "dateOfBirth": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "state": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "postalCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "addressLine1": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "addressLine2": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -291,63 +210,36 @@
                           ]
                         },
                         "accessibility": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "dietary": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "loyalty": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "insurance": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketingConsent": {
                           "type": "boolean"
                         },
                         "marketingConsentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketingConsentSource": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notificationDefaults": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "uiPrefs": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "customerRecord": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -359,40 +251,22 @@
                               "type": "string"
                             },
                             "preferredLanguage": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "preferredCurrency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "dateOfBirth": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "billingAddress": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "id": {
                                   "type": "string"
@@ -411,46 +285,25 @@
                                   ]
                                 },
                                 "fullText": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "line1": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "line2": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "city": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "region": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "postalCode": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "country": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "isPrimary": {
                                   "type": "boolean"
@@ -470,10 +323,7 @@
                               ]
                             },
                             "relation": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "status": {
                               "type": "string"
@@ -520,9 +370,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -538,9 +386,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -548,9 +394,7 @@
         },
         "operationId": "getPublicCustomerPortalMe",
         "summary": "GET /v1/public/customer-portal/me",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -566,31 +410,19 @@
                 "type": "object",
                 "properties": {
                   "firstName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 200
                   },
                   "middleName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 200
                   },
                   "lastName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 200
                   },
                   "avatarUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "locale": {
@@ -598,155 +430,89 @@
                     "maxLength": 10
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 64
                   },
                   "seatingPreference": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "aisle",
-                      "window",
-                      "middle",
-                      "no_preference",
-                      null
-                    ]
+                    "type": ["string", "null"],
+                    "enum": ["aisle", "window", "middle", "no_preference", null]
                   },
                   "dateOfBirth": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "address": {
                     "type": "object",
                     "properties": {
                       "country": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "state": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "city": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "postalCode": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "addressLine1": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       },
                       "addressLine2": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       }
                     }
                   },
                   "accessibility": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 4000
                   },
                   "dietary": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 4000
                   },
                   "loyalty": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 4000
                   },
                   "insurance": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 4000
                   },
                   "marketingConsent": {
                     "type": "boolean"
                   },
                   "marketingConsentSource": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "notificationDefaults": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   },
                   "uiPrefs": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   },
                   "customerRecord": {
                     "type": "object",
                     "properties": {
                       "preferredLanguage": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 35
                       },
                       "preferredCurrency": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 3,
                         "maxLength": 3
                       },
                       "dateOfBirth": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "date"
                       },
                       "phone": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 50
                       },
                       "billingAddress": {
@@ -766,46 +532,25 @@
                             ]
                           },
                           "fullText": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line1": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line2": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "city": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "region": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "postalCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "country": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
@@ -834,114 +579,60 @@
                           "type": "string"
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "email"
                         },
                         "phoneNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "emailVerified": {
                           "type": "boolean"
                         },
                         "firstName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "middleName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lastName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "avatarUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "locale": {
                           "type": "string"
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "seatingPreference": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "aisle",
-                            "window",
-                            "middle",
-                            "no_preference",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["aisle", "window", "middle", "no_preference", null]
                         },
                         "dateOfBirth": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "state": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "postalCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "addressLine1": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "addressLine2": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -954,63 +645,36 @@
                           ]
                         },
                         "accessibility": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "dietary": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "loyalty": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "insurance": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketingConsent": {
                           "type": "boolean"
                         },
                         "marketingConsentAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "marketingConsentSource": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notificationDefaults": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "uiPrefs": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "customerRecord": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -1022,40 +686,22 @@
                               "type": "string"
                             },
                             "preferredLanguage": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "preferredCurrency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "dateOfBirth": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "billingAddress": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "id": {
                                   "type": "string"
@@ -1074,46 +720,25 @@
                                   ]
                                 },
                                 "fullText": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "line1": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "line2": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "city": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "region": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "postalCode": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "country": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "isPrimary": {
                                   "type": "boolean"
@@ -1133,10 +758,7 @@
                               ]
                             },
                             "relation": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "status": {
                               "type": "string"
@@ -1183,9 +805,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1201,9 +821,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1219,9 +837,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1229,9 +845,7 @@
         },
         "operationId": "patchPublicCustomerPortalMe",
         "summary": "PATCH /v1/public/customer-portal/me",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -1259,58 +873,31 @@
                           },
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "passport",
-                              "id_card",
-                              "visa",
-                              "drivers_license",
-                              "other"
-                            ]
+                            "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                           },
                           "number": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "issuingAuthority": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "issuingCountry": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "issueDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "expiryDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "attachmentId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -1336,9 +923,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1346,9 +931,7 @@
         },
         "operationId": "getPublicCustomerPortalMeDocuments",
         "summary": "GET /v1/public/customer-portal/me/documents",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -1365,71 +948,42 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "passport",
-                      "id_card",
-                      "visa",
-                      "drivers_license",
-                      "other"
-                    ]
+                    "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                   },
                   "number": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255
                   },
                   "issuingAuthority": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "issuingCountry": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "issueDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "expiryDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "attachmentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 1024
                   },
                   "isPrimary": {
                     "type": "boolean"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2000
                   }
                 },
-                "required": [
-                  "type"
-                ]
+                "required": ["type"]
               }
             }
           }
@@ -1450,58 +1004,31 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "passport",
-                            "id_card",
-                            "visa",
-                            "drivers_license",
-                            "other"
-                          ]
+                          "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                         },
                         "number": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issuingAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issuingCountry": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issueDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiryDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "attachmentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -1526,9 +1053,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1544,9 +1069,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1554,9 +1077,7 @@
         },
         "operationId": "postPublicCustomerPortalMeDocuments",
         "summary": "POST /v1/public/customer-portal/me/documents",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -1592,58 +1113,31 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "passport",
-                            "id_card",
-                            "visa",
-                            "drivers_license",
-                            "other"
-                          ]
+                          "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                         },
                         "number": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issuingAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issuingCountry": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issueDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiryDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "attachmentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -1668,9 +1162,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1686,9 +1178,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1696,9 +1186,7 @@
         },
         "operationId": "postPublicCustomerPortalMeDocumentsByIdSetPrimary",
         "summary": "POST /v1/public/customer-portal/me/documents/{id}/set-primary",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -1727,65 +1215,38 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "passport",
-                      "id_card",
-                      "visa",
-                      "drivers_license",
-                      "other"
-                    ]
+                    "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                   },
                   "number": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 255
                   },
                   "issuingAuthority": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "issuingCountry": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "issueDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "expiryDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "date"
                   },
                   "attachmentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 1024
                   },
                   "isPrimary": {
                     "type": "boolean"
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 2000
                   }
                 }
@@ -1809,58 +1270,31 @@
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "passport",
-                            "id_card",
-                            "visa",
-                            "drivers_license",
-                            "other"
-                          ]
+                          "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                         },
                         "number": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issuingAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issuingCountry": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "issueDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiryDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "attachmentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -1885,9 +1319,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1903,9 +1335,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1913,9 +1343,7 @@
         },
         "operationId": "patchPublicCustomerPortalMeDocumentsById",
         "summary": "PATCH /v1/public/customer-portal/me/documents/{id}",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -1943,14 +1371,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -1966,9 +1390,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1976,9 +1398,7 @@
         },
         "operationId": "deletePublicCustomerPortalMeDocumentsById",
         "summary": "DELETE /v1/public/customer-portal/me/documents/{id}",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -2003,59 +1423,38 @@
                     "default": true
                   },
                   "firstName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 200
                   },
                   "lastName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 200
                   },
                   "marketingConsent": {
                     "type": "boolean"
                   },
                   "marketingConsentSource": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "customerRecord": {
                     "type": "object",
                     "properties": {
                       "preferredLanguage": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 35
                       },
                       "preferredCurrency": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 3,
                         "maxLength": 3
                       },
                       "dateOfBirth": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "date"
                       },
                       "phone": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 50
                       },
                       "billingAddress": {
@@ -2075,46 +1474,25 @@
                             ]
                           },
                           "fullText": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line1": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line2": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "city": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "region": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "postalCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "country": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
@@ -2149,123 +1527,66 @@
                           ]
                         },
                         "profile": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "userId": {
                               "type": "string"
                             },
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "email"
                             },
                             "phoneNumber": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "emailVerified": {
                               "type": "boolean"
                             },
                             "firstName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "middleName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lastName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "avatarUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "locale": {
                               "type": "string"
                             },
                             "timezone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "seatingPreference": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "aisle",
-                                "window",
-                                "middle",
-                                "no_preference",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["aisle", "window", "middle", "no_preference", null]
                             },
                             "dateOfBirth": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "address": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "country": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "state": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "city": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "postalCode": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "addressLine1": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "addressLine2": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 }
                               },
                               "required": [
@@ -2278,63 +1599,36 @@
                               ]
                             },
                             "accessibility": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "dietary": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "loyalty": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "insurance": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "marketingConsent": {
                               "type": "boolean"
                             },
                             "marketingConsentAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "marketingConsentSource": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "notificationDefaults": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "uiPrefs": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "customerRecord": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "id": {
                                   "type": "string"
@@ -2346,40 +1640,22 @@
                                   "type": "string"
                                 },
                                 "preferredLanguage": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "preferredCurrency": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "dateOfBirth": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "email": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "phone": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "billingAddress": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "properties": {
                                     "id": {
                                       "type": "string"
@@ -2398,46 +1674,25 @@
                                       ]
                                     },
                                     "fullText": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "line1": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "line2": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "city": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "region": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "postalCode": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "country": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
@@ -2457,10 +1712,7 @@
                                   ]
                                 },
                                 "relation": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "status": {
                                   "type": "string"
@@ -2521,40 +1773,22 @@
                                 "type": "string"
                               },
                               "preferredLanguage": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "preferredCurrency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "dateOfBirth": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "billingAddress": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
+                                "type": ["object", "null"],
                                 "properties": {
                                   "id": {
                                     "type": "string"
@@ -2573,46 +1807,25 @@
                                     ]
                                   },
                                   "fullText": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "line1": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "line2": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "city": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "region": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "postalCode": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "country": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "isPrimary": {
                                     "type": "boolean"
@@ -2632,10 +1845,7 @@
                                 ]
                               },
                               "relation": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "status": {
                                 "type": "string"
@@ -2666,15 +1876,10 @@
                           "default": []
                         }
                       },
-                      "required": [
-                        "status",
-                        "profile"
-                      ]
+                      "required": ["status", "profile"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2690,9 +1895,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2719,123 +1922,66 @@
                               ]
                             },
                             "profile": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "userId": {
                                   "type": "string"
                                 },
                                 "email": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "format": "email"
                                 },
                                 "phoneNumber": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "emailVerified": {
                                   "type": "boolean"
                                 },
                                 "firstName": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "middleName": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "lastName": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "avatarUrl": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "locale": {
                                   "type": "string"
                                 },
                                 "timezone": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "seatingPreference": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
-                                  "enum": [
-                                    "aisle",
-                                    "window",
-                                    "middle",
-                                    "no_preference",
-                                    null
-                                  ]
+                                  "type": ["string", "null"],
+                                  "enum": ["aisle", "window", "middle", "no_preference", null]
                                 },
                                 "dateOfBirth": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "address": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "properties": {
                                     "country": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "state": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "city": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "postalCode": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "addressLine1": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "addressLine2": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     }
                                   },
                                   "required": [
@@ -2848,63 +1994,36 @@
                                   ]
                                 },
                                 "accessibility": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "dietary": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "loyalty": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "insurance": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "marketingConsent": {
                                   "type": "boolean"
                                 },
                                 "marketingConsentAt": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "marketingConsentSource": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "notificationDefaults": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "additionalProperties": {}
                                 },
                                 "uiPrefs": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "additionalProperties": {}
                                 },
                                 "customerRecord": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "properties": {
                                     "id": {
                                       "type": "string"
@@ -2916,40 +2035,22 @@
                                       "type": "string"
                                     },
                                     "preferredLanguage": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "preferredCurrency": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "dateOfBirth": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "email": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "phone": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "billingAddress": {
-                                      "type": [
-                                        "object",
-                                        "null"
-                                      ],
+                                      "type": ["object", "null"],
                                       "properties": {
                                         "id": {
                                           "type": "string"
@@ -2968,46 +2069,25 @@
                                           ]
                                         },
                                         "fullText": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "line1": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "line2": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "city": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "region": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "postalCode": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "country": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "isPrimary": {
                                           "type": "boolean"
@@ -3027,10 +2107,7 @@
                                       ]
                                     },
                                     "relation": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "status": {
                                       "type": "string"
@@ -3091,40 +2168,22 @@
                                     "type": "string"
                                   },
                                   "preferredLanguage": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "preferredCurrency": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "dateOfBirth": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "email": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "phone": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "billingAddress": {
-                                    "type": [
-                                      "object",
-                                      "null"
-                                    ],
+                                    "type": ["object", "null"],
                                     "properties": {
                                       "id": {
                                         "type": "string"
@@ -3143,46 +2202,25 @@
                                         ]
                                       },
                                       "fullText": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "line1": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "line2": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "city": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "region": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "postalCode": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "country": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ]
+                                        "type": ["string", "null"]
                                       },
                                       "isPrimary": {
                                         "type": "boolean"
@@ -3202,10 +2240,7 @@
                                     ]
                                   },
                                   "relation": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "status": {
                                     "type": "string"
@@ -3236,15 +2271,10 @@
                               "default": []
                             }
                           },
-                          "required": [
-                            "status",
-                            "profile"
-                          ]
+                          "required": ["status", "profile"]
                         }
                       },
-                      "required": [
-                        "data"
-                      ]
+                      "required": ["data"]
                     },
                     {
                       "type": "object",
@@ -3253,9 +2283,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "error"
-                      ]
+                      "required": ["error"]
                     }
                   ]
                 }
@@ -3265,9 +2293,7 @@
         },
         "operationId": "postPublicCustomerPortalBootstrap",
         "summary": "POST /v1/public/customer-portal/bootstrap",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -3300,64 +2326,37 @@
                             "type": "string"
                           },
                           "title": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "email": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "phone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "typeKey": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "person": {
                             "type": "object",
                             "properties": {
                               "firstName": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "middleName": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "lastName": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "dateOfBirth": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "addresses": {
                                 "type": "array",
@@ -3365,46 +2364,25 @@
                                   "type": "object",
                                   "properties": {
                                     "type": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "country": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "state": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "city": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "postalCode": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "addressLine1": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "addressLine2": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "isDefault": {
                                       "type": "boolean"
@@ -3438,34 +2416,19 @@
                                       ]
                                     },
                                     "number": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "issuingAuthority": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "country": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "issueDate": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "expiryDate": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     }
                                   },
                                   "required": [
@@ -3489,10 +2452,7 @@
                             ]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           }
                         },
@@ -3512,9 +2472,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3522,9 +2480,7 @@
         },
         "operationId": "getPublicCustomerPortalCompanions",
         "summary": "GET /v1/public/customer-portal/companions",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -3561,24 +2517,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -3586,47 +2533,29 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "typeKey": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "person": {
                     "type": "object",
                     "properties": {
                       "firstName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 200
                       },
                       "middleName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 200
                       },
                       "lastName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 200
                       },
                       "dateOfBirth": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "date"
                       },
                       "addresses": {
@@ -3635,52 +2564,31 @@
                           "type": "object",
                           "properties": {
                             "type": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 100
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "state": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "postalCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 50
                             },
                             "addressLine1": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "addressLine2": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "isDefault": {
@@ -3696,68 +2604,40 @@
                           "properties": {
                             "type": {
                               "type": "string",
-                              "enum": [
-                                "passport",
-                                "id_card",
-                                "visa",
-                                "drivers_license",
-                                "other"
-                              ]
+                              "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                             },
                             "number": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "issuingAuthority": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "issueDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "date"
                             },
                             "expiryDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "date"
                             }
                           },
-                          "required": [
-                            "type"
-                          ]
+                          "required": ["type"]
                         }
                       }
                     }
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -3783,64 +2663,37 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "typeKey": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "person": {
                           "type": "object",
                           "properties": {
                             "firstName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "middleName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lastName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "dateOfBirth": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "addresses": {
                               "type": "array",
@@ -3848,46 +2701,25 @@
                                 "type": "object",
                                 "properties": {
                                   "type": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "country": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "state": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "city": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "postalCode": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "addressLine1": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "addressLine2": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "isDefault": {
                                     "type": "boolean"
@@ -3921,34 +2753,19 @@
                                     ]
                                   },
                                   "number": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "issuingAuthority": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "country": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "issueDate": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "expiryDate": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -3972,10 +2789,7 @@
                           ]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         }
                       },
@@ -3994,9 +2808,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4012,9 +2824,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4022,9 +2832,7 @@
         },
         "operationId": "postPublicCustomerPortalCompanions",
         "summary": "POST /v1/public/customer-portal/companions",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -4079,64 +2887,37 @@
                                 "type": "string"
                               },
                               "title": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "email": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "phone": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "isPrimary": {
                                 "type": "boolean"
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "typeKey": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "person": {
                                 "type": "object",
                                 "properties": {
                                   "firstName": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "middleName": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "lastName": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "dateOfBirth": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "addresses": {
                                     "type": "array",
@@ -4144,46 +2925,25 @@
                                       "type": "object",
                                       "properties": {
                                         "type": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "country": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "state": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "city": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "postalCode": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "addressLine1": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "addressLine2": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "isDefault": {
                                           "type": "boolean"
@@ -4217,34 +2977,19 @@
                                           ]
                                         },
                                         "number": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "issuingAuthority": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "country": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "issueDate": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         },
                                         "expiryDate": {
-                                          "type": [
-                                            "string",
-                                            "null"
-                                          ]
+                                          "type": ["string", "null"]
                                         }
                                       },
                                       "required": [
@@ -4268,10 +3013,7 @@
                                 ]
                               },
                               "metadata": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
+                                "type": ["object", "null"],
                                 "additionalProperties": {}
                               }
                             },
@@ -4295,15 +3037,10 @@
                           "minimum": 0
                         }
                       },
-                      "required": [
-                        "created",
-                        "skippedCount"
-                      ]
+                      "required": ["created", "skippedCount"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4319,9 +3056,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4329,9 +3064,7 @@
         },
         "operationId": "postPublicCustomerPortalCompanionsImportBookingTravelers",
         "summary": "POST /v1/public/customer-portal/companions/import-booking-travelers",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -4380,24 +3113,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -4405,47 +3129,29 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "typeKey": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "person": {
                     "type": "object",
                     "properties": {
                       "firstName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 200
                       },
                       "middleName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 200
                       },
                       "lastName": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "maxLength": 200
                       },
                       "dateOfBirth": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "date"
                       },
                       "addresses": {
@@ -4454,52 +3160,31 @@
                           "type": "object",
                           "properties": {
                             "type": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 100
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "state": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "postalCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 50
                             },
                             "addressLine1": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "addressLine2": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "isDefault": {
@@ -4515,62 +3200,36 @@
                           "properties": {
                             "type": {
                               "type": "string",
-                              "enum": [
-                                "passport",
-                                "id_card",
-                                "visa",
-                                "drivers_license",
-                                "other"
-                              ]
+                              "enum": ["passport", "id_card", "visa", "drivers_license", "other"]
                             },
                             "number": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "issuingAuthority": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "maxLength": 255
                             },
                             "issueDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "date"
                             },
                             "expiryDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "date"
                             }
                           },
-                          "required": [
-                            "type"
-                          ]
+                          "required": ["type"]
                         }
                       }
                     }
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -4599,64 +3258,37 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "typeKey": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "person": {
                           "type": "object",
                           "properties": {
                             "firstName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "middleName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lastName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "dateOfBirth": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "addresses": {
                               "type": "array",
@@ -4664,46 +3296,25 @@
                                 "type": "object",
                                 "properties": {
                                   "type": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "country": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "state": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "city": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "postalCode": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "addressLine1": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "addressLine2": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "isDefault": {
                                     "type": "boolean"
@@ -4737,34 +3348,19 @@
                                     ]
                                   },
                                   "number": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "issuingAuthority": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "country": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "issueDate": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "expiryDate": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -4788,10 +3384,7 @@
                           ]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         }
                       },
@@ -4810,9 +3403,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4828,9 +3419,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4846,9 +3435,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4856,9 +3443,7 @@
         },
         "operationId": "patchPublicCustomerPortalCompanionsByCompanionId",
         "summary": "PATCH /v1/public/customer-portal/companions/{companionId}",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -4886,14 +3471,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -4909,9 +3490,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4927,9 +3506,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4937,9 +3514,7 @@
         },
         "operationId": "deletePublicCustomerPortalCompanionsByCompanionId",
         "summary": "DELETE /v1/public/customer-portal/companions/{companionId}",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -4985,64 +3560,35 @@
                             "type": "string"
                           },
                           "sellAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "productTitle": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "paymentStatus": {
                             "type": "string",
-                            "enum": [
-                              "unpaid",
-                              "partially_paid",
-                              "paid",
-                              "overdue"
-                            ]
+                            "enum": ["unpaid", "partially_paid", "paid", "overdue"]
                           },
                           "startDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "endDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "pax": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "confirmedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "completedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "travelerCount": {
                             "type": "integer"
                           },
                           "primaryTravelerName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -5064,9 +3610,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5082,9 +3626,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5092,9 +3634,7 @@
         },
         "operationId": "getPublicCustomerPortalBookings",
         "summary": "GET /v1/public/customer-portal/bookings",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -5148,46 +3688,25 @@
                           "type": "string"
                         },
                         "sellAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "pax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "confirmedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cancelledAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "completedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "travelers": {
                           "type": "array",
@@ -5199,11 +3718,7 @@
                               },
                               "participantType": {
                                 "type": "string",
-                                "enum": [
-                                  "traveler",
-                                  "occupant",
-                                  "other"
-                                ]
+                                "enum": ["traveler", "occupant", "other"]
                               },
                               "firstName": {
                                 "type": "string"
@@ -5236,10 +3751,7 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "itemType": {
                                 "type": "string",
@@ -5268,22 +3780,13 @@
                                 ]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
@@ -5292,22 +3795,13 @@
                                 "type": "string"
                               },
                               "unitSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalSellAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerLinks": {
                                 "type": "array",
@@ -5322,23 +3816,13 @@
                                     },
                                     "role": {
                                       "type": "string",
-                                      "enum": [
-                                        "traveler",
-                                        "occupant",
-                                        "beneficiary",
-                                        "other"
-                                      ]
+                                      "enum": ["traveler", "occupant", "beneficiary", "other"]
                                     },
                                     "isPrimary": {
                                       "type": "boolean"
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "travelerId",
-                                    "role",
-                                    "isPrimary"
-                                  ]
+                                  "required": ["id", "travelerId", "role", "isPrimary"]
                                 }
                               }
                             },
@@ -5361,70 +3845,37 @@
                           }
                         },
                         "billingContact": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "firstName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "lastName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "country": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "state": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "city": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "address1": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "address2": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "postal": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -5450,17 +3901,10 @@
                               },
                               "source": {
                                 "type": "string",
-                                "enum": [
-                                  "booking_document",
-                                  "legal",
-                                  "finance"
-                                ]
+                                "enum": ["booking_document", "legal", "finance"]
                               },
                               "travelerId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "type": {
                                 "type": "string",
@@ -5483,16 +3927,10 @@
                                 "type": "string"
                               },
                               "mimeType": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "reference": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -5523,11 +3961,7 @@
                                   },
                                   "invoiceType": {
                                     "type": "string",
-                                    "enum": [
-                                      "invoice",
-                                      "proforma",
-                                      "credit_note"
-                                    ]
+                                    "enum": ["invoice", "proforma", "credit_note"]
                                   },
                                   "invoiceStatus": {
                                     "type": "string",
@@ -5561,38 +3995,17 @@
                                   },
                                   "documentStatus": {
                                     "type": "string",
-                                    "enum": [
-                                      "missing",
-                                      "pending",
-                                      "ready",
-                                      "failed",
-                                      "stale"
-                                    ]
+                                    "enum": ["missing", "pending", "ready", "failed", "stale"]
                                   },
                                   "format": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
-                                    "enum": [
-                                      "html",
-                                      "pdf",
-                                      "xml",
-                                      "json",
-                                      null
-                                    ]
+                                    "type": ["string", "null"],
+                                    "enum": ["html", "pdf", "xml", "json", null]
                                   },
                                   "generatedAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "downloadUrl": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -5629,20 +4042,11 @@
                                   },
                                   "invoiceType": {
                                     "type": "string",
-                                    "enum": [
-                                      "invoice",
-                                      "proforma",
-                                      "credit_note"
-                                    ]
+                                    "enum": ["invoice", "proforma", "credit_note"]
                                   },
                                   "status": {
                                     "type": "string",
-                                    "enum": [
-                                      "pending",
-                                      "completed",
-                                      "failed",
-                                      "refunded"
-                                    ]
+                                    "enum": ["pending", "completed", "failed", "refunded"]
                                   },
                                   "paymentMethod": {
                                     "type": "string",
@@ -5668,16 +4072,10 @@
                                     "type": "string"
                                   },
                                   "referenceNumber": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "notes": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -5696,10 +4094,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "documents",
-                            "payments"
-                          ]
+                          "required": ["documents", "payments"]
                         },
                         "fulfillments": {
                           "type": "array",
@@ -5710,16 +4105,10 @@
                                 "type": "string"
                               },
                               "bookingItemId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "travelerId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "fulfillmentType": {
                                 "type": "string",
@@ -5735,29 +4124,14 @@
                               },
                               "deliveryChannel": {
                                 "type": "string",
-                                "enum": [
-                                  "download",
-                                  "email",
-                                  "api",
-                                  "wallet",
-                                  "other"
-                                ]
+                                "enum": ["download", "email", "api", "wallet", "other"]
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "pending",
-                                  "issued",
-                                  "reissued",
-                                  "revoked",
-                                  "failed"
-                                ]
+                                "enum": ["pending", "issued", "reissued", "revoked", "failed"]
                               },
                               "artifactUrl": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -5793,9 +4167,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5811,9 +4183,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5821,9 +4191,7 @@
         },
         "operationId": "getPublicCustomerPortalBookingsByBookingId",
         "summary": "GET /v1/public/customer-portal/bookings/{bookingId}",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -5861,17 +4229,10 @@
                           },
                           "source": {
                             "type": "string",
-                            "enum": [
-                              "booking_document",
-                              "legal",
-                              "finance"
-                            ]
+                            "enum": ["booking_document", "legal", "finance"]
                           },
                           "travelerId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "type": {
                             "type": "string",
@@ -5894,16 +4255,10 @@
                             "type": "string"
                           },
                           "mimeType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "reference": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -5919,9 +4274,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5937,9 +4290,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5947,9 +4298,7 @@
         },
         "operationId": "getPublicCustomerPortalBookingsByBookingIdDocuments",
         "summary": "GET /v1/public/customer-portal/bookings/{bookingId}/documents",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -5981,64 +4330,34 @@
                       "type": "object",
                       "properties": {
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "firstName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "lastName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "state": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postal": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -6055,9 +4374,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6073,9 +4390,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6083,9 +4398,7 @@
         },
         "operationId": "getPublicCustomerPortalBookingsByBookingIdBillingContact",
         "summary": "GET /v1/public/customer-portal/bookings/{bookingId}/billing-contact",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -6139,9 +4452,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6149,9 +4460,7 @@
         },
         "operationId": "getPublicCustomerPortalContactExists",
         "summary": "GET /v1/public/customer-portal/contact-exists",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
@@ -6209,9 +4518,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6219,9 +4526,7 @@
         },
         "operationId": "getPublicCustomerPortalContactExistsPhone",
         "summary": "GET /v1/public/customer-portal/contact-exists/phone",
-        "tags": [
-          "customer-portal"
-        ],
+        "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",

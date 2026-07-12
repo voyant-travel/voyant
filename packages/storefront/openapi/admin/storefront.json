@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -171,38 +144,23 @@
                           "type": "object",
                           "properties": {
                             "logoUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "faviconUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "brandMarkUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "primaryColor": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                             },
                             "accentColor": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                             },
                             "supportedLanguages": {
@@ -226,17 +184,11 @@
                           "type": "object",
                           "properties": {
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "email"
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             },
                             "links": {
@@ -253,48 +205,29 @@
                                     "format": "uri"
                                   }
                                 },
-                                "required": [
-                                  "label",
-                                  "url"
-                                ]
+                                "required": ["label", "url"]
                               }
                             }
                           },
-                          "required": [
-                            "email",
-                            "phone",
-                            "links"
-                          ]
+                          "required": ["email", "phone", "links"]
                         },
                         "legal": {
                           "type": "object",
                           "properties": {
                             "termsUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "privacyUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "cancellationUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "defaultContractTemplateId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             }
                           },
@@ -309,25 +242,15 @@
                           "type": "object",
                           "properties": {
                             "defaultLocale": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
                             },
                             "currencyDisplay": {
                               "type": "string",
-                              "enum": [
-                                "code",
-                                "symbol",
-                                "name"
-                              ]
+                              "enum": ["code", "symbol", "name"]
                             }
                           },
-                          "required": [
-                            "defaultLocale",
-                            "currencyDisplay"
-                          ]
+                          "required": ["defaultLocale", "currencyDisplay"]
                         },
                         "forms": {
                           "type": "object",
@@ -365,24 +288,15 @@
                                         "type": "boolean"
                                       },
                                       "placeholder": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "description": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "autocomplete": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "options": {
@@ -399,10 +313,7 @@
                                               "minLength": 1
                                             }
                                           },
-                                          "required": [
-                                            "value",
-                                            "label"
-                                          ]
+                                          "required": ["value", "label"]
                                         }
                                       }
                                     },
@@ -419,9 +330,7 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "fields"
-                              ]
+                              "required": ["fields"]
                             },
                             "travelers": {
                               "type": "object",
@@ -456,24 +365,15 @@
                                         "type": "boolean"
                                       },
                                       "placeholder": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "description": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "autocomplete": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "options": {
@@ -490,10 +390,7 @@
                                               "minLength": 1
                                             }
                                           },
-                                          "required": [
-                                            "value",
-                                            "label"
-                                          ]
+                                          "required": ["value", "label"]
                                         }
                                       }
                                     },
@@ -510,32 +407,17 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "fields"
-                              ]
+                              "required": ["fields"]
                             }
                           },
-                          "required": [
-                            "billing",
-                            "travelers"
-                          ]
+                          "required": ["billing", "travelers"]
                         },
                         "payment": {
                           "type": "object",
                           "properties": {
                             "defaultMethod": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "card",
-                                "bank_transfer",
-                                "cash",
-                                "voucher",
-                                "invoice",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["card", "bank_transfer", "cash", "voucher", "invoice", null]
                             },
                             "methods": {
                               "type": "array",
@@ -544,43 +426,26 @@
                                 "properties": {
                                   "code": {
                                     "type": "string",
-                                    "enum": [
-                                      "card",
-                                      "bank_transfer",
-                                      "cash",
-                                      "voucher",
-                                      "invoice"
-                                    ]
+                                    "enum": ["card", "bank_transfer", "cash", "voucher", "invoice"]
                                   },
                                   "label": {
                                     "type": "string",
                                     "minLength": 1
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "minLength": 1
                                   },
                                   "enabled": {
                                     "type": "boolean"
                                   }
                                 },
-                                "required": [
-                                  "code",
-                                  "label",
-                                  "description",
-                                  "enabled"
-                                ]
+                                "required": ["code", "label", "description", "enabled"]
                               }
                             },
                             "structure": {
                               "type": "string",
-                              "enum": [
-                                "full",
-                                "split"
-                              ]
+                              "enum": ["full", "split"]
                             },
                             "schedule": {
                               "type": "array",
@@ -598,77 +463,43 @@
                                   },
                                   "dueCondition": {
                                     "type": "string",
-                                    "enum": [
-                                      "after_booking",
-                                      "before_departure"
-                                    ]
+                                    "enum": ["after_booking", "before_departure"]
                                   }
                                 },
-                                "required": [
-                                  "percent",
-                                  "dueInDays",
-                                  "dueCondition"
-                                ]
+                                "required": ["percent", "dueInDays", "dueCondition"]
                               }
                             },
                             "defaultSchedule": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "depositPercent": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ],
+                                  "type": ["number", "null"],
                                   "minimum": 0,
                                   "maximum": 100
                                 },
                                 "balanceDueDaysBeforeDeparture": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 }
                               },
-                              "required": [
-                                "depositPercent",
-                                "balanceDueDaysBeforeDeparture"
-                              ]
+                              "required": ["depositPercent", "balanceDueDaysBeforeDeparture"]
                             },
                             "bankTransfer": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "dueDays": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 },
                                 "account": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "properties": {
                                     "provider": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     },
                                     "currency": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     },
                                     "iban": {
@@ -693,45 +524,27 @@
                                   ]
                                 },
                                 "accountHolder": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "bankName": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "iban": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "bic": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "paymentReference": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "instructions": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 }
                               },
@@ -767,9 +580,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -777,9 +588,7 @@
         },
         "operationId": "getAdminStorefrontSettings",
         "summary": "GET /v1/admin/storefront/settings",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/storefront#api.admin",
@@ -798,38 +607,23 @@
                     "type": "object",
                     "properties": {
                       "logoUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       "faviconUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       "brandMarkUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       "primaryColor": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                       },
                       "accentColor": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                       },
                       "supportedLanguages": {
@@ -845,17 +639,11 @@
                     "type": "object",
                     "properties": {
                       "email": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "email"
                       },
                       "phone": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1
                       },
                       "links": {
@@ -872,10 +660,7 @@
                               "format": "uri"
                             }
                           },
-                          "required": [
-                            "label",
-                            "url"
-                          ]
+                          "required": ["label", "url"]
                         }
                       }
                     }
@@ -884,31 +669,19 @@
                     "type": "object",
                     "properties": {
                       "termsUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       "privacyUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       "cancellationUrl": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       "defaultContractTemplateId": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1
                       }
                     }
@@ -917,19 +690,12 @@
                     "type": "object",
                     "properties": {
                       "defaultLocale": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
                       },
                       "currencyDisplay": {
                         "type": "string",
-                        "enum": [
-                          "code",
-                          "symbol",
-                          "name"
-                        ]
+                        "enum": ["code", "symbol", "name"]
                       }
                     }
                   },
@@ -971,24 +737,15 @@
                                   "default": false
                                 },
                                 "placeholder": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "description": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "autocomplete": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "options": {
@@ -1005,18 +762,12 @@
                                         "minLength": 1
                                       }
                                     },
-                                    "required": [
-                                      "value",
-                                      "label"
-                                    ]
+                                    "required": ["value", "label"]
                                   },
                                   "default": []
                                 }
                               },
-                              "required": [
-                                "key",
-                                "label"
-                              ]
+                              "required": ["key", "label"]
                             },
                             "default": []
                           }
@@ -1057,24 +808,15 @@
                                   "default": false
                                 },
                                 "placeholder": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "description": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "autocomplete": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "options": {
@@ -1091,18 +833,12 @@
                                         "minLength": 1
                                       }
                                     },
-                                    "required": [
-                                      "value",
-                                      "label"
-                                    ]
+                                    "required": ["value", "label"]
                                   },
                                   "default": []
                                 }
                               },
-                              "required": [
-                                "key",
-                                "label"
-                              ]
+                              "required": ["key", "label"]
                             },
                             "default": []
                           }
@@ -1114,18 +850,8 @@
                     "type": "object",
                     "properties": {
                       "defaultMethod": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "enum": [
-                          "card",
-                          "bank_transfer",
-                          "cash",
-                          "voucher",
-                          "invoice",
-                          null
-                        ]
+                        "type": ["string", "null"],
+                        "enum": ["card", "bank_transfer", "cash", "voucher", "invoice", null]
                       },
                       "methods": {
                         "type": "array",
@@ -1134,23 +860,14 @@
                           "properties": {
                             "code": {
                               "type": "string",
-                              "enum": [
-                                "card",
-                                "bank_transfer",
-                                "cash",
-                                "voucher",
-                                "invoice"
-                              ]
+                              "enum": ["card", "bank_transfer", "cash", "voucher", "invoice"]
                             },
                             "label": {
                               "type": "string",
                               "minLength": 1
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             },
                             "enabled": {
@@ -1158,17 +875,12 @@
                               "default": true
                             }
                           },
-                          "required": [
-                            "code"
-                          ]
+                          "required": ["code"]
                         }
                       },
                       "structure": {
                         "type": "string",
-                        "enum": [
-                          "full",
-                          "split"
-                        ]
+                        "enum": ["full", "split"]
                       },
                       "schedule": {
                         "type": "array",
@@ -1186,73 +898,42 @@
                             },
                             "dueCondition": {
                               "type": "string",
-                              "enum": [
-                                "after_booking",
-                                "before_departure"
-                              ]
+                              "enum": ["after_booking", "before_departure"]
                             }
                           },
-                          "required": [
-                            "percent",
-                            "dueInDays",
-                            "dueCondition"
-                          ]
+                          "required": ["percent", "dueInDays", "dueCondition"]
                         }
                       },
                       "defaultSchedule": {
-                        "type": [
-                          "object",
-                          "null"
-                        ],
+                        "type": ["object", "null"],
                         "properties": {
                           "depositPercent": {
-                            "type": [
-                              "number",
-                              "null"
-                            ],
+                            "type": ["number", "null"],
                             "minimum": 0,
                             "maximum": 100
                           },
                           "balanceDueDaysBeforeDeparture": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ],
+                            "type": ["integer", "null"],
                             "minimum": 0
                           }
                         }
                       },
                       "bankTransfer": {
-                        "type": [
-                          "object",
-                          "null"
-                        ],
+                        "type": ["object", "null"],
                         "properties": {
                           "dueDays": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ],
+                            "type": ["integer", "null"],
                             "minimum": 0
                           },
                           "account": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "provider": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
+                                "type": ["string", "null"],
                                 "minLength": 1
                               },
                               "currency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ],
+                                "type": ["string", "null"],
                                 "minLength": 1
                               },
                               "iban": {
@@ -1268,52 +949,30 @@
                                 "minLength": 1
                               }
                             },
-                            "required": [
-                              "iban",
-                              "beneficiary",
-                              "bank"
-                            ]
+                            "required": ["iban", "beneficiary", "bank"]
                           },
                           "accountHolder": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "minLength": 1
                           },
                           "bankName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "minLength": 1
                           },
                           "iban": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "minLength": 1
                           },
                           "bic": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "minLength": 1
                           },
                           "paymentReference": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "minLength": 1
                           },
                           "instructions": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
+                            "type": ["string", "null"],
                             "minLength": 1
                           }
                         }
@@ -1340,38 +999,23 @@
                           "type": "object",
                           "properties": {
                             "logoUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "faviconUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "brandMarkUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "primaryColor": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                             },
                             "accentColor": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                             },
                             "supportedLanguages": {
@@ -1395,17 +1039,11 @@
                           "type": "object",
                           "properties": {
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "email"
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             },
                             "links": {
@@ -1422,48 +1060,29 @@
                                     "format": "uri"
                                   }
                                 },
-                                "required": [
-                                  "label",
-                                  "url"
-                                ]
+                                "required": ["label", "url"]
                               }
                             }
                           },
-                          "required": [
-                            "email",
-                            "phone",
-                            "links"
-                          ]
+                          "required": ["email", "phone", "links"]
                         },
                         "legal": {
                           "type": "object",
                           "properties": {
                             "termsUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "privacyUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "cancellationUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "defaultContractTemplateId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             }
                           },
@@ -1478,25 +1097,15 @@
                           "type": "object",
                           "properties": {
                             "defaultLocale": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
                             },
                             "currencyDisplay": {
                               "type": "string",
-                              "enum": [
-                                "code",
-                                "symbol",
-                                "name"
-                              ]
+                              "enum": ["code", "symbol", "name"]
                             }
                           },
-                          "required": [
-                            "defaultLocale",
-                            "currencyDisplay"
-                          ]
+                          "required": ["defaultLocale", "currencyDisplay"]
                         },
                         "forms": {
                           "type": "object",
@@ -1534,24 +1143,15 @@
                                         "type": "boolean"
                                       },
                                       "placeholder": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "description": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "autocomplete": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "options": {
@@ -1568,10 +1168,7 @@
                                               "minLength": 1
                                             }
                                           },
-                                          "required": [
-                                            "value",
-                                            "label"
-                                          ]
+                                          "required": ["value", "label"]
                                         }
                                       }
                                     },
@@ -1588,9 +1185,7 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "fields"
-                              ]
+                              "required": ["fields"]
                             },
                             "travelers": {
                               "type": "object",
@@ -1625,24 +1220,15 @@
                                         "type": "boolean"
                                       },
                                       "placeholder": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "description": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "autocomplete": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "options": {
@@ -1659,10 +1245,7 @@
                                               "minLength": 1
                                             }
                                           },
-                                          "required": [
-                                            "value",
-                                            "label"
-                                          ]
+                                          "required": ["value", "label"]
                                         }
                                       }
                                     },
@@ -1679,32 +1262,17 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "fields"
-                              ]
+                              "required": ["fields"]
                             }
                           },
-                          "required": [
-                            "billing",
-                            "travelers"
-                          ]
+                          "required": ["billing", "travelers"]
                         },
                         "payment": {
                           "type": "object",
                           "properties": {
                             "defaultMethod": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "card",
-                                "bank_transfer",
-                                "cash",
-                                "voucher",
-                                "invoice",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["card", "bank_transfer", "cash", "voucher", "invoice", null]
                             },
                             "methods": {
                               "type": "array",
@@ -1713,43 +1281,26 @@
                                 "properties": {
                                   "code": {
                                     "type": "string",
-                                    "enum": [
-                                      "card",
-                                      "bank_transfer",
-                                      "cash",
-                                      "voucher",
-                                      "invoice"
-                                    ]
+                                    "enum": ["card", "bank_transfer", "cash", "voucher", "invoice"]
                                   },
                                   "label": {
                                     "type": "string",
                                     "minLength": 1
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "minLength": 1
                                   },
                                   "enabled": {
                                     "type": "boolean"
                                   }
                                 },
-                                "required": [
-                                  "code",
-                                  "label",
-                                  "description",
-                                  "enabled"
-                                ]
+                                "required": ["code", "label", "description", "enabled"]
                               }
                             },
                             "structure": {
                               "type": "string",
-                              "enum": [
-                                "full",
-                                "split"
-                              ]
+                              "enum": ["full", "split"]
                             },
                             "schedule": {
                               "type": "array",
@@ -1767,77 +1318,43 @@
                                   },
                                   "dueCondition": {
                                     "type": "string",
-                                    "enum": [
-                                      "after_booking",
-                                      "before_departure"
-                                    ]
+                                    "enum": ["after_booking", "before_departure"]
                                   }
                                 },
-                                "required": [
-                                  "percent",
-                                  "dueInDays",
-                                  "dueCondition"
-                                ]
+                                "required": ["percent", "dueInDays", "dueCondition"]
                               }
                             },
                             "defaultSchedule": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "depositPercent": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ],
+                                  "type": ["number", "null"],
                                   "minimum": 0,
                                   "maximum": 100
                                 },
                                 "balanceDueDaysBeforeDeparture": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 }
                               },
-                              "required": [
-                                "depositPercent",
-                                "balanceDueDaysBeforeDeparture"
-                              ]
+                              "required": ["depositPercent", "balanceDueDaysBeforeDeparture"]
                             },
                             "bankTransfer": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "dueDays": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 },
                                 "account": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "properties": {
                                     "provider": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     },
                                     "currency": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     },
                                     "iban": {
@@ -1862,45 +1379,27 @@
                                   ]
                                 },
                                 "accountHolder": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "bankName": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "iban": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "bic": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "paymentReference": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "instructions": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 }
                               },
@@ -1936,9 +1435,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1954,9 +1451,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1964,9 +1459,7 @@
         },
         "operationId": "patchAdminStorefrontSettings",
         "summary": "PATCH /v1/admin/storefront/settings",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/storefront#api.admin",

@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -165,10 +138,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "name": {
                           "type": "string"
@@ -196,16 +166,10 @@
                         },
                         "customerPaymentPolicy": {},
                         "bookingCheckoutUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoicePayUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -222,9 +186,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -232,9 +194,7 @@
         },
         "operationId": "getPublicOperatorProfile",
         "summary": "GET /v1/public/operator-profile",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.operator-profile"
@@ -251,10 +211,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "name": {
                           "type": "string"
@@ -282,16 +239,10 @@
                         },
                         "customerPaymentPolicy": {},
                         "bookingCheckoutUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoicePayUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -308,9 +259,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -318,9 +267,7 @@
         },
         "operationId": "getPublicSettingsOperator",
         "summary": "GET /v1/public/settings/operator",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.settings"

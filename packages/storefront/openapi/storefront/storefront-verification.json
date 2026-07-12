@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -174,24 +147,16 @@
                     "default": "contact_confirmation"
                   },
                   "locale": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 16
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "email"
-                ]
+                "required": ["email"]
               }
             }
           }
@@ -212,10 +177,7 @@
                         },
                         "channel": {
                           "type": "string",
-                          "enum": [
-                            "email",
-                            "sms"
-                          ]
+                          "enum": ["email", "sms"]
                         },
                         "destination": {
                           "type": "string"
@@ -225,23 +187,14 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "pending",
-                            "verified",
-                            "expired",
-                            "failed",
-                            "cancelled"
-                          ]
+                          "enum": ["pending", "verified", "expired", "failed", "cancelled"]
                         },
                         "expiresAt": {
                           "type": "string",
                           "format": "date-time"
                         },
                         "verifiedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "date-time"
                         },
                         "createdAt": {
@@ -266,9 +219,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -287,9 +238,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -308,9 +257,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -329,9 +276,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -339,9 +284,7 @@
         },
         "operationId": "postPublicStorefrontVerificationEmailStart",
         "summary": "POST /v1/public/storefront-verification/email/start",
-        "tags": [
-          "storefront-verification"
-        ],
+        "tags": ["storefront-verification"],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
@@ -370,24 +313,16 @@
                     "default": "contact_confirmation"
                   },
                   "locale": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 2,
                     "maxLength": 16
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "phone"
-                ]
+                "required": ["phone"]
               }
             }
           }
@@ -408,10 +343,7 @@
                         },
                         "channel": {
                           "type": "string",
-                          "enum": [
-                            "email",
-                            "sms"
-                          ]
+                          "enum": ["email", "sms"]
                         },
                         "destination": {
                           "type": "string"
@@ -421,23 +353,14 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "pending",
-                            "verified",
-                            "expired",
-                            "failed",
-                            "cancelled"
-                          ]
+                          "enum": ["pending", "verified", "expired", "failed", "cancelled"]
                         },
                         "expiresAt": {
                           "type": "string",
                           "format": "date-time"
                         },
                         "verifiedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "date-time"
                         },
                         "createdAt": {
@@ -462,9 +385,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -483,9 +404,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -504,9 +423,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -525,9 +442,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -535,9 +450,7 @@
         },
         "operationId": "postPublicStorefrontVerificationSmsStart",
         "summary": "POST /v1/public/storefront-verification/sms/start",
-        "tags": [
-          "storefront-verification"
-        ],
+        "tags": ["storefront-verification"],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
@@ -569,10 +482,7 @@
                     "default": "contact_confirmation"
                   }
                 },
-                "required": [
-                  "email",
-                  "code"
-                ]
+                "required": ["email", "code"]
               }
             }
           }
@@ -593,10 +503,7 @@
                         },
                         "channel": {
                           "type": "string",
-                          "enum": [
-                            "email",
-                            "sms"
-                          ]
+                          "enum": ["email", "sms"]
                         },
                         "destination": {
                           "type": "string"
@@ -606,19 +513,14 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "verified"
-                          ]
+                          "enum": ["verified"]
                         },
                         "expiresAt": {
                           "type": "string",
                           "format": "date-time"
                         },
                         "verifiedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "date-time"
                         },
                         "createdAt": {
@@ -643,9 +545,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -664,9 +564,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -685,9 +583,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -706,9 +602,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -727,9 +621,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -737,9 +629,7 @@
         },
         "operationId": "postPublicStorefrontVerificationEmailConfirm",
         "summary": "POST /v1/public/storefront-verification/email/confirm",
-        "tags": [
-          "storefront-verification"
-        ],
+        "tags": ["storefront-verification"],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
@@ -772,10 +662,7 @@
                     "default": "contact_confirmation"
                   }
                 },
-                "required": [
-                  "phone",
-                  "code"
-                ]
+                "required": ["phone", "code"]
               }
             }
           }
@@ -796,10 +683,7 @@
                         },
                         "channel": {
                           "type": "string",
-                          "enum": [
-                            "email",
-                            "sms"
-                          ]
+                          "enum": ["email", "sms"]
                         },
                         "destination": {
                           "type": "string"
@@ -809,19 +693,14 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "verified"
-                          ]
+                          "enum": ["verified"]
                         },
                         "expiresAt": {
                           "type": "string",
                           "format": "date-time"
                         },
                         "verifiedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "format": "date-time"
                         },
                         "createdAt": {
@@ -846,9 +725,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -867,9 +744,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -888,9 +763,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -909,9 +782,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -930,9 +801,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -940,9 +809,7 @@
         },
         "operationId": "postPublicStorefrontVerificationSmsConfirm",
         "summary": "POST /v1/public/storefront-verification/sms/confirm",
-        "tags": [
-          "storefront-verification"
-        ],
+        "tags": ["storefront-verification"],
         "x-voyant-module": "storefront-verification",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",

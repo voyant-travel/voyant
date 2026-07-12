@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -203,32 +176,20 @@
                             "type": "string"
                           },
                           "slug": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "discountType": {
                             "type": "string",
-                            "enum": [
-                              "percentage",
-                              "fixed_amount"
-                            ]
+                            "enum": ["percentage", "fixed_amount"]
                           },
                           "discountValue": {
                             "type": "string"
                           },
                           "currency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "applicableProductIds": {
                             "type": "array",
@@ -243,34 +204,19 @@
                             }
                           },
                           "validFrom": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "validTo": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "minTravelers": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "imageMobileUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "imageDesktopUrl": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "stackable": {
                             "type": "boolean"
@@ -304,9 +250,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -314,9 +258,7 @@
         },
         "operationId": "getPublicProductsByProductIdOffers",
         "summary": "GET /v1/public/products/{productId}/offers",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -371,32 +313,20 @@
                           "type": "string"
                         },
                         "slug": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "discountType": {
                           "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed_amount"
-                          ]
+                          "enum": ["percentage", "fixed_amount"]
                         },
                         "discountValue": {
                           "type": "string"
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "applicableProductIds": {
                           "type": "array",
@@ -411,34 +341,19 @@
                           }
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validTo": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "minTravelers": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "imageMobileUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "imageDesktopUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stackable": {
                           "type": "boolean"
@@ -471,9 +386,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -489,9 +402,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -499,9 +410,7 @@
         },
         "operationId": "getPublicOffersBySlug",
         "summary": "GET /v1/public/offers/{slug}",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -533,24 +442,15 @@
                     "minLength": 1
                   },
                   "departureId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "bookingId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "sessionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "locale": {
@@ -563,12 +463,7 @@
                   },
                   "audience": {
                     "type": "string",
-                    "enum": [
-                      "staff",
-                      "customer",
-                      "partner",
-                      "supplier"
-                    ],
+                    "enum": ["staff", "customer", "partner", "supplier"],
                     "default": "customer"
                   },
                   "market": {
@@ -577,10 +472,7 @@
                     "default": "default"
                   },
                   "basePriceCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "currency": {
@@ -589,12 +481,7 @@
                     "maxLength": 3
                   }
                 },
-                "required": [
-                  "productId",
-                  "pax",
-                  "basePriceCents",
-                  "currency"
-                ]
+                "required": ["productId", "pax", "basePriceCents", "currency"]
               }
             }
           }
@@ -612,18 +499,10 @@
                       "properties": {
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "applied",
-                            "not_applicable",
-                            "invalid",
-                            "conflict"
-                          ]
+                          "enum": ["applied", "not_applicable", "invalid", "conflict"]
                         },
                         "reason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "offer_not_found",
                             "offer_expired",
@@ -644,10 +523,7 @@
                           ]
                         },
                         "offer": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -656,32 +532,20 @@
                               "type": "string"
                             },
                             "slug": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "discountType": {
                               "type": "string",
-                              "enum": [
-                                "percentage",
-                                "fixed_amount"
-                              ]
+                              "enum": ["percentage", "fixed_amount"]
                             },
                             "discountValue": {
                               "type": "string"
                             },
                             "currency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "applicableProductIds": {
                               "type": "array",
@@ -696,34 +560,19 @@
                               }
                             },
                             "validFrom": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "validTo": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "minTravelers": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "imageMobileUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "imageDesktopUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "stackable": {
                               "type": "boolean"
@@ -759,33 +608,19 @@
                           "type": "object",
                           "properties": {
                             "bookingId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "productId": {
                               "type": "string"
                             },
                             "departureId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "bookingId",
-                            "sessionId",
-                            "productId",
-                            "departureId"
-                          ]
+                          "required": ["bookingId", "sessionId", "productId", "departureId"]
                         },
                         "pricing": {
                           "type": "object",
@@ -832,28 +667,16 @@
                               },
                               "discountKind": {
                                 "type": "string",
-                                "enum": [
-                                  "percentage",
-                                  "fixed_amount"
-                                ]
+                                "enum": ["percentage", "fixed_amount"]
                               },
                               "discountPercent": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "discountAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "appliedCode": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "stackable": {
                                 "type": "boolean"
@@ -874,17 +697,11 @@
                           }
                         },
                         "conflict": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "policy": {
                               "type": "string",
-                              "enum": [
-                                "best_discount_wins",
-                                "stackable_compose"
-                              ]
+                              "enum": ["best_discount_wins", "stackable_compose"]
                             },
                             "autoAppliedOfferIds": {
                               "type": "array",
@@ -893,10 +710,7 @@
                               }
                             },
                             "manualOfferId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "selectedOfferIds": {
                               "type": "array",
@@ -928,9 +742,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -946,9 +758,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -956,9 +766,7 @@
         },
         "operationId": "postPublicOffersBySlugApply",
         "summary": "POST /v1/public/offers/{slug}/apply",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -980,24 +788,15 @@
                     "minLength": 1
                   },
                   "departureId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "bookingId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "sessionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "locale": {
@@ -1010,12 +809,7 @@
                   },
                   "audience": {
                     "type": "string",
-                    "enum": [
-                      "staff",
-                      "customer",
-                      "partner",
-                      "supplier"
-                    ],
+                    "enum": ["staff", "customer", "partner", "supplier"],
                     "default": "customer"
                   },
                   "market": {
@@ -1024,10 +818,7 @@
                     "default": "default"
                   },
                   "basePriceCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "currency": {
@@ -1041,13 +832,7 @@
                     "maxLength": 80
                   }
                 },
-                "required": [
-                  "productId",
-                  "pax",
-                  "basePriceCents",
-                  "currency",
-                  "code"
-                ]
+                "required": ["productId", "pax", "basePriceCents", "currency", "code"]
               }
             }
           }
@@ -1065,18 +850,10 @@
                       "properties": {
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "applied",
-                            "not_applicable",
-                            "invalid",
-                            "conflict"
-                          ]
+                          "enum": ["applied", "not_applicable", "invalid", "conflict"]
                         },
                         "reason": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
+                          "type": ["string", "null"],
                           "enum": [
                             "offer_not_found",
                             "offer_expired",
@@ -1097,10 +874,7 @@
                           ]
                         },
                         "offer": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -1109,32 +883,20 @@
                               "type": "string"
                             },
                             "slug": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "description": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "discountType": {
                               "type": "string",
-                              "enum": [
-                                "percentage",
-                                "fixed_amount"
-                              ]
+                              "enum": ["percentage", "fixed_amount"]
                             },
                             "discountValue": {
                               "type": "string"
                             },
                             "currency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "applicableProductIds": {
                               "type": "array",
@@ -1149,34 +911,19 @@
                               }
                             },
                             "validFrom": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "validTo": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "minTravelers": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "imageMobileUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "imageDesktopUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "stackable": {
                               "type": "boolean"
@@ -1212,33 +959,19 @@
                           "type": "object",
                           "properties": {
                             "bookingId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "productId": {
                               "type": "string"
                             },
                             "departureId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "bookingId",
-                            "sessionId",
-                            "productId",
-                            "departureId"
-                          ]
+                          "required": ["bookingId", "sessionId", "productId", "departureId"]
                         },
                         "pricing": {
                           "type": "object",
@@ -1285,28 +1018,16 @@
                               },
                               "discountKind": {
                                 "type": "string",
-                                "enum": [
-                                  "percentage",
-                                  "fixed_amount"
-                                ]
+                                "enum": ["percentage", "fixed_amount"]
                               },
                               "discountPercent": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "discountAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "appliedCode": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "stackable": {
                                 "type": "boolean"
@@ -1327,17 +1048,11 @@
                           }
                         },
                         "conflict": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "policy": {
                               "type": "string",
-                              "enum": [
-                                "best_discount_wins",
-                                "stackable_compose"
-                              ]
+                              "enum": ["best_discount_wins", "stackable_compose"]
                             },
                             "autoAppliedOfferIds": {
                               "type": "array",
@@ -1346,10 +1061,7 @@
                               }
                             },
                             "manualOfferId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "selectedOfferIds": {
                               "type": "array",
@@ -1381,9 +1093,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1399,9 +1109,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1409,9 +1117,7 @@
         },
         "operationId": "postPublicOffersRedeem",
         "summary": "POST /v1/public/offers/redeem",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -1430,25 +1136,12 @@
                 "properties": {
                   "kind": {
                     "type": "string",
-                    "enum": [
-                      "wishlist",
-                      "notify",
-                      "inquiry",
-                      "request_offer",
-                      "referral"
-                    ],
+                    "enum": ["wishlist", "notify", "inquiry", "request_offer", "referral"],
                     "default": "inquiry"
                   },
                   "source": {
                     "type": "string",
-                    "enum": [
-                      "form",
-                      "phone",
-                      "admin",
-                      "abandoned_cart",
-                      "website",
-                      "booking"
-                    ],
+                    "enum": ["form", "phone", "admin", "abandoned_cart", "website", "booking"],
                     "default": "website"
                   },
                   "contact": {
@@ -1482,26 +1175,17 @@
                     }
                   },
                   "productId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 160
                   },
                   "optionUnitId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 160
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 4000
                   },
                   "tags": {
@@ -1515,18 +1199,12 @@
                     "default": []
                   },
                   "sourceSubmissionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 160
                   },
                   "sourceUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "locale": {
@@ -1554,18 +1232,12 @@
                         "default": false
                       },
                       "scope": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1,
                         "maxLength": 120
                       },
                       "acceptedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "date-time"
                       }
                     },
@@ -1576,9 +1248,7 @@
                     }
                   }
                 },
-                "required": [
-                  "contact"
-                ]
+                "required": ["contact"]
               }
             }
           }
@@ -1602,53 +1272,24 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": [
-                            "wishlist",
-                            "notify",
-                            "inquiry",
-                            "request_offer",
-                            "referral"
-                          ]
+                          "enum": ["wishlist", "notify", "inquiry", "request_offer", "referral"]
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "form",
-                            "phone",
-                            "admin",
-                            "abandoned_cart",
-                            "website",
-                            "booking"
-                          ]
+                          "enum": ["form", "phone", "admin", "abandoned_cart", "website", "booking"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "new",
-                            "contacted",
-                            "qualified",
-                            "converted",
-                            "lost",
-                            "expired"
-                          ]
+                          "enum": ["new", "contacted", "qualified", "converted", "lost", "expired"]
                         },
                         "duplicate": {
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "id",
-                        "personId",
-                        "kind",
-                        "source",
-                        "status",
-                        "duplicate"
-                      ]
+                      "required": ["id", "personId", "kind", "source", "status", "duplicate"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1664,9 +1305,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1682,9 +1321,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1700,9 +1337,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1710,9 +1345,7 @@
         },
         "operationId": "postPublicLeads",
         "summary": "POST /v1/public/leads",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -1751,29 +1384,16 @@
                   },
                   "source": {
                     "type": "string",
-                    "enum": [
-                      "form",
-                      "phone",
-                      "admin",
-                      "abandoned_cart",
-                      "website",
-                      "booking"
-                    ],
+                    "enum": ["form", "phone", "admin", "abandoned_cart", "website", "booking"],
                     "default": "website"
                   },
                   "sourceSubmissionId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1,
                     "maxLength": 160
                   },
                   "sourceUrl": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "locale": {
@@ -1804,39 +1424,26 @@
                       },
                       "newsletter": {
                         "type": "boolean",
-                        "enum": [
-                          true
-                        ]
+                        "enum": [true]
                       },
                       "gdpr": {
                         "type": "boolean",
                         "default": false
                       },
                       "scope": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "minLength": 1,
                         "maxLength": 120
                       },
                       "acceptedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "date-time"
                       }
                     },
-                    "required": [
-                      "newsletter"
-                    ]
+                    "required": ["newsletter"]
                   }
                 },
-                "required": [
-                  "email",
-                  "consent"
-                ]
+                "required": ["email", "consent"]
               }
             }
           }
@@ -1860,45 +1467,22 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": [
-                            "wishlist",
-                            "notify",
-                            "inquiry",
-                            "request_offer",
-                            "referral"
-                          ]
+                          "enum": ["wishlist", "notify", "inquiry", "request_offer", "referral"]
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "form",
-                            "phone",
-                            "admin",
-                            "abandoned_cart",
-                            "website",
-                            "booking"
-                          ]
+                          "enum": ["form", "phone", "admin", "abandoned_cart", "website", "booking"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "new",
-                            "contacted",
-                            "qualified",
-                            "converted",
-                            "lost",
-                            "expired"
-                          ]
+                          "enum": ["new", "contacted", "qualified", "converted", "lost", "expired"]
                         },
                         "duplicate": {
                           "type": "boolean"
                         },
                         "doubleOptIn": {
                           "type": "string",
-                          "enum": [
-                            "not_configured",
-                            "requested"
-                          ]
+                          "enum": ["not_configured", "requested"]
                         }
                       },
                       "required": [
@@ -1912,9 +1496,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1930,9 +1512,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1948,9 +1528,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1966,9 +1544,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1976,9 +1552,7 @@
         },
         "operationId": "postPublicNewsletterSubscribe",
         "summary": "POST /v1/public/newsletter/subscribe",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -2003,38 +1577,23 @@
                           "type": "object",
                           "properties": {
                             "logoUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "faviconUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "brandMarkUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "primaryColor": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                             },
                             "accentColor": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
                             },
                             "supportedLanguages": {
@@ -2058,17 +1617,11 @@
                           "type": "object",
                           "properties": {
                             "email": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "email"
                             },
                             "phone": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             },
                             "links": {
@@ -2085,48 +1638,29 @@
                                     "format": "uri"
                                   }
                                 },
-                                "required": [
-                                  "label",
-                                  "url"
-                                ]
+                                "required": ["label", "url"]
                               }
                             }
                           },
-                          "required": [
-                            "email",
-                            "phone",
-                            "links"
-                          ]
+                          "required": ["email", "phone", "links"]
                         },
                         "legal": {
                           "type": "object",
                           "properties": {
                             "termsUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "privacyUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "cancellationUrl": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "format": "uri"
                             },
                             "defaultContractTemplateId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "minLength": 1
                             }
                           },
@@ -2141,25 +1675,15 @@
                           "type": "object",
                           "properties": {
                             "defaultLocale": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
                             },
                             "currencyDisplay": {
                               "type": "string",
-                              "enum": [
-                                "code",
-                                "symbol",
-                                "name"
-                              ]
+                              "enum": ["code", "symbol", "name"]
                             }
                           },
-                          "required": [
-                            "defaultLocale",
-                            "currencyDisplay"
-                          ]
+                          "required": ["defaultLocale", "currencyDisplay"]
                         },
                         "forms": {
                           "type": "object",
@@ -2197,24 +1721,15 @@
                                         "type": "boolean"
                                       },
                                       "placeholder": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "description": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "autocomplete": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "options": {
@@ -2231,10 +1746,7 @@
                                               "minLength": 1
                                             }
                                           },
-                                          "required": [
-                                            "value",
-                                            "label"
-                                          ]
+                                          "required": ["value", "label"]
                                         }
                                       }
                                     },
@@ -2251,9 +1763,7 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "fields"
-                              ]
+                              "required": ["fields"]
                             },
                             "travelers": {
                               "type": "object",
@@ -2288,24 +1798,15 @@
                                         "type": "boolean"
                                       },
                                       "placeholder": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "description": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "autocomplete": {
-                                        "type": [
-                                          "string",
-                                          "null"
-                                        ],
+                                        "type": ["string", "null"],
                                         "minLength": 1
                                       },
                                       "options": {
@@ -2322,10 +1823,7 @@
                                               "minLength": 1
                                             }
                                           },
-                                          "required": [
-                                            "value",
-                                            "label"
-                                          ]
+                                          "required": ["value", "label"]
                                         }
                                       }
                                     },
@@ -2342,32 +1840,17 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "fields"
-                              ]
+                              "required": ["fields"]
                             }
                           },
-                          "required": [
-                            "billing",
-                            "travelers"
-                          ]
+                          "required": ["billing", "travelers"]
                         },
                         "payment": {
                           "type": "object",
                           "properties": {
                             "defaultMethod": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "card",
-                                "bank_transfer",
-                                "cash",
-                                "voucher",
-                                "invoice",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["card", "bank_transfer", "cash", "voucher", "invoice", null]
                             },
                             "methods": {
                               "type": "array",
@@ -2376,43 +1859,26 @@
                                 "properties": {
                                   "code": {
                                     "type": "string",
-                                    "enum": [
-                                      "card",
-                                      "bank_transfer",
-                                      "cash",
-                                      "voucher",
-                                      "invoice"
-                                    ]
+                                    "enum": ["card", "bank_transfer", "cash", "voucher", "invoice"]
                                   },
                                   "label": {
                                     "type": "string",
                                     "minLength": 1
                                   },
                                   "description": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
+                                    "type": ["string", "null"],
                                     "minLength": 1
                                   },
                                   "enabled": {
                                     "type": "boolean"
                                   }
                                 },
-                                "required": [
-                                  "code",
-                                  "label",
-                                  "description",
-                                  "enabled"
-                                ]
+                                "required": ["code", "label", "description", "enabled"]
                               }
                             },
                             "structure": {
                               "type": "string",
-                              "enum": [
-                                "full",
-                                "split"
-                              ]
+                              "enum": ["full", "split"]
                             },
                             "schedule": {
                               "type": "array",
@@ -2430,77 +1896,43 @@
                                   },
                                   "dueCondition": {
                                     "type": "string",
-                                    "enum": [
-                                      "after_booking",
-                                      "before_departure"
-                                    ]
+                                    "enum": ["after_booking", "before_departure"]
                                   }
                                 },
-                                "required": [
-                                  "percent",
-                                  "dueInDays",
-                                  "dueCondition"
-                                ]
+                                "required": ["percent", "dueInDays", "dueCondition"]
                               }
                             },
                             "defaultSchedule": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "depositPercent": {
-                                  "type": [
-                                    "number",
-                                    "null"
-                                  ],
+                                  "type": ["number", "null"],
                                   "minimum": 0,
                                   "maximum": 100
                                 },
                                 "balanceDueDaysBeforeDeparture": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 }
                               },
-                              "required": [
-                                "depositPercent",
-                                "balanceDueDaysBeforeDeparture"
-                              ]
+                              "required": ["depositPercent", "balanceDueDaysBeforeDeparture"]
                             },
                             "bankTransfer": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "dueDays": {
-                                  "type": [
-                                    "integer",
-                                    "null"
-                                  ],
+                                  "type": ["integer", "null"],
                                   "minimum": 0
                                 },
                                 "account": {
-                                  "type": [
-                                    "object",
-                                    "null"
-                                  ],
+                                  "type": ["object", "null"],
                                   "properties": {
                                     "provider": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     },
                                     "currency": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     },
                                     "iban": {
@@ -2525,45 +1957,27 @@
                                   ]
                                 },
                                 "accountHolder": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "bankName": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "iban": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "bic": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "paymentReference": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 },
                                 "instructions": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "minLength": 1
                                 }
                               },
@@ -2599,9 +2013,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2609,9 +2021,7 @@
         },
         "operationId": "getPublicSettings",
         "summary": "GET /v1/public/settings",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -2652,103 +2062,56 @@
                           "type": "string"
                         },
                         "optionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "dateLocal": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "timezone": {
                           "type": "string"
                         },
                         "startTime": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
                             },
                             "label": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "startTimeLocal": {
                               "type": "string"
                             },
                             "durationMinutes": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             }
                           },
-                          "required": [
-                            "id",
-                            "label",
-                            "startTimeLocal",
-                            "durationMinutes"
-                          ]
+                          "required": ["id", "label", "startTimeLocal", "durationMinutes"]
                         },
                         "meetingPoint": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capacity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "remaining": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "departureStatus": {
                           "type": "string",
-                          "enum": [
-                            "open",
-                            "closed",
-                            "sold_out",
-                            "cancelled",
-                            "on_request"
-                          ]
+                          "enum": ["open", "closed", "sold_out", "cancelled", "on_request"]
                         },
                         "nights": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "days": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "ratePlans": {
                           "type": "array",
@@ -2779,10 +2142,7 @@
                                       "type": "string"
                                     }
                                   },
-                                  "required": [
-                                    "amount",
-                                    "currencyCode"
-                                  ]
+                                  "required": ["amount", "currencyCode"]
                                 }
                               },
                               "roomPrices": {
@@ -2821,25 +2181,13 @@
                                               "minimum": 0
                                             }
                                           },
-                                          "required": [
-                                            "adultsMin",
-                                            "adultsMax",
-                                            "childrenMax"
-                                          ]
+                                          "required": ["adultsMin", "adultsMax", "childrenMax"]
                                         }
                                       },
-                                      "required": [
-                                        "id",
-                                        "name",
-                                        "occupancy"
-                                      ]
+                                      "required": ["id", "name", "occupancy"]
                                     }
                                   },
-                                  "required": [
-                                    "amount",
-                                    "currencyCode",
-                                    "roomType"
-                                  ]
+                                  "required": ["amount", "currencyCode", "roomType"]
                                 }
                               }
                             },
@@ -2854,10 +2202,7 @@
                           }
                         },
                         "resourceManifest": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "kinds": {
                               "type": "array",
@@ -2877,12 +2222,7 @@
                                     "type": "number"
                                   }
                                 },
-                                "required": [
-                                  "kind",
-                                  "capacity",
-                                  "assigned",
-                                  "available"
-                                ]
+                                "required": ["kind", "capacity", "assigned", "available"]
                               }
                             },
                             "resources": {
@@ -2897,22 +2237,13 @@
                                     "type": "string"
                                   },
                                   "label": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "refType": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "refId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "capacity": {
                                     "type": "number"
@@ -2924,10 +2255,7 @@
                                     "type": "number"
                                   },
                                   "parentId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "flags": {
                                     "type": "object",
@@ -2949,10 +2277,7 @@
                               }
                             }
                           },
-                          "required": [
-                            "kinds",
-                            "resources"
-                          ]
+                          "required": ["kinds", "resources"]
                         }
                       },
                       "required": [
@@ -2976,9 +2301,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2994,9 +2317,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3004,9 +2325,7 @@
         },
         "operationId": "getPublicDeparturesByDepartureId",
         "summary": "GET /v1/public/departures/{departureId}",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -3036,12 +2355,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "open",
-                "closed",
-                "sold_out",
-                "cancelled"
-              ]
+              "enum": ["open", "closed", "sold_out", "cancelled"]
             },
             "required": false,
             "name": "status",
@@ -3107,103 +2421,56 @@
                             "type": "string"
                           },
                           "optionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "dateLocal": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "startAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "endAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "timezone": {
                             "type": "string"
                           },
                           "startTime": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "id": {
                                 "type": "string"
                               },
                               "label": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startTimeLocal": {
                                 "type": "string"
                               },
                               "durationMinutes": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
-                            "required": [
-                              "id",
-                              "label",
-                              "startTimeLocal",
-                              "durationMinutes"
-                            ]
+                            "required": ["id", "label", "startTimeLocal", "durationMinutes"]
                           },
                           "meetingPoint": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "capacity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "remaining": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "departureStatus": {
                             "type": "string",
-                            "enum": [
-                              "open",
-                              "closed",
-                              "sold_out",
-                              "cancelled",
-                              "on_request"
-                            ]
+                            "enum": ["open", "closed", "sold_out", "cancelled", "on_request"]
                           },
                           "nights": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "days": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "ratePlans": {
                             "type": "array",
@@ -3234,10 +2501,7 @@
                                         "type": "string"
                                       }
                                     },
-                                    "required": [
-                                      "amount",
-                                      "currencyCode"
-                                    ]
+                                    "required": ["amount", "currencyCode"]
                                   }
                                 },
                                 "roomPrices": {
@@ -3276,25 +2540,13 @@
                                                 "minimum": 0
                                               }
                                             },
-                                            "required": [
-                                              "adultsMin",
-                                              "adultsMax",
-                                              "childrenMax"
-                                            ]
+                                            "required": ["adultsMin", "adultsMax", "childrenMax"]
                                           }
                                         },
-                                        "required": [
-                                          "id",
-                                          "name",
-                                          "occupancy"
-                                        ]
+                                        "required": ["id", "name", "occupancy"]
                                       }
                                     },
-                                    "required": [
-                                      "amount",
-                                      "currencyCode",
-                                      "roomType"
-                                    ]
+                                    "required": ["amount", "currencyCode", "roomType"]
                                   }
                                 }
                               },
@@ -3309,10 +2561,7 @@
                             }
                           },
                           "resourceManifest": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "kinds": {
                                 "type": "array",
@@ -3332,12 +2581,7 @@
                                       "type": "number"
                                     }
                                   },
-                                  "required": [
-                                    "kind",
-                                    "capacity",
-                                    "assigned",
-                                    "available"
-                                  ]
+                                  "required": ["kind", "capacity", "assigned", "available"]
                                 }
                               },
                               "resources": {
@@ -3352,22 +2596,13 @@
                                       "type": "string"
                                     },
                                     "label": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "refType": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "refId": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "capacity": {
                                       "type": "number"
@@ -3379,10 +2614,7 @@
                                       "type": "number"
                                     },
                                     "parentId": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     },
                                     "flags": {
                                       "type": "object",
@@ -3404,10 +2636,7 @@
                                 }
                               }
                             },
-                            "required": [
-                              "kinds",
-                              "resources"
-                            ]
+                            "required": ["kinds", "resources"]
                           }
                         },
                         "required": [
@@ -3441,12 +2670,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -3454,9 +2678,7 @@
         },
         "operationId": "getPublicProductsByProductIdDepartures",
         "summary": "GET /v1/public/products/{productId}/departures",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -3486,13 +2708,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "open",
-                "closed",
-                "sold_out",
-                "cancelled",
-                "on_request"
-              ]
+              "enum": ["open", "closed", "sold_out", "cancelled", "on_request"]
             },
             "required": false,
             "name": "status",
@@ -3626,41 +2842,23 @@
                                 "type": "string"
                               },
                               "optionId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "dateLocal": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "timezone": {
                                 "type": "string"
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "open",
-                                  "closed",
-                                  "sold_out",
-                                  "cancelled",
-                                  "on_request"
-                                ]
+                                "enum": ["open", "closed", "sold_out", "cancelled", "on_request"]
                               },
                               "availabilityState": {
                                 "type": "string",
@@ -3676,16 +2874,10 @@
                                 ]
                               },
                               "capacity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "remaining": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "pastCutoff": {
                                 "type": "boolean"
@@ -3732,9 +2924,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3742,9 +2932,7 @@
         },
         "operationId": "getPublicProductsByProductIdAvailability",
         "summary": "GET /v1/public/products/{productId}/availability",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -3819,25 +3007,17 @@
                                 "type": "string"
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "thumbnail": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
+                                "type": ["object", "null"],
                                 "properties": {
                                   "url": {
                                     "type": "string",
                                     "minLength": 1
                                   }
                                 },
-                                "required": [
-                                  "url"
-                                ]
+                                "required": ["url"]
                               },
                               "segments": {
                                 "type": "array",
@@ -3851,40 +3031,21 @@
                                       "type": "string"
                                     },
                                     "description": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ]
+                                      "type": ["string", "null"]
                                     }
                                   },
-                                  "required": [
-                                    "id",
-                                    "title",
-                                    "description"
-                                  ]
+                                  "required": ["id", "title", "description"]
                                 }
                               }
                             },
-                            "required": [
-                              "id",
-                              "title",
-                              "description",
-                              "thumbnail",
-                              "segments"
-                            ]
+                            "required": ["id", "title", "description", "thumbnail", "segments"]
                           }
                         }
                       },
-                      "required": [
-                        "id",
-                        "itineraryId",
-                        "days"
-                      ]
+                      "required": ["id", "itineraryId", "days"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3900,9 +3061,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3910,9 +3069,7 @@
         },
         "operationId": "getPublicProductsByProductIdDeparturesByDepartureIdItinerary",
         "summary": "GET /v1/public/products/{productId}/departures/{departureId}/itinerary",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -3975,22 +3132,13 @@
                                 "type": "boolean"
                               },
                               "refProductId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "thumb": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricePerPerson": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "currencyCode": {
                                 "type": "string"
@@ -4006,22 +3154,13 @@
                                 ]
                               },
                               "defaultQuantity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "minQuantity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "maxQuantity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -4066,22 +3205,13 @@
                                 "type": "boolean"
                               },
                               "refProductId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "thumb": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "pricePerPerson": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "currencyCode": {
                                 "type": "string"
@@ -4097,22 +3227,13 @@
                                 ]
                               },
                               "defaultQuantity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "minQuantity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "maxQuantity": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -4139,10 +3260,7 @@
                             "type": "object",
                             "properties": {
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "media": {
                                 "type": "array",
@@ -4154,41 +3272,25 @@
                                       "minLength": 1
                                     },
                                     "alt": {
-                                      "type": [
-                                        "string",
-                                        "null"
-                                      ],
+                                      "type": ["string", "null"],
                                       "minLength": 1
                                     }
                                   },
-                                  "required": [
-                                    "url",
-                                    "alt"
-                                  ]
+                                  "required": ["url", "alt"]
                                 }
                               }
                             },
-                            "required": [
-                              "description",
-                              "media"
-                            ]
+                            "required": ["description", "media"]
                           }
                         },
                         "currencyCode": {
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "extensions",
-                        "items",
-                        "details",
-                        "currencyCode"
-                      ]
+                      "required": ["extensions", "items", "details", "currencyCode"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4196,9 +3298,7 @@
         },
         "operationId": "getPublicProductsByProductIdExtensions",
         "summary": "GET /v1/public/products/{productId}/extensions",
-        "tags": [
-          "storefront"
-        ],
+        "tags": ["storefront"],
         "x-voyant-module": "storefront",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",

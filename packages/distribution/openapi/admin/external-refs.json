@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -170,10 +143,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -229,11 +199,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "inactive",
-                "archived"
-              ]
+              "enum": ["active", "inactive", "archived"]
             },
             "required": false,
             "name": "status",
@@ -283,33 +249,20 @@
                             "type": "string"
                           },
                           "externalParentId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "inactive",
-                              "archived"
-                            ]
+                            "enum": ["active", "inactive", "archived"]
                           },
                           "lastSyncedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -347,12 +300,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -360,9 +308,7 @@
         },
         "operationId": "getAdminExternalRefsRefs",
         "summary": "GET /v1/admin/external-refs/refs",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
@@ -407,10 +353,7 @@
                     "maxLength": 255
                   },
                   "externalParentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "isPrimary": {
@@ -419,34 +362,18 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "archived"
-                    ],
+                    "enum": ["active", "inactive", "archived"],
                     "default": "active"
                   },
                   "lastSyncedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "entityType",
-                  "entityId",
-                  "sourceSystem",
-                  "objectType",
-                  "externalId"
-                ]
+                "required": ["entityType", "entityId", "sourceSystem", "objectType", "externalId"]
               }
             }
           }
@@ -484,33 +411,20 @@
                           "type": "string"
                         },
                         "externalParentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "lastSyncedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -538,9 +452,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -556,9 +468,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -566,9 +476,7 @@
         },
         "operationId": "postAdminExternalRefsRefs",
         "summary": "POST /v1/admin/external-refs/refs",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
@@ -619,33 +527,20 @@
                           "type": "string"
                         },
                         "externalParentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "lastSyncedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -673,9 +568,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -691,9 +584,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -701,9 +592,7 @@
         },
         "operationId": "getAdminExternalRefsRefsById",
         "summary": "GET /v1/admin/external-refs/refs/{id}",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
@@ -758,10 +647,7 @@
                     "maxLength": 255
                   },
                   "externalParentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "isPrimary": {
@@ -770,24 +656,14 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "archived"
-                    ],
+                    "enum": ["active", "inactive", "archived"],
                     "default": "active"
                   },
                   "lastSyncedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -828,33 +704,20 @@
                           "type": "string"
                         },
                         "externalParentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "lastSyncedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -882,9 +745,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -900,9 +761,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -918,9 +777,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -928,9 +785,7 @@
         },
         "operationId": "patchAdminExternalRefsRefsById",
         "summary": "PATCH /v1/admin/external-refs/refs/{id}",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
@@ -956,14 +811,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -979,9 +830,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -989,9 +838,7 @@
         },
         "operationId": "deleteAdminExternalRefsRefsById",
         "summary": "DELETE /v1/admin/external-refs/refs/{id}",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
@@ -1029,10 +876,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1088,11 +932,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "inactive",
-                "archived"
-              ]
+              "enum": ["active", "inactive", "archived"]
             },
             "required": false,
             "name": "status",
@@ -1142,33 +982,20 @@
                             "type": "string"
                           },
                           "externalParentId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "inactive",
-                              "archived"
-                            ]
+                            "enum": ["active", "inactive", "archived"]
                           },
                           "lastSyncedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -1206,12 +1033,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1219,9 +1041,7 @@
         },
         "operationId": "getAdminExternalRefsEntitiesByEntityTypeByEntityIdRefs",
         "summary": "GET /v1/admin/external-refs/entities/{entityType}/{entityId}/refs",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
@@ -1274,10 +1094,7 @@
                     "maxLength": 255
                   },
                   "externalParentId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "isPrimary": {
@@ -1286,32 +1103,18 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "archived"
-                    ],
+                    "enum": ["active", "inactive", "archived"],
                     "default": "active"
                   },
                   "lastSyncedAt": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "sourceSystem",
-                  "objectType",
-                  "externalId"
-                ]
+                "required": ["sourceSystem", "objectType", "externalId"]
               }
             }
           }
@@ -1349,33 +1152,20 @@
                           "type": "string"
                         },
                         "externalParentId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "archived"
-                          ]
+                          "enum": ["active", "inactive", "archived"]
                         },
                         "lastSyncedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1403,9 +1193,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1421,9 +1209,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1431,9 +1217,7 @@
         },
         "operationId": "postAdminExternalRefsEntitiesByEntityTypeByEntityIdRefs",
         "summary": "POST /v1/admin/external-refs/entities/{entityType}/{entityId}/refs",
-        "tags": [
-          "external-refs"
-        ],
+        "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"

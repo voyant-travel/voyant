@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -168,16 +141,10 @@
                       "type": "object",
                       "properties": {
                         "publicCheckoutBaseUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bankTransfer": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "beneficiary": {
                               "type": "string"
@@ -186,27 +153,16 @@
                               "type": "string"
                             },
                             "bankName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
-                          "required": [
-                            "beneficiary",
-                            "iban"
-                          ]
+                          "required": ["beneficiary", "iban"]
                         }
                       },
-                      "required": [
-                        "publicCheckoutBaseUrl",
-                        "bankTransfer"
-                      ]
+                      "required": ["publicCheckoutBaseUrl", "bankTransfer"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -214,9 +170,7 @@
         },
         "operationId": "getPublicPaymentLinkConfig",
         "summary": "GET /v1/public/payment-link-config",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
@@ -254,14 +208,10 @@
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "sessionId"
-                      ]
+                      "required": ["sessionId"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -277,9 +227,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -295,9 +243,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -305,9 +251,7 @@
         },
         "operationId": "postPublicPaymentLinkBySessionIdRetry",
         "summary": "POST /v1/public/payment-link/{sessionId}/retry",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
@@ -342,14 +286,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "sessionId"
-                      ]
+                      "required": ["sessionId"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -365,9 +305,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -383,9 +321,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -393,9 +329,7 @@
         },
         "operationId": "getPublicPaymentLinkResolve",
         "summary": "GET /v1/public/payment-link/resolve",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
@@ -427,20 +361,13 @@
                       "type": "object",
                       "properties": {
                         "redirectUrl": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "redirectUrl"
-                      ]
+                      "required": ["redirectUrl"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -456,9 +383,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -474,9 +399,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -492,9 +415,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -502,9 +423,7 @@
         },
         "operationId": "postPublicPaymentLinkBySessionIdStartCard",
         "summary": "POST /v1/public/payment-link/{sessionId}/start-card",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
@@ -533,10 +452,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "envelopeId": {
                           "type": "string"
@@ -559,61 +475,37 @@
                                 "type": "string"
                               },
                               "entityModule": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "title": {
                                 "type": "string"
                               },
                               "thumbnailUrl": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "thumbnailAlt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "scheduledStartsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "scheduledEndsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "sourceAmountCents": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "sourceCurrency": {
                                 "type": "string"
                               },
                               "targetAmountCents": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "targetCurrency": {
                                 "type": "string"
                               },
                               "fx": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
+                                "type": ["object", "null"],
                                 "properties": {
                                   "rate": {
                                     "type": "number"
@@ -622,10 +514,7 @@
                                     "type": "string"
                                   }
                                 },
-                                "required": [
-                                  "rate",
-                                  "quotedAt"
-                                ]
+                                "required": ["rate", "quotedAt"]
                               }
                             },
                             "required": [
@@ -646,17 +535,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "envelopeId",
-                        "currency",
-                        "totalAmountCents",
-                        "components"
-                      ]
+                      "required": ["envelopeId", "currency", "totalAmountCents", "components"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -672,9 +554,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -682,9 +562,7 @@
         },
         "operationId": "getPublicPaymentLinkBySessionIdTripSummary",
         "summary": "GET /v1/public/payment-link/{sessionId}/trip-summary",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
@@ -713,10 +591,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "bookingId": {
                           "type": "string"
@@ -728,22 +603,13 @@
                           "type": "string"
                         },
                         "pax": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "chargeAmountCents": {
                           "type": "number"
@@ -752,10 +618,7 @@
                           "type": "string"
                         },
                         "bookingTotalAmountCents": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "bookingCurrency": {
                           "type": "string"
@@ -772,40 +635,22 @@
                                 "type": "string"
                               },
                               "optionName": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "unitName": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "departureLabel": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "startsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "endsAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "serviceDate": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "number"
@@ -814,10 +659,7 @@
                                 "type": "string"
                               },
                               "amountCents": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               },
                               "currency": {
                                 "type": "string"
@@ -855,9 +697,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -873,9 +713,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -883,9 +721,7 @@
         },
         "operationId": "getPublicPaymentLinkBySessionIdBookingSummary",
         "summary": "GET /v1/public/payment-link/{sessionId}/booking-summary",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
@@ -951,17 +787,10 @@
                         },
                         "paymentStatus": {
                           "type": "string",
-                          "enum": [
-                            "paid",
-                            "failed",
-                            "pending"
-                          ]
+                          "enum": ["paid", "failed", "pending"]
                         },
                         "session": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -976,34 +805,19 @@
                               "type": "string"
                             },
                             "invoiceId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "paymentMethod": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "completedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "failedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "updatedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -1019,10 +833,7 @@
                           ]
                         },
                         "bankTransferInstructions": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "beneficiary": {
                               "type": "string"
@@ -1043,16 +854,10 @@
                               "type": "string"
                             },
                             "dueAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "proformaNumber": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -1067,10 +872,7 @@
                           ]
                         },
                         "updatedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1084,9 +886,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1102,9 +902,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1112,9 +910,7 @@
         },
         "operationId": "getPublicBookingsByBookingIdCheckoutStatus",
         "summary": "GET /v1/public/bookings/{bookingId}/checkout-status",
-        "tags": [
-          "payment-link"
-        ],
+        "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",

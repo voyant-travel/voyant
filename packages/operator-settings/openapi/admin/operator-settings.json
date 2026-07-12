@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -165,85 +138,46 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "name": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legalName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "vatId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "registrationNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "license": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "licenseAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryRole": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -271,9 +205,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -281,9 +213,7 @@
         },
         "operationId": "getAdminSettingsOperatorProfile",
         "summary": "GET /v1/admin/settings/operator-profile",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -297,55 +227,32 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "legalName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "vatId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "registrationNumber": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "address": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "email": {
                     "anyOf": [
                       {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "email"
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "null"
@@ -355,17 +262,12 @@
                   "website": {
                     "anyOf": [
                       {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "null"
@@ -373,28 +275,16 @@
                     ]
                   },
                   "license": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "licenseAuthority": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "signatoryName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "signatoryRole": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -410,85 +300,46 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "name": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legalName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "vatId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "registrationNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "license": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "licenseAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryRole": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -516,9 +367,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -526,9 +375,7 @@
         },
         "operationId": "patchAdminSettingsOperatorProfile",
         "summary": "PATCH /v1/admin/settings/operator-profile",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -545,37 +392,22 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "bankTransferBeneficiary": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "iban": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bank": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -595,9 +427,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -605,9 +435,7 @@
         },
         "operationId": "getAdminSettingsOperatorPaymentInstructions",
         "summary": "GET /v1/admin/settings/operator-payment-instructions",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -621,28 +449,16 @@
                 "type": "object",
                 "properties": {
                   "bankTransferBeneficiary": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "iban": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "bank": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -658,37 +474,22 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "bankTransferBeneficiary": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "iban": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bank": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -708,9 +509,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -718,9 +517,7 @@
         },
         "operationId": "patchAdminSettingsOperatorPaymentInstructions",
         "summary": "PATCH /v1/admin/settings/operator-payment-instructions",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -737,26 +534,17 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "customerPaymentPolicy": {},
                         "bookingCheckoutUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoicePayUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -774,9 +562,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -784,9 +570,7 @@
         },
         "operationId": "getAdminSettingsOperatorPaymentDefaults",
         "summary": "GET /v1/admin/settings/operator-payment-defaults",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -800,21 +584,14 @@
                 "type": "object",
                 "properties": {
                   "customerPaymentPolicy": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "properties": {
                       "deposit": {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "none",
-                              "percent",
-                              "fixed_cents"
-                            ]
+                            "enum": ["none", "percent", "fixed_cents"]
                           },
                           "percent": {
                             "type": "number",
@@ -826,9 +603,7 @@
                             "minimum": 0
                           }
                         },
-                        "required": [
-                          "kind"
-                        ]
+                        "required": ["kind"]
                       },
                       "minDaysBeforeDepartureForDeposit": {
                         "type": "integer",
@@ -851,16 +626,10 @@
                     ]
                   },
                   "bookingCheckoutUrlTemplate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "invoicePayUrlTemplate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -876,26 +645,17 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "customerPaymentPolicy": {},
                         "bookingCheckoutUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoicePayUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -913,9 +673,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -923,9 +681,7 @@
         },
         "operationId": "patchAdminSettingsOperatorPaymentDefaults",
         "summary": "PATCH /v1/admin/settings/operator-payment-defaults",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -942,85 +698,46 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "name": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legalName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "vatId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "registrationNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "license": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "licenseAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryRole": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -1029,41 +746,23 @@
                           "type": "string"
                         },
                         "bankTransferBeneficiary": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "iban": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bank": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "customerPaymentPolicy": {},
                         "bookingCheckoutUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoicePayUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1076,9 +775,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1086,9 +783,7 @@
         },
         "operationId": "getAdminSettingsOperator",
         "summary": "GET /v1/admin/settings/operator",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
@@ -1102,55 +797,32 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "legalName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "vatId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "registrationNumber": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "address": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "email": {
                     "anyOf": [
                       {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "email"
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "null"
@@ -1160,17 +832,12 @@
                   "website": {
                     "anyOf": [
                       {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
+                        "type": ["string", "null"],
                         "format": "uri"
                       },
                       {
                         "type": "string",
-                        "enum": [
-                          ""
-                        ]
+                        "enum": [""]
                       },
                       {
                         "type": "null"
@@ -1178,69 +845,38 @@
                     ]
                   },
                   "license": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "licenseAuthority": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "signatoryName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "signatoryRole": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "bankTransferBeneficiary": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "iban": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "bank": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "customerPaymentPolicy": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "properties": {
                       "deposit": {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "none",
-                              "percent",
-                              "fixed_cents"
-                            ]
+                            "enum": ["none", "percent", "fixed_cents"]
                           },
                           "percent": {
                             "type": "number",
@@ -1252,9 +888,7 @@
                             "minimum": 0
                           }
                         },
-                        "required": [
-                          "kind"
-                        ]
+                        "required": ["kind"]
                       },
                       "minDaysBeforeDepartureForDeposit": {
                         "type": "integer",
@@ -1277,16 +911,10 @@
                     ]
                   },
                   "bookingCheckoutUrlTemplate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "invoicePayUrlTemplate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -1302,85 +930,46 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "id": {
                           "type": "string"
                         },
                         "name": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "legalName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "vatId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "registrationNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "license": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "licenseAuthority": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "signatoryRole": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -1389,41 +978,23 @@
                           "type": "string"
                         },
                         "bankTransferBeneficiary": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "iban": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bank": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "customerPaymentPolicy": {},
                         "bookingCheckoutUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "invoicePayUrlTemplate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1436,9 +1007,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1446,9 +1015,7 @@
         },
         "operationId": "patchAdminSettingsOperator",
         "summary": "PATCH /v1/admin/settings/operator",
-        "tags": [
-          "operator-settings"
-        ],
+        "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"

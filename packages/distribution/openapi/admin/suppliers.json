@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -203,34 +176,22 @@
                             ]
                           },
                           "label": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "value": {
                             "type": "string"
                           },
                           "normalizedValue": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -257,9 +218,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -267,9 +226,7 @@
         },
         "operationId": "getAdminSuppliersByIdContactPoints",
         "summary": "GET /v1/admin/suppliers/{id}/contact-points",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -307,10 +264,7 @@
                     ]
                   },
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "value": {
@@ -319,10 +273,7 @@
                     "maxLength": 500
                   },
                   "normalizedValue": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 500
                   },
                   "isPrimary": {
@@ -330,23 +281,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "kind",
-                  "value"
-                ]
+                "required": ["kind", "value"]
               }
             }
           }
@@ -386,34 +328,22 @@
                           ]
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "value": {
                           "type": "string"
                         },
                         "normalizedValue": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -439,9 +369,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -457,9 +385,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -475,9 +401,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -485,9 +409,7 @@
         },
         "operationId": "postAdminSuppliersByIdContactPoints",
         "summary": "POST /v1/admin/suppliers/{id}/contact-points",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -537,10 +459,7 @@
                     ]
                   },
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "value": {
@@ -549,10 +468,7 @@
                     "maxLength": 500
                   },
                   "normalizedValue": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 500
                   },
                   "isPrimary": {
@@ -560,16 +476,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -612,34 +522,22 @@
                           ]
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "value": {
                           "type": "string"
                         },
                         "normalizedValue": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -665,9 +563,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -683,9 +579,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -701,9 +595,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -711,9 +603,7 @@
         },
         "operationId": "patchAdminSuppliersContactPointsByContactPointId",
         "summary": "PATCH /v1/admin/suppliers/contact-points/{contactPointId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -741,9 +631,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -759,9 +647,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -769,9 +655,7 @@
         },
         "operationId": "deleteAdminSuppliersContactPointsByContactPointId",
         "summary": "DELETE /v1/admin/suppliers/contact-points/{contactPointId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -830,37 +714,22 @@
                             "type": "string"
                           },
                           "title": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "email": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "phone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -888,9 +757,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -898,9 +765,7 @@
         },
         "operationId": "getAdminSuppliersByIdContacts",
         "summary": "GET /v1/admin/suppliers/{id}/contacts",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -945,24 +810,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -970,22 +826,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -1029,37 +877,22 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1086,9 +919,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1104,9 +935,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1122,9 +951,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1132,9 +959,7 @@
         },
         "operationId": "postAdminSuppliersByIdContacts",
         "summary": "POST /v1/admin/suppliers/{id}/contacts",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -1191,24 +1016,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -1216,16 +1032,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -1272,37 +1082,22 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1329,9 +1124,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1347,9 +1140,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1365,9 +1156,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1375,9 +1164,7 @@
         },
         "operationId": "patchAdminSuppliersContactsByContactId",
         "summary": "PATCH /v1/admin/suppliers/contacts/{contactId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -1405,9 +1192,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -1423,9 +1208,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1433,9 +1216,7 @@
         },
         "operationId": "deleteAdminSuppliersContactsByContactId",
         "summary": "DELETE /v1/admin/suppliers/contacts/{contactId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -1489,79 +1270,43 @@
                             ]
                           },
                           "fullText": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line1": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line2": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "city": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "region": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "postalCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "country": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "latitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "longitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "timezone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -1595,9 +1340,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1605,9 +1348,7 @@
         },
         "operationId": "getAdminSuppliersByIdAddresses",
         "summary": "GET /v1/admin/suppliers/{id}/addresses",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -1645,64 +1386,34 @@
                     "default": "other"
                   },
                   "fullText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line1": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line2": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "region": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "postalCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "latitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "longitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "isPrimary": {
@@ -1710,16 +1421,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -1761,79 +1466,43 @@
                           ]
                         },
                         "fullText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "region": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postalCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "latitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "longitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1866,9 +1535,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1884,9 +1551,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1902,9 +1567,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1912,9 +1575,7 @@
         },
         "operationId": "postAdminSuppliersByIdAddresses",
         "summary": "POST /v1/admin/suppliers/{id}/addresses",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -1964,64 +1625,34 @@
                     "default": "other"
                   },
                   "fullText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line1": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line2": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "region": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "postalCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "latitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "longitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "isPrimary": {
@@ -2029,16 +1660,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2080,79 +1705,43 @@
                           ]
                         },
                         "fullText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "region": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postalCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "latitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "longitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2185,9 +1774,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2203,9 +1790,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2221,9 +1806,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2231,9 +1814,7 @@
         },
         "operationId": "patchAdminSuppliersAddressesByAddressId",
         "summary": "PATCH /v1/admin/suppliers/addresses/{addressId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -2261,9 +1842,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2279,9 +1858,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2289,9 +1866,7 @@
         },
         "operationId": "deleteAdminSuppliersAddressesByAddressId",
         "summary": "DELETE /v1/admin/suppliers/addresses/{addressId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -2340,40 +1915,25 @@
                             ]
                           },
                           "facilityId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "name": {
                             "type": "string"
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "duration": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "capacity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "active": {
                             "type": "boolean"
                           },
                           "tags": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
@@ -2402,9 +1962,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2412,9 +1970,7 @@
         },
         "operationId": "getAdminSuppliersByIdServices",
         "summary": "GET /v1/admin/suppliers/{id}/services",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -2439,20 +1995,10 @@
                 "properties": {
                   "serviceType": {
                     "type": "string",
-                    "enum": [
-                      "accommodation",
-                      "transfer",
-                      "experience",
-                      "guide",
-                      "meal",
-                      "other"
-                    ]
+                    "enum": ["accommodation", "transfer", "experience", "guide", "meal", "other"]
                   },
                   "facilityId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "name": {
                     "type": "string",
@@ -2460,22 +2006,13 @@
                     "maxLength": 255
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "duration": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "capacity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "active": {
@@ -2490,10 +2027,7 @@
                     "default": []
                   }
                 },
-                "required": [
-                  "serviceType",
-                  "name"
-                ]
+                "required": ["serviceType", "name"]
               }
             }
           }
@@ -2527,40 +2061,25 @@
                           ]
                         },
                         "facilityId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "duration": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capacity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "active": {
                           "type": "boolean"
                         },
                         "tags": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
+                          "type": ["array", "null"],
                           "items": {
                             "type": "string"
                           }
@@ -2588,9 +2107,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2606,9 +2123,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2624,9 +2139,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2634,9 +2147,7 @@
         },
         "operationId": "postAdminSuppliersByIdServices",
         "summary": "POST /v1/admin/suppliers/{id}/services",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -2671,20 +2182,10 @@
                 "properties": {
                   "serviceType": {
                     "type": "string",
-                    "enum": [
-                      "accommodation",
-                      "transfer",
-                      "experience",
-                      "guide",
-                      "meal",
-                      "other"
-                    ]
+                    "enum": ["accommodation", "transfer", "experience", "guide", "meal", "other"]
                   },
                   "facilityId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "name": {
                     "type": "string",
@@ -2692,22 +2193,13 @@
                     "maxLength": 255
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "duration": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "capacity": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "active": {
@@ -2755,40 +2247,25 @@
                           ]
                         },
                         "facilityId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "duration": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capacity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "active": {
                           "type": "boolean"
                         },
                         "tags": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
+                          "type": ["array", "null"],
                           "items": {
                             "type": "string"
                           }
@@ -2816,9 +2293,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2834,9 +2309,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2852,9 +2325,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2862,9 +2333,7 @@
         },
         "operationId": "patchAdminSuppliersByIdServicesByServiceId",
         "summary": "PATCH /v1/admin/suppliers/{id}/services/{serviceId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -2900,9 +2369,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2918,9 +2385,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2928,9 +2393,7 @@
         },
         "operationId": "deleteAdminSuppliersByIdServicesByServiceId",
         "summary": "DELETE /v1/admin/suppliers/{id}/services/{serviceId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -2986,43 +2449,22 @@
                           },
                           "unit": {
                             "type": "string",
-                            "enum": [
-                              "per_person",
-                              "per_group",
-                              "per_night",
-                              "per_vehicle",
-                              "flat"
-                            ]
+                            "enum": ["per_person", "per_group", "per_night", "per_vehicle", "flat"]
                           },
                           "validFrom": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "validTo": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "minPax": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "maxPax": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -3045,9 +2487,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3055,9 +2495,7 @@
         },
         "operationId": "getAdminSuppliersByIdServicesByServiceIdRates",
         "summary": "GET /v1/admin/suppliers/{id}/services/{serviceId}/rates",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3104,53 +2542,27 @@
                   },
                   "unit": {
                     "type": "string",
-                    "enum": [
-                      "per_person",
-                      "per_group",
-                      "per_night",
-                      "per_vehicle",
-                      "flat"
-                    ]
+                    "enum": ["per_person", "per_group", "per_night", "per_vehicle", "flat"]
                   },
                   "validFrom": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "validTo": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "minPax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "maxPax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 },
-                "required": [
-                  "name",
-                  "currency",
-                  "amountCents",
-                  "unit"
-                ]
+                "required": ["name", "currency", "amountCents", "unit"]
               }
             }
           }
@@ -3183,43 +2595,22 @@
                         },
                         "unit": {
                           "type": "string",
-                          "enum": [
-                            "per_person",
-                            "per_group",
-                            "per_night",
-                            "per_vehicle",
-                            "flat"
-                          ]
+                          "enum": ["per_person", "per_group", "per_night", "per_vehicle", "flat"]
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validTo": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "minPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3241,9 +2632,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3259,9 +2648,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3277,9 +2664,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3287,9 +2672,7 @@
         },
         "operationId": "postAdminSuppliersByIdServicesByServiceIdRates",
         "summary": "POST /v1/admin/suppliers/{id}/services/{serviceId}/rates",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3346,45 +2729,24 @@
                   },
                   "unit": {
                     "type": "string",
-                    "enum": [
-                      "per_person",
-                      "per_group",
-                      "per_night",
-                      "per_vehicle",
-                      "flat"
-                    ]
+                    "enum": ["per_person", "per_group", "per_night", "per_vehicle", "flat"]
                   },
                   "validFrom": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "validTo": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "minPax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "maxPax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   }
                 }
               }
@@ -3419,43 +2781,22 @@
                         },
                         "unit": {
                           "type": "string",
-                          "enum": [
-                            "per_person",
-                            "per_group",
-                            "per_night",
-                            "per_vehicle",
-                            "flat"
-                          ]
+                          "enum": ["per_person", "per_group", "per_night", "per_vehicle", "flat"]
                         },
                         "validFrom": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validTo": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "minPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "maxPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3477,9 +2818,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3495,9 +2834,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3513,9 +2850,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3523,9 +2858,7 @@
         },
         "operationId": "patchAdminSuppliersByIdServicesByServiceIdRatesByRateId",
         "summary": "PATCH /v1/admin/suppliers/{id}/services/{serviceId}/rates/{rateId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3569,9 +2902,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -3587,9 +2918,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3597,9 +2926,7 @@
         },
         "operationId": "deleteAdminSuppliersByIdServicesByServiceIdRatesByRateId",
         "summary": "DELETE /v1/admin/suppliers/{id}/services/{serviceId}/rates/{rateId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3646,19 +2973,11 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "supplierId",
-                          "authorId",
-                          "content",
-                          "createdAt"
-                        ]
+                        "required": ["id", "supplierId", "authorId", "content", "createdAt"]
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3666,9 +2985,7 @@
         },
         "operationId": "getAdminSuppliersByIdNotes",
         "summary": "GET /v1/admin/suppliers/{id}/notes",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3697,9 +3014,7 @@
                     "maxLength": 10000
                   }
                 },
-                "required": [
-                  "content"
-                ]
+                "required": ["content"]
               }
             }
           }
@@ -3731,18 +3046,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "supplierId",
-                        "authorId",
-                        "content",
-                        "createdAt"
-                      ]
+                      "required": ["id", "supplierId", "authorId", "content", "createdAt"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3758,9 +3065,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3776,9 +3081,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3786,9 +3089,7 @@
         },
         "operationId": "postAdminSuppliersByIdNotes",
         "summary": "POST /v1/admin/suppliers/{id}/notes",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3850,29 +3151,17 @@
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "supplierId",
-                          "date",
-                          "available",
-                          "notes",
-                          "createdAt"
-                        ]
+                        "required": ["id", "supplierId", "date", "available", "notes", "createdAt"]
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3880,9 +3169,7 @@
         },
         "operationId": "getAdminSuppliersByIdAvailability",
         "summary": "GET /v1/admin/suppliers/{id}/availability",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -3919,15 +3206,10 @@
                           "default": true
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
-                      "required": [
-                        "date"
-                      ]
+                      "required": ["date"]
                     }
                   },
                   {
@@ -3942,15 +3224,10 @@
                         "default": true
                       },
                       "notes": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
+                        "type": ["string", "null"]
                       }
                     },
-                    "required": [
-                      "date"
-                    ]
+                    "required": ["date"]
                   }
                 ]
               }
@@ -3983,29 +3260,17 @@
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "supplierId",
-                          "date",
-                          "available",
-                          "notes",
-                          "createdAt"
-                        ]
+                        "required": ["id", "supplierId", "date", "available", "notes", "createdAt"]
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4021,9 +3286,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4039,9 +3302,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4049,9 +3310,7 @@
         },
         "operationId": "postAdminSuppliersByIdAvailability",
         "summary": "POST /v1/admin/suppliers/{id}/availability",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -4089,40 +3348,23 @@
                             "type": "string"
                           },
                           "agreementNumber": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "startDate": {
                             "type": "string"
                           },
                           "endDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "renewalDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "terms": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "expired",
-                              "pending",
-                              "terminated"
-                            ]
+                            "enum": ["active", "expired", "pending", "terminated"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -4146,9 +3388,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4156,9 +3396,7 @@
         },
         "operationId": "getAdminSuppliersByIdContracts",
         "summary": "GET /v1/admin/suppliers/{id}/contracts",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -4182,10 +3420,7 @@
                 "type": "object",
                 "properties": {
                   "agreementNumber": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "startDate": {
@@ -4193,37 +3428,21 @@
                     "minLength": 1
                   },
                   "endDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "renewalDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "terms": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "expired",
-                      "pending",
-                      "terminated"
-                    ],
+                    "enum": ["active", "expired", "pending", "terminated"],
                     "default": "active"
                   }
                 },
-                "required": [
-                  "startDate"
-                ]
+                "required": ["startDate"]
               }
             }
           }
@@ -4246,40 +3465,23 @@
                           "type": "string"
                         },
                         "agreementNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startDate": {
                           "type": "string"
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "renewalDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "terms": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "expired",
-                            "pending",
-                            "terminated"
-                          ]
+                          "enum": ["active", "expired", "pending", "terminated"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4302,9 +3504,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4320,9 +3520,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4338,9 +3536,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4348,9 +3544,7 @@
         },
         "operationId": "postAdminSuppliersByIdContracts",
         "summary": "POST /v1/admin/suppliers/{id}/contracts",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -4384,10 +3578,7 @@
                 "type": "object",
                 "properties": {
                   "agreementNumber": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "startDate": {
@@ -4395,31 +3586,17 @@
                     "minLength": 1
                   },
                   "endDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "renewalDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "terms": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "expired",
-                      "pending",
-                      "terminated"
-                    ],
+                    "enum": ["active", "expired", "pending", "terminated"],
                     "default": "active"
                   }
                 }
@@ -4445,40 +3622,23 @@
                           "type": "string"
                         },
                         "agreementNumber": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startDate": {
                           "type": "string"
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "renewalDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "terms": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "expired",
-                            "pending",
-                            "terminated"
-                          ]
+                          "enum": ["active", "expired", "pending", "terminated"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4501,9 +3661,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4519,9 +3677,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4537,9 +3693,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4547,9 +3701,7 @@
         },
         "operationId": "patchAdminSuppliersByIdContractsByContractId",
         "summary": "PATCH /v1/admin/suppliers/{id}/contracts/{contractId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -4585,9 +3737,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -4603,9 +3753,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4613,9 +3761,7 @@
         },
         "operationId": "deleteAdminSuppliersByIdContractsByContractId",
         "summary": "DELETE /v1/admin/suppliers/{id}/contracts/{contractId}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -4664,20 +3810,13 @@
                             "properties": {
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "active",
-                                  "inactive",
-                                  "pending"
-                                ]
+                                "enum": ["active", "inactive", "pending"]
                               },
                               "count": {
                                 "type": "integer"
                               }
                             },
-                            "required": [
-                              "status",
-                              "count"
-                            ]
+                            "required": ["status", "count"]
                           }
                         },
                         "countsByType": {
@@ -4701,27 +3840,17 @@
                                 "type": "integer"
                               }
                             },
-                            "required": [
-                              "type",
-                              "count"
-                            ]
+                            "required": ["type", "count"]
                           }
                         },
                         "active": {
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "total",
-                        "countsByStatus",
-                        "countsByType",
-                        "active"
-                      ]
+                      "required": ["total", "countsByStatus", "countsByType", "active"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4729,9 +3858,7 @@
         },
         "operationId": "getAdminSuppliersAggregates",
         "summary": "GET /v1/admin/suppliers/aggregates",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -4743,15 +3870,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "hotel",
-                "transfer",
-                "guide",
-                "experience",
-                "airline",
-                "restaurant",
-                "other"
-              ]
+              "enum": ["hotel", "transfer", "guide", "experience", "airline", "restaurant", "other"]
             },
             "required": false,
             "name": "type",
@@ -4760,11 +3879,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "inactive",
-                "pending"
-              ]
+              "enum": ["active", "inactive", "pending"]
             },
             "required": false,
             "name": "status",
@@ -4805,13 +3920,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "type",
-                "status",
-                "defaultCurrency",
-                "createdAt"
-              ],
+              "enum": ["name", "type", "status", "defaultCurrency", "createdAt"],
               "default": "createdAt"
             },
             "required": false,
@@ -4821,10 +3930,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "desc"
             },
             "required": false,
@@ -4844,10 +3950,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -4889,48 +3992,26 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "inactive",
-                              "pending"
-                            ]
+                            "enum": ["active", "inactive", "pending"]
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "defaultCurrency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "paymentTermsDays": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "reservationTimeoutMinutes": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "primaryFacilityId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "customerPaymentPolicy": {},
                           "tags": {
-                            "type": [
-                              "array",
-                              "null"
-                            ],
+                            "type": ["array", "null"],
                             "items": {
                               "type": "string"
                             }
@@ -4942,58 +4023,31 @@
                             "type": "string"
                           },
                           "email": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "phone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "website": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "address": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "city": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "country": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "contactName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "contactEmail": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "contactPhone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -5031,12 +4085,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -5044,9 +4093,7 @@
         },
         "operationId": "getAdminSuppliers",
         "summary": "GET /v1/admin/suppliers",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -5078,122 +4125,69 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "pending"
-                    ],
+                    "enum": ["active", "inactive", "pending"],
                     "default": "active"
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "website": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "address": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "defaultCurrency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 3,
                     "maxLength": 3,
                     "pattern": "^[A-Z]{3}$"
                   },
                   "primaryFacilityId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "contactName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "contactEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "contactPhone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "paymentTermsDays": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "reservationTimeoutMinutes": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": 1440
                   },
                   "customerPaymentPolicy": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "properties": {
                       "deposit": {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "none",
-                              "percent",
-                              "fixed_cents"
-                            ]
+                            "enum": ["none", "percent", "fixed_cents"]
                           },
                           "percent": {
                             "type": "number",
@@ -5205,9 +4199,7 @@
                             "minimum": 0
                           }
                         },
-                        "required": [
-                          "kind"
-                        ]
+                        "required": ["kind"]
                       },
                       "minDaysBeforeDepartureForDeposit": {
                         "type": "integer",
@@ -5237,10 +4229,7 @@
                     "default": []
                   }
                 },
-                "required": [
-                  "name",
-                  "type"
-                ]
+                "required": ["name", "type"]
               }
             }
           }
@@ -5276,48 +4265,26 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "pending"
-                          ]
+                          "enum": ["active", "inactive", "pending"]
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "defaultCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "paymentTermsDays": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "reservationTimeoutMinutes": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "primaryFacilityId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "customerPaymentPolicy": {},
                         "tags": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
+                          "type": ["array", "null"],
                           "items": {
                             "type": "string"
                           }
@@ -5329,58 +4296,31 @@
                           "type": "string"
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactPhone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -5408,9 +4348,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5426,9 +4364,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5436,9 +4372,7 @@
         },
         "operationId": "postAdminSuppliers",
         "summary": "POST /v1/admin/suppliers",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -5487,48 +4421,26 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "pending"
-                          ]
+                          "enum": ["active", "inactive", "pending"]
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "defaultCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "paymentTermsDays": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "reservationTimeoutMinutes": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "primaryFacilityId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "customerPaymentPolicy": {},
                         "tags": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
+                          "type": ["array", "null"],
                           "items": {
                             "type": "string"
                           }
@@ -5540,58 +4452,31 @@
                           "type": "string"
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactPhone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -5619,9 +4504,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5637,9 +4520,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5647,9 +4528,7 @@
         },
         "operationId": "getAdminSuppliersById",
         "summary": "GET /v1/admin/suppliers/{id}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -5691,121 +4570,68 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "inactive",
-                      "pending"
-                    ]
+                    "enum": ["active", "inactive", "pending"]
                   },
                   "description": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "website": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uri"
                   },
                   "address": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "defaultCurrency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 3,
                     "maxLength": 3,
                     "pattern": "^[A-Z]{3}$"
                   },
                   "primaryFacilityId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "contactName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "contactEmail": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "contactPhone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "paymentTermsDays": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "exclusiveMinimum": 0
                   },
                   "reservationTimeoutMinutes": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": 1440
                   },
                   "customerPaymentPolicy": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "properties": {
                       "deposit": {
                         "type": "object",
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "none",
-                              "percent",
-                              "fixed_cents"
-                            ]
+                            "enum": ["none", "percent", "fixed_cents"]
                           },
                           "percent": {
                             "type": "number",
@@ -5817,9 +4643,7 @@
                             "minimum": 0
                           }
                         },
-                        "required": [
-                          "kind"
-                        ]
+                        "required": ["kind"]
                       },
                       "minDaysBeforeDepartureForDeposit": {
                         "type": "integer",
@@ -5883,48 +4707,26 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "inactive",
-                            "pending"
-                          ]
+                          "enum": ["active", "inactive", "pending"]
                         },
                         "description": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "defaultCurrency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "paymentTermsDays": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "reservationTimeoutMinutes": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "primaryFacilityId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "customerPaymentPolicy": {},
                         "tags": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
+                          "type": ["array", "null"],
                           "items": {
                             "type": "string"
                           }
@@ -5936,58 +4738,31 @@
                           "type": "string"
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "website": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "address": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactEmail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "contactPhone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -6015,9 +4790,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6033,9 +4806,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6051,9 +4822,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6061,9 +4830,7 @@
         },
         "operationId": "patchAdminSuppliersById",
         "summary": "PATCH /v1/admin/suppliers/{id}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"
@@ -6091,9 +4858,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -6109,9 +4874,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6119,9 +4882,7 @@
         },
         "operationId": "deleteAdminSuppliersById",
         "summary": "DELETE /v1/admin/suppliers/{id}",
-        "tags": [
-          "suppliers"
-        ],
+        "tags": ["suppliers"],
         "x-voyant-module": "suppliers",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/distribution#api.suppliers"

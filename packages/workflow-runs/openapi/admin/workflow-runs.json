@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -179,10 +152,7 @@
                             "type": "string"
                           },
                           "correlationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "tags": {
                             "type": "array",
@@ -192,32 +162,18 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "running",
-                              "succeeded",
-                              "failed",
-                              "cancelled"
-                            ]
+                            "enum": ["running", "succeeded", "failed", "cancelled"]
                           },
                           "input": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "result": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "error": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "properties": {
                               "message": {
                                 "type": "string"
@@ -232,42 +188,25 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "message"
-                            ]
+                            "required": ["message"]
                           },
                           "parentRunId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "triggeredByUserId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "resumeFromStep": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "startedAt": {
                             "type": "string"
                           },
                           "completedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "durationMs": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -307,12 +246,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -328,9 +262,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -347,9 +279,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -358,9 +288,7 @@
         },
         "operationId": "getAdminWorkflowRuns",
         "summary": "GET /v1/admin/workflow-runs",
-        "tags": [
-          "workflow-runs"
-        ],
+        "tags": ["workflow-runs"],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
@@ -402,10 +330,7 @@
                               "type": "string"
                             },
                             "correlationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "tags": {
                               "type": "array",
@@ -415,32 +340,18 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "running",
-                                "succeeded",
-                                "failed",
-                                "cancelled"
-                              ]
+                              "enum": ["running", "succeeded", "failed", "cancelled"]
                             },
                             "input": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "result": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "error": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "message": {
                                   "type": "string"
@@ -455,42 +366,25 @@
                                   "type": "string"
                                 }
                               },
-                              "required": [
-                                "message"
-                              ]
+                              "required": ["message"]
                             },
                             "parentRunId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "triggeredByUserId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "resumeFromStep": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "startedAt": {
                               "type": "string"
                             },
                             "completedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "durationMs": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -538,26 +432,14 @@
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "running",
-                                  "succeeded",
-                                  "failed",
-                                  "skipped",
-                                  "compensated"
-                                ]
+                                "enum": ["running", "succeeded", "failed", "skipped", "compensated"]
                               },
                               "output": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
+                                "type": ["object", "null"],
                                 "additionalProperties": {}
                               },
                               "error": {
-                                "type": [
-                                  "object",
-                                  "null"
-                                ],
+                                "type": ["object", "null"],
                                 "properties": {
                                   "message": {
                                     "type": "string"
@@ -572,24 +454,16 @@
                                     "type": "string"
                                   }
                                 },
-                                "required": [
-                                  "message"
-                                ]
+                                "required": ["message"]
                               },
                               "startedAt": {
                                 "type": "string"
                               },
                               "completedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "durationMs": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               }
                             },
                             "required": [
@@ -607,15 +481,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "run",
-                        "steps"
-                      ]
+                      "required": ["run", "steps"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -631,9 +500,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -650,9 +517,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -661,9 +526,7 @@
         },
         "operationId": "getAdminWorkflowRunsById",
         "summary": "GET /v1/admin/workflow-runs/{id}",
-        "tags": [
-          "workflow-runs"
-        ],
+        "tags": ["workflow-runs"],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
@@ -702,16 +565,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "runId",
-                        "workflowName",
-                        "status"
-                      ]
+                      "required": ["runId", "workflowName", "status"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -727,9 +584,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -746,9 +601,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -765,9 +618,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -784,9 +635,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -803,9 +652,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -814,9 +661,7 @@
         },
         "operationId": "postAdminWorkflowsByNameRuns",
         "summary": "POST /v1/admin/workflows/{name}/runs",
-        "tags": [
-          "workflow-runs"
-        ],
+        "tags": ["workflow-runs"],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
@@ -852,15 +697,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "runId",
-                        "parentRunId"
-                      ]
+                      "required": ["runId", "parentRunId"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -876,9 +716,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -895,9 +733,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -914,9 +750,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -933,9 +767,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -952,9 +784,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -971,9 +801,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -982,9 +810,7 @@
         },
         "operationId": "postAdminWorkflowRunsByIdRerun",
         "summary": "POST /v1/admin/workflow-runs/{id}/rerun",
-        "tags": [
-          "workflow-runs"
-        ],
+        "tags": ["workflow-runs"],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
@@ -1023,16 +849,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "runId",
-                        "parentRunId",
-                        "resumeFromStep"
-                      ]
+                      "required": ["runId", "parentRunId", "resumeFromStep"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1048,9 +868,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1067,9 +885,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1086,9 +902,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1105,9 +919,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1124,9 +936,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": {}
                 }
               }
@@ -1135,9 +945,7 @@
         },
         "operationId": "postAdminWorkflowRunsByIdResume",
         "summary": "POST /v1/admin/workflow-runs/{id}/resume",
-        "tags": [
-          "workflow-runs"
-        ],
+        "tags": ["workflow-runs"],
         "x-voyant-module": "workflow-runs",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin"
