@@ -102,10 +102,18 @@ export const notificationsVoyantModule = defineModule({
     {
       id: "@voyant-travel/notifications#event.booking.fully-paid",
       eventType: "booking.fully-paid",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
     },
     {
       id: "@voyant-travel/notifications#event.booking.documents.sent",
       eventType: "booking.documents.sent",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "notifications", category: "domain" },
     },
   ],
   access: {

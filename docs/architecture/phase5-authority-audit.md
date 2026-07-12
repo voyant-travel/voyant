@@ -1,6 +1,6 @@
 # Phase 5 Authority Audit
 
-Status at `197d25bbf6`, updated by the first external-event authority cut.
+Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut.
 
 ## Closed In This Cut
 
@@ -12,6 +12,12 @@ Status at `197d25bbf6`, updated by the first external-event authority cut.
   graph-owned audit metadata without adding a host binding.
 - Queued outbound delivery records the graph-owned source and contract headers.
 - A pure Node checker and fixtures prevent name-only outbound eligibility from returning.
+- Every first-party package event is versioned, schema-backed, visibility-classified, and
+  audit-attributed; name-only internal event declarations are no longer accepted.
+- The authority checker reconciles observed package emitters and runtime subscriptions with
+  manifest-owned contracts and subscribers, and reports graph-wide coverage counts.
+- Selected-graph validation rejects executable subscribers when their event contract owner is
+  absent from the selected graph.
 
 ## Existing Phase 5 Authority
 
@@ -28,8 +34,6 @@ Status at `197d25bbf6`, updated by the first external-event authority cut.
 
 ## Residual Checklist
 
-- Migrate every emitted first-party event, not only Catalog's externally deliverable
-  set, to versioned package-owned payload contracts and reconcile emit call sites.
 - Model field-level visibility or package-owned redaction transforms for payloads that
   cannot be externally delivered in full.
 - Validate webhook subscription create/update requests against the selected external
@@ -38,8 +42,9 @@ Status at `197d25bbf6`, updated by the first external-event authority cut.
   owns signing, retries, visibility decisions, audit callbacks, and dead-letter state.
 - Activate Realtime's package-owned invalidation declarations and remove its remaining
   Operator bridge without duplicate subscriptions.
-- Finish subscriber ownership for any remaining central/manual registrations and add
-  one graph-wide emitted-event/subscriber coverage report.
+- Move Notifications' `booking.fully-paid` module-bootstrap subscription behind a selected
+  package-owned subscriber descriptor; the graph-wide report identifies it as the one unowned
+  runtime subscription type.
 - Expand package-owned tools beyond the currently declared Catalog, Bookings, Finance,
   Inventory, Notifications, Quotes, Relationships, and Trips sets; ratchet context and
   runtime export parity mechanically.

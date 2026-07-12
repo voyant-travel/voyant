@@ -65,4 +65,27 @@ describe("Phase 5 event authority checker", () => {
     )
     await assert.rejects(runFixture(invalid), /must reference an event declared/)
   })
+
+  it("rejects name-only internal event declarations", async () => {
+    const invalid = validManifest
+      .replace('direction: "outbound",', 'direction: "inbound",')
+      .replace('version: "1.0.0",', "")
+      .replace('visibility: "external",', "")
+      .replace('payloadSchema: { type: "object" },', "")
+      .replace('audit: { sourceModule: "example", category: "domain" },', "")
+    await assert.rejects(runFixture(invalid), /event .* must declare a semantic version/)
+  })
+
+  it("rejects emitters without package-owned contracts", async () => {
+    const invalid = `${validManifest}\neventBus.emit("example.undeclared", {})\n`
+    await assert.rejects(runFixture(invalid), /emitter publishes undeclared event type/)
+  })
+
+  it("reports runtime subscriptions without manifest owners", async () => {
+    const result = await runFixture(
+      `${validManifest}\neventBus.subscribe("example.changed", handler)\n`,
+    )
+    assert.match(result.stdout, /1 unowned runtime subscription types/)
+    assert.match(result.stdout, /Unowned runtime subscriptions: example.changed/)
+  })
 })

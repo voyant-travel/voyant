@@ -57,6 +57,10 @@ describe("legal deployment manifest", () => {
     expect(legalVoyantModule.events).toContainEqual({
       id: "@voyant-travel/legal#event.booking.contract.generated",
       eventType: "booking.contract.generated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "legal", category: "domain" },
     })
   })
 

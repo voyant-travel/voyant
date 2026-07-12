@@ -61,14 +61,26 @@ export const cruisesVoyantModule = defineModule({
     {
       id: "@voyant-travel/cruises#event.cruise-created",
       eventType: "cruise.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "cruises", category: "domain" },
     },
     {
       id: "@voyant-travel/cruises#event.cruise-updated",
       eventType: "cruise.updated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "cruises", category: "domain" },
     },
     {
       id: "@voyant-travel/cruises#event.cruise-deleted",
       eventType: "cruise.deleted",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "cruises", category: "domain" },
     },
   ],
   workflows: [

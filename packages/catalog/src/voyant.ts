@@ -146,10 +146,18 @@ export const catalogVoyantModule = defineModule({
     {
       id: "@voyant-travel/catalog#event.entity.overlay-changed",
       eventType: "catalog.entity.overlay.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "catalog", category: "domain" },
     },
     {
       id: "@voyant-travel/catalog#event.entity.drift-detected",
       eventType: "catalog.entity.drift.detected",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "catalog", category: "domain" },
     },
     {
       id: "@voyant-travel/catalog#event.entity.reference-missing",

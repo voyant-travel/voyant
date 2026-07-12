@@ -191,7 +191,16 @@ describe("deployment graph artifacts", () => {
     const graph = await graphWithSelectedUnits([
       defineModule({
         id: "@acme/hooks",
-        events: [{ id: "@acme/hooks#event.changed", eventType: "hooks.changed" }],
+        events: [
+          {
+            id: "@acme/hooks#event.changed",
+            eventType: "hooks.changed",
+            version: "1.0.0",
+            payloadSchema: { type: "object" },
+            visibility: "external",
+            audit: { sourceModule: "hooks", category: "domain" },
+          },
+        ],
         webhooks: [
           {
             id: "@acme/hooks#webhook.changed",
@@ -588,7 +597,16 @@ describe("deployment graph artifacts", () => {
             runtime: { entry: "./runtime", export: "reconcileWorkflow" },
           },
         ],
-        events: [{ id: "loyalty.event", eventType: "loyalty.changed" }],
+        events: [
+          {
+            id: "loyalty.event",
+            eventType: "loyalty.changed",
+            version: "1.0.0",
+            payloadSchema: { type: "object" },
+            visibility: "internal",
+            audit: { sourceModule: "loyalty", category: "domain" },
+          },
+        ],
         webhooks: [
           {
             id: "loyalty.webhook",

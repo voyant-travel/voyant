@@ -61,6 +61,10 @@ export const operationsVoyantModule = defineModule({
     {
       id: "@voyant-travel/operations#event.availability-slot-changed",
       eventType: "availability.slot.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "operations", category: "domain" },
     },
   ],
   admin: {

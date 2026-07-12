@@ -1351,69 +1351,52 @@ function validateFacetEntities(
 function validateEvents(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
   const diagnostics = validateFacetEntities(value, "events", source)
   validateEntityArray(value, "events", source, diagnostics, (entry, facet) => {
-    if (entry.eventType !== undefined) {
-      requireNonEmptyString(entry.eventType, `${facet}.eventType`, source, diagnostics)
-    }
-    if (entry.version !== undefined) {
-      if (typeof entry.version !== "string" || !/^\d+\.\d+\.\d+$/.test(entry.version)) {
-        invalidFacet(
-          `${facet}.version`,
-          source,
-          diagnostics,
-          "Event version must be a semantic version such as 1.0.0.",
-        )
-      }
-      if (!isRecord(entry.payloadSchema)) {
-        invalidFacet(
-          `${facet}.payloadSchema`,
-          source,
-          diagnostics,
-          "Versioned events must declare a JSON payload schema.",
-        )
-      }
-    } else if (entry.payloadSchema !== undefined) {
+    requireNonEmptyString(entry.eventType, `${facet}.eventType`, source, diagnostics)
+    if (typeof entry.version !== "string" || !/^\d+\.\d+\.\d+$/.test(entry.version)) {
       invalidFacet(
         `${facet}.version`,
         source,
         diagnostics,
-        "Events with a payload schema must declare a semantic version.",
+        "Events must declare a semantic version such as 1.0.0.",
       )
     }
-    if (
-      entry.visibility !== undefined &&
-      entry.visibility !== "internal" &&
-      entry.visibility !== "external"
-    ) {
+    if (!isRecord(entry.payloadSchema)) {
+      invalidFacet(
+        `${facet}.payloadSchema`,
+        source,
+        diagnostics,
+        "Events must declare a JSON payload schema.",
+      )
+    }
+    if (entry.visibility !== "internal" && entry.visibility !== "external") {
       invalidFacet(
         `${facet}.visibility`,
         source,
         diagnostics,
-        "Event visibility must be internal or external.",
+        "Events must declare internal or external visibility.",
       )
     }
-    if (entry.audit !== undefined) {
-      if (!isRecord(entry.audit)) {
+    if (!isRecord(entry.audit)) {
+      invalidFacet(
+        `${facet}.audit`,
+        source,
+        diagnostics,
+        "Events must declare audit sourceModule and category.",
+      )
+    } else {
+      requireNonEmptyString(
+        entry.audit.sourceModule,
+        `${facet}.audit.sourceModule`,
+        source,
+        diagnostics,
+      )
+      if (entry.audit.category !== "domain" && entry.audit.category !== "internal") {
         invalidFacet(
-          `${facet}.audit`,
+          `${facet}.audit.category`,
           source,
           diagnostics,
-          "Event audit metadata must declare sourceModule and category.",
+          "Event audit category must be domain or internal.",
         )
-      } else {
-        requireNonEmptyString(
-          entry.audit.sourceModule,
-          `${facet}.audit.sourceModule`,
-          source,
-          diagnostics,
-        )
-        if (entry.audit.category !== "domain" && entry.audit.category !== "internal") {
-          invalidFacet(
-            `${facet}.audit.category`,
-            source,
-            diagnostics,
-            "Event audit category must be domain or internal.",
-          )
-        }
       }
     }
   })
@@ -2117,6 +2100,13 @@ function validateFacetReferences(
   const eventById = new Map(
     units.flatMap((unit) => unit.events.map((event) => [event.id, event] as const)),
   )
+  const eventTypes = new Set(
+    units.flatMap((unit) =>
+      unit.events
+        .map((event) => event.eventType?.trim())
+        .filter((eventType): eventType is string => Boolean(eventType)),
+    ),
+  )
   const actionBindings = {
     routes: new Set(units.flatMap((unit) => unit.api.map((entry) => entry.id))),
     tools: new Set(units.flatMap((unit) => (unit.tools ?? []).map((entry) => entry.id))),
@@ -2172,6 +2162,18 @@ function validateFacetReferences(
   }
 
   for (const unit of units) {
+    for (const subscriber of unit.subscribers) {
+      if (subscriber.eventType?.trim() && !eventTypes.has(subscriber.eventType.trim())) {
+        diagnostics.push(
+          diagnostic({
+            code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+            source: unit.id,
+            facet: `${subscriber.id}.eventType`,
+            message: `Subscriber event type "${subscriber.eventType}" is not declared by an event in the selected graph.`,
+          }),
+        )
+      }
+    }
     for (const route of unit.api) {
       if (route.resource && ![...scopes].some((scope) => scope.startsWith(`${route.resource}:`))) {
         diagnostics.push(

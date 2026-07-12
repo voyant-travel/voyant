@@ -82,6 +82,10 @@ export const miceVoyantModule = defineModule({
     {
       id: "@voyant-travel/mice#event.rfp-awarded",
       eventType: "mice.rfp.awarded",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "mice", category: "domain" },
     },
   ],
   admin: {

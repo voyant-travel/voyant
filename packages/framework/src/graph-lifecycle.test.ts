@@ -193,6 +193,8 @@ async function graph(options: {
       {
         id: "@acme/loyalty#event.changed",
         eventType: "loyalty.changed",
+        visibility: "internal",
+        audit: { sourceModule: "loyalty", category: "domain" },
         ...(options.omitContract
           ? {}
           : {

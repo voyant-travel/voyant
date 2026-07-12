@@ -58,10 +58,18 @@ export const storefrontVoyantModule = defineModule({
     {
       id: "@voyant-travel/storefront#event.customer-signal-created",
       eventType: "customer.signal.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "storefront", category: "domain" },
     },
     {
       id: "@voyant-travel/storefront#event.booking-bootstrap-requested",
       eventType: "storefront.booking.bootstrap.requested",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "storefront", category: "domain" },
     },
   ],
   subscribers: [

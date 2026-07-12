@@ -44,9 +44,30 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   events: [
-    { id: "@voyant-travel/quotes#event.quote-created", eventType: "quote.created" },
-    { id: "@voyant-travel/quotes#event.quote-updated", eventType: "quote.updated" },
-    { id: "@voyant-travel/quotes#event.quote-deleted", eventType: "quote.deleted" },
+    {
+      id: "@voyant-travel/quotes#event.quote-created",
+      eventType: "quote.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/quotes#event.quote-updated",
+      eventType: "quote.updated",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/quotes#event.quote-deleted",
+      eventType: "quote.deleted",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "quotes", category: "domain" },
+    },
   ],
   access: {
     resources: [

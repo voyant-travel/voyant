@@ -396,6 +396,31 @@ describe("deployment graph v1", () => {
     expect(graph.webhookPlan).toEqual({ inbound: [], outbound: [] })
   })
 
+  it("rejects subscribers whose event contract owner is absent from the selected graph", async () => {
+    const subscriber = definePlugin({
+      id: "@acme/voyant-listener",
+      subscribers: [
+        {
+          id: "@acme/voyant-listener#subscriber.changed",
+          eventType: "partner.changed",
+          runtime: { entry: "./runtime", export: "partnerChangedSubscriber" },
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [], plugins: [subscriber] }),
+    })
+
+    expect(graph.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_UNKNOWN_REFERENCE",
+        facet: "@acme/voyant-listener#subscriber.changed.eventType",
+        message: expect.stringContaining('event type "partner.changed"'),
+      }),
+    )
+  })
+
   it("fails closed for invalid promoted facets and unresolved references", async () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",

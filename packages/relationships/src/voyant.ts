@@ -53,14 +53,26 @@ export const relationshipsVoyantModule = defineModule({
     {
       id: "@voyant-travel/relationships#event.customer.signal.created",
       eventType: "customer.signal.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "relationships", category: "domain" },
     },
     {
       id: "@voyant-travel/relationships#event.person.changed",
       eventType: "person.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "relationships", category: "domain" },
     },
     {
       id: "@voyant-travel/relationships#event.organization.changed",
       eventType: "organization.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "relationships", category: "domain" },
     },
   ],
   access: {

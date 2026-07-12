@@ -122,14 +122,26 @@ export const commerceVoyantModule = defineModule({
     {
       id: "@voyant-travel/commerce#event.promotion.changed",
       eventType: "promotion.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "commerce", category: "domain" },
     },
     {
       id: "@voyant-travel/commerce#event.pricing.rule.changed",
       eventType: "pricing.rule.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "commerce", category: "domain" },
     },
     {
       id: "@voyant-travel/commerce#event.inquiry.created",
       eventType: "inquiry.created",
+      version: "1.0.0",
+      payloadSchema: { type: "object", additionalProperties: true },
+      visibility: "internal",
+      audit: { sourceModule: "commerce", category: "domain" },
     },
   ],
   subscribers: [
