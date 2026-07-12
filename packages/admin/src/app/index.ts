@@ -1,7 +1,7 @@
 export type {
   AdminAuthMode,
+  AdminAuthRuntime,
   AdminBootstrapStatus,
-  ManagedProfileAdminAuthRuntime,
 } from "./auth-runtime.js"
 export type {
   AdminExtensionChildRoutesOptions,

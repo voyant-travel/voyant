@@ -36,8 +36,8 @@ export {
 } from "./discover.js"
 export { loadMigrationFolder } from "./load-folder.js"
 export {
-  type CollectManagedMigrationSourcesOptions,
-  collectManagedMigrationSources,
+  type CollectDeploymentMigrationSourcesOptions,
+  collectDeploymentMigrationSources,
   type LoadModuleBundleSourceOptions,
   loadModuleBundleSource,
   moduleSourceName,

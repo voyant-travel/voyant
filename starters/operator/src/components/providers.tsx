@@ -11,12 +11,12 @@ import { VoyantAvailabilityProvider } from "@voyant-travel/operations-react/avai
 import { TooltipProvider } from "@voyant-travel/ui/components/tooltip"
 import type * as React from "react"
 import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { projectFetcher } from "@/lib/voyant-fetcher"
 
 // VoyantAvailabilityProvider needs a baseUrl prop — wrap it once so it
 // fits the child-only AdminChildProvider shape used by the admin shell.
 const AvailabilityProvider: AdminChildProvider = ({ children }) => (
-  <VoyantAvailabilityProvider baseUrl={getApiUrl()} fetcher={operatorFetcher}>
+  <VoyantAvailabilityProvider baseUrl={getApiUrl()} fetcher={projectFetcher}>
     {children}
   </VoyantAvailabilityProvider>
 )
@@ -33,7 +33,7 @@ export function Providers({
   return (
     <OperatorAdminShellProvider
       baseUrl={getApiUrl()}
-      fetcher={operatorFetcher}
+      fetcher={projectFetcher}
       queryClient={queryClient}
       providers={appProviders}
     >

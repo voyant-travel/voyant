@@ -17,16 +17,31 @@ const graphNativeFiles = [
   "packages/admin-host/src/index.ts",
   "packages/admin-host/src/serve.ts",
   "packages/admin-host/src/ssr.ts",
+  "packages/admin-app/src/runtime.ts",
+  "packages/admin/src/app/auth-runtime.ts",
+  "packages/admin/src/app/index.ts",
+  "packages/admin/src/app/workspace.tsx",
+  "packages/framework-migrations/src/index.ts",
+  "packages/framework-migrations/src/module-source.ts",
   "scripts/emit-deployment-graph.ts",
   "starters/operator/src/deployment-graph-artifacts.ts",
+  "starters/operator/src/lib/admin-auth-runtime.ts",
+  "starters/operator/src/lib/env.ts",
+  "starters/operator/src/lib/voyant-fetcher.ts",
   "starters/operator/src/server.ts",
   "starters/operator/src/ssr-handler.ts",
+  "starters/federated-operator/src/lib/admin-auth-runtime.ts",
 ]
 
 const retiredTokens = [
   "ManagedProfile",
+  "managedProfile",
   "managed-profile",
   "managed profile",
+  "ManagedOperator",
+  "managedOperator",
+  "managed-operator",
+  "managed operator",
   "profileSnapshot",
   "PROFILE_SNAPSHOT",
   "ProfileSnapshot",
@@ -56,6 +71,7 @@ const retiredFiles = [
   "packages/framework/src/managed-runtime.ts",
   "packages/framework/src/plugin-resolution.ts",
   "packages/framework/src/custom-source-resolution.ts",
+  "packages/admin-host/src/managed-profile-compatibility.ts",
 ]
 for (const file of retiredFiles) {
   if (existsSync(resolve(root, file))) violations.push(`${file}: retired compatibility file exists`)
@@ -72,6 +88,44 @@ for (const subpath of [
     violations.push(`packages/framework/package.json: retired export exists: ${subpath}`)
   }
 }
+
+const adminHostPackage = JSON.parse(read("packages/admin-host/package.json"))
+if (
+  adminHostPackage.exports?.["./managed-profile-compatibility"] ||
+  adminHostPackage.publishConfig?.exports?.["./managed-profile-compatibility"]
+) {
+  violations.push(
+    "packages/admin-host/package.json: retired export exists: ./managed-profile-compatibility",
+  )
+}
+
+const adminRuntime = read("packages/admin-app/src/runtime.ts")
+requireText(adminRuntime, "getAdminApiUrl", "generic admin API URL helper")
+requireText(adminRuntime, "adminFetcher", "generic admin fetcher")
+
+const adminAuthRuntime = read("packages/admin/src/app/auth-runtime.ts")
+requireText(adminAuthRuntime, "AdminAuthRuntime", "generic admin auth port")
+
+const migrationSources = read("packages/framework-migrations/src/module-source.ts")
+requireText(
+  migrationSources,
+  "collectDeploymentMigrationSources",
+  "generic deployment migration collector",
+)
+requireAbsent(
+  migrationSources,
+  "collectManagedMigrationSources",
+  "managed migration collector alias",
+)
+requireAbsent(
+  migrationSources,
+  "CollectManagedMigrationSourcesOptions",
+  "managed migration collector options alias",
+)
+
+const projectFetcher = read("starters/operator/src/lib/voyant-fetcher.ts")
+requireText(projectFetcher, "projectFetcher", "generic project fetcher")
+requireAbsent(projectFetcher, "operatorFetcher", "Operator starter fetcher alias")
 
 const nodeRuntime = read("packages/framework/src/node-runtime.ts")
 for (const token of [

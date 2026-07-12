@@ -8,7 +8,6 @@
     ".": "./src/index.ts",
     "./destinations": "./src/admin-destinations.ts",
     "./presentation": "./src/admin-presentation.ts",
-    "./managed-profile-compatibility": "./src/managed-profile-compatibility.ts",
     "./serve": "./src/serve.ts",
     "./ssr": "./src/ssr.ts"
   },
@@ -76,11 +75,6 @@
         "types": "./dist/admin-presentation.d.ts",
         "import": "./dist/admin-presentation.js",
         "default": "./dist/admin-presentation.js"
-      },
-      "./managed-profile-compatibility": {
-        "types": "./dist/managed-profile-compatibility.d.ts",
-        "import": "./dist/managed-profile-compatibility.js",
-        "default": "./dist/managed-profile-compatibility.js"
       },
       "./serve": {
         "types": "./dist/serve.d.ts",

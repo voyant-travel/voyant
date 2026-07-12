@@ -8,7 +8,7 @@ import {
 import { authClient } from "@/lib/auth"
 import { getApiUrl } from "@/lib/env"
 import { OperatorStorefrontMessagesProvider } from "@/lib/storefront-messages"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { projectFetcher } from "@/lib/voyant-fetcher"
 
 /**
  * `(storefront)` — simulated customer-facing surface inside the
@@ -26,7 +26,7 @@ function StorefrontLayout(): React.ReactElement {
   return (
     <OperatorStorefrontMessagesProvider>
       <StorefrontScopeProvider>
-        <CustomerAccountProvider baseUrl={getApiUrl()} fetcher={operatorFetcher}>
+        <CustomerAccountProvider baseUrl={getApiUrl()} fetcher={projectFetcher}>
           <StorefrontChrome />
         </CustomerAccountProvider>
       </StorefrontScopeProvider>

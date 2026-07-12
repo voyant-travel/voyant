@@ -1,12 +1,12 @@
 /**
- * The admin auth capability **port** for the managed-profile admin host.
+ * The admin auth capability **port** for a deployment-provided admin host.
  *
  * Auth is deployment-owned: the admin surfaces (shell, guard, packaged pages)
  * never import a concrete auth client. Instead a deployment provides a
- * {@link ManagedProfileAdminAuthRuntime}, and the packaged admin depends only on
+ * {@link AdminAuthRuntime}, and the packaged admin depends only on
  * this port. There are two implementations:
  *
- * - **Managed profile** — a Voyant Cloud identity-broker impl. Unauthenticated
+ * - **Voyant Cloud** — a hosted identity-broker implementation. Unauthenticated
  *   visitors are redirected to the Cloud broker (`authMode: "voyant-cloud"`); no
  *   local password/login pages are shipped.
  * - **Self-host / starter** — a Better Auth impl (`authMode: "local"`) that also
@@ -25,10 +25,10 @@ export interface AdminBootstrapStatus {
   authMode?: AdminAuthMode
   /**
    * The active module ids for this deployment (voyant#3063). A source-free
-   * managed admin (one shared image, per-operator module subset injected at
-   * deploy) reads this to gate its composition — showing only the modules the
-   * profile activates. Absent for hosts that do not gate (e.g. a self-hosted
-   * starter built from its own module set); the admin then composes everything.
+   * hosted admin reads this to gate its composition, showing only the modules
+   * selected by the deployment graph. Absent for hosts that do not gate (e.g. a
+   * self-hosted project built from its own module set); the admin then composes
+   * everything.
    */
   modules?: readonly string[]
 }
@@ -38,7 +38,7 @@ export interface AdminBootstrapStatus {
  * the deployment's loaded-user shape (a structural superset of
  * {@link AdminWorkspaceShellUser}).
  */
-export interface ManagedProfileAdminAuthRuntime<TUser> {
+export interface AdminAuthRuntime<TUser> {
   /** Resolve the current user (server fn / cookie-forwarding fetch); `null` when signed out. */
   getCurrentUser: () => Promise<TUser | null | undefined>
   /** Whether any user exists yet + the identity-broker mode driving redirects. */

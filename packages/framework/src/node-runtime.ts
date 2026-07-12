@@ -525,7 +525,7 @@ export function createVoyantCloudAuthApp(
 }
 
 /**
- * Shape returned by `GET /auth/me` for a source-free managed admin host —
+ * Shape returned by `GET /auth/me` for a source-free hosted admin —
  * mirrors the operator starter's `CurrentUser` so the packaged admin UI can
  * resolve its current user directly from the managed API.
  */
@@ -548,7 +548,7 @@ export type VoyantNodeBootstrapStatus = {
   authMode: "local" | "voyant-cloud"
   /**
    * The active module ids for this deployment (voyant#3063). The source-free
-   * managed admin — a shared, framework-version-tagged image — reads this to
+   * hosted admin — a shared, framework-version-tagged image — reads this to
    * gate its composition to the modules admitted by the deployment graph,
    * instead of every module the image can compose.
    */

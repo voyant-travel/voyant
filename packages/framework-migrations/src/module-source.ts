@@ -153,7 +153,7 @@ export async function loadModuleBundleSource(
   }
 }
 
-export interface CollectManagedMigrationSourcesOptions {
+export interface CollectDeploymentMigrationSourcesOptions {
   /** Framework bundle folder override (defaults to the shipped bundle). */
   frameworkBundleDir?: string
   /**
@@ -166,13 +166,13 @@ export interface CollectManagedMigrationSourcesOptions {
 }
 
 /**
- * The ordered migration sources for a managed profile: the framework bundle
+ * The ordered migration sources for a deployment: the framework bundle
  * (priority 0) followed by each declared custom schema-owning module's pre-built
  * migrations (priority 1..n, in declaration order). Pass the result straight to
  * `runDeploymentMigrations`. Modules that ship no migrations are skipped.
  */
-export async function collectManagedMigrationSources(
-  options: CollectManagedMigrationSourcesOptions = {},
+export async function collectDeploymentMigrationSources(
+  options: CollectDeploymentMigrationSourcesOptions = {},
 ): Promise<MigrationSource[]> {
   // Imported lazily to keep this module usable without eagerly resolving the
   // shipped framework bundle folder when only module sources are wanted.

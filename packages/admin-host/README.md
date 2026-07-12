@@ -1,8 +1,8 @@
 # @voyant-travel/admin-host
 
-Profile-agnostic admin **serving seam** for Voyant: the Node static-asset host
-and the TanStack Start SSR handler that admin hosts wrap around their composed
-app. The profile is a snapshot field, never baked into an identifier here.
+Deployment-agnostic admin **serving seam** for Voyant: the Node static-asset
+host and the TanStack Start SSR handler that admin hosts wrap around their
+composed app.
 
 ## Install
 
@@ -16,7 +16,6 @@ pnpm add @voyant-travel/admin-host
 | --- | --- |
 | `./serve` | `serveAdminHost(...)` - Hono Node host that serves built client assets, then falls through to the combined API + SSR app |
 | `./ssr` | `createAdminSsrHandler(...)` - the TanStack Start SSR handler (`createStartHandler` + active-route manifest restriction) |
-| `./managed-profile-compatibility` | Deprecated aliases for snapshot-era external callers |
 | `.` | Barrel re-exporting both |
 
 ## Usage
@@ -41,8 +40,8 @@ the router.
 
 ## Consumers
 
-Consumed by the operator starter (`starters/operator`) and the future managed
-admin host (voyant#3044).
+Consumed by Node deployments, including the standard project in
+`starters/operator`.
 
 ## License
 

@@ -8,11 +8,11 @@
  * settings form. This is the packaged counterpart of the operator starter's
  * former app-custom page: it resolves its API surface from the admin runtime
  * context ({@link useVoyantReactContext}) and its copy from the shared operator
- * admin messages, so a source-free managed admin can mount it in one line via
+ * admin messages, so a source-free hosted admin can mount it in one line via
  * `createAdminCoreExtension({ settings: { extraPages: [...] } })`.
  *
  * It talks to the `@voyant-travel/operator-settings` routes already mounted on
- * the managed runtime (`/v1/admin/settings/operator-*`).
+ * the deployment runtime (`/v1/admin/settings/operator-*`).
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"

@@ -13,7 +13,7 @@ import {
 } from "./admin.routes.generated"
 import { discoveredAdminExtensions } from "./lib/admin-extensions"
 import { getApiUrl } from "./lib/env"
-import { operatorFetcher } from "./lib/voyant-fetcher"
+import { projectFetcher } from "./lib/voyant-fetcher"
 import { Route as workspaceRoute } from "./routes/_workspace/route"
 import { type FileRouteTypes, routeTree } from "./routeTree.gen"
 
@@ -54,7 +54,7 @@ export interface OperatorFileRouteTypes {
 const discoveredAdminRoutes = buildAdminExtensionRoutes(
   discoveredAdminExtensions,
   () => workspaceRoute,
-  () => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }),
+  () => ({ baseUrl: getApiUrl(), fetcher: projectFetcher }),
 )
 
 const operatorRouteTree = attachAdminExtensionRoutes(routeTree, workspaceRoute, [

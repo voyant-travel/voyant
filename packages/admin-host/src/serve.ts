@@ -27,7 +27,7 @@ export interface ServeAdminHostOptions<Env extends object> {
  * served by Vite's own middleware instead.
  *
  * This packages the static-host + fall-through that admin hosts (the operator
- * starter and the future managed admin host, voyant#3044) previously held
+ * starter and hosted admin deployments, voyant#3044) previously held
  * inline as a `web` Hono app.
  */
 export function serveAdminHost<Env extends object = Record<string, unknown>>(

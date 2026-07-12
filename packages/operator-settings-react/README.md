@@ -13,7 +13,7 @@ mounts on the runtime.
 It resolves its API surface from the admin runtime context
 (`useVoyantReactContext`) and its copy from the shared operator admin messages
 (`useOperatorAdminMessages`), so a **package-only, source-free admin** (e.g. the
-managed operator host) can render it without importing any starter source.
+hosted deployment) can render it without importing any starter source.
 
 ## Usage
 

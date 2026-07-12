@@ -27,12 +27,12 @@ import {
 
 import { adminExtensions } from "@/lib/admin-extensions"
 import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { projectFetcher } from "@/lib/voyant-fetcher"
 import { Route as WorkspaceRoute } from "@/routes/_workspace/route"
 
-// operatorFetcher so SSR loaders forward the request cookie; resolved per
+// projectFetcher so SSR loaders forward the request cookie; resolved per
 // loader call because `getApiUrl()` reads the runtime origin.
-const runtime = () => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher })
+const runtime = () => ({ baseUrl: getApiUrl(), fetcher: projectFetcher })
 
 const workspace = () => WorkspaceRoute
 

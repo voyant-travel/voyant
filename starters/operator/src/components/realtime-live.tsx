@@ -10,7 +10,7 @@ import {
 import { useMemo } from "react"
 import { authClient } from "@/lib/auth"
 import { getApiUrl } from "@/lib/env"
-import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { projectFetcher } from "@/lib/voyant-fetcher"
 
 export { hasAdminRealtimeSession }
 
@@ -32,7 +32,7 @@ export const RealtimeLiveProvider: AdminChildProvider = ({ children }) => {
       connector={connector}
       session={session}
       tokenEndpoint={`${getApiUrl()}/v1/admin/realtime/token`}
-      fetcher={operatorFetcher}
+      fetcher={projectFetcher}
     >
       {children}
     </AdminRealtimeProvider>

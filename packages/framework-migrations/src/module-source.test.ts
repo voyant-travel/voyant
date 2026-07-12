@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import {
-  collectManagedMigrationSources,
+  collectDeploymentMigrationSources,
   loadModuleBundleSource,
   moduleSourceName,
 } from "./module-source.js"
@@ -110,9 +110,9 @@ describe("loadModuleBundleSource (voyant#3069)", () => {
   })
 })
 
-describe("collectManagedMigrationSources (voyant#3069)", () => {
+describe("collectDeploymentMigrationSources (voyant#3069)", () => {
   it("orders the framework bundle first, then custom modules deps-first", async () => {
-    const sources = await collectManagedMigrationSources({
+    const sources = await collectDeploymentMigrationSources({
       frameworkBundleDir,
       modulePackages: ["@acme/loyalty"],
       resolveFrom,
@@ -125,7 +125,7 @@ describe("collectManagedMigrationSources (voyant#3069)", () => {
   })
 
   it("skips declared modules that ship no migrations", async () => {
-    const sources = await collectManagedMigrationSources({
+    const sources = await collectDeploymentMigrationSources({
       frameworkBundleDir,
       modulePackages: ["@acme/analytics", "@acme/loyalty"],
       resolveFrom,

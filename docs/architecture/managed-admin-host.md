@@ -14,11 +14,12 @@ it no longer emits or boots from a profile snapshot.
 Shipped:
 
 - **Serving seam** - `@voyant-travel/admin-host` (`serveAdminHost`,
-  `createAdminSsrHandler`). Deprecated names are isolated on
-  `./managed-profile-compatibility`.
-- **Runtime glue** — `@voyant-travel/admin-app/runtime` (fetcher, api-url,
+  `createAdminSsrHandler`). Snapshot-era compatibility names and their subpath
+  have been removed.
+- **Runtime glue** — `@voyant-travel/admin-app/runtime` (`adminFetcher`,
+  `getAdminApiUrl`,
   admin-path normalize) — #3048.
-- **Auth port** — `ManagedProfileAdminAuthRuntime` in `@voyant-travel/admin/app`;
+- **Auth port** — `AdminAuthRuntime` in `@voyant-travel/admin/app`;
   `createAdminWorkspaceBeforeLoad` consumes it — #3051.
 - **User provider** — `@voyant-travel/admin-react/user` — #3053.
 - **Source-free host + runtime composition** — packaged serving seams, the
