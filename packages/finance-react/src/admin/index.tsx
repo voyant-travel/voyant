@@ -57,7 +57,7 @@ function runtimeClient(runtime: AdminRouteLoaderContext["runtime"]) {
  */
 function lazyWidget<TProps extends object>(
   load: () => Promise<{ default: ComponentType<TProps> }>,
-): ComponentType<TProps> {
+): React.FunctionComponent<TProps> {
   const Lazy = React.lazy(load)
   return function LazyFinanceAdminWidget(props: TProps) {
     return (
