@@ -219,17 +219,12 @@ async function startInquiryCheckout(
   let stageId = env.INQUIRY_STAGE_ID ?? null
 
   if (!pipelineId || !stageId) {
-    const { quotesService } = await import("@voyant-travel/quotes")
-    const pipelines = await quotesService
-      .listPipelines(db, { entityType: "quote", limit: 1, offset: 0 })
+    const selection = await context.options.checkoutInquiry
+      .resolvePipeline(db, { pipelineId, stageId })
       .catch(() => null)
-    const firstPipeline = pipelines?.data?.[0] ?? null
-    if (firstPipeline) {
-      pipelineId = pipelineId ?? firstPipeline.id
-      const stages = await quotesService
-        .listStages(db, { pipelineId: firstPipeline.id, limit: 1, offset: 0 })
-        .catch(() => null)
-      stageId = stageId ?? stages?.data?.[0]?.id ?? null
+    if (selection) {
+      pipelineId = selection.pipelineId
+      stageId = selection.stageId
     }
   }
 
@@ -245,19 +240,16 @@ async function startInquiryCheckout(
     }
   }
 
-  const { quotesService } = await import("@voyant-travel/quotes")
-  const quote = await quotesService.createQuote(db, {
+  const quote = await context.options.checkoutInquiry.createInquiry(db, {
     title: `Inquiry — booking ${booking.bookingNumber}`,
     pipelineId,
     stageId,
     personId: booking.personId,
     organizationId: booking.organizationId,
-    status: "open",
     valueAmountCents: booking.sellAmountCents ?? null,
     valueCurrency: booking.sellCurrency ?? null,
     source: "storefront-inquiry",
     sourceRef: booking.id,
-    tags: [],
   })
 
   await releaseInquiryBooking(db, booking, eventBus)

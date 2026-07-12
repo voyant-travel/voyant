@@ -608,6 +608,9 @@ importers:
       '@voyant-travel/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
+      '@voyant-travel/quotes-contracts':
+        specifier: workspace:^
+        version: link:../quotes-contracts
       '@voyant-travel/relationships-contracts':
         specifier: workspace:^
         version: link:../relationships-contracts
@@ -1381,9 +1384,6 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
-      '@voyant-travel/quotes':
-        specifier: workspace:^
-        version: link:../quotes
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config

@@ -45,6 +45,7 @@
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
+    "@voyant-travel/quotes-contracts": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -52,16 +53,7 @@
     "rrule": "^2.8.1",
     "zod": "catalog:"
   },
-  "peerDependencies": {
-    "@voyant-travel/quotes": "workspace:^"
-  },
-  "peerDependenciesMeta": {
-    "@voyant-travel/quotes": {
-      "optional": true
-    }
-  },
   "devDependencies": {
-    "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",

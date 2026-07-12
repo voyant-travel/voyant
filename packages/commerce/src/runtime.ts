@@ -10,6 +10,7 @@ import type {
   FinanceInventoryPaymentPolicyRuntime,
 } from "@voyant-travel/finance/runtime-port"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import type { CheckoutInquiryRuntime } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -70,6 +71,7 @@ interface CommerceRuntimeRequirements {
   cruises: FinanceCruisesPaymentPolicyRuntime
   inventoryPolicy: FinanceInventoryPaymentPolicyRuntime
   cardPayment?: CommerceCardPaymentRuntime
+  checkoutInquiry: CheckoutInquiryRuntime
 }
 
 /** Compose Commerce from generic host primitives and selected domain providers. */
@@ -85,6 +87,7 @@ export function createCommerceRuntime(requirements: CommerceRuntimeRequirements)
     cruises,
     inventoryPolicy,
     cardPayment,
+    checkoutInquiry,
   } = requirements
   const paymentPolicy = inventoryPolicy.createPaymentPolicyRuntime({
     resolveSupplierPolicy: distribution.resolveSupplierPolicy,
@@ -128,6 +131,7 @@ export function createCommerceRuntime(requirements: CommerceRuntimeRequirements)
       persistAcceptanceDraftContract: (db, input) =>
         legal.persistAcceptanceDraftContract(db, input),
       startCardPayment: cardPayment?.createStartCardPayment(context),
+      checkoutInquiry,
     }),
     checkoutDatabase: {
       withDb: <T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>) =>

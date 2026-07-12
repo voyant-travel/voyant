@@ -1,6 +1,8 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
+import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import { tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
+import { createCheckoutInquiryRuntime } from "./checkout-inquiry-runtime.js"
 import { createQuotesRuntime } from "./runtime.js"
 import {
   type QuotesProposalRuntime,
@@ -20,10 +22,12 @@ export interface QuotesRuntimeContributorHost {
 export function createQuotesRuntimePortContribution(
   host: QuotesRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const checkoutInquiry = createCheckoutInquiryRuntime()
   const runtime = Promise.resolve()
     .then(() => host.getRuntimePort(tripsRoutesRuntimePort))
     .then((tripsRoutes) => createQuotesRuntime(host, tripsRoutes))
   return {
+    [checkoutInquiryRuntimePort.id]: checkoutInquiry,
     [quotesRuntimePort.id]: runtime.then((value) => value.quotes),
     [quotesProposalRuntimePort.id]: runtime.then((value) => value.proposal),
     [quotesSnapshotRuntimePort.id]: runtime.then((value) => value.snapshot),

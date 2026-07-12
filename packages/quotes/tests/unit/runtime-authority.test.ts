@@ -39,7 +39,11 @@ describe("quotes deployment authority", () => {
 
   it("declares package-owned factories and their narrow ports", () => {
     expect(quotesVoyantModule).toMatchObject({
-      runtimePorts: [{ id: "quotes.runtime" }, { id: "trips.routes-runtime" }],
+      runtimePorts: [
+        { id: "quotes.runtime" },
+        { id: "quotes.checkout-inquiry.runtime" },
+        { id: "trips.routes-runtime" },
+      ],
       api: [{ runtime: { export: "createQuotesVoyantRuntime" } }],
     })
     expect(quotesProposalVoyantPlugin).toMatchObject({

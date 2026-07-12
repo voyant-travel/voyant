@@ -6,6 +6,7 @@ import {
   financeDistributionPaymentPolicyRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
   bookingMaintenanceRuntimePort,
@@ -64,6 +65,7 @@ export const commerceVoyantModule = defineModule({
     requirePort(financeAccommodationsPaymentPolicyRuntimePort),
     requirePort(financeCruisesPaymentPolicyRuntimePort),
     requirePort(financeInventoryPaymentPolicyRuntimePort),
+    requirePort(checkoutInquiryRuntimePort),
   ],
   api: [
     {
