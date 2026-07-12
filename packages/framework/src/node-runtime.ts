@@ -13,6 +13,7 @@ import {
   createCloudAdminAuthStart,
 } from "@voyant-travel/auth/cloud-broker"
 import { createBetterAuth } from "@voyant-travel/auth/server"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   createDbClient,
   createPostgresFixedWindowRateLimitStore,
@@ -40,6 +41,11 @@ import {
   type NodeServerHandle,
   type R2BucketShim,
 } from "@voyant-travel/runtime"
+import {
+  createDocumentStorage,
+  readDocumentContentBase64,
+  resolveDocumentDownloadUrl,
+} from "@voyant-travel/storage/runtime"
 import { scopesForRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
@@ -90,6 +96,73 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   VOYANT_CLOUD_ENVIRONMENT?: "production" | "preview" | "development"
   ORIGIN_TRUST_SECRET?: string
   PORT?: string
+}
+
+export interface CreateVoyantNodeRuntimeHostPrimitivesOptions {
+  env: VoyantNodeRuntimeEnv
+  config?: Readonly<Record<string, unknown>>
+  deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
+}
+
+export class VoyantNodeHostRequirementError extends Error {
+  readonly code = "VOYANT_NODE_HOST_REQUIREMENT_MISSING"
+
+  constructor(readonly requirement: string) {
+    super(
+      `Voyant Node host requirement "${requirement}" is not configured. Provide it through createVoyantNodeRuntimeHostPrimitives().`,
+    )
+    this.name = "VoyantNodeHostRequirementError"
+  }
+}
+
+/** Domain-neutral infrastructure supplied to statically selected runtime contributors. */
+export function createVoyantNodeRuntimeHostPrimitives(
+  options: CreateVoyantNodeRuntimeHostPrimitivesOptions,
+): VoyantRuntimeHostPrimitives {
+  const fallbackEnv = options.env
+  const bindingsEnv = (bindings: unknown): VoyantNodeRuntimeEnv =>
+    bindings && typeof bindings === "object" ? (bindings as VoyantNodeRuntimeEnv) : fallbackEnv
+
+  return {
+    env: (bindings) => bindingsEnv(bindings) as Readonly<Record<string, unknown>>,
+    database: {
+      resolve: <TDatabase>(bindings: unknown) =>
+        resolveDb(bindingsEnv(bindings)) as unknown as TDatabase,
+      fromContext: <TDatabase>(context: unknown) => {
+        const candidate = context as {
+          env?: VoyantNodeRuntimeEnv
+          get?: (key: string) => unknown
+        }
+        const requestDb = candidate?.get?.("db")
+        return (requestDb ?? resolveDb(candidate?.env ?? fallbackEnv)) as TDatabase
+      },
+      transaction: async (bindings, operation) => {
+        const database = resolveDb(bindingsEnv(bindings)) as VoyantDb & {
+          transaction<T>(operation: (database: unknown) => Promise<T>): Promise<T>
+        }
+        return database.transaction(operation)
+      },
+    },
+    storage: {
+      resolve: (bindings) => createDocumentStorage(bindingsEnv(bindings)),
+      read: (bindings, key) => readDocumentContentBase64(bindingsEnv(bindings), key),
+      downloadUrl: (bindings, key) => resolveDocumentDownloadUrl(bindingsEnv(bindings), key),
+    },
+    events: {
+      deliver: (event, bindings) => {
+        if (!options.deliverEvent) {
+          throw new VoyantNodeHostRequirementError("events.deliver")
+        }
+        return options.deliverEvent(event, bindings)
+      },
+    },
+    config: {
+      read: (bindings, key) =>
+        Object.hasOwn(options.config ?? {}, key)
+          ? options.config?.[key]
+          : Reflect.get(bindingsEnv(bindings), key),
+    },
+  }
 }
 
 /** Generic host resources available only to deployment-local factories. */

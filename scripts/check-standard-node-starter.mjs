@@ -183,6 +183,22 @@ function inspectPackageJson(packageJsonPath) {
 }
 
 function inspectRepositoryAuthority(repoRoot) {
+  const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
+  const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
+  if (existsSync(operatorRuntimePath) && existsSync(deploymentArtifactsPath)) {
+    const operatorRuntime = readFileSync(operatorRuntimePath, "utf8")
+    const deploymentArtifacts = readFileSync(deploymentArtifactsPath, "utf8")
+    if (!operatorRuntime.includes("runtimePorts: generated.createRuntimePorts({ primitives })")) {
+      violations.push("packaged starter must boot real statically selected runtime ports")
+    }
+    if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {
+      violations.push("packaged starter must not use fail-on-use runtime port stubs")
+    }
+    if (!deploymentArtifacts.includes("createRuntimePorts: createGeneratedGraphRuntimePorts")) {
+      violations.push("generated project runtime must expose selected contributor composition")
+    }
+  }
+
   const distributionPath = join(repoRoot, "packages/framework/src/operator-distribution.ts")
   const configPath = join(repoRoot, "starters/operator/voyant.config.ts")
   if (existsSync(distributionPath) && existsSync(configPath)) {

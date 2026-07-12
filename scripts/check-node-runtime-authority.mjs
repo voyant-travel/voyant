@@ -21,8 +21,10 @@ for (const forbidden of [
 
 for (const required of [
   "@voyant-travel/framework/node-runtime",
+  "createVoyantNodeRuntimeHostPrimitives",
   "loadVoyantNodeRuntime",
   "deploymentRequirements: graph.requirements",
+  "runtimePorts: generated.createRuntimePorts({ primitives })",
 ]) {
   if (!operatorRuntime.includes(required)) {
     violations.push(
@@ -30,15 +32,24 @@ for (const required of [
     )
   }
 }
+if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {
+  violations.push("operator-runtime must not boot selected package routes with runtime port stubs")
+}
 
 for (const required of [
+  "createVoyantNodeRuntimeHostPrimitives",
   "loadVoyantNodeRuntime",
   "startVoyantNodeRuntime",
+  "VOYANT_NODE_HOST_REQUIREMENT_MISSING",
+  'VoyantNodeHostRequirementError("events.deliver")',
   "VoyantNodeRuntimeOptions",
 ]) {
   if (!nodeRuntime.includes(required)) {
     violations.push(`framework node-runtime must export ${required}`)
   }
+}
+if (!deploymentArtifacts.includes("createRuntimePorts: createGeneratedGraphRuntimePorts")) {
+  violations.push("generated project runtimes must expose their static runtime port composition")
 }
 
 if (!deploymentArtifacts.includes("@voyant-travel/framework/node-runtime")) {

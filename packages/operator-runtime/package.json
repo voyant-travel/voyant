@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@voyant-travel/admin-host": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
     "@voyant-travel/framework": "workspace:^",
     "@voyant-travel/runtime": "workspace:^",
     "hono": "catalog:",

@@ -151,6 +151,7 @@ describe("deployment graph artifacts", () => {
       'import { createLoyaltyRuntimePortContribution as GENERATED_RUNTIME_CONTRIBUTOR_0 } from "@acme/voyant-loyalty/runtime-contributor"',
     )
     expect(source).toContain("export function createGeneratedGraphRuntimePorts(")
+    expect(source).toContain("createRuntimePorts: createGeneratedGraphRuntimePorts")
     expect(source).toContain("& Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>[0]")
     expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
     expect(source).toContain("getRuntimePort(port: { id: string })")

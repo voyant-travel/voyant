@@ -3,9 +3,11 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
-import { createVoyantGraphRuntimePortStubs } from "@voyant-travel/framework"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
+  createVoyantNodeEnv,
+  createVoyantNodeRuntimeHostPrimitives,
   loadVoyantNodeRuntime,
   type VoyantNodeRuntime,
   type VoyantNodeRuntimeEnv,
@@ -20,6 +22,10 @@ export interface LoadOperatorProjectOptions {
   projectRoot?: string
   env?: Record<string, string | undefined>
   adminAssetsDir?: string
+  host?: {
+    config?: Readonly<Record<string, unknown>>
+    deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
+  }
 }
 
 export interface OperatorProjectHost {
@@ -37,6 +43,9 @@ interface GeneratedProjectRuntime {
     providers: Record<string, string>
   }
   graphRuntime: import("@voyant-travel/framework").VoyantGraphRuntime
+  createRuntimePorts(host: {
+    primitives: VoyantRuntimeHostPrimitives
+  }): import("@voyant-travel/framework").VoyantGraphRuntimePorts
 }
 
 /** Load the generated graph and create the framework-owned Node/admin host. */
@@ -46,6 +55,11 @@ export async function loadOperatorProject(
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const generated = await loadGeneratedProjectRuntime(projectRoot)
   const graph = await readGeneratedDeploymentGraph(projectRoot, generated)
+  const env = createVoyantNodeEnv(options.env ?? process.env)
+  const primitives = createVoyantNodeRuntimeHostPrimitives({
+    env,
+    ...options.host,
+  })
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
     graphRuntime: generated.graphRuntime,
@@ -54,8 +68,8 @@ export async function loadOperatorProject(
       providers: generated.deployment.providers,
     },
     deploymentRequirements: graph.requirements,
-    runtimePorts: createVoyantGraphRuntimePortStubs(generated.graphRuntime),
-    env: options.env,
+    runtimePorts: generated.createRuntimePorts({ primitives }),
+    env,
   })
   const clientAssetsDir = path.resolve(
     options.adminAssetsDir ?? path.join(projectRoot, ".voyant/admin/client"),
@@ -100,6 +114,9 @@ async function loadGeneratedProjectRuntime(projectRoot: string): Promise<Generat
   const generated = namespace.createGeneratedProjectRuntime()
   if (generated.kind !== "application") {
     throw new Error(`${PROJECT_RUNTIME_ENTRY} is not a Voyant application runtime.`)
+  }
+  if (typeof generated.createRuntimePorts !== "function") {
+    throw new Error(`${PROJECT_RUNTIME_ENTRY} does not expose static runtime port composition.`)
   }
   return generated
 }

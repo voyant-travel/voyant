@@ -3348,6 +3348,9 @@ importers:
       '@voyant-travel/admin-host':
         specifier: workspace:^
         version: link:../admin-host
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       '@voyant-travel/framework':
         specifier: workspace:^
         version: link:../framework

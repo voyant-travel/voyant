@@ -528,6 +528,7 @@ export function createGeneratedProjectRuntime() {
     graphHash: GENERATED_GRAPH_RUNTIME_HASH,
     deployment: GENERATED_PROJECT_RUNTIME_DEPLOYMENT,
     graphRuntime: createGeneratedGraphRuntime(),
+    createRuntimePorts: createGeneratedGraphRuntimePorts,
   }
 }
 
