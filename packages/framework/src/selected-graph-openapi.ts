@@ -46,7 +46,6 @@ export async function buildSelectedGraphOpenApiDocuments(
   const ownership = await buildModulePathOwnership(input.app.moduleMounts ?? [], input.options)
   const source = stampModuleMetadata(merged, ownership)
   const claims = collectClaims(input.runtime)
-  validateDocumentClaims(claims)
 
   const claimedOperations = new Map<string, OpenApiClaim>()
   const documents = new Map<string, OpenApiDocument>()
@@ -99,7 +98,11 @@ export async function buildSelectedGraphOpenApiDocuments(
       )
     }
 
-    documents.set(claim.document, { ...source, paths } as OpenApiDocument)
+    const existingPaths = documents.get(claim.document)?.paths ?? {}
+    documents.set(claim.document, {
+      ...source,
+      paths: mergeDocumentPaths(existingPaths, paths),
+    } as OpenApiDocument)
   }
 
   return documents
@@ -129,17 +132,16 @@ function collectClaims(
     )
 }
 
-function validateDocumentClaims(claims: readonly OpenApiClaim[]): void {
-  const byDocument = new Map<string, OpenApiClaim>()
-  for (const claim of claims) {
-    const previous = byDocument.get(claim.document)
-    if (previous) {
-      throw new Error(
-        `Selected graph OpenAPI document "${claim.document}" is claimed by both "${previous.route.id}" and "${claim.route.id}".`,
-      )
-    }
-    byDocument.set(claim.document, claim)
+function mergeDocumentPaths(
+  existing: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = { ...existing }
+  for (const [path, pathItem] of Object.entries(incoming)) {
+    const current = merged[path]
+    merged[path] = isRecord(current) && isRecord(pathItem) ? { ...current, ...pathItem } : pathItem
   }
+  return merged
 }
 
 function routeClaimsMethod(claim: OpenApiClaim, method: string): boolean {

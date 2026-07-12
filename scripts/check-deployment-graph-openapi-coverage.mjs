@@ -23,7 +23,7 @@ const CHECKED_SURFACES = new Set(["admin", "storefront"])
 // Ratchet only. The document names and owners remain authoritative in package
 // manifests; this prevents migrated bundles from silently falling back to the
 // Operator compatibility partition.
-const MIN_PACKAGE_OWNED_DOCUMENTS = 12
+const MIN_PACKAGE_OWNED_API_BUNDLES = 14
 const HTTP_METHODS = new Set([
   "connect",
   "delete",
@@ -56,12 +56,12 @@ const coveredBundles = []
 const allowlistedGaps = []
 
 if (options.useDefaultAllowlist) {
-  const packageOwnedDocuments = bundles.filter((bundle) => bundle.openapiDocument).length
-  if (packageOwnedDocuments < MIN_PACKAGE_OWNED_DOCUMENTS) {
+  const packageOwnedBundles = bundles.filter((bundle) => bundle.openapiDocument).length
+  if (packageOwnedBundles < MIN_PACKAGE_OWNED_API_BUNDLES) {
     failures.push({
       kind: "authority-regression",
-      actual: packageOwnedDocuments,
-      minimum: MIN_PACKAGE_OWNED_DOCUMENTS,
+      actual: packageOwnedBundles,
+      minimum: MIN_PACKAGE_OWNED_API_BUNDLES,
     })
   }
 }

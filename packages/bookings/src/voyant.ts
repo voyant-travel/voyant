@@ -23,6 +23,7 @@ export const bookingsVoyantModule = defineModule({
       id: "@voyant-travel/bookings#api.admin",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       resource: "bookings",
       transactional: true,
       runtime: {
@@ -34,6 +35,7 @@ export const bookingsVoyantModule = defineModule({
       id: "@voyant-travel/bookings#api.public",
       surface: "public",
       mount: "bookings",
+      openapi: { document: "bookings" },
       resource: "bookings",
       anonymous: true,
       transactional: true,

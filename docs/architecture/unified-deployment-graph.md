@@ -924,15 +924,22 @@ extensions, and plugins only. It resolves their absolute mounts through the
 same normalization used by runtime route posture, replays eager and lazy Hono
 OpenAPI registries, and emits only matching operations. Every emitted operation
 carries exact `x-voyant-api-id`, `x-voyant-unit-id`, and
-`x-voyant-package-name` ownership. Zero-operation bundles, duplicate document
-slugs, and overlapping operation claims are build failures.
+`x-voyant-package-name` ownership. Disjoint bundles may intentionally share a
+document slug; zero-operation bundles and overlapping operation claims are
+build failures.
 
-The Operator still emits compatibility documents for unmigrated bundles. Its
-`identity.json` entry is replaced by the graph-derived document only after a
+The Operator still emits compatibility documents for unmigrated bundles. A
+compatibility entry is replaced by the graph-derived document only after a
 parity check proves that paths, schemas, operation ids, and all pre-existing
 content are unchanged apart from the graph ownership extensions. Coverage uses
 exact API ids for opted-in bundles; filename/module heuristics and temporary
 allowlists remain available only to unmigrated bundles.
+
+One package document may collect multiple disjoint selected API bundles. This
+supports a package-owned document spanning admin and public surfaces without
+moving document membership back into the deployment. Bookings is the first
+multi-surface document using this convention. Duplicate operation claims remain
+a build failure even when the claims target the same document.
 
 API scopes, staff RBAC, user scopes, tool permissions, and action-ledger
 capabilities should converge toward one permission catalog, but that is a
@@ -1627,10 +1634,10 @@ Progress: all fifteen first-party nav/route/page factories, their declared slots
 contributions, and their lightweight localization/icon adapters are lowered
 into the selected-graph admin bundle. The Operator composes these factories
 generically, with selection and deselection controlled only by the graph.
-No Operator admin factory compatibility registry remains. Eleven API documents,
-including Identity and Notifications, now have package-owned selected-graph
-OpenAPI authority; other API documents remain on the Operator compatibility
-path.
+No Operator admin factory compatibility registry remains. Package-owned
+selected-graph OpenAPI authority includes Identity, Notifications, SmartBill,
+and the multi-surface Bookings document. Other API documents remain on the
+Operator compatibility path and are measured by the coverage checker.
 
 Exit: a custom package contributes a secured, documented API and complete admin
 surface without operator edits; all grants and message references validate.

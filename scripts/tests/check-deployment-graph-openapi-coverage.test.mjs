@@ -79,6 +79,54 @@ describe("check-deployment-graph-openapi-coverage", () => {
     assert.match(result.stdout, /1 covered graph API bundles/)
   })
 
+  it("covers multiple selected API bundles owned by one document", async () => {
+    const adminId = "@voyant-travel/bookings#api.admin"
+    const publicId = "@voyant-travel/bookings#api.public"
+    const root = await createFixture({
+      "graph.json": graph([
+        {
+          id: "@voyant-travel/bookings",
+          localId: "bookings",
+          packageName: "@voyant-travel/bookings",
+          api: [
+            {
+              id: adminId,
+              surface: "admin",
+              mount: "bookings",
+              openapi: { document: "bookings" },
+            },
+            {
+              id: publicId,
+              surface: "public",
+              mount: "bookings",
+              openapi: { document: "bookings" },
+            },
+          ],
+        },
+      ]),
+      "openapi/admin/bookings.json": openapi({
+        "/v1/admin/bookings": {
+          get: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": adminId,
+          },
+        },
+      }),
+      "openapi/storefront/bookings.json": openapi({
+        "/v1/public/bookings": {
+          get: {
+            responses: { 200: { description: "OK" } },
+            "x-voyant-api-id": publicId,
+          },
+        },
+      }),
+    })
+
+    const result = await runChecker(root)
+
+    assert.match(result.stdout, /2 covered graph API bundles/)
+  })
+
   it("normalizes graph public surface to the storefront OpenAPI surface", async () => {
     const root = await createFixture({
       "graph.json": graph([

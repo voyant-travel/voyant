@@ -180,7 +180,7 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     ).rejects.toThrow(/matched zero operations/)
   })
 
-  it("fails duplicate document claims across all selected unit kinds", async () => {
+  it("merges disjoint selected bundles into one package-owned document", async () => {
     const app = documentedApp(["/v1/admin/identity", "/v1/admin/identity-extra"])
     const module = unit("@voyant-travel/identity", [
       route("@voyant-travel/identity#api.admin", "identity", "identity"),
@@ -191,9 +191,16 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
       "extension",
     )
 
-    await expect(
-      buildSelectedGraphOpenApiDocuments({ runtime: runtime([module], [extension]), app, options }),
-    ).rejects.toThrow(/document "identity" is claimed by both/)
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([module], [extension]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(documents.get("identity")?.paths ?? {})).toEqual([
+      "/v1/admin/identity",
+      "/v1/admin/identity-extra",
+    ])
   })
 
   it("fails overlapping mounts that claim the same path", async () => {

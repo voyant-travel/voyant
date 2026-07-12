@@ -23,12 +23,14 @@ describe("bookings deployment manifest", () => {
         {
           id: "@voyant-travel/bookings#api.admin",
           surface: "admin",
+          openapi: { document: "bookings" },
           resource: "bookings",
           runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
           surface: "public",
+          openapi: { document: "bookings" },
           resource: "bookings",
           anonymous: true,
           runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
