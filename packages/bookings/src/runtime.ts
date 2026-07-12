@@ -55,7 +55,7 @@ export function createBookingsRuntime(
       overviewItemEnrichers: { accommodation: accommodation.enrichOverviewItems },
     },
     registerWorkflowService: ({ container, bindings }) => {
-      const env = resolveWorkflowEnvironment(bindings as Record<string, unknown>, process.env)
+      const env = resolveWorkflowEnvironment(bindings as Record<string, unknown>)
       container.register(
         BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
         finance.createStaleBookingHoldsRuntime({
@@ -76,7 +76,7 @@ export function createBookingRequirementsRuntime(
   }
 }
 
-function createWorkflowDb(env: NodeJS.ProcessEnv): PostgresJsDatabase {
+function createWorkflowDb(env: Readonly<Record<string, string | undefined>>): PostgresJsDatabase {
   if (!env.DATABASE_URL) throw new Error("Workflow runtime requires DATABASE_URL")
   return createDbClient(env.DATABASE_URL, { adapter: "node" }) as PostgresJsDatabase
 }

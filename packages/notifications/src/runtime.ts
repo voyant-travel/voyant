@@ -46,7 +46,7 @@ export function createNotificationsRuntime(
       templateSlug: "booking-confirmation",
     },
     resolveReminderWorkflowRuntime: (bindings) => {
-      const env = resolveWorkflowEnvironment(primitives.env(bindings), process.env)
+      const env = resolveWorkflowEnvironment(primitives.env(bindings))
       return createNotificationReminderWorkflowRuntime({
         resolveDb: () => primitives.database.resolve<PostgresJsDatabase>(bindings),
         resolveEnv: () => env,
