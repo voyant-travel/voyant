@@ -49,6 +49,7 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
+    "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
@@ -60,7 +61,10 @@
     "@voyant-travel/identity-react": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
     "@voyant-travel/commerce-react": "workspace:^",
+    "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/inventory": "workspace:^",
+    "@voyant-travel/storefront-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^1.23.0",
     "react": "^19.0.0",
@@ -71,6 +75,9 @@
   },
   "peerDependenciesMeta": {
     "@tanstack/react-table": {
+      "optional": true
+    },
+    "@voyant-travel/accommodations": {
       "optional": true
     },
     "@voyant-travel/admin": {
@@ -103,7 +110,16 @@
     "@voyant-travel/commerce-react": {
       "optional": true
     },
+    "@voyant-travel/cruises": {
+      "optional": true
+    },
     "@voyant-travel/inventory-react": {
+      "optional": true
+    },
+    "@voyant-travel/inventory": {
+      "optional": true
+    },
+    "@voyant-travel/storefront-react": {
       "optional": true
     },
     "@voyant-travel/ui": {
@@ -131,6 +147,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
@@ -142,8 +159,11 @@
     "@voyant-travel/identity-react": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
     "@voyant-travel/commerce-react": "workspace:^",
+    "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
+    "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/storefront-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.23.0",

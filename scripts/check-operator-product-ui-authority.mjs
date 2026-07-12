@@ -7,7 +7,7 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
-const starterFileRatchet = 154
+const starterFileRatchet = 141
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
@@ -62,6 +62,7 @@ for (const [relativePath, maxLines] of new Map([
   ["starters/operator/src/routes/(storefront)/shop_.account.verify-email.tsx", 45],
   ["starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx", 35],
   ["starters/operator/src/routes/(storefront)/shop_.composer.tsx", 40],
+  ["starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx", 60],
 ])) {
   const path = join(root, relativePath)
   if (!existsSync(path)) continue
@@ -85,6 +86,7 @@ for (const relativePath of [
   "packages/storefront-react/src/storefront/messages.tsx",
   "packages/storefront-react/src/storefront/scope.tsx",
   "packages/storefront-react/src/storefront/shell.tsx",
+  "packages/bookings-react/src/storefront/storefront-booking-page.tsx",
   "packages/trips-react/src/storefront/storefront-composer-block.tsx",
 ]) {
   const path = join(root, relativePath)
@@ -115,7 +117,11 @@ for (const relativePath of [
 const requiredTokens = new Map([
   [
     "packages/bookings-react/src/storefront/index.ts",
-    ["StorefrontBookingJourney", "resolveContractVariables"],
+    ["StorefrontBookingJourney", "StorefrontBookingPage", "resolveContractVariables"],
+  ],
+  [
+    "packages/bookings-react/src/storefront/storefront-booking-page.tsx",
+    ["storefrontBookingSearchSchema", "useStorefrontUi", "useEntityContent"],
   ],
   ["packages/bookings-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   ["packages/quotes-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],

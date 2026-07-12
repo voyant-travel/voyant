@@ -12,3 +12,11 @@ export {
   type StorefrontBookingJourneyScope,
   type StorefrontCheckoutConfirmationKind,
 } from "./storefront-booking-journey.js"
+export {
+  StorefrontBookingPage,
+  type StorefrontBookingPageExtensions,
+  type StorefrontBookingPageMessages,
+  type StorefrontBookingPageProps,
+  type StorefrontBookingSearch,
+  storefrontBookingSearchSchema,
+} from "./storefront-booking-page.js"
