@@ -3,7 +3,64 @@ import path from "node:path"
 
 const root = process.cwd()
 const nodeRuntime = await read("packages/framework/src/node-runtime.ts")
+const operatorResourcesPath = "starters/operator/src/api/runtime/deployment-resources.ts"
+const operatorResources = await read(operatorResourcesPath)
 const violations = []
+
+const migratedRuntimeLoaders = [
+  "loadBookingsRuntime",
+  "loadBookingRequirementsRuntime",
+  "loadFinanceRuntime",
+  "loadBookingScheduleRuntime",
+  "loadBookingTaxRuntime",
+  "loadCatalogRuntime",
+]
+const migratedContributors = await Promise.all(
+  ["bookings", "finance", "catalog"].map((name) =>
+    read(`packages/${name}/src/runtime-contributor.ts`),
+  ),
+)
+for (const loader of migratedRuntimeLoaders) {
+  if (operatorResources.includes(loader)) {
+    violations.push(`${operatorResourcesPath} must not retain migrated capability loader ${loader}`)
+  }
+  if (migratedContributors.some((source) => source.includes(`capabilities.${loader}`))) {
+    violations.push(`package contributor must not consume migrated capability loader ${loader}`)
+  }
+}
+for (const packageId of [
+  "@voyant-travel/bookings",
+  "@voyant-travel/finance",
+  "@voyant-travel/catalog",
+]) {
+  if (operatorResources.includes(packageId)) {
+    violations.push(`${operatorResourcesPath} must not name migrated package ${packageId}`)
+  }
+}
+for (const forbidden of ["GraphSelectedNodeRuntimeAdapters", "runtimeAdapters", "new Map("]) {
+  if (operatorResources.includes(forbidden)) {
+    violations.push(`${operatorResourcesPath} retains central adapter authority ${forbidden}`)
+  }
+}
+for (const primitive of ["env:", "database:", "storage:", "events:", "config:"]) {
+  if (!operatorResources.includes(primitive)) {
+    violations.push(`operator generic Node primitive contract is missing ${primitive}`)
+  }
+}
+if (
+  migratedContributors.some((source) => !source.includes("primitives: VoyantRuntimeHostPrimitives"))
+) {
+  violations.push(
+    "migrated package contributors must accept the generic runtime primitive contract",
+  )
+}
+const operatorLineDelta = lineCount(operatorResources) - 686
+const operatorImportDelta = importCount(operatorResources) - 25
+if (operatorLineDelta > 0 || operatorImportDelta > 0) {
+  violations.push(
+    `operator starter authority must not grow; found ${signed(operatorLineDelta)} lines and ${signed(operatorImportDelta)} imports from 4c94a014b0`,
+  )
+}
 
 // The resident host may import only generic process, auth, database, storage,
 // composition, and workflow infrastructure. Each exception is intentionally
@@ -106,8 +163,20 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-node-runtime-product-authority: OK (0 product imports; ${firstPartyImports.length} explicitly justified infrastructure imports)`,
+  `check-node-runtime-product-authority: OK (0 framework product imports; ${firstPartyImports.length} explicitly justified infrastructure imports; operator ${signed(operatorLineDelta)} lines, ${signed(operatorImportDelta)} imports from 4c94a014b0)`,
 )
+
+function signed(value) {
+  return `${value >= 0 ? "+" : ""}${value}`
+}
+
+function lineCount(source) {
+  return source.trimEnd().split("\n").length
+}
+
+function importCount(source) {
+  return [...source.matchAll(/^import\b/gm)].length
+}
 
 function extractFirstPartyImports(source) {
   const imports = [

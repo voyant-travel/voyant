@@ -1,3 +1,4 @@
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { BookingRequirementsHonoModuleOptions } from "./requirements/index.js"
 import {
   type BookingsRuntimeProvider,
@@ -13,18 +14,19 @@ export interface BookingsRuntimePortContribution {
 }
 
 export interface BookingsRuntimeContributorHost {
-  capabilities: {
-    loadBookingsRuntime(): RuntimePortValue<BookingsRuntimeProvider>
-    loadBookingRequirementsRuntime(): RuntimePortValue<BookingRequirementsHonoModuleOptions>
-  }
+  primitives: VoyantRuntimeHostPrimitives
 }
 
-/** Package-owned registration map for Bookings deployment adapters. */
+/** Package-owned Bookings defaults lowered from the generic runtime host. */
 export function createBookingsRuntimePortContribution(
-  host: BookingsRuntimeContributorHost,
+  _host: BookingsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const runtime: BookingsRuntimePortContribution = {
+    bookings: { options: {} },
+    requirements: {},
+  }
   return {
-    [bookingsRuntimePort.id]: host.capabilities.loadBookingsRuntime(),
-    [bookingRequirementsRuntimePort.id]: host.capabilities.loadBookingRequirementsRuntime(),
+    [bookingsRuntimePort.id]: runtime.bookings,
+    [bookingRequirementsRuntimePort.id]: runtime.requirements,
   }
 }

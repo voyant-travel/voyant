@@ -12,11 +12,11 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-final.mjs")
 const contributors = {
   "action-ledger": "host.capabilities.loadActionLedgerHealthRuntime()",
-  bookings: "host.capabilities.loadBookingsRuntime()",
-  catalog: "host.capabilities.loadCatalogRuntime()",
+  bookings: "bookings: { options: {} }",
+  catalog: "buildCatalogTypesenseIndexer",
   commerce: "host.capabilities.loadCommerceRuntime()",
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
-  finance: "host.capabilities.loadFinanceRuntime()",
+  finance: "host.primitives.storage.downloadUrl",
   inventory: "host.capabilities.loadInventoryRuntime()",
   legal: "host.capabilities.loadLegalRuntime()",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
@@ -48,18 +48,20 @@ ${generatedArguments}
   return root
 }
 
-it("accepts only generic capabilities and the irreducible SmartBill host", async () => {
-  const root = await fixture("    capabilities,\n    host: operatorSmartbillRuntimeHost,")
+it("accepts package-owned defaults, generic primitives, and the irreducible SmartBill host", async () => {
+  const root = await fixture(
+    "    capabilities,\n    primitives,\n    host: operatorSmartbillRuntimeHost,",
+  )
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /exact keys capabilities,host/)
+  assert.match(result.stdout, /3 package-owned primitive families/)
 })
 
 it("rejects a package-specific generated runtime argument", async () => {
   const root = await fixture(
-    "    capabilities,\n    finance: loadFinanceRuntime(),\n    host: operatorSmartbillRuntimeHost,",
+    "    capabilities,\n    primitives,\n    finance: loadFinanceRuntime(),\n    host: operatorSmartbillRuntimeHost,",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
-    /keys must be exactly capabilities,host/,
+    /keys must be exactly capabilities,primitives,host/,
   )
 })

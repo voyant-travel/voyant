@@ -10,11 +10,11 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
   "action-ledger": "host.capabilities.loadActionLedgerHealthRuntime()",
-  bookings: "host.capabilities.loadBookingsRuntime()",
-  catalog: "host.capabilities.loadCatalogRuntime()",
+  bookings: "bookings: { options: {} }",
+  catalog: "buildCatalogTypesenseIndexer",
   commerce: "host.capabilities.loadCommerceRuntime()",
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
-  finance: "host.capabilities.loadFinanceRuntime()",
+  finance: "host.primitives.storage.downloadUrl",
   inventory: "host.capabilities.loadInventoryRuntime()",
   legal: "host.capabilities.loadLegalRuntime()",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
@@ -37,9 +37,9 @@ if (!generatedCall) {
   const keys = [...generatedCall.matchAll(/^\s{4}([A-Za-z][A-Za-z0-9]*)(?::|,)/gm)].map(
     (match) => match[1],
   )
-  if (keys.join(",") !== "capabilities,host") {
+  if (keys.join(",") !== "capabilities,primitives,host") {
     violations.push(
-      `createGeneratedGraphRuntimePorts keys must be exactly capabilities,host; found ${keys.join(",") || "none"}`,
+      `createGeneratedGraphRuntimePorts keys must be exactly capabilities,primitives,host; found ${keys.join(",") || "none"}`,
     )
   }
 }
@@ -71,5 +71,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-runtime-binding-final: OK (${Object.keys(contributorRequirements).length} capability-derived families; exact keys capabilities,host)`,
+  `check-operator-runtime-binding-final: OK (3 package-owned primitive families; ${Object.keys(contributorRequirements).length - 3} legacy capability families)`,
 )
