@@ -7,10 +7,8 @@ import type {
   QuoteEntityResult,
   SourceAdapterRegistry,
 } from "./booking-engine/index.js"
-import type {
-  CatalogBookingRouteModuleOptions,
-  CatalogBookingRoutesOptions,
-} from "./booking-engine/operator-routes.js"
+import type { CatalogBookingRouteModuleOptions } from "./booking-engine/operator-routes.js"
+import type { CatalogBookingRoutesOptions } from "./booking-engine/routes-contracts.js"
 import type {
   CatalogBookingSnapshotExecutionContext,
   CatalogBookingSnapshotRuntime,

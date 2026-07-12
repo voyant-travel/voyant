@@ -217,7 +217,9 @@ export function createStorefrontPresentationContribution(
         onCompleted={async () => {
           await runtime.signOut()
         }}
-        onResendVerification={runtime.resendVerification}
+        onResendVerification={async (verificationEmail) => {
+          await runtime.resendVerification(verificationEmail)
+        }}
         onNavigateToSignIn={() =>
           void navigate({
             to: "/shop/account/sign-in",
@@ -360,7 +362,7 @@ export function createStorefrontMessagesProvider(useLocale: () => string) {
   }
 }
 
-function formatVerticalLabel(vertical: string, messages: Record<string, string>): string {
+function formatVerticalLabel(vertical: string, messages: StorefrontMessages["shop"]): string {
   if (vertical === "products") return messages.verticalProducts
   if (vertical === "cruises") return messages.verticalCruises
   if (vertical === "accommodations") return messages.verticalAccommodations

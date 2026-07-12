@@ -13,7 +13,12 @@ import type { HonoModule } from "@voyant-travel/hono/module"
 import type { CheckoutInquiryRuntime } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-
+import type { BookingMaintenanceRoutesOptions } from "./checkout/routes.js"
+import type {
+  CatalogCheckoutApiRuntime,
+  CatalogCheckoutContractPdfRuntime,
+  CatalogCheckoutDatabaseRuntime,
+} from "./checkout/runtime-ports.js"
 import { marketsHonoModule } from "./markets/index.js"
 import { pricingHonoModule } from "./pricing/index.js"
 import {
@@ -21,6 +26,10 @@ import {
   type PromotionsRoutesOptions,
   promotionsHonoModule,
 } from "./promotions/index.js"
+import type {
+  PromotionRedemptionDatabaseRuntime,
+  PromotionsBulkReindexRuntime,
+} from "./promotions/runtime-ports.js"
 import { createPromotionsStorefrontResolvers } from "./promotions/service-storefront.js"
 import type {
   CommerceCardPaymentRuntime,
@@ -74,8 +83,18 @@ interface CommerceRuntimeRequirements {
   checkoutInquiry: CheckoutInquiryRuntime
 }
 
+export interface CommerceRuntime {
+  bookingMaintenance: BookingMaintenanceRoutesOptions
+  checkoutApi: CatalogCheckoutApiRuntime
+  checkoutDatabase: CatalogCheckoutDatabaseRuntime
+  checkoutLegal: CommerceLegalRuntime
+  checkoutContractPdf: CatalogCheckoutContractPdfRuntime
+  promotionRedemptionDatabase: PromotionRedemptionDatabaseRuntime
+  promotionsBulkReindex: PromotionsBulkReindexRuntime
+}
+
 /** Compose Commerce from generic host primitives and selected domain providers. */
-export function createCommerceRuntime(requirements: CommerceRuntimeRequirements) {
+export function createCommerceRuntime(requirements: CommerceRuntimeRequirements): CommerceRuntime {
   const {
     primitives,
     settings,

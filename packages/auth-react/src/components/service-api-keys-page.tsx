@@ -277,9 +277,9 @@ export function ServiceApiKeysPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {Object.keys(permissionPresets).map((key) => (
+              {Object.entries(permissionPresets).map(([key, preset]) => (
                 <Button key={key} type="button" variant="outline" onClick={() => applyPreset(key)}>
-                  {permissionPresets[key].label}
+                  {preset.label}
                 </Button>
               ))}
             </div>
