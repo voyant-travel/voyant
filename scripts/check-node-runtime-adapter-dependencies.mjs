@@ -33,6 +33,24 @@ const adapters = [
     factory: "createLegalNodeRuntimePortContribution",
     domainPackageNames: ["@voyant-travel/legal"],
   },
+  {
+    packageName: "@voyant-travel/flights-node",
+    directory: "flights-node",
+    factory: "createFlightsNodeRuntimePortContribution",
+    domainPackageNames: ["@voyant-travel/flights"],
+  },
+  {
+    packageName: "@voyant-travel/notifications-node",
+    directory: "notifications-node",
+    factory: "createNotificationsNodeRuntimePortContribution",
+    domainPackageNames: ["@voyant-travel/notifications"],
+  },
+  {
+    packageName: "@voyant-travel/quotes-node",
+    directory: "quotes-node",
+    factory: "createQuotesNodeRuntimePortContribution",
+    domainPackageNames: ["@voyant-travel/quotes"],
+  },
 ]
 const manifests = readWorkspaceManifests()
 const byName = new Map(manifests.map((manifest) => [manifest.name, manifest]))
@@ -86,6 +104,9 @@ for (const domainPackageName of [
   "@voyant-travel/catalog",
   "@voyant-travel/cruises",
   "@voyant-travel/legal",
+  "@voyant-travel/flights",
+  "@voyant-travel/notifications",
+  "@voyant-travel/quotes",
 ]) {
   const domain = byName.get(domainPackageName)
   if (domain?.voyant?.runtime) {

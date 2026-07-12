@@ -39,8 +39,8 @@ async function fixture(deploymentResources) {
   )
   await write(
     root,
-    "packages/quotes/src/runtime-contributor.ts",
-    "host.capabilities.relationshipsService\nresolveParticipantPersonById\n",
+    "packages/quotes-node/src/runtime-contributor.ts",
+    "createQuotesStandardNodeRuntime(host)\n",
   )
   await write(
     root,

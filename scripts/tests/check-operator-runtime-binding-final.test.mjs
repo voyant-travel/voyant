@@ -17,8 +17,11 @@ const contributors = {
   commerce: "host.capabilities.loadCommerceRuntime()",
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
   "finance-node": "createFinanceStandardNodeRuntime",
+  "flights-node": "createFlightsStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   "legal-node": "createLegalStandardNodeRuntime",
+  "notifications-node": "createNotificationsStandardNodeRuntime",
+  "quotes-node": "createQuotesStandardNodeRuntime",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
 }
 
@@ -53,7 +56,7 @@ it("accepts package-owned defaults, generic primitives, and the irreducible Smar
     "    capabilities,\n    primitives,\n    host: operatorSmartbillRuntimeHost,",
   )
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /3 package-owned primitive families/)
+  assert.match(result.stdout, /6 package-owned standard Node families/)
 })
 
 it("rejects a package-specific generated runtime argument", async () => {

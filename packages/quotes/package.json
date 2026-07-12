@@ -11,7 +11,6 @@
     "./routes": "./src/routes/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./proposal-routes": "./src/proposal-routes.ts",
-    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/quotes.json",
@@ -88,11 +87,6 @@
         "import": "./dist/proposal-routes.js",
         "default": "./dist/proposal-routes.js"
       },
-      "./runtime-contributor": {
-        "types": "./dist/runtime-contributor.d.ts",
-        "import": "./dist/runtime-contributor.js",
-        "default": "./dist/runtime-contributor.js"
-      },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",
         "import": "./dist/mcp-runtime.js",
@@ -118,10 +112,6 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
-    "runtime": {
-      "entry": "./runtime-contributor",
-      "export": "createQuotesRuntimePortContribution"
-    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

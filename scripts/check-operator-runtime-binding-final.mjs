@@ -15,8 +15,11 @@ const contributorRequirements = {
   commerce: "host.capabilities.loadCommerceRuntime()",
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
   "finance-node": "createFinanceStandardNodeRuntime",
+  "flights-node": "createFlightsStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   "legal-node": "createLegalStandardNodeRuntime",
+  "notifications-node": "createNotificationsStandardNodeRuntime",
+  "quotes-node": "createQuotesStandardNodeRuntime",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",
 }
 
@@ -71,5 +74,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-runtime-binding-final: OK (3 package-owned primitive families; ${Object.keys(contributorRequirements).length - 3} legacy capability families)`,
+  `check-operator-runtime-binding-final: OK (6 package-owned standard Node families; ${Object.keys(contributorRequirements).length - 6} legacy capability families)`,
 )
