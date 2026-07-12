@@ -1,4 +1,4 @@
-// agent-quality: file-size exception -- reason: first v1 deployment-graph cut keeps schema versions, diagnostics, resolver, managed-profile bridge, and author harness co-located until generated runtime lowering defines stable split points.
+// agent-quality: file-size exception -- reason: deployment graph schemas, resolution, diagnostics, hashing, and author harness remain co-located until stable split points emerge.
 import {
   defineExtension,
   defineModule,
@@ -22,6 +22,7 @@ import {
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
   type VoyantGraphProject,
+  type VoyantGraphProjectDeploymentMode,
   type VoyantGraphProjectDeploymentMigration,
   type VoyantGraphProjectSelections,
   type VoyantGraphProviderDeclaration,
@@ -42,31 +43,17 @@ import {
 } from "@voyant-travel/core/project"
 import type { AccessCatalog, AccessCatalogResource } from "@voyant-travel/types/api-keys"
 import {
-  getManagedProfileScheduledJobs,
-  getStandardProfileEventFiltersForModule,
-  getStandardProfileWorkflowManifestForModule,
-  type ManagedEventFilterEntry,
-  type ManagedScheduledJob,
-  type ManagedWorkflowManifestEntry,
-  SCHEDULED_JOB_ROUTE,
-} from "./managed-jobs.js"
+  type VoyantDeploymentEnvRequirement,
+  type VoyantDeploymentProviderRole,
+  type VoyantDeploymentResourceRequirement,
+} from "./deployment-types.js"
 import {
   FRAMEWORK_CAPABILITY_GRAPH,
   FRAMEWORK_RUNTIME_MANIFEST,
   subsetStandardManifest,
 } from "./manifest.js"
-import {
-  getVoyantProjectProviders,
-  PROVIDER_ROLES,
-  toCreateVoyantAppProfileConfig,
-  type VoyantProfileEnvRequirement,
-  type VoyantProfileResourceRequirement,
-  type VoyantProjectDeploymentMode,
-  type VoyantProjectManifest,
-  type VoyantProjectProviderRole,
-} from "./profile.js"
-import { resourceRequirementsForProvider } from "./profile-requirements.js"
-import { moduleIdFromSpecifier } from "./profile-types.js"
+import { resourceRequirementsForProvider } from "./deployment-requirements.js"
+import { SCHEDULED_JOB_ROUTE, type VoyantScheduledJob } from "./scheduled-jobs.js"
 
 export const VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION = "voyant.deployment.v1" as const
 export const VOYANT_GRAPH_PACKAGE_SCHEMA_VERSION = "voyant.package.v1" as const
@@ -239,9 +226,9 @@ export interface DefineVoyantGraphDeploymentInput {
   schemaVersion?: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
   target: VoyantGraphRuntimeTarget
-  providers?: Partial<Record<VoyantProjectProviderRole | string, string>>
+  providers?: Partial<Record<VoyantDeploymentProviderRole | string, string>>
   migrations?: readonly VoyantGraphProjectDeploymentMigration[]
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   requirements?: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
@@ -250,16 +237,16 @@ export interface DefineVoyantGraphDeploymentInput {
 export type VoyantGraphRuntimeTarget = "node"
 
 export interface VoyantGraphDeploymentRequirements {
-  resources: readonly VoyantProfileResourceRequirement[]
+  resources: readonly VoyantDeploymentResourceRequirement[]
 }
 
 export interface VoyantGraphDeployment {
   schemaVersion: typeof VOYANT_GRAPH_DEPLOYMENT_SCHEMA_VERSION
   project: VoyantGraphProject
   target: VoyantGraphRuntimeTarget
-  providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+  providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>
   migrations?: readonly VoyantGraphProjectDeploymentMigration[]
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
   meta?: VoyantGraphJsonObject
 }
@@ -272,7 +259,7 @@ export interface VoyantGraphPackageMetadata {
   compatibleWith?: {
     framework?: string
     targets?: readonly string[]
-    modes?: readonly VoyantProjectDeploymentMode[]
+    modes?: readonly VoyantGraphProjectDeploymentMode[]
   }
   requires?: VoyantGraphCapabilityDeclaration
   /** Package schema export and its package-level migration dependencies. */
@@ -304,10 +291,10 @@ export interface ResolveDeploymentGraphInput {
     target?: VoyantGraphRuntimeTarget
   }
   packageRecords?: readonly VoyantGraphPackageRecord[]
-  scheduledJobs?: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[]
+  scheduledJobs?: readonly (VoyantScheduledJob | VoyantGraphScheduledJob)[]
   frameworkVersion?: string
   target?: VoyantGraphRuntimeTarget
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   admission?: VoyantGraphAdmissionPolicy
 }
 
@@ -323,7 +310,7 @@ export interface CreateTestDeploymentInput {
   extensions?: readonly VoyantGraphUnitManifest[]
   plugins?: readonly VoyantGraphUnitManifest[]
   target?: VoyantGraphRuntimeTarget
-  mode?: VoyantProjectDeploymentMode
+  mode?: VoyantGraphProjectDeploymentMode
   packageRecords?: readonly VoyantGraphPackageRecord[]
 }
 
@@ -374,8 +361,8 @@ export interface ResolvedVoyantDeploymentGraph {
   }
   deployment: {
     target?: VoyantGraphRuntimeTarget
-    mode?: VoyantProjectDeploymentMode
-    providers: Partial<Record<VoyantProjectProviderRole | string, string>>
+    mode?: VoyantGraphProjectDeploymentMode
+    providers: Partial<Record<VoyantDeploymentProviderRole | string, string>>
     migrations?: readonly VoyantGraphProjectDeploymentMigration[]
   }
   requirements: VoyantGraphDeploymentRequirements
@@ -510,7 +497,7 @@ export function defineDeployment(input: DefineVoyantGraphDeploymentInput): Voyan
 }
 
 export function deriveDeploymentRequirements(
-  providers: Partial<Record<VoyantProjectProviderRole | string, string>> = {},
+  providers: Partial<Record<VoyantDeploymentProviderRole | string, string>> = {},
 ): VoyantGraphDeploymentRequirements {
   return normalizeDeploymentRequirements({
     resources: PROVIDER_ROLES.flatMap((role) => {
@@ -817,70 +804,6 @@ export async function resolveDeploymentGraphWithPackageManifests(
   return diagnostics.length > 0 ? graphWithDiagnostics(resolved, diagnostics) : resolved
 }
 
-export function defineProjectFromManagedProfile(
-  project: VoyantProjectManifest,
-): VoyantGraphProject {
-  const bridge = toCreateVoyantAppProfileConfig(project)
-  return defineProject({
-    presetLineage: `${project.profile}-standard`,
-    modules: [
-      ...generateFrameworkModuleManifests(bridge.manifest.modules),
-      ...generateCustomSourceModuleManifests(project.customSource?.modules),
-    ],
-    extensions: [
-      ...generateFrameworkExtensionManifests(bridge.manifest.extensions),
-      ...generateCustomSourceExtensionManifests(project.customSource?.extensions),
-    ],
-    plugins: project.plugins.map((specifier) =>
-      definePlugin({
-        id: graphIdFromSpecifier(specifier),
-        packageName: packageNameFromSpecifier(specifier),
-        localId: moduleIdFromSpecifier(specifier),
-      }),
-    ),
-    meta: {
-      compatibilityProfile: project.profile,
-      managedProfileSchemaVersion: project.schemaVersion,
-      frameworkVersion: project.frameworkVersion,
-    },
-  })
-}
-
-export function defineDeploymentFromManagedProfile(
-  project: VoyantProjectManifest,
-): VoyantGraphDeployment {
-  const providers = getVoyantProjectProviders(project)
-  return defineDeployment({
-    project: defineProjectFromManagedProfile(project),
-    target: "node",
-    mode: project.mode,
-    providers: { ...providers },
-    meta: {
-      compatibilityProfile: project.profile,
-      frameworkVersion: project.frameworkVersion,
-    },
-  })
-}
-
-export async function resolveManagedProfileDeploymentGraph(
-  project: VoyantProjectManifest,
-  options: Omit<ResolveDeploymentGraphInput, "project" | "deployment"> = {},
-): Promise<ResolvedVoyantDeploymentGraph> {
-  const deployment = defineDeploymentFromManagedProfile(project)
-  return resolveDeploymentGraph({
-    ...options,
-    project: deployment.project,
-    deployment,
-    packageRecords:
-      options.packageRecords ??
-      generateWorkspacePackageRecords(deployment.project, project.frameworkVersion),
-    scheduledJobs: options.scheduledJobs ?? getManagedProfileScheduledJobs(project),
-    frameworkVersion: options.frameworkVersion ?? project.frameworkVersion,
-    target: options.target ?? deployment.target,
-    mode: options.mode ?? deployment.mode,
-  })
-}
-
 export async function createTestDeployment(
   input: CreateTestDeploymentInput,
 ): Promise<TestDeployment> {
@@ -958,7 +881,7 @@ export function generateFrameworkModuleManifests(
     return defineModule({
       id,
       packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
+      localId: localIdFromSpecifier(specifier),
       provides: normalizeCapabilities(capabilities?.provides),
       requires: normalizeCapabilities(capabilities?.requires),
       api: [
@@ -968,9 +891,6 @@ export function generateFrameworkModuleManifests(
           mount: specifier,
         },
       ],
-      workflows: lowerManagedWorkflowFacets(specifier),
-      events: lowerManagedEventFacets(id, specifier),
-      subscribers: lowerManagedEventFilterFacets(id, specifier),
     })
   })
 }
@@ -985,7 +905,7 @@ export function generateFrameworkExtensionManifests(
     return defineExtension({
       id,
       packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
+      localId: localIdFromSpecifier(specifier),
       api: [
         {
           id: childGraphEntityId(id, "api"),
@@ -1004,8 +924,8 @@ export function generateCustomSourceModuleManifests(
     defineModule({
       id: graphIdFromSpecifier(specifier),
       packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
-      meta: { source: "managed-custom-source" },
+      localId: localIdFromSpecifier(specifier),
+      meta: { source: "custom-source" },
     }),
   )
 }
@@ -1017,8 +937,8 @@ export function generateCustomSourceExtensionManifests(
     defineExtension({
       id: graphIdFromSpecifier(specifier),
       packageName: packageNameFromSpecifier(specifier),
-      localId: moduleIdFromSpecifier(specifier),
-      meta: { source: "managed-custom-source" },
+      localId: localIdFromSpecifier(specifier),
+      meta: { source: "custom-source" },
     }),
   )
 }
@@ -1033,6 +953,10 @@ export function graphIdFromSpecifier(specifier: string): string {
   const { packageName, subpath } = splitPackageSpecifier(specifier)
   if (!subpath) return packageName
   return `${packageName}#${subpath.replaceAll("/", ".")}`
+}
+
+function localIdFromSpecifier(specifier: string): string {
+  return specifier.replace(/^@voyant-travel\//, "").replaceAll("/", ".")
 }
 
 export function packageNameFromSpecifier(specifier: string): string {
@@ -1077,8 +1001,8 @@ function normalizeDeploymentRequirements(
 }
 
 function normalizeResourceRequirement(
-  requirement: VoyantProfileResourceRequirement,
-): VoyantProfileResourceRequirement {
+  requirement: VoyantDeploymentResourceRequirement,
+): VoyantDeploymentResourceRequirement {
   return {
     resourceKey: requirement.resourceKey,
     roles: [...requirement.roles].sort(),
@@ -1097,7 +1021,7 @@ function normalizeResourceRequirement(
 }
 
 function normalizeScheduledJobs(
-  jobs: readonly (ManagedScheduledJob | VoyantGraphScheduledJob)[],
+  jobs: readonly (VoyantScheduledJob | VoyantGraphScheduledJob)[],
 ): VoyantGraphScheduledJob[] {
   return jobs
     .map((job) => ({
@@ -1136,8 +1060,8 @@ function deriveWorkflowScheduledJobs(
 }
 
 function compareEnvRequirements(
-  left: VoyantProfileEnvRequirement,
-  right: VoyantProfileEnvRequirement,
+  left: VoyantDeploymentEnvRequirement,
+  right: VoyantDeploymentEnvRequirement,
 ): number {
   return (
     left.name.localeCompare(right.name) ||
@@ -1150,8 +1074,8 @@ function compareEnvRequirements(
 }
 
 function compareResourceRequirements(
-  left: VoyantProfileResourceRequirement,
-  right: VoyantProfileResourceRequirement,
+  left: VoyantDeploymentResourceRequirement,
+  right: VoyantDeploymentResourceRequirement,
 ): number {
   return (
     left.resourceKey.localeCompare(right.resourceKey) ||
@@ -1305,20 +1229,6 @@ function sortResolvedUnits<
     .map((unit, index) => ({ ...unit, order: index }))
 }
 
-function lowerManagedWorkflowFacets(moduleSpecifier: string): VoyantGraphWorkflow[] {
-  return getStandardProfileWorkflowManifestForModule(moduleSpecifier).map((workflow) =>
-    lowerManagedWorkflowFacet(workflow),
-  )
-}
-
-function lowerManagedWorkflowFacet(workflow: ManagedWorkflowManifestEntry): VoyantGraphWorkflow {
-  const config = toGraphJsonObject(workflow.config)
-  return {
-    id: workflow.id,
-    ...(config ? { config } : {}),
-  }
-}
-
 function normalizeWorkflowScheduleFacets(
   unitId: string,
   workflows: readonly VoyantGraphWorkflow[],
@@ -1390,40 +1300,6 @@ function normalizeScheduleEnvironments(
     (entry): entry is "production" | "preview" | "development" =>
       entry === "production" || entry === "preview" || entry === "development",
   )
-}
-
-function lowerManagedEventFacets(unitId: string, moduleSpecifier: string): VoyantGraphEvent[] {
-  const eventTypes = sortedUnique(
-    getStandardProfileEventFiltersForModule(moduleSpecifier).map((filter) => filter.eventType),
-  )
-  return eventTypes.map((eventType) => ({
-    id: childGraphEntityId(unitId, `event.${eventType}`),
-    eventType,
-  }))
-}
-
-function lowerManagedEventFilterFacets(
-  unitId: string,
-  moduleSpecifier: string,
-): VoyantGraphSubscriber[] {
-  return getStandardProfileEventFiltersForModule(moduleSpecifier).map((filter) =>
-    lowerManagedEventFilterFacet(unitId, filter),
-  )
-}
-
-function lowerManagedEventFilterFacet(
-  unitId: string,
-  filter: ManagedEventFilterEntry,
-): VoyantGraphSubscriber {
-  const manifest = toGraphJsonObject(filter.manifest)
-  const workflowId = manifest?.targetWorkflowId
-  return {
-    id: childGraphEntityId(unitId, `subscriber.${filter.id}`),
-    eventType: filter.eventType,
-    eventFilterId: filter.id,
-    ...(typeof workflowId === "string" ? { workflowId } : {}),
-    ...(manifest ? { filter: manifest } : {}),
-  }
 }
 
 function validateCapabilityDeclaration(
@@ -2698,7 +2574,7 @@ function validatePackageAdmission(
   context: {
     frameworkVersion?: string
     target?: VoyantGraphRuntimeTarget
-    mode?: VoyantProjectDeploymentMode
+    mode?: VoyantGraphProjectDeploymentMode
     admission?: VoyantGraphAdmissionPolicy
   },
 ): VoyantGraphDiagnostic[] {

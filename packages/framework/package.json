@@ -20,7 +20,9 @@
     "./project-runtime": "./src/project-runtime.ts",
     "./node-runtime": "./src/node-runtime.ts",
     "./profile": "./src/profile.ts",
+    "./scheduled-jobs": "./src/scheduled-jobs.ts",
     "./managed-jobs": "./src/managed-jobs.ts",
+    "./managed-profile-compatibility": "./src/managed-profile-compatibility.ts",
     "./managed-runtime": "./src/managed-runtime.ts"
   },
   "files": [
@@ -190,9 +192,17 @@
         "types": "./dist/node-runtime.d.ts",
         "import": "./dist/node-runtime.js"
       },
+      "./scheduled-jobs": {
+        "types": "./dist/scheduled-jobs.d.ts",
+        "import": "./dist/scheduled-jobs.js"
+      },
       "./managed-jobs": {
         "types": "./dist/managed-jobs.d.ts",
         "import": "./dist/managed-jobs.js"
+      },
+      "./managed-profile-compatibility": {
+        "types": "./dist/managed-profile-compatibility.d.ts",
+        "import": "./dist/managed-profile-compatibility.js"
       },
       "./managed-runtime": {
         "types": "./dist/managed-runtime.d.ts",

@@ -1,4 +1,4 @@
-// agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while the resolver, diagnostics, hashing, and managed-profile bridge share one contract harness.
+// agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while resolver, diagnostics, hashing, and compatibility behavior share one harness.
 
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
 import { financeVoyantModule } from "@voyant-travel/finance/voyant"
@@ -15,11 +15,11 @@ import {
   packageNameFromSpecifier,
   resolveDeploymentGraph,
   resolveDeploymentGraphWithPackageManifests,
-  resolveManagedProfileDeploymentGraph,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
   VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
   validateGraphUnitManifest,
 } from "./deployment-graph.js"
+import { resolveManagedProfileDeploymentGraph } from "./managed-profile-compatibility.js"
 import { assertPortConforms, definePort, providePort, requirePort } from "./ports.js"
 import { defineVoyantProject } from "./profile.js"
 

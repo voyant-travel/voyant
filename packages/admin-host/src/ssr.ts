@@ -2,15 +2,15 @@ import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/
 import { withActiveRouteSsrManifest } from "@voyant-travel/runtime"
 import type { ExecutionContext } from "hono"
 
-/** The SSR request handler produced by {@link createManagedProfileAdminSsrHandler}. */
-export type ManagedProfileAdminSsrHandler<Env = Record<string, unknown>> = (
+/** The SSR request handler produced by {@link createAdminSsrHandler}. */
+export type AdminSsrHandler<Env = Record<string, unknown>> = (
   request: Request,
   env: Env,
   ctx: ExecutionContext,
 ) => Response | Promise<Response>
 
 /**
- * Build the TanStack Start SSR handler for a managed profile admin. The
+ * Build the TanStack Start SSR handler for an admin application. The
  * `createStartHandler` wrap (with the active-route SSR-manifest restriction) is
  * packaged here so hosts do not reimplement it; the handler still relies on the
  * consuming app's TanStack Start build to provide the router.
@@ -21,9 +21,7 @@ export type ManagedProfileAdminSsrHandler<Env = Record<string, unknown>> = (
  *
  * See docs/architecture/deployment-targets.md.
  */
-export function createManagedProfileAdminSsrHandler<
-  Env = Record<string, unknown>,
->(): ManagedProfileAdminSsrHandler<Env> {
+export function createAdminSsrHandler<Env = Record<string, unknown>>(): AdminSsrHandler<Env> {
   const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStreamHandler))
 
   return (request, env, _ctx) => startHandler(request, { context: { env } } as never)

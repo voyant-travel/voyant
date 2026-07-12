@@ -10,10 +10,8 @@ const EXPECTED_GRAPH_ARTIFACT = "./deployment-graph.generated.json"
 const EXPECTED_NODE_RUNTIME_ENTRY_ID = "@voyant-travel/framework#runtime.node"
 const EXPECTED_NODE_RUNTIME_ENTRY_FILE = "./runtime-entry.generated.ts"
 const EXPECTED_GRAPH_RUNTIME_FILE = "runtime/graph-runtime.generated.ts"
-const EXPECTED_NODE_RUNTIME_ENTRY_KIND = "managed-profile-node"
-const EXPECTED_PROFILE_SNAPSHOT = "./managed-profile.json"
+const EXPECTED_NODE_RUNTIME_ENTRY_KIND = "node"
 const EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH = "./deployment-graph.generated.json"
-const EXPECTED_RUNTIME_ENTRY_PROFILE_SNAPSHOT_PATH = "./managed-profile.json"
 const SHA256_CONTENT_HASH_PATTERN = /^sha256:[a-f0-9]{64}$/
 
 export interface OperatorDeploymentGraphArtifactSummary {
@@ -77,7 +75,6 @@ interface RuntimeEntryArtifact {
   file?: unknown
   graphHash?: unknown
   kind?: unknown
-  profileSnapshot?: unknown
 }
 
 interface ResolvedDeploymentGraph {
@@ -182,10 +179,6 @@ export function loadOperatorDeploymentGraphArtifacts(
       )
     }
 
-    const profileSnapshot = requireString(
-      entry.profileSnapshot,
-      `runtime entry ${id} profileSnapshot`,
-    )
     if (id === EXPECTED_NODE_RUNTIME_ENTRY_ID) {
       if (entryTarget !== "node") {
         throw new Error(`runtime entry ${id} target must be node, got ${entryTarget}`)
@@ -200,17 +193,7 @@ export function loadOperatorDeploymentGraphArtifacts(
           `runtime entry ${id} kind must be ${EXPECTED_NODE_RUNTIME_ENTRY_KIND}, got ${entryKind}`,
         )
       }
-      if (profileSnapshot !== EXPECTED_PROFILE_SNAPSHOT) {
-        throw new Error(
-          `runtime entry ${id} profileSnapshot must be ${EXPECTED_PROFILE_SNAPSHOT}, got ${profileSnapshot}`,
-        )
-      }
       hasExpectedNodeRuntimeEntry = true
-    }
-
-    const profileUrl = relativeArtifactUrl(profileSnapshot, manifestUrl)
-    if (!existsSync(fileURLToPath(profileUrl))) {
-      throw new Error(`runtime entry ${id} profile snapshot is missing: ${profileSnapshot}`)
     }
   }
   if (!hasExpectedNodeRuntimeEntry) {
@@ -547,11 +530,6 @@ function validateGeneratedRuntimeEntrySource(input: {
     source,
     "GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH",
     EXPECTED_RUNTIME_ENTRY_GRAPH_ARTIFACT_PATH,
-  )
-  assertGeneratedStringConst(
-    source,
-    "GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH",
-    EXPECTED_RUNTIME_ENTRY_PROFILE_SNAPSHOT_PATH,
   )
   assertGeneratedStringArrayConst(
     source,

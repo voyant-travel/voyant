@@ -36,14 +36,14 @@ deterministic.
 ## Exports
 
 - `FRAMEWORK_RUNTIME_PACKAGES` — the pinned runtime-module names (e.g. for `voyant upgrade`).
-- `@voyant-travel/framework/profile` — managed profile snapshots, validation,
-  plugin/settings metadata, provider/resource requirements, migration metadata,
-  and the `createVoyantApp` profile bridge for Cloud-managed admin/API operator
-  deployments. Customer-facing site and storefront apps are separate Cloud app
-  artifacts, not managed profile fields.
+- `@voyant-travel/framework/profile` - deprecated snapshot compatibility for
+  existing external deployments. New applications author graph projects.
+- `@voyant-travel/framework/managed-profile-compatibility` - deprecated
+  profile-to-graph conversion for snapshot-era external callers only.
+- `@voyant-travel/framework/scheduled-jobs` - graph-neutral standard scheduled
+  job declarations.
 - `@voyant-travel/framework/deployment-graph` — v1 project/deployment graph
-  declarations, resolver diagnostics, managed-profile bridging, and deterministic
-  resolved graph hashing.
+  declarations, resolver diagnostics, and deterministic resolved graph hashing.
 - `@voyant-travel/framework/deployment-artifacts` — pure lowering helpers that
   turn a resolved graph into deterministic JSON, artifact manifests, and tiny
-  managed Node runtime entry modules for build/deploy tooling.
+  Node runtime entry modules for build/deploy tooling.

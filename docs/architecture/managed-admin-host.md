@@ -1,22 +1,21 @@
-# Managed profile admin host — source-free admin UI serving
+# Admin Host - Historical Source-Free Design
 
-- **Status:** Folded into the unified `operator` starter (2026-07-09). There is
-  intentionally no separate managed-operator starter.
+- **Status:** Superseded by the graph-native Node runtime and generic admin host
+  (2026-07-12). Retained below as a design record.
 - **Tracks:** voyant#3044 · Parent: voyant#2983 · Sibling: voyant#2987 (API runtime entry, shipped)
 - **Related:** Packaged Admin RFC (#1643/#1649), `@voyant-travel/vite-config`, platform#953/#954
 
 ## Implementation status
 
-The source-free managed-profile work is now represented by graph artifacts under
-`starters/operator/.voyant/`, not by a second starter. The operator starter is
-the single reference deployment surface; its compatibility profile, resolved
-graph, artifact manifest, and runtime modules are disposable generated outputs
-for the managed Node runtime path.
+The operator starter is the single reference deployment surface. Its resolved
+graph, artifact manifest, and runtime modules are disposable generated outputs;
+it no longer emits or boots from a profile snapshot.
 
 Shipped:
 
-- **Serving seam** — `@voyant-travel/admin-host` (`serveManagedProfileAdmin`,
-  `createManagedProfileAdminSsrHandler`) — #3046.
+- **Serving seam** - `@voyant-travel/admin-host` (`serveAdminHost`,
+  `createAdminSsrHandler`). Deprecated names are isolated on
+  `./managed-profile-compatibility`.
 - **Runtime glue** — `@voyant-travel/admin-app/runtime` (fetcher, api-url,
   admin-path normalize) — #3048.
 - **Auth port** — `ManagedProfileAdminAuthRuntime` in `@voyant-travel/admin/app`;
@@ -29,9 +28,8 @@ Shipped:
 - **Packaged build config** — `voyantStartViteConfig({ nodeSsr: true })` folds in
   the Node SSR target/`noExternal`/resolve-conditions; the app `vite.config.ts`
   copies **no** build config — #3057.
-- **Unified deployment graph artifacts** — the operator starter emits and checks
-  the managed-profile graph artifacts from the same deployment surface instead of
-  maintaining a duplicate starter.
+- **Unified deployment graph artifacts** - the operator starter emits and checks
+  graph-native artifacts from the same deployment surface.
 
 **Key finding that changed the plan:** the cross-repo `voyant admin generate`
 codegen is **not** needed. `buildAdminExtensionRoutes` builds the whole admin
@@ -44,8 +42,8 @@ Remaining (non-blocking): compose the real `/api` (`loadManagedProfileRuntime`,
 snapshot module-subsetting (#2104/#2107); extract a thin Cloud-image template
 from the unified operator graph artifacts if platform#954 still needs one.
 
-The phased plan below is retained as the design record; where it says "Phase 3 /
-future," read the status above for what actually shipped.
+The phased plan below describes the superseded snapshot-era design. Its names
+are historical, not current API guidance.
 
 ## Module-subset gating (source-free admin, #3063)
 

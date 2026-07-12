@@ -7,12 +7,12 @@ import {
   buildGraphAdminBundleModule,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
-  buildManagedNodeRuntimeEntry,
-  buildManagedNodeRuntimeEntryArtifact,
+  buildNodeRuntimeEntry,
+  buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
   buildSelectedGraphExecutableFacetArtifacts,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
-  VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
+  VOYANT_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
 import {
   defineExtension,
@@ -244,10 +244,9 @@ describe("deployment graph artifacts", () => {
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {
     const graph = await sampleGraph()
-    const entry = buildManagedNodeRuntimeEntryArtifact({
+    const entry = buildNodeRuntimeEntryArtifact({
       graph,
       file: "src/runtime-entry.generated.ts",
-      profileSnapshot: "managed-profile.json",
     })
 
     expect(
@@ -270,12 +269,11 @@ describe("deployment graph artifacts", () => {
       webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {
-          id: VOYANT_MANAGED_NODE_RUNTIME_ENTRY_ID,
+          id: VOYANT_NODE_RUNTIME_ENTRY_ID,
           target: "node",
           file: "src/runtime-entry.generated.ts",
           graphHash: graph.contentHash,
-          kind: "managed-profile-node",
-          profileSnapshot: "managed-profile.json",
+          kind: "node",
         },
       ],
       migrationSources: [
@@ -326,10 +324,9 @@ describe("deployment graph artifacts", () => {
 
   it("builds a tiny managed Node runtime entry tied to the graph hash", async () => {
     const graph = await sampleGraph()
-    const source = buildManagedNodeRuntimeEntry({
+    const source = buildNodeRuntimeEntry({
       graph,
       graphArtifactPath: "../deployment-graph.generated.json",
-      profileSnapshotPath: "../managed-profile.json",
       command: "pnpm --filter operator graph:emit",
     })
 
@@ -725,20 +722,18 @@ describe("deployment graph artifacts", () => {
     const graph = await sampleGraph()
 
     expect(() =>
-      buildManagedNodeRuntimeEntryArtifact({
+      buildNodeRuntimeEntryArtifact({
         graph,
         file: "/tmp/runtime-entry.generated.ts",
-        profileSnapshot: "managed-profile.json",
       }),
     ).toThrow(/relative path/)
   })
 
   it("rejects runtime entry artifacts with a mismatched graph hash", async () => {
     const graph = await sampleGraph()
-    const entry = buildManagedNodeRuntimeEntryArtifact({
+    const entry = buildNodeRuntimeEntryArtifact({
       graph,
       file: "src/runtime-entry.generated.ts",
-      profileSnapshot: "managed-profile.json",
     })
 
     expect(() =>

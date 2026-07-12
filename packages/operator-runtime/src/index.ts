@@ -2,7 +2,7 @@ import { mkdir, readFile } from "node:fs/promises"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
-import { serveManagedProfileAdmin } from "@voyant-travel/admin-host/serve"
+import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import { createVoyantGraphRuntimePortStubs } from "@voyant-travel/framework"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
@@ -61,7 +61,7 @@ export async function loadOperatorProject(
     options.adminAssetsDir ?? path.join(projectRoot, ".voyant/admin/client"),
   )
   await mkdir(clientAssetsDir, { recursive: true })
-  const web = serveManagedProfileAdmin<VoyantNodeRuntimeEnv>({
+  const web = serveAdminHost<VoyantNodeRuntimeEnv>({
     clientAssetsDir,
     app: (request, env, ctx) => runtime.app.fetch(request, env, ctx),
   })

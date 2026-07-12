@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./managed-profile-compatibility": "./src/managed-profile-compatibility.ts",
     "./serve": "./src/serve.ts",
     "./ssr": "./src/ssr.ts"
   },
@@ -47,6 +48,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./managed-profile-compatibility": {
+        "types": "./dist/managed-profile-compatibility.d.ts",
+        "import": "./dist/managed-profile-compatibility.js",
+        "default": "./dist/managed-profile-compatibility.js"
       },
       "./serve": {
         "types": "./dist/serve.d.ts",

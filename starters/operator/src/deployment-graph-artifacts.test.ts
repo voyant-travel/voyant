@@ -530,7 +530,7 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
 
     expect(() =>
       loadOperatorDeploymentGraphArtifacts(pathToFileURL(join(root, "src", "server.ts")).href),
-    ).toThrow(/kind must be managed-profile-node/)
+    ).toThrow(/kind must be node/)
   })
 
   it("fails when generated runtime entry constants drift from the graph", () => {
@@ -578,7 +578,6 @@ function writeFixture(
 ): string {
   mkdirSync(join(root, "src"), { recursive: true })
   mkdirSync(join(root, ".voyant"), { recursive: true })
-  writeFileSync(join(root, ".voyant", "managed-profile.json"), "{}\n")
   const graphWithoutHash: Omit<FixtureDeploymentGraph, "contentHash"> = {
     schemaVersion: "voyant.resolved-graph.v1",
     diagnostics: options.diagnostics ?? [],
@@ -658,8 +657,7 @@ function writeFixture(
           target: "node",
           file: "./runtime-entry.generated.ts",
           graphHash,
-          kind: "managed-profile-node",
-          profileSnapshot: "./managed-profile.json",
+          kind: "node",
         },
         ...options.runtimeEntry,
       },
@@ -772,7 +770,6 @@ function writeGeneratedRuntimeEntrySource(
         graph.deployment.mode,
       )} as const`,
       'export const GENERATED_DEPLOYMENT_GRAPH_ARTIFACT_PATH = "./deployment-graph.generated.json" as const',
-      'export const GENERATED_MANAGED_PROFILE_SNAPSHOT_PATH = "./managed-profile.json" as const',
       `export const GENERATED_DEPLOYMENT_GRAPH_MODULE_IDS = ${stringArrayLiteral(
         graph.modules.map((module) => module.id),
       )} as const`,

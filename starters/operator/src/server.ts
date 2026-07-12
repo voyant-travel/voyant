@@ -1,6 +1,6 @@
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { serveManagedProfileAdmin } from "@voyant-travel/admin-host/serve"
+import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import {
   createDbClient,
   createPostgresFixedWindowRateLimitStore,
@@ -203,7 +203,7 @@ function toExecutionContext(ctx: ExecutionContextLike): ExecutionContext {
 // handler renders the document shell for any non-asset route, so no explicit
 // SPA index fallback is needed. In dev the assets 404 here and are served by
 // Vite's own middleware instead.
-const web = serveManagedProfileAdmin<AppBindings>({
+const web = serveAdminHost<AppBindings>({
   clientAssetsDir: CLIENT_DIR,
   app: appFetch,
 })

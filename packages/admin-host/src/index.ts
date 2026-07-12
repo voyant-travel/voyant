@@ -1,4 +1,4 @@
-export type { ServeManagedProfileAdminOptions } from "./serve.js"
-export { serveManagedProfileAdmin } from "./serve.js"
-export type { ManagedProfileAdminSsrHandler } from "./ssr.js"
-export { createManagedProfileAdminSsrHandler } from "./ssr.js"
+export type { ServeAdminHostOptions } from "./serve.js"
+export { serveAdminHost } from "./serve.js"
+export type { AdminSsrHandler } from "./ssr.js"
+export { createAdminSsrHandler } from "./ssr.js"

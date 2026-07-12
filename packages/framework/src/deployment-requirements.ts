@@ -1,9 +1,9 @@
 import type {
-  VoyantProfileEnvRequirement,
-  VoyantProfileResourceRequirement,
-  VoyantProjectProviderRole,
-  VoyantProjectProviders,
-} from "./profile-types.js"
+  VoyantDeploymentEnvRequirement,
+  VoyantDeploymentProviderRole,
+  VoyantDeploymentProviders,
+  VoyantDeploymentResourceRequirement,
+} from "./deployment-types.js"
 
 const R2_ACCESS_KEY_ID_ENV = ["R2", "ACCESS", "KEY", "ID"].join("_")
 const R2_PRIVATE_CREDENTIAL_ENV = ["R2", "SECRET", "ACCESS", "KEY"].join("_")
@@ -11,16 +11,16 @@ const R2_STORAGE_ID_COPY = "Object storage access identifier."
 const R2_STORAGE_PRIVATE_COPY = "Private value for object storage access."
 
 export function resourceRequirementsFor(
-  role: VoyantProjectProviderRole,
-  providers: VoyantProjectProviders,
-): VoyantProfileResourceRequirement[] {
+  role: VoyantDeploymentProviderRole,
+  providers: VoyantDeploymentProviders,
+): VoyantDeploymentResourceRequirement[] {
   return resourceRequirementsForProvider(role, providers[role])
 }
 
 export function resourceRequirementsForProvider(
-  role: VoyantProjectProviderRole,
+  role: VoyantDeploymentProviderRole,
   provider: string,
-): VoyantProfileResourceRequirement[] {
+): VoyantDeploymentResourceRequirement[] {
   if (provider === "none") {
     return [
       {
@@ -47,9 +47,9 @@ export function resourceRequirementsForProvider(
 }
 
 function envForProvider(
-  role: VoyantProjectProviderRole,
+  role: VoyantDeploymentProviderRole,
   provider: string,
-): readonly VoyantProfileEnvRequirement[] {
+): readonly VoyantDeploymentEnvRequirement[] {
   if (role === "database" && provider === "postgres") {
     return [
       secret(
@@ -191,7 +191,7 @@ function envForProvider(
   return []
 }
 
-function notesForProvider(role: VoyantProjectProviderRole, provider: string): string | undefined {
+function notesForProvider(role: VoyantDeploymentProviderRole, provider: string): string | undefined {
   if (role === "scheduledJobs" && provider === "cloud-scheduler") {
     return "Cloud Scheduler should POST /__voyant/scheduled?schedule=<stable-id> with x-voyant-origin-trust."
   }
@@ -201,7 +201,7 @@ function notesForProvider(role: VoyantProjectProviderRole, provider: string): st
   return undefined
 }
 
-function resourceKeyFor(role: VoyantProjectProviderRole, provider: string): string {
+function resourceKeyFor(role: VoyantDeploymentProviderRole, provider: string): string {
   if (provider === "redis") return "redis"
   if (
     provider === "postgres" &&
@@ -218,8 +218,8 @@ function secret(
   description: string,
   required = true,
   aliases: readonly string[] = [],
-  format?: VoyantProfileEnvRequirement["format"],
-): VoyantProfileEnvRequirement {
+  format?: VoyantDeploymentEnvRequirement["format"],
+): VoyantDeploymentEnvRequirement {
   return {
     name,
     ...(aliases.length > 0 ? { aliases } : {}),
@@ -234,7 +234,7 @@ function variable(
   name: string,
   description: string,
   required = true,
-  format?: VoyantProfileEnvRequirement["format"],
-): VoyantProfileEnvRequirement {
+  format?: VoyantDeploymentEnvRequirement["format"],
+): VoyantDeploymentEnvRequirement {
   return { name, ...(format ? { format } : {}), kind: "variable", required, description }
 }

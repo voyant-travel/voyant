@@ -1,10 +1,23 @@
+/** @deprecated Types for the serialized profile compatibility contract. */
 import { FRAMEWORK_CAPABILITY_GRAPH, FRAMEWORK_RUNTIME_MANIFEST } from "./manifest.js"
+import {
+  DEFAULT_MANAGED_CLOUD_PROVIDERS,
+  DEPLOYMENT_PROVIDER_CONTRACTS,
+  DEPLOYMENT_PROVIDER_ROLES,
+  type VoyantDeploymentEnvRequirement,
+  type VoyantDeploymentEnvValueFormat,
+  type VoyantDeploymentMode,
+  type VoyantDeploymentProviderRole,
+  type VoyantDeploymentProviders,
+  type VoyantDeploymentResourceRequirement,
+} from "./deployment-types.js"
 
 export const VOYANT_PROJECT_SCHEMA_VERSION = "voyant.managed-profile.v1" as const
 
 export type VoyantProjectSchemaVersion = typeof VOYANT_PROJECT_SCHEMA_VERSION
 export type VoyantProjectProfileId = "operator"
-export type VoyantProjectDeploymentMode = "managed-cloud" | "self-hosted" | "local"
+/** @deprecated Use VoyantDeploymentMode from the graph-native deployment contract. */
+export type VoyantProjectDeploymentMode = VoyantDeploymentMode
 export type VoyantProjectJsonValue =
   | null
   | boolean
@@ -13,32 +26,11 @@ export type VoyantProjectJsonValue =
   | readonly VoyantProjectJsonValue[]
   | { readonly [key: string]: VoyantProjectJsonValue }
 
-export type VoyantProjectProviderRole =
-  | "database"
-  | "storage"
-  | "cache"
-  | "sharedState"
-  | "rateLimit"
-  | "search"
-  | "email"
-  | "sms"
-  | "auth"
-  | "scheduledJobs"
-  | "workflows"
+/** @deprecated Use VoyantDeploymentProviderRole. */
+export type VoyantProjectProviderRole = VoyantDeploymentProviderRole
 
-export interface VoyantProjectProviders {
-  database: "postgres"
-  storage: "s3" | "r2" | "memory"
-  cache: "redis" | "postgres" | "platform" | "memory"
-  sharedState: "redis" | "postgres" | "platform" | "memory"
-  rateLimit: "redis" | "postgres" | "platform" | "memory"
-  search: "postgres" | "typesense" | "algolia" | "none"
-  email: "voyant-cloud" | "resend" | "sendgrid" | "smtp" | "none"
-  sms: "voyant-cloud" | "twilio" | "none"
-  auth: "voyant-cloud" | "better-auth"
-  scheduledJobs: "cloud-scheduler" | "node-cron" | "none"
-  workflows: "voyant-cloud" | "self-hosted" | "none"
-}
+/** @deprecated Use VoyantDeploymentProviders. */
+export type VoyantProjectProviders = VoyantDeploymentProviders
 
 export type VoyantProjectModuleReference = string
 export type VoyantProjectPluginReference = string
@@ -107,26 +99,12 @@ export interface VoyantProfileValidationResult {
   issues: VoyantProfileValidationIssue[]
 }
 
-export interface VoyantProfileEnvRequirement {
-  name: string
-  /** Alternate environment names that satisfy the canonical requirement. */
-  aliases?: readonly string[]
-  format?: VoyantProfileEnvValueFormat
-  kind: "secret" | "variable" | "binding"
-  required: boolean
-  description: string
-}
-
-export type VoyantProfileEnvValueFormat = "postgres-url" | "redis-url" | "http-url"
-
-export interface VoyantProfileResourceRequirement {
-  resourceKey: string
-  roles: readonly VoyantProjectProviderRole[]
-  provider: string
-  required: boolean
-  env: readonly VoyantProfileEnvRequirement[]
-  notes?: string
-}
+/** @deprecated Use VoyantDeploymentEnvRequirement. */
+export type VoyantProfileEnvRequirement = VoyantDeploymentEnvRequirement
+/** @deprecated Use VoyantDeploymentEnvValueFormat. */
+export type VoyantProfileEnvValueFormat = VoyantDeploymentEnvValueFormat
+/** @deprecated Use VoyantDeploymentResourceRequirement. */
+export type VoyantProfileResourceRequirement = VoyantDeploymentResourceRequirement
 
 /**
  * A custom schema-owning module the managed migrate booter must apply AFTER the
@@ -190,35 +168,12 @@ export interface VoyantProfileAppBridge {
   }
 }
 
-export const MANAGED_OPERATOR_DEFAULT_PROVIDERS = {
-  database: "postgres",
-  storage: "s3",
-  cache: "redis",
-  sharedState: "redis",
-  rateLimit: "redis",
-  search: "postgres",
-  email: "voyant-cloud",
-  sms: "voyant-cloud",
-  auth: "voyant-cloud",
-  scheduledJobs: "cloud-scheduler",
-  workflows: "voyant-cloud",
-} as const satisfies VoyantProjectProviders
-
-export const PROVIDER_CONTRACTS = {
-  database: ["postgres"],
-  storage: ["s3", "r2", "memory"],
-  cache: ["redis", "postgres", "platform", "memory"],
-  sharedState: ["redis", "postgres", "platform", "memory"],
-  rateLimit: ["redis", "postgres", "platform", "memory"],
-  search: ["postgres", "typesense", "algolia", "none"],
-  email: ["voyant-cloud", "resend", "sendgrid", "smtp", "none"],
-  sms: ["voyant-cloud", "twilio", "none"],
-  auth: ["voyant-cloud", "better-auth"],
-  scheduledJobs: ["cloud-scheduler", "node-cron", "none"],
-  workflows: ["voyant-cloud", "self-hosted", "none"],
-} as const satisfies Record<VoyantProjectProviderRole, readonly string[]>
-
-export const PROVIDER_ROLES = Object.keys(PROVIDER_CONTRACTS) as VoyantProjectProviderRole[]
+/** @deprecated Use DEFAULT_MANAGED_CLOUD_PROVIDERS. */
+export const MANAGED_OPERATOR_DEFAULT_PROVIDERS = DEFAULT_MANAGED_CLOUD_PROVIDERS
+/** @deprecated Use DEPLOYMENT_PROVIDER_CONTRACTS. */
+export const PROVIDER_CONTRACTS = DEPLOYMENT_PROVIDER_CONTRACTS
+/** @deprecated Use DEPLOYMENT_PROVIDER_ROLES. */
+export const PROVIDER_ROLES = DEPLOYMENT_PROVIDER_ROLES
 
 export const VOYANT_PROFILE_MODULES = [
   ...FRAMEWORK_RUNTIME_MANIFEST.modules.map((specifier) => moduleDefinition(specifier, "module")),

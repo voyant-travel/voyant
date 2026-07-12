@@ -5,10 +5,10 @@ boundary is `@voyant-travel/framework/node-runtime`; generated project and
 deployment artifacts provide its admitted `VoyantGraphRuntime`, deployment
 mode/providers, deployment requirements, and runtime-port implementations.
 
-`packages/operator-runtime` is a generic generated-project host. It may verify
-the generated graph hash and serve the packaged admin application, but it must
-not reconstruct `voyant.managed-profile.v1`, select an Operator profile, or
-infer package/runtime membership outside the generated graph.
+`packages/operator-runtime` is a generic generated-project host. It verifies
+the generated graph hash and serves the packaged admin application without
+reconstructing a snapshot-era project contract or inferring package/runtime
+membership outside the generated graph.
 
 The Node runtime owns process environment adaptation, deployment-resource
 assembly, graph value resolution, runtime composition, route posture, and the
@@ -39,12 +39,17 @@ Flights compatibility assembly moves behind its typed runtime port.
 
 ## Compatibility Boundary
 
-`@voyant-travel/framework/managed-runtime`, `managed-jobs`, and the
-`profile`/`profile-types` contract remain temporarily published for existing
-snapshot-generated deployments and Cloud callers. New generated application
-artifacts must not depend on those entries. The v1 deployment-artifact manifest
-still carries its `profileSnapshot` field so older readers remain compatible,
-but the generated Node entry does not read that snapshot to boot.
+`@voyant-travel/framework/managed-runtime`, `managed-jobs`, `profile`, and
+`managed-profile-compatibility` remain temporarily published for existing
+external snapshot-generated deployments and Cloud callers. They are deprecated
+and may not be imported by generated applications or graph-native framework
+modules.
+
+The v1 deployment-artifact manifest and generated Node entry no longer carry a
+profile snapshot path. A runtime entry has `kind: "node"` and boots from its
+admitted graph runtime, deployment settings, and graph-derived requirements.
+Generic admin hosting uses `serveAdminHost` and `createAdminSsrHandler`; the old
+names exist only on the admin-host compatibility subpath.
 
 `scripts/check-node-runtime-authority.mjs` enforces the public subpath, direct
 graph boot in generated entries, and the absence of managed-profile synthesis
@@ -52,3 +57,5 @@ from `packages/operator-runtime`.
 `scripts/check-node-runtime-product-authority.mjs` separately caps first-party
 references at 44, forbids the extracted provider fields, verifies package
 runtime authority, and permits only the documented Finance/Flights residual.
+`scripts/check-profile-compatibility-boundary.mjs` enforces this retirement
+boundary.
