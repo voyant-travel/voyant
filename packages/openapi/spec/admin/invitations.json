@@ -200,26 +200,102 @@
     "parameters": {}
   },
   "paths": {
-    "/v1/admin/realtime/token": {
-      "post": {
-        "summary": "Mint a realtime client token",
-        "x-voyant-api-id": "@voyant-travel/realtime#api.admin",
+    "/v1/admin/invitations": {
+      "get": {
+        "operationId": "listAuthInvitations",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.admin",
         "responses": {
           "200": {
-            "description": "A short-lived capability-scoped client token."
+            "description": "HTTP 200"
           },
-          "401": {
-            "description": "Authentication is required."
-          },
-          "503": {
-            "description": "No realtime transport is configured."
+          "403": {
+            "description": "HTTP 403"
           }
         },
-        "operationId": "postAdminRealtimeToken",
+        "summary": "GET /v1/admin/invitations",
         "tags": [
-          "realtime"
+          "invitations"
         ],
-        "x-voyant-module": "realtime",
+        "x-voyant-module": "invitations",
+        "x-voyant-surface": "admin"
+      },
+      "post": {
+        "operationId": "createAuthInvitation",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "expiresInHours": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 720
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTTP 200"
+          },
+          "403": {
+            "description": "HTTP 403"
+          },
+          "409": {
+            "description": "HTTP 409"
+          }
+        },
+        "summary": "POST /v1/admin/invitations",
+        "tags": [
+          "invitations"
+        ],
+        "x-voyant-module": "invitations",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/invitations/{id}": {
+      "delete": {
+        "operationId": "deleteAuthInvitation",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.admin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTTP 200"
+          },
+          "403": {
+            "description": "HTTP 403"
+          }
+        },
+        "summary": "DELETE /v1/admin/invitations/{id}",
+        "tags": [
+          "invitations"
+        ],
+        "x-voyant-module": "invitations",
         "x-voyant-surface": "admin"
       }
     }

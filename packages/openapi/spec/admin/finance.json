@@ -149,6 +149,52 @@
             ]
           }
         ]
+      },
+      "BookingProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BookingItemProductDetailsInput": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "optionId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierServiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "parameters": {}
@@ -36571,6 +36617,251 @@
         },
         "operationId": "postAdminFinanceInvoicesByIdPollSettlement",
         "summary": "POST /v1/admin/finance/invoices/{id}/poll-settlement",
+        "tags": [
+          "finance"
+        ],
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/finance/tax-settings": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "responses": {
+          "200": {
+            "description": "The effective booking tax settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "taxPriceMode": {
+                          "type": "string",
+                          "enum": [
+                            "inclusive",
+                            "exclusive"
+                          ]
+                        },
+                        "taxPolicyProfileId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "taxPriceMode",
+                        "taxPolicyProfileId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminFinanceTaxSettings",
+        "summary": "GET /v1/admin/finance/tax-settings",
+        "tags": [
+          "finance"
+        ],
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
+      },
+      "patch": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "taxPriceMode": {
+                    "type": "string",
+                    "enum": [
+                      "inclusive",
+                      "exclusive"
+                    ]
+                  },
+                  "taxPolicyProfileId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated booking tax settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "taxPriceMode": {
+                          "type": "string",
+                          "enum": [
+                            "inclusive",
+                            "exclusive"
+                          ]
+                        },
+                        "taxPolicyProfileId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "taxPriceMode",
+                        "taxPolicyProfileId"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This deployment does not support tax setting updates"
+          }
+        },
+        "operationId": "patchAdminFinanceTaxSettings",
+        "summary": "PATCH /v1/admin/finance/tax-settings",
+        "tags": [
+          "finance"
+        ],
+        "x-voyant-module": "finance",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/finance/tax-preview": {
+      "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-tax-extension.api",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "productId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "subtotalCents": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 8
+                  }
+                },
+                "required": [
+                  "productId",
+                  "subtotalCents",
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The calculated tax preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "subtotalCents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "taxCents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalCents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "taxRate": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "rateBasisPoints": {
+                              "type": "integer"
+                            },
+                            "priceMode": {
+                              "type": "string",
+                              "enum": [
+                                "inclusive",
+                                "exclusive"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "label",
+                            "rateBasisPoints",
+                            "priceMode"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "subtotalCents",
+                        "taxCents",
+                        "totalCents",
+                        "currency",
+                        "taxRate"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postAdminFinanceTaxPreview",
+        "summary": "POST /v1/admin/finance/tax-preview",
         "tags": [
           "finance"
         ],

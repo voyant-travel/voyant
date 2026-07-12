@@ -200,26 +200,82 @@
     "parameters": {}
   },
   "paths": {
-    "/v1/admin/realtime/token": {
-      "post": {
-        "summary": "Mint a realtime client token",
-        "x-voyant-api-id": "@voyant-travel/realtime#api.admin",
+    "/v1/admin/mcp/manifest": {
+      "get": {
+        "operationId": "getMcpManifest",
+        "x-voyant-api-id": "@voyant-travel/mcp#api.admin",
         "responses": {
           "200": {
-            "description": "A short-lived capability-scoped client token."
-          },
-          "401": {
-            "description": "Authentication is required."
-          },
-          "503": {
-            "description": "No realtime transport is configured."
+            "description": "The authorized MCP tool manifest"
           }
         },
-        "operationId": "postAdminRealtimeToken",
+        "summary": "GET /v1/admin/mcp/manifest",
         "tags": [
-          "realtime"
+          "mcp"
         ],
-        "x-voyant-module": "realtime",
+        "x-voyant-module": "mcp",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/mcp": {
+      "post": {
+        "operationId": "callMcp",
+        "x-voyant-api-id": "@voyant-travel/mcp#api.admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jsonrpc": {
+                    "type": "string",
+                    "enum": [
+                      "2.0"
+                    ]
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "method": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "jsonrpc",
+                  "method"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The MCP JSON-RPC response"
+          },
+          "204": {
+            "description": "The MCP notification was accepted"
+          }
+        },
+        "summary": "POST /v1/admin/mcp",
+        "tags": [
+          "mcp"
+        ],
+        "x-voyant-module": "mcp",
         "x-voyant-surface": "admin"
       }
     }

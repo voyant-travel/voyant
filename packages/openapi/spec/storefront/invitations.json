@@ -200,27 +200,96 @@
     "parameters": {}
   },
   "paths": {
-    "/v1/admin/realtime/token": {
-      "post": {
-        "summary": "Mint a realtime client token",
-        "x-voyant-api-id": "@voyant-travel/realtime#api.admin",
+    "/v1/public/invitations/{token}": {
+      "get": {
+        "operationId": "inspectAuthInvitation",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "A short-lived capability-scoped client token."
+            "description": "HTTP 200"
           },
-          "401": {
-            "description": "Authentication is required."
+          "404": {
+            "description": "HTTP 404"
           },
-          "503": {
-            "description": "No realtime transport is configured."
+          "410": {
+            "description": "HTTP 410"
           }
         },
-        "operationId": "postAdminRealtimeToken",
+        "summary": "GET /v1/public/invitations/{token}",
         "tags": [
-          "realtime"
+          "invitations"
         ],
-        "x-voyant-module": "realtime",
-        "x-voyant-surface": "admin"
+        "x-voyant-module": "invitations",
+        "x-voyant-surface": "storefront"
+      }
+    },
+    "/v1/public/invitations/{token}/redeem": {
+      "post": {
+        "operationId": "redeemAuthInvitation",
+        "x-voyant-api-id": "@voyant-travel/auth#invitations.api.public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "name",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTTP 200"
+          },
+          "409": {
+            "description": "HTTP 409"
+          },
+          "410": {
+            "description": "HTTP 410"
+          }
+        },
+        "summary": "POST /v1/public/invitations/{token}/redeem",
+        "tags": [
+          "invitations"
+        ],
+        "x-voyant-module": "invitations",
+        "x-voyant-surface": "storefront"
       }
     }
   },
