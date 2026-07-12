@@ -22,7 +22,12 @@ const DEFAULT_EXPIRY_HOURS = 72
 
 const createInviteSchema = z.object({
   email: z.string().email(),
-  expiresInHours: z.number().int().positive().max(24 * 30).optional(),
+  expiresInHours: z
+    .number()
+    .int()
+    .positive()
+    .max(24 * 30)
+    .optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
 

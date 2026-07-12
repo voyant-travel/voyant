@@ -153,9 +153,17 @@
     "manifest": "./voyant",
     "compatibleWith": {
       "framework": ">=0.26.0",
-      "targets": ["node"],
-      "modes": ["local", "managed-cloud", "self-hosted"]
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
     },
-    "requiresSchemas": ["@voyant-travel/db"]
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   }
 }

@@ -35,9 +35,7 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDirectory, "..")
 const operatorRoot = join(repoRoot, "starters", "operator")
 
-const OPERATOR_LOCAL_MODULE_IDS = [
-  "npm/operator#mcp",
-] as const
+const OPERATOR_LOCAL_MODULE_IDS = ["npm/operator#mcp"] as const
 const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/db",
   "@voyant-travel/availability",
