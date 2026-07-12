@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { miceBookingExtension } from "../../src/booking-extension.js"
+import {
+  MICE_BOOKING_OPENAPI_API_ID,
+  miceBookingExtension,
+  miceBookingExtensionRoutes,
+} from "../../src/booking-extension.js"
 import { createMiceHonoModule } from "../../src/index.js"
 import { miceBookingVoyantPlugin, miceVoyantModule } from "../../src/voyant.js"
 
@@ -65,6 +69,7 @@ describe("MICE deployment manifests", () => {
           id: "@voyant-travel/mice#booking-extension.api.admin",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "mice-booking" },
           runtime: {
             entry: "@voyant-travel/mice/booking-extension",
             export: "miceBookingExtension",
@@ -72,6 +77,10 @@ describe("MICE deployment manifests", () => {
         },
       ],
     })
+
+    expect(readApiIds(miceBookingExtensionRoutes)).toEqual(
+      Array.from({ length: 3 }, () => MICE_BOOKING_OPENAPI_API_ID),
+    )
   })
 
   it("references exported runtimes with matching mounts", () => {
@@ -79,3 +88,19 @@ describe("MICE deployment manifests", () => {
     expect(miceBookingExtension.extension.module).toBe("bookings")
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "MICE booking extension", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

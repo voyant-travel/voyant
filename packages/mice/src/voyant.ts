@@ -1,13 +1,14 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import { relationshipsMiceRuntimePort } from "@voyant-travel/relationships/voyant"
 import { miceRuntimePort } from "./runtime-port.js"
+
+const relationshipsMiceRuntimePortReference = { id: "relationships.mice.runtime" } as const
 
 /** Import-cheap deployment declarations owned by the MICE package. */
 export const miceVoyantModule = defineModule({
   id: "@voyant-travel/mice",
   packageName: "@voyant-travel/mice",
   localId: "mice",
-  runtimePorts: [requirePort(miceRuntimePort), requirePort(relationshipsMiceRuntimePort)],
+  runtimePorts: [requirePort(miceRuntimePort), relationshipsMiceRuntimePortReference],
   api: [
     {
       id: "@voyant-travel/mice#api.admin",
@@ -131,6 +132,7 @@ export const miceBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/mice#booking-extension.api.admin",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "mice-booking" },
       runtime: {
         entry: "@voyant-travel/mice/booking-extension",
         export: "miceBookingExtension",

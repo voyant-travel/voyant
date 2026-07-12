@@ -1,5 +1,4 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
-import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
@@ -7,6 +6,7 @@ import {
 } from "./runtime-port.js"
 
 const tripsRoutesRuntimePortReference = { id: "trips.routes-runtime" } as const
+const checkoutInquiryRuntimePortReference = { id: "quotes.checkout-inquiry.runtime" } as const
 
 /** Import-cheap deployment declarations owned by the quotes package. */
 export const quotesVoyantModule = defineModule({
@@ -15,7 +15,7 @@ export const quotesVoyantModule = defineModule({
   localId: "quotes",
   runtimePorts: [
     requirePort(quotesRuntimePort),
-    requirePort(checkoutInquiryRuntimePort),
+    checkoutInquiryRuntimePortReference,
     tripsRoutesRuntimePortReference,
   ],
   api: [
@@ -198,6 +198,7 @@ export const quotesBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/quotes#booking-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "quotes-booking" },
       runtime: {
         entry: "@voyant-travel/quotes/booking-extension",
         export: "quotesBookingExtension",
@@ -275,6 +276,7 @@ export const quotesVersionSnapshotVoyantPlugin = defineExtension({
       id: "@voyant-travel/quotes#quote-version-snapshot-extension.api",
       surface: "admin",
       mount: "trips",
+      openapi: { document: "quote-version-snapshot" },
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",

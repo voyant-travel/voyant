@@ -15,6 +15,8 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/quotes.json",
+    "./openapi/admin/quotes-booking": "./openapi/admin/quotes-booking.json",
+    "./openapi/admin/quote-version-snapshot": "./openapi/admin/quote-version-snapshot.json",
     "./openapi/storefront": "./openapi/storefront/quotes-proposal-public.json"
   },
   "scripts": {
@@ -106,6 +108,8 @@
         "default": "./dist/voyant.js"
       },
       "./openapi/admin": "./openapi/admin/quotes.json",
+      "./openapi/admin/quotes-booking": "./openapi/admin/quotes-booking.json",
+      "./openapi/admin/quote-version-snapshot": "./openapi/admin/quote-version-snapshot.json",
       "./openapi/storefront": "./openapi/storefront/quotes-proposal-public.json"
     },
     "main": "./dist/index.js",

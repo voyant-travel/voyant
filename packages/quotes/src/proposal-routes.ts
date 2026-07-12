@@ -97,6 +97,9 @@ export const QUOTE_PROPOSAL_OPENAPI_API_IDS = {
   public: "@voyant-travel/quotes#proposal-extension.api.public",
 } as const
 
+export const QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID =
+  "@voyant-travel/quotes#quote-version-snapshot-extension.api"
+
 const PUBLIC_PROPOSAL_OPENAPI_OPERATIONS = [
   ["get", "/{quoteVersionId}", "Get a public quote proposal"],
   ["post", "/{quoteVersionId}/accept", "Accept a public quote proposal"],
@@ -332,11 +335,18 @@ export function createQuoteProposalPublicRoutes(
 /** Build the Trip-snapshot freeze route (relative path; mount at `/v1/admin/trips`). */
 export function createQuoteVersionSnapshotRoutes(
   options: QuoteVersionSnapshotRoutesOptions,
-): Hono<OperatorQuoteVersionSnapshotRouteEnv> {
-  const app = new Hono<OperatorQuoteVersionSnapshotRouteEnv>()
+): OpenAPIHono<OperatorQuoteVersionSnapshotRouteEnv> {
+  const app = new OpenAPIHono<OperatorQuoteVersionSnapshotRouteEnv>()
   app.post("/:envelopeId/quote-versions/:quoteVersionId/snapshot", (c) =>
     handleFreezeQuoteVersionSnapshot(c, options),
   )
+  app.openAPIRegistry.registerPath({
+    method: "post",
+    path: "/{envelopeId}/quote-versions/{quoteVersionId}/snapshot",
+    summary: "Freeze a Trip snapshot into a Quote Version",
+    responses: { 200: { description: "The updated Quote Version and frozen Trip snapshot." } },
+    "x-voyant-api-id": QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID,
+  })
   return app
 }
 

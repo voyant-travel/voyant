@@ -1,10 +1,10 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { parseJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 import { z } from "zod"
 
 /**
@@ -84,11 +84,14 @@ type Env = {
   }
 }
 
-const miceBookingExtensionRoutes = new Hono<Env>()
+export const MICE_BOOKING_OPENAPI_API_ID = "@voyant-travel/mice#booking-extension.api.admin"
+
+export const miceBookingExtensionRoutes = new OpenAPIHono<Env>()
   .get("/:bookingId/mice-details", async (c) => {
     const row = await miceBookingExtensionService.getDetails(c.get("db"), c.req.param("bookingId"))
     return c.json({ data: row })
   })
+
   .put("/:bookingId/mice-details", async (c) => {
     const data = await parseJsonBody(c, bookingMiceDetailSchema)
     const row = await miceBookingExtensionService.upsertDetails(
@@ -106,6 +109,19 @@ const miceBookingExtensionRoutes = new Hono<Env>()
     if (!row) return c.json({ error: "Not found" }, 404)
     return c.json({ success: true })
   })
+
+for (const [method, path] of [
+  ["get", "/{bookingId}/mice-details"],
+  ["put", "/{bookingId}/mice-details"],
+  ["delete", "/{bookingId}/mice-details"],
+] as const) {
+  miceBookingExtensionRoutes.openAPIRegistry.registerPath({
+    method,
+    path,
+    responses: { 200: { description: "MICE booking detail response." } },
+    "x-voyant-api-id": MICE_BOOKING_OPENAPI_API_ID,
+  })
+}
 
 const miceBookingExtensionDef: Extension = {
   name: "mice-booking",
