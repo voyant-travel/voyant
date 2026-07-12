@@ -98,6 +98,31 @@ export async function assertPortConforms<TProvider>(
 }
 
 export interface VoyantGraphRuntimeFactoryGraph {
+  readonly accessCatalog: {
+    readonly resources: readonly {
+      readonly id: string
+      readonly unitId: string
+      readonly resource: string
+      readonly label: string
+      readonly description: string
+      readonly wildcard: "allow" | "explicit-resource"
+      readonly actions: readonly {
+        readonly action: string
+        readonly label: string
+        readonly description: string
+        readonly wildcard?: "allow" | "explicit"
+      }[]
+      readonly legacyActions?: readonly string[]
+    }[]
+    readonly presets: readonly {
+      readonly id: string
+      readonly kind: "api-token" | "api-token-grant" | "staff"
+      readonly label: string
+      readonly description: string
+      readonly grants: readonly string[]
+      readonly audience?: "staff" | "customer" | "partner" | "supplier"
+    }[]
+  }
   readonly tools: readonly {
     readonly referenceId: string
     readonly context?: readonly string[]
