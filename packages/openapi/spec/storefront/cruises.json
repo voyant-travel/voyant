@@ -1492,6 +1492,40 @@
         "x-voyant-module": "cruises",
         "x-voyant-surface": "storefront"
       }
+    },
+    "/v1/public/cruises/{key}/content": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#content-extension.api.public",
+        "responses": {
+          "200": {
+            "description": "Cruise content response."
+          }
+        },
+        "operationId": "getPublicCruisesByKeyContent",
+        "summary": "GET /v1/public/cruises/{key}/content",
+        "tags": [
+          "cruises"
+        ],
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
+      }
+    },
+    "/v1/public/cruises/{key}/sailings/{sailingExternalId}/pricing": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#content-extension.api.public",
+        "responses": {
+          "200": {
+            "description": "Cruise content response."
+          }
+        },
+        "operationId": "getPublicCruisesByKeySailingsBySailingExternalIdPricing",
+        "summary": "GET /v1/public/cruises/{key}/sailings/{sailingExternalId}/pricing",
+        "tags": [
+          "cruises"
+        ],
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "storefront"
+      }
     }
   },
   "webhooks": {}

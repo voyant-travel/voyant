@@ -159,6 +159,14 @@ describe("loadDeploymentGraphArtifacts", () => {
         eventType: "booking.contract.generated",
       }),
       expect.objectContaining({
+        id: "@voyant-travel/notifications#subscriber.document-lifecycle-booking-fully-paid",
+        eventType: "booking.fully-paid",
+        runtime: {
+          entry: "./subscriber-runtime",
+          export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
+        },
+      }),
+      expect.objectContaining({
         id: "@voyant-travel/notifications#subscriber.reminder-booking-cancelled",
         eventType: "booking.cancelled",
       }),
@@ -281,7 +289,7 @@ describe("loadDeploymentGraphArtifacts", () => {
       validateVoyantNodeDeploymentGraphResourceEnv(summary, { DATABASE_URL: "not-a-postgres-url" }),
     ).toEqual(["secret DATABASE_URL must be a Postgres URL for database:postgres"])
     expect(() => assertVoyantNodeDeploymentGraphResourceEnv(summary, {})).toThrow(
-      /Operator deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
+      /Node deployment graph resource requirements are not satisfied:\n- secret DATABASE_URL is required for database:postgres/,
     )
   })
 

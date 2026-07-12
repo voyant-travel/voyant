@@ -129,6 +129,7 @@
   "paths": {
     "/v1/admin/accommodations/room-blocks": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#api",
         "requestBody": {
           "required": true,
           "content": {
@@ -315,6 +316,7 @@
     },
     "/v1/admin/accommodations/room-blocks/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#api",
         "parameters": [
           {
             "schema": {
@@ -505,6 +507,7 @@
     },
     "/v1/admin/accommodations/room-blocks/{id}/nights": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#api",
         "parameters": [
           {
             "schema": {
@@ -655,6 +658,7 @@
     },
     "/v1/admin/accommodations/room-blocks/{id}/pickups": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#api",
         "parameters": [
           {
             "schema": {
@@ -909,6 +913,7 @@
     },
     "/v1/admin/accommodations/room-blocks/{id}/pickups/reverse": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#api",
         "parameters": [
           {
             "schema": {
@@ -1044,6 +1049,7 @@
     },
     "/v1/admin/accommodations/room-blocks/{id}/release": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/accommodations#api",
         "parameters": [
           {
             "schema": {

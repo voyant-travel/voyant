@@ -156,6 +156,7 @@
   "paths": {
     "/v1/admin/bookings/{bookingId}/generate-contract": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#contract-document.api",
         "parameters": [
           {
             "schema": {

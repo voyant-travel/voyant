@@ -156,6 +156,7 @@
   "paths": {
     "/v1/admin/workflow-runs": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin",
         "responses": {
           "200": {
             "description": "Recorded workflow runs (filtered + paginated)",
@@ -367,6 +368,7 @@
     },
     "/v1/admin/workflow-runs/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin",
         "parameters": [
           {
             "schema": {
@@ -669,6 +671,7 @@
     },
     "/v1/admin/workflows/{name}/runs": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin",
         "parameters": [
           {
             "schema": {
@@ -821,6 +824,7 @@
     },
     "/v1/admin/workflow-runs/{id}/rerun": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin",
         "parameters": [
           {
             "schema": {
@@ -988,6 +992,7 @@
     },
     "/v1/admin/workflow-runs/{id}/resume": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/workflow-runs#api.admin",
         "parameters": [
           {
             "schema": {

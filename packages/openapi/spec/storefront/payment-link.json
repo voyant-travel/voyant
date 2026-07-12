@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/payment-link-config": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "responses": {
           "200": {
             "description": "Public payment-link configuration (checkout base URL + bank-transfer details)",
@@ -223,6 +224,7 @@
     },
     "/v1/public/payment-link/{sessionId}/retry": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "parameters": [
           {
             "schema": {
@@ -311,6 +313,7 @@
     },
     "/v1/public/payment-link/resolve": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "parameters": [
           {
             "schema": {
@@ -396,6 +399,7 @@
     },
     "/v1/public/payment-link/{sessionId}/start-card": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "parameters": [
           {
             "schema": {
@@ -502,6 +506,7 @@
     },
     "/v1/public/payment-link/{sessionId}/trip-summary": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "parameters": [
           {
             "schema": {
@@ -679,6 +684,7 @@
     },
     "/v1/public/payment-link/{sessionId}/booking-summary": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "parameters": [
           {
             "schema": {
@@ -877,6 +883,7 @@
     },
     "/v1/public/bookings/{bookingId}/checkout-status": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "parameters": [
           {
             "schema": {

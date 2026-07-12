@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/products/tags": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -246,6 +247,7 @@
     },
     "/v1/public/products/categories": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -366,6 +368,7 @@
     },
     "/v1/public/products/destinations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -580,6 +583,7 @@
     },
     "/v1/public/products": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -1561,6 +1565,7 @@
     },
     "/v1/public/products/slug/{slug}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -2359,6 +2364,7 @@
     },
     "/v1/public/products/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -3157,6 +3163,7 @@
     },
     "/v1/public/products/{id}/brochure": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.public",
         "parameters": [
           {
             "schema": {
@@ -3292,6 +3299,7 @@
     },
     "/v1/public/products/{id}/content": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#content-extension.api.public",
         "parameters": [
           {
             "schema": {

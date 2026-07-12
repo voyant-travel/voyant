@@ -21,6 +21,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "catalog",
       "inventory",
       "operations",
+      "operator-settings",
       "relationships",
       "distribution",
       "finance",
@@ -31,6 +32,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "trips",
       "quotes",
       "mice",
+      "realtime",
       "action-ledger",
     ])
   })

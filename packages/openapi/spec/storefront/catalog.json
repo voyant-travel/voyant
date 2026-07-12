@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/catalog/search": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#api.public",
         "requestBody": {
           "required": true,
           "content": {
@@ -704,6 +705,7 @@
     },
     "/v1/public/catalog/checkout/start": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/commerce#catalog-checkout-extension.api",
         "requestBody": {
           "required": true,
           "content": {

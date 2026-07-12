@@ -12,6 +12,10 @@ vi.mock("@tanstack/react-router", () => ({
 }))
 
 vi.mock("@voyant-travel/storefront-react/storefront", () => ({
+  createStorefrontMessagesProvider:
+    () =>
+    ({ children }: { children: React.ReactNode }) =>
+      children,
   StorefrontUiProvider: ({ children }: { children: React.ReactNode }) => children,
   AccommodationDetailPage: ({ entityId }: { entityId: string }) => (
     <div data-testid="accommodation-detail">{entityId}</div>

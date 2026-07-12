@@ -5738,6 +5738,7 @@
     },
     "/v1/admin/quotes/quote-versions/{id}/send": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/quotes#proposal-extension.api.admin",
         "description": "Send a quote version for client review. Accepts an optional `validUntil` JSON body; an empty or absent body is accepted. The body is parsed in the handler (not as a declared OpenAPI request body) because Hono's JSON validator would reject a zero-length `application/json` request before the handler runs.",
         "parameters": [
           {

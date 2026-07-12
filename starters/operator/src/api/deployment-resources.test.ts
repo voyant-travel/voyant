@@ -4,7 +4,13 @@ import {
   actionLedgerFinanceDriftRuntimePort,
   actionLedgerInventoryDriftRuntimePort,
 } from "@voyant-travel/action-ledger/graph-runtime"
-import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "@voyant-travel/bookings"
+import {
+  bookingsAccommodationRuntimePort,
+  bookingsConfigurationRuntimePort,
+  bookingsFinanceRuntimePort,
+  bookingsInventoryRuntimePort,
+  bookingsRelationshipsRuntimePort,
+} from "@voyant-travel/bookings/runtime-port"
 import {
   catalogBookingRuntimePort,
   catalogContentRuntimePort,
@@ -93,9 +99,11 @@ async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
 }
 
 describe("operator graph runtime composition", () => {
-  it("supplies request-scoped checkout options through the declared runtime port", () => {
+  it("supplies request-scoped checkout options through the declared runtime port", async () => {
     expect(
-      buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[catalogCheckoutApiRuntimePort.id],
+      await buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[
+        catalogCheckoutApiRuntimePort.id
+      ],
     ).toEqual(expect.any(Function))
   })
 
@@ -275,6 +283,7 @@ describe("operator graph runtime composition", () => {
     expect(container.has(NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY)).toBe(true)
     expect(subscribe.mock.calls.map(([eventType]) => eventType)).toEqual([
       "booking.contract.generated",
+      "booking.fully-paid",
       "booking.cancelled",
       "booking.confirmed",
       "booking.expired",
@@ -285,7 +294,7 @@ describe("operator graph runtime composition", () => {
         .map(([eventType], index) => ({ eventType, index }))
         .filter(({ eventType }) => eventType === "booking.confirmed")
         .map(({ index }) => index),
-    ).toEqual([2])
+    ).toEqual([3])
   })
 
   it("removes Notifications subscriber services and handlers when deselected", async () => {
@@ -608,14 +617,14 @@ describe("operator graph runtime composition", () => {
     ).toBe(false)
   })
 
-  it("fails composition explicitly when a selected checkout host omits a required service", async () => {
+  it("resolves package-owned checkout services without a host registry", async () => {
     await expect(
       composeVoyantGraphRuntime({
         runtime: createGeneratedGraphRuntime(),
         capabilities: buildOperatorProviders(),
         ports: buildOperatorRuntimePorts(),
       }),
-    ).rejects.toThrow(/requires runtime port "workflows\.runner-registry"/)
+    ).resolves.toBeDefined()
   })
 
   it("selects package-owned bridge units and discovered project modules directly", () => {
@@ -635,19 +644,17 @@ describe("operator graph runtime composition", () => {
     expect(pluginIds).not.toContain("npm/operator#mcp")
     expect(moduleIds).toContain("@voyant-travel/auth#invitations")
     expect(moduleIds).toContain("@voyant-travel/auth#team")
-    expect([...moduleIds].filter((id) => id.startsWith("npm/operator#")).sort()).toEqual([
-      "npm/operator#mcp",
-      "npm/operator#project-subscribers-links",
-    ])
+    expect(moduleIds).toContain("@voyant-travel/mcp")
+    expect([...moduleIds].filter((id) => id.startsWith("npm/operator#"))).toEqual([])
   })
 
   it("composes package-owned invitations/team and the local MCP module", async () => {
     const composed = await composeOperatorGraph()
     const byName = (name: string) => composed.modules.find((module) => module.module.name === name)
 
-    expect(byName("invitations")?.lazyAdminRoutes).toBeTypeOf("function")
-    expect(byName("invitations")?.lazyPublicRoutes).toBeTypeOf("function")
-    expect(byName("team")?.lazyAdminRoutes).toBeTypeOf("function")
+    expect(byName("invitations")?.adminRoutes).toBeDefined()
+    expect(byName("invitations")?.publicRoutes).toBeDefined()
+    expect(byName("team")?.adminRoutes).toBeDefined()
     expect(byName("mcp")?.lazyAdminRoutes).toBeTypeOf("function")
   })
 
@@ -674,8 +681,11 @@ describe("operator graph runtime composition", () => {
         actionLedgerFinanceDriftRuntimePort.id,
         actionLedgerInventoryDriftRuntimePort.id,
         bookingMaintenanceRuntimePort.id,
-        bookingRequirementsRuntimePort.id,
-        bookingsRuntimePort.id,
+        bookingsAccommodationRuntimePort.id,
+        bookingsConfigurationRuntimePort.id,
+        bookingsFinanceRuntimePort.id,
+        bookingsInventoryRuntimePort.id,
+        bookingsRelationshipsRuntimePort.id,
         catalogBookingRuntimePort.id,
         catalogContentRuntimePort.id,
         catalogOffersRuntimePort.id,

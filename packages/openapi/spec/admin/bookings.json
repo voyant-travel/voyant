@@ -9764,6 +9764,7 @@
     },
     "/v1/admin/bookings/{id}/supplier-statuses": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
         "parameters": [
           {
             "schema": {
@@ -9890,6 +9891,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
         "parameters": [
           {
             "schema": {
@@ -10112,6 +10114,7 @@
     },
     "/v1/admin/bookings/{id}/supplier-statuses/{statusId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
         "parameters": [
           {
             "schema": {
@@ -16764,6 +16767,7 @@
     },
     "/v1/admin/bookings/{bookingId}/rebuild-tax-lines": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/commerce#booking-maintenance-extension.api",
         "parameters": [
           {
             "schema": {
@@ -16836,6 +16840,7 @@
     },
     "/v1/admin/bookings/create": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#bookings-create-extension.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -17762,6 +17767,7 @@
     },
     "/v1/admin/bookings/dual-create": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#bookings-create-extension.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -19346,6 +19352,7 @@
     },
     "/v1/admin/bookings/{bookingId}/payment-schedule/regenerate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#booking-schedule-extension.api.admin",
         "parameters": [
           {
             "schema": {

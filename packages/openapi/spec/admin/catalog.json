@@ -156,6 +156,7 @@
   "paths": {
     "/v1/admin/catalog/search": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -704,6 +705,7 @@
     },
     "/v1/admin/catalog/package-offers": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#offers-extension.api",
         "requestBody": {
           "required": false,
           "content": {
@@ -770,6 +772,7 @@
     },
     "/v1/admin/catalog/package-detail": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#offers-extension.api",
         "requestBody": {
           "required": false,
           "content": {
@@ -854,6 +857,7 @@
     },
     "/v1/admin/catalog/package-search": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#offers-extension.api",
         "requestBody": {
           "required": false,
           "content": {
@@ -943,6 +947,7 @@
     },
     "/v1/admin/catalog/departure-airports": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#offers-extension.api",
         "requestBody": {
           "required": false,
           "content": {
@@ -997,6 +1002,7 @@
     },
     "/v1/admin/catalog/cruise-price": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#offers-extension.api",
         "requestBody": {
           "required": false,
           "content": {
@@ -1065,6 +1071,7 @@
     },
     "/v1/admin/catalog/cruise-sailing-pricing": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#offers-extension.api",
         "requestBody": {
           "required": false,
           "content": {

@@ -156,6 +156,7 @@
   "paths": {
     "/v1/admin/products/activation-settings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -306,6 +307,7 @@
     },
     "/v1/admin/products/activation-settings/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -420,6 +422,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -601,6 +604,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -660,6 +664,7 @@
     },
     "/v1/admin/products/{id}/activation-settings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -843,6 +848,7 @@
     },
     "/v1/admin/products/ticket-settings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1006,6 +1012,7 @@
     },
     "/v1/admin/products/ticket-settings/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1132,6 +1139,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1335,6 +1343,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1394,6 +1403,7 @@
     },
     "/v1/admin/products/{id}/ticket-settings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1599,6 +1609,7 @@
     },
     "/v1/admin/products/visibility-settings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1743,6 +1754,7 @@
     },
     "/v1/admin/products/visibility-settings/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1836,6 +1848,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -1975,6 +1988,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2034,6 +2048,7 @@
     },
     "/v1/admin/products/{id}/visibility-settings": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2175,6 +2190,7 @@
     },
     "/v1/admin/products/capabilities": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2342,6 +2358,7 @@
     },
     "/v1/admin/products/capabilities/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2449,6 +2466,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2614,6 +2632,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2673,6 +2692,7 @@
     },
     "/v1/admin/products/{id}/capabilities": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2843,6 +2863,7 @@
     },
     "/v1/admin/products/delivery-formats": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -2979,6 +3000,7 @@
     },
     "/v1/admin/products/delivery-formats/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3074,6 +3096,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3216,6 +3239,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3275,6 +3299,7 @@
     },
     "/v1/admin/products/{id}/delivery-formats": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3422,6 +3447,7 @@
     },
     "/v1/admin/products/features": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3563,6 +3589,7 @@
     },
     "/v1/admin/products/features/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3666,6 +3693,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3825,6 +3853,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -3884,6 +3913,7 @@
     },
     "/v1/admin/products/{id}/features": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4048,6 +4078,7 @@
     },
     "/v1/admin/products/faqs": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4160,6 +4191,7 @@
     },
     "/v1/admin/products/faqs/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4249,6 +4281,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4382,6 +4415,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4441,6 +4475,7 @@
     },
     "/v1/admin/products/{id}/faqs": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4580,6 +4615,7 @@
     },
     "/v1/admin/products/locations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4774,6 +4810,7 @@
     },
     "/v1/admin/products/locations/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -4928,6 +4965,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5193,6 +5231,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5252,6 +5291,7 @@
     },
     "/v1/admin/products/{id}/locations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5522,6 +5562,7 @@
     },
     "/v1/admin/products/destinations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -5738,6 +5779,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -5950,6 +5992,7 @@
     },
     "/v1/admin/products/destinations/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6082,6 +6125,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6317,6 +6361,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6376,6 +6421,7 @@
     },
     "/v1/admin/products/destination-translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6516,6 +6562,7 @@
     },
     "/v1/admin/products/destinations/{id}/translations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6688,6 +6735,7 @@
     },
     "/v1/admin/products/destination-translations/{id}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6854,6 +6902,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -6913,6 +6962,7 @@
     },
     "/v1/admin/products/product-category-translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7053,6 +7103,7 @@
     },
     "/v1/admin/products/product-categories/{id}/translations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7225,6 +7276,7 @@
     },
     "/v1/admin/products/product-category-translations/{id}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7391,6 +7443,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7450,6 +7503,7 @@
     },
     "/v1/admin/products/product-tag-translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7569,6 +7623,7 @@
     },
     "/v1/admin/products/product-tags/{id}/translations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7701,6 +7756,7 @@
     },
     "/v1/admin/products/product-tag-translations/{id}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7827,6 +7883,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -7886,6 +7943,7 @@
     },
     "/v1/admin/products/destination-links": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8010,6 +8068,7 @@
     },
     "/v1/admin/products/{id}/destinations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8133,6 +8192,7 @@
     },
     "/v1/admin/products/{id}/destinations/{destinationId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8200,6 +8260,7 @@
     },
     "/v1/admin/products/options": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8362,6 +8423,7 @@
     },
     "/v1/admin/products/options/{optionId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8488,6 +8550,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8688,6 +8751,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8747,6 +8811,7 @@
     },
     "/v1/admin/products/{id}/options": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -8955,6 +9020,7 @@
     },
     "/v1/admin/products/units": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9155,6 +9221,7 @@
     },
     "/v1/admin/products/units/{unitId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9316,6 +9383,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9587,6 +9655,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9646,6 +9715,7 @@
     },
     "/v1/admin/products/options/{optionId}/units": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -9926,6 +9996,7 @@
     },
     "/v1/admin/products/translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10101,6 +10172,7 @@
     },
     "/v1/admin/products/translations/{translationId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10242,6 +10314,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10474,6 +10547,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10533,6 +10607,7 @@
     },
     "/v1/admin/products/{id}/translations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10771,6 +10846,7 @@
     },
     "/v1/admin/products/option-translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -10904,6 +10980,7 @@
     },
     "/v1/admin/products/option-translations/{translationId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11003,6 +11080,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11155,6 +11233,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11214,6 +11293,7 @@
     },
     "/v1/admin/products/options/{optionId}/translations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11372,6 +11452,7 @@
     },
     "/v1/admin/products/unit-translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11505,6 +11586,7 @@
     },
     "/v1/admin/products/unit-translations/{translationId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11604,6 +11686,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11756,6 +11839,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11815,6 +11899,7 @@
     },
     "/v1/admin/products/units/{unitId}/translations": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -11973,6 +12058,7 @@
     },
     "/v1/admin/products/product-types": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12112,6 +12198,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -12255,6 +12342,7 @@
     },
     "/v1/admin/products/product-types/{typeId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12359,6 +12447,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12524,6 +12613,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12583,6 +12673,7 @@
     },
     "/v1/admin/products/product-categories": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -12738,6 +12829,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -12946,6 +13038,7 @@
     },
     "/v1/admin/products/product-categories/{categoryId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13058,6 +13151,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13288,6 +13382,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13347,6 +13442,7 @@
     },
     "/v1/admin/products/product-tags": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13445,6 +13541,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -13534,6 +13631,7 @@
     },
     "/v1/admin/products/product-tags/{tagId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13611,6 +13709,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13723,6 +13822,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13782,6 +13882,7 @@
     },
     "/v1/admin/products/media/{mediaId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -13934,6 +14035,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -14185,6 +14287,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -14339,6 +14442,7 @@
     },
     "/v1/admin/products/media/{mediaId}/set-cover": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -14529,6 +14633,7 @@
     },
     "/v1/admin/products/{id}/brochure/versions": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -14668,6 +14773,7 @@
     },
     "/v1/admin/products/{id}/brochure/versions/{brochureId}/set-current": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -14830,6 +14936,7 @@
     },
     "/v1/admin/products/{id}/brochure/versions/{brochureId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -14992,6 +15099,7 @@
     },
     "/v1/admin/products/{id}/brochure": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -15144,6 +15252,7 @@
         "x-voyant-surface": "admin"
       },
       "put": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -15373,6 +15482,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -15527,6 +15637,7 @@
     },
     "/v1/admin/products/{id}/media/reorder": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -15630,6 +15741,7 @@
     },
     "/v1/admin/products/{id}/media": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -15852,6 +15964,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16116,6 +16229,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/media": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16346,6 +16460,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16618,6 +16733,7 @@
     },
     "/v1/admin/products/{id}/itineraries": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16692,6 +16808,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16829,6 +16946,7 @@
     },
     "/v1/admin/products/itineraries/{itineraryId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -16961,6 +17079,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17020,6 +17139,7 @@
     },
     "/v1/admin/products/itineraries/{itineraryId}/duplicate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17146,6 +17266,7 @@
     },
     "/v1/admin/products/{id}/itineraries/{itineraryId}/days": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17241,6 +17362,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17410,6 +17532,7 @@
     },
     "/v1/admin/products/{id}/days": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17497,6 +17620,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17658,6 +17782,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17822,6 +17947,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -17889,6 +18015,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/services": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -18018,6 +18145,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -18262,6 +18390,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/services/{serviceId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -18506,6 +18635,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -18581,6 +18711,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -18688,6 +18819,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -18859,6 +18991,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/translations/{translationId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19033,6 +19166,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19108,6 +19242,7 @@
     },
     "/v1/admin/products/{id}/versions": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19182,6 +19317,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19273,6 +19409,7 @@
     },
     "/v1/admin/products/{id}/notes": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19339,6 +19476,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19460,6 +19598,7 @@
     },
     "/v1/admin/products/{id}/itineraries/{itineraryId}/translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19550,6 +19689,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19690,6 +19830,7 @@
     },
     "/v1/admin/products/{id}/itineraries/{itineraryId}/translations/{translationId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19832,6 +19973,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -19907,6 +20049,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20019,6 +20162,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20193,6 +20337,7 @@
     },
     "/v1/admin/products/{id}/days/{dayId}/services/{serviceId}/translations/{translationId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20369,6 +20514,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20452,6 +20598,7 @@
     },
     "/v1/admin/products/{id}/categories": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20549,6 +20696,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20647,6 +20795,7 @@
     },
     "/v1/admin/products/{id}/categories/{categoryId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20714,6 +20863,7 @@
     },
     "/v1/admin/products/{id}/tags": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20776,6 +20926,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20871,6 +21022,7 @@
     },
     "/v1/admin/products/{id}/tags/{tagId}": {
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -20938,6 +21090,7 @@
     },
     "/v1/admin/products/{id}/recalculate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -21009,6 +21162,7 @@
     },
     "/v1/admin/products/aggregates": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -21119,6 +21273,7 @@
     },
     "/v1/admin/products": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -21627,6 +21782,7 @@
         "x-voyant-surface": "admin"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -22194,6 +22350,7 @@
     },
     "/v1/admin/products/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -22495,6 +22652,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -23077,6 +23235,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -23136,6 +23295,7 @@
     },
     "/v1/admin/products/{id}/action-ledger": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#api.admin",
         "parameters": [
           {
             "schema": {
@@ -23254,6 +23414,7 @@
     },
     "/v1/admin/products/{id}/brochure/generate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/inventory#brochure-extension.api.admin",
         "parameters": [
           {
             "schema": {
@@ -23468,6 +23629,7 @@
     },
     "/v1/admin/products/{id}/content": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/inventory#content-extension.api.admin",
         "parameters": [
           {
             "schema": {

@@ -156,6 +156,7 @@
   "paths": {
     "/v1/admin/storefront/settings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#api.admin",
         "responses": {
           "200": {
             "description": "The deployment's storefront settings",
@@ -784,6 +785,7 @@
         "x-voyant-surface": "admin"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/storefront#api.admin",
         "requestBody": {
           "required": true,
           "content": {

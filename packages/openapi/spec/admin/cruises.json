@@ -13433,6 +13433,40 @@
         "x-voyant-module": "cruises",
         "x-voyant-surface": "admin"
       }
+    },
+    "/v1/admin/cruises/{key}/content": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#content-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "Cruise content response."
+          }
+        },
+        "operationId": "getAdminCruisesByKeyContent",
+        "summary": "GET /v1/admin/cruises/{key}/content",
+        "tags": [
+          "cruises"
+        ],
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "admin"
+      }
+    },
+    "/v1/admin/cruises/{key}/sailings/{sailingExternalId}/pricing": {
+      "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#content-extension.api.admin",
+        "responses": {
+          "200": {
+            "description": "Cruise content response."
+          }
+        },
+        "operationId": "getAdminCruisesByKeySailingsBySailingExternalIdPricing",
+        "summary": "GET /v1/admin/cruises/{key}/sailings/{sailingExternalId}/pricing",
+        "tags": [
+          "cruises"
+        ],
+        "x-voyant-module": "cruises",
+        "x-voyant-surface": "admin"
+      }
     }
   },
   "webhooks": {}

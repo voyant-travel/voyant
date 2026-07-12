@@ -9,7 +9,7 @@ const operatorRoot = process.cwd()
 
 describe("Operator project config", () => {
   it("authors only deployment differences and external plugins", () => {
-    expect(config.modules).toHaveLength(35)
+    expect(config.modules).toHaveLength(38)
     expect(config.extensions).toHaveLength(24)
     expect(config.plugins).toHaveLength(1)
     expect(config.productBom).toEqual({
@@ -30,7 +30,7 @@ describe("Operator project config", () => {
       "editor",
     ])
 
-    expect(config.selections?.modules).toHaveLength(35)
+    expect(config.selections?.modules).toHaveLength(38)
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)

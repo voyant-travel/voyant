@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/customer-portal/me": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "responses": {
           "200": {
             "description": "The authenticated customer's portal profile",
@@ -555,6 +556,7 @@
         "x-voyant-surface": "storefront"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -1235,6 +1237,7 @@
     },
     "/v1/public/customer-portal/me/documents": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "responses": {
           "200": {
             "description": "The authenticated customer's identity documents",
@@ -1347,6 +1350,7 @@
         "x-voyant-surface": "storefront"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -1554,6 +1558,7 @@
     },
     "/v1/public/customer-portal/me/documents/{id}/set-primary": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -1693,6 +1698,7 @@
     },
     "/v1/public/customer-portal/me/documents/{id}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -1905,6 +1911,7 @@
         "x-voyant-surface": "storefront"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -1967,6 +1974,7 @@
     },
     "/v1/public/customer-portal/bootstrap": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -3253,6 +3261,7 @@
     },
     "/v1/public/customer-portal/companions": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "responses": {
           "200": {
             "description": "The authenticated customer's saved companions",
@@ -3505,6 +3514,7 @@
         "x-voyant-surface": "storefront"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -4004,6 +4014,7 @@
     },
     "/v1/public/customer-portal/companions/import-booking-travelers": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "requestBody": {
           "required": true,
           "content": {
@@ -4308,6 +4319,7 @@
     },
     "/v1/public/customer-portal/companions/{companionId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -4830,6 +4842,7 @@
         "x-voyant-surface": "storefront"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -4910,6 +4923,7 @@
     },
     "/v1/public/customer-portal/bookings": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "responses": {
           "200": {
             "description": "The authenticated customer's bookings",
@@ -5062,6 +5076,7 @@
     },
     "/v1/public/customer-portal/bookings/{bookingId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -5788,6 +5803,7 @@
     },
     "/v1/public/customer-portal/bookings/{bookingId}/documents": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -5911,6 +5927,7 @@
     },
     "/v1/public/customer-portal/bookings/{bookingId}/billing-contact": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -6044,6 +6061,7 @@
     },
     "/v1/public/customer-portal/contact-exists": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {
@@ -6107,6 +6125,7 @@
     },
     "/v1/public/customer-portal/contact-exists/phone": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/storefront#customer-portal.api",
         "parameters": [
           {
             "schema": {

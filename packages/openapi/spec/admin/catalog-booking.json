@@ -156,6 +156,7 @@
   "paths": {
     "/v1/admin/catalog/quote": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -1576,6 +1577,7 @@
     },
     "/v1/admin/catalog/quotes/batch": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -3095,6 +3097,7 @@
     },
     "/v1/admin/catalog/book": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "requestBody": {
           "required": true,
           "description": "Either `quoteId` or `draftId` is required (cross-field rule enforced server-side; the schema is a permissive superset).",
@@ -3477,6 +3480,7 @@
     },
     "/v1/admin/catalog/drafts/{id}": {
       "put": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -3780,6 +3784,7 @@
         "x-voyant-surface": "admin"
       },
       "get": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -3929,6 +3934,7 @@
         "x-voyant-surface": "admin"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -3955,6 +3961,7 @@
     },
     "/v1/admin/catalog/holds/place": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -4152,6 +4159,7 @@
     },
     "/v1/admin/catalog/holds/release": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "requestBody": {
           "required": true,
           "content": {
@@ -4292,6 +4300,7 @@
     },
     "/v1/admin/catalog/orders": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -4369,6 +4378,7 @@
     },
     "/v1/admin/catalog/orders/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -4453,6 +4463,7 @@
     },
     "/v1/admin/catalog/orders/{id}/cancel": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -4645,6 +4656,7 @@
     },
     "/v1/admin/catalog/slots": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {
@@ -4809,6 +4821,7 @@
     },
     "/v1/admin/bookings/{id}/catalog-snapshot": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
         "parameters": [
           {
             "schema": {

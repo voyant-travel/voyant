@@ -64,7 +64,7 @@ describe("Operator Catalog subscriber composition", () => {
   })
 
   it("shares one Catalog projection runtime across all selected index subscribers", async () => {
-    const provider = buildOperatorRuntimePorts()[catalogProjectionRuntimePort.id] as {
+    const provider = (await buildOperatorRuntimePorts()[catalogProjectionRuntimePort.id]) as {
       createRuntime(bindings: unknown): Promise<unknown>
     }
     const bindings = { TYPESENSE_HOST: "http://localhost:8108" }
