@@ -9,6 +9,7 @@ const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaul
 const paths = {
   manifest: "packages/legal/src/voyant.ts",
   legalModule: "packages/legal/src/index.ts",
+  contributor: "packages/legal/src/runtime-contributor.ts",
   distribution: "packages/framework/src/operator-distribution.ts",
   composition: "starters/operator/src/api/runtime/deployment-resources.ts",
   config: "starters/operator/voyant.config.ts",
@@ -62,14 +63,14 @@ rejectMatch(
   "Legal API module must leave subscriber registration to selected-graph lowering",
 )
 requireMatch(
-  sources.composition,
+  sources.contributor,
   /\[legalRuntimePort\.id\]\s*:/,
-  "Node host must provide the Legal API runtime by port id",
+  "Legal package contributor must provide the API runtime by port id",
 )
 requireMatch(
-  sources.composition,
+  sources.contributor,
   /\[legalBookingContractSubscriberRuntimePort\.id\]\s*:/,
-  "Node host must provide the Legal subscriber runtime by port id",
+  "Legal package contributor must provide the subscriber runtime by port id",
 )
 rejectMatch(
   sources.composition,

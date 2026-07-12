@@ -94,7 +94,11 @@ for (const token of ["installCatalogRuntimeServices"]) {
   if (!runtime.includes(token)) violations.push(`Catalog private runtime is missing ${token}`)
 }
 for (const [, , port] of ownerContributors) {
-  if (!contributor.includes(`host.getRuntimePort(${port})`)) {
+  const escapedPort = port.replaceAll("$", "\\$")
+  const staticPortResolution = new RegExp(
+    `host\\.getRuntimePort(?:<[^>]+>)?\\(\\s*${escapedPort}\\s*,?\\s*\\)`,
+  )
+  if (!staticPortResolution.test(contributor)) {
     violations.push(`Catalog contributor must resolve ${port} through the static host`)
   }
 }
@@ -106,6 +110,9 @@ const runtimeComposition = [
 ]
   .map((file) => read(file))
   .join("\n")
+  // This integration is resolved while executing a package hold, not while
+  // composing the selected graph. Keep arbitrary composition imports forbidden.
+  .replace('await import("@voyant-travel/plugin-voyant-connect")', "")
 for (const [pattern, label] of [
   [/\bimport\s*\(/, "dynamic import"],
   [/\brequire\s*\(/, "runtime require"],

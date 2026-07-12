@@ -23,18 +23,29 @@ const manifest = readRequired(join(tripsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(tripsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(tripsRoot, "src/runtime-port.ts"))
 const runtimeContributor = readRequired(join(tripsRoot, "src/runtime-contributor.ts"))
+const normalizedRuntimeContributor = runtimeContributor.replace(
+  /host\.getRuntimePort<[^>]+>/g,
+  "host.getRuntimePort",
+)
 const runtime = readRequired(join(tripsRoot, "src/runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 
 if (
   !manifest.includes("requirePort(tripsRoutesRuntimePort)") ||
   !manifest.includes("requirePort(tripsDatabaseRuntimePort)") ||
-  !manifest.includes("requirePort(catalogRuntimeServicesPort)") ||
-  !manifest.includes("requirePort(catalogCheckoutApiRuntimePort)") ||
-  !manifest.includes("requirePort(flightsRuntimePort)") ||
+  !manifest.includes('catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" }') ||
+  !manifest.includes(
+    'catalogCheckoutApiRuntimePortReference = { id: "commerce.checkout-api-options" }',
+  ) ||
+  !manifest.includes('flightsRuntimePortReference = { id: "flights.runtime" }') ||
+  !manifest.includes("catalogRuntimeServicesPortReference,") ||
+  !manifest.includes("catalogCheckoutApiRuntimePortReference,") ||
+  !manifest.includes("flightsRuntimePortReference,") ||
   !manifest.includes('export: "createTripsVoyantRuntime"')
 ) {
-  violations.push("Trips manifest must own both runtime dependencies and its graph factory")
+  violations.push(
+    "Trips manifest must own its local ports, neutral runtime dependencies, and graph factory",
+  )
 }
 if (
   !runtimePort.includes("definePort<TripsRoutesOptionsProvider>") ||
@@ -68,9 +79,9 @@ if (
 }
 if (
   runtimeContributor.includes("host.capabilities") ||
-  !runtimeContributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
-  !runtimeContributor.includes("host.getRuntimePort(catalogCheckoutApiRuntimePort)") ||
-  !runtimeContributor.includes("host.getRuntimePort(flightsRuntimePort)") ||
+  !normalizedRuntimeContributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
+  !normalizedRuntimeContributor.includes("host.getRuntimePort(catalogCheckoutApiRuntimePort)") ||
+  !normalizedRuntimeContributor.includes("host.getRuntimePort(flightsRuntimePort)") ||
   !runtimeContributor.includes("host.primitives.database.transaction") ||
   !runtime.includes("createTripsRouteRuntime")
 ) {

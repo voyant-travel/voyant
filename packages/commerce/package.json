@@ -16,7 +16,6 @@
     "./product-reindex-workflow-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
     "./product-reindex-workflow": "./src/promotions/workflow-bulk-reindex.ts",
     "./promotion-boundary-workflow": "./src/promotions/workflow-boundary-scheduler.ts",
-    "./promotions/workflow-boundary-scheduler": "./src/promotions/workflow-boundary-scheduler.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin/markets": "./openapi/admin/markets.json",
     "./openapi/admin/pricing": "./openapi/admin/pricing.json",
@@ -125,11 +124,6 @@
         "default": "./dist/promotions/workflow-bulk-reindex.js"
       },
       "./promotion-boundary-workflow": {
-        "types": "./dist/promotions/workflow-boundary-scheduler.d.ts",
-        "import": "./dist/promotions/workflow-boundary-scheduler.js",
-        "default": "./dist/promotions/workflow-boundary-scheduler.js"
-      },
-      "./promotions/workflow-boundary-scheduler": {
         "types": "./dist/promotions/workflow-boundary-scheduler.d.ts",
         "import": "./dist/promotions/workflow-boundary-scheduler.js",
         "default": "./dist/promotions/workflow-boundary-scheduler.js"

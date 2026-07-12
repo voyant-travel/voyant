@@ -9,7 +9,7 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packageRequirements = {
-  catalog: ["host.primitives", "host.getRuntimePort", "runtime.services.ensureSourceRegistry"],
+  catalog: ["host.primitives", "host.getRuntimePort", "services.ensureSourceRegistry"],
   realtime: ["host.primitives", "createRealtimeRuntime"],
   storage: ["host.primitives", "createStorageRuntime"],
   trips: ["host.primitives", "host.getRuntimePort", "createTripsRoutesRuntime"],

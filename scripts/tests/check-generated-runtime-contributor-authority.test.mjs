@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFile } from "node:child_process"
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { it } from "node:test"
@@ -27,7 +27,6 @@ const packageFactories = {
   notifications: "createNotificationsRuntimePortContribution",
   "operator-settings": "createOperatorSettingsRuntimePortContribution",
   operations: "createOperationsRuntimePortContribution",
-  "plugins/catalog-demo": "createCatalogDemoRuntimePortContribution",
   quotes: "createQuotesRuntimePortContribution",
   realtime: "createRealtimeRuntimePortContribution",
   relationships: "createRelationshipsRuntimePortContribution",
@@ -93,6 +92,15 @@ it("rejects a restored generated contributor barrel", async () => {
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
     /retired generated resolver input/,
+  )
+})
+
+it("reports a stale contributor package entry", async () => {
+  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  await rm(path.join(root, "packages/trips"), { recursive: true })
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /trips contributor package does not exist/,
   )
 })
 

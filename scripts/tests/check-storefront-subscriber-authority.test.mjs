@@ -42,7 +42,7 @@ host.primitives.database.transaction
 [storefrontCustomerPortalRuntimePort.id]: customerPortal
 `,
     "packages/relationships/src/runtime-contributor.ts":
-      "[storefrontIntakeRuntimePort.id]: createStorefrontIntakePersistence()\n",
+      "[storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence()\n",
     "packages/notifications/src/runtime-contributor.ts":
       "[storefrontVerificationRuntimePort.id]: verification\n",
     "packages/trips/src/runtime-contributor.ts":

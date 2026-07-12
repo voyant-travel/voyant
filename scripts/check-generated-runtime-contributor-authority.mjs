@@ -26,7 +26,6 @@ const packageFactories = {
   notifications: "createNotificationsRuntimePortContribution",
   "operator-settings": "createOperatorSettingsRuntimePortContribution",
   operations: "createOperationsRuntimePortContribution",
-  "plugins/catalog-demo": "createCatalogDemoRuntimePortContribution",
   quotes: "createQuotesRuntimePortContribution",
   realtime: "createRealtimeRuntimePortContribution",
   relationships: "createRelationshipsRuntimePortContribution",
@@ -51,9 +50,10 @@ const [
   read("packages/framework/src/project-resolver.ts"),
   read("scripts/emit-deployment-graph.ts"),
   read("scripts/generate-framework-bom.mjs"),
-  ...Object.keys(packageFactories).map((packageName) =>
-    read(`packages/${packageName}/package.json`),
-  ),
+  ...Object.keys(packageFactories).map((packageName) => {
+    const packageJsonPath = `packages/${packageName}/package.json`
+    return existsSync(path.join(root, packageJsonPath)) ? read(packageJsonPath) : null
+  }),
 ])
 
 const violations = []
@@ -130,7 +130,12 @@ if (/writeFileSync\((?:SRC|CONTRIBUTORS|MANIFEST)/.test(bomGenerator)) {
 }
 
 for (const [index, [packageName, factory]] of Object.entries(packageFactories).entries()) {
-  const packageJson = JSON.parse(packageJsonSources[index])
+  const packageJsonSource = packageJsonSources[index]
+  if (packageJsonSource === null) {
+    violations.push(`${packageName} contributor package does not exist`)
+    continue
+  }
+  const packageJson = JSON.parse(packageJsonSource)
   const runtime = packageJson.voyant?.runtime
   if (runtime?.entry !== "./runtime-contributor" || runtime?.export !== factory) {
     violations.push(`${packageName} must declare its package-owned runtime contributor metadata`)

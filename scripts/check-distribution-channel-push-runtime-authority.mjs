@@ -30,6 +30,10 @@ const extension = readRequired(join(distributionRoot, "src/channel-push/extensio
 const runtimePort = readRequired(join(distributionRoot, "src/channel-push/runtime-port.ts"))
 const domainPackage = readRequired(join(distributionRoot, "package.json"))
 const contributor = readRequired(join(distributionRoot, "src/runtime-contributor.ts"))
+const normalizedContributor = contributor.replace(
+  /host\.getRuntimePort<[^>]+>/g,
+  "host.getRuntimePort",
+)
 const runtime = readRequired(join(distributionRoot, "src/runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const workflowServices = readRequired(
@@ -56,7 +60,7 @@ if (existsSync(join(dirname(distributionRoot), "distribution-node"))) {
 }
 if (
   !contributor.includes("Promise.resolve()") ||
-  !contributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
+  !normalizedContributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
   !contributor.includes("createDistributionRuntime(host.primitives, services)") ||
   !contributor.includes("[channelPushRuntimePort.id]: channelPushRuntime") ||
   !contributor.includes("[catalogDistributionRuntimeExtensionPort.id]") ||

@@ -59,7 +59,11 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
     if (deploymentResources.includes(port)) {
       violations.push(`deployment-resources.ts must not register or import ${port}`)
     }
-    if (!contributors[packageName].includes(`[${port}.id]`)) {
+    const ownershipToken =
+      packageName === "relationships" && port === "storefrontIntakeRuntimePort"
+        ? "[storefrontIntakeRuntimePortReference.id]"
+        : `[${port}.id]`
+    if (!contributors[packageName].includes(ownershipToken)) {
       violations.push(`${packageName} runtime contributor must own ${port}`)
     }
   }

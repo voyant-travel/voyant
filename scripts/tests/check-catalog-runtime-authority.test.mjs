@@ -24,7 +24,6 @@ async function fixture() {
       "distribution",
       "inventory",
       "operations",
-      "plugins/catalog-demo",
     ].flatMap((directory) => [
       `packages/${directory}/package.json`,
       `packages/${directory}/src/catalog-runtime-extension.ts`,

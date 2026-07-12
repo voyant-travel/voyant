@@ -89,7 +89,7 @@ requireMatch(
 )
 requireMatch(
   sources.relationshipsContributor,
-  /\[storefrontIntakeRuntimePort\.id\]:\s*createStorefrontIntakePersistence/,
+  /\[storefrontIntakeRuntimePortReference\.id\]:\s*createStorefrontIntakePersistence/,
   "Relationships contributor must own Storefront intake persistence",
 )
 requireMatch(

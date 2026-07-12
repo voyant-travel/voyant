@@ -3,35 +3,14 @@ import { resolve } from "node:path"
 
 const root = resolve(import.meta.dirname, "..")
 const starterLib = resolve(root, "starters/operator/src/api/lib")
-const bindingPath = resolve(starterLib, "owned-booking-handlers.ts")
-
 for (const helper of [
+  "owned-booking-handlers.ts",
   "product-booking-handler.ts",
   "product-booking-handler-utils.ts",
   "retained-vertical-booking-handlers.ts",
 ]) {
   if (existsSync(resolve(starterLib, helper))) {
     throw new Error(`Operator must not own package booking behavior: ${helper}`)
-  }
-}
-
-const binding = readFileSync(bindingPath, "utf8")
-const bindingLines = binding.split("\n").length
-if (bindingLines > 35) {
-  throw new Error(`Operator booking binding grew to ${bindingLines} lines (maximum: 35)`)
-}
-
-for (const token of [
-  "/schema",
-  "/service-content",
-  "commitBridge",
-  "loadContent",
-  "loadPrice",
-  "loadProductOptions",
-  "bookingPaymentSchedules",
-]) {
-  if (binding.includes(token)) {
-    throw new Error(`Operator booking binding regained product behavior: ${token}`)
   }
 }
 
@@ -53,6 +32,4 @@ for (const [relativePath, registration] of packageAuthorities) {
   }
 }
 
-console.log(
-  `Operator product booking backend authority: ${bindingLines}/35 binding lines; 3 package runtimes`,
-)
+console.log("Operator product booking backend authority: 0 starter bindings; 3 package runtimes")

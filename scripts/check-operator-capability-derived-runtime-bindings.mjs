@@ -54,8 +54,9 @@ const contributorRequirements = [
 ]
 
 for (const [packageName, source, requirements] of contributorRequirements) {
+  const normalizedSource = source.replace(/host\.getRuntimePort<[^>]+>/g, "host.getRuntimePort")
   for (const requirement of requirements) {
-    if (!source.includes(requirement)) {
+    if (!normalizedSource.includes(requirement)) {
       violations.push(`${packageName} runtime contributor must own ${requirement}`)
     }
   }

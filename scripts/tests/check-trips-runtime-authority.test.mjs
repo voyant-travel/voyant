@@ -15,7 +15,7 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-trips-runtime-authority-"))
   const files = {
     "trips/src/voyant.ts":
-      'requirePort(tripsRoutesRuntimePort)\nrequirePort(tripsDatabaseRuntimePort)\nrequirePort(catalogRuntimeServicesPort)\nrequirePort(catalogCheckoutApiRuntimePort)\nrequirePort(flightsRuntimePort)\nexport: "createTripsVoyantRuntime"\n',
+      'requirePort(tripsRoutesRuntimePort)\nrequirePort(tripsDatabaseRuntimePort)\nconst catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" }\nconst catalogCheckoutApiRuntimePortReference = { id: "commerce.checkout-api-options" }\nconst flightsRuntimePortReference = { id: "flights.runtime" }\ncatalogRuntimeServicesPortReference,\ncatalogCheckoutApiRuntimePortReference,\nflightsRuntimePortReference,\nexport: "createTripsVoyantRuntime"\n',
     "trips/src/index.ts":
       'createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => { api.some(({ surface }) => surface === "admin"); api.some(({ surface }) => surface === "public"); getPort(tripsRoutesRuntimePort); getPort(tripsDatabaseRuntimePort); return { module: { requiresTransactionalDb: true } } })\n',
     "trips/src/runtime-port.ts":

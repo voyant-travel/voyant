@@ -16,6 +16,10 @@ const [deploymentResources, catalogContributor, commerceContributor, tripsContri
     read("packages/trips/src/runtime-contributor.ts"),
   ])
 const commerceRuntime = await read("packages/commerce/src/runtime.ts")
+const normalizedCommerceContributor = commerceContributor.replace(
+  /getRuntimePort<[^>]+>/g,
+  "getRuntimePort",
+)
 
 const catalogPorts = [
   "catalogSearchRuntimePort",
@@ -75,7 +79,7 @@ for (const provider of [
   "commerceLegalRuntimePort",
   "catalogRuntimeServicesPort",
 ]) {
-  if (!commerceContributor.includes(`getRuntimePort(${provider})`)) {
+  if (!normalizedCommerceContributor.includes(`getRuntimePort(${provider})`)) {
     violations.push(`Commerce runtime contributor must resolve ${provider}`)
   }
 }

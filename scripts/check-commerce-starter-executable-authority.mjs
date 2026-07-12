@@ -24,16 +24,23 @@ for (const relativePath of deletedStarterFiles) {
   )
 }
 
-const [catalogManifest, commerceManifest, composition, financeRuntime, notificationsRuntime] =
-  await Promise.all(
-    [
-      "packages/catalog/src/voyant.ts",
-      "packages/commerce/src/voyant.ts",
-      "starters/operator/src/api/runtime/deployment-resources.ts",
-      "packages/finance/src/index.ts",
-      "packages/notifications/src/subscriber-runtime.ts",
-    ].map((relativePath) => readFile(path.join(root, relativePath), "utf8")),
-  )
+const [
+  catalogManifest,
+  catalogContributor,
+  commerceManifest,
+  composition,
+  financeRuntime,
+  notificationsRuntime,
+] = await Promise.all(
+  [
+    "packages/catalog/src/voyant.ts",
+    "packages/catalog/src/runtime-contributor.ts",
+    "packages/commerce/src/voyant.ts",
+    "starters/operator/src/api/runtime/deployment-resources.ts",
+    "packages/finance/src/index.ts",
+    "packages/notifications/src/subscriber-runtime.ts",
+  ].map((relativePath) => readFile(path.join(root, relativePath), "utf8")),
+)
 
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)
@@ -53,9 +60,14 @@ requireMatch(
   "Commerce must own the promotion-boundary workflow and schedule",
 )
 requireMatch(
-  composition,
-  /\[catalogContentRuntimePort\.id\]:\s*\{[\s\S]*resolveRegistry:/,
-  "Operator must expose only the shared catalog content registry capability",
+  catalogContributor,
+  /\[catalogContentRuntimePort\.id\]:/,
+  "Catalog contributor must provide the shared content runtime port",
+)
+requireMatch(
+  catalogContributor,
+  /services\.ensureSourceRegistry\(host\.primitives\.env\(bindings\)\)/,
+  "Catalog contributor must resolve the shared source registry from host primitives",
 )
 requireMatch(
   financeRuntime,

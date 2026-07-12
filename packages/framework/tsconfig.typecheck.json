@@ -364,6 +364,7 @@
       "@voyant-travel/catalog/booking-snapshot-subscriber": [
         "../catalog/dist/booking-snapshot-subscriber-runtime.d.ts"
       ],
+      "@voyant-travel/catalog/catalog-runtime": ["../catalog/dist/runtime/catalog-runtime.d.ts"],
       "@voyant-travel/catalog/contract": ["../catalog/dist/contract.d.ts"],
       "@voyant-travel/catalog/draft-reaper-workflow": [
         "../catalog/dist/draft-reaper-workflow.d.ts"
@@ -1431,6 +1432,9 @@
       ],
       "@voyant-travel/quotes": ["../quotes/dist/index.d.ts"],
       "@voyant-travel/quotes-contracts": ["../quotes-contracts/dist/index.d.ts"],
+      "@voyant-travel/quotes-contracts/checkout-inquiry": [
+        "../quotes-contracts/dist/checkout-inquiry.d.ts"
+      ],
       "@voyant-travel/quotes-contracts/validation": ["../quotes-contracts/dist/validation.d.ts"],
       "@voyant-travel/quotes-react": ["../quotes-react/dist/index.d.ts"],
       "@voyant-travel/quotes-react/admin": ["../quotes-react/dist/admin/index.d.ts"],
@@ -1484,6 +1488,9 @@
       "@voyant-travel/realtime/voyant": ["../realtime/dist/voyant.d.ts"],
       "@voyant-travel/relationships": ["../relationships/dist/index.d.ts"],
       "@voyant-travel/relationships-contracts": ["../relationships-contracts/dist/index.d.ts"],
+      "@voyant-travel/relationships-contracts/storefront-intake": [
+        "../relationships-contracts/dist/storefront-intake.d.ts"
+      ],
       "@voyant-travel/relationships-contracts/validation": [
         "../relationships-contracts/dist/validation.d.ts"
       ],

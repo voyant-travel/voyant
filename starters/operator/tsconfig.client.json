@@ -477,6 +477,9 @@
       "@voyant-travel/catalog/booking-snapshot-subscriber": [
         "../../packages/catalog/dist/booking-snapshot-subscriber-runtime.d.ts"
       ],
+      "@voyant-travel/catalog/catalog-runtime": [
+        "../../packages/catalog/dist/runtime/catalog-runtime.d.ts"
+      ],
       "@voyant-travel/catalog/contract": ["../../packages/catalog/dist/contract.d.ts"],
       "@voyant-travel/catalog/draft-reaper-workflow": [
         "../../packages/catalog/dist/draft-reaper-workflow.d.ts"
@@ -1846,6 +1849,9 @@
       ],
       "@voyant-travel/quotes": ["../../packages/quotes/dist/index.d.ts"],
       "@voyant-travel/quotes-contracts": ["../../packages/quotes-contracts/dist/index.d.ts"],
+      "@voyant-travel/quotes-contracts/checkout-inquiry": [
+        "../../packages/quotes-contracts/dist/checkout-inquiry.d.ts"
+      ],
       "@voyant-travel/quotes-contracts/validation": [
         "../../packages/quotes-contracts/dist/validation.d.ts"
       ],
@@ -1922,6 +1928,9 @@
       "@voyant-travel/relationships": ["../../packages/relationships/dist/index.d.ts"],
       "@voyant-travel/relationships-contracts": [
         "../../packages/relationships-contracts/dist/index.d.ts"
+      ],
+      "@voyant-travel/relationships-contracts/storefront-intake": [
+        "../../packages/relationships-contracts/dist/storefront-intake.d.ts"
       ],
       "@voyant-travel/relationships-contracts/validation": [
         "../../packages/relationships-contracts/dist/validation.d.ts"
