@@ -44,29 +44,27 @@ const adapters = [
     factory: "createCatalogNodeRuntimePortContribution",
     domainPackageNames: ["@voyant-travel/catalog", "@voyant-travel/cruises"],
   },
+]
+const consolidatedPackages = [
   {
-    packageName: "@voyant-travel/legal-node",
-    directory: "legal-node",
-    factory: "createLegalNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/legal"],
+    packageName: "@voyant-travel/flights",
+    retiredPackageName: "@voyant-travel/flights-node",
+    factory: "createFlightsRuntimePortContribution",
   },
   {
-    packageName: "@voyant-travel/flights-node",
-    directory: "flights-node",
-    factory: "createFlightsNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/flights"],
+    packageName: "@voyant-travel/legal",
+    retiredPackageName: "@voyant-travel/legal-node",
+    factory: "createLegalRuntimePortContribution",
   },
   {
-    packageName: "@voyant-travel/notifications-node",
-    directory: "notifications-node",
-    factory: "createNotificationsNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/notifications"],
+    packageName: "@voyant-travel/notifications",
+    retiredPackageName: "@voyant-travel/notifications-node",
+    factory: "createNotificationsRuntimePortContribution",
   },
   {
-    packageName: "@voyant-travel/quotes-node",
-    directory: "quotes-node",
-    factory: "createQuotesNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/quotes"],
+    packageName: "@voyant-travel/quotes",
+    retiredPackageName: "@voyant-travel/quotes-node",
+    factory: "createQuotesRuntimePortContribution",
   },
 ]
 const manifests = readWorkspaceManifests()
@@ -115,16 +113,47 @@ for (const adapter of adapters) {
     violations.push(`starter/framework resident composition must not name ${adapter.packageName}`)
   }
 }
+for (const consolidated of consolidatedPackages) {
+  const manifest = byName.get(consolidated.packageName)
+  const runtime = manifest?.voyant?.runtime
+  if (byName.has(consolidated.retiredPackageName)) {
+    violations.push(`${consolidated.retiredPackageName} must stay deleted`)
+  }
+  if (manifest?.voyant?.kind !== "module") {
+    violations.push(`${consolidated.packageName} must remain a domain module`)
+  }
+  if (runtime?.entry !== "./runtime-contributor" || runtime?.export !== consolidated.factory) {
+    violations.push(`${consolidated.packageName} has invalid runtime contributor metadata`)
+  }
+  if (!manifest?.exports?.["./runtime-contributor"]) {
+    violations.push(`${consolidated.packageName} must export ./runtime-contributor`)
+  }
+  if (manifest?.exports?.["./standard-node"]) {
+    violations.push(`${consolidated.packageName} must not expose a target-labelled runtime`)
+  }
+  if (!runtimeBom.includes(consolidated.packageName)) {
+    violations.push(`${consolidated.packageName} must be selected by the standard Node runtime BOM`)
+  }
+  if (!generatedBom.includes(`"${consolidated.packageName}"`)) {
+    violations.push(
+      `${consolidated.packageName} is missing from generated framework BOM membership`,
+    )
+  }
+  if (!framework?.dependencies?.[consolidated.packageName]) {
+    violations.push(
+      `${consolidated.packageName} must be supplied by the framework BOM dependency set`,
+    )
+  }
+  if (framework?.dependencies?.[consolidated.retiredPackageName]) {
+    violations.push(`framework BOM must not retain ${consolidated.retiredPackageName}`)
+  }
+}
 for (const domainPackageName of [
   "@voyant-travel/action-ledger",
   "@voyant-travel/bookings",
   "@voyant-travel/finance",
   "@voyant-travel/catalog",
   "@voyant-travel/cruises",
-  "@voyant-travel/legal",
-  "@voyant-travel/flights",
-  "@voyant-travel/notifications",
-  "@voyant-travel/quotes",
   "@voyant-travel/distribution",
 ]) {
   const domain = byName.get(domainPackageName)
@@ -167,7 +196,7 @@ if (violations.length > 0) {
   throw new Error(`check-node-runtime-adapter-dependencies:\n- ${violations.join("\n- ")}`)
 }
 console.log(
-  `check-node-runtime-adapter-dependencies: OK (${adapters.length} BOM-selected leaf adapters; production graph acyclic)`,
+  `check-node-runtime-adapter-dependencies: OK (${adapters.length} leaf adapters; ${consolidatedPackages.length} consolidated domain runtimes; production graph acyclic)`,
 )
 
 function readWorkspaceManifests() {

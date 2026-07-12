@@ -20,6 +20,7 @@
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
     "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
     "./tools": "./src/mcp-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/notifications.json"
   },
@@ -144,6 +145,11 @@
         "import": "./dist/mcp-runtime.js",
         "default": "./dist/mcp-runtime.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -163,6 +169,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createNotificationsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

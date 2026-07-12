@@ -2,39 +2,39 @@ import { buildBookingRouteRuntime, createBookingPiiService } from "@voyant-trave
 import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { readPolicySourceFromInternalNotes } from "@voyant-travel/inventory/booking-payment-policy-runtime"
-import type { CreateLegalHonoModuleOptions } from "@voyant-travel/legal"
-import {
-  type AutoGenerateContractOptions,
-  type ContractDocumentGenerator,
-  createBrowserRenderedPdfContractDocumentSerializer,
-  createPdfContractDocumentGenerator,
-  createStorageBackedContractDocumentGenerator,
-} from "@voyant-travel/legal"
-import type {
-  LegalBookingContractSubscriberHost,
-  LegalBookingContractSubscriberRuntime,
-} from "@voyant-travel/legal/booking-contract-subscriber"
-import { createContractDocumentService } from "@voyant-travel/legal/contract-document"
-import type { ContractDocumentRoutesOptions } from "@voyant-travel/legal/contract-document-routes"
-import { buildContractVariableBindings } from "@voyant-travel/legal/contract-variables"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { ContractDocumentRoutesOptions } from "./contract-document-routes.js"
+import type {
+  LegalBookingContractSubscriberHost,
+  LegalBookingContractSubscriberRuntime,
+} from "./contracts/booking-contract-subscriber-runtime.js"
+import { createContractDocumentService } from "./contracts/contract-document-service.js"
+import { buildContractVariableBindings } from "./contracts/contract-variables.js"
+import type { CreateLegalHonoModuleOptions } from "./index.js"
+import {
+  type AutoGenerateContractOptions,
+  type ContractDocumentGenerator,
+  createBrowserRenderedPdfContractDocumentSerializer,
+  createPdfContractDocumentGenerator,
+  createStorageBackedContractDocumentGenerator,
+} from "./index.js"
 
 const DEFAULT_CONTRACT_SERIES_NAME = "customer-contracts"
 const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
 const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
 
-export interface LegalStandardNodeRuntime {
+export interface LegalRuntime {
   legal: CreateLegalHonoModuleOptions
   contractDocument: ContractDocumentRoutesOptions
   bookingContractSubscriber: LegalBookingContractSubscriberHost
 }
 
-export const STANDARD_NODE_AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
+export const DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
   enabled: true,
   templateSlug: "customer-sales-agreement",
   scope: "customer",
@@ -48,9 +48,7 @@ export const STANDARD_NODE_AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractO
 }
 
 /** Build all Legal providers for the standard Node product. */
-export function createLegalStandardNodeRuntime(
-  primitives: VoyantRuntimeHostPrimitives,
-): LegalStandardNodeRuntime {
+export function createLegalRuntime(primitives: VoyantRuntimeHostPrimitives): LegalRuntime {
   return {
     legal: {
       resolveDocumentDownloadUrl: primitives.storage.downloadUrl,
@@ -153,7 +151,7 @@ function createBookingContractSubscriberHost(
         return null
       }
       return {
-        options: STANDARD_NODE_AUTO_GENERATE_CONTRACT_OPTIONS,
+        options: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS,
         withDb: (runtimeBindings, operation) =>
           primitives.database.transaction(runtimeBindings, (db) =>
             operation(db as PostgresJsDatabase),
@@ -161,7 +159,7 @@ function createBookingContractSubscriberHost(
         documentGenerator,
         documentStorage: resolveStorage(primitives, bindings),
         resolveBookingPiiService: () => resolveBookingPiiService(primitives, bindings),
-        resolveVariables: STANDARD_NODE_AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
+        resolveVariables: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
         resolveActionLedgerContext: (event) => ({
           userId: event.actorId,
           actor: event.actorId ? "staff" : "system",
@@ -179,7 +177,7 @@ function createContractDocumentServiceForBindings(
 ) {
   return createContractDocumentService({
     resolveGenerator: () => resolveContractDocumentGenerator(primitives, bindings) ?? null,
-    autoGenerateOptions: STANDARD_NODE_AUTO_GENERATE_CONTRACT_OPTIONS,
+    autoGenerateOptions: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS,
     defaultSeriesName: DEFAULT_CONTRACT_SERIES_NAME,
     resolveBindings: () => primitives.env(bindings),
     resolveBookingPiiService: () => resolveBookingPiiService(primitives, bindings),

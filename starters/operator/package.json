@@ -92,7 +92,6 @@
     "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/legal": "workspace:^",
-    "@voyant-travel/legal-node": "workspace:^",
     "@voyant-travel/legal-react": "workspace:^",
     "@voyant-travel/mcp": "workspace:^",
     "@voyant-travel/mice": "workspace:^",

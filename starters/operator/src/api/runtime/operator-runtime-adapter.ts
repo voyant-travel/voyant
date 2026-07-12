@@ -111,7 +111,7 @@ export async function generateContractPdfForBooking(
   bookingId: string,
   options: { force?: boolean } = {},
 ) {
-  const runtime = await import("@voyant-travel/legal-node/standard-node-runtime")
+  const runtime = await import("@voyant-travel/legal/runtime")
   return runtime.generateContractPdfForBooking(
     primitives,
     bindings,

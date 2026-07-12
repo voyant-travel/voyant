@@ -11,7 +11,10 @@ const pathOption = (name, fallback) => {
   return value
 }
 const flightsRoot = pathOption("--flights-root", join(ROOT, "packages/flights"))
-const flightsNodeRoot = pathOption("--flights-node-root", join(ROOT, "packages/flights-node"))
+const retiredFlightsNodeRoot = pathOption(
+  "--retired-flights-node-root",
+  join(ROOT, "packages/flights-node"),
+)
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
 const violations = []
 
@@ -21,13 +24,12 @@ function readRequired(path) {
 }
 
 const packageJson = JSON.parse(readRequired(join(flightsRoot, "package.json")))
-const nodePackageJson = JSON.parse(readRequired(join(flightsNodeRoot, "package.json")))
 const manifest = readRequired(join(flightsRoot, "src/voyant.ts"))
 const hono = readRequired(join(flightsRoot, "src/hono.ts"))
 const runtimePort = readRequired(join(flightsRoot, "src/runtime-port.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
-const nodeContributor = readRequired(join(flightsNodeRoot, "src/runtime-contributor.ts"))
-const nodeRuntime = readRequired(join(flightsNodeRoot, "src/standard-node-runtime.ts"))
+const nodeContributor = readRequired(join(flightsRoot, "src/runtime-contributor.ts"))
+const runtime = readRequired(join(flightsRoot, "src/runtime.ts"))
 
 if (packageJson.dependencies?.["@voyant-travel/finance"] !== "workspace:^") {
   violations.push("Flights must own its @voyant-travel/finance runtime dependency")
@@ -56,8 +58,15 @@ for (const method of ["resolveAdapter", "startCardPayment"]) {
     violations.push(`flights.runtime conformance must require ${method}()`)
   }
 }
-if (packageJson.voyant?.runtime || packageJson.exports?.["./runtime-contributor"]) {
-  violations.push("Flights domain package must not retain target-specific runtime authority")
+if (
+  packageJson.voyant?.runtime?.export !== "createFlightsRuntimePortContribution" ||
+  !packageJson.exports?.["./runtime-contributor"] ||
+  packageJson.exports?.["./standard-node"]
+) {
+  violations.push("Flights package must own its standard Node runtime contributor")
+}
+if (existsSync(retiredFlightsNodeRoot)) {
+  violations.push("the retired Flights Node suffix package must stay deleted")
 }
 if (composition.includes("operatorGraphRuntimeBindings")) {
   violations.push("Operator compatibility runtime bindings must stay deleted")
@@ -66,14 +75,14 @@ if (composition.includes("loadFlightAdminRoutes")) {
   violations.push("Operator must not retain the Flights compatibility route loader")
 }
 if (
-  nodePackageJson.voyant?.runtime?.export !== "createFlightsNodeRuntimePortContribution" ||
   !nodeContributor.includes("primitives: VoyantRuntimeHostPrimitives") ||
-  !nodeContributor.includes("createFlightsStandardNodeRuntime(host.primitives)")
+  !nodeContributor.includes("createFlightsRuntime(host.primitives)")
 ) {
-  violations.push("Flights Node adapter must own runtime contribution from generic primitives")
+  violations.push("Flights must own runtime contribution from generic primitives")
 }
 for (const token of ["resolveAdapter(c)", "startCardPayment", "createDemoFlightAdapter"]) {
-  if (!nodeRuntime.includes(token)) violations.push(`Flights Node runtime must preserve ${token}`)
+  if (!runtime.includes(token))
+    violations.push(`Flights standard Node runtime must preserve ${token}`)
 }
 if (composition.includes("loadFlightsRuntime") || composition.includes("./flights-runtime")) {
   violations.push("Operator must not retain a Flights runtime loader or facade")
@@ -85,4 +94,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("check-flights-runtime-authority: OK (BOM-selected Flights Node adapter authority)")
+console.log("check-flights-runtime-authority: OK (Flights-owned standard Node runtime authority)")

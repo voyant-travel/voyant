@@ -2141,6 +2141,12 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/plugin-flights-demo':
+        specifier: workspace:^
+        version: link:../plugins/flights-demo
+      '@voyant-travel/plugin-netopia':
+        specifier: ^0.105.20
+        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -2182,20 +2188,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-
-  packages/flights-node:
-    dependencies:
-      '@voyant-travel/core': {specifier: 'workspace:^', version: 'link:../core'}
-      '@voyant-travel/finance': {specifier: 'workspace:^', version: 'link:../finance'}
-      '@voyant-travel/flights': {specifier: 'workspace:^', version: 'link:../flights'}
-      '@voyant-travel/hono': {specifier: 'workspace:^', version: 'link:../hono'}
-      '@voyant-travel/plugin-flights-demo': {specifier: 'workspace:^', version: 'link:../plugins/flights-demo'}
-      '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.20
-        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config': {specifier: 'workspace:^', version: 'link:../typescript-config'}
-      typescript: {specifier: 'catalog:', version: 6.0.3}
 
   packages/flights-react:
     dependencies:
@@ -2344,9 +2336,6 @@ importers:
       '@voyant-travel/flights':
         specifier: workspace:*
         version: link:../flights
-      '@voyant-travel/flights-node':
-        specifier: workspace:*
-        version: link:../flights-node
       '@voyant-travel/flights-react':
         specifier: workspace:*
         version: link:../flights-react
@@ -2365,9 +2354,6 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:*
         version: link:../legal
-      '@voyant-travel/legal-node':
-        specifier: workspace:*
-        version: link:../legal-node
       '@voyant-travel/legal-react':
         specifier: workspace:*
         version: link:../legal-react
@@ -2383,9 +2369,6 @@ importers:
       '@voyant-travel/notifications':
         specifier: workspace:*
         version: link:../notifications
-      '@voyant-travel/notifications-node':
-        specifier: workspace:*
-        version: link:../notifications-node
       '@voyant-travel/notifications-react':
         specifier: workspace:*
         version: link:../notifications-react
@@ -2419,9 +2402,6 @@ importers:
       '@voyant-travel/quotes':
         specifier: workspace:*
         version: link:../quotes
-      '@voyant-travel/quotes-node':
-        specifier: workspace:*
-        version: link:../quotes-node
       '@voyant-travel/quotes-react':
         specifier: workspace:*
         version: link:../quotes-react
@@ -2906,6 +2886,9 @@ importers:
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
+      '@voyant-travel/cloud-sdk':
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -2927,6 +2910,9 @@ importers:
       '@voyant-travel/legal-contracts':
         specifier: workspace:^
         version: link:../legal-contracts
+      '@voyant-travel/operator-settings':
+        specifier: workspace:^
+        version: link:../operator-settings
       '@voyant-travel/relationships':
         specifier: workspace:^
         version: link:../relationships
@@ -2986,40 +2972,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-
-  packages/legal-node:
-    dependencies:
-      '@voyant-travel/bookings':
-        specifier: workspace:^
-        version: link:../bookings
-      '@voyant-travel/cloud-sdk':
-        specifier: ^0.11.0
-        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
-      '@voyant-travel/core':
-        specifier: workspace:^
-        version: link:../core
-      '@voyant-travel/inventory':
-        specifier: workspace:^
-        version: link:../inventory
-      '@voyant-travel/legal':
-        specifier: workspace:^
-        version: link:../legal
-      '@voyant-travel/operator-settings':
-        specifier: workspace:^
-        version: link:../operator-settings
-      '@voyant-travel/storage':
-        specifier: workspace:^
-        version: link:../storage
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
 
   packages/legal-react:
     dependencies:
@@ -3310,18 +3262,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-
-  packages/notifications-node:
-    dependencies:
-      '@voyant-travel/core': {specifier: 'workspace:^', version: 'link:../core'}
-      '@voyant-travel/db': {specifier: 'workspace:^', version: 'link:../db'}
-      '@voyant-travel/notifications': {specifier: 'workspace:^', version: 'link:../notifications'}
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config': {specifier: 'workspace:^', version: 'link:../typescript-config'}
-      typescript: {specifier: 'catalog:', version: 6.0.3}
 
   packages/notifications-react:
     dependencies:
@@ -3853,9 +3793,15 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/operator-settings':
+        specifier: workspace:^
+        version: link:../operator-settings
       '@voyant-travel/quotes-contracts':
         specifier: workspace:^
         version: link:../quotes-contracts
+      '@voyant-travel/relationships':
+        specifier: workspace:^
+        version: link:../relationships
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools
@@ -3884,17 +3830,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
-
-  packages/quotes-node:
-    dependencies:
-      '@voyant-travel/core': {specifier: 'workspace:^', version: 'link:../core'}
-      '@voyant-travel/operator-settings': {specifier: 'workspace:^', version: 'link:../operator-settings'}
-      '@voyant-travel/quotes': {specifier: 'workspace:^', version: 'link:../quotes'}
-      '@voyant-travel/relationships': {specifier: 'workspace:^', version: 'link:../relationships'}
-      hono: {specifier: 'catalog:', version: 4.12.25}
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config': {specifier: 'workspace:^', version: 'link:../typescript-config'}
-      typescript: {specifier: 'catalog:', version: 6.0.3}
 
   packages/quotes-contracts:
     dependencies:
@@ -5344,9 +5279,6 @@ importers:
       '@voyant-travel/legal':
         specifier: workspace:^
         version: link:../../packages/legal
-      '@voyant-travel/legal-node':
-        specifier: workspace:^
-        version: link:../../packages/legal-node
       '@voyant-travel/legal-react':
         specifier: workspace:^
         version: link:../../packages/legal-react

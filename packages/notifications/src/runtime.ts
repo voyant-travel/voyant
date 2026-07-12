@@ -1,17 +1,17 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
 import { createPostgresAdvisoryLockManager } from "@voyant-travel/db/runtime"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   buildNotificationTaskRuntime,
   createDefaultBookingDocumentAttachment,
   type NotificationProvider,
   type NotificationsRuntimeProvider,
-} from "@voyant-travel/notifications"
-import { createNotificationReminderWorkflowRuntime } from "@voyant-travel/notifications/workflow-runtime"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+} from "./index.js"
+import { createNotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
 
 /** Build the standard Node Notifications runtime from domain-neutral host primitives. */
-export function createNotificationsStandardNodeRuntime(
+export function createNotificationsRuntime(
   primitives: VoyantRuntimeHostPrimitives,
 ): NotificationsRuntimeProvider {
   const resolveProviders = (bindings: Record<string, unknown>) =>

@@ -17,11 +17,11 @@ const contributors = {
   commerce: "host.capabilities.loadCommerceRuntime()",
   "distribution-node": "configureDistributionStandardNodeRuntime",
   "finance-node": "createFinanceStandardNodeRuntime",
-  "flights-node": "createFlightsStandardNodeRuntime",
+  flights: "createFlightsRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
-  "legal-node": "createLegalStandardNodeRuntime",
-  "notifications-node": "createNotificationsStandardNodeRuntime",
-  "quotes-node": "createQuotesStandardNodeRuntime",
+  legal: "createLegalRuntime",
+  notifications: "createNotificationsRuntime",
+  quotes: "createQuotesRuntime",
   "workflow-runs": "workflowRunnerRegistryService",
 }
 

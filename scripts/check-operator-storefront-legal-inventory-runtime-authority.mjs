@@ -12,7 +12,7 @@ const [deploymentResources, storefrontContributor, legalContributor, inventoryCo
   await Promise.all([
     read("starters/operator/src/api/runtime/deployment-resources.ts"),
     read("packages/storefront/src/runtime-contributor.ts"),
-    read("packages/legal-node/src/runtime-contributor.ts"),
+    read("packages/legal/src/runtime-contributor.ts"),
     read("packages/inventory/src/runtime-contributor.ts"),
   ])
 
@@ -50,7 +50,7 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
 
 for (const factory of [
   "createStorefrontRuntimePortContribution",
-  "createLegalNodeRuntimePortContribution",
+  "createLegalRuntimePortContribution",
   "createInventoryRuntimePortContribution",
 ]) {
   if (deploymentResources.includes(factory)) {

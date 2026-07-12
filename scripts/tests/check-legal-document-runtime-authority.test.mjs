@@ -18,28 +18,29 @@ async function fixture(overrides = {}) {
   const files = {
     "starters/operator/src/api/runtime/deployment-resources.ts": "generic primitives",
     "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
-      'import("@voyant-travel/legal-node/standard-node-runtime")',
-    "packages/legal/package.json": JSON.stringify({ exports: {} }),
-    "packages/legal-node/package.json": JSON.stringify({
+      'import("@voyant-travel/legal/runtime")',
+    "packages/legal/package.json": JSON.stringify({
+      exports: {
+        "./runtime-contributor": "./src/runtime-contributor.ts",
+      },
       voyant: {
-        kind: "library",
-        runtime: { export: "createLegalNodeRuntimePortContribution" },
+        kind: "module",
+        runtime: { export: "createLegalRuntimePortContribution" },
       },
       dependencies: {
         "@voyant-travel/bookings": "workspace:^",
-        "@voyant-travel/legal": "workspace:^",
         "@voyant-travel/operator-settings": "workspace:^",
       },
     }),
-    "packages/legal-node/src/runtime-contributor.ts":
-      "createLegalStandardNodeRuntime legalRuntimePort.id legalContractDocumentRuntimePort.id legalBookingContractSubscriberRuntimePort.id",
-    "packages/legal-node/src/standard-node-runtime.ts":
+    "packages/legal/src/runtime-contributor.ts":
+      "createLegalRuntime legalRuntimePort.id legalContractDocumentRuntimePort.id legalBookingContractSubscriberRuntimePort.id",
+    "packages/legal/src/runtime.ts":
       "buildContractVariableBindings createContractDocumentService resolveContractDocumentGenerator resolveBookingPiiService createBookingContractSubscriberHost",
     "packages/framework/package.json": JSON.stringify({
-      dependencies: { "@voyant-travel/legal-node": "workspace:*" },
+      dependencies: { "@voyant-travel/legal": "workspace:*" },
     }),
     "release.runtime-packages.generated.json": JSON.stringify({
-      runtimePackages: ["@voyant-travel/legal-node"],
+      runtimePackages: ["@voyant-travel/legal"],
     }),
     ...overrides,
   }
@@ -65,14 +66,16 @@ it("rejects a restored deployment Legal loader", async () => {
   )
 })
 
-it("rejects target contributor metadata on the Legal domain package", async () => {
+it("rejects incorrect contributor metadata on the Legal domain package", async () => {
   const root = await fixture({
     "packages/legal/package.json": JSON.stringify({
-      exports: { "./runtime-contributor": "./src/runtime-contributor.ts" },
+      exports: {
+        "./runtime-contributor": "./src/runtime-contributor.ts",
+      },
       voyant: { runtime: { export: "createLegalRuntimePortContribution" } },
     }),
   })
   await assert.rejects(execFileAsync(process.execPath, [checker, "--root", root]), (error) =>
-    error.stderr.includes("must not retain target runtime contributor metadata"),
+    error.stderr.includes("must declare its standard Node runtime contributor"),
   )
 })

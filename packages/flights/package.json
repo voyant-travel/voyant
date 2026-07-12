@@ -16,6 +16,7 @@
     "./reference/static-bundle": "./src/reference/static-bundle.ts",
     "./hono": "./src/hono.ts",
     "./payment-integration": "./src/payment-integration.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/flights.json"
   },
@@ -23,6 +24,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createFlightsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -118,6 +123,11 @@
         "import": "./dist/payment-integration.js",
         "default": "./dist/payment-integration.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -137,6 +147,8 @@
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/plugin-flights-demo": "workspace:^",
+    "@voyant-travel/plugin-netopia": "^0.105.20",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"

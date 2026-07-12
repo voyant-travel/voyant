@@ -16,19 +16,22 @@ async function createFixture(overrides = {}) {
   const files = {
     "flights/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/finance": "workspace:^" },
-      voyant: { requiresSchemas: ["@voyant-travel/finance"] },
+      exports: {
+        "./runtime-contributor": "./src/runtime-contributor.ts",
+      },
+      voyant: {
+        requiresSchemas: ["@voyant-travel/finance"],
+        runtime: { export: "createFlightsRuntimePortContribution" },
+      },
     }),
     "flights/src/voyant.ts":
       'runtimePorts: [requirePort(flightsRuntimePort)]\nrequires: { capabilities: ["finance.payment-sessions"] }\nexport: "createFlightsVoyantRuntime"\n',
     "flights/src/hono.ts":
       'defineGraphRuntimeFactory(({ getPort }) => getPort(flightsRuntimePort))\ncreateOrderPaymentSessions({ targetType: "flight_order" })\n',
     "flights/src/runtime-port.ts": '["resolveAdapter", "startCardPayment"]\n',
-    "flights-node/package.json": JSON.stringify({
-      voyant: { runtime: { export: "createFlightsNodeRuntimePortContribution" } },
-    }),
-    "flights-node/src/runtime-contributor.ts":
-      "primitives: VoyantRuntimeHostPrimitives\ncreateFlightsStandardNodeRuntime(host.primitives)\n",
-    "flights-node/src/standard-node-runtime.ts":
+    "flights/src/runtime-contributor.ts":
+      "primitives: VoyantRuntimeHostPrimitives\ncreateFlightsRuntime(host.primitives)\n",
+    "flights/src/runtime.ts":
       "resolveAdapter(c) {}\nstartCardPayment() {}\ncreateDemoFlightAdapter()\n",
     "operator/src/api/runtime/deployment-resources.ts":
       "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
@@ -49,7 +52,7 @@ async function runChecker(root) {
       checkerPath,
       "--flights-root",
       path.join(root, "flights"),
-      "--flights-node-root",
+      "--retired-flights-node-root",
       path.join(root, "flights-node"),
       "--operator-root",
       path.join(root, "operator"),
@@ -61,7 +64,7 @@ async function runChecker(root) {
 describe("check-flights-runtime-authority", () => {
   it("accepts package runtime authority with Node-host port wiring", async () => {
     const result = await runChecker(await createFixture())
-    assert.match(result.stdout, /BOM-selected Flights Node adapter authority/)
+    assert.match(result.stdout, /Flights-owned standard Node runtime authority/)
   })
 
   it("rejects package-id bindings and compatibility route loaders", async () => {

@@ -12,7 +12,7 @@ const [deploymentResources, auth, mice, quotes, relationships] = await Promise.a
   read("starters/operator/src/api/runtime/deployment-resources.ts"),
   read("packages/auth/src/runtime-contributor.ts"),
   read("packages/mice/src/runtime-contributor.ts"),
-  read("packages/quotes-node/src/runtime-contributor.ts"),
+  read("packages/quotes/src/runtime-contributor.ts"),
   read("packages/relationships/src/runtime-contributor.ts"),
 ])
 
@@ -35,7 +35,7 @@ if (deploymentResources.includes("createOperatorIdentityAccessRuntime")) {
 const contributorRequirements = [
   ["auth", auth, ["host.capabilities", "cloudAdminMembersConfigFromRevalidate", "auth.invitation"]],
   ["mice", mice, ["host.capabilities.relationshipsService", "resolveDelegatePersonById"]],
-  ["quotes", quotes, ["createQuotesStandardNodeRuntime(host)"]],
+  ["quotes", quotes, ["createQuotesRuntime(host)"]],
   ["relationships", relationships, ["host.capabilities.customFields"]],
 ]
 

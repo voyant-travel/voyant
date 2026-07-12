@@ -1,8 +1,8 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { CardPaymentStarter } from "@voyant-travel/finance/card-payment"
-import type { FlightsRuntime } from "@voyant-travel/flights"
 import { lazyProvider } from "@voyant-travel/hono"
 import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
+import type { FlightsRuntime } from "./runtime-port.js"
 
 const cardPaymentStarter: CardPaymentStarter = lazyProvider(async () =>
   import("@voyant-travel/plugin-netopia").then((module) => module.netopiaCardPaymentStarter()),
@@ -10,9 +10,7 @@ const cardPaymentStarter: CardPaymentStarter = lazyProvider(async () =>
 type CardPaymentInput = Parameters<CardPaymentStarter>[1]
 
 /** Build the standard Node Flights runtime from domain-neutral host primitives. */
-export function createFlightsStandardNodeRuntime(
-  primitives: VoyantRuntimeHostPrimitives,
-): FlightsRuntime {
+export function createFlightsRuntime(primitives: VoyantRuntimeHostPrimitives): FlightsRuntime {
   return {
     resolveAdapter(c) {
       const baseUrl = stringValue(primitives.env(c.env).FLIGHTS_DEMO_API_URL)

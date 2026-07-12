@@ -13,7 +13,7 @@ const [deploymentResources, bookingsContributor, financeContributor, quotesContr
     read("starters/operator/src/api/runtime/deployment-resources.ts"),
     read("packages/bookings-node/src/runtime-contributor.ts"),
     read("packages/finance-node/src/runtime-contributor.ts"),
-    read("packages/quotes-node/src/runtime-contributor.ts"),
+    read("packages/quotes/src/runtime-contributor.ts"),
   ])
 
 const packagePorts = {
@@ -46,7 +46,7 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
 for (const factory of [
   "createBookingsNodeRuntimePortContribution",
   "createFinanceNodeRuntimePortContribution",
-  "createQuotesNodeRuntimePortContribution",
+  "createQuotesRuntimePortContribution",
 ]) {
   if (deploymentResources.includes(factory)) {
     violations.push(`deployment-resources.ts must not enumerate ${factory}`)
