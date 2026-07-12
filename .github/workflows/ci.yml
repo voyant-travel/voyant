@@ -100,7 +100,10 @@ jobs:
         # (a public package, already installed) — no extra root dependency.
         env:
           NODE_OPTIONS: --conditions=development --max-old-space-size=8192
-        run: pnpm --filter operator db:doctor
+        working-directory: starters/operator
+        run: |
+          pnpm exec voyant build --json
+          pnpm exec voyant db doctor --fail-on-drift
 
       - name: i18n checks
         run: pnpm i18n:check
