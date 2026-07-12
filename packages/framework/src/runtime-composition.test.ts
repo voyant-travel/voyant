@@ -2,7 +2,10 @@
 import { createEventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory, definePort } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
-import { composeVoyantGraphRuntime } from "./runtime-composition.js"
+import {
+  composeVoyantGraphRuntime,
+  createVoyantGraphRuntimePortStubs,
+} from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
 function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
@@ -37,6 +40,31 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime composition", () => {
+  it("creates non-thenable generic stubs for package-owned runtime ports", () => {
+    const graphRuntime = createVoyantGraphRuntime({
+      graphHash: "sha256:runtime-port-stub",
+      entries: {},
+      modules: [
+        {
+          id: "@acme/identity",
+          kind: "module",
+          packageName: "@acme/identity",
+          order: 0,
+          requiredRuntimePorts: ["acme.identity-runtime"],
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    const provider = createVoyantGraphRuntimePortStubs(graphRuntime)[
+      "acme.identity-runtime"
+    ] as Record<string, unknown>
+
+    expect(provider.then).toBeUndefined()
+    expect(typeof provider.resolveDeployment).toBe("function")
+  })
+
   it("registers outbound subscribers from graph selections without a deployment event catalog", async () => {
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:webhook-runtime",

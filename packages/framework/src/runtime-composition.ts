@@ -120,6 +120,7 @@ function runtimePortStub(id: string): unknown {
   }
   return new Proxy(stub, {
     get(target, property, receiver) {
+      if (property === "then") return undefined
       return Reflect.has(target, property) ? Reflect.get(target, property, receiver) : unavailable
     },
   })
