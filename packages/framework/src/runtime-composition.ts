@@ -64,7 +64,7 @@ function runtimePortStub(id: string): unknown {
   }
   const unavailableAsync = async () => unavailable()
   const registrySurface = { resolveRegistry: unavailableAsync }
-  return {
+  const stub = {
     options: {},
     booking: {},
     publicRoutes: { resolveProductSnapshot: unavailableAsync },
@@ -118,6 +118,11 @@ function runtimePortStub(id: string): unknown {
     signContract: unavailableAsync,
     generate: unavailableAsync,
   }
+  return new Proxy(stub, {
+    get(target, property, receiver) {
+      return Reflect.has(target, property) ? Reflect.get(target, property, receiver) : unavailable
+    },
+  })
 }
 
 function runtimeServiceStub(id: string): Record<string, (...args: unknown[]) => Promise<never>> {

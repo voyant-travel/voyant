@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -198,13 +171,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "user",
-                "api_key",
-                "agent",
-                "workflow",
-                "system"
-              ]
+              "enum": ["user", "api_key", "agent", "workflow", "system"]
             },
             "required": false,
             "name": "principalType",
@@ -399,12 +366,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "low",
-                  "medium",
-                  "high",
-                  "critical"
-                ]
+                "enum": ["low", "medium", "high", "critical"]
               },
               "minItems": 1
             },
@@ -442,12 +404,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "none",
-                  "revert",
-                  "compensate",
-                  "domain_command"
-                ]
+                "enum": ["none", "revert", "compensate", "domain_command"]
               },
               "minItems": 1
             },
@@ -481,11 +438,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "full",
-                  "partial",
-                  "failed"
-                ]
+                "enum": ["full", "partial", "failed"]
               },
               "minItems": 1
             },
@@ -568,10 +521,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "required": false,
             "name": "sortDir",
@@ -646,138 +596,69 @@
                           },
                           "evaluatedRisk": {
                             "type": "string",
-                            "enum": [
-                              "low",
-                              "medium",
-                              "high",
-                              "critical"
-                            ]
+                            "enum": ["low", "medium", "high", "critical"]
                           },
                           "actorType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "principalType": {
                             "type": "string",
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system"
-                            ]
+                            "enum": ["user", "api_key", "agent", "workflow", "system"]
                           },
                           "principalId": {
                             "type": "string"
                           },
                           "principalSubtype": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sessionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "apiTokenId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "internalRequest": {
                             "type": "boolean"
                           },
                           "delegatedByPrincipalType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system",
-                              null
-                            ]
+                            "type": ["string", "null"],
+                            "enum": ["user", "api_key", "agent", "workflow", "system", null]
                           },
                           "delegatedByPrincipalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "delegationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "callerType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "organizationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "routeOrToolName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "workflowRunId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "workflowStepId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "correlationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "causationActionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "idempotencyScope": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "idempotencyKey": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "idempotencyFingerprint": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "targetType": {
                             "type": "string"
@@ -786,34 +667,19 @@
                             "type": "string"
                           },
                           "capabilityId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "capabilityVersion": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "authorizationSource": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "approvalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "amendsActionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -862,10 +728,7 @@
                       "type": "object",
                       "properties": {
                         "nextCursor": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "occurredAt": {
                               "type": "string"
@@ -874,21 +737,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "occurredAt",
-                            "id"
-                          ]
+                          "required": ["occurredAt", "id"]
                         }
                       },
-                      "required": [
-                        "nextCursor"
-                      ]
+                      "required": ["nextCursor"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "pageInfo"
-                  ]
+                  "required": ["data", "pageInfo"]
                 }
               }
             }
@@ -904,9 +759,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -914,9 +767,7 @@
         },
         "operationId": "getAdminActionLedger",
         "summary": "GET /v1/admin/action-ledger",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -968,13 +819,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "user",
-                "api_key",
-                "agent",
-                "workflow",
-                "system"
-              ]
+              "enum": ["user", "api_key", "agent", "workflow", "system"]
             },
             "required": false,
             "name": "principalType",
@@ -1169,12 +1014,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "low",
-                  "medium",
-                  "high",
-                  "critical"
-                ]
+                "enum": ["low", "medium", "high", "critical"]
               },
               "minItems": 1
             },
@@ -1212,12 +1052,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "none",
-                  "revert",
-                  "compensate",
-                  "domain_command"
-                ]
+                "enum": ["none", "revert", "compensate", "domain_command"]
               },
               "minItems": 1
             },
@@ -1251,11 +1086,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "full",
-                  "partial",
-                  "failed"
-                ]
+                "enum": ["full", "partial", "failed"]
               },
               "minItems": 1
             },
@@ -1338,10 +1169,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "required": false,
             "name": "sortDir",
@@ -1416,138 +1244,69 @@
                           },
                           "evaluatedRisk": {
                             "type": "string",
-                            "enum": [
-                              "low",
-                              "medium",
-                              "high",
-                              "critical"
-                            ]
+                            "enum": ["low", "medium", "high", "critical"]
                           },
                           "actorType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "principalType": {
                             "type": "string",
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system"
-                            ]
+                            "enum": ["user", "api_key", "agent", "workflow", "system"]
                           },
                           "principalId": {
                             "type": "string"
                           },
                           "principalSubtype": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sessionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "apiTokenId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "internalRequest": {
                             "type": "boolean"
                           },
                           "delegatedByPrincipalType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system",
-                              null
-                            ]
+                            "type": ["string", "null"],
+                            "enum": ["user", "api_key", "agent", "workflow", "system", null]
                           },
                           "delegatedByPrincipalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "delegationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "callerType": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "organizationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "routeOrToolName": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "workflowRunId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "workflowStepId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "correlationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "causationActionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "idempotencyScope": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "idempotencyKey": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "idempotencyFingerprint": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "targetType": {
                             "type": "string"
@@ -1556,34 +1315,19 @@
                             "type": "string"
                           },
                           "capabilityId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "capabilityVersion": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "authorizationSource": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "approvalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "amendsActionId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -1632,10 +1376,7 @@
                       "type": "object",
                       "properties": {
                         "nextCursor": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "occurredAt": {
                               "type": "string"
@@ -1644,21 +1385,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "occurredAt",
-                            "id"
-                          ]
+                          "required": ["occurredAt", "id"]
                         }
                       },
-                      "required": [
-                        "nextCursor"
-                      ]
+                      "required": ["nextCursor"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "pageInfo"
-                  ]
+                  "required": ["data", "pageInfo"]
                 }
               }
             }
@@ -1674,9 +1407,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1684,9 +1415,7 @@
         },
         "operationId": "getAdminActionLedgerEntries",
         "summary": "GET /v1/admin/action-ledger/entries",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -1728,27 +1457,15 @@
                       },
                       "actionKind": {
                         "type": "string",
-                        "enum": [
-                          "reverse",
-                          "compensate"
-                        ]
+                        "enum": ["reverse", "compensate"]
                       },
                       "status": {
                         "type": "string",
-                        "enum": [
-                          "reversed",
-                          "compensated",
-                          "failed"
-                        ]
+                        "enum": ["reversed", "compensated", "failed"]
                       },
                       "evaluatedRisk": {
                         "type": "string",
-                        "enum": [
-                          "low",
-                          "medium",
-                          "high",
-                          "critical"
-                        ],
+                        "enum": ["low", "medium", "high", "critical"],
                         "default": "high"
                       },
                       "actorType": {
@@ -1757,13 +1474,7 @@
                       },
                       "principalType": {
                         "type": "string",
-                        "enum": [
-                          "user",
-                          "api_key",
-                          "agent",
-                          "workflow",
-                          "system"
-                        ]
+                        "enum": ["user", "api_key", "agent", "workflow", "system"]
                       },
                       "principalId": {
                         "type": "string",
@@ -1787,13 +1498,7 @@
                       },
                       "delegatedByPrincipalType": {
                         "type": "string",
-                        "enum": [
-                          "user",
-                          "api_key",
-                          "agent",
-                          "workflow",
-                          "system"
-                        ]
+                        "enum": ["user", "api_key", "agent", "workflow", "system"]
                       },
                       "delegatedByPrincipalId": {
                         "type": "string",
@@ -1884,12 +1589,7 @@
                           },
                           "reversalKind": {
                             "type": "string",
-                            "enum": [
-                              "none",
-                              "revert",
-                              "compensate",
-                              "domain_command"
-                            ],
+                            "enum": ["none", "revert", "compensate", "domain_command"],
                             "default": "none"
                           },
                           "reversalCommandId": {
@@ -1934,18 +1634,12 @@
                       },
                       "reversalOutcome": {
                         "type": "string",
-                        "enum": [
-                          "full",
-                          "partial",
-                          "failed"
-                        ]
+                        "enum": ["full", "partial", "failed"]
                       }
                     }
                   }
                 },
-                "required": [
-                  "reversalAction"
-                ]
+                "required": ["reversalAction"]
               }
             }
           }
@@ -2009,138 +1703,69 @@
                             },
                             "evaluatedRisk": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "actorType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "principalType": {
                               "type": "string",
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system"
-                              ]
+                              "enum": ["user", "api_key", "agent", "workflow", "system"]
                             },
                             "principalId": {
                               "type": "string"
                             },
                             "principalSubtype": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "apiTokenId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "internalRequest": {
                               "type": "boolean"
                             },
                             "delegatedByPrincipalType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["user", "api_key", "agent", "workflow", "system", null]
                             },
                             "delegatedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "callerType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "organizationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "routeOrToolName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowRunId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowStepId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "correlationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "causationActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyScope": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyFingerprint": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "targetType": {
                               "type": "string"
@@ -2149,34 +1774,19 @@
                               "type": "string"
                             },
                             "capabilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "capabilityVersion": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "authorizationSource": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "approvalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "amendsActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -2268,138 +1878,69 @@
                             },
                             "evaluatedRisk": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "actorType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "principalType": {
                               "type": "string",
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system"
-                              ]
+                              "enum": ["user", "api_key", "agent", "workflow", "system"]
                             },
                             "principalId": {
                               "type": "string"
                             },
                             "principalSubtype": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "apiTokenId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "internalRequest": {
                               "type": "boolean"
                             },
                             "delegatedByPrincipalType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["user", "api_key", "agent", "workflow", "system", null]
                             },
                             "delegatedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "callerType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "organizationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "routeOrToolName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowRunId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowStepId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "correlationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "causationActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyScope": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyFingerprint": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "targetType": {
                               "type": "string"
@@ -2408,34 +1949,19 @@
                               "type": "string"
                             },
                             "capabilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "capabilityVersion": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "authorizationSource": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "approvalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "amendsActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -2483,16 +2009,10 @@
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "originalAction",
-                        "reversalAction",
-                        "replayed"
-                      ]
+                      "required": ["originalAction", "reversalAction", "replayed"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2508,9 +2028,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2526,9 +2044,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2545,16 +2061,10 @@
                     },
                     "reason": {
                       "type": "string",
-                      "enum": [
-                        "missing_mutation_detail",
-                        "not_reversible"
-                      ]
+                      "enum": ["missing_mutation_detail", "not_reversible"]
                     }
                   },
-                  "required": [
-                    "error",
-                    "reason"
-                  ]
+                  "required": ["error", "reason"]
                 }
               }
             }
@@ -2562,9 +2072,7 @@
         },
         "operationId": "postAdminActionLedgerEntriesByIdReversals",
         "summary": "POST /v1/admin/action-ledger/entries/{id}/reversals",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -2640,138 +2148,69 @@
                         },
                         "evaluatedRisk": {
                           "type": "string",
-                          "enum": [
-                            "low",
-                            "medium",
-                            "high",
-                            "critical"
-                          ]
+                          "enum": ["low", "medium", "high", "critical"]
                         },
                         "actorType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "principalType": {
                           "type": "string",
-                          "enum": [
-                            "user",
-                            "api_key",
-                            "agent",
-                            "workflow",
-                            "system"
-                          ]
+                          "enum": ["user", "api_key", "agent", "workflow", "system"]
                         },
                         "principalId": {
                           "type": "string"
                         },
                         "principalSubtype": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sessionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "apiTokenId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "internalRequest": {
                           "type": "boolean"
                         },
                         "delegatedByPrincipalType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "enum": [
-                            "user",
-                            "api_key",
-                            "agent",
-                            "workflow",
-                            "system",
-                            null
-                          ]
+                          "type": ["string", "null"],
+                          "enum": ["user", "api_key", "agent", "workflow", "system", null]
                         },
                         "delegatedByPrincipalId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "delegationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "callerType": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "routeOrToolName": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "workflowRunId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "workflowStepId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "correlationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "causationActionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "idempotencyScope": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "idempotencyKey": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "idempotencyFingerprint": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "targetType": {
                           "type": "string"
@@ -2780,97 +2219,53 @@
                           "type": "string"
                         },
                         "capabilityId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capabilityVersion": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "authorizationSource": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "approvalId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "amendsActionId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
                         },
                         "mutationDetail": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "actionId": {
                               "type": "string"
                             },
                             "commandInputRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "commandResultRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "summary": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "reversalKind": {
                               "type": "string",
-                              "enum": [
-                                "none",
-                                "revert",
-                                "compensate",
-                                "domain_command"
-                              ]
+                              "enum": ["none", "revert", "compensate", "domain_command"]
                             },
                             "reversalCommandId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "reversalCommandVersion": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "reversalArgsRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "reversalStateProjection": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
+                              "type": ["string", "null"],
                               "enum": [
                                 "not_reversible",
                                 "available",
@@ -2883,28 +2278,14 @@
                               ]
                             },
                             "reversalOutcomeProjection": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "full",
-                                "partial",
-                                "failed",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["full", "partial", "failed", null]
                             },
                             "reversesActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "reversedByActionIdProjection": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -2923,40 +2304,25 @@
                           ]
                         },
                         "sensitiveReadDetail": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "actionId": {
                               "type": "string"
                             },
                             "reasonCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "disclosedFieldSet": {
-                              "type": [
-                                "array",
-                                "null"
-                              ],
+                              "type": ["array", "null"],
                               "items": {
                                 "type": "string"
                               }
                             },
                             "disclosureSummary": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decisionPolicy": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             }
                           },
                           "required": [
@@ -2986,12 +2352,7 @@
                               },
                               "redactionStatus": {
                                 "type": "string",
-                                "enum": [
-                                  "none",
-                                  "redacted",
-                                  "tombstoned",
-                                  "crypto_shredded"
-                                ]
+                                "enum": ["none", "redacted", "tombstoned", "crypto_shredded"]
                               },
                               "retentionPolicy": {
                                 "type": "string"
@@ -3000,19 +2361,13 @@
                                 "type": "string"
                               },
                               "hash": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
                               },
                               "expiresAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -3041,10 +2396,7 @@
                                 "type": "string"
                               },
                               "organizationId": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "relayStatus": {
                                 "type": "string",
@@ -3057,34 +2409,22 @@
                                 ]
                               },
                               "payloadRef": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "attemptCount": {
                                 "type": "integer"
                               },
                               "nextRetryAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "lastError": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
                               },
                               "processedAt": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [
@@ -3145,9 +2485,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3163,9 +2501,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3173,9 +2509,7 @@
         },
         "operationId": "getAdminActionLedgerEntriesById",
         "summary": "GET /v1/admin/action-ledger/entries/{id}",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -3200,14 +2534,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "pending",
-                  "approved",
-                  "denied",
-                  "expired",
-                  "cancelled",
-                  "superseded"
-                ]
+                "enum": ["pending", "approved", "denied", "expired", "cancelled", "superseded"]
               },
               "minItems": 1
             },
@@ -3274,12 +2601,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "low",
-                  "medium",
-                  "high",
-                  "critical"
-                ]
+                "enum": ["low", "medium", "high", "critical"]
               },
               "minItems": 1
             },
@@ -3410,28 +2732,16 @@
                             ]
                           },
                           "requestedByPrincipalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "assignedToPrincipalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "decidedByPrincipalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "delegatedFromPrincipalId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "policyName": {
                             "type": "string"
@@ -3440,37 +2750,20 @@
                             "type": "string"
                           },
                           "targetSnapshotRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "riskSnapshot": {
                             "type": "string",
-                            "enum": [
-                              "low",
-                              "medium",
-                              "high",
-                              "critical"
-                            ]
+                            "enum": ["low", "medium", "high", "critical"]
                           },
                           "reasonCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "expiresAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "decidedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -3499,10 +2792,7 @@
                       "type": "object",
                       "properties": {
                         "nextCursor": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "createdAt": {
                               "type": "string"
@@ -3511,21 +2801,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "createdAt",
-                            "id"
-                          ]
+                          "required": ["createdAt", "id"]
                         }
                       },
-                      "required": [
-                        "nextCursor"
-                      ]
+                      "required": ["nextCursor"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "pageInfo"
-                  ]
+                  "required": ["data", "pageInfo"]
                 }
               }
             }
@@ -3541,9 +2823,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3551,9 +2831,7 @@
         },
         "operationId": "getAdminActionLedgerApprovals",
         "summary": "GET /v1/admin/action-ledger/approvals",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -3600,12 +2878,7 @@
                       },
                       "evaluatedRisk": {
                         "type": "string",
-                        "enum": [
-                          "low",
-                          "medium",
-                          "high",
-                          "critical"
-                        ]
+                        "enum": ["low", "medium", "high", "critical"]
                       },
                       "actorType": {
                         "type": "string",
@@ -3613,13 +2886,7 @@
                       },
                       "principalType": {
                         "type": "string",
-                        "enum": [
-                          "user",
-                          "api_key",
-                          "agent",
-                          "workflow",
-                          "system"
-                        ]
+                        "enum": ["user", "api_key", "agent", "workflow", "system"]
                       },
                       "principalId": {
                         "type": "string",
@@ -3643,13 +2910,7 @@
                       },
                       "delegatedByPrincipalType": {
                         "type": "string",
-                        "enum": [
-                          "user",
-                          "api_key",
-                          "agent",
-                          "workflow",
-                          "system"
-                        ]
+                        "enum": ["user", "api_key", "agent", "workflow", "system"]
                       },
                       "delegatedByPrincipalId": {
                         "type": "string",
@@ -3763,12 +3024,7 @@
                       },
                       "riskSnapshot": {
                         "type": "string",
-                        "enum": [
-                          "low",
-                          "medium",
-                          "high",
-                          "critical"
-                        ]
+                        "enum": ["low", "medium", "high", "critical"]
                       },
                       "reasonCode": {
                         "type": "string",
@@ -3779,16 +3035,10 @@
                         "format": "date-time"
                       }
                     },
-                    "required": [
-                      "policyName",
-                      "policyVersion"
-                    ]
+                    "required": ["policyName", "policyVersion"]
                   }
                 },
-                "required": [
-                  "requestedAction",
-                  "approval"
-                ]
+                "required": ["requestedAction", "approval"]
               }
             }
           }
@@ -3852,138 +3102,69 @@
                             },
                             "evaluatedRisk": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "actorType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "principalType": {
                               "type": "string",
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system"
-                              ]
+                              "enum": ["user", "api_key", "agent", "workflow", "system"]
                             },
                             "principalId": {
                               "type": "string"
                             },
                             "principalSubtype": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "apiTokenId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "internalRequest": {
                               "type": "boolean"
                             },
                             "delegatedByPrincipalType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["user", "api_key", "agent", "workflow", "system", null]
                             },
                             "delegatedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "callerType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "organizationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "routeOrToolName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowRunId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowStepId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "correlationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "causationActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyScope": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyFingerprint": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "targetType": {
                               "type": "string"
@@ -3992,34 +3173,19 @@
                               "type": "string"
                             },
                             "capabilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "capabilityVersion": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "authorizationSource": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "approvalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "amendsActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -4084,28 +3250,16 @@
                               ]
                             },
                             "requestedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "assignedToPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decidedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegatedFromPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "policyName": {
                               "type": "string"
@@ -4114,37 +3268,20 @@
                               "type": "string"
                             },
                             "targetSnapshotRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "riskSnapshot": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "reasonCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "expiresAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decidedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -4172,16 +3309,10 @@
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "requestedAction",
-                        "approval",
-                        "replayed"
-                      ]
+                      "required": ["requestedAction", "approval", "replayed"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4197,9 +3328,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4207,9 +3336,7 @@
         },
         "operationId": "postAdminActionLedgerApprovalsRequest",
         "summary": "POST /v1/admin/action-ledger/approvals/request",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -4258,28 +3385,16 @@
                           ]
                         },
                         "requestedByPrincipalId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "assignedToPrincipalId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedByPrincipalId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "delegatedFromPrincipalId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "policyName": {
                           "type": "string"
@@ -4288,46 +3403,26 @@
                           "type": "string"
                         },
                         "targetSnapshotRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "riskSnapshot": {
                           "type": "string",
-                          "enum": [
-                            "low",
-                            "medium",
-                            "high",
-                            "critical"
-                          ]
+                          "enum": ["low", "medium", "high", "critical"]
                         },
                         "reasonCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "decidedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
                         },
                         "requestedAction": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "id": {
                               "type": "string"
@@ -4374,138 +3469,69 @@
                             },
                             "evaluatedRisk": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "actorType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "principalType": {
                               "type": "string",
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system"
-                              ]
+                              "enum": ["user", "api_key", "agent", "workflow", "system"]
                             },
                             "principalId": {
                               "type": "string"
                             },
                             "principalSubtype": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "apiTokenId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "internalRequest": {
                               "type": "boolean"
                             },
                             "delegatedByPrincipalType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["user", "api_key", "agent", "workflow", "system", null]
                             },
                             "delegatedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "callerType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "organizationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "routeOrToolName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowRunId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowStepId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "correlationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "causationActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyScope": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyFingerprint": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "targetType": {
                               "type": "string"
@@ -4514,97 +3540,53 @@
                               "type": "string"
                             },
                             "capabilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "capabilityVersion": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "authorizationSource": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "approvalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "amendsActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
                             },
                             "mutationDetail": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "actionId": {
                                   "type": "string"
                                 },
                                 "commandInputRef": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "commandResultRef": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "summary": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "reversalKind": {
                                   "type": "string",
-                                  "enum": [
-                                    "none",
-                                    "revert",
-                                    "compensate",
-                                    "domain_command"
-                                  ]
+                                  "enum": ["none", "revert", "compensate", "domain_command"]
                                 },
                                 "reversalCommandId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "reversalCommandVersion": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "reversalArgsRef": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "reversalStateProjection": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
+                                  "type": ["string", "null"],
                                   "enum": [
                                     "not_reversible",
                                     "available",
@@ -4617,28 +3599,14 @@
                                   ]
                                 },
                                 "reversalOutcomeProjection": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ],
-                                  "enum": [
-                                    "full",
-                                    "partial",
-                                    "failed",
-                                    null
-                                  ]
+                                  "type": ["string", "null"],
+                                  "enum": ["full", "partial", "failed", null]
                                 },
                                 "reversesActionId": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "reversedByActionIdProjection": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 }
                               },
                               "required": [
@@ -4657,40 +3625,25 @@
                               ]
                             },
                             "sensitiveReadDetail": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "properties": {
                                 "actionId": {
                                   "type": "string"
                                 },
                                 "reasonCode": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "disclosedFieldSet": {
-                                  "type": [
-                                    "array",
-                                    "null"
-                                  ],
+                                  "type": ["array", "null"],
                                   "items": {
                                     "type": "string"
                                   }
                                 },
                                 "disclosureSummary": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 },
                                 "decisionPolicy": {
-                                  "type": [
-                                    "string",
-                                    "null"
-                                  ]
+                                  "type": ["string", "null"]
                                 }
                               },
                               "required": [
@@ -4720,12 +3673,7 @@
                                   },
                                   "redactionStatus": {
                                     "type": "string",
-                                    "enum": [
-                                      "none",
-                                      "redacted",
-                                      "tombstoned",
-                                      "crypto_shredded"
-                                    ]
+                                    "enum": ["none", "redacted", "tombstoned", "crypto_shredded"]
                                   },
                                   "retentionPolicy": {
                                     "type": "string"
@@ -4734,19 +3682,13 @@
                                     "type": "string"
                                   },
                                   "hash": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "createdAt": {
                                     "type": "string"
                                   },
                                   "expiresAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -4775,10 +3717,7 @@
                                     "type": "string"
                                   },
                                   "organizationId": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "relayStatus": {
                                     "type": "string",
@@ -4791,34 +3730,22 @@
                                     ]
                                   },
                                   "payloadRef": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "attemptCount": {
                                     "type": "integer"
                                   },
                                   "nextRetryAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "lastError": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   },
                                   "createdAt": {
                                     "type": "string"
                                   },
                                   "processedAt": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ]
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -4899,9 +3826,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4917,9 +3842,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4927,9 +3850,7 @@
         },
         "operationId": "getAdminActionLedgerApprovalsById",
         "summary": "GET /v1/admin/action-ledger/approvals/{id}",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -4959,13 +3880,7 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "approved",
-                      "denied",
-                      "expired",
-                      "cancelled",
-                      "superseded"
-                    ]
+                    "enum": ["approved", "denied", "expired", "cancelled", "superseded"]
                   },
                   "decidedByPrincipalId": {
                     "type": "string",
@@ -4993,13 +3908,7 @@
                       },
                       "principalType": {
                         "type": "string",
-                        "enum": [
-                          "user",
-                          "api_key",
-                          "agent",
-                          "workflow",
-                          "system"
-                        ]
+                        "enum": ["user", "api_key", "agent", "workflow", "system"]
                       },
                       "principalId": {
                         "type": "string",
@@ -5023,13 +3932,7 @@
                       },
                       "delegatedByPrincipalType": {
                         "type": "string",
-                        "enum": [
-                          "user",
-                          "api_key",
-                          "agent",
-                          "workflow",
-                          "system"
-                        ]
+                        "enum": ["user", "api_key", "agent", "workflow", "system"]
                       },
                       "delegatedByPrincipalId": {
                         "type": "string",
@@ -5092,18 +3995,10 @@
                         "minLength": 1
                       }
                     },
-                    "required": [
-                      "actionName",
-                      "principalType",
-                      "principalId"
-                    ]
+                    "required": ["actionName", "principalType", "principalId"]
                   }
                 },
-                "required": [
-                  "status",
-                  "decidedByPrincipalId",
-                  "decisionAction"
-                ]
+                "required": ["status", "decidedByPrincipalId", "decisionAction"]
               }
             }
           }
@@ -5140,28 +4035,16 @@
                               ]
                             },
                             "requestedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "assignedToPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decidedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegatedFromPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "policyName": {
                               "type": "string"
@@ -5170,37 +4053,20 @@
                               "type": "string"
                             },
                             "targetSnapshotRef": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "riskSnapshot": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "reasonCode": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "expiresAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "decidedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -5272,138 +4138,69 @@
                             },
                             "evaluatedRisk": {
                               "type": "string",
-                              "enum": [
-                                "low",
-                                "medium",
-                                "high",
-                                "critical"
-                              ]
+                              "enum": ["low", "medium", "high", "critical"]
                             },
                             "actorType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "principalType": {
                               "type": "string",
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system"
-                              ]
+                              "enum": ["user", "api_key", "agent", "workflow", "system"]
                             },
                             "principalId": {
                               "type": "string"
                             },
                             "principalSubtype": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "sessionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "apiTokenId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "internalRequest": {
                               "type": "boolean"
                             },
                             "delegatedByPrincipalType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ],
-                              "enum": [
-                                "user",
-                                "api_key",
-                                "agent",
-                                "workflow",
-                                "system",
-                                null
-                              ]
+                              "type": ["string", "null"],
+                              "enum": ["user", "api_key", "agent", "workflow", "system", null]
                             },
                             "delegatedByPrincipalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "delegationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "callerType": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "organizationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "routeOrToolName": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowRunId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "workflowStepId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "correlationId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "causationActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyScope": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyKey": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "idempotencyFingerprint": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "targetType": {
                               "type": "string"
@@ -5412,34 +4209,19 @@
                               "type": "string"
                             },
                             "capabilityId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "capabilityVersion": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "authorizationSource": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "approvalId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "amendsActionId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -5484,15 +4266,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "approval",
-                        "decisionAction"
-                      ]
+                      "required": ["approval", "decisionAction"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5508,9 +4285,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5526,9 +4301,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5558,11 +4331,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "error",
-                    "approvalId",
-                    "currentStatus"
-                  ]
+                  "required": ["error", "approvalId", "currentStatus"]
                 }
               }
             }
@@ -5570,9 +4339,7 @@
         },
         "operationId": "postAdminActionLedgerApprovalsByIdDecide",
         "summary": "POST /v1/admin/action-ledger/approvals/{id}/decide",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -5586,13 +4353,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "user",
-                "api_key",
-                "agent",
-                "workflow",
-                "system"
-              ]
+              "enum": ["user", "api_key", "agent", "workflow", "system"]
             },
             "required": false,
             "name": "rootPrincipalType",
@@ -5610,13 +4371,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "user",
-                "api_key",
-                "agent",
-                "workflow",
-                "system"
-              ]
+              "enum": ["user", "api_key", "agent", "workflow", "system"]
             },
             "required": false,
             "name": "parentPrincipalType",
@@ -5634,13 +4389,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "user",
-                "api_key",
-                "agent",
-                "workflow",
-                "system"
-              ]
+              "enum": ["user", "api_key", "agent", "workflow", "system"]
             },
             "required": false,
             "name": "childPrincipalType",
@@ -5765,39 +4514,21 @@
                           },
                           "rootPrincipalType": {
                             "type": "string",
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system"
-                            ]
+                            "enum": ["user", "api_key", "agent", "workflow", "system"]
                           },
                           "rootPrincipalId": {
                             "type": "string"
                           },
                           "parentPrincipalType": {
                             "type": "string",
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system"
-                            ]
+                            "enum": ["user", "api_key", "agent", "workflow", "system"]
                           },
                           "parentPrincipalId": {
                             "type": "string"
                           },
                           "childPrincipalType": {
                             "type": "string",
-                            "enum": [
-                              "user",
-                              "api_key",
-                              "agent",
-                              "workflow",
-                              "system"
-                            ]
+                            "enum": ["user", "api_key", "agent", "workflow", "system"]
                           },
                           "childPrincipalId": {
                             "type": "string"
@@ -5806,22 +4537,13 @@
                             "type": "string"
                           },
                           "capabilityScopeRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "budgetScopeRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "expiresAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -5847,10 +4569,7 @@
                       "type": "object",
                       "properties": {
                         "nextCursor": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "createdAt": {
                               "type": "string"
@@ -5859,21 +4578,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "createdAt",
-                            "id"
-                          ]
+                          "required": ["createdAt", "id"]
                         }
                       },
-                      "required": [
-                        "nextCursor"
-                      ]
+                      "required": ["nextCursor"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "pageInfo"
-                  ]
+                  "required": ["data", "pageInfo"]
                 }
               }
             }
@@ -5889,9 +4600,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5899,9 +4608,7 @@
         },
         "operationId": "getAdminActionLedgerDelegations",
         "summary": "GET /v1/admin/action-ledger/delegations",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -5937,39 +4644,21 @@
                         },
                         "rootPrincipalType": {
                           "type": "string",
-                          "enum": [
-                            "user",
-                            "api_key",
-                            "agent",
-                            "workflow",
-                            "system"
-                          ]
+                          "enum": ["user", "api_key", "agent", "workflow", "system"]
                         },
                         "rootPrincipalId": {
                           "type": "string"
                         },
                         "parentPrincipalType": {
                           "type": "string",
-                          "enum": [
-                            "user",
-                            "api_key",
-                            "agent",
-                            "workflow",
-                            "system"
-                          ]
+                          "enum": ["user", "api_key", "agent", "workflow", "system"]
                         },
                         "parentPrincipalId": {
                           "type": "string"
                         },
                         "childPrincipalType": {
                           "type": "string",
-                          "enum": [
-                            "user",
-                            "api_key",
-                            "agent",
-                            "workflow",
-                            "system"
-                          ]
+                          "enum": ["user", "api_key", "agent", "workflow", "system"]
                         },
                         "childPrincipalId": {
                           "type": "string"
@@ -5978,22 +4667,13 @@
                           "type": "string"
                         },
                         "capabilityScopeRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "budgetScopeRef": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "expiresAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -6015,9 +4695,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6033,9 +4711,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6043,9 +4719,7 @@
         },
         "operationId": "getAdminActionLedgerDelegationsById",
         "summary": "GET /v1/admin/action-ledger/delegations/{id}",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
@@ -6079,13 +4753,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": [
-                  "pending",
-                  "processing",
-                  "succeeded",
-                  "failed",
-                  "dead_letter"
-                ]
+                "enum": ["pending", "processing", "succeeded", "failed", "dead_letter"]
               },
               "minItems": 1
             },
@@ -6187,50 +4855,29 @@
                             "type": "string"
                           },
                           "organizationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "relayStatus": {
                             "type": "string",
-                            "enum": [
-                              "pending",
-                              "processing",
-                              "succeeded",
-                              "failed",
-                              "dead_letter"
-                            ]
+                            "enum": ["pending", "processing", "succeeded", "failed", "dead_letter"]
                           },
                           "payloadRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "attemptCount": {
                             "type": "integer"
                           },
                           "nextRetryAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "lastError": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
                           },
                           "processedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           }
                         },
                         "required": [
@@ -6251,10 +4898,7 @@
                       "type": "object",
                       "properties": {
                         "nextCursor": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "createdAt": {
                               "type": "string"
@@ -6263,21 +4907,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "createdAt",
-                            "id"
-                          ]
+                          "required": ["createdAt", "id"]
                         }
                       },
-                      "required": [
-                        "nextCursor"
-                      ]
+                      "required": ["nextCursor"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "pageInfo"
-                  ]
+                  "required": ["data", "pageInfo"]
                 }
               }
             }
@@ -6293,9 +4929,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6303,9 +4937,7 @@
         },
         "operationId": "getAdminActionLedgerRelayOutbox",
         "summary": "GET /v1/admin/action-ledger/relay-outbox",
-        "tags": [
-          "action-ledger"
-        ],
+        "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",

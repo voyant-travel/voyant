@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -160,14 +133,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "lead",
-                "planning",
-                "contracted",
-                "operating",
-                "completed",
-                "cancelled"
-              ]
+              "enum": ["lead", "planning", "contracted", "operating", "completed", "cancelled"]
             },
             "required": false,
             "name": "status",
@@ -176,13 +142,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "meeting",
-                "incentive",
-                "conference",
-                "exhibition",
-                "other"
-              ]
+              "enum": ["meeting", "incentive", "conference", "exhibition", "other"]
             },
             "required": false,
             "name": "type",
@@ -210,10 +170,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -239,41 +196,23 @@
                             "type": "string"
                           },
                           "organizationId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "primaryContactPersonId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "accountManagerId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "name": {
                             "type": "string"
                           },
                           "code": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "meeting",
-                              "incentive",
-                              "conference",
-                              "exhibition",
-                              "other"
-                            ]
+                            "enum": ["meeting", "incentive", "conference", "exhibition", "other"]
                           },
                           "status": {
                             "type": "string",
@@ -287,52 +226,28 @@
                             ]
                           },
                           "destination": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "startDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "endDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "estimatedPax": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "confirmedPax": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "currency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "budgetAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -371,11 +286,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "limit", "offset"]
                 }
               }
             }
@@ -383,9 +294,7 @@
         },
         "operationId": "getAdminMicePrograms",
         "summary": "GET /v1/admin/mice/programs",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -421,13 +330,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "meeting",
-                      "incentive",
-                      "conference",
-                      "exhibition",
-                      "other"
-                    ],
+                    "enum": ["meeting", "incentive", "conference", "exhibition", "other"],
                     "default": "conference"
                   },
                   "status": {
@@ -469,9 +372,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -491,41 +392,23 @@
                           "type": "string"
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "primaryContactPersonId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "accountManagerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "meeting",
-                            "incentive",
-                            "conference",
-                            "exhibition",
-                            "other"
-                          ]
+                          "enum": ["meeting", "incentive", "conference", "exhibition", "other"]
                         },
                         "status": {
                           "type": "string",
@@ -539,52 +422,28 @@
                           ]
                         },
                         "destination": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "estimatedPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "confirmedPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "budgetAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -616,9 +475,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -634,9 +491,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -644,9 +499,7 @@
         },
         "operationId": "postAdminMicePrograms",
         "summary": "POST /v1/admin/mice/programs",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -742,10 +595,7 @@
                                 "type": "integer"
                               },
                               "marginPct": {
-                                "type": [
-                                  "number",
-                                  "null"
-                                ]
+                                "type": ["number", "null"]
                               }
                             },
                             "required": [
@@ -761,16 +611,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "programId",
-                        "mixedCurrency",
-                        "byCurrency"
-                      ]
+                      "required": ["programId", "mixedCurrency", "byCurrency"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -786,9 +630,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -796,9 +638,7 @@
         },
         "operationId": "getAdminMiceProgramsByIdCostSheet",
         "summary": "GET /v1/admin/mice/programs/{id}/cost-sheet",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -833,41 +673,23 @@
                           "type": "string"
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "primaryContactPersonId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "accountManagerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "meeting",
-                            "incentive",
-                            "conference",
-                            "exhibition",
-                            "other"
-                          ]
+                          "enum": ["meeting", "incentive", "conference", "exhibition", "other"]
                         },
                         "status": {
                           "type": "string",
@@ -881,52 +703,28 @@
                           ]
                         },
                         "destination": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "estimatedPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "confirmedPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "budgetAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -958,9 +756,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -976,9 +772,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -986,9 +780,7 @@
         },
         "operationId": "getAdminMiceProgramsById",
         "summary": "GET /v1/admin/mice/programs/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -1018,41 +810,23 @@
                     "minLength": 1
                   },
                   "organizationId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "primaryContactPersonId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "accountManagerId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "code": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "meeting",
-                      "incentive",
-                      "conference",
-                      "exhibition",
-                      "other"
-                    ]
+                    "enum": ["meeting", "incentive", "conference", "exhibition", "other"]
                   },
                   "status": {
                     "type": "string",
@@ -1066,50 +840,29 @@
                     ]
                   },
                   "destination": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "startDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   },
                   "endDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   },
                   "estimatedPax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "confirmedPax": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   },
                   "currency": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "budgetAmountCents": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
+                    "type": ["integer", "null"],
                     "minimum": 0
                   }
                 }
@@ -1132,41 +885,23 @@
                           "type": "string"
                         },
                         "organizationId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "primaryContactPersonId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "accountManagerId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "name": {
                           "type": "string"
                         },
                         "code": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "meeting",
-                            "incentive",
-                            "conference",
-                            "exhibition",
-                            "other"
-                          ]
+                          "enum": ["meeting", "incentive", "conference", "exhibition", "other"]
                         },
                         "status": {
                           "type": "string",
@@ -1180,52 +915,28 @@
                           ]
                         },
                         "destination": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "estimatedPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "confirmedPax": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "budgetAmountCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1257,9 +968,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1275,9 +984,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1293,9 +1000,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1303,9 +1008,7 @@
         },
         "operationId": "patchAdminMiceProgramsById",
         "summary": "PATCH /v1/admin/mice/programs/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -1328,15 +1031,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "keynote",
-                "breakout",
-                "meal",
-                "networking",
-                "gala",
-                "excursion",
-                "free"
-              ]
+              "enum": ["keynote", "breakout", "meal", "networking", "gala", "excursion", "free"]
             },
             "required": false,
             "name": "sessionType",
@@ -1355,10 +1050,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1387,10 +1079,7 @@
                             "type": "string"
                           },
                           "functionSpaceId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "title": {
                             "type": "string"
@@ -1408,49 +1097,28 @@
                             ]
                           },
                           "dayDate": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "startsAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "endsAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "track": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "capacity": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "requiresRegistration": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -1486,11 +1154,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "limit", "offset"]
                 }
               }
             }
@@ -1498,9 +1162,7 @@
         },
         "operationId": "getAdminMiceSessions",
         "summary": "GET /v1/admin/mice/sessions",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -1566,10 +1228,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "programId",
-                  "title"
-                ]
+                "required": ["programId", "title"]
               }
             }
           }
@@ -1592,10 +1251,7 @@
                           "type": "string"
                         },
                         "functionSpaceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "title": {
                           "type": "string"
@@ -1613,49 +1269,28 @@
                           ]
                         },
                         "dayDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startsAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endsAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "track": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capacity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "requiresRegistration": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1684,9 +1319,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1702,9 +1335,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1720,9 +1351,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1730,9 +1359,7 @@
         },
         "operationId": "postAdminMiceSessions",
         "summary": "POST /v1/admin/mice/sessions",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -1770,10 +1397,7 @@
                           "type": "string"
                         },
                         "functionSpaceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "title": {
                           "type": "string"
@@ -1791,49 +1415,28 @@
                           ]
                         },
                         "dayDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startsAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endsAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "track": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capacity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "requiresRegistration": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1855,34 +1458,19 @@
                               },
                               "kind": {
                                 "type": "string",
-                                "enum": [
-                                  "fnb",
-                                  "av",
-                                  "materials",
-                                  "signage",
-                                  "other"
-                                ]
+                                "enum": ["fnb", "av", "materials", "signage", "other"]
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "costAmountCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "currency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -1925,9 +1513,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1943,9 +1529,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1953,9 +1537,7 @@
         },
         "operationId": "getAdminMiceSessionsById",
         "summary": "GET /v1/admin/mice/sessions/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -2048,10 +1630,7 @@
                           "type": "string"
                         },
                         "functionSpaceId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "title": {
                           "type": "string"
@@ -2069,49 +1648,28 @@
                           ]
                         },
                         "dayDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "startsAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "endsAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "track": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "capacity": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "requiresRegistration": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2140,9 +1698,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2158,9 +1714,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2176,9 +1730,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2186,9 +1738,7 @@
         },
         "operationId": "patchAdminMiceSessionsById",
         "summary": "PATCH /v1/admin/mice/sessions/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -2216,14 +1766,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2239,9 +1785,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2249,9 +1793,7 @@
         },
         "operationId": "deleteAdminMiceSessionsById",
         "summary": "DELETE /v1/admin/mice/sessions/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -2285,13 +1827,7 @@
                       "properties": {
                         "kind": {
                           "type": "string",
-                          "enum": [
-                            "fnb",
-                            "av",
-                            "materials",
-                            "signage",
-                            "other"
-                          ]
+                          "enum": ["fnb", "av", "materials", "signage", "other"]
                         },
                         "description": {
                           "type": "string"
@@ -2309,15 +1845,11 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "kind"
-                      ]
+                      "required": ["kind"]
                     }
                   }
                 },
-                "required": [
-                  "inclusions"
-                ]
+                "required": ["inclusions"]
               }
             }
           }
@@ -2343,34 +1875,19 @@
                           },
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "fnb",
-                              "av",
-                              "materials",
-                              "signage",
-                              "other"
-                            ]
+                            "enum": ["fnb", "av", "materials", "signage", "other"]
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "quantity": {
                             "type": "integer"
                           },
                           "costAmountCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "currency": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -2393,9 +1910,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2411,9 +1926,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2429,9 +1942,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2439,9 +1950,7 @@
         },
         "operationId": "putAdminMiceSessionsByIdInclusions",
         "summary": "PUT /v1/admin/mice/sessions/{id}/inclusions",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -2464,14 +1973,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "invited",
-                "registered",
-                "confirmed",
-                "checked_in",
-                "no_show",
-                "cancelled"
-              ]
+              "enum": ["invited", "registered", "confirmed", "checked_in", "no_show", "cancelled"]
             },
             "required": false,
             "name": "status",
@@ -2480,15 +1982,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "attendee",
-                "speaker",
-                "sponsor",
-                "vip",
-                "staff",
-                "exhibitor",
-                "organizer"
-              ]
+              "enum": ["attendee", "speaker", "sponsor", "vip", "staff", "exhibitor", "organizer"]
             },
             "required": false,
             "name": "role",
@@ -2507,10 +2001,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -2539,16 +2030,10 @@
                             "type": "string"
                           },
                           "personId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "bookingId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "role": {
                             "type": "string",
@@ -2574,28 +2059,16 @@
                             ]
                           },
                           "arrivalAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "departureAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -2628,11 +2101,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "limit", "offset"]
                 }
               }
             }
@@ -2640,9 +2109,7 @@
         },
         "operationId": "getAdminMiceDelegates",
         "summary": "GET /v1/admin/mice/delegates",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -2662,10 +2129,7 @@
                     "minLength": 1
                   },
                   "personId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "bookingId": {
@@ -2709,9 +2173,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "programId"
-                ]
+                "required": ["programId"]
               }
             }
           }
@@ -2734,16 +2196,10 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "role": {
                           "type": "string",
@@ -2769,28 +2225,16 @@
                           ]
                         },
                         "arrivalAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "departureAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2816,9 +2260,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2834,9 +2276,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2852,9 +2292,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2862,9 +2300,7 @@
         },
         "operationId": "postAdminMiceDelegates",
         "summary": "POST /v1/admin/mice/delegates",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -2902,16 +2338,10 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "role": {
                           "type": "string",
@@ -2937,28 +2367,16 @@
                           ]
                         },
                         "arrivalAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "departureAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2983,12 +2401,7 @@
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "registered",
-                                  "waitlisted",
-                                  "attended",
-                                  "cancelled"
-                                ]
+                                "enum": ["registered", "waitlisted", "attended", "cancelled"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -3025,9 +2438,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3043,9 +2454,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3053,9 +2462,7 @@
         },
         "operationId": "getAdminMiceDelegatesById",
         "summary": "GET /v1/admin/mice/delegates/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -3081,10 +2488,7 @@
                 "type": "object",
                 "properties": {
                   "personId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "bookingId": {
@@ -3148,16 +2552,10 @@
                           "type": "string"
                         },
                         "personId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "role": {
                           "type": "string",
@@ -3183,28 +2581,16 @@
                           ]
                         },
                         "arrivalAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "departureAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3230,9 +2616,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3248,9 +2632,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3266,9 +2648,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3276,9 +2656,7 @@
         },
         "operationId": "patchAdminMiceDelegatesById",
         "summary": "PATCH /v1/admin/mice/delegates/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -3311,18 +2689,11 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "registered",
-                      "waitlisted",
-                      "attended",
-                      "cancelled"
-                    ],
+                    "enum": ["registered", "waitlisted", "attended", "cancelled"],
                     "default": "registered"
                   }
                 },
-                "required": [
-                  "sessionId"
-                ]
+                "required": ["sessionId"]
               }
             }
           }
@@ -3349,12 +2720,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "registered",
-                            "waitlisted",
-                            "attended",
-                            "cancelled"
-                          ]
+                          "enum": ["registered", "waitlisted", "attended", "cancelled"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3373,9 +2739,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3401,12 +2765,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "registered",
-                            "waitlisted",
-                            "attended",
-                            "cancelled"
-                          ]
+                          "enum": ["registered", "waitlisted", "attended", "cancelled"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -3425,9 +2784,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3443,9 +2800,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3461,9 +2816,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3479,9 +2832,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3489,9 +2840,7 @@
         },
         "operationId": "postAdminMiceDelegatesByIdEnrollments",
         "summary": "POST /v1/admin/mice/delegates/{id}/enrollments",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -3524,10 +2873,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -3556,52 +2902,28 @@
                             "type": "string"
                           },
                           "roomBlockId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "roomTypeId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "bedConfig": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "sharingGroupId": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "checkIn": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "checkOut": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "specialRequests": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3634,11 +2956,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "limit", "offset"]
                 }
               }
             }
@@ -3646,9 +2964,7 @@
         },
         "operationId": "getAdminMiceRoomingAssignments",
         "summary": "GET /v1/admin/mice/rooming-assignments",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -3693,9 +3009,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "programId"
-                ]
+                "required": ["programId"]
               }
             }
           }
@@ -3718,52 +3032,28 @@
                           "type": "string"
                         },
                         "roomBlockId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "roomTypeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bedConfig": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sharingGroupId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkOut": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "specialRequests": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3789,9 +3079,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3807,9 +3095,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3825,9 +3111,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3835,9 +3119,7 @@
         },
         "operationId": "postAdminMiceRoomingAssignments",
         "summary": "POST /v1/admin/mice/rooming-assignments",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -3875,52 +3157,28 @@
                           "type": "string"
                         },
                         "roomBlockId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "roomTypeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bedConfig": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sharingGroupId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkOut": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "specialRequests": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3947,10 +3205,7 @@
                                 "type": "boolean"
                               },
                               "bedLabel": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -3984,9 +3239,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4002,9 +3255,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4012,9 +3263,7 @@
         },
         "operationId": "getAdminMiceRoomingAssignmentsById",
         "summary": "GET /v1/admin/mice/rooming-assignments/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -4087,52 +3336,28 @@
                           "type": "string"
                         },
                         "roomBlockId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "roomTypeId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "bedConfig": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "sharingGroupId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkOut": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "specialRequests": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4158,9 +3383,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4176,9 +3399,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4194,9 +3415,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4204,9 +3423,7 @@
         },
         "operationId": "patchAdminMiceRoomingAssignmentsById",
         "summary": "PATCH /v1/admin/mice/rooming-assignments/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -4249,15 +3466,11 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "delegateId"
-                      ]
+                      "required": ["delegateId"]
                     }
                   }
                 },
-                "required": [
-                  "delegates"
-                ]
+                "required": ["delegates"]
               }
             }
           }
@@ -4288,10 +3501,7 @@
                             "type": "boolean"
                           },
                           "bedLabel": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -4308,9 +3518,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4326,9 +3534,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4353,14 +3559,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "missing"
-                      ]
+                      "required": ["missing"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4385,14 +3587,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "offending"
-                      ]
+                      "required": ["offending"]
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4400,9 +3598,7 @@
         },
         "operationId": "putAdminMiceRoomingAssignmentsByIdDelegates",
         "summary": "PUT /v1/admin/mice/rooming-assignments/{id}/delegates",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -4425,13 +3621,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "draft",
-                "issued",
-                "closed",
-                "awarded",
-                "cancelled"
-              ]
+              "enum": ["draft", "issued", "closed", "awarded", "cancelled"]
             },
             "required": false,
             "name": "status",
@@ -4450,10 +3640,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -4485,39 +3672,21 @@
                             "type": "string"
                           },
                           "requirements": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "draft",
-                              "issued",
-                              "closed",
-                              "awarded",
-                              "cancelled"
-                            ]
+                            "enum": ["draft", "issued", "closed", "awarded", "cancelled"]
                           },
                           "issuedAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "dueAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -4547,11 +3716,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "limit", "offset"]
                 }
               }
             }
@@ -4559,9 +3724,7 @@
         },
         "operationId": "getAdminMiceRfps",
         "summary": "GET /v1/admin/mice/rfps",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -4590,12 +3753,7 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "draft",
-                      "issued",
-                      "closed",
-                      "cancelled"
-                    ],
+                    "enum": ["draft", "issued", "closed", "cancelled"],
                     "default": "draft"
                   },
                   "issuedAt": {
@@ -4610,10 +3768,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "programId",
-                  "title"
-                ]
+                "required": ["programId", "title"]
               }
             }
           }
@@ -4639,39 +3794,21 @@
                           "type": "string"
                         },
                         "requirements": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "issued",
-                            "closed",
-                            "awarded",
-                            "cancelled"
-                          ]
+                          "enum": ["draft", "issued", "closed", "awarded", "cancelled"]
                         },
                         "issuedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "dueAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4694,9 +3831,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4712,9 +3847,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4730,9 +3863,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4740,9 +3871,7 @@
         },
         "operationId": "postAdminMiceRfps",
         "summary": "POST /v1/admin/mice/rfps",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -4774,9 +3903,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "supplierId"
-                ]
+                "required": ["supplierId"]
               }
             }
           }
@@ -4803,12 +3930,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "invited",
-                            "viewed",
-                            "declined",
-                            "responded"
-                          ]
+                          "enum": ["invited", "viewed", "declined", "responded"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4817,19 +3939,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "rfpId",
-                        "supplierId",
-                        "status",
-                        "createdAt",
-                        "updatedAt"
-                      ]
+                      "required": ["id", "rfpId", "supplierId", "status", "createdAt", "updatedAt"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4855,12 +3968,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "invited",
-                            "viewed",
-                            "declined",
-                            "responded"
-                          ]
+                          "enum": ["invited", "viewed", "declined", "responded"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -4869,19 +3977,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "rfpId",
-                        "supplierId",
-                        "status",
-                        "createdAt",
-                        "updatedAt"
-                      ]
+                      "required": ["id", "rfpId", "supplierId", "status", "createdAt", "updatedAt"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4897,9 +3996,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4915,9 +4012,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -4925,9 +4020,7 @@
         },
         "operationId": "postAdminMiceRfpsByIdInvitations",
         "summary": "POST /v1/admin/mice/rfps/{id}/invitations",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -4960,11 +4053,7 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "draft",
-                      "submitted",
-                      "under_review"
-                    ],
+                    "enum": ["draft", "submitted", "under_review"],
                     "default": "draft"
                   },
                   "totalCents": {
@@ -4985,9 +4074,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "supplierId"
-                ]
+                "required": ["supplierId"]
               }
             }
           }
@@ -5014,43 +4101,22 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "submitted",
-                            "under_review",
-                            "accepted",
-                            "rejected"
-                          ]
+                          "enum": ["draft", "submitted", "under_review", "accepted", "rejected"]
                         },
                         "totalCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "proposalDoc": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5074,9 +4140,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5092,9 +4156,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5110,9 +4172,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5120,9 +4180,7 @@
         },
         "operationId": "postAdminMiceRfpsByIdBids",
         "summary": "POST /v1/admin/mice/rfps/{id}/bids",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -5154,9 +4212,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "bidId"
-                ]
+                "required": ["bidId"]
               }
             }
           }
@@ -5185,39 +4241,21 @@
                               "type": "string"
                             },
                             "requirements": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "draft",
-                                "issued",
-                                "closed",
-                                "awarded",
-                                "cancelled"
-                              ]
+                              "enum": ["draft", "issued", "closed", "awarded", "cancelled"]
                             },
                             "issuedAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "dueAt": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -5253,43 +4291,22 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "draft",
-                                "submitted",
-                                "under_review",
-                                "accepted",
-                                "rejected"
-                              ]
+                              "enum": ["draft", "submitted", "under_review", "accepted", "rejected"]
                             },
                             "totalCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "currency": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "proposalDoc": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "validUntil": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "createdAt": {
                               "type": "string"
@@ -5313,15 +4330,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "rfp",
-                        "bid"
-                      ]
+                      "required": ["rfp", "bid"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5337,9 +4349,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5355,9 +4365,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5373,9 +4381,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5383,9 +4389,7 @@
         },
         "operationId": "postAdminMiceRfpsByIdAward",
         "summary": "POST /v1/admin/mice/rfps/{id}/award",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -5426,39 +4430,21 @@
                           "type": "string"
                         },
                         "requirements": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "issued",
-                            "closed",
-                            "awarded",
-                            "cancelled"
-                          ]
+                          "enum": ["draft", "issued", "closed", "awarded", "cancelled"]
                         },
                         "issuedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "dueAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5482,12 +4468,7 @@
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "invited",
-                                  "viewed",
-                                  "declined",
-                                  "responded"
-                                ]
+                                "enum": ["invited", "viewed", "declined", "responded"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -5531,34 +4512,19 @@
                                 ]
                               },
                               "totalCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "currency": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "proposalDoc": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "validUntil": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -5599,9 +4565,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5617,9 +4581,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5627,9 +4589,7 @@
         },
         "operationId": "getAdminMiceRfpsById",
         "summary": "GET /v1/admin/mice/rfps/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -5664,12 +4624,7 @@
                   },
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "draft",
-                      "issued",
-                      "closed",
-                      "cancelled"
-                    ]
+                    "enum": ["draft", "issued", "closed", "cancelled"]
                   },
                   "issuedAt": {
                     "type": "string",
@@ -5708,39 +4663,21 @@
                           "type": "string"
                         },
                         "requirements": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "issued",
-                            "closed",
-                            "awarded",
-                            "cancelled"
-                          ]
+                          "enum": ["draft", "issued", "closed", "awarded", "cancelled"]
                         },
                         "issuedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "dueAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -5763,9 +4700,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5781,9 +4716,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5799,9 +4732,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5809,9 +4740,7 @@
         },
         "operationId": "patchAdminMiceRfpsById",
         "summary": "PATCH /v1/admin/mice/rfps/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -5866,9 +4795,7 @@
                     }
                   }
                 },
-                "required": [
-                  "lines"
-                ]
+                "required": ["lines"]
               }
             }
           }
@@ -5893,31 +4820,19 @@
                             "type": "string"
                           },
                           "requirementRef": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "description": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "quantity": {
                             "type": "integer"
                           },
                           "unitCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "totalCents": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": ["integer", "null"]
                           },
                           "createdAt": {
                             "type": "string"
@@ -5936,9 +4851,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -5954,9 +4867,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5972,9 +4883,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -5982,9 +4891,7 @@
         },
         "operationId": "putAdminMiceBidsByIdLines",
         "summary": "PUT /v1/admin/mice/bids/{id}/lines",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -6030,9 +4937,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "criterion"
-                ]
+                "required": ["criterion"]
               }
             }
           }
@@ -6058,28 +4963,16 @@
                           "type": "string"
                         },
                         "weight": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "score": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "evaluatedBy": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -6097,9 +4990,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6115,9 +5006,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6133,9 +5022,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6143,9 +5030,7 @@
         },
         "operationId": "postAdminMiceBidsByIdEvaluations",
         "summary": "POST /v1/admin/mice/bids/{id}/evaluations",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -6187,43 +5072,22 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "submitted",
-                            "under_review",
-                            "accepted",
-                            "rejected"
-                          ]
+                          "enum": ["draft", "submitted", "under_review", "accepted", "rejected"]
                         },
                         "totalCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "proposalDoc": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -6243,31 +5107,19 @@
                                 "type": "string"
                               },
                               "requirementRef": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "description": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "quantity": {
                                 "type": "integer"
                               },
                               "unitCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "totalCents": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -6300,28 +5152,16 @@
                                 "type": "string"
                               },
                               "weight": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "score": {
-                                "type": [
-                                  "integer",
-                                  "null"
-                                ]
+                                "type": ["integer", "null"]
                               },
                               "notes": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "evaluatedBy": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
+                                "type": ["string", "null"]
                               },
                               "createdAt": {
                                 "type": "string"
@@ -6357,9 +5197,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6375,9 +5213,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6385,9 +5221,7 @@
         },
         "operationId": "getAdminMiceBidsById",
         "summary": "GET /v1/admin/mice/bids/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
@@ -6414,11 +5248,7 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "draft",
-                      "submitted",
-                      "under_review"
-                    ]
+                    "enum": ["draft", "submitted", "under_review"]
                   },
                   "totalCents": {
                     "type": "integer",
@@ -6464,43 +5294,22 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "draft",
-                            "submitted",
-                            "under_review",
-                            "accepted",
-                            "rejected"
-                          ]
+                          "enum": ["draft", "submitted", "under_review", "accepted", "rejected"]
                         },
                         "totalCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "proposalDoc": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "validUntil": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "createdAt": {
                           "type": "string"
@@ -6524,9 +5333,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -6542,9 +5349,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6560,9 +5365,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -6570,9 +5373,7 @@
         },
         "operationId": "patchAdminMiceBidsById",
         "summary": "PATCH /v1/admin/mice/bids/{id}",
-        "tags": [
-          "mice"
-        ],
+        "tags": ["mice"],
         "x-voyant-module": "mice",
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
