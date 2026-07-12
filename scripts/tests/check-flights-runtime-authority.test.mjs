@@ -32,7 +32,7 @@ async function createFixture(overrides = {}) {
     "flights/src/runtime-contributor.ts":
       "primitives: VoyantRuntimeHostPrimitives\ncreateFlightsRuntime(host.primitives)\n",
     "flights/src/runtime.ts":
-      "resolveAdapter(c) {}\nstartCardPayment() {}\ncreateDemoFlightAdapter()\n",
+      'resolveAdapter() {}\nstartCardPayment() {}\nthrow new Error("Flight connector is not configured")\n',
     "operator/src/api/runtime/deployment-resources.ts":
       "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
     ...overrides,

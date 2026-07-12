@@ -1968,9 +1968,6 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyant-travel/plugin-flights-demo':
-        specifier: workspace:^
-        version: link:../plugins/flights-demo
       '@voyant-travel/plugin-netopia':
         specifier: ^0.105.20
         version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
@@ -3496,25 +3493,6 @@ importers:
         specifier: workspace:^
         version: link:../../core
     devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
-
-  packages/plugins/flights-demo:
-    dependencies:
-      '@voyant-travel/core':
-        specifier: workspace:^
-        version: link:../../core
-    devDependencies:
-      '@voyant-travel/flights':
-        specifier: workspace:^
-        version: link:../../flights
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../../typescript-config
@@ -5145,9 +5123,6 @@ importers:
       '@voyant-travel/plugin-catalog-demo':
         specifier: workspace:^
         version: link:../../packages/plugins/catalog-demo
-      '@voyant-travel/plugin-flights-demo':
-        specifier: workspace:^
-        version: link:../../packages/plugins/flights-demo
       '@voyant-travel/plugin-netopia':
         specifier: ^0.105.20
         version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))

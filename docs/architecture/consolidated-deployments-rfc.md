@@ -190,7 +190,7 @@ This keeps custom fields on the supported path and upgrade-safe (the registry is
 
 A single preflight that closes the two cheapest risks and makes upgrades safe to run:
 
-- **Env/bindings/secrets preflight** — validate required env at startup instead of failing at first use (today a missing `FLIGHTS_DEMO_API_URL` is a runtime 500). Replace placeholder detection (e.g. `replace-with-...` KV ids in `wrangler.jsonc`).
+- **Env/bindings/secrets preflight** — validate required environment at startup instead of failing at first use. Replace placeholder detection (e.g. `replace-with-...` KV ids in `wrangler.jsonc`).
 - **Composition drift** — assert `config.modules` ↔ mounted registry ↔ derived nav/icons/destinations ↔ generated routes are all in sync, and that every installed module's migrations are applied. Extends today's `voyant db doctor` schema-parity check.
 
 `voyant doctor` is cheap, high-value, and independent of the harder workstreams — it should land first.

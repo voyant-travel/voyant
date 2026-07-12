@@ -13,10 +13,8 @@
  * WHY THE FLIGHT ADAPTER IS INJECTED (not imported):
  *
  * Trips reads flight *contract types* from `@voyant-travel/flights` (a leaf
- * contract dependency, acyclic), but the concrete adapter
- * (`createDemoFlightAdapter` from `@voyant-travel/plugin-flights-demo`) is
- * deployment-specific provider wiring — which provider, which base URL — so it
- * is injected via `options.adapter` rather than imported. The price/expiry
+ * contract dependency, acyclic), but the concrete adapter is deployment-specific
+ * provider wiring, so it is injected via `options.adapter` rather than imported. The price/expiry
  * detection, passenger mapping, and billing fallbacks are vertical-agnostic
  * orchestration and live here.
  *

@@ -144,7 +144,7 @@ function adapterErrorDetails(err: unknown): { message: string; status: 404 | 500
 function statusForAdapterErrorMessage(message: string): 404 | 500 | 503 {
   if (/(?:not found|_not_found\b)/i.test(message)) return 404
   if (
-    /(?:Flight connector is not configured|demo service is unavailable|FLIGHTS_DEMO_API_URL is not set|network connection lost|fetch failed|ECONNREFUSED|ENOTFOUND)/i.test(
+    /(?:Flight connector is not configured|network connection lost|fetch failed|ECONNREFUSED|ENOTFOUND)/i.test(
       message,
     )
   ) {

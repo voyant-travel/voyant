@@ -158,7 +158,7 @@ The registry is intentionally not a dependency-injection container — it's a `M
 
 ## 5. The demo: separate app + thin plugin
 
-The demo follows the same posture as the flights vertical (`apps/flights-demo-api` + `@voyant-travel/plugin-flights-demo`): a standalone HTTP service simulates the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing — operator starters ship **zero demo state**. No demo tables in the operator's DB, no demo seed in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely an env-var change.
+The demo uses a standalone HTTP service to simulate the upstream, and a thin client plugin implements the `SourceAdapter` interface against it. This is load-bearing: operator starters ship **zero demo state**. No demo tables live in the operator's DB and no demo seed lives in the operator's seed script. Swapping `demo` for a real upstream (TUI direct, Hotelbeds, a Voyant Connect peer) is purely a project integration change.
 
 ### 5.1. `apps/catalog-demo-api` — standalone upstream simulator
 

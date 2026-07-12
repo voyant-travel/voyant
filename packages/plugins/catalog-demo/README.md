@@ -6,8 +6,7 @@ This package contains zero state and zero business logic — every method
 round-trips to the standalone [`catalog-demo-api`](../../../apps/catalog-demo-api)
 service. Drop or swap the plugin to point at a real upstream (Voyant
 Connect peer, TUI direct API, Hotelbeds, GDS) without touching any
-template tables. Mirrors the shape of `@voyant-travel/plugin-flights-demo`
-for `flights`.
+template tables.
 
 ## What it provides
 

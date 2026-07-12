@@ -80,7 +80,11 @@ if (
 ) {
   violations.push("Flights must own runtime contribution from generic primitives")
 }
-for (const token of ["resolveAdapter(c)", "startCardPayment", "createDemoFlightAdapter"]) {
+for (const token of [
+  "resolveAdapter()",
+  "startCardPayment",
+  "Flight connector is not configured",
+]) {
   if (!runtime.includes(token))
     violations.push(`Flights standard Node runtime must preserve ${token}`)
 }

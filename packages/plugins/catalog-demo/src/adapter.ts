@@ -4,8 +4,6 @@
  * service; this package contains zero business logic so it can be
  * dropped or replaced by a real upstream connector (Voyant Connect peer,
  * TUI direct API, Hotelbeds, GDS) with no template churn.
- *
- * Mirrors the shape of `@voyant-travel/plugin-flights-demo` for `flights`.
  */
 
 import {

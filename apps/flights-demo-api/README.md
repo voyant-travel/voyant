@@ -3,13 +3,13 @@
 Standalone HTTP service that mocks a flight supplier/GDS provider so starters
 and examples can exercise the full flight booking flow without external
 credentials. This is a demo/reference supplier-integration surface, not an
-airline or flight-operator deployment. Mirrors `FlightConnectorAdapter` 1:1 over REST; the
-`@voyant-travel/plugin-flights-demo` package is a thin fetch client that
-implements the adapter interface against this service.
+airline or flight-operator deployment. It mirrors `FlightConnectorAdapter` 1:1
+over REST so local project customizations can implement the adapter interface
+against this service.
 
 Owns its own Postgres database — orders persist here, not in the
-starter's primary DB. Replace it with a real GDS connector by swapping
-the plugin, no starter tables to drop.
+starter's primary DB. Replace it with a real GDS connector through project
+configuration, with no starter tables to drop.
 
 ## Run
 

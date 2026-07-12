@@ -784,7 +784,7 @@ Candidates:
 - `flights.ts` -> `@voyant-travel/flights` route module.
   - Options: flight adapter resolver, reference data provider, payment session
     starter, order payment session helper, actor/correlation resolver.
-  - Keep the demo connector in `@voyant-travel/plugin-flights-demo`.
+  - Keep connector selection outside the Flights domain package.
   - Use a lazy route contribution so the extraction preserves the Worker
     cold-start and bundle-size behavior of the current starter.
 - `payment-link-routes.ts` and `lazy-additional-routes.ts` -> public routes on

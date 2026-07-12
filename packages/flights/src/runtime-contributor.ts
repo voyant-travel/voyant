@@ -5,7 +5,7 @@ export interface FlightsRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
 }
 
-/** Contribute the standard Node Flights adapter selected by the framework BOM. */
+/** Contribute the standard Node Flights runtime selected by the framework BOM. */
 export function createFlightsRuntimePortContribution(
   host: FlightsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
