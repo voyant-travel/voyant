@@ -5,9 +5,9 @@ import { Label } from "@voyant-travel/ui/components/label"
 import { Skeleton } from "@voyant-travel/ui/components/skeleton"
 import type React from "react"
 
-import { StorefrontLink, useStorefrontUi } from "./context.js"
+import { StorefrontLink, type StorefrontUiMessages, useStorefrontUi } from "./context.js"
 
-type DetailSharedMessages = Record<string, string>
+type DetailSharedMessages = StorefrontUiMessages["shopDetailShared"]
 
 export interface AvailabilitySlot {
   id: string
