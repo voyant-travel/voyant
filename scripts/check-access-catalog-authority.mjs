@@ -34,7 +34,7 @@ assert.deepEqual(presets.get("editor")?.grants, ["bookings:read", "bookings:writ
 for (const relativePath of [
   "src/api/app.ts",
   "src/api/auth/handler.ts",
-  "src/lib/admin-extensions.tsx",
+  "src/lib/admin-presentation.tsx",
 ]) {
   const source = await readFile(path.join(operatorRoot, relativePath), "utf8")
   assert.match(

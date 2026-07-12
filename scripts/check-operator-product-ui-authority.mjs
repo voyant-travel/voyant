@@ -211,7 +211,7 @@ const requiredTokens = new Map([
     ['from "@voyant-travel/finance-react/ui"'],
   ],
   [
-    "starters/operator/src/lib/admin-extensions.tsx",
+    "starters/operator/src/lib/admin-presentation.tsx",
     [
       "../../.voyant/admin/selected-graph-admin.generated",
       'import.meta.glob("../admin/*/index.tsx"',
@@ -219,7 +219,7 @@ const requiredTokens = new Map([
   ],
   [
     "starters/operator/src/router.tsx",
-    ['from "./lib/admin-extensions"', "buildAdminExtensionRoutes"],
+    ['from "./lib/admin-presentation"', "buildAdminExtensionRoutes"],
   ],
 ])
 

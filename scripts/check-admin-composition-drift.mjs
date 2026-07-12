@@ -33,6 +33,10 @@ const BUNDLE = optionPath(
   "--bundle",
   join(ROOT, "starters/operator/.voyant/admin/selected-graph-admin.generated.ts"),
 )
+const PRESENTATION = optionPath(
+  "--presentation",
+  join(ROOT, "starters/operator/src/lib/admin-presentation.tsx"),
+)
 const COMPATIBILITY = optionPath(
   "--compatibility",
   join(ROOT, "starters/operator/src/lib/admin-extensions.tsx"),
@@ -157,6 +161,12 @@ if (existsSync(EXTENSIONS)) {
   )
 }
 
+if (existsSync(COMPATIBILITY)) {
+  violations.push(
+    "starters/operator/src/lib/admin-extensions.tsx must not exist; generic composition belongs to admin-host",
+  )
+}
+
 for (const [label, file] of [
   ["admin.routes.generated.tsx", LEGACY_ROUTES],
   ["admin.destinations.generated.ts", LEGACY_DESTINATIONS],
@@ -172,7 +182,7 @@ for (const [label, file] of [
 const routerSource = existsSync(ROUTER) ? readFileSync(ROUTER, "utf8") : ""
 if (
   !routerSource.includes("buildAdminExtensionRoutes") ||
-  !routerSource.includes("adminExtensions")
+  !routerSource.includes("operatorAdminPresentation.extensions")
 ) {
   violations.push(
     "Operator router must build routes from the selected-graph admin extension registry",
@@ -181,7 +191,7 @@ if (
 
 const destinationsSource = existsSync(DESTINATIONS) ? readFileSync(DESTINATIONS, "utf8") : ""
 if (
-  !destinationsSource.includes("createAdminHostDestinations(adminExtensions)") ||
+  !destinationsSource.includes("operatorAdminPresentation.extensions") ||
   destinationsSource.includes("admin.destinations.generated")
 ) {
   violations.push(
@@ -219,8 +229,8 @@ const {
 const expected = selected.filter(hasAdminSurface)
 const bundled = new Set(bundledPackages)
 const actualBundleEntries = firstPartyImportsIn(BUNDLE)
-const compatibilityImports = firstPartyImportsIn(COMPATIBILITY)
-const compatibilitySelectedFactories = selectedFactoryReferencesIn(COMPATIBILITY)
+const presentationImports = firstPartyImportsIn(PRESENTATION)
+const presentationSelectedFactories = selectedFactoryReferencesIn(PRESENTATION)
 
 // Silently-dropped admin: graph-selected + has ./admin, but not bundled.
 for (const name of expected) {
@@ -238,23 +248,17 @@ for (const name of bundled) {
       `${name} declares admin.runtime entry ${runtimeEntry ?? "<missing>"} but it is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
     )
   }
-  if (compatibilitySelectedFactories.has(name)) {
+  if (presentationSelectedFactories.has(name)) {
     violations.push(
-      `${name} remains package-keyed in the Operator compatibility registry after migration to generic selected-admin composition`,
+      `${name} remains package-keyed in the Operator presentation input instead of selected-admin composition`,
     )
   }
 }
 
-for (const name of compatibilityImports) {
-  if (
-    name === "@voyant-travel/admin/extensions" ||
-    name === "@voyant-travel/admin-app/core-extension" ||
-    name === "@voyant-travel/admin-host/presentation"
-  ) {
-    continue
-  }
+for (const name of presentationImports) {
+  if (name === "@voyant-travel/admin-host/presentation") continue
   violations.push(
-    `${name} remains imported by the Operator admin compatibility composition; package admin authority must arrive through the selected graph`,
+    `${name} remains imported by the Operator admin presentation input; package admin authority must arrive through the selected graph`,
   )
 }
 
@@ -267,7 +271,17 @@ for (const entry of actualBundleEntries) {
   }
 }
 
-const compatibilitySource = existsSync(COMPATIBILITY) ? readFileSync(COMPATIBILITY, "utf8") : ""
+const presentationSource = existsSync(PRESENTATION) ? readFileSync(PRESENTATION, "utf8") : ""
+for (const token of [
+  "createAdminHostPresentation",
+  ".voyant/admin/selected-graph-admin.generated",
+  'import.meta.glob("../admin/*/index.tsx"',
+]) {
+  if (!presentationSource.includes(token)) {
+    violations.push(`Operator admin presentation input must contain ${token}`)
+  }
+}
+
 for (const token of [
   "createOperatorProfileSettingsExtraPage",
   "CustomFieldDefinitionsPage",
@@ -275,8 +289,8 @@ for (const token of [
   "custom-fields",
   "SlidersHorizontal",
 ]) {
-  if (compatibilitySource.includes(token)) {
-    violations.push(`Operator admin compatibility composition retains package-owned token ${token}`)
+  if (presentationSource.includes(token)) {
+    violations.push(`Operator admin presentation input retains package-owned token ${token}`)
   }
 }
 

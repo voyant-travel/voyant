@@ -646,6 +646,12 @@ importers:
       '@voyant-travel/admin':
         specifier: workspace:^
         version: link:../admin
+      '@voyant-travel/admin-app':
+        specifier: workspace:^
+        version: link:../admin-app
+      '@voyant-travel/types':
+        specifier: workspace:^
+        version: link:../types
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config

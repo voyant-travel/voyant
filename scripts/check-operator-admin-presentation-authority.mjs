@@ -8,7 +8,7 @@ const starterFiles = [
   "src/components/providers.tsx",
   "src/components/providers/user-provider.tsx",
   "src/lib/admin-destinations.ts",
-  "src/lib/admin-extensions.tsx",
+  "src/lib/admin-presentation.tsx",
   "src/lib/admin-i18n.ts",
   "src/lib/admin-i18n.tsx",
 ]
@@ -38,24 +38,36 @@ for (const relativePath of forbidden) {
 
 const requiredTokens = new Map([
   [
-    "starters/operator/src/lib/admin-extensions.tsx",
+    "starters/operator/src/lib/admin-presentation.tsx",
     [
       "../../.voyant/admin/selected-graph-admin.generated",
       'import.meta.glob("../admin/*/index.tsx"',
-      "createAdminHostExtensions",
+      "createAdminHostPresentation",
     ],
   ],
   [
     "starters/operator/src/lib/admin-destinations.ts",
-    ["adminExtensions", "createAdminHostDestinations"],
+    ["operatorAdminPresentation.extensions", "createAdminHostDestinations"],
   ],
   [
     "packages/admin-host/src/admin-presentation.ts",
-    ["loadAdminDashboard", "discoverAdminHostExtensions", "selected({ navMessages })"],
+    ["loadAdminDashboard", "discoverAdminHostExtensions", "createAdminHostPresentation"],
   ],
   [
     "packages/realtime-react/src/admin.tsx",
-    ["AdminRealtimeProvider", "ADMIN_INVALIDATIONS", "hasAdminRealtimeSession"],
+    [
+      "AdminRealtimeProvider",
+      "ADMIN_INVALIDATIONS",
+      "hasAdminRealtimeSession",
+      "createSelectedRealtimeAdminExtension",
+    ],
+  ],
+  [
+    "packages/realtime/src/voyant.ts",
+    [
+      'entry: "@voyant-travel/realtime-react/admin"',
+      'export: "createSelectedRealtimeAdminExtension"',
+    ],
   ],
   [
     "packages/realtime-react/src/admin-workspace.tsx",

@@ -67,8 +67,8 @@ vi.mock("@/lib/admin-destinations", () => ({
   operatorAdminDestinations: {},
 }))
 
-vi.mock("@/lib/admin-extensions", () => ({
-  createOperatorAdminExtensions: () => [],
+vi.mock("@/lib/admin-presentation", () => ({
+  operatorAdminPresentation: { createExtensions: () => [] },
 }))
 
 vi.mock("@/lib/auth", () => ({

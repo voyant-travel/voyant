@@ -5,7 +5,7 @@ import {
   createAdminRouter,
 } from "@voyant-travel/admin/app"
 
-import { adminExtensions } from "./lib/admin-extensions"
+import { operatorAdminPresentation } from "./lib/admin-presentation"
 import { getApiUrl } from "./lib/env"
 import { projectFetcher } from "./lib/voyant-fetcher"
 import { Route as workspaceRoute } from "./routes/_workspace/route"
@@ -17,7 +17,7 @@ export type RouterContext = AdminRouterContext
 // conventions share one runtime route path. No committed route registry is
 // required in the deployment source tree.
 const adminRoutes = buildAdminExtensionRoutes(
-  adminExtensions,
+  operatorAdminPresentation.extensions,
   () => workspaceRoute,
   () => ({ baseUrl: getApiUrl(), fetcher: projectFetcher }),
 )

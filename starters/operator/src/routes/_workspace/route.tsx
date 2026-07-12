@@ -10,7 +10,7 @@ import { AdminWorkspaceRealtimeProvider } from "@voyant-travel/realtime-react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
 import { adminAuthRuntime } from "@/lib/admin-auth-runtime"
 import { operatorAdminDestinations } from "@/lib/admin-destinations"
-import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
+import { operatorAdminPresentation } from "@/lib/admin-presentation"
 import { authClient, useSignOut } from "@/lib/auth"
 import { getApiUrl } from "@/lib/env"
 import { projectFetcher } from "@/lib/voyant-fetcher"
@@ -63,7 +63,7 @@ function WorkspaceContent() {
       icons={operatorNavigationIcons}
       // The extension builder picks the nav label keys it needs from the full
       // nav messages — no hand-listing each key here.
-      extensions={(messages) => createOperatorAdminExtensions(messages.nav)}
+      extensions={(messages) => operatorAdminPresentation.createExtensions(messages.nav)}
       destinations={operatorAdminDestinations}
       onSignOut={() => signOut({ redirectTo: "/sign-in" })}
     >

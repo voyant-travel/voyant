@@ -1,5 +1,7 @@
 import { createAdminHostDestinations } from "@voyant-travel/admin-host/destinations"
 
-import { adminExtensions } from "@/lib/admin-extensions"
+import { operatorAdminPresentation } from "@/lib/admin-presentation"
 
-export const operatorAdminDestinations = createAdminHostDestinations(adminExtensions)
+export const operatorAdminDestinations = createAdminHostDestinations(
+  operatorAdminPresentation.extensions,
+)

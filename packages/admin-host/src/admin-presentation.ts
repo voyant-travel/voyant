@@ -11,6 +11,8 @@ import {
   getDashboardProductsAggregatesQueryOptions,
   getDashboardSuppliersAggregatesQueryOptions,
 } from "@voyant-travel/admin/dashboard/query-options"
+import { createAdminCoreExtension } from "@voyant-travel/admin-app/core-extension"
+import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 
 type SelectedExtensionsFactory = (context: {
   navMessages: Readonly<Record<string, string>>
@@ -25,6 +27,17 @@ export interface CreateAdminHostExtensionsOptions {
   selected: SelectedExtensionsFactory
   navMessages: Readonly<Record<string, string>>
   discovered?: ReadonlyArray<AdminExtension>
+}
+
+export interface CreateAdminHostPresentationOptions {
+  accessCatalog: AccessCatalog
+  selected: SelectedExtensionsFactory
+  project?: Record<string, unknown>
+}
+
+export interface AdminHostPresentation {
+  extensions: ReadonlyArray<AdminExtension>
+  createExtensions: (navMessages: Readonly<Record<string, string>>) => ReadonlyArray<AdminExtension>
 }
 
 export function discoverAdminHostExtensions(glob: Record<string, unknown>): AdminExtension[] {
@@ -42,6 +55,31 @@ export function createAdminHostExtensions({
   const settingsPages = selectedExtensions.flatMap((extension) => extension.settingsPages ?? [])
 
   return createAdminExtensionRegistry(core(settingsPages), ...selectedExtensions, ...discovered)
+}
+
+/** Build the standard selected-graph presentation with optional project-local extensions. */
+export function createAdminHostPresentation({
+  accessCatalog,
+  selected,
+  project = {},
+}: CreateAdminHostPresentationOptions): AdminHostPresentation {
+  const discovered = discoverAdminHostExtensions(project)
+  const createExtensions = (navMessages: Readonly<Record<string, string>>) =>
+    createAdminHostExtensions({
+      core: (settingsPages) =>
+        createAdminCoreExtension({
+          dashboard: { loader: loadAdminDashboard },
+          settings: { accessCatalog, extraPages: settingsPages },
+        }),
+      selected,
+      navMessages,
+      discovered,
+    })
+
+  return {
+    createExtensions,
+    extensions: createExtensions(defaultAdminHostNavMessages),
+  }
 }
 
 /** Prefetch the standard dashboard through the host's authenticated API runtime. */

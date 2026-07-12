@@ -33,8 +33,8 @@ export default defineAdminExtension({
 
 ## How it composes
 
-- **nav + widgets** merge in `src/lib/admin-extensions.tsx`
-  (`adminExtensionsFromGlob` → `createOperatorAdminExtensions`) and resolve
+- **nav + widgets** merge through `src/lib/admin-presentation.tsx`
+  (`createAdminHostPresentation`) and resolve
   through the shared `resolveAdminNavigation` / `resolveAdminWidgets`.
 - **page routes** are grafted into the TanStack route tree at runtime by
   `src/router.tsx` (`buildAdminExtensionRoutes`). Discovered pages are reachable
@@ -50,7 +50,7 @@ until a deployment adds an extension.
 - Keep page components lazy where possible (`page: () => import("./page.js")`)
   so they land in their own chunk instead of the workspace-chrome bundle.
 - Widget `slot` names are the ones the starter exposes (see
-  `src/lib/admin-extensions.tsx`). Targeting an unknown slot simply renders
+  `src/lib/admin-presentation.tsx`). Targeting an unknown slot simply renders
   nothing.
 
 See `docs/architecture/custom-modules.md` for the full extend-without-forking

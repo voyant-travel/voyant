@@ -32,6 +32,13 @@ export const realtimeVoyantModule = defineModule({
       },
     },
   ],
+  admin: {
+    compositionOrder: 110,
+    runtime: {
+      entry: "@voyant-travel/realtime-react/admin",
+      export: "createSelectedRealtimeAdminExtension",
+    },
+  },
   providers: [
     {
       id: "@voyant-travel/realtime#provider.local",

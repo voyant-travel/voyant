@@ -13,14 +13,17 @@ test("derives expected admin entries from the resolved graph, not voyant.config"
   const graph = join(dir, "deployment-graph.generated.json")
   const extensions = join(dir, "admin.extensions.generated.ts")
   const bundle = join(dir, "selected-graph-admin.generated.ts")
+  const presentation = join(dir, "admin-presentation.tsx")
   const compatibility = join(dir, "admin-extensions.tsx")
 
   try {
     writeFileSync(graph, JSON.stringify({ modules: [], plugins: [] }))
     writeFileSync(bundle, "export const selectedGraphAdminExtensionFactories = {}\n")
-    writeFileSync(compatibility, "export const extensions = []\n")
+    writePresentation(presentation)
 
-    assert.doesNotThrow(() => runChecker({ graph, extensions, bundle, compatibility }))
+    assert.doesNotThrow(() =>
+      runChecker({ graph, extensions, bundle, presentation, compatibility }),
+    )
 
     writeFileSync(
       graph,
@@ -36,7 +39,7 @@ test("derives expected admin entries from the resolved graph, not voyant.config"
     )
 
     assert.throws(
-      () => runChecker({ graph, extensions, bundle, compatibility }),
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
       /selected by the deployment graph.*does not declare admin\.runtime/s,
     )
   } finally {
@@ -49,6 +52,7 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
   const graph = join(dir, "deployment-graph.generated.json")
   const extensions = join(dir, "admin.extensions.generated.ts")
   const bundle = join(dir, "selected-graph-admin.generated.ts")
+  const presentation = join(dir, "admin-presentation.tsx")
   const compatibility = join(dir, "admin-extensions.tsx")
 
   try {
@@ -68,39 +72,84 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
       bundle,
       'import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/admin"\n',
     )
-    writeFileSync(compatibility, "export const extensions = []\n")
+    writePresentation(presentation)
 
-    assert.doesNotThrow(() => runChecker({ graph, extensions, bundle, compatibility }))
+    assert.doesNotThrow(() =>
+      runChecker({ graph, extensions, bundle, presentation, compatibility }),
+    )
+
+    writeFileSync(compatibility, "export const adminExtensions = []\n")
+    assert.throws(
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
+      /admin-extensions\.tsx must not exist/,
+    )
+    rmSync(compatibility, { force: true })
 
     writeFileSync(extensions, "export const generatedAdminExtensionFactories = {}\n")
     assert.throws(
-      () => runChecker({ graph, extensions, bundle, compatibility }),
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
       /admin\.extensions\.generated\.ts must not exist/,
     )
 
     rmSync(extensions, { force: true })
     writeFileSync(
-      compatibility,
+      presentation,
       'selectedGraphAdminExtensionFactories["@voyant-travel/action-ledger"]({})\n',
     )
     assert.throws(
-      () => runChecker({ graph, extensions, bundle, compatibility }),
-      /remains package-keyed in the Operator compatibility registry/,
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
+      /remains package-keyed in the Operator presentation input/,
     )
 
     writeFileSync(
-      compatibility,
+      presentation,
       'import "@voyant-travel/operator-settings-react/settings"\nexport const extensions = []\n',
     )
     assert.throws(
-      () => runChecker({ graph, extensions, bundle, compatibility }),
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
       /package admin authority must arrive through the selected graph/,
     )
 
-    writeFileSync(compatibility, 'const path = "custom-fields"\nexport const extensions = []\n')
+    writeFileSync(presentation, 'const path = "custom-fields"\nexport const extensions = []\n')
     assert.throws(
-      () => runChecker({ graph, extensions, bundle, compatibility }),
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
       /retains package-owned token custom-fields/,
+    )
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test("accepts Realtime only when its selected graph admin factory is bundled", () => {
+  const dir = mkdtempSync(join(tmpdir(), "voyant-realtime-admin-"))
+  const graph = join(dir, "deployment-graph.generated.json")
+  const extensions = join(dir, "admin.extensions.generated.ts")
+  const bundle = join(dir, "selected-graph-admin.generated.ts")
+  const presentation = join(dir, "admin-presentation.tsx")
+  const compatibility = join(dir, "admin-extensions.tsx")
+
+  try {
+    writeFileSync(
+      graph,
+      JSON.stringify({
+        modules: [
+          {
+            admin: { runtime: { entry: "@voyant-travel/realtime-react/admin" } },
+            api: [{ surface: "admin" }],
+            packageName: "@voyant-travel/realtime",
+          },
+        ],
+        plugins: [],
+      }),
+    )
+    writeFileSync(
+      bundle,
+      'import { createSelectedRealtimeAdminExtension } from "@voyant-travel/realtime-react/admin"\n',
+    )
+    writePresentation(presentation)
+
+    assert.doesNotThrow(() =>
+      runChecker({ graph, extensions, bundle, presentation, compatibility }),
     )
   } finally {
     rmSync(dir, { force: true, recursive: true })
@@ -112,6 +161,7 @@ test("rejects legacy committed admin generation artifacts and commands", () => {
   const graph = join(dir, "deployment-graph.generated.json")
   const extensions = join(dir, "admin.extensions.generated.ts")
   const bundle = join(dir, "selected-graph-admin.generated.ts")
+  const presentation = join(dir, "admin-presentation.tsx")
   const compatibility = join(dir, "admin-extensions.tsx")
   const router = join(dir, "router.tsx")
   const destinations = join(dir, "admin-destinations.ts")
@@ -124,9 +174,9 @@ test("rejects legacy committed admin generation artifacts and commands", () => {
   try {
     writeFileSync(graph, JSON.stringify({ modules: [], plugins: [] }))
     writeFileSync(bundle, "export const selectedGraphAdminExtensionFactories = {}\n")
-    writeFileSync(compatibility, "export const adminExtensions = []\n")
-    writeFileSync(router, "buildAdminExtensionRoutes(adminExtensions)\n")
-    writeFileSync(destinations, "createAdminHostDestinations(adminExtensions)\n")
+    writePresentation(presentation)
+    writeFileSync(router, "buildAdminExtensionRoutes(operatorAdminPresentation.extensions)\n")
+    writeFileSync(destinations, "operatorAdminPresentation.extensions\n")
     writeFileSync(operatorPackage, JSON.stringify({ scripts: {} }))
     writeFileSync(adminHostDestinations, "buildAdminExtensionDestinations(extensions)\n")
 
@@ -134,6 +184,7 @@ test("rejects legacy committed admin generation artifacts and commands", () => {
       graph,
       extensions,
       bundle,
+      presentation,
       compatibility,
       router,
       destinations,
@@ -163,6 +214,7 @@ function runChecker({
   graph,
   extensions,
   bundle,
+  presentation,
   compatibility,
   router = join(ROOT, "starters/operator/src/router.tsx"),
   destinations = join(ROOT, "starters/operator/src/lib/admin-destinations.ts"),
@@ -182,6 +234,8 @@ function runChecker({
       extensions,
       "--bundle",
       bundle,
+      "--presentation",
+      presentation,
       "--compatibility",
       compatibility,
       "--router",
@@ -200,5 +254,12 @@ function runChecker({
       legacyGenerator,
     ],
     { encoding: "utf8" },
+  )
+}
+
+function writePresentation(path) {
+  writeFileSync(
+    path,
+    'createAdminHostPresentation({ selected: "../../.voyant/admin/selected-graph-admin.generated", project: import.meta.glob("../admin/*/index.tsx", { eager: true }) })\n',
   )
 }

@@ -33,6 +33,11 @@ const ADMIN_INVALIDATIONS: Readonly<Record<string, ReadonlyArray<QueryKey>>> = {
   availability: [["voyant", "availability"], ["voyant", "products"], DASH_PRODUCTS],
 }
 
+/** Selected-graph marker for Realtime's workspace-level admin integration. */
+export function createSelectedRealtimeAdminExtension() {
+  return { id: "realtime" }
+}
+
 export function adminInvalidationKeys(hint: RealtimeInvalidationHint): ReadonlyArray<QueryKey> {
   return ADMIN_INVALIDATIONS[hint.entity] ?? []
 }

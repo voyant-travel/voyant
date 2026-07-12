@@ -14,6 +14,7 @@ pnpm add @voyant-travel/admin-host
 
 | Entry | Description |
 | --- | --- |
+| `./presentation` | `createAdminHostPresentation(...)` - composes the selected graph, core admin, and explicit project-local admin convention |
 | `./serve` | `serveAdminHost(...)` - Hono Node host that serves built client assets, then falls through to the combined API + SSR app |
 | `./ssr` | `createAdminSsrHandler(...)` - the TanStack Start SSR handler (`createStartHandler` + active-route manifest restriction) |
 | `.` | Barrel re-exporting both |
