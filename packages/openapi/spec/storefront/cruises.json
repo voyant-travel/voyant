@@ -599,7 +599,8 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
       }
     },
     "/v1/public/cruises/sailings/{key}": {
@@ -717,7 +718,8 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
       }
     },
     "/v1/public/cruises/sailings/{key}/quote": {
@@ -1033,7 +1035,8 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
       }
     },
     "/v1/public/cruises/ships/{key}": {
@@ -1126,7 +1129,8 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
       }
     },
     "/v1/public/cruises/{slug}": {
@@ -1490,7 +1494,8 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
       }
     },
     "/v1/public/cruises/{key}/content": {

@@ -6,10 +6,13 @@ import {
 } from "../../src/booking-extension.js"
 import { createCruisesContentVoyantRuntime } from "../../src/graph-runtime.js"
 import { createCruisesHonoModule, createCruisesVoyantRuntime } from "../../src/index.js"
+import { cruiseAdminRoutes } from "../../src/routes.js"
 import {
   CRUISE_CONTENT_OPENAPI_API_IDS,
   createCruiseContentHonoExtension,
 } from "../../src/routes-content.js"
+import { CRUISES_OPENAPI_API_IDS } from "../../src/routes-openapi.js"
+import { cruisePublicRoutes } from "../../src/routes-public.js"
 import { cruisesRoutesRuntimePort } from "../../src/runtime-port.js"
 import {
   cruisesBookingVoyantPlugin,
@@ -61,6 +64,10 @@ describe("cruises deployment manifest", () => {
       ],
     })
     expect(isGraphRuntimeFactory(createCruisesVoyantRuntime)).toBe(true)
+    expect(new Set(readApiIds(cruiseAdminRoutes))).toEqual(new Set([CRUISES_OPENAPI_API_IDS.admin]))
+    expect(new Set(readApiIds(cruisePublicRoutes))).toEqual(
+      new Set([CRUISES_OPENAPI_API_IDS.public]),
+    )
   })
 
   it("validates the deployment registry contract", async () => {

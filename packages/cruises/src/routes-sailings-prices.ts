@@ -1,4 +1,4 @@
-import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi"
+import { type OpenAPIHono, z } from "@hono/zod-openapi"
 import { parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 
@@ -14,6 +14,7 @@ import {
 } from "./routes-booking-payloads.js"
 import type { CruiseRoutesEnv as Env } from "./routes-env.js"
 import { adapterNotRegistered, invalidKey, resolveExternal } from "./routes-keying.js"
+import { createCruisesAdminRoute as createRoute } from "./routes-openapi.js"
 import {
   cruisePriceRowSchema,
   cruiseSailingDayRowSchema,
