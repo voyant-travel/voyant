@@ -28,7 +28,7 @@ function readRequired(path) {
 const manifest = readRequired(join(distributionRoot, "src/voyant.ts"))
 const extension = readRequired(join(distributionRoot, "src/channel-push/extension.ts"))
 const runtimePort = readRequired(join(distributionRoot, "src/channel-push/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const provider = readRequired(join(operatorRoot, "src/api/runtime/channel-push-runtime.ts"))
 const workflowServices = readRequired(
   join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),

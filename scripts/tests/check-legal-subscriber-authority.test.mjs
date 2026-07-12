@@ -24,7 +24,7 @@ subscribers: [{ runtime: { export: "legalBookingContractConfirmedSubscriber" } }
     "packages/framework/src/operator-distribution.ts": `
 const extensions = [{ resolve: "@voyant-travel/legal/booking-contract-extension" }]
 `,
-    "starters/operator/src/api/composition.ts": `
+    "starters/operator/src/api/runtime/deployment-resources.ts": `
 const ports = {
   [legalRuntimePort.id]: {},
   [legalBookingContractSubscriberRuntimePort.id]: {},
@@ -80,7 +80,7 @@ legalBookingContractConfirmedSubscriber.register(context)
 
   it("rejects a package-id-specific Operator Legal binding", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/composition.ts": `
+      "starters/operator/src/api/runtime/deployment-resources.ts": `
 const ports = {
   [legalRuntimePort.id]: {},
   [legalBookingContractSubscriberRuntimePort.id]: {},

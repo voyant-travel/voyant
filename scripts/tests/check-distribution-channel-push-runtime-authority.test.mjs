@@ -23,7 +23,7 @@ async function createFixture(overrides = {}) {
       "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
     "distribution/src/channel-push/runtime-port.ts":
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
-    "operator/src/api/composition.ts":
+    "operator/src/api/runtime/deployment-resources.ts":
       "export const ports = { [channelPushRuntimePort.id]: operatorChannelPushRuntime }\n",
     "operator/src/api/runtime/channel-push-runtime.ts":
       'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
@@ -66,7 +66,7 @@ describe("check-distribution-channel-push-runtime-authority", () => {
 
   it("rejects a package-id binding and restored compatibility route", async () => {
     const root = await createFixture({
-      "operator/src/api/composition.ts":
+      "operator/src/api/runtime/deployment-resources.ts":
         'const binding = { "@voyant-travel/distribution#channel-push-extension": createChannelPushExtension }\n',
       "operator/src/api/routes/channel-push.ts": "export const compatibilityRoute = true\n",
     })

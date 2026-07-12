@@ -22,7 +22,7 @@ container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
     "starters/operator/src/api/app.ts": "export const app = {}\n",
     "starters/operator/src/api/runtime/trips-runtime.ts":
       "export function createOperatorTripsRoutesOptions() {}\n",
-    "starters/operator/src/api/composition.ts": `
+    "starters/operator/src/api/runtime/deployment-resources.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
     withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
@@ -71,7 +71,7 @@ eventBus.subscribe("payment.completed", handler)
 
   it("rejects manual descriptor registration in composition", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/composition.ts": `
+      "starters/operator/src/api/runtime/deployment-resources.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
     withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>

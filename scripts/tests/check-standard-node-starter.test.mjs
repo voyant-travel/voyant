@@ -60,12 +60,13 @@ function fixture(overrides = {}) {
   deployment: { target: "node", providers: { database: "postgres" } },
 })\n`,
     "packages/framework/src/operator-distribution.ts": `const modules = [{ resolve: "@voyant-travel/identity" }]\n`,
-    "starters/operator/src/api/composition.ts": "export function buildOperatorRuntimePorts() {}\n",
+    "starters/operator/src/api/runtime/deployment-resources.ts":
+      "export function createOperatorDeploymentResources() {}\n",
     "packages/framework/src/project-artifact-paths.ts": `export const path = "product-bom.generated.json"\n`,
   }
   if (overrides.config) files["starters/operator/voyant.config.ts"] = overrides.config
   if (overrides.composition) {
-    files["starters/operator/src/api/composition.ts"] = overrides.composition
+    files["starters/operator/src/api/runtime/deployment-resources.ts"] = overrides.composition
   }
   for (const [path, contents] of Object.entries(files)) {
     const destination = join(root, path)

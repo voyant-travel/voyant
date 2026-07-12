@@ -12,7 +12,7 @@ const [manifest, indexRuntime, snapshotRuntime, app, composition] = await Promis
   read("packages/catalog/src/index-subscriber-runtime.ts"),
   read("packages/catalog/src/booking-snapshot-subscriber-runtime.ts"),
   read("starters/operator/src/api/app.ts"),
-  read("starters/operator/src/api/composition.ts"),
+  read("starters/operator/src/api/runtime/deployment-resources.ts"),
 ])
 
 const failures = []

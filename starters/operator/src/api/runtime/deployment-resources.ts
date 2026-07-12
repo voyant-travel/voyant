@@ -1,15 +1,10 @@
 /**
- * Graph-driven runtime composition for the operator starter.
+ * Node deployment resources consumed by the generated graph runtime.
  *
- * agent-quality: file-size exception -- this is the deployment's single
- * composition source of truth (one factory entry per mounted module/extension,
- * now that every route family composes here instead of ad-hoc additionalRoutes).
- * Keeping the manifest + registry + capabilities in one file is intentional; the
- * length scales with the module count, not with logic complexity.
- *
- * Generated package loaders own selection and order. This file keeps only the
- * deployment capability container and the ID-keyed bindings that configure
- * option-bearing factories or supply deployment-local units.
+ * Package selection and route composition belong to generated graph loaders.
+ * This module is limited to concrete host resources whose implementations
+ * depend on this deployment's bindings, database, storage, and process-local
+ * registries.
  */
 
 import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
@@ -62,7 +57,7 @@ import {
 import type { VoyantPort } from "@voyant-travel/core/project"
 import { cruisesRoutesRuntimePort } from "@voyant-travel/cruises/graph-runtime"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { channelPushRuntimePort } from "@voyant-travel/distribution"
+import { channelPushRuntimePort, enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import {
@@ -110,15 +105,15 @@ import {
   workflowRunnerRegistryRuntimePort,
 } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { resolveOperatorCustomFields } from "../lib/custom-fields"
-import { resolveNotificationProviders } from "../lib/notifications"
-import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../lib/realtime"
-import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"
-import { resolveBookingRequirementsProductSnapshot } from "./lib/booking-requirements-product-snapshot"
-import { withDbFromEnv } from "./lib/db"
-import { createOperatorCheckoutStartOptions } from "./runtime/catalog-checkout-options"
-import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./runtime/contract-document-variables"
-import { createOperatorNotificationsRuntimeProvider } from "./runtime/notifications-runtime"
+import { resolveOperatorCustomFields } from "../../lib/custom-fields"
+import { resolveNotificationProviders } from "../../lib/notifications"
+import { operatorRealtimeBridgeRoutes, resolveRealtimeProviders } from "../../lib/realtime"
+import { getBookingEngineRegistryFromContext } from "../lib/booking-engine-runtime"
+import { resolveBookingRequirementsProductSnapshot } from "../lib/booking-requirements-product-snapshot"
+import { withDbFromEnv } from "../lib/db"
+import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
+import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-variables"
+import { createOperatorNotificationsRuntimeProvider } from "./notifications-runtime"
 import {
   createOperatorBookingPiiService,
   createOperatorDocumentStorage,
@@ -132,15 +127,15 @@ import {
   resolveOperatorContractDocumentGenerator,
   resolveOperatorDb,
   resolveOperatorDocumentDownloadUrl,
-} from "./runtime/operator-runtime-adapter"
+} from "./operator-runtime-adapter"
 import {
   registerBookingsWorkflowService,
   registerInventoryWorkflowService,
-} from "./runtime/operator-workflow-services"
+} from "./operator-workflow-services"
 import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
-} from "./runtime/payment-config"
+} from "./payment-config"
 
 type AsyncMethodProvider<T extends object> = {
   [K in keyof T]: T[K] extends (...args: infer Args) => infer Result
@@ -160,7 +155,7 @@ type OperatorRelationshipsService = Pick<
   "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
 >
 
-export interface OperatorCapabilities {
+interface OperatorCapabilities {
   resolveNotificationProviders: typeof resolveNotificationProviders
   resolvePublicCheckoutBaseUrl: typeof resolvePublicCheckoutBaseUrlFromBindings
   resolveDocumentDownloadUrl: typeof resolveOperatorDocumentDownloadUrl
@@ -176,7 +171,7 @@ export interface OperatorCapabilities {
  * Build the operator provider container (gathers deployment resolvers/loaders).
  * Providers are bindings-deferred closures, so no `env` is needed here.
  */
-export function buildOperatorProviders(): OperatorCapabilities {
+function createDeploymentCapabilities(): OperatorCapabilities {
   return {
     customFields: resolveOperatorCustomFields,
     resolveNotificationProviders,
@@ -203,7 +198,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
     resolveBookingRequirementsProductSnapshot,
     storefrontIntakePersistence: lazyProvider<StorefrontIntakePersistence>(async () =>
-      import("./runtime/storefront-intake-runtime").then(
+      import("./storefront-intake-runtime").then(
         (m) =>
           m.createRelationshipsStorefrontIntakePersistence() as AsyncMethodProvider<StorefrontIntakePersistence>,
       ),
@@ -213,7 +208,7 @@ export function buildOperatorProviders(): OperatorCapabilities {
         import("@voyant-travel/plugin-netopia").then((m) => m.createNetopiaCheckoutStarter()),
       ),
     }),
-    loadMcpAdminRoutes: () => import("./runtime/mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
+    loadMcpAdminRoutes: () => import("./mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
     loadCatalogCheckoutRoutes: () =>
       import("@voyant-travel/commerce/checkout").then((commerce) =>
         commerce.createCatalogCheckoutRoutes((context) =>
@@ -224,9 +219,9 @@ export function buildOperatorProviders(): OperatorCapabilities {
 }
 
 /** Deployment implementations for package-declared runtime ports. */
-export function buildOperatorRuntimePorts(
+function createDeploymentPortResources(
   workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
-  capabilities: OperatorCapabilities = buildOperatorProviders(),
+  capabilities: OperatorCapabilities = createDeploymentCapabilities(),
 ): VoyantGraphRuntimePorts {
   return {
     [identityAccessRuntimePort.id]: runtimePortValue(
@@ -241,10 +236,10 @@ export function buildOperatorRuntimePorts(
       resolveDelegatePersonById: async (db, personId) =>
         (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
     }),
-    [quotesProposalRuntimePort.id]: import("./runtime/quote-proposal-runtime").then((runtime) =>
+    [quotesProposalRuntimePort.id]: import("./quote-proposal-runtime").then((runtime) =>
       runtime.createQuoteProposalRoutesOptions(),
     ),
-    [quotesSnapshotRuntimePort.id]: import("./runtime/quote-proposal-runtime").then((runtime) =>
+    [quotesSnapshotRuntimePort.id]: import("./quote-proposal-runtime").then((runtime) =>
       runtime.createQuoteProposalRoutesOptions(),
     ),
     [bookingsRuntimePort.id]: createOperatorBookingsRuntimeProvider(capabilities),
@@ -256,7 +251,7 @@ export function buildOperatorRuntimePorts(
     [financeRuntimePort.id]: createOperatorFinanceRuntimeProvider(capabilities),
     [financeBookingScheduleRuntimePort.id]: Promise.all([
       import("@voyant-travel/operator-settings"),
-      import("./runtime/booking-payment-policy-runtime"),
+      import("./booking-payment-policy-runtime"),
     ]).then(([settings, runtime]) => ({
       options: {
         resolveDb: (context) => operatorPostgresDb(context.get("db")),
@@ -281,8 +276,8 @@ export function buildOperatorRuntimePorts(
     ),
     [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost,
     [storefrontRuntimePort.id]: createOperatorStorefrontRuntimeProvider(capabilities),
-    [storefrontPaymentLinkRuntimePort.id]: import("./runtime/payment-link-runtime").then(
-      (runtime) => runtime.createOperatorPaymentLinkRouteOptions(),
+    [storefrontPaymentLinkRuntimePort.id]: import("./payment-link-runtime").then((runtime) =>
+      runtime.createOperatorPaymentLinkRouteOptions(),
     ),
     [storefrontCustomerPortalRuntimePort.id]: runtimePortValue(
       storefrontCustomerPortalRuntimePort,
@@ -295,8 +290,8 @@ export function buildOperatorRuntimePorts(
       resolveProviders: capabilities.resolveNotificationProviders,
       email: { subject: "Your verification code" },
     },
-    [legalContractDocumentRuntimePort.id]: import("./runtime/contract-document-runtime").then(
-      (runtime) => runtime.createOperatorContractDocumentRoutesOptions(),
+    [legalContractDocumentRuntimePort.id]: import("./contract-document-runtime").then((runtime) =>
+      runtime.createOperatorContractDocumentRoutesOptions(),
     ),
     [bookingMaintenanceRuntimePort.id]: import("@voyant-travel/operator-settings").then(
       (settings) =>
@@ -308,10 +303,10 @@ export function buildOperatorRuntimePorts(
     [catalogSearchRuntimePort.id]: {
       resolveRuntime: capabilities.resolveCatalogRuntime,
     },
-    [catalogBookingRuntimePort.id]: import("./runtime/catalog-booking-runtime").then((runtime) =>
+    [catalogBookingRuntimePort.id]: import("./catalog-booking-runtime").then((runtime) =>
       runtime.createOperatorCatalogBookingRouteModuleOptions(),
     ),
-    [catalogOffersRuntimePort.id]: import("./runtime/catalog-offers-runtime").then((runtime) =>
+    [catalogOffersRuntimePort.id]: import("./catalog-offers-runtime").then((runtime) =>
       runtime.createOperatorCatalogOffersRouteModuleOptions(),
     ),
     [inventoryRuntimePort.id]: runtimePortValue(inventoryRuntimePort, {
@@ -321,22 +316,22 @@ export function buildOperatorRuntimePorts(
     [catalogContentRuntimePort.id]: {
       resolveRegistry: getBookingEngineRegistryFromContext,
     },
-    [inventoryBrochureRuntimePort.id]: import("./runtime/media-runtime").then(
+    [inventoryBrochureRuntimePort.id]: import("./media-runtime").then(
       (runtime) => runtime.operatorInventoryBrochureRuntime,
     ),
     [cruisesRoutesRuntimePort.id]: {
       resolveSourceAdapterRegistry: (bindings: unknown) =>
-        import("./lib/booking-engine-runtime").then((runtime) =>
+        import("../lib/booking-engine-runtime").then((runtime) =>
           runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
         ),
     },
-    [actionLedgerHealthRuntimePort.id]: import("./runtime/action-ledger-health-runtime").then(
-      (runtime) => runtime.createOperatorActionLedgerHealthRuntime(),
+    [actionLedgerHealthRuntimePort.id]: import("./action-ledger-health-runtime").then((runtime) =>
+      runtime.createOperatorActionLedgerHealthRuntime(),
     ),
     [relationshipsRouteRuntimePort.id]: {
       customFields: resolveOperatorCustomFields,
     },
-    [flightsRuntimePort.id]: import("./runtime/flights-runtime").then(
+    [flightsRuntimePort.id]: import("./flights-runtime").then(
       (runtime) => runtime.operatorFlightsRuntime,
     ),
     [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider(),
@@ -380,11 +375,11 @@ export function buildOperatorRuntimePorts(
       createOperatorCatalogProjectionRuntimeProvider() satisfies CatalogProjectionRuntimeProvider,
     [catalogBookingSnapshotRuntimePort.id]: {
       createRuntime: (bindings) =>
-        import("./runtime/catalog-subscriber-runtime").then((runtime) =>
+        import("./catalog-subscriber-runtime").then((runtime) =>
           runtime.createOperatorCatalogBookingSnapshotRuntime(bindings),
         ),
     } satisfies CatalogBookingSnapshotRuntimeProvider,
-    [channelPushRuntimePort.id]: import("./runtime/channel-push-runtime").then(
+    [channelPushRuntimePort.id]: import("./channel-push-runtime").then(
       (runtime) => runtime.operatorChannelPushRuntime,
     ),
     [tripsRoutesRuntimePort.id]: createOperatorTripsRoutesOptions,
@@ -392,7 +387,7 @@ export function buildOperatorRuntimePorts(
       withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
         withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
     } satisfies TripsDatabaseRuntime,
-    [storageMediaRuntimePort.id]: import("./runtime/media-runtime").then(
+    [storageMediaRuntimePort.id]: import("./media-runtime").then(
       (runtime) => runtime.operatorStorageMediaRuntime,
     ),
     [realtimeRuntimePort.id]: {
@@ -429,13 +424,28 @@ export function buildOperatorRuntimePorts(
     } satisfies PromotionRedemptionDatabaseRuntime,
     [promotionsBulkReindexRuntimePort.id]: {
       createService: (bindings: unknown) =>
-        import("./lib/bulk-reindex-service").then((runtime) =>
+        import("../lib/bulk-reindex-service").then((runtime) =>
           runtime.createBulkReindexProductsService(operatorBindings(bindings)),
         ),
     } satisfies PromotionsBulkReindexRuntime,
     ...(workflowRunnerRegistry
       ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
       : {}),
+  }
+}
+
+/** All host-owned inputs passed to graph composition as one opaque resource set. */
+export function createOperatorDeploymentResources(
+  workflowRunnerRegistry?: WorkflowRunnerRegistryRuntime,
+) {
+  const capabilities = createDeploymentCapabilities()
+  return {
+    capabilities,
+    ports: createDeploymentPortResources(workflowRunnerRegistry, capabilities),
+    outboundWebhooks: {
+      enqueue: (event: Parameters<typeof enqueueGraphWebhookEvent>[1], bindings: unknown) =>
+        enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
+    },
   }
 }
 
@@ -537,7 +547,7 @@ function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRunt
   let runtime: ReturnType<CatalogProjectionRuntimeProvider["createRuntime"]> | undefined
   return {
     createRuntime(bindings) {
-      runtime ??= import("./runtime/catalog-subscriber-runtime").then((module) =>
+      runtime ??= import("./catalog-subscriber-runtime").then((module) =>
         module.createOperatorCatalogProjectionRuntime(bindings),
       )
       return runtime
@@ -546,8 +556,7 @@ function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRunt
 }
 
 const createOperatorTripsRoutesOptions: import("@voyant-travel/trips").TripsRoutesOptionsProvider =
-  () =>
-    import("./runtime/trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
+  () => import("./trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
 
 function createLazyCatalogSearchRuntime(
   c: Parameters<OperatorCapabilities["resolveCatalogRuntime"]>[0],
@@ -597,7 +606,9 @@ function createLazyCatalogEmbeddingProvider(
       supportedLanguages: null,
     },
     async embed(texts) {
-      providerPromise ??= import("./lib/catalog-runtime").then((m) => m.buildEmbeddingProvider(env))
+      providerPromise ??= import("../lib/catalog-runtime").then((m) =>
+        m.buildEmbeddingProvider(env),
+      )
       const provider = await providerPromise
       if (!provider) throw new Error("Catalog embedding provider is not configured")
       return provider.embed(texts)
@@ -624,7 +635,7 @@ function createLazyCatalogIndexer(
 
   let indexerPromise: Promise<IndexerAdapter | undefined> | undefined
   const loadIndexer = async () => {
-    indexerPromise ??= import("./lib/catalog-runtime").then((m) =>
+    indexerPromise ??= import("../lib/catalog-runtime").then((m) =>
       m.buildTypesenseIndexer(env, embeddings),
     )
     const indexer = await indexerPromise

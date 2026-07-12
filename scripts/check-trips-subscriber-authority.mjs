@@ -11,7 +11,7 @@ const paths = {
   packageRuntime: "packages/trips/src/index.ts",
   app: "starters/operator/src/api/app.ts",
   tripsRuntime: "starters/operator/src/api/runtime/trips-runtime.ts",
-  composition: "starters/operator/src/api/composition.ts",
+  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(

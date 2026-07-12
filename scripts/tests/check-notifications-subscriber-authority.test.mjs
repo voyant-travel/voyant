@@ -25,7 +25,7 @@ subscriber.reminder-booking-expired
     "packages/notifications/src/index.ts": "export const selectedGraphOnly = true\n",
     "packages/framework/src/operator-distribution.ts":
       'resolve: "@voyant-travel/notifications/reminder-subscribers-extension"\n',
-    "starters/operator/src/api/composition.ts":
+    "starters/operator/src/api/runtime/deployment-resources.ts":
       "const ports = { [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider() }\n",
     "starters/operator/src/api/runtime/notifications-runtime.ts": `
 function createOperatorNotificationsRuntimeProvider() {
@@ -52,7 +52,7 @@ describe("Notifications subscriber authority checker", () => {
 
   it("rejects package-id Operator bindings", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/composition.ts": `
+      "starters/operator/src/api/runtime/deployment-resources.ts": `
 const ports = { [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider() }
 const bindings = { "@voyant-travel/notifications": configure }
 `,

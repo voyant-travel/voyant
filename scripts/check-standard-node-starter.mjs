@@ -52,7 +52,7 @@ if (existsSync(join(root, "packages/framework/src/composition-lazy.ts"))) {
 }
 
 const operatorComposition = readFileSync(
-  join(root, "starters/operator/src/api/composition.ts"),
+  join(root, "starters/operator/src/api/runtime/deployment-resources.ts"),
   "utf8",
 )
 for (const symbol of [

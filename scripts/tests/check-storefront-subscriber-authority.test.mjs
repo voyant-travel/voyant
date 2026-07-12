@@ -30,7 +30,7 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
 `,
     "packages/storefront/src/index.ts":
       "registerStorefrontBookingBootstrapRuntime(container, runtime)\n",
-    "starters/operator/src/api/composition.ts": `
+    "starters/operator/src/api/runtime/deployment-resources.ts": `
 [storefrontRuntimePort.id]: createOperatorStorefrontRuntimeProvider(capabilities)
 function createOperatorStorefrontRuntimeProvider() {
   return { bookingIntents: { withDb: (bindings, operation) => withDbFromEnv(bindings, operation) } }

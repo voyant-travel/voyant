@@ -23,8 +23,8 @@ async function createFixture(overrides = {}) {
     "flights/src/hono.ts":
       'defineGraphRuntimeFactory(({ getPort }) => getPort(flightsRuntimePort))\ncreateOrderPaymentSessions({ targetType: "flight_order" })\n',
     "flights/src/runtime-port.ts": '["resolveAdapter", "startCardPayment"]\n',
-    "operator/src/api/composition.ts":
-      "export function buildOperatorRuntimePorts() { return { [flightsRuntimePort.id]: provider } }\nfunction createLazyCatalogSearchRuntime() {}\n",
+    "operator/src/api/runtime/deployment-resources.ts":
+      "function createDeploymentPortResources() { return { [flightsRuntimePort.id]: provider } }\nfunction createLazyCatalogSearchRuntime() {}\n",
     "operator/src/api/runtime/flights-runtime.ts":
       "export const operatorFlightsRuntime: FlightsRuntime = { resolveAdapter, startCardPayment }\n",
     ...overrides,
@@ -59,8 +59,8 @@ describe("check-flights-runtime-authority", () => {
 
   it("rejects package-id bindings and compatibility route loaders", async () => {
     const root = await createFixture({
-      "operator/src/api/composition.ts":
-        'export function buildOperatorRuntimePorts() { return {} }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/flights": legacy }\nfunction bindingsFromExtensionFactories() {}\nconst loadFlightAdminRoutes = legacy\n',
+      "operator/src/api/runtime/deployment-resources.ts":
+        'function createDeploymentPortResources() { return {} }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/flights": legacy }\nfunction bindingsFromExtensionFactories() {}\nconst loadFlightAdminRoutes = legacy\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {

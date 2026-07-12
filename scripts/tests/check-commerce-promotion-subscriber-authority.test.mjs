@@ -38,7 +38,7 @@ register: async (context) => {
     "starters/operator/src/api/app.ts": "plugins: [catalogBridgeBundle]\n",
     "starters/operator/src/api/subscribers/catalog-bridge.ts":
       'eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", captureSnapshot)\n',
-    "starters/operator/src/api/composition.ts": `
+    "starters/operator/src/api/runtime/deployment-resources.ts": `
 [promotionRedemptionDatabaseRuntimePort.id]: {
   withDb: (bindings, operation) => withDbFromEnv(operatorBindings(bindings), operation),
 } satisfies PromotionRedemptionDatabaseRuntime,

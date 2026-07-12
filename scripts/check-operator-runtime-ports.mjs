@@ -9,24 +9,12 @@ function argument(name, fallback) {
 
 const operatorRoot = argument("--operator-root", "starters/operator")
 const frameworkRoot = argument("--framework-root", "packages/framework")
-const composition = await readFile(path.join(operatorRoot, "src/api/composition.ts"), "utf8")
+const compositionPath = path.join(operatorRoot, "src/api/composition.ts")
+const resourcesPath = path.join(operatorRoot, "src/api/runtime/deployment-resources.ts")
+const app = await readFile(path.join(operatorRoot, "src/api/app.ts"), "utf8")
+const resources = await readFile(resourcesPath, "utf8")
 
-function section(source, start, end) {
-  const startIndex = source.indexOf(start)
-  const endIndex = source.indexOf(end, startIndex + start.length)
-  if (startIndex < 0 || endIndex < 0) {
-    throw new Error(`check-operator-runtime-ports: could not locate ${start}`)
-  }
-  return source.slice(startIndex, endIndex)
-}
-
-const runtimePorts = section(
-  composition,
-  "export function buildOperatorRuntimePorts",
-  "async function createOperatorBookingsRuntimeProvider",
-)
-
-const requiredPorts = [
+const migratedPorts = [
   "actionLedgerHealthRuntimePort",
   "bookingMaintenanceRuntimePort",
   "bookingRequirementsRuntimePort",
@@ -53,24 +41,35 @@ const requiredPorts = [
 ]
 
 const violations = []
-for (const port of requiredPorts) {
-  if (!runtimePorts.includes(`[${port}.id]`)) {
-    violations.push(`buildOperatorRuntimePorts must bind ${port}.id`)
-  }
+if (existsSync(compositionPath)) {
+  violations.push("starters/operator/src/api/composition.ts must stay deleted")
 }
-
-if (composition.includes("operatorGraphCompatibilityModules")) {
-  violations.push("operatorGraphCompatibilityModules must stay deleted")
+if (!resources.includes("export function createOperatorDeploymentResources")) {
+  violations.push("deployment-resources.ts must expose one graph deployment resource factory")
 }
-if (composition.includes("operatorGraphCompatibilityExtensions")) {
-  violations.push("operatorGraphCompatibilityExtensions must stay deleted")
+for (const legacyExport of [
+  "export function buildOperatorProviders",
+  "export function buildOperatorRuntimePorts",
+]) {
+  if (resources.includes(legacyExport)) violations.push(`${legacyExport} must stay private`)
+}
+for (const legacyBuilder of ["buildOperatorProviders", "buildOperatorRuntimePorts"]) {
+  if (resources.includes(legacyBuilder)) violations.push(`${legacyBuilder} must stay deleted`)
+}
+if (!app.includes("...createOperatorDeploymentResources(workflowRunnerRegistry)")) {
+  violations.push("Operator app must compose the generated graph from deployment resources")
+}
+for (const port of migratedPorts) {
+  if (app.includes(port)) violations.push(`Operator app must not own ${port}`)
 }
 for (const symbol of [
+  "buildOperatorProviders",
+  "buildOperatorRuntimePorts",
   "operatorGraphRuntimeBindings",
   "deploymentLocalExtensions",
   "bindingsFromExtensionFactories",
 ]) {
-  if (composition.includes(symbol)) violations.push(`${symbol} must stay deleted`)
+  if (app.includes(symbol)) violations.push(`${symbol} must stay out of Operator app composition`)
 }
 if (existsSync(path.join(frameworkRoot, "src/composition-lazy.ts"))) {
   violations.push("framework composition-lazy.ts must stay deleted")
@@ -81,5 +80,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-runtime-ports: OK (${requiredPorts.length} package runtimes are port-bound; central package-id factories are absent)`,
+  `check-operator-runtime-ports: OK (0 product runtime-port entries in app composition; ${migratedPorts.length} resources are behind the deployment boundary)`,
 )

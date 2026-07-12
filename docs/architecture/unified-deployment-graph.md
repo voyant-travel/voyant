@@ -610,7 +610,13 @@ exposes the owning loader's normalized, JSON-safe `projectConfig`; config from
 another selected unit is never merged into it. Deselected units remain behind
 their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
-public factories have not adopted this contract.
+public factories have not adopted this contract. The Operator application does
+not expose or assemble that bridge: it passes the generated runtime one opaque
+deployment-resource object from `src/api/runtime/deployment-resources.ts`. That
+boundary may adapt Node-only database, storage, notification, workflow-registry,
+and outbound-webhook resources, but package selection and route ordering remain
+graph-derived. `src/api/composition.ts` is deleted and the runtime-port checker
+rejects its return.
 
 Progress: the Distribution channel-push extension now declares its route and
 workflow-service runtime dependency as a typed port and adapts that port through

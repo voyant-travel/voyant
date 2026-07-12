@@ -11,7 +11,7 @@ const paths = {
   descriptor: "packages/commerce/src/promotions/subscriber-runtime.ts",
   app: "starters/operator/src/api/app.ts",
   catalogBridge: "starters/operator/src/api/subscribers/catalog-bridge.ts",
-  composition: "starters/operator/src/api/composition.ts",
+  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(

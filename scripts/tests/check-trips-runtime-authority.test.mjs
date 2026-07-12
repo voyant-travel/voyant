@@ -20,8 +20,8 @@ async function createFixture(overrides = {}) {
       'createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => { api.some(({ surface }) => surface === "admin"); api.some(({ surface }) => surface === "public"); getPort(tripsRoutesRuntimePort); getPort(tripsDatabaseRuntimePort); return { module: { requiresTransactionalDb: true } } })\n',
     "trips/src/runtime-port.ts":
       'definePort<TripsRoutesOptionsProvider>({ id: "trips.routes-runtime" })\ndefinePort<TripsDatabaseRuntime>({ id: "trips.database-runtime" })\n',
-    "operator/src/api/composition.ts":
-      'import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"\nexport function buildOperatorRuntimePorts() { return { [tripsRoutesRuntimePort.id]: {}, [tripsDatabaseRuntimePort.id]: {} } }\nconst createOperatorTripsRoutesOptions = () => ({})\n',
+    "operator/src/api/runtime/deployment-resources.ts":
+      'import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"\nfunction createDeploymentPortResources() { return { [tripsRoutesRuntimePort.id]: {}, [tripsDatabaseRuntimePort.id]: {} } }\nconst createOperatorTripsRoutesOptions = () => ({})\n',
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -56,8 +56,8 @@ describe("check-trips-runtime-authority", () => {
   it("rejects package-id binding and the compatibility module export", async () => {
     const root = await createFixture({
       "trips/src/index.ts": "export const tripsHonoModule = {}\n",
-      "operator/src/api/composition.ts":
-        'import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"\nexport function buildOperatorRuntimePorts() { return { [tripsRoutesRuntimePort.id]: {}, [tripsDatabaseRuntimePort.id]: {} } }\nconst createOperatorTripsRoutesOptions = () => ({})\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\nfunction bindingsFromExtensionFactories() {}\n',
+      "operator/src/api/runtime/deployment-resources.ts":
+        'import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"\nfunction createDeploymentPortResources() { return { [tripsRoutesRuntimePort.id]: {}, [tripsDatabaseRuntimePort.id]: {} } }\nconst createOperatorTripsRoutesOptions = () => ({})\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\nfunction bindingsFromExtensionFactories() {}\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {

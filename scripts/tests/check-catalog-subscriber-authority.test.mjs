@@ -40,7 +40,7 @@ const factory = defineGraphRuntimeFactory(async ({ getPort }) => {
 })
 `,
     "starters/operator/src/api/app.ts": "mountApp({ modules })\n",
-    "starters/operator/src/api/composition.ts": `
+    "starters/operator/src/api/runtime/deployment-resources.ts": `
 [catalogProjectionRuntimePort.id]: { createRuntime() {} } satisfies CatalogProjectionRuntimeProvider,
 [catalogBookingSnapshotRuntimePort.id]: { createRuntime() {} } satisfies CatalogBookingSnapshotRuntimeProvider,
 `,

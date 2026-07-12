@@ -12,7 +12,11 @@ import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
-import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
+import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+
+const buildOperatorProviders = () => createOperatorDeploymentResources().capabilities
+const buildOperatorRuntimePorts = (registry?: WorkflowRunnerRegistry) =>
+  createOperatorDeploymentResources(registry).ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({

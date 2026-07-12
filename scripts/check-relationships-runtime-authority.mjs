@@ -31,10 +31,10 @@ function section(source, start, end) {
 const manifest = readRequired(join(relationshipsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(relationshipsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(relationshipsRoot, "src/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const runtimePorts = section(
   composition,
-  "export function buildOperatorRuntimePorts",
+  "function createDeploymentPortResources",
   "function createLazyCatalogSearchRuntime",
 )
 

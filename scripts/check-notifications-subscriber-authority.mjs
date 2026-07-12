@@ -10,7 +10,7 @@ const paths = {
   manifest: "packages/notifications/src/voyant.ts",
   module: "packages/notifications/src/index.ts",
   distribution: "packages/framework/src/operator-distribution.ts",
-  composition: "starters/operator/src/api/composition.ts",
+  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
   host: "starters/operator/src/api/runtime/notifications-runtime.ts",
 }
 

@@ -68,7 +68,11 @@ import {
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "../../.voyant/runtime/graph-runtime.generated"
-import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
+import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+
+const buildOperatorProviders = () => createOperatorDeploymentResources().capabilities
+const buildOperatorRuntimePorts = (registry?: WorkflowRunnerRegistry) =>
+  createOperatorDeploymentResources(registry).ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   const workflowRunnerRegistry = new WorkflowRunnerRegistry()

@@ -10,42 +10,20 @@ import { promisify } from "node:util"
 const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checkerPath = path.join(repoRoot, "scripts/check-operator-runtime-ports.mjs")
-const portNames = [
-  "actionLedgerHealthRuntimePort",
-  "bookingMaintenanceRuntimePort",
-  "bookingRequirementsRuntimePort",
-  "bookingsRuntimePort",
-  "catalogBookingRuntimePort",
-  "catalogContentRuntimePort",
-  "catalogOffersRuntimePort",
-  "catalogSearchRuntimePort",
-  "financeBookingScheduleRuntimePort",
-  "financeBookingTaxRuntimePort",
-  "financeRuntimePort",
-  "inventoryBrochureRuntimePort",
-  "inventoryRuntimePort",
-  "legalContractDocumentRuntimePort",
-  "miceRuntimePort",
-  "quotesProposalRuntimePort",
-  "quotesRuntimePort",
-  "quotesSnapshotRuntimePort",
-  "smartbillRuntimeHostPort",
-  "storefrontCustomerPortalRuntimePort",
-  "storefrontPaymentLinkRuntimePort",
-  "storefrontRuntimePort",
-  "storefrontVerificationRuntimePort",
-]
-
-async function createFixture({ binding = "", framework = false } = {}) {
+async function createFixture({ appExtra = "", composition = false, framework = false } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-package-authority-"))
-  const operator = path.join(root, "operator/src/api/composition.ts")
+  const app = path.join(root, "operator/src/api/app.ts")
+  const resources = path.join(root, "operator/src/api/runtime/deployment-resources.ts")
   const frameworkFile = path.join(root, "framework/src/composition-lazy.ts")
-  await mkdir(path.dirname(operator), { recursive: true })
+  await mkdir(path.dirname(resources), { recursive: true })
   await mkdir(path.dirname(frameworkFile), { recursive: true })
   await writeFile(
-    operator,
-    `export function buildOperatorRuntimePorts() { return { ${portNames.map((name) => `[${name}.id]: {}`).join(",")} } }\nasync function createOperatorBookingsRuntimeProvider() {}\n${binding}\n`,
+    app,
+    `const graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...createOperatorDeploymentResources(workflowRunnerRegistry) })\n${appExtra}\n`,
   )
+  await writeFile(resources, "export function createOperatorDeploymentResources() { return {} }\n")
+  if (composition)
+    await writeFile(path.join(root, "operator/src/api/composition.ts"), "export {}\n")
   if (framework) await writeFile(frameworkFile, "export const registry = {}\n")
   return root
 }
@@ -65,18 +43,20 @@ function runChecker(root) {
 }
 
 describe("check-operator-runtime-ports", () => {
-  it("accepts typed host ports without central factories", async () => {
+  it("accepts the opaque deployment-resource composition boundary", async () => {
     const result = await runChecker(await createFixture())
-    assert.match(result.stdout, /23 package runtimes are port-bound/)
+    assert.match(result.stdout, /0 product runtime-port entries in app composition/)
   })
 
-  it("rejects restored Operator bindings and framework factories", async () => {
+  it("rejects restored Operator composition and framework factories", async () => {
     const root = await createFixture({
-      binding: 'export const operatorGraphRuntimeBindings = { "@voyant-travel/quotes": factory }',
+      appExtra: "const buildOperatorRuntimePorts = () => ({})",
+      composition: true,
       framework: true,
     })
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /operatorGraphRuntimeBindings must stay deleted/)
+      assert.match(error.stderr, /composition\.ts must stay deleted/)
+      assert.match(error.stderr, /buildOperatorRuntimePorts must stay out/)
       assert.match(error.stderr, /composition-lazy\.ts must stay deleted/)
       return true
     })

@@ -29,7 +29,7 @@ const [catalogManifest, commerceManifest, composition, financeRuntime, notificat
     [
       "packages/catalog/src/voyant.ts",
       "packages/commerce/src/voyant.ts",
-      "starters/operator/src/api/composition.ts",
+      "starters/operator/src/api/runtime/deployment-resources.ts",
       "packages/finance/src/index.ts",
       "packages/notifications/src/subscriber-runtime.ts",
     ].map((relativePath) => readFile(path.join(root, relativePath), "utf8")),

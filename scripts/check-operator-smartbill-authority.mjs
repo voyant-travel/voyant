@@ -26,7 +26,7 @@ const operatorPackage = JSON.parse(readRequired(join(operatorRoot, "package.json
 const installedPackage = JSON.parse(readRequired(join(installedPackageRoot, "package.json")))
 const config = readRequired(join(operatorRoot, "voyant.config.ts"))
 const app = readRequired(join(operatorRoot, "src/api/app.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 
 if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.0") {

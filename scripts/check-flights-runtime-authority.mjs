@@ -32,11 +32,11 @@ const packageJson = JSON.parse(readRequired(join(flightsRoot, "package.json")))
 const manifest = readRequired(join(flightsRoot, "src/voyant.ts"))
 const hono = readRequired(join(flightsRoot, "src/hono.ts"))
 const runtimePort = readRequired(join(flightsRoot, "src/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/composition.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const operatorRuntime = readRequired(join(operatorRoot, "src/api/runtime/flights-runtime.ts"))
 const runtimePorts = section(
   composition,
-  "export function buildOperatorRuntimePorts",
+  "function createDeploymentPortResources",
   "function createLazyCatalogSearchRuntime",
 )
 

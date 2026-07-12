@@ -1,4 +1,3 @@
-import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import {
   composeVoyantGraphRuntime,
   lowerVoyantGraphActionsToActionLedgerRegistry,
@@ -14,9 +13,9 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
-import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
+import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+import { createOperatorWorkflowDriver } from "./runtime/operator-runtime-adapter"
 
 /**
  * Process-wide registry of workflow runners. Selected package runtimes register
@@ -30,17 +29,12 @@ import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/opera
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
-const operatorProviders = buildOperatorProviders()
 const graphRuntime = createGeneratedGraphRuntime()
 export const operatorActionLedgerCapabilityRegistry =
   lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
 const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
-  capabilities: operatorProviders,
-  ports: buildOperatorRuntimePorts(workflowRunnerRegistry, operatorProviders),
-  outboundWebhooks: {
-    enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),
-  },
+  ...createOperatorDeploymentResources(workflowRunnerRegistry),
 })
 
 export const app = mountApp<AppBindings>({
@@ -95,7 +89,7 @@ export const app = mountApp<AppBindings>({
   },
   additionalRoutes: (hono) => {
     // Every domain + deployment-local route family is now composed through the
-    // registry (see composition.ts). The only thing left here is the workflow-
+    // generated graph. The only thing left here is the workflow-
     // runs admin surface, which is coupled to the app-level runner registry that
     // selected graph bootstraps populate at construction time.
 

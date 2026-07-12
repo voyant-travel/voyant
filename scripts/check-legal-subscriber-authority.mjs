@@ -10,7 +10,7 @@ const paths = {
   manifest: "packages/legal/src/voyant.ts",
   legalModule: "packages/legal/src/index.ts",
   distribution: "packages/framework/src/operator-distribution.ts",
-  composition: "starters/operator/src/api/composition.ts",
+  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
   config: "starters/operator/voyant.config.ts",
 }
 
