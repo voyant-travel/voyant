@@ -129,6 +129,7 @@
   "paths": {
     "/v1/public/legal/contracts/templates/default": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -268,6 +269,7 @@
     },
     "/v1/public/legal/contracts/templates/{id}/preview": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -355,6 +357,7 @@
     },
     "/v1/public/legal/contracts/templates/{id}/render-preview": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -442,6 +445,7 @@
     },
     "/v1/public/legal/contracts/templates/by-slug/{slug}/preview": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -529,6 +533,7 @@
     },
     "/v1/public/legal/contracts/templates/by-slug/{slug}/render-preview": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -616,6 +621,7 @@
     },
     "/v1/public/legal/contracts/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -756,6 +762,7 @@
     },
     "/v1/public/legal/contracts/{id}/sign": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -930,6 +937,7 @@
     },
     "/v1/public/legal/policies/{slug}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -1093,6 +1101,7 @@
     },
     "/v1/public/legal/policies/{id}/accept": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -1356,6 +1365,7 @@
     },
     "/v1/public/legal/terms": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {
@@ -1622,6 +1632,7 @@
     },
     "/v1/public/legal/terms/{id}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/legal#api.public",
         "parameters": [
           {
             "schema": {

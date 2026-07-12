@@ -1,4 +1,6 @@
+import type { OpenAPIHono } from "@hono/zod-openapi"
 import { describe, expect, it } from "vitest"
+import { createOperatorSettingsHonoModule } from "../../src/hono-module.js"
 import { operatorSettingsVoyantModule } from "../../src/voyant.js"
 
 describe("operator-settings deployment manifest", () => {
@@ -48,5 +50,23 @@ describe("operator-settings deployment manifest", () => {
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
     expect(operatorSettingsVoyantModule.api?.every((route) => route.runtime)).toBe(true)
+  })
+
+  it("marks each public OpenAPI operation with its graph API id", async () => {
+    const routes = (await createOperatorSettingsHonoModule().lazyRoutes?.load()) as
+      | OpenAPIHono
+      | undefined
+    const document = routes?.getOpenAPI31Document({
+      openapi: "3.1.0",
+      info: { title: "Operator Settings", version: "1" },
+    })
+    const paths = document?.paths
+
+    expect(paths?.["/v1/public/operator-profile"]?.get?.["x-voyant-api-id"]).toBe(
+      "@voyant-travel/operator-settings#api.public.operator-profile",
+    )
+    expect(paths?.["/v1/public/settings/operator"]?.get?.["x-voyant-api-id"]).toBe(
+      "@voyant-travel/operator-settings#api.public.settings",
+    )
   })
 })

@@ -1,11 +1,11 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-
 import { listCharterAdapters, resolveCharterAdapter } from "./adapters/registry.js"
 import { parseUnifiedKey } from "./lib/key.js"
+import { createChartersPublicRoute } from "./routes-openapi.js"
 import { chartersService } from "./service.js"
 import { composePerSuiteQuote, composeWholeYachtQuote, pricingService } from "./service-pricing.js"
 import { productListQuerySchema, voyageListQuerySchema } from "./validation-core.js"
@@ -181,7 +181,7 @@ const yachtDetailResponseSchema = z.object({
 
 // ---------- route definitions ----------
 
-const listChartersRoute = createRoute({
+const listChartersRoute = createChartersPublicRoute({
   method: "get",
   path: "/",
   request: { query: productListQuerySchema },
@@ -194,7 +194,7 @@ const listChartersRoute = createRoute({
   },
 })
 
-const listVoyagesRoute = createRoute({
+const listVoyagesRoute = createChartersPublicRoute({
   method: "get",
   path: "/voyages",
   request: { query: voyageListQuerySchema },
@@ -206,7 +206,7 @@ const listVoyagesRoute = createRoute({
   },
 })
 
-const voyageByKeyRoute = createRoute({
+const voyageByKeyRoute = createChartersPublicRoute({
   method: "get",
   path: "/voyages/{key}",
   request: { params: z.object({ key: z.string() }) },
@@ -230,7 +230,7 @@ const voyageByKeyRoute = createRoute({
   },
 })
 
-const quotePerSuiteRoute = createRoute({
+const quotePerSuiteRoute = createChartersPublicRoute({
   method: "post",
   path: "/voyages/{key}/quote/per-suite",
   request: {
@@ -260,7 +260,7 @@ const quotePerSuiteRoute = createRoute({
   },
 })
 
-const quoteWholeYachtRoute = createRoute({
+const quoteWholeYachtRoute = createChartersPublicRoute({
   method: "post",
   path: "/voyages/{key}/quote/whole-yacht",
   request: {
@@ -290,7 +290,7 @@ const quoteWholeYachtRoute = createRoute({
   },
 })
 
-const yachtByKeyRoute = createRoute({
+const yachtByKeyRoute = createChartersPublicRoute({
   method: "get",
   path: "/yachts/{key}",
   request: { params: z.object({ key: z.string() }) },
@@ -314,7 +314,7 @@ const yachtByKeyRoute = createRoute({
   },
 })
 
-const productByKeyRoute = createRoute({
+const productByKeyRoute = createChartersPublicRoute({
   method: "get",
   path: "/products/{key}",
   request: { params: z.object({ key: z.string() }) },

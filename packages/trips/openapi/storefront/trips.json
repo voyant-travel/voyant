@@ -129,6 +129,7 @@
   "paths": {
     "/v1/public/trips/health": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "responses": {
           "200": {
             "description": "Trips module health status",
@@ -167,6 +168,7 @@
     },
     "/v1/public/trips": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -629,6 +631,7 @@
         "x-voyant-surface": "storefront"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "requestBody": {
           "required": true,
           "content": {
@@ -1019,6 +1022,7 @@
     },
     "/v1/public/trips/{envelopeId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -1349,6 +1353,7 @@
         "x-voyant-surface": "storefront"
       },
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -1608,6 +1613,7 @@
     },
     "/v1/public/trips/{envelopeId}/reshop": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -1929,6 +1935,7 @@
     },
     "/v1/public/trips/{envelopeId}/snapshots": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -2057,6 +2064,7 @@
         "x-voyant-surface": "storefront"
       },
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -2251,6 +2259,7 @@
     },
     "/v1/public/trips/snapshots/{snapshotId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -2395,6 +2404,7 @@
     },
     "/v1/public/trips/{envelopeId}/components": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -2738,6 +2748,7 @@
     },
     "/v1/public/trips/{envelopeId}/components/reorder": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -3024,6 +3035,7 @@
     },
     "/v1/public/trips/components/{componentId}": {
       "patch": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -3354,6 +3366,7 @@
         "x-voyant-surface": "storefront"
       },
       "delete": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -3616,6 +3629,7 @@
     },
     "/v1/public/trips/components/{componentId}/refs": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -3927,6 +3941,7 @@
     },
     "/v1/public/trips/{envelopeId}/requirements": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -4146,6 +4161,7 @@
         "x-voyant-surface": "storefront"
       },
       "get": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -4324,6 +4340,7 @@
     },
     "/v1/public/trips/requirements/{requirementId}/candidates": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -4647,6 +4664,7 @@
     },
     "/v1/public/trips/requirements/{requirementId}/select": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -5082,6 +5100,7 @@
     },
     "/v1/public/trips/requirements/{requirementId}/reshop": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -5405,6 +5424,7 @@
     },
     "/v1/public/trips/{envelopeId}/price": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -5829,6 +5849,7 @@
     },
     "/v1/public/trips/{envelopeId}/reserve": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -6253,6 +6274,7 @@
     },
     "/v1/public/trips/{envelopeId}/checkout": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -6664,6 +6686,7 @@
     },
     "/v1/public/trips/{envelopeId}/cancellation-preview": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {
@@ -7082,6 +7105,7 @@
     },
     "/v1/public/trips/{envelopeId}/cancel-components": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/trips#api.public",
         "parameters": [
           {
             "schema": {

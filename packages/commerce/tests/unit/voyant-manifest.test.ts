@@ -14,6 +14,8 @@ import {
   catalogCheckoutDatabaseRuntimePort,
   catalogCheckoutLegalRuntimePort,
 } from "../../src/checkout/runtime-ports.js"
+import { publicMarketsRoutes } from "../../src/markets/routes-public.js"
+import { publicPricingRoutes } from "../../src/pricing/routes-public.js"
 import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
@@ -169,6 +171,9 @@ describe("commerce deployment manifest", () => {
         },
       ],
     })
+
+    expect(readApiIds(publicMarketsRoutes)).toEqual(["@voyant-travel/commerce#api.markets.public"])
+    expect(readApiIds(publicPricingRoutes)).toEqual(["@voyant-travel/commerce#api.pricing.public"])
   })
 
   it("owns the catalog checkout and booking maintenance bridges", () => {
@@ -285,3 +290,19 @@ describe("commerce deployment manifest", () => {
     })
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Commerce", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

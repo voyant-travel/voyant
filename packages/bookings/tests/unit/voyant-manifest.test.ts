@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { createBookingsVoyantRuntime } from "../../src/index.js"
 import { createBookingRequirementsVoyantRuntime } from "../../src/requirements/index.js"
+import { publicBookingRequirementsRoutes } from "../../src/requirements/routes-public.js"
 import {
   bookingRequirementsVoyantModule,
   bookingsSupplierVoyantPlugin,
@@ -151,6 +152,10 @@ describe("bookings deployment manifest", () => {
         },
       ],
     })
+
+    expect(readApiIds(publicBookingRequirementsRoutes)).toEqual([
+      "@voyant-travel/bookings#requirements.api.public",
+    ])
   })
 
   it("mounts only selected Bookings API surfaces", async () => {
@@ -242,3 +247,19 @@ describe("bookings deployment manifest", () => {
     })
   })
 })
+
+function readApiIds(routes: OpenApiDocumentSource): unknown[] {
+  const document = routes.getOpenAPI31Document({
+    openapi: "3.1.0",
+    info: { title: "Bookings", version: "1" },
+  })
+  return Object.values(document.paths ?? {}).flatMap((path) =>
+    Object.values(path).map((operation) => operation["x-voyant-api-id"]),
+  )
+}
+
+interface OpenApiDocumentSource {
+  getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
+    paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}

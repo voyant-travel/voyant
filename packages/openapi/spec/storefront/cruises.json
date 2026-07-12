@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/cruises": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -599,12 +600,12 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/sailings/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -718,12 +719,12 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/sailings/{key}/quote": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -1035,12 +1036,12 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/ships/{key}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -1129,12 +1130,12 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/{slug}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/cruises#api.public",
         "parameters": [
           {
             "schema": {
@@ -1494,8 +1495,7 @@
           "cruises"
         ],
         "x-voyant-module": "cruises",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/cruises#api.public"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/cruises/{key}/content": {

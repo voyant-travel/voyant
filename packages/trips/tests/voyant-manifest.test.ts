@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { assertPortConforms } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -61,6 +62,17 @@ describe("trips deployment manifest", () => {
     expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
   })
 
+  it("marks every public OpenAPI operation with its graph API id", () => {
+    const document = JSON.parse(
+      readFileSync(new URL("../openapi/storefront/trips.json", import.meta.url), "utf8"),
+    )
+
+    expect(publicOperationApiIds(document)).not.toHaveLength(0)
+    expect(new Set(publicOperationApiIds(document))).toEqual(
+      new Set(["@voyant-travel/trips#api.public"]),
+    )
+  })
+
   it.each([
     ["admin", true, false],
     ["public", false, true],
@@ -114,3 +126,12 @@ describe("trips deployment manifest", () => {
     expect(withDb).toHaveBeenCalledWith(bindings, expect.any(Function))
   })
 })
+
+function publicOperationApiIds(document: unknown): unknown[] {
+  const paths = (document as { paths?: Record<string, Record<string, unknown>> } | undefined)?.paths
+  return Object.values(paths ?? {}).flatMap((path) =>
+    Object.values(path).map(
+      (operation) => (operation as Record<string, unknown>)["x-voyant-api-id"],
+    ),
+  )
+}

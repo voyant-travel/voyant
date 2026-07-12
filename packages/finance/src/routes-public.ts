@@ -90,6 +90,7 @@ function invoiceCheckoutCapability(action: CheckoutCapabilityAction): Middleware
 // ─────────────────────────────────────────────────────────────────
 
 const validateVoucherRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "post",
   path: "/vouchers/validate",
   request: {
@@ -109,6 +110,7 @@ const validateVoucherRoute = createRoute({
 })
 
 const documentByReferenceRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/documents/by-reference",
   request: { query: publicFinanceDocumentLookupQuerySchema },
@@ -134,6 +136,7 @@ const documentByReferenceRoute = createRoute({
 const bookingParamsSchema = z.object({ bookingId: z.string() })
 
 const bookingDocumentsRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/bookings/{bookingId}/documents",
   request: { params: bookingParamsSchema },
@@ -152,6 +155,7 @@ const bookingDocumentsRoute = createRoute({
 })
 
 const bookingDocumentByReferenceRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/bookings/{bookingId}/documents/by-reference",
   request: { params: bookingParamsSchema, query: publicFinanceDocumentLookupQuerySchema },
@@ -170,6 +174,7 @@ const bookingDocumentByReferenceRoute = createRoute({
 })
 
 const bookingPaymentsRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/bookings/{bookingId}/payments",
   request: { params: bookingParamsSchema },
@@ -188,6 +193,7 @@ const bookingPaymentsRoute = createRoute({
 })
 
 const bookingPaymentOptionsRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/bookings/{bookingId}/payment-options",
   request: { params: bookingParamsSchema, query: publicPaymentOptionsQuerySchema },
@@ -206,6 +212,7 @@ const bookingPaymentOptionsRoute = createRoute({
 })
 
 const paymentSessionByIdRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/payment-sessions/{sessionId}",
   request: { params: z.object({ sessionId: z.string() }) },
@@ -226,6 +233,7 @@ const paymentSessionByIdRoute = createRoute({
 // ─────────────────────────────────────────────────────────────────
 
 const startSchedulePaymentSessionRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "post",
   path: "/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session",
   request: {
@@ -252,6 +260,7 @@ const startSchedulePaymentSessionRoute = createRoute({
 })
 
 const startGuaranteePaymentSessionRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "post",
   path: "/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session",
   request: {
@@ -278,6 +287,7 @@ const startGuaranteePaymentSessionRoute = createRoute({
 })
 
 const startInvoicePaymentSessionRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "post",
   path: "/invoices/{invoiceId}/payment-session",
   request: {
@@ -319,6 +329,7 @@ const accountantScopeSchema = z.object({
 })
 
 const accountantSummaryRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/accountant/{token}/summary",
   request: { params: accountantTokenParamsSchema },
@@ -349,6 +360,7 @@ const accountantSummaryRoute = createRoute({
 })
 
 const accountantInvoicesRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/finance#api.public",
   method: "get",
   path: "/accountant/{token}/invoices",
   request: { params: accountantTokenParamsSchema },

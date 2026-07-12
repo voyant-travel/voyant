@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/pricing/products/{productId}/pricing": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/commerce#api.pricing.public",
         "parameters": [
           {
             "schema": {

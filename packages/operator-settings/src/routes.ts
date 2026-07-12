@@ -236,6 +236,7 @@ const patchOperatorPaymentDefaultsRoute = createRoute({
 })
 
 const getPublicOperatorProfileRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.operator-profile",
   method: "get",
   path: "/v1/public/operator-profile",
   responses: {
@@ -270,6 +271,7 @@ const patchOperatorSettingsRoute = createRoute({
 })
 
 const getPublicOperatorSettingsRoute = createRoute({
+  "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.settings",
   method: "get",
   path: "/v1/public/settings/operator",
   responses: {

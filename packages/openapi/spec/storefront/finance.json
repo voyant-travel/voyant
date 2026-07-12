@@ -156,6 +156,7 @@
   "paths": {
     "/v1/public/finance/vouchers/validate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "requestBody": {
           "required": true,
           "content": {
@@ -321,6 +322,7 @@
     },
     "/v1/public/finance/documents/by-reference": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -524,6 +526,7 @@
     },
     "/v1/public/finance/bookings/{bookingId}/documents": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -723,6 +726,7 @@
     },
     "/v1/public/finance/bookings/{bookingId}/documents/by-reference": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -934,6 +938,7 @@
     },
     "/v1/public/finance/bookings/{bookingId}/payments": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -1116,6 +1121,7 @@
     },
     "/v1/public/finance/bookings/{bookingId}/payment-options": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -1479,6 +1485,7 @@
     },
     "/v1/public/finance/payment-sessions/{sessionId}": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -1992,6 +1999,7 @@
     },
     "/v1/public/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -2908,6 +2916,7 @@
     },
     "/v1/public/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -3824,6 +3833,7 @@
     },
     "/v1/public/finance/invoices/{invoiceId}/payment-session": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -4732,6 +4742,7 @@
     },
     "/v1/public/finance/accountant/{token}/summary": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {
@@ -4833,6 +4844,7 @@
     },
     "/v1/public/finance/accountant/{token}/invoices": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "parameters": [
           {
             "schema": {

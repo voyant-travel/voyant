@@ -5,6 +5,8 @@ import {
   chartersBookingExtensionRoutes,
 } from "../../src/booking-extension.js"
 import { createChartersHonoModule, createChartersVoyantRuntime } from "../../src/index.js"
+import { CHARTERS_PUBLIC_OPENAPI_API_ID } from "../../src/routes-openapi.js"
+import { chartersPublicRoutes } from "../../src/routes-public.js"
 import { chartersBookingVoyantPlugin, chartersVoyantModule } from "../../src/voyant.js"
 
 describe("charters deployment manifest", () => {
@@ -39,6 +41,9 @@ describe("charters deployment manifest", () => {
       ],
     })
     expect(isGraphRuntimeFactory(createChartersVoyantRuntime)).toBe(true)
+    expect(readApiIds(chartersPublicRoutes)).toEqual(
+      Array.from({ length: 7 }, () => CHARTERS_PUBLIC_OPENAPI_API_ID),
+    )
   })
 
   it("owns the bookings extension and preserves injected lazy bridges", () => {

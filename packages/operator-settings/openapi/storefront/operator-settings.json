@@ -129,6 +129,7 @@
   "paths": {
     "/v1/public/operator-profile": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.operator-profile",
         "responses": {
           "200": {
             "description": "The public operator profile (null when unset)",
@@ -196,12 +197,12 @@
         "summary": "GET /v1/public/operator-profile",
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.operator-profile"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/settings/operator": {
       "get": {
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.settings",
         "responses": {
           "200": {
             "description": "The public operator settings (null when unset)",
@@ -269,8 +270,7 @@
         "summary": "GET /v1/public/settings/operator",
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "storefront",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.public.settings"
+        "x-voyant-surface": "storefront"
       }
     }
   },

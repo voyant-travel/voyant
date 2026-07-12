@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import {
   legalBookingContractVoyantExtension,
@@ -88,6 +89,17 @@ describe("legal deployment manifest", () => {
     })
   })
 
+  it("marks every public OpenAPI operation with its graph API id", () => {
+    const document = JSON.parse(
+      readFileSync(new URL("../../openapi/storefront/legal.json", import.meta.url), "utf8"),
+    )
+
+    expect(publicOperationApiIds(document)).not.toHaveLength(0)
+    expect(new Set(publicOperationApiIds(document))).toEqual(
+      new Set(["@voyant-travel/legal#api.public"]),
+    )
+  })
+
   it("owns the executable booking-contract subscriber on its package-owned extension", () => {
     expect(legalVoyantModule.subscribers).toBeUndefined()
     expect(legalBookingContractVoyantExtension).toMatchObject({
@@ -133,3 +145,12 @@ describe("legal deployment manifest", () => {
     ).toBe(true)
   })
 })
+
+function publicOperationApiIds(document: unknown): unknown[] {
+  const paths = (document as { paths?: Record<string, Record<string, unknown>> } | undefined)?.paths
+  return Object.values(paths ?? {}).flatMap((path) =>
+    Object.values(path).map(
+      (operation) => (operation as Record<string, unknown>)["x-voyant-api-id"],
+    ),
+  )
+}

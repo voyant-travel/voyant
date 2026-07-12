@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import {
   buildContractsRouteRuntime,
@@ -57,10 +57,13 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
     .route("/policies", policiesAdminRoutes)
     .route("/terms", legalTermsAdminRoutes)
 
-  const legalPublicRoutes = new OpenAPIHono({ defaultHook: openApiValidationHook })
-    .route("/contracts", createContractsPublicRoutes(options))
-    .route("/policies", policiesPublicRoutes)
-    .route("/terms", legalTermsPublicRoutes)
+  const legalPublicRoutes = stampOpenApiRegistryApiId(
+    new OpenAPIHono({ defaultHook: openApiValidationHook })
+      .route("/contracts", createContractsPublicRoutes(options))
+      .route("/policies", policiesPublicRoutes)
+      .route("/terms", legalTermsPublicRoutes),
+    "@voyant-travel/legal#api.public",
+  )
 
   const module: Module = {
     ...legalModule,
