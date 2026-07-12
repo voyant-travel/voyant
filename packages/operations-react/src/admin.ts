@@ -281,7 +281,7 @@ export function createOperationsAdminExtension(
         id: "operations-product-option-resource-templates",
         slot: productDetailOptionExtrasSlot,
         component: ProductOptionResourceTemplates,
-      } satisfies AdminWidgetContribution,
+      } satisfies AdminWidgetContribution<ProductDetailOptionExtrasSlotContext>,
     ],
   })
 }

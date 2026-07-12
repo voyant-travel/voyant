@@ -213,6 +213,8 @@ export interface AdminWidgetContribution<Props = Record<string, unknown>> {
   component: React.ComponentType<Props>
 }
 
+type ErasedAdminWidgetContribution = AdminWidgetContribution<never>
+
 export type AdminSettingsNavGroup = "general" | "products"
 
 /** Icon contract used by selected package settings contributions. */
@@ -254,7 +256,7 @@ export interface AdminExtension {
   navigation?: ReadonlyArray<AdminNavigationContribution>
   routes?: ReadonlyArray<AdminUiRouteContribution>
   settingsPages?: ReadonlyArray<AdminSettingsPageContribution>
-  widgets?: ReadonlyArray<AdminWidgetContribution>
+  widgets?: ReadonlyArray<ErasedAdminWidgetContribution>
 }
 
 export function defineAdminExtension<T extends AdminExtension>(extension: T): T {
