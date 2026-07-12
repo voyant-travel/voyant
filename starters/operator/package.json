@@ -12,7 +12,6 @@
     "start": "node -r ./scripts/env-preload.cjs dist/server/server.js",
     "typecheck": "pnpm run graph:emit && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.client.json",
     "test": "pnpm run graph:emit && vitest run --passWithNoTests",
-    "generate:openapi": "pnpm run graph:emit && UPDATE_OPENAPI=1 vitest run src/api/openapi.test.ts",
     "graph:check": "tsx ../../scripts/emit-deployment-graph.ts",
     "graph:env": "tsx scripts/check-deployment-graph-env.ts",
     "graph:emit": "tsx ../../scripts/emit-deployment-graph.ts --emit",

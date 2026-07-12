@@ -4,10 +4,16 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 
 const root = process.cwd()
-const operatorSource = [
+const forbiddenStarterFiles = [
   "starters/operator/src/api/openapi.ts",
   "starters/operator/src/api/openapi.test.ts",
-].map((file) => [file, readFileSync(path.join(root, file), "utf8")])
+]
+for (const file of forbiddenStarterFiles) {
+  assert(!existsSync(path.join(root, file)), `${file} must remain package-owned`)
+}
+
+const runtimeFile = "packages/operator-runtime/src/openapi.ts"
+const runtimeSource = readFileSync(path.join(root, runtimeFile), "utf8")
 
 const prohibited = [
   "PACKAGE_OPENAPI_ROOTS",
@@ -16,12 +22,24 @@ const prohibited = [
   "compatibilityModules",
   "REPO_ROOT",
 ]
-for (const [file, source] of operatorSource) {
-  for (const token of prohibited) {
-    assert(!source.includes(token), `${file} must not restore OpenAPI compatibility token ${token}`)
-  }
-  assert(!source.includes("packages/"), `${file} must not map package-owned OpenAPI roots`)
+for (const token of prohibited) {
+  assert(
+    !runtimeSource.includes(token),
+    `${runtimeFile} must not restore OpenAPI compatibility token ${token}`,
+  )
 }
+assert(
+  !runtimeSource.includes("packages/"),
+  `${runtimeFile} must not map package-owned OpenAPI roots`,
+)
+assert(
+  runtimeSource.includes("buildSelectedGraphOpenApiDocuments"),
+  `${runtimeFile} must build from selected graph claims`,
+)
+assert(
+  runtimeSource.includes("mergeSelectedGraphOpenApiDocuments"),
+  `${runtimeFile} must merge selected graph documents`,
+)
 
 const starterOpenApi = path.join(root, "starters/operator/openapi")
 if (existsSync(starterOpenApi)) {
