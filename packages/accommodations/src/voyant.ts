@@ -12,6 +12,7 @@ export const accommodationsVoyantModule = defineModule({
       surface: "admin",
       mount: "accommodations",
       transactional: true,
+      openapi: { document: "accommodations" },
       runtime: {
         entry: "@voyant-travel/accommodations",
         export: "accommodationsHonoModule",
@@ -69,6 +70,7 @@ export const accommodationsContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/accommodations#content-extension.api.admin",
       surface: "admin",
       mount: "accommodations",
+      openapi: { document: "accommodations-content" },
       runtime: {
         entry: "@voyant-travel/accommodations/graph-runtime",
         export: "createAccommodationsContentVoyantRuntime",
@@ -79,7 +81,7 @@ export const accommodationsContentVoyantPlugin = defineExtension({
       surface: "public",
       mount: "accommodations",
       anonymous: true,
-      openapi: { document: "accommodations-content-public" },
+      openapi: { document: "accommodations-content" },
       runtime: {
         entry: "@voyant-travel/accommodations/graph-runtime",
         export: "createAccommodationsContentVoyantRuntime",

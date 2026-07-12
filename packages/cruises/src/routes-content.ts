@@ -25,12 +25,12 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.3.
  */
 
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
-import { Hono } from "hono"
 
 import {
   encodeSourceRef,
@@ -63,105 +63,117 @@ export interface CreateCruiseContentRoutesOptions {
   allowOwnedKeys?: boolean
 }
 
+export const CRUISE_CONTENT_OPENAPI_API_IDS = {
+  admin: "@voyant-travel/cruises#content-extension.api.admin",
+  public: "@voyant-travel/cruises#content-extension.api.public",
+} as const
+
 export function createCruiseContentRoutes(
   options: CreateCruiseContentRoutesOptions,
-): Hono<CruiseContentRoutesEnv> {
-  return new Hono<CruiseContentRoutesEnv>()
-    .get("/:key/content", async (c) => {
-      const rawKey = c.req.param("key")
-      const parsed = parseUnifiedKey(rawKey)
+  apiId?: (typeof CRUISE_CONTENT_OPENAPI_API_IDS)[keyof typeof CRUISE_CONTENT_OPENAPI_API_IDS],
+): OpenAPIHono<CruiseContentRoutesEnv> {
+  const routes = new OpenAPIHono<CruiseContentRoutesEnv>().get("/:key/content", async (c) => {
+    const rawKey = c.req.param("key")
+    const parsed = parseUnifiedKey(rawKey)
 
-      if (parsed.kind === "invalid") {
-        return c.json(
-          {
-            error: "invalid_key",
-            detail: `Unrecognized cruise key: ${parsed.raw}`,
-          },
-          400,
-        )
-      }
-
-      // A catalog sourced entity id (`crus_sr_<base64>`) is inherently sourced,
-      // so it dispatches regardless of `allowOwnedKeys`. Only plain owned TypeIDs
-      // (`cru_<base32>`) need the opt-in.
-      const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
-      if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
-        return c.json(
-          {
-            error: "owned_not_supported",
-            detail: "GET /:key/content requires allowOwnedKeys to serve owned cruise content.",
-          },
-          404,
-        )
-      }
-
-      // For external keys we resolve through the catalog sourced-entry
-      // store via service-content. The cruise adapter must be registered
-      // against the catalog SourceAdapterRegistry (typically via
-      // cruiseAdapterToSourceAdapter) for this to find a row.
-      const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
-      const scope = parseScope(c)
-      const registry = options.resolveRegistry(c)
-
-      const result = await getCruiseContent(c.var.db, entityId, scope, {
-        registry,
-        onOverlayError: options.onOverlayError,
-      })
-
-      if (!result) {
-        return c.json(
-          {
-            error: "not_found",
-            detail: `Cruise ${rawKey} (entity ${entityId}) has no public content. For sourced cruises, either no adapter is registered for this provider or discovery hasn't run yet. For owned cruises, no matching cruise row was found.`,
-          },
-          404,
-        )
-      }
-
-      return c.json({
-        data: {
-          content: result.content,
-          provenance: result.provenance,
-          served_locale: result.resolution.served_locale,
-          match_kind: result.resolution.match_kind,
-          source: result.source,
-          served_stale: result.served_stale,
-          synthesized: result.synthesized,
-          machine_translated: result.machine_translated,
+    if (parsed.kind === "invalid") {
+      return c.json(
+        {
+          error: "invalid_key",
+          detail: `Unrecognized cruise key: ${parsed.raw}`,
         },
-      })
+        400,
+      )
+    }
+
+    // A catalog sourced entity id (`crus_sr_<base64>`) is inherently sourced,
+    // so it dispatches regardless of `allowOwnedKeys`. Only plain owned TypeIDs
+    // (`cru_<base32>`) need the opt-in.
+    const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
+    if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
+      return c.json(
+        {
+          error: "owned_not_supported",
+          detail: "GET /:key/content requires allowOwnedKeys to serve owned cruise content.",
+        },
+        404,
+      )
+    }
+
+    // For external keys we resolve through the catalog sourced-entry
+    // store via service-content. The cruise adapter must be registered
+    // against the catalog SourceAdapterRegistry (typically via
+    // cruiseAdapterToSourceAdapter) for this to find a row.
+    const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
+    const scope = parseScope(c)
+    const registry = options.resolveRegistry(c)
+
+    const result = await getCruiseContent(c.var.db, entityId, scope, {
+      registry,
+      onOverlayError: options.onOverlayError,
     })
-    .get("/:key/sailings/:sailingExternalId/pricing", async (c) => {
-      // Live per-sailing cabin pricing for the detail sheet's Departures tab.
-      // Fetched fresh from the adapter (price is volatile-live), not cached.
-      const rawKey = c.req.param("key")
-      const parsed = parseUnifiedKey(rawKey)
-      if (parsed.kind === "invalid") {
-        return c.json(
-          { error: "invalid_key", detail: `Unrecognized cruise key: ${parsed.raw}` },
-          400,
-        )
-      }
-      const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
-      if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
-        return c.json({ error: "owned_not_supported", detail: "Sourced cruises only." }, 404)
-      }
-      const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
-      const sailingExternalId = c.req.param("sailingExternalId")
-      const pricing = await getCruiseSailingPricing(c.var.db, entityId, sailingExternalId, {
-        registry: options.resolveRegistry(c),
-      })
-      if (pricing == null) {
-        return c.json(
-          {
-            error: "not_found",
-            detail: `No pricing for sailing ${sailingExternalId} on cruise ${rawKey} (no sourced row or adapter can't price sailings).`,
-          },
-          404,
-        )
-      }
-      return c.json({ data: { pricing } })
+
+    if (!result) {
+      return c.json(
+        {
+          error: "not_found",
+          detail: `Cruise ${rawKey} (entity ${entityId}) has no public content. For sourced cruises, either no adapter is registered for this provider or discovery hasn't run yet. For owned cruises, no matching cruise row was found.`,
+        },
+        404,
+      )
+    }
+
+    return c.json({
+      data: {
+        content: result.content,
+        provenance: result.provenance,
+        served_locale: result.resolution.served_locale,
+        match_kind: result.resolution.match_kind,
+        source: result.source,
+        served_stale: result.served_stale,
+        synthesized: result.synthesized,
+        machine_translated: result.machine_translated,
+      },
     })
+  })
+
+  for (const path of ["/{key}/content", "/{key}/sailings/{sailingExternalId}/pricing"] as const) {
+    routes.openAPIRegistry.registerPath({
+      method: "get",
+      path,
+      responses: { 200: { description: "Cruise content response." } },
+      ...(apiId ? { "x-voyant-api-id": apiId } : {}),
+    })
+  }
+
+  return routes.get("/:key/sailings/:sailingExternalId/pricing", async (c) => {
+    // Live per-sailing cabin pricing for the detail sheet's Departures tab.
+    // Fetched fresh from the adapter (price is volatile-live), not cached.
+    const rawKey = c.req.param("key")
+    const parsed = parseUnifiedKey(rawKey)
+    if (parsed.kind === "invalid") {
+      return c.json({ error: "invalid_key", detail: `Unrecognized cruise key: ${parsed.raw}` }, 400)
+    }
+    const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
+    if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
+      return c.json({ error: "owned_not_supported", detail: "Sourced cruises only." }, 404)
+    }
+    const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
+    const sailingExternalId = c.req.param("sailingExternalId")
+    const pricing = await getCruiseSailingPricing(c.var.db, entityId, sailingExternalId, {
+      registry: options.resolveRegistry(c),
+    })
+    if (pricing == null) {
+      return c.json(
+        {
+          error: "not_found",
+          detail: `No pricing for sailing ${sailingExternalId} on cruise ${rawKey} (no sourced row or adapter can't price sailings).`,
+        },
+        404,
+      )
+    }
+    return c.json({ data: { pricing } })
+  })
 
   function parseScope(c: Context): CruiseContentScope {
     const localeParams = c.req.queries("locale") ?? c.req.queries("locales") ?? []
@@ -207,8 +219,8 @@ export function createCruiseContentHonoExtension(
 ): HonoExtension {
   return {
     extension: cruiseContentExtension,
-    adminRoutes: createCruiseContentRoutes(options.admin),
-    publicRoutes: createCruiseContentRoutes(options.public),
+    adminRoutes: createCruiseContentRoutes(options.admin, CRUISE_CONTENT_OPENAPI_API_IDS.admin),
+    publicRoutes: createCruiseContentRoutes(options.public, CRUISE_CONTENT_OPENAPI_API_IDS.public),
   }
 }
 

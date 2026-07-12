@@ -19,6 +19,7 @@ describe("accommodations deployment manifest", () => {
           surface: "admin",
           mount: "accommodations",
           transactional: true,
+          openapi: { document: "accommodations" },
           runtime: {
             entry: "@voyant-travel/accommodations",
             export: "accommodationsHonoModule",
@@ -52,13 +53,14 @@ describe("accommodations deployment manifest", () => {
         {
           surface: "admin",
           mount: "accommodations",
+          openapi: { document: "accommodations-content" },
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "accommodations",
           anonymous: true,
-          openapi: { document: "accommodations-content-public" },
+          openapi: { document: "accommodations-content" },
           runtime: { export: "createAccommodationsContentVoyantRuntime" },
         },
       ],

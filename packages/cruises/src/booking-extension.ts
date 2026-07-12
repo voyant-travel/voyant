@@ -1,3 +1,4 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { parseJsonBody } from "@voyant-travel/hono"
@@ -15,7 +16,6 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
 import { z } from "zod"
 
 import type { ExternalPassengerComposition, SourceRef } from "./adapters/index.js"
@@ -362,7 +362,9 @@ type Env = {
   }
 }
 
-export const cruisesBookingExtensionRoutes = new Hono<Env>()
+export const CRUISES_BOOKING_OPENAPI_API_ID = "@voyant-travel/cruises#booking-extension.api.admin"
+
+export const cruisesBookingExtensionRoutes = new OpenAPIHono<Env>()
   .get("/:bookingId/cruise-details", async (c) => {
     const bookingId = c.req.param("bookingId")
     const row = await bookingCruiseDetailsService.get(c.get("db"), bookingId)
@@ -381,6 +383,7 @@ export const cruisesBookingExtensionRoutes = new Hono<Env>()
     if (!ok) return c.json({ error: "not_found" }, 404)
     return c.body(null, 204)
   })
+
   .get("/groups/:groupId/cruise-details", async (c) => {
     const groupId = c.req.param("groupId")
     const row = await bookingGroupCruiseDetailsService.get(c.get("db"), groupId)
@@ -399,6 +402,22 @@ export const cruisesBookingExtensionRoutes = new Hono<Env>()
     if (!ok) return c.json({ error: "not_found" }, 404)
     return c.body(null, 204)
   })
+
+for (const [method, path] of [
+  ["get", "/{bookingId}/cruise-details"],
+  ["put", "/{bookingId}/cruise-details"],
+  ["delete", "/{bookingId}/cruise-details"],
+  ["get", "/groups/{groupId}/cruise-details"],
+  ["put", "/groups/{groupId}/cruise-details"],
+  ["delete", "/groups/{groupId}/cruise-details"],
+] as const) {
+  cruisesBookingExtensionRoutes.openAPIRegistry.registerPath({
+    method,
+    path,
+    responses: { 200: { description: "Cruise booking detail response." } },
+    "x-voyant-api-id": CRUISES_BOOKING_OPENAPI_API_ID,
+  })
+}
 
 // ---------- HonoExtension export ----------
 

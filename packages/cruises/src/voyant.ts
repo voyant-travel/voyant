@@ -14,6 +14,7 @@ export const cruisesVoyantModule = defineModule({
       surface: "admin",
       mount: "cruises",
       transactional: true,
+      openapi: { document: "cruises" },
       runtime: {
         entry: "@voyant-travel/cruises",
         export: "createCruisesVoyantRuntime",
@@ -25,6 +26,7 @@ export const cruisesVoyantModule = defineModule({
       mount: "cruises",
       anonymous: true,
       transactional: true,
+      openapi: { document: "cruises" },
       runtime: {
         entry: "@voyant-travel/cruises",
         export: "createCruisesVoyantRuntime",
@@ -105,6 +107,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#content-extension.api.admin",
       surface: "admin",
       mount: "cruises",
+      openapi: { document: "cruises-content" },
       runtime: {
         entry: "@voyant-travel/cruises/graph-runtime",
         export: "createCruisesContentVoyantRuntime",
@@ -114,6 +117,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#content-extension.api.public",
       surface: "public",
       mount: "cruises",
+      openapi: { document: "cruises-content" },
       runtime: {
         entry: "@voyant-travel/cruises/graph-runtime",
         export: "createCruisesContentVoyantRuntime",
@@ -134,6 +138,7 @@ export const cruisesBookingVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#booking-extension.api.admin",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       runtime: {
         entry: "@voyant-travel/cruises/booking-extension",
         export: "cruisesBookingExtension",
