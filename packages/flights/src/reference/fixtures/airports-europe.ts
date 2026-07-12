@@ -1,6 +1,6 @@
-import type { AirportSeedRow } from "./seed-flights-reference-types"
+import type { AirportFixtureRow } from "./types.js"
 
-export const EUROPE_AIRPORTS: AirportSeedRow[] = [
+export const EUROPE_AIRPORTS: AirportFixtureRow[] = [
   // ── Europe (25) ────────────────────────────────────────────────────────
   {
     iataCode: "LHR",

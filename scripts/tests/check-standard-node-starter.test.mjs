@@ -155,6 +155,23 @@ test("rejects restored checked-in starter compatibility authority", () => {
   }
 })
 
+test("rejects restored starter-owned Flights reference fixtures", () => {
+  const starter = fixture()
+  const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+  roots.push(root)
+  const fixturePath = join(root, "starters/operator/scripts/seed-flights-reference-airlines.ts")
+  mkdirSync(dirname(fixturePath), { recursive: true })
+  writeFileSync(fixturePath, "export const airlines = []\n")
+
+  assert.throws(
+    () => run(starter, root),
+    (error) =>
+      String(error.stderr).includes(
+        "Flights reference fixture must remain package-owned: starters/operator/scripts/seed-flights-reference-airlines.ts",
+      ),
+  )
+})
+
 function run(starterDir, root = repoRoot) {
   return execFileSync(process.execPath, [checker, "--root", root, "--starter-dir", starterDir], {
     cwd: repoRoot,

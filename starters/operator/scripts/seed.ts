@@ -57,6 +57,7 @@ import {
   taxPolicyRules,
   taxRegimes,
 } from "@voyant-travel/finance/schema"
+import { seedFlightReferenceFixtures } from "@voyant-travel/flights/reference/fixtures"
 import {
   identityAddresses,
   identityContactPoints,
@@ -127,7 +128,6 @@ import {
   seedCruises,
   seedExtras,
 } from "./seed-catalog-verticals"
-import { seedAircraft, seedAirlines, seedAirports } from "./seed-flights-reference"
 
 // ---------- Env & args ----------
 
@@ -2730,12 +2730,8 @@ async function seedCatalogVerticals() {
 
 async function seedFlightsReference() {
   console.log("→ seeding flights reference data (airlines + airports + aircraft)…")
-  const airlineCount = await seedAirlines(db)
-  const airportCount = await seedAirports(db)
-  const aircraftCount = await seedAircraft(db)
-  console.log(
-    `  · airlines: ${airlineCount}, airports: ${airportCount}, aircraft: ${aircraftCount}`,
-  )
+  const { aircraft, airlines, airports } = await seedFlightReferenceFixtures(db)
+  console.log(`  · airlines: ${airlines}, airports: ${airports}, aircraft: ${aircraft}`)
 }
 
 // ---------- Run ----------

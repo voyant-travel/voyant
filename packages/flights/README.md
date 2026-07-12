@@ -103,7 +103,6 @@ const request: FlightBookRequest = flightBookRequestSchema.parse(await req.json(
 ```typescript
 import {
   createLocalPostgresReferenceProvider,
-  createReferenceDataTables,
 } from "@voyant-travel/flights/reference/local-postgres"
 
 // Schema lives in the operator's own DB. No external service required.
@@ -112,5 +111,15 @@ const reference = createLocalPostgresReferenceProvider({ db })
 const ba = await reference.getAirline("BA")
 // → { iataCode: "BA", icaoCode: "BAW", name: "British Airways", country: "GB" }
 ```
+
+The package also owns an optional curated fixture for local and demo deployments:
+
+```typescript
+import { seedFlightReferenceFixtures } from "@voyant-travel/flights/reference/fixtures"
+
+await seedFlightReferenceFixtures(db)
+```
+
+The insert is idempotent. Consumer projects do not need to copy or maintain the fixture rows.
 
 See `docs/architecture/catalog-flights-architecture.md` for the full design.
