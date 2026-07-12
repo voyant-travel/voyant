@@ -1,4 +1,5 @@
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
 import {
@@ -13,30 +14,42 @@ import { executeSemanticSearch } from "./search/semantic.js"
 
 function selectedModuleSurfaces(
   configured: HonoModule,
-  api: readonly { surface: string }[],
+  api: readonly { id: string; surface: string }[],
 ): HonoModule {
+  const adminApiId = api.find(({ surface }) => surface === "admin")?.id
+  const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
     ...configured,
-    ...(api.some(({ surface }) => surface === "admin")
-      ? {}
+    ...(adminApiId
+      ? {
+          adminRoutes: stampOpenApiRegistryApiId(configured.adminRoutes, adminApiId),
+        }
       : { adminRoutes: undefined, lazyAdminRoutes: undefined }),
-    ...(api.some(({ surface }) => surface === "public")
-      ? {}
+    ...(publicApiId
+      ? {
+          publicRoutes: stampOpenApiRegistryApiId(configured.publicRoutes, publicApiId),
+        }
       : { publicRoutes: undefined, lazyPublicRoutes: undefined }),
   }
 }
 
 function selectedExtensionSurfaces(
   configured: HonoExtension,
-  api: readonly { surface: string }[],
+  api: readonly { id: string; surface: string }[],
 ): HonoExtension {
+  const adminApiId = api.find(({ surface }) => surface === "admin")?.id
+  const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
     ...configured,
-    ...(api.some(({ surface }) => surface === "admin")
-      ? {}
+    ...(adminApiId
+      ? {
+          adminRoutes: stampOpenApiRegistryApiId(configured.adminRoutes, adminApiId),
+        }
       : { adminRoutes: undefined, lazyAdminRoutes: undefined }),
-    ...(api.some(({ surface }) => surface === "public")
-      ? {}
+    ...(publicApiId
+      ? {
+          publicRoutes: stampOpenApiRegistryApiId(configured.publicRoutes, publicApiId),
+        }
       : { publicRoutes: undefined, lazyPublicRoutes: undefined }),
   }
 }

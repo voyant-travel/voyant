@@ -903,6 +903,13 @@ OpenAPI metadata belongs with route declarations. The graph resolver should
 collect it after package admission, not require a separate OpenAPI facet first.
 
 Selected-graph OpenAPI authority is active for package-owned route bundles,
+including nineteen Catalog, Commerce, and Inventory retail bundles. Overlapping
+mounts carry exact package-authored `x-voyant-api-id` metadata, and the selected
+graph loader honors explicit ownership even for package routes outside a
+bundle's primary mount.
+The Operator's committed per-module JSON remains a generated Scalar asset and
+contract-parity snapshot during the compatibility cutover; it is not the
+authority for opted-in retail bundles.
 including Identity and Notifications. A route bundle opts in with a stable
 document slug:
 

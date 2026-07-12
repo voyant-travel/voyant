@@ -13,6 +13,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#api.admin",
       surface: "admin",
       mount: "products",
+      openapi: { document: "products" },
       runtime: {
         entry: "@voyant-travel/inventory/graph-runtime",
         export: "createInventoryVoyantRuntime",
@@ -22,6 +23,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#api.public",
       surface: "public",
       mount: "products",
+      openapi: { document: "products" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/inventory/graph-runtime",
@@ -211,9 +213,10 @@ export const inventoryExtrasVoyantModule = defineModule({
       id: "@voyant-travel/inventory#extras.api",
       surface: "admin",
       mount: "extras",
+      openapi: { document: "extras" },
       runtime: {
-        entry: "@voyant-travel/inventory/extras",
-        export: "inventoryExtrasHonoModule",
+        entry: "@voyant-travel/inventory/graph-runtime",
+        export: "createInventoryExtrasVoyantRuntime",
       },
     },
   ],
@@ -273,6 +276,7 @@ export const inventoryContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/inventory#content-extension.api.admin",
       surface: "admin",
       mount: "products",
+      openapi: { document: "products" },
       runtime: {
         entry: "@voyant-travel/inventory/graph-runtime",
         export: "createInventoryContentVoyantRuntime",
@@ -282,6 +286,7 @@ export const inventoryContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/inventory#content-extension.api.public",
       surface: "public",
       mount: "products",
+      openapi: { document: "products" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/inventory/graph-runtime",
@@ -304,6 +309,7 @@ export const inventoryBrochureVoyantPlugin = defineExtension({
       id: "@voyant-travel/inventory#brochure-extension.api.admin",
       surface: "admin",
       mount: "products",
+      openapi: { document: "products" },
       runtime: {
         entry: "@voyant-travel/inventory/graph-runtime",
         export: "createInventoryBrochureVoyantRuntime",

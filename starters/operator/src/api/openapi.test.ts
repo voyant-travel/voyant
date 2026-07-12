@@ -7,10 +7,11 @@ import { buildOperatorOpenApiDocuments, mergeOperatorOpenApiModuleDocuments } fr
 /**
  * OpenAPI drift gate for the operator deployment (voyant#2733, was #2114).
  *
- * Specs are generated per module from each module's own routes — the
- * authoritative boundary — not split out of one giant document. The compact
- * per-module files under `openapi/{admin,storefront}/<module>.json` are the
- * committed, browsable, drift-gated surface; regenerating from the composed app
+ * Specs are generated per module from each module's own routes. Selected graph
+ * manifests and package route registries are authoritative for opted-in
+ * bundles; the compact files under
+ * `openapi/{admin,storefront}/<module>.json` are committed, browsable render
+ * artifacts and compatibility snapshots. Regenerating from the composed app
  * must reproduce them exactly (added/changed/removed routes fail CI). The
  * multi-megabyte aggregates (`openapi/framework-*.json`) are NOT committed —
  * they're generated on demand, so git never carries a 7 MB file no tool can

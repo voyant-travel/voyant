@@ -30,6 +30,7 @@ describe("inventory deployment manifests", () => {
         {
           id: "@voyant-travel/inventory#api.admin",
           surface: "admin",
+          openapi: { document: "products" },
           runtime: {
             entry: "@voyant-travel/inventory/graph-runtime",
             export: "createInventoryVoyantRuntime",
@@ -38,6 +39,7 @@ describe("inventory deployment manifests", () => {
         {
           id: "@voyant-travel/inventory#api.public",
           surface: "public",
+          openapi: { document: "products" },
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/inventory/graph-runtime",
@@ -71,9 +73,10 @@ describe("inventory deployment manifests", () => {
       api: [
         {
           id: "@voyant-travel/inventory#extras.api",
+          openapi: { document: "extras" },
           runtime: {
-            entry: "@voyant-travel/inventory/extras",
-            export: "inventoryExtrasHonoModule",
+            entry: "@voyant-travel/inventory/graph-runtime",
+            export: "createInventoryExtrasVoyantRuntime",
           },
         },
       ],
@@ -119,11 +122,13 @@ describe("inventory deployment manifests", () => {
         {
           surface: "admin",
           mount: "products",
+          openapi: { document: "products" },
           runtime: { export: "createInventoryContentVoyantRuntime" },
         },
         {
           surface: "public",
           mount: "products",
+          openapi: { document: "products" },
           anonymous: true,
           runtime: { export: "createInventoryContentVoyantRuntime" },
         },
@@ -137,6 +142,7 @@ describe("inventory deployment manifests", () => {
         {
           surface: "admin",
           mount: "products",
+          openapi: { document: "products" },
           runtime: { export: "createInventoryBrochureVoyantRuntime" },
         },
       ],

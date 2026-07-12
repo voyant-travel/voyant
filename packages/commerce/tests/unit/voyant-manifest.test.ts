@@ -30,6 +30,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.pricing.admin",
           surface: "admin",
+          openapi: { document: "pricing" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "pricingHonoModule",
@@ -38,6 +39,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.pricing.public",
           surface: "public",
+          openapi: { document: "pricing" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "pricingHonoModule",
@@ -46,6 +48,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.markets.admin",
           surface: "admin",
+          openapi: { document: "markets" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "marketsHonoModule",
@@ -54,6 +57,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.markets.public",
           surface: "public",
+          openapi: { document: "markets" },
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/commerce",
@@ -63,6 +67,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.sellability.admin",
           surface: "admin",
+          openapi: { document: "sellability" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "sellabilityHonoModule",
@@ -71,6 +76,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.promotions.admin",
           surface: "admin",
+          openapi: { document: "promotions" },
           runtime: {
             entry: "@voyant-travel/commerce",
             export: "promotionsHonoModule",
@@ -141,6 +147,7 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#catalog-checkout-extension.api",
           surface: "public",
           mount: "catalog",
+          openapi: { document: "catalog" },
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
             export: "createCatalogCheckoutGraphExtension",
@@ -184,6 +191,7 @@ describe("commerce deployment manifest", () => {
           id: "@voyant-travel/commerce#booking-maintenance-extension.api",
           surface: "admin",
           mount: "bookings",
+          openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
             export: "createBookingMaintenanceHonoExtension",

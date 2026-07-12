@@ -54,7 +54,7 @@ export async function buildSelectedGraphOpenApiDocuments(
     let operationCount = 0
 
     for (const [path, pathItem] of Object.entries(source.paths ?? {})) {
-      if (!isWithinMount(path, claim.mount) || !isRecord(pathItem)) continue
+      if (!isRecord(pathItem)) continue
 
       const selectedItem: Record<string, unknown> = {}
       let selectedOperationCount = 0
@@ -68,6 +68,7 @@ export async function buildSelectedGraphOpenApiDocuments(
 
         const explicitApiId = value["x-voyant-api-id"]
         if (typeof explicitApiId === "string" && explicitApiId !== claim.route.id) continue
+        if (!isWithinMount(path, claim.mount) && explicitApiId !== claim.route.id) continue
 
         const operation = `${method.toUpperCase()} ${path}`
         const previous = claimedOperations.get(operation)

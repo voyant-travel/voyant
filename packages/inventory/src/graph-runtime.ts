@@ -1,7 +1,9 @@
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
+import { inventoryExtrasHonoModule } from "./extras.js"
 import { inventoryHonoModule } from "./interface.js"
 import { createProductBrochureHonoExtension } from "./routes-brochure.js"
 import { createProductContentHonoExtension } from "./routes-content.js"
@@ -9,23 +11,35 @@ import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-po
 
 function selectedModuleSurfaces(
   configured: HonoModule,
-  api: readonly { surface: string }[],
+  api: readonly { id: string; surface: string }[],
 ): HonoModule {
+  const adminApiId = api.find(({ surface }) => surface === "admin")?.id
+  const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
     ...configured,
-    ...(api.some(({ surface }) => surface === "admin") ? {} : { adminRoutes: undefined }),
-    ...(api.some(({ surface }) => surface === "public") ? {} : { publicRoutes: undefined }),
+    ...(adminApiId
+      ? { adminRoutes: stampOpenApiRegistryApiId(configured.adminRoutes, adminApiId) }
+      : { adminRoutes: undefined }),
+    ...(publicApiId
+      ? { publicRoutes: stampOpenApiRegistryApiId(configured.publicRoutes, publicApiId) }
+      : { publicRoutes: undefined }),
   }
 }
 
 function selectedExtensionSurfaces(
   configured: HonoExtension,
-  api: readonly { surface: string }[],
+  api: readonly { id: string; surface: string }[],
 ): HonoExtension {
+  const adminApiId = api.find(({ surface }) => surface === "admin")?.id
+  const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
     ...configured,
-    ...(api.some(({ surface }) => surface === "admin") ? {} : { adminRoutes: undefined }),
-    ...(api.some(({ surface }) => surface === "public") ? {} : { publicRoutes: undefined }),
+    ...(adminApiId
+      ? { adminRoutes: stampOpenApiRegistryApiId(configured.adminRoutes, adminApiId) }
+      : { adminRoutes: undefined }),
+    ...(publicApiId
+      ? { publicRoutes: stampOpenApiRegistryApiId(configured.publicRoutes, publicApiId) }
+      : { publicRoutes: undefined }),
   }
 }
 
@@ -39,6 +53,10 @@ export const createInventoryVoyantRuntime = defineGraphRuntimeFactory(async ({ a
     api,
   )
 })
+
+export const createInventoryExtrasVoyantRuntime = defineGraphRuntimeFactory(async ({ api }) =>
+  selectedModuleSurfaces(inventoryExtrasHonoModule, api),
+)
 
 export const createInventoryContentVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
@@ -62,8 +80,12 @@ export const createInventoryContentVoyantRuntime = defineGraphRuntimeFactory(
   },
 )
 
-export const createInventoryBrochureVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createProductBrochureHonoExtension(await getPort(inventoryBrochureRuntimePort)),
+export const createInventoryBrochureVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ api, getPort }) =>
+    selectedExtensionSurfaces(
+      createProductBrochureHonoExtension(await getPort(inventoryBrochureRuntimePort)),
+      api,
+    ),
 )
 
 export type { InventoryRuntime } from "./runtime-ports.js"

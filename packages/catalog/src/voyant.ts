@@ -42,6 +42,7 @@ export const catalogVoyantModule = defineModule({
       id: "@voyant-travel/catalog#api.admin",
       surface: "admin",
       mount: "catalog",
+      openapi: { document: "catalog" },
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
         export: "createCatalogSearchVoyantRuntime",
@@ -51,6 +52,7 @@ export const catalogVoyantModule = defineModule({
       id: "@voyant-travel/catalog#api.public",
       surface: "public",
       mount: "catalog",
+      openapi: { document: "catalog" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
@@ -279,6 +281,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       id: "@voyant-travel/catalog#booking-engine.api.admin",
       surface: "admin",
       mount: "catalog",
+      openapi: { document: "catalog-booking" },
       transactional: ["/book", "/holds", "/orders", "/quote", "/quotes/batch"],
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
@@ -289,6 +292,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       id: "@voyant-travel/catalog#booking-engine.api.public",
       surface: "public",
       mount: "catalog",
+      openapi: { document: "catalog-booking" },
       transactional: ["/book", "/holds", "/quote", "/quotes/batch"],
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
@@ -311,6 +315,7 @@ export const catalogOffersVoyantPlugin = defineExtension({
       id: "@voyant-travel/catalog#offers-extension.api",
       surface: "admin",
       mount: "catalog",
+      openapi: { document: "catalog" },
       runtime: {
         entry: "@voyant-travel/catalog/graph-runtime",
         export: "createCatalogOffersVoyantRuntime",

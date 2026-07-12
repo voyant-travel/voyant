@@ -48,6 +48,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#api.pricing.admin",
       surface: "admin",
       mount: "pricing",
+      openapi: { document: "pricing" },
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "pricingHonoModule",
@@ -57,6 +58,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#api.pricing.public",
       surface: "public",
       mount: "pricing",
+      openapi: { document: "pricing" },
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "pricingHonoModule",
@@ -66,6 +68,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#api.markets.admin",
       surface: "admin",
       mount: "markets",
+      openapi: { document: "markets" },
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "marketsHonoModule",
@@ -75,6 +78,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#api.markets.public",
       surface: "public",
       mount: "markets",
+      openapi: { document: "markets" },
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/commerce",
@@ -85,6 +89,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#api.sellability.admin",
       surface: "admin",
       mount: "sellability",
+      openapi: { document: "sellability" },
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "sellabilityHonoModule",
@@ -94,6 +99,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#api.promotions.admin",
       surface: "admin",
       mount: "promotions",
+      openapi: { document: "promotions" },
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "promotionsHonoModule",
@@ -240,6 +246,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
       id: "@voyant-travel/commerce#catalog-checkout-extension.api",
       surface: "public",
       mount: "catalog",
+      openapi: { document: "catalog" },
       runtime: {
         entry: "@voyant-travel/commerce/checkout",
         export: "createCatalogCheckoutGraphExtension",
@@ -285,6 +292,7 @@ export const commerceBookingMaintenanceVoyantPlugin = defineExtension({
       id: "@voyant-travel/commerce#booking-maintenance-extension.api",
       surface: "admin",
       mount: "bookings",
+      openapi: { document: "bookings" },
       runtime: {
         entry: "@voyant-travel/commerce/checkout",
         export: "createBookingMaintenanceHonoExtension",
