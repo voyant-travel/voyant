@@ -54,6 +54,12 @@ describe("@voyant-travel/commerce package exports", () => {
   })
 
   it("publishes selected-graph checkout factories and typed host ports", () => {
+    expect(packageJson.exports["./runtime-port"]).toBe("./src/runtime-port.ts")
+    expect(packageJson.publishConfig.exports["./runtime-port"]).toEqual({
+      types: "./dist/runtime-port.d.ts",
+      import: "./dist/runtime-port.js",
+      default: "./dist/runtime-port.js",
+    })
     expect(createAcceptanceSignatureSubscriberGraphRuntime).toBeTypeOf("function")
     expect(createCheckoutFinalizeSubscriberGraphRuntime).toBeTypeOf("function")
     expect(catalogCheckoutDatabaseRuntimePort.id).toBe("commerce.checkout-database")

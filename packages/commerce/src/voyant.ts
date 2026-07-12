@@ -1,4 +1,11 @@
+import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
   bookingMaintenanceRuntimePort,
@@ -11,6 +18,12 @@ import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "./promotions/runtime-ports.js"
+import {
+  commerceCardPaymentRuntimePort,
+  commerceInventoryRuntimePort,
+  commerceLegalRuntimePort,
+  commerceOperatorSettingsRuntimePort,
+} from "./runtime-port.js"
 
 const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
 const commerceAdminRuntime = {
@@ -42,6 +55,15 @@ export const commerceVoyantModule = defineModule({
   runtimePorts: [
     requirePort(promotionRedemptionDatabaseRuntimePort),
     requirePort(promotionsBulkReindexRuntimePort),
+    requirePort(commerceOperatorSettingsRuntimePort),
+    requirePort(commerceInventoryRuntimePort),
+    requirePort(commerceLegalRuntimePort),
+    requirePort(commerceCardPaymentRuntimePort, { optional: true }),
+    requirePort(catalogRuntimeServicesPort),
+    requirePort(financeDistributionPaymentPolicyRuntimePort),
+    requirePort(financeAccommodationsPaymentPolicyRuntimePort),
+    requirePort(financeCruisesPaymentPolicyRuntimePort),
+    requirePort(financeInventoryPaymentPolicyRuntimePort),
   ],
   api: [
     {

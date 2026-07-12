@@ -7,6 +7,10 @@ import {
   bookingsInventoryRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
 import { catalogInventoryRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
+import {
+  type CommerceInventoryRuntime,
+  commerceInventoryRuntimePort,
+} from "@voyant-travel/commerce/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   type FinanceInventoryPaymentPolicyRuntime,
@@ -28,6 +32,7 @@ import {
   inventoryRuntimePort,
 } from "./runtime-ports.js"
 import { productCapabilities, products } from "./schema.js"
+import { productsService } from "./service.js"
 import {
   createProductsGeneratePdfWorkflowRuntime,
   PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
@@ -67,6 +72,17 @@ export function createInventoryRuntimePortContribution(
   const brochure = createInventoryBrochureRuntime(host.primitives)
   return {
     [catalogInventoryRuntimeExtensionPort.id]: catalogInventoryRuntimeExtension,
+    [commerceInventoryRuntimePort.id]: {
+      async getOwnedProductName(db, entityModule, entityId) {
+        if (entityModule !== "products") return null
+        return (await productsService.getProductById(db, entityId))?.name ?? null
+      },
+      listAllProductIds: (db) =>
+        db
+          .select({ id: products.id })
+          .from(products)
+          .then((rows) => rows.map((row) => row.id)),
+    } satisfies CommerceInventoryRuntime,
     [actionLedgerInventoryDriftRuntimePort.id]: {
       checkProductDrift: checkProductActionLedgerDrift,
     } satisfies ActionLedgerInventoryDriftRuntime,

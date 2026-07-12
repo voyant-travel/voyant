@@ -11,7 +11,7 @@ const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
   bookings: "bookingsConfigurationRuntimePort",
   catalog: "createCatalogRuntime",
-  commerce: "host.capabilities.loadCommerceRuntime()",
+  commerce: "createCommerceRuntime",
   distribution: "createDistributionRuntime",
   finance: "financeHostRuntimePort",
   flights: "createFlightsRuntime",

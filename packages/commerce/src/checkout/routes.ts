@@ -27,7 +27,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { rebuildBookingItemTaxLines } from "./materialization-tax.js"
 import type { CheckoutModuleOptions, CheckoutStartOptions } from "./options.js"
-import { bookingMaintenanceRuntimePort } from "./runtime-ports.js"
+import { bookingMaintenanceRuntimePort, CATALOG_CHECKOUT_API_RUNTIME_KEY } from "./runtime-ports.js"
 import {
   CatalogCheckoutStartError,
   type CheckoutStartRequestMeta,
@@ -221,7 +221,16 @@ export function createCatalogCheckoutHonoExtension(
   options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
 ): HonoExtension {
   return {
-    extension: { name: "catalog-checkout", module: "catalog" },
+    extension: {
+      name: "catalog-checkout",
+      module: "catalog",
+      bootstrap: ({ container }) => {
+        container.register(
+          CATALOG_CHECKOUT_API_RUNTIME_KEY,
+          typeof options === "function" ? options : () => options,
+        )
+      },
+    },
     publicRoutes: createCatalogCheckoutRoutes(options),
   }
 }

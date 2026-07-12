@@ -1,5 +1,6 @@
 import type { CatalogSearchRuntime } from "@voyant-travel/catalog/search/routes"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
 import {
   ensureBookingEngineRegistry,
   getBookingEngineRegistryFromContext,
@@ -36,6 +37,7 @@ import type { CatalogRuntimePortContribution } from "./runtime-contributor.js"
 export function createCatalogRuntime(
   primitives: VoyantRuntimeHostPrimitives,
   extensions: CatalogRuntimeExtensions,
+  settings: FinanceOperatorSettingsRuntime,
 ): CatalogRuntimePortContribution {
   configureCatalogRuntimeHost(primitives, extensions)
   let projectionRuntime:
@@ -56,7 +58,15 @@ export function createCatalogRuntime(
     fieldPolicyRegistries: getFieldPolicyRegistries,
     createProductsDocumentBuilder,
     withEmbedding,
-    applyTaxToQuoteResult: applyOperatorTaxToQuoteResult,
+    applyTaxToQuoteResult: (db, result, entityModule, entityId, sourceKind) =>
+      applyOperatorTaxToQuoteResult(
+        db,
+        result,
+        entityModule,
+        entityId,
+        sourceKind,
+        settings.resolveBookingTaxSettings,
+      ),
   }
   installCatalogRuntimeServices(services)
   return {

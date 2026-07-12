@@ -64,6 +64,7 @@ export {
 } from "./routes.js"
 export {
   bookingMaintenanceRuntimePort,
+  CATALOG_CHECKOUT_API_RUNTIME_KEY,
   type CatalogCheckoutApiRuntime,
   catalogCheckoutApiRuntimePort,
 } from "./runtime-ports.js"

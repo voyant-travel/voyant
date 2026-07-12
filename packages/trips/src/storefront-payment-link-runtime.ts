@@ -1,4 +1,6 @@
 /** Standard statically composed payment-link runtime selected by Storefront. */
+
+import type { CommerceCardPaymentRuntime } from "@voyant-travel/commerce/runtime-port"
 import { productMedia, products } from "@voyant-travel/inventory/schema"
 import {
   getOperatorPaymentInstructions,
@@ -16,6 +18,32 @@ import { tripComponents, tripEnvelopes } from "./schema.js"
 import { tripsService } from "./service.js"
 
 const cardPaymentStarter = netopiaCardPaymentStarter()
+
+/** Standard selected payment provider exposed through Commerce's neutral port. */
+export function createCommerceCardPaymentRuntime(): CommerceCardPaymentRuntime {
+  return {
+    createStartCardPayment:
+      (context) =>
+      async ({ db, sessionId, billing, description, returnUrl }) =>
+        cardPaymentStarter(context, {
+          db,
+          sessionId,
+          billing: {
+            email: billing.email,
+            phone: "0000000000",
+            firstName: billing.firstName,
+            lastName: billing.lastName,
+            city: "TBD",
+            country: 642,
+            state: "TBD",
+            postalCode: "00000",
+            details: "Pending — customer to confirm at payment.",
+          },
+          description,
+          returnUrl,
+        }),
+  }
+}
 
 interface PaymentConfigBindings {
   APP_URL?: string

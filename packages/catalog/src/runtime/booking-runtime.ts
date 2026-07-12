@@ -21,7 +21,7 @@ import { createVoyantConnectClient, type PackageOffer } from "@voyant-travel/con
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyant-travel/finance"
-import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
+import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
 import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -185,6 +185,7 @@ export async function applyOperatorTaxToQuoteResult(
   entityModule: string,
   entityId: string,
   sourceKind: string,
+  resolveBookingTaxSettings: FinanceOperatorSettingsRuntime["resolveBookingTaxSettings"],
 ): Promise<QuoteEntityResult> {
   return applyCatalogTaxToQuoteResult({
     result,

@@ -15,10 +15,8 @@ import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph
 import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
 import { withDbFromEnv } from "../lib/db"
-import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 import {
   createOperatorDocumentStorage,
-  generateContractPdfForBooking,
   operatorBindings,
   operatorPostgresDb,
   readOperatorDocumentContentBase64,
@@ -49,7 +47,7 @@ type OperatorRelationshipsService = Pick<
  * Build the operator provider container (gathers deployment resolvers/loaders).
  * Providers are bindings-deferred closures, so no `env` is needed here.
  */
-function createBaseDeploymentCapabilities() {
+function createDeploymentCapabilities() {
   return {
     customFields: resolveOperatorCustomFields,
     resolveNotificationProviders,
@@ -65,14 +63,6 @@ function createBaseDeploymentCapabilities() {
       ),
     ),
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
-  }
-}
-
-function createLegacyDeploymentCapabilities() {
-  const capabilities = createBaseDeploymentCapabilities()
-  return {
-    ...capabilities,
-    loadCommerceRuntime: createOperatorCommerceRuntime,
   }
 }
 
@@ -113,7 +103,7 @@ function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
 
 /** Deployment implementations for package-declared runtime ports. */
 function createDeploymentPortResources(
-  capabilities: ReturnType<typeof createLegacyDeploymentCapabilities>,
+  capabilities: ReturnType<typeof createDeploymentCapabilities>,
   primitives: VoyantRuntimeHostPrimitives,
 ) {
   return createGeneratedGraphRuntimePorts({
@@ -124,7 +114,7 @@ function createDeploymentPortResources(
 
 /** All host-owned inputs passed to graph composition as one opaque resource set. */
 export function createOperatorDeploymentResources() {
-  const capabilities = createLegacyDeploymentCapabilities()
+  const capabilities = createDeploymentCapabilities()
   const primitives = createNodeRuntimePrimitives()
   return {
     capabilities,
@@ -133,52 +123,6 @@ export function createOperatorDeploymentResources() {
     outboundWebhooks: {
       enqueue: (event: Parameters<typeof enqueueGraphWebhookEvent>[1], bindings: unknown) =>
         primitives.events.deliver(event, bindings),
-    },
-  }
-}
-
-function createOperatorCommerceRuntime() {
-  return {
-    bookingMaintenance: import("@voyant-travel/operator-settings").then((settings) => ({
-      resolveDb: (context) => operatorPostgresDb(context.get("db")),
-      resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
-    })),
-    checkoutApi: (context) => createOperatorCheckoutStartOptions(context),
-    checkoutDatabase: {
-      withDb: <T>(
-        bindings: unknown,
-        operation: (db: PostgresJsDatabase) => Promise<T>,
-      ): Promise<T> =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    },
-    checkoutLegal: import("@voyant-travel/legal/contracts").then(({ contractsService }) => ({
-      getContract: contractsService.getContractById,
-      listSignatures: contractsService.listSignatures,
-      sendContract: (db, contractId, eventBus) =>
-        contractsService.sendContract(db, contractId, { eventBus }),
-      signContract: (db, contractId, input, eventBus) =>
-        contractsService.signContract(db, contractId, input as never, { eventBus }),
-    })),
-    checkoutContractPdf: {
-      generate: ({ bindings, db, eventBus, bookingId, force }) =>
-        generateContractPdfForBooking(
-          createNodeRuntimePrimitives(),
-          bindings,
-          db,
-          eventBus,
-          bookingId,
-          { force },
-        ),
-    },
-    promotionRedemptionDatabase: {
-      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    },
-    promotionsBulkReindex: {
-      createService: (bindings: unknown) =>
-        import("../lib/bulk-reindex-service").then((runtime) =>
-          runtime.createBulkReindexProductsService(operatorBindings(bindings)),
-        ),
     },
   }
 }

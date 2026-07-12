@@ -12,6 +12,7 @@
     "./markets/validation": "./src/markets/validation.ts",
     "./promotion-redemption-subscriber": "./src/promotions/subscriber-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./promotions/validation": "./src/promotions/validation.ts",
     "./promotions/workflow-bulk-reindex-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
     "./promotions/workflow-bulk-reindex": "./src/promotions/workflow-bulk-reindex.ts",
@@ -54,19 +55,14 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
-    "@voyant-travel/legal": "workspace:^",
     "@voyant-travel/quotes": "workspace:^"
   },
   "peerDependenciesMeta": {
-    "@voyant-travel/legal": {
-      "optional": true
-    },
     "@voyant-travel/quotes": {
       "optional": true
     }
   },
   "devDependencies": {
-    "@voyant-travel/legal": "workspace:^",
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
@@ -121,6 +117,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./promotions/validation": {
         "types": "./dist/promotions/validation.d.ts",

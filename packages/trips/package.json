@@ -59,6 +59,7 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",

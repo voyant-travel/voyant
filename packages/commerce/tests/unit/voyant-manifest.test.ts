@@ -1,3 +1,10 @@
+import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
+import {
+  financeAccommodationsPaymentPolicyRuntimePort,
+  financeCruisesPaymentPolicyRuntimePort,
+  financeDistributionPaymentPolicyRuntimePort,
+  financeInventoryPaymentPolicyRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
@@ -10,6 +17,12 @@ import {
   promotionRedemptionDatabaseRuntimePort,
   promotionsBulkReindexRuntimePort,
 } from "../../src/promotions/runtime-ports.js"
+import {
+  commerceCardPaymentRuntimePort,
+  commerceInventoryRuntimePort,
+  commerceLegalRuntimePort,
+  commerceOperatorSettingsRuntimePort,
+} from "../../src/runtime-port.js"
 import {
   commerceBookingMaintenanceVoyantPlugin,
   commerceCatalogCheckoutVoyantPlugin,
@@ -25,6 +38,15 @@ describe("commerce deployment manifest", () => {
       runtimePorts: [
         { id: promotionRedemptionDatabaseRuntimePort.id },
         { id: promotionsBulkReindexRuntimePort.id },
+        { id: commerceOperatorSettingsRuntimePort.id },
+        { id: commerceInventoryRuntimePort.id },
+        { id: commerceLegalRuntimePort.id },
+        { id: commerceCardPaymentRuntimePort.id, optional: true },
+        { id: catalogRuntimeServicesPort.id },
+        { id: financeDistributionPaymentPolicyRuntimePort.id },
+        { id: financeAccommodationsPaymentPolicyRuntimePort.id },
+        { id: financeCruisesPaymentPolicyRuntimePort.id },
+        { id: financeInventoryPaymentPolicyRuntimePort.id },
       ],
       api: [
         {

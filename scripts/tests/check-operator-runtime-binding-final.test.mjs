@@ -13,7 +13,7 @@ const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-fina
 const contributors = {
   bookings: "bookingsConfigurationRuntimePort",
   catalog: "createCatalogRuntime",
-  commerce: "host.capabilities.loadCommerceRuntime()",
+  commerce: "createCommerceRuntime",
   distribution: "createDistributionRuntime",
   finance: "financeHostRuntimePort",
   flights: "createFlightsRuntime",

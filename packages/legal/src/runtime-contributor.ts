@@ -1,4 +1,6 @@
+import { commerceLegalRuntimePort } from "@voyant-travel/commerce/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import { createCommerceLegalRuntime } from "./commerce-runtime.js"
 import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 import { legalBookingContractSubscriberRuntimePort } from "./contracts/booking-contract-subscriber-runtime.js"
 import { legalRuntimePort } from "./runtime-port.js"
@@ -15,6 +17,7 @@ export function createLegalRuntimePortContribution(
     module.createLegalRuntime(host.primitives),
   )
   return {
+    [commerceLegalRuntimePort.id]: createCommerceLegalRuntime(host.primitives),
     [legalRuntimePort.id]: runtime.then((value) => value.legal),
     [legalContractDocumentRuntimePort.id]: runtime.then((value) => value.contractDocument),
     [legalBookingContractSubscriberRuntimePort.id]: runtime.then(

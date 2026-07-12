@@ -18,6 +18,7 @@ import {
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
+import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { createCatalogRuntime } from "./runtime.js"
 import {
   type CatalogRuntimeServices,
@@ -64,6 +65,7 @@ export function createCatalogRuntimePortContribution(
         host.getRuntimePort(catalogInventoryRuntimeExtensionPort),
         host.getRuntimePort(catalogOperationsRuntimeExtensionPort),
         host.getRuntimePort(catalogDemoRuntimeExtensionPort),
+        host.getRuntimePort(financeOperatorSettingsRuntimePort),
       ]),
     )
     .then(
@@ -76,17 +78,22 @@ export function createCatalogRuntimePortContribution(
         inventory,
         operations,
         catalogDemo,
+        settings,
       ]) =>
-        createCatalogRuntime(host.primitives, {
-          accommodations,
-          charters,
-          commerce,
-          distribution,
-          cruises,
-          inventory,
-          operations,
-          catalogDemo,
-        }),
+        createCatalogRuntime(
+          host.primitives,
+          {
+            accommodations,
+            charters,
+            commerce,
+            distribution,
+            cruises,
+            inventory,
+            operations,
+            catalogDemo,
+          },
+          settings,
+        ),
     )
   const cruisesRoutes = {
     resolveSourceAdapterRegistry: async (bindings) => {

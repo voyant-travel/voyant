@@ -7,6 +7,10 @@ import {
   promotionsBulkReindexRuntimePort,
 } from "./runtime-ports.js"
 import { recordPromotionRedemptionsForBooking } from "./service-booking-confirmed.js"
+import {
+  PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
+  type PromotionBoundarySchedulerRuntime,
+} from "./workflow-boundary-scheduler.js"
 import { BULK_REINDEX_SERVICE_KEY } from "./workflow-runtime.js"
 
 export const COMMERCE_PROMOTION_REDEMPTION_SUBSCRIBER_ID =
@@ -72,10 +76,12 @@ export const createPromotionRedemptionSubscriberGraphRuntime = defineGraphRuntim
     return {
       ...descriptor,
       register: async (context: BootstrapContext) => {
-        context.container.register(
-          BULK_REINDEX_SERVICE_KEY,
-          await bulkReindex.createService(context.bindings),
-        )
+        const reindexService = await bulkReindex.createService(context.bindings)
+        context.container.register(BULK_REINDEX_SERVICE_KEY, reindexService)
+        context.container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, {
+          withDb: (operation) => database.withDb(context.bindings, operation),
+          createReindexService: () => reindexService,
+        } satisfies PromotionBoundarySchedulerRuntime)
         await descriptor.register(context)
       },
     }

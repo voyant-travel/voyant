@@ -32,20 +32,34 @@ const descriptor = {
 }
 register: async (context) => {
   context.container.register(BULK_REINDEX_SERVICE_KEY, await bulkReindex.createService(bindings))
+  context.container.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, {
+    withDb: (operation) => database.withDb(context.bindings, operation)
+  })
   await descriptor.register(context)
 }
 `,
     "starters/operator/src/api/app.ts": "plugins: [catalogBridgeBundle]\n",
     "starters/operator/src/api/subscribers/catalog-bridge.ts":
       'eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", captureSnapshot)\n',
-    "starters/operator/src/api/runtime/deployment-resources.ts": `
+    "packages/commerce/src/runtime-contributor.ts": `
 [promotionRedemptionDatabaseRuntimePort.id]: {
-  withDb: (bindings, operation) => withDbFromEnv(operatorBindings(bindings), operation),
-} satisfies PromotionRedemptionDatabaseRuntime,
+},
 [promotionsBulkReindexRuntimePort.id]: {
-  createService: (bindings) => createBulkReindexProductsService(operatorBindings(bindings)),
-} satisfies PromotionsBulkReindexRuntime,
+},
 `,
+    "packages/commerce/src/runtime.ts": `
+promotionRedemptionDatabase: {
+  withDb: (bindings, operation) => primitives.database.transaction(bindings, operation),
+},
+promotionsBulkReindex: {
+  createService: (bindings) => {
+    primitives.database.transaction(bindings, operation)
+    catalog.createProductsDocumentBuilder(db, context)
+  },
+},
+`,
+    "starters/operator/src/api/runtime/deployment-resources.ts": "",
+    "starters/operator/src/api/runtime/operator-workflow-services.ts": "",
     ...overrides,
   }
 

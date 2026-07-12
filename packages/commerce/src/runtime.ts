@@ -1,4 +1,18 @@
+import { createIndexerService } from "@voyant-travel/catalog"
+import type { CatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { noDepositPolicy, resolveEffectivePaymentPolicy } from "@voyant-travel/finance"
+import type {
+  FinanceAccommodationsPaymentPolicyRuntime,
+  FinanceCruisesPaymentPolicyRuntime,
+  FinanceDistributionPaymentPolicyRuntime,
+  FinanceInventoryPaymentPolicyRuntime,
+} from "@voyant-travel/finance/runtime-port"
 import type { HonoModule } from "@voyant-travel/hono/module"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
+
 import { marketsHonoModule } from "./markets/index.js"
 import { pricingHonoModule } from "./pricing/index.js"
 import {
@@ -7,6 +21,12 @@ import {
   promotionsHonoModule,
 } from "./promotions/index.js"
 import { createPromotionsStorefrontResolvers } from "./promotions/service-storefront.js"
+import type {
+  CommerceCardPaymentRuntime,
+  CommerceInventoryRuntime,
+  CommerceLegalRuntime,
+  CommerceOperatorSettingsRuntime,
+} from "./runtime-port.js"
 import {
   createSellabilityHonoModule,
   type SellabilityRoutesOptions,
@@ -27,13 +47,7 @@ export interface CommerceHonoModulesOptions {
   sellability?: SellabilityRoutesOptions
 }
 
-/**
- * Runtime consolidation for the Commerce Module.
- *
- * This keeps existing API route prefixes stable while allowing templates to
- * declare one Commerce manifest entry. The old packages remain schema owners
- * until explicit schema-move issues migrate their tables.
- */
+/** Build the HTTP modules represented by the consolidated Commerce manifest. */
 export function createCommerceHonoModules(options: CommerceHonoModulesOptions = {}): HonoModule[] {
   return [
     pricingHonoModule,
@@ -44,3 +58,127 @@ export function createCommerceHonoModules(options: CommerceHonoModulesOptions = 
 }
 
 export const createCommerceStorefrontOfferResolvers = createPromotionsStorefrontResolvers
+
+interface CommerceRuntimeRequirements {
+  primitives: VoyantRuntimeHostPrimitives
+  settings: CommerceOperatorSettingsRuntime
+  inventory: CommerceInventoryRuntime
+  legal: CommerceLegalRuntime
+  catalog: CatalogRuntimeServices
+  distribution: FinanceDistributionPaymentPolicyRuntime
+  accommodations: FinanceAccommodationsPaymentPolicyRuntime
+  cruises: FinanceCruisesPaymentPolicyRuntime
+  inventoryPolicy: FinanceInventoryPaymentPolicyRuntime
+  cardPayment?: CommerceCardPaymentRuntime
+}
+
+/** Compose Commerce from generic host primitives and selected domain providers. */
+export function createCommerceRuntime(requirements: CommerceRuntimeRequirements) {
+  const {
+    primitives,
+    settings,
+    inventory,
+    legal,
+    catalog,
+    distribution,
+    accommodations,
+    cruises,
+    inventoryPolicy,
+    cardPayment,
+  } = requirements
+  const paymentPolicy = inventoryPolicy.createPaymentPolicyRuntime({
+    resolveSupplierPolicy: distribution.resolveSupplierPolicy,
+    resolveSupplierPolicyById: distribution.resolveSupplierPolicyById,
+    resolveVerticalListingPolicy: async (db, bookingId) =>
+      (await cruises.resolveBookingPolicy(db, bookingId)) ??
+      accommodations.resolveBookingPolicy(db, bookingId),
+    resolveVerticalListingPolicyForEntity: async (db, context) =>
+      (await cruises.resolveEntityPolicy(db, context)) ??
+      accommodations.resolveEntityPolicy(db, context),
+    resolveVerticalSupplierPolicyForEntity: async (db, context) => {
+      const supplierId = await cruises.resolveSupplierId(db, context)
+      return supplierId ? distribution.resolveSupplierPolicyById(db, supplierId) : null
+    },
+  })
+
+  return {
+    bookingMaintenance: {
+      resolveDb: (context) => primitives.database.fromContext<PostgresJsDatabase>(context),
+      resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
+    },
+    checkoutApi: (context: Context) => ({
+      resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
+      getOwnedProductName: inventory.getOwnedProductName,
+      resolveBankTransferInstructions: settings.resolveBankTransferInstructions,
+      resolveAcceptedPaymentPolicy: async ({ db, booking }) => {
+        const [operatorDefault, supplierPolicy, categoryPolicy, listingPolicy] = await Promise.all([
+          settings.resolveOperatorDefaultPaymentPolicy(db),
+          paymentPolicy.resolveSupplierPolicy(db, booking.id),
+          paymentPolicy.resolveCategoryPolicy(db, booking.id),
+          paymentPolicy.resolveListingPolicy(db, booking.id),
+        ])
+        return resolveEffectivePaymentPolicy({
+          bookingPolicy: booking.customerPaymentPolicy,
+          listingPolicy,
+          categoryPolicy,
+          supplierPolicy,
+          operatorDefault: operatorDefault ?? noDepositPolicy,
+        })
+      },
+      persistAcceptanceDraftContract: (db, input) =>
+        legal.persistAcceptanceDraftContract(db, input),
+      startCardPayment: cardPayment?.createStartCardPayment(context),
+    }),
+    checkoutDatabase: {
+      withDb: <T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>) =>
+        primitives.database.transaction(bindings, (database) =>
+          operation(database as PostgresJsDatabase),
+        ),
+    },
+    checkoutLegal: legal,
+    checkoutContractPdf: {
+      generate: (input) => legal.generateContractPdf(input),
+    },
+    promotionRedemptionDatabase: {
+      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+        primitives.database.transaction(bindings, (database) =>
+          operation(database as AnyDrizzleDb),
+        ),
+    },
+    promotionsBulkReindex: {
+      createService: (bindings) => {
+        const env = primitives.env(bindings)
+        const sellerOperatorId = stringValue(env.TENANT_ID) ?? "default"
+        return {
+          listAllProductIds: () =>
+            primitives.database.transaction(bindings, (database) =>
+              inventory.listAllProductIds(database as PostgresJsDatabase),
+            ),
+          async reindexProduct(productId) {
+            const embeddings = catalog.buildEmbeddingProvider(env)
+            const adapter = catalog.buildTypesenseIndexer(env, embeddings)
+            if (!adapter) return
+            await primitives.database.transaction(bindings, async (database) => {
+              const db = database as AnyDrizzleDb
+              const service = createIndexerService({
+                adapter,
+                slices: await catalog.loadSlices(db),
+                registries: catalog.fieldPolicyRegistries(),
+              })
+              const builder = catalog.withEmbedding(
+                catalog.createProductsDocumentBuilder(db, { sellerOperatorId }),
+                embeddings,
+              )
+              await service.ensureCollections()
+              await service.reindexEntity("products", productId, builder)
+            })
+          },
+        }
+      },
+    },
+  }
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined
+}

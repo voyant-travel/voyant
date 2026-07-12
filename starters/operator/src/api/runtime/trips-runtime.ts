@@ -1,10 +1,15 @@
 import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import type {
+  CatalogCheckoutApiRuntime,
   CatalogCheckoutStartResult,
   CheckoutStartInput,
 } from "@voyant-travel/commerce/checkout"
-import { CatalogCheckoutStartError, startCatalogCheckout } from "@voyant-travel/commerce/checkout"
+import {
+  CATALOG_CHECKOUT_API_RUNTIME_KEY,
+  CatalogCheckoutStartError,
+  startCatalogCheckout,
+} from "@voyant-travel/commerce/checkout"
 import type { EventBus } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { createDemoFlightAdapter } from "@voyant-travel/plugin-flights-demo"
@@ -26,7 +31,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { resolveVoyantDataApiKey } from "../../lib/voyant-cloud"
 import { cardPaymentStarter } from "./card-payment"
-import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 
 const tripsRouteRuntime = createTripsRouteRuntime({
   createCatalogAdapter(c) {
@@ -127,7 +131,9 @@ async function startComponentCheckout(
             "",
           userAgent: c.req.header("user-agent") ?? "",
         },
-        options: createOperatorCheckoutStartOptions(c),
+        options: getContainer(c)!.resolve<CatalogCheckoutApiRuntime>(
+          CATALOG_CHECKOUT_API_RUNTIME_KEY,
+        )(c),
       },
       checkoutInput,
     )
@@ -146,8 +152,8 @@ function getEventBus(c: Context): EventBus | undefined {
   return (c.var as { eventBus?: EventBus }).eventBus
 }
 
-function getContainer(c: Context): { resolve(key: string): unknown } | undefined {
-  return (c.var as { container?: { resolve(key: string): unknown } }).container
+function getContainer(c: Context): { resolve<T = unknown>(key: string): T } | undefined {
+  return (c.var as { container?: { resolve<T = unknown>(key: string): T } }).container
 }
 
 function required(value: string | null | undefined, label: string): string {

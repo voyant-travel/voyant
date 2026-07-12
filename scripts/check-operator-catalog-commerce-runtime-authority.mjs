@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises"
+import { access, readFile } from "node:fs/promises"
 import path from "node:path"
 
 function argument(name, fallback) {
@@ -8,11 +8,14 @@ function argument(name, fallback) {
 
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
-const [deploymentResources, catalogContributor, commerceContributor] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
-  read("packages/catalog/src/runtime-contributor.ts"),
-  read("packages/commerce/src/runtime-contributor.ts"),
-])
+const [deploymentResources, catalogContributor, commerceContributor, tripsContributor] =
+  await Promise.all([
+    read("starters/operator/src/api/runtime/deployment-resources.ts"),
+    read("packages/catalog/src/runtime-contributor.ts"),
+    read("packages/commerce/src/runtime-contributor.ts"),
+    read("packages/trips/src/runtime-contributor.ts"),
+  ])
+const commerceRuntime = await read("packages/commerce/src/runtime.ts")
 
 const catalogPorts = [
   "catalogSearchRuntimePort",
@@ -46,6 +49,16 @@ for (const required of [
     violations.push(`deployment-resources.ts must not enumerate ${required}`)
   }
 }
+for (const legacy of [
+  "loadCommerceRuntime",
+  "createOperatorCommerceRuntime",
+  "catalog-checkout-options",
+  "bulk-reindex-service",
+]) {
+  if (deploymentResources.includes(legacy)) {
+    violations.push(`deployment-resources.ts must not retain ${legacy}`)
+  }
+}
 for (const port of catalogPorts) {
   if (!catalogContributor.includes(`[${port}.id]`)) {
     violations.push(`Catalog runtime contributor must own ${port}`)
@@ -55,6 +68,31 @@ for (const port of commercePorts) {
   if (!commerceContributor.includes(`[${port}.id]`)) {
     violations.push(`Commerce runtime contributor must own ${port}`)
   }
+}
+for (const provider of [
+  "commerceOperatorSettingsRuntimePort",
+  "commerceInventoryRuntimePort",
+  "commerceLegalRuntimePort",
+  "catalogRuntimeServicesPort",
+]) {
+  if (!commerceContributor.includes(`getRuntimePort(${provider})`)) {
+    violations.push(`Commerce runtime contributor must resolve ${provider}`)
+  }
+}
+if (!commerceRuntime.includes("createCommerceRuntime")) {
+  violations.push("Commerce package must own createCommerceRuntime")
+}
+if (!tripsContributor.includes("[commerceCardPaymentRuntimePort.id]")) {
+  violations.push("selected payment package must provide Commerce's card-payment runtime port")
+}
+for (const removedPath of [
+  "starters/operator/src/api/runtime/catalog-checkout-options.ts",
+  "starters/operator/src/api/lib/bulk-reindex-service.ts",
+]) {
+  try {
+    await access(path.join(root, removedPath))
+    violations.push(`${removedPath} must be removed`)
+  } catch {}
 }
 
 if (violations.length > 0) {

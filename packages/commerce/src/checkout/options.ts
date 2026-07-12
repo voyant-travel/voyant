@@ -38,6 +38,23 @@ export interface CheckoutAcceptedPaymentPolicy {
   source: PaymentPolicySource
 }
 
+export interface CommerceAcceptanceDraftInput {
+  booking: {
+    id: string
+    bookingNumber: string
+    personId: string | null
+    organizationId: string | null
+  }
+  acceptance: {
+    templateId: string
+    templateSlug: string
+    acceptedAt: string
+    acceptedMarketing: boolean
+    renderedHtml: string
+  }
+  requestMeta: { clientIp?: string; userAgent?: string }
+}
+
 /**
  * Options shared by the checkout materialization + start-service. All
  * structural — no deployment imports, no platform bindings.
@@ -93,6 +110,10 @@ export interface CheckoutStartOptions extends CheckoutModuleOptions {
       customerPaymentPolicy: PaymentPolicy | null
     }
   }): Promise<CheckoutAcceptedPaymentPolicy | null>
+  persistAcceptanceDraftContract?(
+    db: PostgresJsDatabase,
+    input: CommerceAcceptanceDraftInput,
+  ): Promise<void>
   /**
    * Start the card-payment provider session for the `card` checkout intent.
    * INJECTED so commerce never imports a specific payment provider (which

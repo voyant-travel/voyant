@@ -4,10 +4,6 @@ import {
   createCatalogDraftReaperRuntime,
 } from "@voyant-travel/catalog/draft-reaper-workflow"
 import { requireCatalogRuntimeServices } from "@voyant-travel/catalog/runtime-contracts"
-import {
-  PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
-  type PromotionBoundarySchedulerRuntime,
-} from "@voyant-travel/commerce/promotions/workflow-boundary-scheduler"
 import type { ModuleContainer } from "@voyant-travel/core"
 import {
   CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
@@ -26,7 +22,6 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
 import { reportBackgroundFailure } from "../../lib/observability.js"
-import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
 import { withDbFromEnv } from "../lib/db.js"
 import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter.js"
 
@@ -68,10 +63,6 @@ export async function createOperatorWorkflowServiceResolver(
       reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
     }),
   )
-  app.services.register(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY, {
-    withDb: (operation) => operation(createWorkflowDb(env)),
-    createReindexService: () => createBulkReindexProductsService(appBindings),
-  } satisfies PromotionBoundarySchedulerRuntime)
   if (selectedUnitIds.has("@voyant-travel/cruises"))
     app.services.register(
       CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,

@@ -575,6 +575,7 @@
         "../commerce/dist/promotions/workflow-bulk-reindex-manifest.d.ts"
       ],
       "@voyant-travel/commerce/runtime-contributor": ["../commerce/dist/runtime-contributor.d.ts"],
+      "@voyant-travel/commerce/runtime-port": ["../commerce/dist/runtime-port.d.ts"],
       "@voyant-travel/commerce/schema": ["../commerce/dist/schema.d.ts"],
       "@voyant-travel/commerce/sellability/validation": [
         "../commerce/dist/sellability/validation.d.ts"

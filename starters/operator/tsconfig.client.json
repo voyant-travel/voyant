@@ -757,6 +757,7 @@
       "@voyant-travel/commerce/runtime-contributor": [
         "../../packages/commerce/dist/runtime-contributor.d.ts"
       ],
+      "@voyant-travel/commerce/runtime-port": ["../../packages/commerce/dist/runtime-port.d.ts"],
       "@voyant-travel/commerce/schema": ["../../packages/commerce/dist/schema.d.ts"],
       "@voyant-travel/commerce/sellability/validation": [
         "../../packages/commerce/dist/sellability/validation.d.ts"

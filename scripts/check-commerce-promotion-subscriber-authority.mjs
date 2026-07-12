@@ -11,7 +11,10 @@ const paths = {
   descriptor: "packages/commerce/src/promotions/subscriber-runtime.ts",
   app: "starters/operator/src/api/app.ts",
   catalogBridge: "starters/operator/src/api/subscribers/catalog-bridge.ts",
+  contributor: "packages/commerce/src/runtime-contributor.ts",
+  runtime: "packages/commerce/src/runtime.ts",
   composition: "starters/operator/src/api/runtime/deployment-resources.ts",
+  workflowServices: "starters/operator/src/api/runtime/operator-workflow-services.ts",
 }
 
 const sources = Object.fromEntries(
@@ -54,9 +57,9 @@ for (const port of ["promotionRedemptionDatabaseRuntimePort", "promotionsBulkRei
     `Commerce subscriber runtime must resolve ${port}`,
   )
   requireMatch(
-    sources.composition,
+    sources.contributor,
     new RegExp(`\\[${port}\\.id\\]`),
-    `Operator must provide ${port} through the runtime port map`,
+    `Commerce contributor must provide ${port} through the runtime port map`,
   )
 }
 requireMatch(
@@ -70,24 +73,34 @@ requireMatch(
   "Commerce runtime must register the bulk-reindex service before the redemption subscriber",
 )
 requireMatch(
-  sources.composition,
-  /promotionRedemptionDatabaseRuntimePort\.id\]:\s*\{[\s\S]*withDb:[\s\S]*withDbFromEnv\(operatorBindings\(bindings\)/,
-  "Operator promotion redemption must preserve database lifecycle ownership",
+  sources.descriptor,
+  /container\.register\(PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,[\s\S]*database\.withDb\(context\.bindings/,
+  "Commerce runtime must register its promotion-boundary workflow runtime",
 )
 requireMatch(
-  sources.composition,
-  /promotionRedemptionDatabaseRuntimePort\.id\]:[\s\S]*satisfies PromotionRedemptionDatabaseRuntime/,
-  "Operator promotion database provider must satisfy its package-owned type",
+  sources.runtime,
+  /promotionRedemptionDatabase:\s*\{[\s\S]*?primitives\.database\.transaction\(bindings/,
+  "Commerce promotion redemption must use generic database primitives",
 )
 requireMatch(
-  sources.composition,
-  /promotionsBulkReindexRuntimePort\.id\]:\s*\{[\s\S]*createBulkReindexProductsService\(operatorBindings\(bindings\)\)/,
-  "Operator must expose the existing bulk-reindex host service through its typed port",
+  sources.runtime,
+  /primitives\.database\.transaction\(bindings/,
+  "Commerce database runtime must preserve the host transaction lifecycle",
 )
 requireMatch(
+  sources.runtime,
+  /promotionsBulkReindex:\s*\{[\s\S]*createService:[\s\S]*catalog\.createProductsDocumentBuilder/,
+  "Commerce must own bulk-reindex service composition",
+)
+rejectMatch(
   sources.composition,
-  /promotionsBulkReindexRuntimePort\.id\]:[\s\S]*satisfies PromotionsBulkReindexRuntime/,
-  "Operator bulk-reindex provider must satisfy its package-owned type",
+  /loadCommerceRuntime|createOperatorCommerceRuntime|createBulkReindexProductsService/,
+  "Operator deployment resources must not retain Commerce runtime assembly",
+)
+rejectMatch(
+  sources.workflowServices,
+  /BULK_REINDEX_SERVICE_KEY|PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY|PromotionBoundarySchedulerRuntime/,
+  "Operator workflow services must not retain Commerce runtime registration",
 )
 rejectMatch(
   sources.app,
