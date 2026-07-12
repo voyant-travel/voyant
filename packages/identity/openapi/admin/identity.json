@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -156,9 +129,7 @@
   "paths": {
     "/v1/admin/identity/contact-points": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "List contact points",
         "parameters": [
           {
@@ -174,10 +145,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -225,12 +193,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "isPrimary",
@@ -282,34 +245,22 @@
                             ]
                           },
                           "label": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "value": {
                             "type": "string"
                           },
                           "normalizedValue": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -345,12 +296,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -364,9 +310,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Create a contact point",
         "requestBody": {
           "required": true,
@@ -400,10 +344,7 @@
                     ]
                   },
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "value": {
@@ -412,10 +353,7 @@
                     "maxLength": 500
                   },
                   "normalizedValue": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 500
                   },
                   "isPrimary": {
@@ -423,25 +361,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "entityType",
-                  "entityId",
-                  "kind",
-                  "value"
-                ]
+                "required": ["entityType", "entityId", "kind", "value"]
               }
             }
           }
@@ -481,34 +408,22 @@
                           ]
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "value": {
                           "type": "string"
                         },
                         "normalizedValue": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -534,9 +449,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -552,9 +465,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -570,9 +481,7 @@
     },
     "/v1/admin/identity/contact-points/{id}": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Get a contact point by id",
         "parameters": [
           {
@@ -619,34 +528,22 @@
                           ]
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "value": {
                           "type": "string"
                         },
                         "normalizedValue": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -672,9 +569,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -690,9 +585,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -706,9 +599,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Update a contact point",
         "parameters": [
           {
@@ -752,10 +643,7 @@
                     ]
                   },
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "value": {
@@ -764,10 +652,7 @@
                     "maxLength": 500
                   },
                   "normalizedValue": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 500
                   },
                   "isPrimary": {
@@ -775,16 +660,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -827,34 +706,22 @@
                           ]
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "value": {
                           "type": "string"
                         },
                         "normalizedValue": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -880,9 +747,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -898,9 +763,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -916,9 +779,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -932,9 +793,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Delete a contact point",
         "parameters": [
           {
@@ -956,14 +815,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -979,9 +834,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -997,9 +850,7 @@
     },
     "/v1/admin/identity/addresses": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "List addresses",
         "parameters": [
           {
@@ -1015,10 +866,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -1065,12 +913,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "isPrimary",
@@ -1121,79 +964,43 @@
                             ]
                           },
                           "fullText": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line1": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line2": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "city": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "region": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "postalCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "country": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "latitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "longitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "timezone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -1236,12 +1043,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -1255,9 +1057,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Create an address",
         "requestBody": {
           "required": true,
@@ -1291,64 +1091,34 @@
                     "default": "other"
                   },
                   "fullText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line1": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line2": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "region": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "postalCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "latitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "longitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "isPrimary": {
@@ -1356,23 +1126,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "entityType",
-                  "entityId"
-                ]
+                "required": ["entityType", "entityId"]
               }
             }
           }
@@ -1411,79 +1172,43 @@
                           ]
                         },
                         "fullText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "region": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postalCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "latitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "longitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1516,9 +1241,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1534,9 +1257,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1552,9 +1273,7 @@
     },
     "/v1/admin/identity/addresses/{id}": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Get an address by id",
         "parameters": [
           {
@@ -1600,79 +1319,43 @@
                           ]
                         },
                         "fullText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "region": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postalCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "latitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "longitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -1705,9 +1388,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1723,9 +1404,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1739,9 +1418,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Update an address",
         "parameters": [
           {
@@ -1785,64 +1462,34 @@
                     "default": "other"
                   },
                   "fullText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line1": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line2": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "region": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "postalCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "latitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "longitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "isPrimary": {
@@ -1850,16 +1497,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -1901,79 +1542,43 @@
                           ]
                         },
                         "fullText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "region": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postalCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "latitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "longitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2006,9 +1611,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2024,9 +1627,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2042,9 +1643,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2058,9 +1657,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Delete an address",
         "parameters": [
           {
@@ -2082,14 +1679,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2105,9 +1698,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2123,9 +1714,7 @@
     },
     "/v1/admin/identity/named-contacts": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "List named contacts",
         "parameters": [
           {
@@ -2141,10 +1730,7 @@
           },
           {
             "schema": {
-              "type": [
-                "integer",
-                "null"
-              ],
+              "type": ["integer", "null"],
               "minimum": 0,
               "default": 0
             },
@@ -2193,12 +1779,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": [
-                "0",
-                "1",
-                "true",
-                "false"
-              ]
+              "enum": ["0", "1", "true", "false"]
             },
             "required": false,
             "name": "isPrimary",
@@ -2254,37 +1835,22 @@
                             "type": "string"
                           },
                           "title": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "email": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "phone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -2321,12 +1887,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "limit",
-                    "offset"
-                  ]
+                  "required": ["data", "total", "limit", "offset"]
                 }
               }
             }
@@ -2340,9 +1901,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Create a named contact",
         "requestBody": {
           "required": true,
@@ -2383,24 +1942,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -2408,24 +1958,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "entityType",
-                  "entityId",
-                  "name"
-                ]
+                "required": ["entityType", "entityId", "name"]
               }
             }
           }
@@ -2469,37 +2009,22 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2526,9 +2051,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2544,9 +2067,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2562,9 +2083,7 @@
     },
     "/v1/admin/identity/named-contacts/{id}": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Get a named contact by id",
         "parameters": [
           {
@@ -2615,37 +2134,22 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2672,9 +2176,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2690,9 +2192,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2706,9 +2206,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Update a named contact",
         "parameters": [
           {
@@ -2759,24 +2257,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -2784,16 +2273,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -2840,37 +2323,22 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -2897,9 +2365,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2915,9 +2381,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2933,9 +2397,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -2949,9 +2411,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Delete a named contact",
         "parameters": [
           {
@@ -2973,14 +2433,10 @@
                   "properties": {
                     "success": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     }
                   },
-                  "required": [
-                    "success"
-                  ]
+                  "required": ["success"]
                 }
               }
             }
@@ -2996,9 +2452,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3014,9 +2468,7 @@
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/contact-points": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "List contact points for an entity",
         "parameters": [
           {
@@ -3073,34 +2525,22 @@
                             ]
                           },
                           "label": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "value": {
                             "type": "string"
                           },
                           "normalizedValue": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3127,9 +2567,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3143,9 +2581,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Create a contact point for an entity",
         "parameters": [
           {
@@ -3187,10 +2623,7 @@
                     ]
                   },
                   "label": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "value": {
@@ -3199,10 +2632,7 @@
                     "maxLength": 500
                   },
                   "normalizedValue": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 500
                   },
                   "isPrimary": {
@@ -3210,23 +2640,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "kind",
-                  "value"
-                ]
+                "required": ["kind", "value"]
               }
             }
           }
@@ -3266,34 +2687,22 @@
                           ]
                         },
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "value": {
                           "type": "string"
                         },
                         "normalizedValue": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3319,9 +2728,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3337,9 +2744,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3355,9 +2760,7 @@
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/addresses": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "List addresses for an entity",
         "parameters": [
           {
@@ -3413,79 +2816,43 @@
                             ]
                           },
                           "fullText": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line1": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "line2": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "city": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "region": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "postalCode": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "country": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "latitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "longitude": {
-                            "type": [
-                              "number",
-                              "null"
-                            ]
+                            "type": ["number", "null"]
                           },
                           "timezone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3519,9 +2886,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3535,9 +2900,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Create an address for an entity",
         "parameters": [
           {
@@ -3579,64 +2942,34 @@
                     "default": "other"
                   },
                   "fullText": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line1": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "line2": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "city": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "region": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "postalCode": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "country": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "latitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "longitude": {
-                    "type": [
-                      "number",
-                      "null"
-                    ]
+                    "type": ["number", "null"]
                   },
                   "timezone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 100
                   },
                   "isPrimary": {
@@ -3644,16 +2977,10 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 }
@@ -3695,79 +3022,43 @@
                           ]
                         },
                         "fullText": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line1": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "line2": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "city": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "region": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "postalCode": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "country": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "latitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "longitude": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
+                          "type": ["number", "null"]
                         },
                         "timezone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -3800,9 +3091,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3818,9 +3107,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -3836,9 +3123,7 @@
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/named-contacts": {
       "get": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "List named contacts for an entity",
         "parameters": [
           {
@@ -3899,37 +3184,22 @@
                             "type": "string"
                           },
                           "title": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "email": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "phone": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "isPrimary": {
                             "type": "boolean"
                           },
                           "notes": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                            "type": ["string", "null"]
                           },
                           "metadata": {
-                            "type": [
-                              "object",
-                              "null"
-                            ],
+                            "type": ["object", "null"],
                             "additionalProperties": {}
                           },
                           "createdAt": {
@@ -3957,9 +3227,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3973,9 +3241,7 @@
         "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
-        "tags": [
-          "Identity"
-        ],
+        "tags": ["Identity"],
         "summary": "Create a named contact for an entity",
         "parameters": [
           {
@@ -4024,24 +3290,15 @@
                     "maxLength": 255
                   },
                   "title": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "email": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "email"
                   },
                   "phone": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "maxLength": 50
                   },
                   "isPrimary": {
@@ -4049,22 +3306,14 @@
                     "default": false
                   },
                   "notes": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "metadata": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
+                    "type": ["object", "null"],
                     "additionalProperties": {}
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -4108,37 +3357,22 @@
                           "type": "string"
                         },
                         "title": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "phone": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "isPrimary": {
                           "type": "boolean"
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -4165,9 +3399,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -4183,9 +3415,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }

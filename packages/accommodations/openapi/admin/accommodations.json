@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -207,11 +180,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "roomTypeId",
-                  "name",
-                  "currency"
-                ]
+                "required": ["roomTypeId", "name", "currency"]
               }
             }
           }
@@ -231,22 +200,13 @@
                           "type": "string"
                         },
                         "programId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "supplierId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "propertyId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "roomTypeId": {
                           "type": "string"
@@ -269,54 +229,30 @@
                           "type": "string"
                         },
                         "netRateCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "sellRateCents": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
+                          "type": ["integer", "null"]
                         },
                         "optionDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "cutoffDate": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "attritionTerms": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "depositTerms": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "notes": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "metadata": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "additionalProperties": {}
                         },
                         "createdAt": {
@@ -348,9 +284,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -366,9 +300,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -376,9 +308,7 @@
         },
         "operationId": "postAdminAccommodationsRoomBlocks",
         "summary": "POST /v1/admin/accommodations/room-blocks",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -413,22 +343,13 @@
                               "type": "string"
                             },
                             "programId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "supplierId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "propertyId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "roomTypeId": {
                               "type": "string"
@@ -451,54 +372,30 @@
                               "type": "string"
                             },
                             "netRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "sellRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "optionDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "cutoffDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "attritionTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "depositTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "metadata": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "createdAt": {
@@ -530,10 +427,7 @@
                           ]
                         },
                         "summary": {
-                          "type": [
-                            "object",
-                            "null"
-                          ],
+                          "type": ["object", "null"],
                           "properties": {
                             "blockId": {
                               "type": "string"
@@ -563,11 +457,7 @@
                             },
                             "pickupProgress": {
                               "type": "string",
-                              "enum": [
-                                "none",
-                                "partial",
-                                "full"
-                              ]
+                              "enum": ["none", "partial", "full"]
                             }
                           },
                           "required": [
@@ -581,15 +471,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "block",
-                        "summary"
-                      ]
+                      "required": ["block", "summary"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -605,9 +490,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -615,9 +498,7 @@
         },
         "operationId": "getAdminAccommodationsRoomBlocksById",
         "summary": "GET /v1/admin/accommodations/room-blocks/{id}",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -664,17 +545,12 @@
                           "minimum": 0
                         }
                       },
-                      "required": [
-                        "date",
-                        "roomsHeld"
-                      ]
+                      "required": ["date", "roomsHeld"]
                     },
                     "minItems": 1
                   }
                 },
-                "required": [
-                  "nights"
-                ]
+                "required": ["nights"]
               }
             }
           }
@@ -688,10 +564,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "type": [
-                        "object",
-                        "null"
-                      ],
+                      "type": ["object", "null"],
                       "properties": {
                         "blockId": {
                           "type": "string"
@@ -721,11 +594,7 @@
                         },
                         "pickupProgress": {
                           "type": "string",
-                          "enum": [
-                            "none",
-                            "partial",
-                            "full"
-                          ]
+                          "enum": ["none", "partial", "full"]
                         }
                       },
                       "required": [
@@ -739,9 +608,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -757,9 +624,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -775,9 +640,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -785,9 +648,7 @@
         },
         "operationId": "putAdminAccommodationsRoomBlocksByIdNights",
         "summary": "PUT /v1/admin/accommodations/room-blocks/{id}/nights",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -834,10 +695,7 @@
                     "default": 1
                   }
                 },
-                "required": [
-                  "checkIn",
-                  "checkOut"
-                ]
+                "required": ["checkIn", "checkOut"]
               }
             }
           }
@@ -860,16 +718,10 @@
                           "type": "string"
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stayBookingItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
                           "type": "string"
@@ -882,19 +734,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "reversed"
-                          ]
+                          "enum": ["active", "reversed"]
                         },
                         "pickedUpAt": {
                           "type": "string"
                         },
                         "reversedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -911,9 +757,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -935,16 +779,10 @@
                           "type": "string"
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stayBookingItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
                           "type": "string"
@@ -957,19 +795,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "reversed"
-                          ]
+                          "enum": ["active", "reversed"]
                         },
                         "pickedUpAt": {
                           "type": "string"
                         },
                         "reversedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -986,9 +818,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1004,9 +834,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1022,9 +850,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1042,9 +868,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "error"
-                      ]
+                      "required": ["error"]
                     },
                     {
                       "type": "object",
@@ -1065,17 +889,10 @@
                               "type": "integer"
                             }
                           },
-                          "required": [
-                            "date",
-                            "remaining",
-                            "needed"
-                          ]
+                          "required": ["date", "remaining", "needed"]
                         }
                       },
-                      "required": [
-                        "error",
-                        "detail"
-                      ]
+                      "required": ["error", "detail"]
                     }
                   ]
                 }
@@ -1085,9 +902,7 @@
         },
         "operationId": "postAdminAccommodationsRoomBlocksByIdPickups",
         "summary": "POST /v1/admin/accommodations/room-blocks/{id}/pickups",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -1143,16 +958,10 @@
                           "type": "string"
                         },
                         "bookingId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "stayBookingItemId": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         },
                         "checkIn": {
                           "type": "string"
@@ -1165,19 +974,13 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "reversed"
-                          ]
+                          "enum": ["active", "reversed"]
                         },
                         "pickedUpAt": {
                           "type": "string"
                         },
                         "reversedAt": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -1194,9 +997,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1212,9 +1013,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1230,9 +1029,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1240,9 +1037,7 @@
         },
         "operationId": "postAdminAccommodationsRoomBlocksByIdPickupsReverse",
         "summary": "POST /v1/admin/accommodations/room-blocks/{id}/pickups/reverse",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -1280,22 +1075,13 @@
                               "type": "string"
                             },
                             "programId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "supplierId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "propertyId": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "roomTypeId": {
                               "type": "string"
@@ -1318,54 +1104,30 @@
                               "type": "string"
                             },
                             "netRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "sellRateCents": {
-                              "type": [
-                                "integer",
-                                "null"
-                              ]
+                              "type": ["integer", "null"]
                             },
                             "optionDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "cutoffDate": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "attritionTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "depositTerms": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "notes": {
-                              "type": [
-                                "string",
-                                "null"
-                              ]
+                              "type": ["string", "null"]
                             },
                             "metadata": {
-                              "type": [
-                                "object",
-                                "null"
-                              ],
+                              "type": ["object", "null"],
                               "additionalProperties": {}
                             },
                             "createdAt": {
@@ -1397,15 +1159,10 @@
                           ]
                         }
                       },
-                      "required": [
-                        "releasedRooms",
-                        "block"
-                      ]
+                      "required": ["releasedRooms", "block"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1421,9 +1178,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ]
+                  "required": ["error"]
                 }
               }
             }
@@ -1431,9 +1186,7 @@
         },
         "operationId": "postAdminAccommodationsRoomBlocksByIdRelease",
         "summary": "POST /v1/admin/accommodations/room-blocks/{id}/release",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }
@@ -1451,9 +1204,7 @@
           }
         },
         "operationId": "getAdminAccommodationsByIdContent",
-        "tags": [
-          "accommodations"
-        ],
+        "tags": ["accommodations"],
         "x-voyant-module": "accommodations",
         "x-voyant-surface": "admin"
       }

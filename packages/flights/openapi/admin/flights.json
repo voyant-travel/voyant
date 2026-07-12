@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -164,9 +137,7 @@
           }
         },
         "operationId": "postAdminFlightsSearch",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -183,9 +154,7 @@
           }
         },
         "operationId": "postAdminFlightsAncillaries",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -202,9 +171,7 @@
           }
         },
         "operationId": "postAdminFlightsSeatmap",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -221,9 +188,7 @@
           }
         },
         "operationId": "postAdminFlightsPrice",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -240,9 +205,7 @@
           }
         },
         "operationId": "postAdminFlightsBook",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -259,9 +222,7 @@
           }
         },
         "operationId": "getAdminFlightsOrders",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -278,9 +239,7 @@
           }
         },
         "operationId": "getAdminFlightsOrdersByOrderId",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -297,9 +256,7 @@
           }
         },
         "operationId": "postAdminFlightsOrdersByOrderIdTicket",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -316,9 +273,7 @@
           }
         },
         "operationId": "postAdminFlightsOrdersByOrderIdCancel",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -335,9 +290,7 @@
           }
         },
         "operationId": "getAdminFlightsReferenceAirports",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -354,9 +307,7 @@
           }
         },
         "operationId": "getAdminFlightsReferenceAirlines",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
@@ -373,9 +324,7 @@
           }
         },
         "operationId": "getAdminFlightsReferenceAircraft",
-        "tags": [
-          "flights"
-        ],
+        "tags": ["flights"],
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",

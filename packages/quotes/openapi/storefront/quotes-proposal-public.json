@@ -20,9 +20,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "eq"
-                ]
+                "enum": ["eq"]
               },
               "field": {
                 "type": "string",
@@ -42,20 +40,14 @@
                 ]
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "value"
-            ]
+            "required": ["kind", "field", "value"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "in"
-                ]
+                "enum": ["in"]
               },
               "field": {
                 "type": "string",
@@ -75,20 +67,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "field",
-              "values"
-            ]
+            "required": ["kind", "field", "values"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "range"
-                ]
+                "enum": ["range"]
               },
               "field": {
                 "type": "string",
@@ -101,19 +87,14 @@
                 "type": "number"
               }
             },
-            "required": [
-              "kind",
-              "field"
-            ]
+            "required": ["kind", "field"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "and"
-                ]
+                "enum": ["and"]
               },
               "clauses": {
                 "type": "array",
@@ -122,19 +103,14 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           },
           {
             "type": "object",
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "or"
-                ]
+                "enum": ["or"]
               },
               "clauses": {
                 "type": "array",
@@ -143,10 +119,7 @@
                 }
               }
             },
-            "required": [
-              "kind",
-              "clauses"
-            ]
+            "required": ["kind", "clauses"]
           }
         ]
       }
@@ -164,9 +137,7 @@
           }
         },
         "operationId": "getPublicProposalsByQuoteVersionId",
-        "tags": [
-          "quote-versions"
-        ],
+        "tags": ["quote-versions"],
         "x-voyant-module": "quote-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/quotes#proposal-extension",
@@ -183,9 +154,7 @@
           }
         },
         "operationId": "postPublicProposalsByQuoteVersionIdAccept",
-        "tags": [
-          "quote-versions"
-        ],
+        "tags": ["quote-versions"],
         "x-voyant-module": "quote-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/quotes#proposal-extension",
@@ -202,9 +171,7 @@
           }
         },
         "operationId": "postPublicProposalsByQuoteVersionIdDecline",
-        "tags": [
-          "quote-versions"
-        ],
+        "tags": ["quote-versions"],
         "x-voyant-module": "quote-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/quotes#proposal-extension",
@@ -221,9 +188,7 @@
           }
         },
         "operationId": "postPublicProposalsByQuoteVersionIdRequestEdits",
-        "tags": [
-          "quote-versions"
-        ],
+        "tags": ["quote-versions"],
         "x-voyant-module": "quote-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/quotes#proposal-extension",
