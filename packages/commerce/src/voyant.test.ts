@@ -15,17 +15,17 @@ describe("commerce deployment manifest", () => {
           defaultRuntime: "node",
           schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
         },
-        source: "@voyant-travel/commerce/promotions/workflow-boundary-scheduler",
+        source: "@voyant-travel/commerce/promotion-boundary-workflow",
         runtime: {
-          entry: "./promotions/workflow-boundary-scheduler",
+          entry: "./promotion-boundary-workflow",
           export: "promotionBoundarySchedulerWorkflow",
         },
       },
       {
         ...bulkReindexProductsWorkflowManifest,
-        source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
+        source: "@voyant-travel/commerce/product-reindex-workflow",
         runtime: {
-          entry: "./promotions/workflow-bulk-reindex",
+          entry: "./product-reindex-workflow",
           export: "bulkReindexProductsWorkflow",
         },
       },
@@ -46,9 +46,9 @@ describe("commerce deployment manifest", () => {
         eventFilterId: promotionAffectedAllFilter.id,
         workflowId: bulkReindexProductsWorkflowManifest.id,
         filter: promotionAffectedAllFilter.manifest,
-        source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest",
+        source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
         runtime: {
-          entry: "./promotions/workflow-bulk-reindex-manifest",
+          entry: "./product-reindex-workflow-manifest",
           export: "promotionAffectedAllFilter",
         },
       },

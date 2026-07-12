@@ -1,4 +1,4 @@
-import { insertExternalRefSchema } from "@voyant-travel/distribution/external-refs/validation"
+import { insertExternalRefSchema } from "@voyant-travel/distribution/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 

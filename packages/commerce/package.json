@@ -9,15 +9,13 @@
     "./catalog-checkout-subscribers": "./src/checkout/subscriber-runtime.ts",
     "./schema": "./src/schema.ts",
     "./checkout": "./src/checkout/index.ts",
-    "./markets/validation": "./src/markets/validation.ts",
+    "./validation": "./src/validation.ts",
     "./promotion-redemption-subscriber": "./src/promotions/subscriber-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
-    "./promotions/validation": "./src/promotions/validation.ts",
-    "./promotions/workflow-bulk-reindex-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
-    "./promotions/workflow-bulk-reindex": "./src/promotions/workflow-bulk-reindex.ts",
-    "./promotions/workflow-boundary-scheduler": "./src/promotions/workflow-boundary-scheduler.ts",
-    "./sellability/validation": "./src/sellability/validation.ts",
+    "./product-reindex-workflow-manifest": "./src/promotions/workflow-bulk-reindex-manifest.ts",
+    "./product-reindex-workflow": "./src/promotions/workflow-bulk-reindex.ts",
+    "./promotion-boundary-workflow": "./src/promotions/workflow-boundary-scheduler.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin/markets": "./openapi/admin/markets.json",
     "./openapi/admin/pricing": "./openapi/admin/pricing.json",
@@ -103,10 +101,10 @@
         "import": "./dist/checkout/index.js",
         "default": "./dist/checkout/index.js"
       },
-      "./markets/validation": {
-        "types": "./dist/markets/validation.d.ts",
-        "import": "./dist/markets/validation.js",
-        "default": "./dist/markets/validation.js"
+      "./validation": {
+        "types": "./dist/validation.d.ts",
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
       },
       "./promotion-redemption-subscriber": {
         "types": "./dist/promotions/subscriber-runtime.d.ts",
@@ -123,30 +121,20 @@
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
       },
-      "./promotions/validation": {
-        "types": "./dist/promotions/validation.d.ts",
-        "import": "./dist/promotions/validation.js",
-        "default": "./dist/promotions/validation.js"
-      },
-      "./promotions/workflow-bulk-reindex-manifest": {
+      "./product-reindex-workflow-manifest": {
         "types": "./dist/promotions/workflow-bulk-reindex-manifest.d.ts",
         "import": "./dist/promotions/workflow-bulk-reindex-manifest.js",
         "default": "./dist/promotions/workflow-bulk-reindex-manifest.js"
       },
-      "./promotions/workflow-bulk-reindex": {
+      "./product-reindex-workflow": {
         "types": "./dist/promotions/workflow-bulk-reindex.d.ts",
         "import": "./dist/promotions/workflow-bulk-reindex.js",
         "default": "./dist/promotions/workflow-bulk-reindex.js"
       },
-      "./promotions/workflow-boundary-scheduler": {
+      "./promotion-boundary-workflow": {
         "types": "./dist/promotions/workflow-boundary-scheduler.d.ts",
         "import": "./dist/promotions/workflow-boundary-scheduler.js",
         "default": "./dist/promotions/workflow-boundary-scheduler.js"
-      },
-      "./sellability/validation": {
-        "types": "./dist/sellability/validation.d.ts",
-        "import": "./dist/sellability/validation.js",
-        "default": "./dist/sellability/validation.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

@@ -1,6 +1,6 @@
 import { bookingLinkable } from "@voyant-travel/bookings/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { supplierLinkable } from "@voyant-travel/distribution/suppliers/linkables"
+import { supplierLinkable } from "@voyant-travel/distribution/linkables"
 import { invoiceLinkable } from "@voyant-travel/finance/linkables"
 import { inventoryProductCompatibilityLinkable as productLinkable } from "@voyant-travel/inventory/linkables"
 import { organizationLinkable, personLinkable } from "@voyant-travel/relationships/linkables"

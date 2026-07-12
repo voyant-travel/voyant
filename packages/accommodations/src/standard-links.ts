@@ -1,7 +1,7 @@
 import { defineLink } from "@voyant-travel/core"
-import { supplierLinkable } from "@voyant-travel/distribution/suppliers/linkables"
+import { supplierLinkable } from "@voyant-travel/distribution/linkables"
 import { programLinkable } from "@voyant-travel/mice/linkables"
-import { propertyLinkable } from "@voyant-travel/operations/places/linkables"
+import { propertyLinkable } from "@voyant-travel/operations/linkables"
 
 import { roomBlockLinkable } from "./linkables.js"
 

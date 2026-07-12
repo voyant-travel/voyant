@@ -53,7 +53,7 @@ export const distributionVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/distribution#linkable.supplier",
-      source: "@voyant-travel/distribution/suppliers/linkables",
+      source: "@voyant-travel/distribution/linkables",
     },
   ],
   events: [

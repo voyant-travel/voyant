@@ -1,11 +1,8 @@
 import { roomBlockLinkable } from "@voyant-travel/accommodations/linkables"
 import { bookingLinkable } from "@voyant-travel/bookings/linkables"
 import { defineLink } from "@voyant-travel/core"
-import { supplierLinkable } from "@voyant-travel/distribution/suppliers/linkables"
-import {
-  functionSpaceLinkable,
-  spaceBlockLinkable,
-} from "@voyant-travel/operations/places/linkables"
+import { supplierLinkable } from "@voyant-travel/distribution/linkables"
+import { functionSpaceLinkable, spaceBlockLinkable } from "@voyant-travel/operations/linkables"
 import { quoteLinkable } from "@voyant-travel/quotes/linkables"
 import { organizationLinkable, personLinkable } from "@voyant-travel/relationships/linkables"
 

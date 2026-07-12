@@ -182,9 +182,9 @@ export const commerceVoyantModule = defineModule({
       eventFilterId: promotionAffectedAllFilter.id,
       workflowId: "promotions.reindex-all-products",
       filter: promotionAffectedAllFilter,
-      source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest",
+      source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
       runtime: {
-        entry: "./promotions/workflow-bulk-reindex-manifest",
+        entry: "./product-reindex-workflow-manifest",
         export: "promotionAffectedAllFilter",
       },
     },
@@ -196,9 +196,9 @@ export const commerceVoyantModule = defineModule({
         defaultRuntime: "node",
         schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
       },
-      source: "@voyant-travel/commerce/promotions/workflow-boundary-scheduler",
+      source: "@voyant-travel/commerce/promotion-boundary-workflow",
       runtime: {
-        entry: "./promotions/workflow-boundary-scheduler",
+        entry: "./promotion-boundary-workflow",
         export: "promotionBoundarySchedulerWorkflow",
       },
     },
@@ -207,9 +207,9 @@ export const commerceVoyantModule = defineModule({
       config: {
         defaultRuntime: "node",
       },
-      source: "@voyant-travel/commerce/promotions/workflow-bulk-reindex",
+      source: "@voyant-travel/commerce/product-reindex-workflow",
       runtime: {
-        entry: "./promotions/workflow-bulk-reindex",
+        entry: "./product-reindex-workflow",
         export: "bulkReindexProductsWorkflow",
       },
     },

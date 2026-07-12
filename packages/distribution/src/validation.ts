@@ -1,6 +1,9 @@
 import { booleanQueryParam } from "@voyant-travel/db/helpers"
 import { z } from "zod"
 
+export * from "./external-refs/validation.js"
+export * from "./suppliers/validation.js"
+
 const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),

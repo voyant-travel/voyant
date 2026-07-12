@@ -1,10 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type {
-  insertMarketSchema,
-  updateMarketSchema,
-} from "@voyant-travel/commerce/markets/validation"
+import type { insertMarketSchema, updateMarketSchema } from "@voyant-travel/commerce/validation"
 import type { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"

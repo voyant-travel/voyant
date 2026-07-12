@@ -5,12 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./availability": "./src/availability/index.ts",
-    "./availability/slot-timezone": "./src/availability/slot-timezone.ts",
-    "./resources": "./src/resources/index.ts",
-    "./ground": "./src/ground/index.ts",
-    "./places": "./src/places/index.ts",
-    "./places/linkables": "./src/places/linkables.ts",
+    "./linkables": "./src/linkables.ts",
+    "./scheduling": "./src/availability/slot-timezone.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
@@ -62,35 +58,15 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
-      "./availability": {
-        "types": "./dist/availability/index.d.ts",
-        "import": "./dist/availability/index.js",
-        "default": "./dist/availability/index.js"
-      },
-      "./availability/slot-timezone": {
+      "./scheduling": {
         "types": "./dist/availability/slot-timezone.d.ts",
         "import": "./dist/availability/slot-timezone.js",
         "default": "./dist/availability/slot-timezone.js"
       },
-      "./resources": {
-        "types": "./dist/resources/index.d.ts",
-        "import": "./dist/resources/index.js",
-        "default": "./dist/resources/index.js"
-      },
-      "./ground": {
-        "types": "./dist/ground/index.d.ts",
-        "import": "./dist/ground/index.js",
-        "default": "./dist/ground/index.js"
-      },
-      "./places": {
-        "types": "./dist/places/index.d.ts",
-        "import": "./dist/places/index.js",
-        "default": "./dist/places/index.js"
-      },
-      "./places/linkables": {
-        "types": "./dist/places/linkables.d.ts",
-        "import": "./dist/places/linkables.js",
-        "default": "./dist/places/linkables.js"
+      "./linkables": {
+        "types": "./dist/linkables.d.ts",
+        "import": "./dist/linkables.js",
+        "default": "./dist/linkables.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

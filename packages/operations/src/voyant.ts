@@ -38,23 +38,23 @@ export const operationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/operations#linkable.departure",
-      source: "@voyant-travel/operations/availability",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.facility",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.functionSpace",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.property",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.spaceBlock",
-      source: "@voyant-travel/operations/places/linkables",
+      source: "@voyant-travel/operations/linkables",
     },
   ],
   events: [

@@ -559,28 +559,22 @@
         "../commerce/dist/catalog-runtime-extension.d.ts"
       ],
       "@voyant-travel/commerce/checkout": ["../commerce/dist/checkout/index.d.ts"],
-      "@voyant-travel/commerce/markets/validation": ["../commerce/dist/markets/validation.d.ts"],
-      "@voyant-travel/commerce/promotion-redemption-subscriber": [
-        "../commerce/dist/promotions/subscriber-runtime.d.ts"
-      ],
-      "@voyant-travel/commerce/promotions/validation": [
-        "../commerce/dist/promotions/validation.d.ts"
-      ],
-      "@voyant-travel/commerce/promotions/workflow-boundary-scheduler": [
-        "../commerce/dist/promotions/workflow-boundary-scheduler.d.ts"
-      ],
-      "@voyant-travel/commerce/promotions/workflow-bulk-reindex": [
+      "@voyant-travel/commerce/product-reindex-workflow": [
         "../commerce/dist/promotions/workflow-bulk-reindex.d.ts"
       ],
-      "@voyant-travel/commerce/promotions/workflow-bulk-reindex-manifest": [
+      "@voyant-travel/commerce/product-reindex-workflow-manifest": [
         "../commerce/dist/promotions/workflow-bulk-reindex-manifest.d.ts"
+      ],
+      "@voyant-travel/commerce/promotion-boundary-workflow": [
+        "../commerce/dist/promotions/workflow-boundary-scheduler.d.ts"
+      ],
+      "@voyant-travel/commerce/promotion-redemption-subscriber": [
+        "../commerce/dist/promotions/subscriber-runtime.d.ts"
       ],
       "@voyant-travel/commerce/runtime-contributor": ["../commerce/dist/runtime-contributor.d.ts"],
       "@voyant-travel/commerce/runtime-port": ["../commerce/dist/runtime-port.d.ts"],
       "@voyant-travel/commerce/schema": ["../commerce/dist/schema.d.ts"],
-      "@voyant-travel/commerce/sellability/validation": [
-        "../commerce/dist/sellability/validation.d.ts"
-      ],
+      "@voyant-travel/commerce/validation": ["../commerce/dist/validation.d.ts"],
       "@voyant-travel/commerce/voyant": ["../commerce/dist/voyant.d.ts"],
       "@voyant-travel/core": ["../core/dist/index.d.ts"],
       "@voyant-travel/core/container": ["../core/dist/container.d.ts"],
@@ -821,9 +815,7 @@
       "@voyant-travel/distribution/channel-push-workflows": [
         "../distribution/dist/channel-push/workflow-entry.d.ts"
       ],
-      "@voyant-travel/distribution/external-refs/validation": [
-        "../distribution/dist/external-refs/validation.d.ts"
-      ],
+      "@voyant-travel/distribution/linkables": ["../distribution/dist/linkables.d.ts"],
       "@voyant-travel/distribution/payment-policy-runtime": [
         "../distribution/dist/payment-policy-runtime.d.ts"
       ],
@@ -832,9 +824,6 @@
         "../distribution/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/distribution/schema": ["../distribution/dist/schema.d.ts"],
-      "@voyant-travel/distribution/suppliers/linkables": [
-        "../distribution/dist/suppliers/linkables.d.ts"
-      ],
       "@voyant-travel/distribution/validation": ["../distribution/dist/validation.d.ts"],
       "@voyant-travel/distribution/voyant": ["../distribution/dist/voyant.d.ts"],
       "@voyant-travel/extras-contracts": ["../extras-contracts/dist/index.d.ts"],
@@ -1376,20 +1365,16 @@
       "@voyant-travel/operations-react/resources/ui": [
         "../operations-react/dist/resources/ui.d.ts"
       ],
-      "@voyant-travel/operations/availability": ["../operations/dist/availability/index.d.ts"],
-      "@voyant-travel/operations/availability/slot-timezone": [
-        "../operations/dist/availability/slot-timezone.d.ts"
-      ],
       "@voyant-travel/operations/catalog-runtime-extension": [
         "../operations/dist/catalog-runtime-extension.d.ts"
       ],
-      "@voyant-travel/operations/ground": ["../operations/dist/ground/index.d.ts"],
-      "@voyant-travel/operations/places": ["../operations/dist/places/index.d.ts"],
-      "@voyant-travel/operations/places/linkables": ["../operations/dist/places/linkables.d.ts"],
-      "@voyant-travel/operations/resources": ["../operations/dist/resources/index.d.ts"],
+      "@voyant-travel/operations/linkables": ["../operations/dist/linkables.d.ts"],
       "@voyant-travel/operations/routes": ["../operations/dist/routes.d.ts"],
       "@voyant-travel/operations/runtime-contributor": [
         "../operations/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/operations/scheduling": [
+        "../operations/dist/availability/slot-timezone.d.ts"
       ],
       "@voyant-travel/operations/schema": ["../operations/dist/schema.d.ts"],
       "@voyant-travel/operations/validation": ["../operations/dist/validation.d.ts"],

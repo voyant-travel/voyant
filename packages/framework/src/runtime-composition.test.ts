@@ -485,7 +485,7 @@ describe("graph runtime composition", () => {
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:without-commerce",
       entries: {
-        "@voyant-travel/commerce/promotions/workflow-bulk-reindex": importCommerce,
+        "@voyant-travel/commerce/product-reindex-workflow": importCommerce,
       },
       modules: [],
       plugins: [],

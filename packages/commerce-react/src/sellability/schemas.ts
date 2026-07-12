@@ -2,7 +2,7 @@ import {
   insertSellabilityPolicySchema,
   sellabilityPolicyScopeSchema,
   sellabilityPolicyTypeSchema,
-} from "@voyant-travel/commerce/sellability/validation"
+} from "@voyant-travel/commerce/validation"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
