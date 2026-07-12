@@ -29,10 +29,7 @@
     ]
   ],
   "linked": [],
-  "ignore": [
-    "@voyant-travel/voyant-test-utils",
-    "@voyant-travel/voyant-typescript-config"
-  ],
+  "ignore": ["@voyant-travel/voyant-test-utils", "@voyant-travel/voyant-typescript-config"],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch"
