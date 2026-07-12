@@ -42,6 +42,7 @@
     "./authoring/spec": "./src/authoring/spec.ts",
     "./authoring/extension": "./src/authoring/extension.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -283,6 +284,11 @@
         "types": "./dist/graph-runtime.d.ts",
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

@@ -33,15 +33,9 @@ import { createFinanceRuntimePortContribution } from "@voyant-travel/finance/run
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
-import {
-  inventoryBrochureRuntimePort,
-  inventoryRuntimePort,
-} from "@voyant-travel/inventory/graph-runtime"
-import { legalContractDocumentRuntimePort, legalRuntimePort } from "@voyant-travel/legal"
-import {
-  type LegalBookingContractSubscriberRuntime,
-  legalBookingContractSubscriberRuntimePort,
-} from "@voyant-travel/legal/booking-contract-subscriber"
+import { createInventoryRuntimePortContribution } from "@voyant-travel/inventory/runtime-contributor"
+import type { LegalBookingContractSubscriberRuntime } from "@voyant-travel/legal/booking-contract-subscriber"
+import { createLegalRuntimePortContribution } from "@voyant-travel/legal/runtime-contributor"
 import { miceRuntimePort } from "@voyant-travel/mice"
 import { notificationsRuntimePort } from "@voyant-travel/notifications"
 import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"
@@ -49,13 +43,8 @@ import { createQuotesRuntimePortContribution } from "@voyant-travel/quotes/runti
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
-import {
-  type StorefrontIntakePersistence,
-  storefrontCustomerPortalRuntimePort,
-  storefrontPaymentLinkRuntimePort,
-  storefrontRuntimePort,
-  storefrontVerificationRuntimePort,
-} from "@voyant-travel/storefront"
+import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
+import { createStorefrontRuntimePortContribution } from "@voyant-travel/storefront/runtime-contributor"
 import {
   type TripsDatabaseRuntime,
   tripsDatabaseRuntimePort,
@@ -240,24 +229,20 @@ function createDeploymentPortResources(
       })),
     }),
     [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost,
-    [storefrontRuntimePort.id]: createOperatorStorefrontRuntimeProvider(capabilities),
-    [storefrontPaymentLinkRuntimePort.id]: import("./payment-link-runtime").then((runtime) =>
-      runtime.createOperatorPaymentLinkRouteOptions(),
-    ),
-    [storefrontCustomerPortalRuntimePort.id]: runtimePortValue(
-      storefrontCustomerPortalRuntimePort,
-      {
+    ...createStorefrontRuntimePortContribution({
+      storefront: createOperatorStorefrontRuntimeProvider(capabilities),
+      paymentLink: import("./payment-link-runtime").then((runtime) =>
+        runtime.createOperatorPaymentLinkRouteOptions(),
+      ),
+      customerPortal: {
         resolveDocumentDownloadUrl: (bindings, storageKey) =>
           capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
       },
-    ),
-    [storefrontVerificationRuntimePort.id]: {
-      resolveProviders: capabilities.resolveNotificationProviders,
-      email: { subject: "Your verification code" },
-    },
-    [legalContractDocumentRuntimePort.id]: import("./contract-document-runtime").then((runtime) =>
-      runtime.createOperatorContractDocumentRoutesOptions(),
-    ),
+      verification: {
+        resolveProviders: capabilities.resolveNotificationProviders,
+        email: { subject: "Your verification code" },
+      },
+    }),
     ...createCatalogRuntimePortContribution({
       search: {
         resolveRuntime: capabilities.resolveCatalogRuntime,
@@ -317,13 +302,15 @@ function createDeploymentPortResources(
           ),
       },
     }),
-    [inventoryRuntimePort.id]: runtimePortValue(inventoryRuntimePort, {
-      bootstrap: ({ container, bindings }) =>
-        registerInventoryWorkflowService(container, bindings as AppBindings),
+    ...createInventoryRuntimePortContribution({
+      inventory: {
+        bootstrap: ({ container, bindings }) =>
+          registerInventoryWorkflowService(container, bindings as AppBindings),
+      },
+      brochure: import("./media-runtime").then(
+        (runtime) => runtime.operatorInventoryBrochureRuntime,
+      ),
     }),
-    [inventoryBrochureRuntimePort.id]: import("./media-runtime").then(
-      (runtime) => runtime.operatorInventoryBrochureRuntime,
-    ),
     [cruisesRoutesRuntimePort.id]: {
       resolveSourceAdapterRegistry: (bindings: unknown) =>
         import("../lib/booking-engine-runtime").then((runtime) =>
@@ -340,40 +327,45 @@ function createDeploymentPortResources(
       (runtime) => runtime.operatorFlightsRuntime,
     ),
     [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider(),
-    [legalRuntimePort.id]: {
-      resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
-      resolveDocumentStorage: createOperatorDocumentStorage,
-      resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
-      resolveBookingPiiService: createOperatorBookingPiiService,
-    },
-    [legalBookingContractSubscriberRuntimePort.id]: {
-      createRuntime(bindings: unknown): LegalBookingContractSubscriberRuntime | null {
-        const documentGenerator = resolveOperatorContractDocumentGenerator(bindings)
-        if (!documentGenerator) {
-          console.error(
-            "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
-          )
-          return null
-        }
-        return {
-          options: AUTO_GENERATE_CONTRACT_OPTIONS,
-          withDb: (runtimeBindings, operation) =>
-            withDbFromEnv(operatorBindings(runtimeBindings), (db) =>
-              operation(operatorPostgresDb(db)),
-            ),
-          documentGenerator,
-          documentStorage: createOperatorDocumentStorage(bindings),
-          resolveBookingPiiService: () => createOperatorBookingPiiService(bindings),
-          resolveVariables: AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
-          resolveActionLedgerContext: (event) => ({
-            userId: event.actorId,
-            actor: event.actorId ? "staff" : "system",
-            callerType: "internal",
-            isInternalRequest: true,
-          }),
-        }
+    ...createLegalRuntimePortContribution({
+      legal: {
+        resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
+        resolveDocumentStorage: createOperatorDocumentStorage,
+        resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
+        resolveBookingPiiService: createOperatorBookingPiiService,
       },
-    },
+      contractDocument: import("./contract-document-runtime").then((runtime) =>
+        runtime.createOperatorContractDocumentRoutesOptions(),
+      ),
+      bookingContractSubscriber: {
+        createRuntime(bindings: unknown): LegalBookingContractSubscriberRuntime | null {
+          const documentGenerator = resolveOperatorContractDocumentGenerator(bindings)
+          if (!documentGenerator) {
+            console.error(
+              "[legal] autoGenerateContractOnConfirmed.enabled=true but no documentGenerator resolved; skipping subscriber.",
+            )
+            return null
+          }
+          return {
+            options: AUTO_GENERATE_CONTRACT_OPTIONS,
+            withDb: (runtimeBindings, operation) =>
+              withDbFromEnv(operatorBindings(runtimeBindings), (db) =>
+                operation(operatorPostgresDb(db)),
+              ),
+            documentGenerator,
+            documentStorage: createOperatorDocumentStorage(bindings),
+            resolveBookingPiiService: () => createOperatorBookingPiiService(bindings),
+            resolveVariables: AUTO_GENERATE_CONTRACT_OPTIONS.resolveVariables,
+            resolveActionLedgerContext: (event) => ({
+              userId: event.actorId,
+              actor: event.actorId ? "staff" : "system",
+              callerType: "internal",
+              isInternalRequest: true,
+            }),
+          }
+        },
+      },
+    }),
     [channelPushRuntimePort.id]: import("./channel-push-runtime").then(
       (runtime) => runtime.operatorChannelPushRuntime,
     ),

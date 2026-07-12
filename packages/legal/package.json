@@ -28,6 +28,7 @@
     "./policies/validation": "./src/policies/validation.ts",
     "./policies/routes": "./src/policies/routes.ts",
     "./policies/service": "./src/policies/service.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -194,6 +195,11 @@
         "types": "./dist/policies/service.d.ts",
         "import": "./dist/policies/service.js",
         "default": "./dist/policies/service.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
