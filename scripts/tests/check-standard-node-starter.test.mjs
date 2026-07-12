@@ -16,7 +16,10 @@ afterEach(() => {
 
 test("accepts the strict generated standard Node starter shape", () => {
   const root = fixture()
-  assert.match(run(root), /4 authored files, generic Node bootstrap, no product authority/)
+  assert.match(
+    run(root),
+    /packaged: 4 authored files; checked-in: no database authority; generic Node bootstrap/,
+  )
 })
 
 test("rejects an environment example without a DATABASE_URL assignment", () => {
@@ -113,16 +116,28 @@ test("rejects a missing optional project convention directory", () => {
   )
 })
 
-function run(starterDir) {
-  return execFileSync(
-    process.execPath,
-    [checker, "--root", repoRoot, "--starter-dir", starterDir],
-    {
-      cwd: repoRoot,
-      encoding: "utf8",
-      stdio: "pipe",
-    },
+test("rejects database authority in the checked-in starter", () => {
+  const starter = fixture()
+  const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+  roots.push(root)
+  const artifact = join(root, "starters/operator/drizzle.schemas.generated.ts")
+  mkdirSync(dirname(artifact), { recursive: true })
+  writeFileSync(artifact, "export const schema = []\n")
+  assert.throws(
+    () => run(starter, root),
+    (error) =>
+      String(error.stderr).includes(
+        "checked-in starter must not own database artifact starters/operator/drizzle.schemas.generated.ts",
+      ),
   )
+})
+
+function run(starterDir, root = repoRoot) {
+  return execFileSync(process.execPath, [checker, "--root", root, "--starter-dir", starterDir], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  })
 }
 
 function fixture(overrides = {}) {

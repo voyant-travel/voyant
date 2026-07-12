@@ -32,7 +32,7 @@ try {
     process.exitCode = 1
   } else {
     console.log(
-      "check-standard-node-starter: OK (4 authored files, generic Node bootstrap, no product authority)",
+      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no database authority; generic Node bootstrap)",
     )
   }
 } finally {
@@ -195,6 +195,19 @@ function inspectRepositoryAuthority(repoRoot) {
     violations.push(
       "packages/cli must not exist; CLI implementation belongs to the separate voyant-travel/cli repository",
     )
+  }
+
+  for (const relativePath of [
+    "starters/operator/drizzle.config.ts",
+    "starters/operator/drizzle.deployment-migrations.config.ts",
+    "starters/operator/drizzle.framework-bundle.config.ts",
+    "starters/operator/drizzle.links.generated.ts",
+    "starters/operator/drizzle.schemas.generated.ts",
+    "starters/operator/migrations",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`checked-in starter must not own database artifact ${relativePath}`)
+    }
   }
 
   const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")

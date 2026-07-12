@@ -7,6 +7,5 @@ export default defineConfig({
     providers: {
       database: "postgres",
     },
-    migrations: [{ id: "deployment", source: "./migrations" }],
   },
 })

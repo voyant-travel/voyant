@@ -8,6 +8,13 @@
       "when": 1781947493896,
       "tag": "0000_legal_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783900800000,
+      "tag": "20260713000400_standard_links",
+      "breakpoints": true
     }
   ]
 }

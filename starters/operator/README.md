@@ -70,14 +70,16 @@ a legacy fallback for both of those specialized keys.
 
 ## Database
 
-The starter owns its `drizzle.config.ts` and `migrations/`:
+Selected packages own and publish their migration histories. The project graph
+orders those package migrations and the Node runner applies them:
 
 ```bash
-pnpm -F operator db:generate   # generate new migration from schema changes
-pnpm -F operator db:migrate    # apply migrations
-pnpm -F operator db:push       # push schema directly (dev only)
-pnpm -F operator db:studio     # open Drizzle Studio
+pnpm -F operator db:migrate
 ```
+
+Project-local modules keep schema and migrations together under
+`src/modules/<name>/`; the starter does not maintain an aggregate Drizzle schema
+or copy framework migrations.
 
 ## Deploy
 

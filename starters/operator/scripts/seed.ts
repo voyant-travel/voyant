@@ -157,8 +157,8 @@ function parseDotEnv(path: string): Record<string, string> {
 }
 
 /**
- * Match drizzle.config.ts load order with `.env` as the final local
- * override. This keeps seed, migrate, and local worker runtime aligned.
+ * Match the Node runtime's environment load order with `.env` as the final
+ * local override. This keeps seed, migrate, and local runtime aligned.
  */
 function loadEnv(): Record<string, string> {
   const merged: Record<string, string> = {}

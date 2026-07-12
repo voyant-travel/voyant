@@ -7,23 +7,22 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 
 describe("operator action ledger schema mounting", () => {
   it("keeps the action ledger schema in the migration schema set", () => {
-    // drizzle.config consumes the generated manifest (derived from
-    // voyant.config.ts), which must still include the action-ledger schema.
-    const config = readFileSync(resolve(repoRoot, "starters/operator/drizzle.config.ts"), "utf8")
-    expect(config).toContain("./drizzle.schemas.generated.ts")
-
-    const generated = readFileSync(
-      resolve(repoRoot, "starters/operator/drizzle.schemas.generated.ts"),
-      "utf8",
-    )
-    expect(generated).toContain("../../packages/action-ledger/src/schema.ts")
+    const artifacts = JSON.parse(
+      readFileSync(
+        resolve(repoRoot, "starters/operator/.voyant/deployment-artifacts.generated.json"),
+        "utf8",
+      ),
+    ) as { migrationSources: Array<{ packageName: string; schema: string }> }
+    expect(artifacts.migrationSources).toContainEqual({
+      packageName: "@voyant-travel/action-ledger",
+      schema: "@voyant-travel/action-ledger/schema",
+    })
   })
 
   it("keeps the action ledger migration in the framework bundle", () => {
     // The action ledger is package-owned: its CREATE TABLEs ship in the
     // framework migration bundle (collector source `framework`), not in the
-    // deployment's own ./migrations folder (which holds only link tables +
-    // custom modules since the single-folder collapse).
+    // a deployment-owned aggregate migration folder.
     const migration = readFileSync(
       resolve(repoRoot, "packages/framework-migrations/migrations/0000_framework_baseline.sql"),
       "utf8",

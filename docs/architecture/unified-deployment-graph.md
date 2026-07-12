@@ -790,8 +790,8 @@ Richer cross-module link behavior is deferred:
 - cross-module hydration policy
 - link-aware permission policy
 
-Until those ship, link tables and deployment-local link migrations should keep
-using the existing link machinery.
+Until those ship, link tables keep using the existing link machinery, with DDL
+owned by the package that declares each link facet.
 
 ## Lifecycle
 
@@ -1325,12 +1325,12 @@ every package-backed migration source selected into the graph.
 The deployment artifact manifest records package-backed migration sources
 directly from selected package manifests. Runtime migration execution derives
 the dependency-ordered plan from those same selected graph units, resolves each
-package's migration folder through the D.2 collector, and applies explicit
-deployment-local migrations last. Deselecting a package therefore removes its
-schema migration from both the artifact and executable plan. The committed
-`drizzle.schemas.generated.ts` remains a Drizzle generation and replay-parity
-input; it is not migration selection authority. Graph artifact validation
-rejects sources that are not represented in graph package records.
+package's migration folder through the D.2 collector. Deselecting a package
+therefore removes its schema migration from both the artifact and executable
+plan. The generated plan under `.voyant/` is the only project-level migration
+synthesis; the starter commits no aggregate Drizzle schema, generated link
+schema, or deployment migration folder. Graph artifact validation rejects
+sources that are not represented in graph package records.
 
 The operator graph now also lowers the first declarative workflow/event-filter
 pair from first-party metadata: commerce contributes
@@ -1459,9 +1459,9 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | Identity, selection, package metadata, admission | Deterministic v1 graph, package records, generated operator units, managed-profile compatibility | Package exports `voyant.package.v1` plus import-cheap `./voyant`; project explicitly selects normalized module/plugin package or path references | Phase 0 | Direct package resolution matches the bridge graph; no operator package catalog is consulted | #3080 |
 | Capabilities | Package manifests and resolved graph `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | No central capability projection exists; package removal still produces stable resolution diagnostics | #3080 |
 | Typed ports, providers, adapters | First public-port slice plus broad `FrameworkProviders` container and starter factories | Port-owning package exports contract and conformance kit; module declares requirements; plugin-distributed providers declare provisions; deployment selects routing/defaults only where needed | Capabilities, runtime contract, test harness | Selected providers satisfy facets and kits; no package-specific starter provider entry is required | #3080, demand-driven replacement |
-| Schema and migrations | D.2 collector, generated schema manifest, operator migration-source artifact, ADR-0007 monolithic bundle | Schema-owning package declares schema and ships namespaced migrations; project owns only cross-package link/deployment-local migrations | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
+| Schema and migrations | D.2 collector, graph migration plan, frozen transition bundle | Schema-owning packages ship append-only migrations, including the cross-package links they declare; the starter owns no aggregate schema or migration history | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
 | Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |
-| Linkables and links | Selected graph link facets with symbolic named exports and deployment-local link migrations | Reference-owning package declares neutral pair links; the product BOM explicitly selects genuinely ownerless pairs; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
+| Linkables and links | Selected graph link facets with symbolic named exports and package-owned link migrations | Reference-owning package declares neutral pair links; the product BOM explicitly selects genuinely ownerless pairs; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and DDL resolve without starter link lists or generated starter schemas | #3080 |
 | Runtime config | Managed profile settings and deployment config bridges | Package declares typed config contract; project supplies portable non-secret values | Package manifests | Defaults/values validate before build and package code no longer reads profile settings directly | #3080 |
 | Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds provider-specific sources; runtime receives typed redacted handles | Runtime config, Node host adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no provider env names | #3080 |
 | API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |

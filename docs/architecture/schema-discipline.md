@@ -102,32 +102,27 @@ clauses).
 
 ## Migration generation & ordering
 
-A template's Drizzle schema set is **derived from package/local manifests
-selected by `voyant.config.ts`**, not hand-listed in config. Package schema and
-migration facets plus transitive schema requirements are resolved into a
-committed `drizzle.schemas.generated.ts`; generated project links are appended.
-See
-[`migration-resilience-rfc.md`](./migration-resilience-rfc.md) (voyant#1608).
+A deployment's schema migration plan is **derived from package manifests
+selected by `voyant.config.ts`**, not hand-listed in starter config. Package
+schema and migration facets plus transitive schema requirements are resolved
+into disposable `.voyant/` graph artifacts.
 
 Rules:
 
-- **Never hand-edit the schema list** in `drizzle.config.ts`. Select the owning
-  module/plugin in `voyant.config.ts` and run `voyant db generate`
-  (or `voyant db schemas --emit`) to refresh the generated manifest.
+- **Never copy package schemas or migrations into a starter.** Select the owning
+  module/plugin in `voyant.config.ts`; the graph migration plan consumes its
+  published migration history.
 - **New migrations use timestamp prefixes.** `voyant db generate` defaults to
   `--prefix timestamp`, so concurrently-authored migrations never collide on a
   sequential index. The pre-existing sequential migrations stay as-is.
 - **Pre-existing duplicate prefixes are baselined**, not rewritten, in
   `migrations/duplicate-prefixes.baseline.json`. `voyant db doctor` fails only
   on *new* (un-baselined) collisions.
-- **Cross-module link tables are folded into the migration history.** Generate
-  their Drizzle definitions with `voyant db sync-links --emit-drizzle` (writes
-  `drizzle.links.generated.ts`, referenced from the manifest's `schemas`), then
-  `voyant db generate` so Drizzle owns their diff/snapshot — instead of applying
-  them out-of-band via raw `sync-links` DDL.
+- **Cross-module link tables are owned by the package declaring the link.** Its
+  append-only migration must safely adopt an object created by the retired
+  deployment migration history.
 - **`voyant db doctor --fail-on-drift` gates CI** — it cross-checks manifest
   resolvability, schema parity, generated-manifest freshness, duplicate prefixes
   (vs the baseline), and that every link table is in the latest snapshot.
 
-Generated files (`*.generated.ts`) are excluded from formatting so
-`voyant db generate` is a no-op when nothing changed.
+Generated project artifacts live only under `.voyant/` and are disposable.

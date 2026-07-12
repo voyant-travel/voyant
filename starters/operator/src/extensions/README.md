@@ -29,18 +29,7 @@ export default defineDeploymentExtension({
 `extension.name` is this extension's own identifier. The directory name is the
 composition key.
 
-## schema.ts — migrations (optional)
-
-If the extension owns tables, define them in `src/extensions/<name>/schema.ts` —
-they are picked up by the deployment drizzle config and migrated as a deployment
-source (after the framework bundle), exactly like custom-module schema:
-
-```sh
-pnpm db:generate:deployment   # emit into migrations/
-pnpm db:migrate               # collector applies it
-```
-
-Reference framework tables with plain `text()` id columns + `defineLink`, not
-hard cross-module FKs.
+Schema-bearing reusable extensions own schema and migrations in their package.
+Project-local extensions are runtime-only until promoted to that package shape.
 
 See `docs/architecture/custom-modules.md` for the full guide.
