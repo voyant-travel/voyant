@@ -87,7 +87,8 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       graph.modules.some(
         (unit) =>
           unit.localId === "storefront" &&
-          unit.api?.some((api) => api.surface === "public" && api.mount === "/"),
+          unit.api?.some((api) => api.surface === "public" && api.mount === "/") &&
+          unit.runtimePorts?.some((port) => port.id === "storefront.offers-runtime"),
       ),
     )
     assert.equal(bom.productBom.id, "@voyant-travel/operator-standard")
@@ -102,7 +103,6 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
     assert.match(projectRuntime, /createRuntimePorts: createGeneratedGraphRuntimePorts/)
     assert.match(projectRuntime, /GENERATED_GRAPH_RUNTIME_CONTRIBUTORS/)
     assert.match(projectRuntime, /@voyant-travel\/storefront\/runtime-contributor/)
-    assert.match(projectRuntime, /storefront\.offers-runtime/)
     assert.doesNotMatch(projectRuntime, /createVoyantGraphRuntimePortStubs/)
 
     exec(
