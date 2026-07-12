@@ -7,6 +7,7 @@ const FORBIDDEN_TOKENS = [
   "manifests/webhooks.json",
   "npm/operator#mcp",
   "OPERATOR_LOCAL_MODULE_IDS",
+  "mcpRuntimePort",
 ]
 
 const REQUIRED_TOKENS = new Map([
@@ -15,18 +16,29 @@ const REQUIRED_TOKENS = new Map([
     [
       "defineModule",
       'id: "@voyant-travel/mcp"',
-      "runtimePorts:",
       'mount: "mcp"',
       'entry: "@voyant-travel/mcp/runtime"',
     ],
   ],
   [
     "packages/mcp/src/runtime.ts",
-    ["defineGraphRuntimeFactory", "mcpRuntimePort", "createGraphMcpHonoApp"],
+    [
+      "defineGraphRuntimeFactory",
+      "createGraphMcpHonoApp",
+      "graph, runtimePorts",
+      "buildMcpBaseContext",
+    ],
   ],
-  ["packages/mcp/src/runtime-port.ts", ['id: "mcp.runtime"']],
+  [
+    "packages/core/src/project.ts",
+    ["VoyantGraphRuntimeFactoryGraph", "readonly graph:", "readonly runtimePorts:"],
+  ],
+  [
+    "packages/framework/src/runtime-composition.ts",
+    ["graph: runtime", "runtimePorts: ports ?? {}"],
+  ],
   ["packages/framework/src/operator-distribution.ts", ['resolve: "@voyant-travel/mcp"']],
-  ["starters/operator/src/api/app.ts", ["mcpRuntimePort.id", "runtime: graphRuntime"]],
+  ["starters/operator/src/api/app.ts", ["composeVoyantGraphRuntime", "...deploymentResources"]],
 ])
 
 export function inspectPhase5ToolsMcpAuthority(files) {
@@ -34,6 +46,11 @@ export function inspectPhase5ToolsMcpAuthority(files) {
   const compatibilityModule = "starters/operator/src/modules/mcp/index.ts"
   if (files.has(compatibilityModule)) {
     failures.push(`${compatibilityModule}: Operator-local MCP compatibility module must be removed`)
+  }
+  if (files.has("packages/mcp/src/runtime-port.ts")) {
+    failures.push(
+      "packages/mcp/src/runtime-port.ts: MCP must consume generic graph factory context",
+    )
   }
 
   for (const [file, tokens] of REQUIRED_TOKENS) {

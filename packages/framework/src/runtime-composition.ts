@@ -577,6 +577,7 @@ async function resolveRuntimeUnit<TCapabilities>(
 }
 
 function createRuntimeFactoryContext(
+  runtime: VoyantGraphRuntime,
   ports: VoyantGraphRuntimePorts | undefined,
   unit: VoyantGraphRuntimeUnitLoader,
 ): VoyantGraphRuntimeFactoryContext {
@@ -584,6 +585,8 @@ function createRuntimeFactoryContext(
     unitId: unit.id,
     projectConfig: unit.projectConfig,
     api: unit.routes.map(({ route }) => ({ id: route.id, surface: route.surface })),
+    graph: runtime,
+    runtimePorts: ports ?? {},
     hasPort: <TProvider>(port: VoyantPort<TProvider>): boolean => {
       assertDeclaredRuntimePort(unit, port)
       return Object.hasOwn(ports ?? {}, port.id)
@@ -612,7 +615,7 @@ function createRuntimeFactoryContexts(
   return new Map(
     [...runtime.modules, ...runtime.extensions, ...runtime.plugins].map((unit) => [
       unit,
-      createRuntimeFactoryContext(ports, unit),
+      createRuntimeFactoryContext(runtime, ports, unit),
     ]),
   )
 }

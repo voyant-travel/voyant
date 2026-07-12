@@ -7,7 +7,12 @@ import { inspectPhase5ToolsMcpAuthority } from "./lib/phase5-tools-mcp-authority
 const defaultRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const rootArg = process.argv.indexOf("--root")
 const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaultRoot
-const roots = ["packages/framework/src", "packages/mcp", "starters/operator/src"]
+const roots = [
+  "packages/core/src",
+  "packages/framework/src",
+  "packages/mcp",
+  "starters/operator/src",
+]
 const files = new Map()
 
 for (const root of roots) await collect(path.join(repoRoot, root))

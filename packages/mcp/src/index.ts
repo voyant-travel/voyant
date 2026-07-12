@@ -1,4 +1,3 @@
-export { type McpRuntimeProvider, mcpRuntimePort } from "./runtime-port.js"
 export {
   createGraphMcpHonoApp,
   createMcpHonoApp,

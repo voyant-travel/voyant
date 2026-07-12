@@ -91,12 +91,29 @@ export async function assertPortConforms<TProvider>(
   await port.test(provider)
 }
 
+export interface VoyantGraphRuntimeFactoryGraph {
+  readonly tools: readonly {
+    readonly referenceId: string
+    readonly context?: readonly string[]
+    load<T = unknown>(): Promise<T>
+  }[]
+  readonly references: readonly {
+    readonly id: string
+    readonly importEntry: string
+    loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
+  }[]
+}
+
 export interface VoyantGraphRuntimeFactoryContext {
   readonly unitId: string
   /** Validated JSON config authored on this package-scoped project selection. */
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
   /** API facets selected for this runtime unit in the resolved graph. */
   readonly api: readonly Readonly<Pick<VoyantGraphRouteBundle, "id" | "surface">>[]
+  /** Import-capable selected graph view for generic graph consumers such as MCP. */
+  readonly graph: VoyantGraphRuntimeFactoryGraph
+  /** Selected deployment providers keyed by their declared runtime-port id. */
+  readonly runtimePorts: Readonly<Record<string, unknown>>
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
 }

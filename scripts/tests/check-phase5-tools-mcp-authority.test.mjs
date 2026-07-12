@@ -14,15 +14,19 @@ function validFixture() {
     ],
     [
       "packages/mcp/src/voyant.ts",
-      'defineModule({ id: "@voyant-travel/mcp", runtimePorts: [], api: [{ mount: "mcp", runtime: { entry: "@voyant-travel/mcp/runtime" } }] })',
+      'defineModule({ id: "@voyant-travel/mcp", api: [{ mount: "mcp", runtime: { entry: "@voyant-travel/mcp/runtime" } }] })',
     ],
     [
       "packages/mcp/src/runtime.ts",
-      "defineGraphRuntimeFactory(() => mcpRuntimePort && createGraphMcpHonoApp())",
+      "defineGraphRuntimeFactory(({ graph, runtimePorts }) => createGraphMcpHonoApp({ graph, runtimePorts, buildMcpBaseContext }))",
     ],
-    ["packages/mcp/src/runtime-port.ts", 'definePort({ id: "mcp.runtime" })'],
+    [
+      "packages/core/src/project.ts",
+      "VoyantGraphRuntimeFactoryGraph readonly graph: readonly runtimePorts:",
+    ],
+    ["packages/framework/src/runtime-composition.ts", "graph: runtime runtimePorts: ports ?? {}"],
     ["packages/framework/src/operator-distribution.ts", 'resolve: "@voyant-travel/mcp"'],
-    ["starters/operator/src/api/app.ts", "ports[mcpRuntimePort.id] = { runtime: graphRuntime }"],
+    ["starters/operator/src/api/app.ts", "composeVoyantGraphRuntime({ ...deploymentResources })"],
     ["packages/framework/src/project-resolver.ts", "buildProjectRuntimeModule(graph)"],
   ])
 }
@@ -56,5 +60,14 @@ describe("Phase 5 tools/MCP authority checker", () => {
     const failures = inspectPhase5ToolsMcpAuthority(files).join("\n")
     assert.match(failures, /voyant metadata/)
     assert.match(failures, /runtime and voyant exports/)
+  })
+
+  it("rejects an app-specific MCP runtime port", () => {
+    const files = validFixture()
+    files.set("packages/mcp/src/runtime-port.ts", 'definePort({ id: "mcp.runtime" })')
+    files.set("starters/operator/src/api/app.ts", "mcpRuntimePort")
+    const failures = inspectPhase5ToolsMcpAuthority(files).join("\n")
+    assert.match(failures, /generic graph factory context/)
+    assert.match(failures, /mcpRuntimePort/)
   })
 })

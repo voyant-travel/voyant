@@ -1,6 +1,7 @@
 import { defineToolContextContribution, requireService } from "@voyant-travel/tools"
 import type { Context } from "hono"
 import type { TripsRoutesOptions } from "./routes.js"
+import { tripsRoutesRuntimePort } from "./runtime-port.js"
 import { tripsService } from "./service.js"
 import type { TripsToolServices } from "./tools.js"
 
@@ -8,12 +9,17 @@ export * from "./tools.js"
 
 export const voyantToolContextContribution = defineToolContextContribution({
   context: ["trips"],
-  contribute: ({ request, resources }) => {
+  async contribute({ request, resources }) {
     const c = request as Context
-    const options = requireService(
-      resources.trips as TripsRoutesOptions | undefined,
-      "trips MCP resource",
+    const provider = await Promise.resolve(
+      requireService(
+        resources[tripsRoutesRuntimePort.id] as
+          | (() => TripsRoutesOptions | Promise<TripsRoutesOptions>)
+          | undefined,
+        tripsRoutesRuntimePort.id,
+      ),
     )
+    const options = await provider()
     const trips: TripsToolServices = {
       createTrip: (input) => tripsService.createTrip(c.var.db, input),
       addComponent: (input) => tripsService.addComponent(c.var.db, input),
