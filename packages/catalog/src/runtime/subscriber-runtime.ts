@@ -34,7 +34,7 @@ export function createOperatorCatalogProjectionRuntime(
 ): CatalogProjectionRuntime {
   const env = bindings as CatalogSubscriberBindings
   const sellerOperatorId = env.TENANT_ID ?? "default"
-  return createCatalogProjectionRuntimeAdapter({
+  return createCatalogProjectionRuntimeAdapter<CatalogSubscriberBindings, AnyDrizzleDb>({
     bindings: env,
     withDb: (bindings, operation) =>
       catalogRuntimeHost().database.transaction(bindings, (database) =>
@@ -59,7 +59,7 @@ export function createOperatorCatalogBookingSnapshotRuntime(
 ): CatalogBookingSnapshotRuntime {
   const env = bindings as CatalogSubscriberBindings
 
-  return createCatalogBookingSnapshotRuntimeAdapter({
+  return createCatalogBookingSnapshotRuntimeAdapter<CatalogSubscriberBindings, AnyDrizzleDb>({
     bindings: env,
     withDb: (bindings, operation) =>
       catalogRuntimeHost().database.transaction(bindings, (database) =>
@@ -71,7 +71,7 @@ export function createOperatorCatalogBookingSnapshotRuntime(
         db,
         sellerOperatorId,
         findBookingProductIds: async (bookingId) => {
-          const items = await db
+          const items: { productId: string | null }[] = await db
             .select({ productId: bookingItems.productId })
             .from(bookingItems)
             .where(and(eq(bookingItems.bookingId, bookingId), isNotNull(bookingItems.productId)))

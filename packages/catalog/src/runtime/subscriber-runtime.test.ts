@@ -45,7 +45,10 @@ describe("Operator Catalog subscriber runtime ports", () => {
     configureCatalogRuntimeHost(
       {
         database: {
-          transaction: async (_bindings, operation) => operation(db),
+          transaction: async <T>(
+            _bindings: unknown,
+            operation: (database: unknown) => Promise<T>,
+          ) => operation(db),
         },
       } as never,
       { inventory: { buildSnapshotInput: buildProductSnapshotInput } } as never,

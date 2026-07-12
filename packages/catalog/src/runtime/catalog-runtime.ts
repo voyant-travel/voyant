@@ -76,11 +76,11 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
   if (!_registries) {
     const { accommodations, charters, cruises, inventory } = catalogRuntimeExtensions()
     _registries = new Map<string, FieldPolicyRegistry>([
-      ["products", createFieldPolicyRegistry(inventory.productFieldPolicy)],
-      ["extras", createFieldPolicyRegistry(inventory.extrasFieldPolicy)],
+      ["products", createFieldPolicyRegistry([...inventory.productFieldPolicy])],
+      ["extras", createFieldPolicyRegistry([...inventory.extrasFieldPolicy])],
       ["cruises", cruises.createRegistry(cruises.fieldPolicy)],
-      ["charters", createFieldPolicyRegistry(charters.fieldPolicy)],
-      ["accommodations", createFieldPolicyRegistry(accommodations.fieldPolicy)],
+      ["charters", createFieldPolicyRegistry([...charters.fieldPolicy])],
+      ["accommodations", createFieldPolicyRegistry([...accommodations.fieldPolicy])],
     ])
   }
   return _registries
