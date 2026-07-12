@@ -23,7 +23,7 @@ vi.mock("@voyant-travel/inventory/service-catalog-plane", () => ({
   buildProductSnapshotInput,
 }))
 
-vi.mock("../lib/catalog-runtime", () => ({
+vi.mock("@voyant-travel/catalog/standard-node/catalog-runtime", () => ({
   buildEmbeddingProvider: () => undefined,
   buildTypesenseIndexer: () => ({}),
   createProductsDocumentBuilder: () => vi.fn(),
@@ -32,20 +32,21 @@ vi.mock("../lib/catalog-runtime", () => ({
   withEmbedding: (builder: unknown) => builder,
 }))
 
-vi.mock("../lib/db", () => ({
-  withDbFromEnv: async (_env: unknown, operation: (value: unknown) => Promise<unknown>) =>
-    operation(db),
-}))
-
+import { configureCatalogStandardNodeHost } from "@voyant-travel/catalog/standard-node/host"
 import {
   createOperatorCatalogBookingSnapshotRuntime,
   createOperatorCatalogProjectionRuntime,
-} from "./catalog-subscriber-runtime"
+} from "@voyant-travel/catalog/standard-node/subscriber-runtime"
 
 describe("Operator Catalog subscriber runtime ports", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ensureCollections.mockResolvedValue(undefined)
+    configureCatalogStandardNodeHost({
+      database: {
+        transaction: async (_bindings, operation) => operation(db),
+      },
+    } as never)
   })
 
   it("preserves publication reindex semantics", async () => {

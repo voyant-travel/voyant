@@ -11,10 +11,10 @@
  * projection extensions).
  */
 
-import type { IndexerSlice } from "@voyant-travel/catalog"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { channelProductMappings, channels } from "@voyant-travel/distribution"
 import { and, eq } from "drizzle-orm"
+import type { IndexerSlice } from "../indexer/contract.js"
 
 /**
  * True when the product has at least one active `channel_product_mappings`

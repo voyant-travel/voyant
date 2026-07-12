@@ -9,11 +9,14 @@ import type {
   ResolverScope,
   Visibility,
 } from "@voyant-travel/catalog"
+import {
+  buildEmbeddingProvider,
+  buildTypesenseIndexer,
+  DEFAULT_SLICES,
+} from "@voyant-travel/catalog/standard-node/catalog-runtime"
 import { getResolvedExtraById } from "@voyant-travel/inventory/extras"
 import { getResolvedProductById } from "@voyant-travel/inventory/service-catalog-plane"
 import type { Context } from "hono"
-
-import { buildEmbeddingProvider, buildTypesenseIndexer, DEFAULT_SLICES } from "./catalog-runtime"
 
 export interface OperatorCatalogResolvedEntity {
   vertical: string

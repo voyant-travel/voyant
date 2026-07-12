@@ -1,15 +1,16 @@
 import { bookingItems } from "@voyant-travel/bookings/schema"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { buildProductSnapshotInput } from "@voyant-travel/inventory/service-catalog-plane"
+import { and, eq, isNotNull } from "drizzle-orm"
 import type {
   CatalogBookingSnapshotExecutionContext,
   CatalogBookingSnapshotRuntime,
-} from "@voyant-travel/catalog/booking-snapshot-subscriber"
+} from "../booking-snapshot-subscriber-runtime.js"
 import {
   createCatalogBookingSnapshotRuntimeAdapter,
   createCatalogProjectionRuntimeAdapter,
-} from "@voyant-travel/catalog/operator-runtime"
-import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
-import { buildProductSnapshotInput } from "@voyant-travel/inventory/service-catalog-plane"
-import { and, eq, isNotNull } from "drizzle-orm"
+} from "../operator-runtime.js"
+import type { CatalogProjectionRuntime } from "../projection-runtime.js"
 
 import {
   buildEmbeddingProvider,
@@ -18,10 +19,10 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
-} from "../lib/catalog-runtime"
-import { withDbFromEnv } from "../lib/db"
+} from "./catalog-runtime.js"
+import { catalogStandardNodeHost } from "./host.js"
 
-type CatalogSubscriberBindings = AppBindings & {
+type CatalogSubscriberBindings = Record<string, unknown> & {
   TENANT_ID?: string
   TYPESENSE_HOST?: string
   TYPESENSE_ADMIN_API_KEY?: string
@@ -36,7 +37,10 @@ export function createOperatorCatalogProjectionRuntime(
   const sellerOperatorId = env.TENANT_ID ?? "default"
   return createCatalogProjectionRuntimeAdapter({
     bindings: env,
-    withDb: withDbFromEnv,
+    withDb: (bindings, operation) =>
+      catalogStandardNodeHost().database.transaction(bindings, (database) =>
+        operation(database as AnyDrizzleDb),
+      ),
     buildContext: async (db) => {
       const embeddings = buildEmbeddingProvider(env)
       const adapter = buildTypesenseIndexer(env, embeddings)
@@ -58,7 +62,10 @@ export function createOperatorCatalogBookingSnapshotRuntime(
 
   return createCatalogBookingSnapshotRuntimeAdapter({
     bindings: env,
-    withDb: withDbFromEnv,
+    withDb: (bindings, operation) =>
+      catalogStandardNodeHost().database.transaction(bindings, (database) =>
+        operation(database as AnyDrizzleDb),
+      ),
     buildContext: async (db) => {
       const sellerOperatorId = env.TENANT_ID ?? "default"
       const context: CatalogBookingSnapshotExecutionContext = {

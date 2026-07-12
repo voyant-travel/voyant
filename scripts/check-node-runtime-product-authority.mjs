@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -20,6 +21,15 @@ const migratedContributors = await Promise.all(
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
 )
+const movedRuntimeFactories = await Promise.all([
+  read("packages/bookings/src/standard-node-runtime.ts"),
+  read("packages/finance/src/standard-node-runtime.ts"),
+  read("packages/catalog/src/standard-node-runtime.ts"),
+  read("packages/catalog/src/standard-node/booking-engine-runtime.ts"),
+  read("packages/catalog/src/standard-node/booking-runtime.ts"),
+  read("packages/catalog/src/standard-node/offers-runtime.ts"),
+  read("packages/catalog/src/standard-node/subscriber-runtime.ts"),
+])
 for (const loader of migratedRuntimeLoaders) {
   if (operatorResources.includes(loader)) {
     violations.push(`${operatorResourcesPath} must not retain migrated capability loader ${loader}`)
@@ -42,6 +52,19 @@ for (const forbidden of ["GraphSelectedNodeRuntimeAdapters", "runtimeAdapters", 
     violations.push(`${operatorResourcesPath} retains central adapter authority ${forbidden}`)
   }
 }
+for (const required of [
+  'key === "customFields"',
+  'key === "notificationProviders"',
+  'key === "invoiceSettlementPollers"',
+  "createOperatorInvoiceSettlementPollers",
+]) {
+  if (!operatorResources.includes(required)) {
+    violations.push(`operator generic config primitive is missing behavior adapter ${required}`)
+  }
+}
+if (operatorResources.includes("loadMcpAdminRoutes")) {
+  violations.push("operator deployment resources must not retain dormant loadMcpAdminRoutes")
+}
 for (const primitive of ["env:", "database:", "storage:", "events:", "config:"]) {
   if (!operatorResources.includes(primitive)) {
     violations.push(`operator generic Node primitive contract is missing ${primitive}`)
@@ -53,6 +76,101 @@ if (
   violations.push(
     "migrated package contributors must accept the generic runtime primitive contract",
   )
+}
+for (const [source, required] of [
+  [
+    movedRuntimeFactories[0],
+    [
+      "relationshipsService",
+      "enrichStayBookingOverviewItems",
+      "createFinanceStaleBookingHoldsRuntime",
+      "productCapabilities",
+    ],
+  ],
+  [
+    movedRuntimeFactories[1],
+    [
+      "invoiceSettlementPollers",
+      "createNetopiaCheckoutStarter",
+      "notificationsService",
+      "resolveBookingTaxSettings",
+      "createInventoryPaymentPolicyRuntime",
+      "createVoyantDataFxExchangeRateResolver",
+    ],
+  ],
+  [
+    movedRuntimeFactories[2],
+    [
+      "createOperatorCatalogBookingRouteModuleOptions",
+      "createOperatorCatalogOffersRouteModuleOptions",
+      "createOperatorCatalogProjectionRuntime",
+      "createOperatorCatalogBookingSnapshotRuntime",
+    ],
+  ],
+  [
+    movedRuntimeFactories[3],
+    ["createVoyantConnectSources", "registerCruiseAdapters", "createOwnedBookingHandlersRegistry"],
+  ],
+  [
+    movedRuntimeFactories[4],
+    [
+      "materializeSourcedBookingForCatalogCommit",
+      "applyOperatorTaxToQuoteResult",
+      "getProductContent",
+      "availabilitySlots",
+    ],
+  ],
+  [
+    movedRuntimeFactories[5],
+    ["createVoyantConnectClient", "createCatalogOffersTypesenseResolvers", "resolveAirportLabels"],
+  ],
+  [
+    movedRuntimeFactories[6],
+    [
+      "createCatalogProjectionRuntimeAdapter",
+      "createCatalogBookingSnapshotRuntimeAdapter",
+      "buildProductSnapshotInput",
+    ],
+  ],
+]) {
+  for (const token of required) {
+    if (!source.includes(token))
+      violations.push(`package-owned standard runtime is missing ${token}`)
+  }
+}
+for (const forbidden of [
+  "bookings: { options: {} }",
+  "noPolicy",
+  "resolveConnectClient: () => null",
+  "reindexEntity: async () => undefined",
+  "findBookingProductIds: async () => []",
+  "buildSnapshotInput: async () => null",
+]) {
+  if (
+    migratedContributors.some((source) => source.includes(forbidden)) ||
+    movedRuntimeFactories.some((source) => source.includes(forbidden))
+  ) {
+    violations.push(`package-owned standard runtime must not retain fallback ${forbidden}`)
+  }
+}
+for (const removedPath of [
+  "starters/operator/src/api/runtime/catalog-booking-runtime.ts",
+  "starters/operator/src/api/runtime/catalog-booking-shape-enricher.ts",
+  "starters/operator/src/api/runtime/catalog-offers-runtime.ts",
+  "starters/operator/src/api/runtime/catalog-subscriber-runtime.ts",
+  "starters/operator/src/api/lib/booking-engine-runtime.ts",
+  "starters/operator/src/api/lib/catalog-runtime.ts",
+  "starters/operator/src/api/lib/catalog-listability.ts",
+  "starters/operator/src/api/lib/cruise-adapters-runtime.ts",
+  "starters/operator/src/api/lib/owned-booking-handlers.ts",
+  "starters/operator/src/api/lib/booking-engine-db.ts",
+  "starters/operator/src/api/lib/booking-requirements-product-snapshot.ts",
+]) {
+  if (existsSync(path.join(root, removedPath))) {
+    violations.push(
+      `package-owned Catalog implementation must not retain starter shim ${removedPath}`,
+    )
+  }
 }
 const operatorLineDelta = lineCount(operatorResources) - 686
 const operatorImportDelta = importCount(operatorResources) - 25

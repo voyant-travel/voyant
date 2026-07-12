@@ -24,7 +24,6 @@
  * a clean `adapter_not_registered` / `registry_not_configured`, not a crash.
  */
 
-import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import {
   hasCruiseAdapter,
   memoizeCruiseAdapter,
@@ -35,6 +34,7 @@ import {
   type CruiseSourceAdapterShim,
   cruiseAdapterToSourceAdapter,
 } from "@voyant-travel/cruises/adapters"
+import type { SourceAdapterRegistry } from "../booking-engine/index.js"
 
 /**
  * Read-cache TTL for deployment-owned cruise adapters. `memoizeCruiseAdapter`

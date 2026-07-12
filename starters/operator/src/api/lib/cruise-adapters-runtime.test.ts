@@ -1,5 +1,11 @@
 import { createSourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import {
+  registerCruiseAdapters,
+  resetConfiguredCruiseAdapters,
+  syncVerticalRegistryFromCatalog,
+  withReadCache,
+} from "@voyant-travel/catalog/standard-node/cruise-adapters-runtime"
+import {
   clearCruiseAdapters,
   MockCruiseAdapter,
   resolveCruiseAdapter,
@@ -9,13 +15,6 @@ import {
   cruiseAdapterToSourceAdapter,
 } from "@voyant-travel/cruises/adapters"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-
-import {
-  registerCruiseAdapters,
-  resetConfiguredCruiseAdapters,
-  syncVerticalRegistryFromCatalog,
-  withReadCache,
-} from "./cruise-adapters-runtime"
 
 // The vertical cruise registry is a process-global Map — reset both it and the
 // memoized configured-adapter list between tests.

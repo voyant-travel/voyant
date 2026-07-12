@@ -356,6 +356,7 @@
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
       "@voyant-travel/catalog/runtime-contributor": ["../catalog/dist/runtime-contributor.d.ts"],
+      "@voyant-travel/catalog/standard-node/*": ["../catalog/dist/standard-node/*.d.ts"],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [

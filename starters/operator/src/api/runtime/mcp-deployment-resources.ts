@@ -1,9 +1,10 @@
 /** Deployment resources consumed by package-owned MCP context contributions. */
+
+import { DEFAULT_SLICES } from "@voyant-travel/catalog/standard-node/catalog-runtime"
 import type { ToolContext } from "@voyant-travel/tools"
 import type { Context } from "hono"
 import { resolveNotificationProviders } from "../../lib/notifications"
 import { buildCatalogContext } from "../lib/catalog-context"
-import { DEFAULT_SLICES } from "../lib/catalog-runtime"
 import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
 export function buildOperatorMcpBaseContext(c: Context): ToolContext {

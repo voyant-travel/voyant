@@ -19,14 +19,13 @@ export interface BookingsRuntimeContributorHost {
 
 /** Package-owned Bookings defaults lowered from the generic runtime host. */
 export function createBookingsRuntimePortContribution(
-  _host: BookingsRuntimeContributorHost,
+  host: BookingsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const runtime: BookingsRuntimePortContribution = {
-    bookings: { options: {} },
-    requirements: {},
-  }
+  const runtime = import("./standard-node-runtime.js").then((module) =>
+    module.createBookingsStandardNodeRuntime(host.primitives),
+  )
   return {
-    [bookingsRuntimePort.id]: runtime.bookings,
-    [bookingRequirementsRuntimePort.id]: runtime.requirements,
+    [bookingsRuntimePort.id]: runtime.then((value) => value.bookings),
+    [bookingRequirementsRuntimePort.id]: runtime.then((value) => value.requirements),
   }
 }

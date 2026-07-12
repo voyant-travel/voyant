@@ -1,8 +1,10 @@
+import {
+  CATALOG_VERTICALS,
+  loadCatalogSlices,
+} from "@voyant-travel/catalog/standard-node/catalog-runtime"
 import { marketLocales, markets } from "@voyant-travel/commerce"
 import { channels } from "@voyant-travel/distribution"
 import { describe, expect, it } from "vitest"
-
-import { CATALOG_VERTICALS, loadCatalogSlices } from "./catalog-runtime"
 
 type TableRows = Map<object, unknown[]>
 

@@ -12,11 +12,11 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-final.mjs")
 const contributors = {
   "action-ledger": "host.capabilities.loadActionLedgerHealthRuntime()",
-  bookings: "bookings: { options: {} }",
-  catalog: "buildCatalogTypesenseIndexer",
+  bookings: "createBookingsStandardNodeRuntime",
+  catalog: "createCatalogStandardNodeRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
-  finance: "host.primitives.storage.downloadUrl",
+  finance: "createFinanceStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   legal: "host.capabilities.loadLegalRuntime()",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",

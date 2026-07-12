@@ -24,36 +24,12 @@ export interface FinanceRuntimeContributorHost {
 export function createFinanceRuntimePortContribution(
   host: FinanceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const noPolicy = async () => null
-  const runtime: FinanceRuntimePortContribution = {
-    finance: {
-      resolveDocumentDownloadUrl: host.primitives.storage.downloadUrl,
-      invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
-        bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
-    },
-    bookingSchedule: {
-      options: {
-        resolveDb: (context) => host.primitives.database.fromContext(context),
-        resolveOperatorDefaultPaymentPolicy: noPolicy,
-        resolveSupplierPolicy: noPolicy,
-        resolveCategoryPolicy: noPolicy,
-        resolveListingPolicy: noPolicy,
-        resolveListingPolicyForEntity: noPolicy,
-        resolveCategoryPolicyForEntity: noPolicy,
-        resolveSupplierPolicyForEntity: noPolicy,
-        stampPolicySourceOnBooking: async () => undefined,
-        readPolicySourceFromInternalNotes: () => null,
-      },
-      withDb: (bindings, operation) =>
-        host.primitives.database.transaction(bindings, (database) =>
-          operation(database as Parameters<typeof operation>[0]),
-        ),
-    },
-    bookingTax: {},
-  }
+  const runtime = import("./standard-node-runtime.js").then((module) =>
+    module.createFinanceStandardNodeRuntime(host.primitives),
+  )
   return {
-    [financeRuntimePort.id]: runtime.finance,
-    [financeBookingScheduleRuntimePort.id]: runtime.bookingSchedule,
-    [financeBookingTaxRuntimePort.id]: runtime.bookingTax,
+    [financeRuntimePort.id]: runtime.then((value) => value.finance),
+    [financeBookingScheduleRuntimePort.id]: runtime.then((value) => value.bookingSchedule),
+    [financeBookingTaxRuntimePort.id]: runtime.then((value) => value.bookingTax),
   }
 }

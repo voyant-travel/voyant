@@ -4,11 +4,6 @@
  * vertical booking handlers live in focused registration modules.
  */
 
-import {
-  createSourceAdapterRegistry,
-  type OwnedBookingHandlerRegistry,
-  type SourceAdapterRegistry,
-} from "@voyant-travel/catalog/booking-engine"
 import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
   createVoyantConnectSources,
@@ -20,11 +15,16 @@ import {
 } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
 import {
+  createSourceAdapterRegistry,
+  type OwnedBookingHandlerRegistry,
+  type SourceAdapterRegistry,
+} from "../booking-engine/index.js"
+import {
   CRUISE_ADAPTER_READ_CACHE_TTL_MS,
   registerCruiseAdapters,
   syncVerticalRegistryFromCatalog,
-} from "./cruise-adapters-runtime"
-import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers"
+} from "./cruise-adapters-runtime.js"
+import { createOwnedBookingHandlersRegistry } from "./owned-booking-handlers.js"
 
 // `VoyantConnectConnectionCache` isn't re-exported from the package root (0.3.0),
 // so derive it from the options type rather than naming it directly.

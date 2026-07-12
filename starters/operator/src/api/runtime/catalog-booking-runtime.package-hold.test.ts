@@ -26,7 +26,7 @@ vi.mock("@voyant-travel/plugin-voyant-connect", async () => {
   }
 })
 
-import { createOperatorCatalogBookingRouteModuleOptions } from "./catalog-booking-runtime"
+import { createOperatorCatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/standard-node/booking-runtime"
 
 describe("operator Connect package hold preparation", () => {
   it("locks stored package offers that do not include hold status", async () => {

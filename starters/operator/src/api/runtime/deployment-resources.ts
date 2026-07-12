@@ -26,6 +26,7 @@ import { createOperatorNotificationsRuntimeProvider } from "./notifications-runt
 import {
   createOperatorBookingPiiService,
   createOperatorDocumentStorage,
+  createOperatorInvoiceSettlementPollers,
   generateContractPdfForBooking,
   operatorBindings,
   operatorPostgresDb,
@@ -85,10 +86,6 @@ function createBaseDeploymentCapabilities() {
       ),
     ),
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
-    resolveCruiseSourceAdapterRegistry: (bindings: unknown) =>
-      import("../lib/booking-engine-runtime").then((runtime) =>
-        runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
-      ),
     loadFlightsRuntime: () =>
       import("./flights-runtime").then((runtime) => runtime.operatorFlightsRuntime),
     loadQuoteProposalRuntime: () =>
@@ -126,7 +123,6 @@ function createBaseDeploymentCapabilities() {
         },
       }
     },
-    loadMcpAdminRoutes: () => import("./mcp-runtime").then((m) => m.buildMcpAdminRoutes()),
   }
 }
 
@@ -175,7 +171,12 @@ function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
         ),
     },
     config: {
-      read: (bindings, key) => (operatorBindings(bindings) as Record<string, unknown>)[key],
+      read: (bindings, key) => {
+        if (key === "customFields") return resolveOperatorCustomFields
+        if (key === "notificationProviders") return resolveNotificationProviders
+        if (key === "invoiceSettlementPollers") return createOperatorInvoiceSettlementPollers
+        return (operatorBindings(bindings) as Record<string, unknown> | undefined)?.[key]
+      },
     },
   }
 }

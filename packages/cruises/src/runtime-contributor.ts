@@ -7,9 +7,7 @@ export interface CruisesRuntimePortContribution {
 }
 
 export interface CruisesRuntimeContributorHost {
-  capabilities: {
-    resolveCruiseSourceAdapterRegistry: CruisesRoutesRuntime["resolveSourceAdapterRegistry"]
-  }
+  primitives: VoyantRuntimeHostPrimitives
 }
 
 /** Package-owned registration map for Cruises deployment adapters. */
@@ -17,7 +15,12 @@ export function createCruisesRuntimePortContribution(
   host: CruisesRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const cruisesRoutes: CruisesRoutesRuntime = {
-    resolveSourceAdapterRegistry: host.capabilities.resolveCruiseSourceAdapterRegistry,
+    resolveSourceAdapterRegistry: (bindings) =>
+      import("@voyant-travel/catalog/standard-node/booking-engine-runtime").then((runtime) =>
+        runtime.ensureBookingEngineRegistry(host.primitives.env(bindings)),
+      ),
   }
   return { [cruisesRoutesRuntimePort.id]: cruisesRoutes }
 }
+
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"

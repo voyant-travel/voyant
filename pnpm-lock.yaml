@@ -842,6 +842,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/accommodations':
+        specifier: workspace:^
+        version: link:../accommodations
       '@voyant-travel/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
@@ -854,9 +857,18 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/inventory':
+        specifier: workspace:^
+        version: link:../inventory
+      '@voyant-travel/relationships':
+        specifier: workspace:^
+        version: link:../relationships
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools
@@ -1022,18 +1034,57 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/accommodations':
+        specifier: workspace:^
+        version: link:../accommodations
+      '@voyant-travel/bookings':
+        specifier: workspace:^
+        version: link:../bookings
       '@voyant-travel/catalog-contracts':
         specifier: workspace:^
         version: link:../catalog-contracts
+      '@voyant-travel/charters':
+        specifier: workspace:^
+        version: link:../charters
+      '@voyant-travel/commerce':
+        specifier: workspace:^
+        version: link:../commerce
+      '@voyant-travel/connect-sdk':
+        specifier: 0.9.1
+        version: 0.9.1
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
+      '@voyant-travel/cruises':
+        specifier: workspace:^
+        version: link:../cruises
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/distribution':
+        specifier: workspace:^
+        version: link:../distribution
+      '@voyant-travel/finance':
+        specifier: workspace:^
+        version: link:../finance
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/inventory':
+        specifier: workspace:^
+        version: link:../inventory
+      '@voyant-travel/operations':
+        specifier: workspace:^
+        version: link:../operations
+      '@voyant-travel/operator-settings':
+        specifier: workspace:^
+        version: link:../operator-settings
+      '@voyant-travel/plugin-catalog-demo':
+        specifier: workspace:^
+        version: link:../plugins/catalog-demo
+      '@voyant-travel/plugin-voyant-connect':
+        specifier: ^0.3.2
+        version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools
@@ -1773,6 +1824,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/accommodations':
+        specifier: workspace:^
+        version: link:../accommodations
       '@voyant-travel/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
@@ -1782,12 +1836,30 @@ importers:
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
+      '@voyant-travel/cruises':
+        specifier: workspace:^
+        version: link:../cruises
       '@voyant-travel/data-sdk':
         specifier: ^0.7.1
         version: 0.7.1
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
+      '@voyant-travel/distribution':
+        specifier: workspace:^
+        version: link:../distribution
+      '@voyant-travel/inventory':
+        specifier: workspace:^
+        version: link:../inventory
+      '@voyant-travel/notifications':
+        specifier: workspace:^
+        version: link:../notifications
+      '@voyant-travel/operator-settings':
+        specifier: workspace:^
+        version: link:../operator-settings
+      '@voyant-travel/plugin-netopia':
+        specifier: ^0.105.20
+        version: 0.105.20(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/finance-contracts':
         specifier: workspace:^
         version: link:../finance-contracts

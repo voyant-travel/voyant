@@ -7,9 +7,6 @@
  */
 
 import { createIndexerService } from "@voyant-travel/catalog"
-import type { BulkReindexProductsService } from "@voyant-travel/commerce"
-import { products } from "@voyant-travel/inventory/schema"
-
 import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
@@ -17,7 +14,9 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
-} from "./catalog-runtime.js"
+} from "@voyant-travel/catalog/standard-node/catalog-runtime"
+import type { BulkReindexProductsService } from "@voyant-travel/commerce"
+import { products } from "@voyant-travel/inventory/schema"
 import { withDbFromEnv } from "./db.js"
 
 type BulkReindexEnv = AppBindings & {

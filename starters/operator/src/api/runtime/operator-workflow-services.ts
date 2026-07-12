@@ -1,9 +1,15 @@
-import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "@voyant-travel/bookings/workflow-runtime"
 import { createIndexerService } from "@voyant-travel/catalog"
 import {
   CATALOG_DRAFT_REAPER_RUNTIME_KEY,
   createCatalogDraftReaperRuntime,
 } from "@voyant-travel/catalog/draft-reaper-workflow"
+import {
+  buildEmbeddingProvider,
+  buildTypesenseIndexer,
+  getFieldPolicyRegistries,
+  loadCatalogSlices,
+  withEmbedding,
+} from "@voyant-travel/catalog/standard-node/catalog-runtime"
 import {
   PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
   type PromotionBoundarySchedulerRuntime,
@@ -20,7 +26,6 @@ import {
   resolveWorkflowEnvironment,
 } from "@voyant-travel/db/outbox-workflow"
 import { createChannelPushWorkflowRuntimeEntries } from "@voyant-travel/distribution/channel-push-workflows"
-import { createFinanceStaleBookingHoldsRuntime } from "@voyant-travel/finance/stale-booking-holds-runtime"
 import {
   createProductsGeneratePdfWorkflowRuntime,
   PRODUCTS_GENERATE_PDF_WORKFLOW_RUNTIME_KEY,
@@ -30,18 +35,10 @@ import {
   type NotificationReminderWorkflowRuntime,
 } from "@voyant-travel/notifications/workflow-runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
 import { createProductBrochurePrinter } from "../../lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
 import { reportBackgroundFailure } from "../../lib/observability.js"
 import { createBulkReindexProductsService } from "../lib/bulk-reindex-service.js"
-import {
-  buildEmbeddingProvider,
-  buildTypesenseIndexer,
-  getFieldPolicyRegistries,
-  loadCatalogSlices,
-  withEmbedding,
-} from "../lib/catalog-runtime.js"
 import { withDbFromEnv } from "../lib/db.js"
 import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter.js"
 
@@ -49,21 +46,6 @@ type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string,
 
 function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
   return resolveWorkflowEnvironment(bindings, process.env)
-}
-
-/** Deployment adapter consumed by the Bookings package bootstrap. */
-export function registerBookingsWorkflowService(
-  container: ModuleContainer,
-  bindings: OperatorWorkflowBindings,
-): void {
-  const env = workflowEnvironment(bindings)
-  container.register(
-    BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY,
-    createFinanceStaleBookingHoldsRuntime({
-      resolveDb: () => createWorkflowDb(env),
-      userId: "system",
-    }),
-  )
 }
 
 /** Deployment adapter consumed by the Inventory package bootstrap. */
@@ -88,7 +70,9 @@ export async function registerDistributionWorkflowService(
 ): Promise<void> {
   const env = workflowEnvironment(bindings)
   const appBindings = operatorBindings(bindings)
-  const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
+  const { ensureBookingEngineRegistry } = await import(
+    "@voyant-travel/catalog/standard-node/booking-engine-runtime"
+  )
   const entries = await createChannelPushWorkflowRuntimeEntries({
     resolveDb: () => createWorkflowDb(env),
     withDb: (operation) => withDbFromEnv(appBindings, operation),
@@ -124,11 +108,11 @@ export async function createOperatorWorkflowServiceResolver(
     createCatalogDraftReaperRuntime({
       withDb: (operation) => operation(createWorkflowDb(env)),
       resolveSourceRegistry: () =>
-        import("../lib/booking-engine-runtime.js").then((runtime) =>
+        import("@voyant-travel/catalog/standard-node/booking-engine-runtime").then((runtime) =>
           runtime.ensureBookingEngineRegistry(appBindings),
         ),
       resolveOwnedHandlers: () =>
-        import("../lib/booking-engine-runtime.js").then((runtime) =>
+        import("@voyant-travel/catalog/standard-node/booking-engine-runtime").then((runtime) =>
           runtime.getOwnedBookingHandlerRegistry(appBindings),
         ),
       reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
@@ -155,7 +139,9 @@ export async function createOperatorWorkflowServiceResolver(
               registries: getFieldPolicyRegistries(),
             })
             await indexerService.ensureCollections()
-            const { ensureBookingEngineRegistry } = await import("../lib/booking-engine-runtime.js")
+            const { ensureBookingEngineRegistry } = await import(
+              "@voyant-travel/catalog/standard-node/booking-engine-runtime"
+            )
             return operation({
               db,
               sourceAdapterRegistry: await ensureBookingEngineRegistry(env),

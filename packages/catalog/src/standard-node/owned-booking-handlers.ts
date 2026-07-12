@@ -1,15 +1,15 @@
 import { registerAccommodationBookingHandler } from "@voyant-travel/accommodations/booking-engine/operator-runtime"
+import { registerCruiseBookingHandler } from "@voyant-travel/cruises/booking-engine/operator-runtime"
+import { registerProductBookingHandler } from "@voyant-travel/inventory/booking-engine/operator-runtime"
 import {
   createOwnedBookingHandlerRegistry,
   type OwnedBookingHandlerRegistry,
   type SourceAdapterRegistry,
-} from "@voyant-travel/catalog/booking-engine"
-import { registerCruiseBookingHandler } from "@voyant-travel/cruises/booking-engine/operator-runtime"
-import { registerProductBookingHandler } from "@voyant-travel/inventory/booking-engine/operator-runtime"
+} from "../booking-engine/index.js"
 
-import { asPostgresDb } from "./booking-engine-db"
-import type { BookingEngineEnv } from "./booking-engine-runtime"
-import { withDbFromEnv } from "./db"
+import { asPostgresDb } from "./booking-engine-db.js"
+import type { BookingEngineEnv } from "./booking-engine-runtime.js"
+import { catalogStandardNodeHost } from "./host.js"
 
 export function createOwnedBookingHandlersRegistry(
   env: BookingEngineEnv,
@@ -19,9 +19,7 @@ export function createOwnedBookingHandlersRegistry(
   const host = {
     getSourceRegistry,
     withDatabase: <T>(operation: (db: ReturnType<typeof asPostgresDb>) => Promise<T>) =>
-      withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], (db) =>
-        operation(asPostgresDb(db)),
-      ),
+      catalogStandardNodeHost().database.transaction(env, (db) => operation(asPostgresDb(db))),
   }
   registerProductBookingHandler(registry, host)
   registerAccommodationBookingHandler(registry, host)

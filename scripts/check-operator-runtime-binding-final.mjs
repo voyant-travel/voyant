@@ -10,11 +10,11 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
   "action-ledger": "host.capabilities.loadActionLedgerHealthRuntime()",
-  bookings: "bookings: { options: {} }",
-  catalog: "buildCatalogTypesenseIndexer",
+  bookings: "createBookingsStandardNodeRuntime",
+  catalog: "createCatalogStandardNodeRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
   distribution: "host.capabilities.loadDistributionChannelPushRuntime()",
-  finance: "host.primitives.storage.downloadUrl",
+  finance: "createFinanceStandardNodeRuntime",
   inventory: "host.capabilities.loadInventoryRuntime()",
   legal: "host.capabilities.loadLegalRuntime()",
   "workflow-runs": "host.capabilities.resolveWorkflowRunnerRegistry()",

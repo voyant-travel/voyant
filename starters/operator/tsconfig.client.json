@@ -459,6 +459,9 @@
       "@voyant-travel/catalog/runtime-contributor": [
         "../../packages/catalog/dist/runtime-contributor.d.ts"
       ],
+      "@voyant-travel/catalog/standard-node/*": [
+        "../../packages/catalog/dist/standard-node/*.d.ts"
+      ],
       "@voyant-travel/catalog/provenance": ["../../packages/catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../../packages/catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
