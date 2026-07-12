@@ -1,5 +1,11 @@
 # @voyant-travel/workflows-react
 
+## 0.116.0
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.116.0
+
 ## 0.115.2
 
 ### Patch Changes

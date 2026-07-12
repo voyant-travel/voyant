@@ -1,5 +1,29 @@
 # @voyant-travel/crm
 
+## 0.127.0
+
+### Minor Changes
+
+- 0c19298: Declare the package-owned Quotes admin factory as a selected-graph runtime while
+  preserving its existing routes, destinations, localized navigation, icon, copy
+  provider, and selection behavior.
+
+### Patch Changes
+
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+- Updated dependencies [0a7eab6]
+- Updated dependencies [d771be3]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/trips@0.143.0
+  - @voyant-travel/db@0.112.2
+
 ## 0.126.4
 
 ### Patch Changes

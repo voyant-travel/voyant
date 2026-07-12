@@ -1,5 +1,87 @@
 # @voyant-travel/framework
 
+## 0.39.0
+
+### Minor Changes
+
+- d771be3: Activate Notifications reminder and booking-confirmation subscribers through the selected Operator graph and a typed Node host runtime port.
+- d771be3: Activate the package-owned catalog checkout subscribers and workflow runner through selected-graph runtime ports, with explicit composition failure when required Node host services are missing.
+- 8f4c242: Derive anonymous public and transactional path posture from selected deployment graph API bundles, including partial transactional path declarations.
+- d771be3: Expose package-scoped project config through the generic graph runtime factory
+  context and reuse one typed context across each selected unit's API and
+  subscriber facets.
+- d26a820: Lower package-owned admin factories from the selected deployment graph into a
+  dedicated generated admin bundle, beginning with the action-ledger nav, route,
+  lazy page surface, localized Operator label, and standard icon. Selected admin
+  factories compose in stable graph-declared order.
+- d771be3: Compile selected graph access catalogs, make Bookings the first package-owned access authority, and
+  wire exact-pair catalog validation through runtime authorization and permission editors.
+- bd7a830: Emit selected-graph OpenAPI documents from route-owned metadata, beginning with
+  the identity admin API authority.
+- 263fb4d: Activate Storefront booking-bootstrap write intents through the package-owned selected-graph subscriber runtime and generic Node database lifecycle capability.
+
+### Patch Changes
+
+- 60b1970: Activate the package-owned booking-schedule subscriber through selected graph lowering and shared host-provided runtime capabilities.
+- 8f537b0: Lower package-owned ordinary subscriber runtime descriptors from the selected deployment graph and move distribution channel-push subscribers out of the Operator hand list.
+- 0a7eab6: Move Trips payment completion to its package-owned graph subscriber runtime and publish the descriptor subpath.
+- Updated dependencies [d771be3]
+- Updated dependencies [c54cd3d]
+- Updated dependencies [0c19298]
+- Updated dependencies [e68bdc1]
+- Updated dependencies [d771be3]
+- Updated dependencies [8e67fe8]
+- Updated dependencies [26fe0e5]
+- Updated dependencies [d771be3]
+- Updated dependencies [18d8aa0]
+- Updated dependencies [9b15ebe]
+- Updated dependencies [d771be3]
+- Updated dependencies [60b1970]
+- Updated dependencies [977c1bd]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [a799a34]
+- Updated dependencies [02b4103]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+- Updated dependencies [0a7eab6]
+- Updated dependencies [263fb4d]
+- Updated dependencies [d771be3]
+  - @voyant-travel/notifications@0.124.0
+  - @voyant-travel/mice@0.8.0
+  - @voyant-travel/quotes@0.127.0
+  - @voyant-travel/catalog@0.150.0
+  - @voyant-travel/commerce@0.34.0
+  - @voyant-travel/distribution@0.142.0
+  - @voyant-travel/finance@0.152.0
+  - @voyant-travel/flights@0.152.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/inventory@0.8.6
+  - @voyant-travel/accommodations@0.112.5
+  - @voyant-travel/storefront@0.154.0
+  - @voyant-travel/legal@0.152.0
+  - @voyant-travel/action-ledger@0.107.0
+  - @voyant-travel/relationships@0.124.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/bookings@0.152.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/auth@0.125.0
+  - @voyant-travel/identity@0.152.0
+  - @voyant-travel/trips@0.143.0
+  - @voyant-travel/cruises@0.151.0
+  - @voyant-travel/operations@0.6.5
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/operator-settings@0.3.5
+  - @voyant-travel/storage@0.108.1
+  - @voyant-travel/mcp@0.1.1
+  - @voyant-travel/utils@0.106.1
+  - @voyant-travel/workflows@0.116.0
+  - @voyant-travel/workflows-orchestrator@0.116.0
+
 ## 0.38.0
 
 ### Minor Changes

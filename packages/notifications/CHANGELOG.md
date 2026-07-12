@@ -1,5 +1,32 @@
 # @voyant-travel/notifications
 
+## 0.124.0
+
+### Minor Changes
+
+- d771be3: Activate Notifications reminder and booking-confirmation subscribers through the selected Operator graph and a typed Node host runtime port.
+- 02b4103: Publish package-owned subscriber runtime descriptors for reminder rules and booking-confirmation auto-dispatch behind one Notifications runtime service contract.
+
+### Patch Changes
+
+- Updated dependencies [60b1970]
+- Updated dependencies [977c1bd]
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [a799a34]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/finance@0.152.0
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/legal@0.152.0
+  - @voyant-travel/types@0.108.0
+  - @voyant-travel/bookings@0.152.0
+  - @voyant-travel/hono@0.125.0
+  - @voyant-travel/db@0.112.2
+  - @voyant-travel/workflows@0.116.0
+
 ## 0.123.5
 
 ### Patch Changes

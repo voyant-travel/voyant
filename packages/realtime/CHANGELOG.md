@@ -1,5 +1,19 @@
 # @voyant-travel/realtime
 
+## 0.3.1
+
+### Patch Changes
+
+- 91f3ffb: Stage the package-owned deferred admin invalidation subscriber runtime contract and narrow publication capability for selected-graph activation.
+- Updated dependencies [8f4c242]
+- Updated dependencies [d771be3]
+- Updated dependencies [8f537b0]
+- Updated dependencies [d26a820]
+- Updated dependencies [d771be3]
+- Updated dependencies [bd7a830]
+  - @voyant-travel/core@0.118.0
+  - @voyant-travel/hono@0.125.0
+
 ## 0.3.0
 
 ### Minor Changes
