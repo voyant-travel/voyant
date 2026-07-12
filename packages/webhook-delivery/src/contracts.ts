@@ -1,4 +1,5 @@
 import type { EventEnvelope } from "@voyant-travel/core"
+import { isExternalWebhookPayloadSchema } from "@voyant-travel/core/project"
 
 const REDACTION_MARKER = "[REDACTED]"
 
@@ -32,6 +33,11 @@ export function prepareExternalWebhookEvent(
   event: EventEnvelope,
   contract: ExternalWebhookEventContract,
 ): EventEnvelope {
+  if (!isExternalWebhookPayloadSchema(contract.payloadSchema)) {
+    throw new Error(
+      `External webhook contract "${contract.eventId}" requires an object payload schema with explicit properties.`,
+    )
+  }
   if (event.name !== contract.eventType) {
     throw new Error(
       `External webhook contract "${contract.eventId}" governs "${contract.eventType}", not "${event.name}".`,

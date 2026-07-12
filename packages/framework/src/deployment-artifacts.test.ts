@@ -101,7 +101,7 @@ describe("deployment graph artifacts", () => {
             id: "@acme/hooks#event.changed",
             eventType: "hooks.changed",
             version: "1.0.0",
-            payloadSchema: { type: "object" },
+            payloadSchema: { type: "object", properties: {} },
             visibility: "external",
             audit: { sourceModule: "hooks", category: "domain" },
           },

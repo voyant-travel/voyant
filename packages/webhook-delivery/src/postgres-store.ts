@@ -1,12 +1,20 @@
 import { newId } from "@voyant-travel/db/lib/typeid"
 import {
+  type InfraWebhookSubscription,
   infraWebhookDeliveriesTable,
   infraWebhookDeliverySelectSchema,
+  infraWebhookSubscriptionInsertSchema,
+  infraWebhookSubscriptionSelectSchema,
   infraWebhookSubscriptionsTable,
+  infraWebhookSubscriptionUpdateSchema,
 } from "@voyant-travel/db/schema/infra"
 import { and, arrayContains, eq, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import type { ExternalWebhookEventContract } from "./contracts.js"
+import {
+  createWebhookSubscriptionService,
+  type WebhookSubscriptionService,
+} from "./subscriptions.js"
 import type {
   CompleteWebhookAttemptInput,
   EnqueuedWebhookAttempt,
@@ -132,6 +140,40 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
         .where(eq(infraWebhookSubscriptionsTable.id, subscriptionId))
     },
   }
+}
+
+/** The only package-owned Postgres mutation boundary for webhook subscriptions. */
+export function createPostgresWebhookSubscriptionService(
+  db: PostgresJsDatabase,
+  contracts: readonly ExternalWebhookEventContract[],
+): WebhookSubscriptionService {
+  return createWebhookSubscriptionService({
+    contracts,
+    store: {
+      async create(input) {
+        const values = infraWebhookSubscriptionInsertSchema.parse(input)
+        const rows = await db
+          .insert(infraWebhookSubscriptionsTable)
+          .values({ id: newId("webhook_subscriptions"), ...values })
+          .returning()
+        return requireSubscription(rows[0], "create")
+      },
+      async update(id, input) {
+        const values = infraWebhookSubscriptionUpdateSchema.parse(input)
+        const rows = await db
+          .update(infraWebhookSubscriptionsTable)
+          .set({ ...values, updatedAt: new Date() })
+          .where(eq(infraWebhookSubscriptionsTable.id, id))
+          .returning()
+        return requireSubscription(rows[0], `update "${id}"`)
+      },
+    },
+  })
+}
+
+function requireSubscription(row: unknown, operation: string): InfraWebhookSubscription {
+  if (!row) throw new Error(`Webhook subscription ${operation} returned no row.`)
+  return infraWebhookSubscriptionSelectSchema.parse(row)
 }
 
 function pendingAttemptValues(input: EnqueueWebhookAttemptInput) {

@@ -20,6 +20,11 @@ export {
   webhookBodyExcerpt,
 } from "./security.js"
 export type {
+  WebhookSubscriptionMutationStore,
+  WebhookSubscriptionService,
+} from "./subscriptions.js"
+export { createWebhookSubscriptionService } from "./subscriptions.js"
+export type {
   CompleteWebhookAttemptInput,
   CreateWebhookDeliveryEngineOptions,
   EnqueuedWebhookAttempt,

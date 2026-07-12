@@ -170,6 +170,21 @@ export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
   }
 }
 
+/** External delivery is deny-by-default and requires an explicit object property allowlist. */
+export function isExternalWebhookPayloadSchema(value: unknown): value is VoyantGraphJsonObject & {
+  type: "object"
+  properties: VoyantGraphJsonObject
+} {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false
+  const schema = value as Record<string, unknown>
+  return (
+    schema.type === "object" &&
+    schema.properties !== null &&
+    typeof schema.properties === "object" &&
+    !Array.isArray(schema.properties)
+  )
+}
+
 export interface VoyantGraphSubscriber extends VoyantGraphFacetEntity {
   eventType?: string
   eventFilterId?: string

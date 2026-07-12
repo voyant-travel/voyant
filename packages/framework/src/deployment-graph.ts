@@ -3,6 +3,7 @@ import {
   defineExtension,
   defineModule,
   defineProject,
+  isExternalWebhookPayloadSchema,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
@@ -2276,7 +2277,7 @@ function validateFacetReferences(
         } else if (
           event.visibility !== "external" ||
           !event.version ||
-          !event.payloadSchema ||
+          !isExternalWebhookPayloadSchema(event.payloadSchema) ||
           !event.audit?.sourceModule ||
           !event.audit.category
         ) {
@@ -2285,7 +2286,7 @@ function validateFacetReferences(
               code: "VOYANT_GRAPH_INVALID_FACET",
               source: unit.id,
               facet: `${webhook.id}.eventId`,
-              message: `Outbound webhook event reference "${webhook.eventId}" must select an external, versioned event with payload schema and audit metadata.`,
+              message: `Outbound webhook event reference "${webhook.eventId}" must select an external, versioned event with an explicit object property schema and audit metadata.`,
             }),
           )
         }
@@ -2516,7 +2517,7 @@ function compileWebhookPlan(
           target?.event.eventType?.trim() &&
           target.event.visibility === "external" &&
           target.event.version &&
-          target.event.payloadSchema &&
+          isExternalWebhookPayloadSchema(target.event.payloadSchema) &&
           target.event.audit
         ) {
           outbound.push({

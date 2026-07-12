@@ -18,8 +18,8 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
   manifest-owned contracts and subscribers, and reports graph-wide coverage counts.
 - Selected-graph validation rejects executable subscribers when their event contract owner is
   absent from the selected graph.
-- Subscription create/update validation accepts only event types in the selected external
-  webhook plan; internal, unknown, and deselected event types fail before persistence.
+- The package-owned subscription mutation service accepts only event types in the selected
+  external webhook plan, and its Postgres factory validates before insert/update persistence.
 - External payload delivery is schema-projected with package-owned property allowlists.
   Undeclared fields are dropped, while `writeOnly` and `x-voyant-redact` properties are
   replaced with a redaction marker.
@@ -41,6 +41,9 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
 
 ## Residual Checklist
 
+- Route the legacy Dash subscription mutations through the package-owned service. This repository
+  contains no subscription mutation API or direct insert call outside the service factory, so
+  end-to-end enforcement by that external control-plane caller is not yet demonstrated here.
 - Converge queued dispatch and `@voyant-travel/webhook-delivery` so one implementation
   owns signing, retries, visibility decisions, audit callbacks, and dead-letter state. Contract
   validation and queued fan-out are shared; worker execution and retry state still need one owner.

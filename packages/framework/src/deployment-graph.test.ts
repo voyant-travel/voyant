@@ -225,7 +225,7 @@ describe("deployment graph v1", () => {
           id: "@acme/voyant-loyalty#event.points-adjusted",
           eventType: "points.adjusted",
           version: "1.0.0",
-          payloadSchema: { type: "object" },
+          payloadSchema: { type: "object", properties: {} },
           visibility: "external",
           audit: { sourceModule: "loyalty", category: "domain" },
         },
@@ -288,7 +288,7 @@ describe("deployment graph v1", () => {
         eventUnitId: "@acme/voyant-loyalty",
         eventType: "points.adjusted",
         eventVersion: "1.0.0",
-        payloadSchema: { type: "object" },
+        payloadSchema: { type: "object", properties: {} },
         visibility: "external",
         audit: { sourceModule: "loyalty", category: "domain" },
         secretIds: ["@acme/voyant-loyalty#secret.webhook"],
@@ -313,7 +313,7 @@ describe("deployment graph v1", () => {
           id: "@acme/voyant-hooks#event.changed",
           eventType: "partner.changed",
           version: "1.0.0",
-          payloadSchema: { type: "object" },
+          payloadSchema: { type: "object", properties: {} },
           visibility: "external",
           audit: { sourceModule: "hooks", category: "domain" },
         },
@@ -394,6 +394,39 @@ describe("deployment graph v1", () => {
       ]),
     )
     expect(graph.webhookPlan).toEqual({ inbound: [], outbound: [] })
+  })
+
+  it("rejects external webhook events without an explicit object property allowlist", async () => {
+    const module = defineModule({
+      id: "@acme/voyant-hooks",
+      events: [
+        {
+          id: "@acme/voyant-hooks#event.open",
+          eventType: "partner.open",
+          version: "1.0.0",
+          payloadSchema: { type: "object" },
+          visibility: "external",
+          audit: { sourceModule: "hooks", category: "domain" },
+        },
+      ],
+      webhooks: [
+        {
+          id: "@acme/voyant-hooks#webhook.open",
+          direction: "outbound",
+          eventId: "@acme/voyant-hooks#event.open",
+        },
+      ],
+    })
+
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+
+    expect(graph.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_FACET",
+        facet: "@acme/voyant-hooks#webhook.open.eventId",
+      }),
+    )
+    expect(graph.webhookPlan.outbound).toEqual([])
   })
 
   it("rejects subscribers whose event contract owner is absent from the selected graph", async () => {

@@ -94,7 +94,7 @@ describe("graph runtime lowering", () => {
             eventUnitId: "@acme/hooks",
             eventType: "hooks.changed",
             eventVersion: "1.0.0",
-            payloadSchema: { type: "object" },
+            payloadSchema: { type: "object", properties: {} },
             visibility: "external",
             audit: { sourceModule: "hooks", category: "domain" },
             secretIds: [],
@@ -108,13 +108,6 @@ describe("graph runtime lowering", () => {
     expect(runtime.webhooks.outboundEventTypes).toEqual(["hooks.changed"])
     expect(runtime.webhooks.isOutboundEventEligible("hooks.changed")).toBe(true)
     expect(runtime.webhooks.isOutboundEventEligible("hooks.deleted")).toBe(false)
-    expect(() => runtime.webhooks.assertSubscriptionCreateEvents(["hooks.deleted"])).toThrow(
-      /outside the selected external catalog/,
-    )
-    expect(() => runtime.webhooks.assertSubscriptionUpdateEvents([])).toThrow(
-      /requires at least one event/,
-    )
-    expect(() => runtime.webhooks.assertSubscriptionUpdateEvents(undefined)).not.toThrow()
   })
 
   it("keeps package imports lazy and memoized across route and unit loaders", async () => {

@@ -5,4 +5,4 @@
 "@voyant-travel/webhook-delivery": minor
 ---
 
-Validate webhook subscriptions against selected external events, project outbound payloads through package-owned schemas, and route queued graph delivery through the shared webhook contract implementation.
+Provide a validated webhook subscription mutation boundary, project outbound payloads through package-owned schemas, and route queued graph delivery through the shared webhook contract implementation.
