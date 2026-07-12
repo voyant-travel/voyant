@@ -68,14 +68,14 @@ export interface QuoteProposalRoutesOptions {
    */
   resolvePublicProposalBaseUrl(c: Context): string | null
   /** Build the trips reserve deps for a request (catalog/non-catalog wiring). */
-  reserveTripDeps(c: Context): ReserveTripDeps
+  reserveTripDeps(c: Context): ReserveTripDeps | Promise<ReserveTripDeps>
   /** Build the trips checkout deps for a request (payment-session wiring). */
-  startCheckoutDeps(c: Context): StartCheckoutDeps
+  startCheckoutDeps(c: Context): StartCheckoutDeps | Promise<StartCheckoutDeps>
   /**
    * Build the trips cancel deps for a request (provider hold-release wiring).
    * Used to release a reserved Trip when final CRM acceptance loses a race.
    */
-  cancelTripComponentsDeps(c: Context): CancelTripComponentsDeps
+  cancelTripComponentsDeps(c: Context): CancelTripComponentsDeps | Promise<CancelTripComponentsDeps>
   /**
    * Resolve the deployment's public operator profile, surfaced on the public
    * proposal payload. Returns `null` when no profile is configured.
@@ -790,7 +790,7 @@ async function finalizePublicProposalAcceptWithQuoteLock({
   return { kind: "accepted", accepted }
 }
 
-function reservePreparedPublicProposal(
+async function reservePreparedPublicProposal(
   c: Context<OperatorProposalRouteEnv>,
   options: QuoteProposalRoutesOptions,
   db: PostgresJsDatabase,
@@ -810,7 +810,7 @@ function reservePreparedPublicProposal(
         currency: snapshot.currency,
       },
     },
-    options.reserveTripDeps(c),
+    await options.reserveTripDeps(c),
   )
 }
 
@@ -869,7 +869,7 @@ async function releaseAcceptedProposalReservation(
           quoteVersionId: release.quoteVersionId,
         },
       },
-      options.cancelTripComponentsDeps(c),
+      await options.cancelTripComponentsDeps(c),
     )
   } catch (error) {
     console.warn("[proposal] failed to release reservation after proposal accept conflict:", error)
@@ -942,7 +942,7 @@ async function startAcceptedProposalCheckout(
           collectionCurrency: snapshot.currency,
         },
       },
-      options.startCheckoutDeps(c),
+      await options.startCheckoutDeps(c),
     )
   } catch (error) {
     console.warn("[proposal] checkout handoff failed after proposal acceptance:", error)
