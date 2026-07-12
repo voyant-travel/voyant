@@ -11,6 +11,7 @@ export const mcpVoyantModule = defineModule({
       surface: "admin",
       mount: "mcp",
       methods: ["GET", "POST"],
+      openapi: { document: "mcp" },
       runtime: {
         entry: "@voyant-travel/mcp/runtime",
         export: "createMcpVoyantRuntime",

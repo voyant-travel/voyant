@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./runtime": "./src/runtime.ts",
+    "./openapi/admin": "./openapi/admin/mcp.json",
     "./voyant": "./src/voyant.ts"
   },
   "voyant": {
@@ -20,7 +21,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "publishConfig": {
     "access": "public",
@@ -35,6 +37,7 @@
         "import": "./dist/runtime.js",
         "default": "./dist/runtime.js"
       },
+      "./openapi/admin": "./openapi/admin/mcp.json",
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",

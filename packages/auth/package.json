@@ -60,6 +60,9 @@
       "types": "./src/runtime-contributor.ts",
       "default": "./src/runtime-contributor.ts"
     },
+    "./openapi/admin/invitations": "./openapi/admin/invitations.json",
+    "./openapi/admin/team": "./openapi/admin/team.json",
+    "./openapi/storefront/invitations": "./openapi/storefront/invitations.json",
     "./voyant": {
       "types": "./src/voyant.ts",
       "default": "./src/voyant.ts"
@@ -130,6 +133,9 @@
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
       },
+      "./openapi/admin/invitations": "./openapi/admin/invitations.json",
+      "./openapi/admin/team": "./openapi/admin/team.json",
+      "./openapi/storefront/invitations": "./openapi/storefront/invitations.json",
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -138,7 +144,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "openapi"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises"
 import {
   createToolRegistry,
   defineTool,
@@ -9,6 +10,7 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { createMcpHonoApp } from "../src/index.js"
+import { mcpVoyantModule } from "../src/voyant.js"
 
 const accessCatalog = {
   resources: [
@@ -122,6 +124,36 @@ function appWithScopes(scopes: string[]): Hono {
 }
 
 describe("createMcpHonoApp", () => {
+  it("owns its concrete HTTP operations and OpenAPI document", async () => {
+    expect(mcpVoyantModule.api).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/mcp#api.admin",
+        surface: "admin",
+        mount: "mcp",
+        methods: ["GET", "POST"],
+        openapi: { document: "mcp" },
+      }),
+    ])
+
+    const document = JSON.parse(
+      await readFile(new URL("../openapi/admin/mcp.json", import.meta.url), "utf8"),
+    ) as { paths: Record<string, Record<string, Record<string, unknown>>> }
+    const claims = Object.entries(document.paths)
+      .flatMap(([path, pathItem]) =>
+        Object.entries(pathItem).map(([method, operation]) => [
+          method.toUpperCase(),
+          path,
+          operation["x-voyant-api-id"],
+        ]),
+      )
+      .sort((left, right) => left.join(":").localeCompare(right.join(":")))
+
+    expect(claims).toEqual([
+      ["GET", "/v1/admin/mcp/manifest", "@voyant-travel/mcp#api.admin"],
+      ["POST", "/v1/admin/mcp", "@voyant-travel/mcp#api.admin"],
+    ])
+  })
+
   it("lists and calls a tool when the caller holds its required scopes", async () => {
     const app = appWithScopes(["catalog:read"])
 
