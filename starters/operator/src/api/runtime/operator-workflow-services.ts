@@ -15,6 +15,7 @@ import {
   EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
   resolveWorkflowEnvironment,
 } from "@voyant-travel/db/outbox-workflow"
+import { withNodeDatabase } from "@voyant-travel/db/runtime"
 import {
   createNotificationReminderWorkflowRuntime,
   type NotificationReminderWorkflowRuntime,
@@ -22,7 +23,6 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { getNotificationTaskRuntime } from "../../lib/notifications.js"
 import { reportBackgroundFailure } from "../../lib/observability.js"
-import { withDbFromEnv } from "../lib/db.js"
 import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter.js"
 
 type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
@@ -68,7 +68,7 @@ export async function createOperatorWorkflowServiceResolver(
       CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY,
       createCruisesExternalRefreshWorkflowRuntime({
         withOptions: (operation) =>
-          withDbFromEnv(appBindings, async (rawDb) => {
+          withNodeDatabase(appBindings, async (rawDb) => {
             const db = operatorPostgresDb(rawDb)
             const embeddings = catalogRuntime.buildEmbeddingProvider(env)
             const indexer = catalogRuntime.buildTypesenseIndexer(env, embeddings)
@@ -97,7 +97,7 @@ export async function createOperatorWorkflowServiceResolver(
       EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY,
       createEventOutboxWorkflowRuntime({
         withDb: (operation) =>
-          withDbFromEnv(appBindings, (db) => operation(operatorPostgresDb(db))),
+          withNodeDatabase(appBindings, (db) => operation(operatorPostgresDb(db))),
         resolveEventBus: async () => app.eventBus,
         warn: (message) => console.warn(message),
       }),

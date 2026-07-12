@@ -1,4 +1,5 @@
 import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
 import {
@@ -8,7 +9,6 @@ import {
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveVoyantDataApiKey } from "../../lib/voyant-cloud"
-import { getDbFromEnv } from "../lib/db"
 import {
   createDocumentStorage,
   readDocumentContentBase64,
@@ -24,7 +24,7 @@ export function operatorPostgresDb(db: VoyantDb): PostgresJsDatabase {
 }
 
 export function resolveOperatorDb(bindings: unknown) {
-  return getDbFromEnv(operatorBindings(bindings))
+  return resolveNodeDatabase(operatorBindings(bindings))
 }
 
 export function readOperatorDocumentContentBase64(

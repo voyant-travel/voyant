@@ -36,39 +36,25 @@ interface AppBindings {
   DATABASE_URL: string
   /**
    * Direct (non-pooled-proxy) Postgres connection string for the resident Node
-   * runtime. When set, the operator uses a single process-wide pooled
-   * node-postgres client (`adapter: "node"`) instead of the neon-http/WS
-   * per-request clients — the production default on Node (voyant#2966). Point
-   * it at the primary's direct endpoint (Neon `...pooler`-free host, or any
-   * standard Postgres). Falls back to `DATABASE_URL` when unset.
+   * runtime. Point it at the primary's direct endpoint (Neon `...pooler`-free
+   * host, or any standard Postgres). Falls back to `DATABASE_URL` when unset.
    */
   DATABASE_URL_DIRECT?: string
   /**
-   * Optional comma-separated connection strings of same-region Neon read
-   * replicas, used by the DEFAULT (neon-http) data plane only — reads
-   * round-robin across replicas while writes (and `db.$primary`) go to the
-   * primary. The transactional WebSocket client always talks to the primary
-   * and is unaffected.
+   * Optional comma-separated Postgres read-replica connection strings. Reads
+   * round-robin across replicas while writes (and `db.$primary`) use the
+   * primary process-cached Node client.
    *
    * Read-your-writes caveat: Neon replicas are eventually consistent
    * (typically milliseconds of lag), so a request that writes and then
    * reads the same data via the http client may read a slightly stale
-   * replica. Surfaces that need strict read-your-writes should read via
-   * `db.$primary` or live on the transactional client.
+   * replica. Surfaces that need strict read-your-writes should use `db.$primary`.
    *
    * Entries are trimmed; empty entries and entries equal to DATABASE_URL
-   * are ignored. Ignored entirely when DATABASE_URL points at localhost
-   * (the local pg.Pool fallback has no replica support).
+   * are ignored.
    */
   DATABASE_URL_REPLICAS?: string
   REDIS_URL?: string
-  /**
-   * Operational escape hatch for the split data plane: set to "1" to
-   * serve EVERY request with the transaction-capable WebSocket client
-   * (pre-Phase-1 behavior) — e.g. if a transactional surface was missed
-   * in the per-path routing. Costs a connection handshake per request.
-   */
-  DB_FORCE_TRANSACTIONAL?: string
 
   // Admin auth mode. Localhost/self-hosted deployments use local Better Auth
   // flows. Voyant Cloud deployments use Cloud as the exclusive identity broker.

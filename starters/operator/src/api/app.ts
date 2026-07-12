@@ -1,3 +1,4 @@
+import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import {
   composeVoyantGraphRuntime,
   lowerVoyantGraphActionsToActionLedgerRegistry,
@@ -13,7 +14,6 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
 import { createOperatorWorkflowDriver } from "./runtime/operator-runtime-adapter"
 
@@ -49,19 +49,10 @@ export const app = mountApp<AppBindings>({
   // Sentry/OpenTelemetry adapter in one place; the no-op default stays valid.
   appName: OPERATOR_APP_NAME,
   reporter: operatorReporter,
-  // Split data plane (perf, RFC voyant#1687 Phase 1.1):
-  // - `db` (default): neon-http — one fetch per query, NO connection
-  //   handshake. Serves all reads and single-statement writes.
-  // - `dbTransactional`: per-request Neon WebSocket Pool — the only
-  //   Workers-compatible client that supports db.transaction(). createApp
-  //   routes it to the absolute transactional surface derived from the selected
-  //   deployment graph (ADR-0008), so this deployment does not hand-maintain
-  //   first-party transactional route families.
-  // `DB_FORCE_TRANSACTIONAL=1` reverts to the WS client for ALL requests
-  // (operational escape hatch if a transactional surface was missed).
-  db: (env) =>
-    env.DB_FORCE_TRANSACTIONAL === "1" ? dbFromEnvForApp(env) : httpDbFromEnvForApp(env),
-  dbTransactional: (env) => dbFromEnvForApp(env),
+  // The resident Node host owns one transaction-capable Postgres pool. Both
+  // request surfaces resolve the same process-cached generic runtime resource.
+  db: resolveNodeDatabase,
+  dbTransactional: resolveNodeDatabase,
   dbTransactionalPaths: [...graphComposition.routePosture.transactionalPaths],
   linkDefinitions: projectLinks,
   // Workflow runtime — managed Cloud forwarding. App code forwards

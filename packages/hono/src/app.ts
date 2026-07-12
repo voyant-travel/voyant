@@ -151,7 +151,7 @@ export interface VoyantAppExtensions<TBindings = unknown> {
    * being the canonical consumer:
    *
    *     await app.ready(env)
-   *     await withDbFromEnv(env, (db) => drainOutbox(db, app.eventBus))
+   *     await withNodeDatabase(env, (db) => drainOutbox(db, app.eventBus))
    */
   eventBus: import("@voyant-travel/core").EventBus
   /**

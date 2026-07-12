@@ -138,6 +138,8 @@ test("rejects restored checked-in starter compatibility authority", () => {
     "starters/operator/src/api/runtime/payment-config.ts",
     "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
     "starters/operator/src/api/runtime/media-runtime.ts",
+    "starters/operator/src/api/lib/db.ts",
+    "starters/operator/src/api/lib/db.test.ts",
   ]) {
     const starter = fixture()
     const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))

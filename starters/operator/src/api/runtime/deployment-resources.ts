@@ -8,11 +8,11 @@
  */
 
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import { withNodeDatabase } from "@voyant-travel/db/runtime"
 import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph-runtime.generated"
 import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
-import { withDbFromEnv } from "../lib/db"
 import {
   createOperatorDocumentStorage,
   operatorBindings,
@@ -33,7 +33,7 @@ function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
           (context as { get(key: string): Parameters<typeof operatorPostgresDb>[0] }).get("db"),
         ) as unknown as TDatabase,
       transaction: (bindings, operation) =>
-        withDbFromEnv(operatorBindings(bindings), (database) => operation(database)),
+        withNodeDatabase(operatorBindings(bindings), (database) => operation(database)),
     },
     storage: {
       resolve: createOperatorDocumentStorage,
