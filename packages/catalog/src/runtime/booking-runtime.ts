@@ -25,7 +25,6 @@ import {
   resolveBookingSellTaxRate,
 } from "@voyant-travel/finance/booking-tax"
 import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
-import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -145,6 +144,7 @@ export function buildSourcedBookingRows({
 const prepareConnectPackageBookParameters = createCatalogPackageHoldPreparer({
   lock: async ({ context, connectionId, offer }) => {
     const c = context as Context
+    const { resolveVoyantConnectEnv } = await import("@voyant-travel/plugin-voyant-connect")
     const config = resolveVoyantConnectEnv(c.env as Record<string, string | undefined>, {
       warn: (message) => console.warn(`[catalog-booking] ${message}`),
     })

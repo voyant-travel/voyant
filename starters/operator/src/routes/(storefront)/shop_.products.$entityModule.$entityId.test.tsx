@@ -16,7 +16,16 @@ vi.mock("@voyant-travel/storefront-react/storefront", () => ({
     () =>
     ({ children }: { children: React.ReactNode }) =>
       children,
-  createStorefrontPresentationContribution: <T,>(contribution: T) => contribution,
+  createStorefrontPresentationContribution: (runtime: {
+    renderProductDetail(entityModule: string, entityId: string): React.ReactNode
+  }) => ({
+    routes: {
+      productDetail: {
+        component: () =>
+          runtime.renderProductDetail(mocks.params.entityModule, mocks.params.entityId),
+      },
+    },
+  }),
   StorefrontUiProvider: ({ children }: { children: React.ReactNode }) => children,
   AccommodationDetailPage: ({ entityId }: { entityId: string }) => (
     <div data-testid="accommodation-detail">{entityId}</div>
