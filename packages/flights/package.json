@@ -16,6 +16,7 @@
     "./reference/static-bundle": "./src/reference/static-bundle.ts",
     "./hono": "./src/hono.ts",
     "./payment-integration": "./src/payment-integration.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts"
   },
   "voyant": {
@@ -115,6 +116,11 @@
         "types": "./dist/payment-integration.d.ts",
         "import": "./dist/payment-integration.js",
         "default": "./dist/payment-integration.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

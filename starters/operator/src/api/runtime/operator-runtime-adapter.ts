@@ -4,6 +4,7 @@ import {
   createSmartbillSettlementPollers,
   type SmartbillRuntimeConfig,
   type SmartbillRuntimeHost,
+  smartbillRuntimeHostPort,
 } from "@voyant-travel/plugin-smartbill/graph-runtime"
 import {
   type CloudWorkflowsClientEnv,
@@ -54,6 +55,13 @@ export const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {
   resolveDatabase: (bindings) => operatorPostgresDb(resolveOperatorDb(bindings)),
   resolveConfig: resolveOperatorSmartbillConfig,
   resolveDocumentStorage: createOperatorDocumentStorage,
+}
+
+/** Compatibility contributor until the external SmartBill package exports its own factory. */
+export function createOperatorSmartbillRuntimePortContribution(): Readonly<
+  Record<string, unknown>
+> {
+  return { [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost }
 }
 
 export function resolveOperatorContractDocumentGenerator(bindings: unknown) {

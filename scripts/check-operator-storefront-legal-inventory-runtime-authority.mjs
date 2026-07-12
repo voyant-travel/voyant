@@ -59,9 +59,9 @@ for (const factory of [
 }
 
 const residualRegistrations = deploymentResources.match(/^\s+\[[A-Za-z][A-Za-z0-9]*Port\.id\]/gm)
-if ((residualRegistrations?.length ?? 0) > 13) {
+if ((residualRegistrations?.length ?? 0) > 0) {
   violations.push(
-    `deployment-resources.ts has ${residualRegistrations?.length ?? 0} direct runtime-port registrations; expected at most 13`,
+    `deployment-resources.ts has ${residualRegistrations?.length ?? 0} direct runtime-port registrations; expected zero`,
   )
 }
 

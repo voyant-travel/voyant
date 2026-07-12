@@ -20,6 +20,7 @@
     "./providers/voyant-cloud-email": "./src/providers/voyant-cloud-email.ts",
     "./providers/voyant-cloud-sms": "./src/providers/voyant-cloud-sms.ts",
     "./tools": "./src/mcp-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -141,6 +142,11 @@
         "types": "./dist/mcp-runtime.d.ts",
         "import": "./dist/mcp-runtime.js",
         "default": "./dist/mcp-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

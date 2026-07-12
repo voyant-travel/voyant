@@ -7,12 +7,10 @@
  * registries.
  */
 
-import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
+import { createActionLedgerRuntimePortContribution } from "@voyant-travel/action-ledger/runtime-contributor"
 import { cloudAdminMembersConfigFromRevalidate } from "@voyant-travel/auth/cloud-broker"
-import {
-  type IdentityAccessRuntimeProvider,
-  identityAccessRuntimePort,
-} from "@voyant-travel/auth/identity-access-runtime-port"
+import type { IdentityAccessRuntimeProvider } from "@voyant-travel/auth/identity-access-runtime-port"
+import { createAuthRuntimePortContribution } from "@voyant-travel/auth/runtime-contributor"
 import type { BookingsRuntimeProvider } from "@voyant-travel/bookings"
 import { createBookingsRuntimePortContribution } from "@voyant-travel/bookings/runtime-contributor"
 import type {
@@ -23,37 +21,31 @@ import type {
 import type { CatalogProjectionRuntimeProvider } from "@voyant-travel/catalog/projection-runtime"
 import { createCatalogRuntimePortContribution } from "@voyant-travel/catalog/runtime-contributor"
 import { createCommerceRuntimePortContribution } from "@voyant-travel/commerce/runtime-contributor"
-import type { VoyantPort } from "@voyant-travel/core/project"
-import { cruisesRoutesRuntimePort } from "@voyant-travel/cruises/graph-runtime"
+import { createCruisesRuntimePortContribution } from "@voyant-travel/cruises/runtime-contributor"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { channelPushRuntimePort, enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
+import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
+import { createDistributionRuntimePortContribution } from "@voyant-travel/distribution/runtime-contributor"
 import type { CheckoutNotificationDelivery } from "@voyant-travel/finance/checkout"
 import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-validation"
 import { createFinanceRuntimePortContribution } from "@voyant-travel/finance/runtime-contributor"
-import { flightsRuntimePort } from "@voyant-travel/flights"
+import { createFlightsRuntimePortContribution } from "@voyant-travel/flights/runtime-contributor"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
 import { createInventoryRuntimePortContribution } from "@voyant-travel/inventory/runtime-contributor"
 import type { LegalBookingContractSubscriberRuntime } from "@voyant-travel/legal/booking-contract-subscriber"
 import { createLegalRuntimePortContribution } from "@voyant-travel/legal/runtime-contributor"
-import { miceRuntimePort } from "@voyant-travel/mice"
-import { notificationsRuntimePort } from "@voyant-travel/notifications"
-import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"
+import { createMiceRuntimePortContribution } from "@voyant-travel/mice/runtime-contributor"
+import { createNotificationsRuntimePortContribution } from "@voyant-travel/notifications/runtime-contributor"
 import { createQuotesRuntimePortContribution } from "@voyant-travel/quotes/runtime-contributor"
-import { realtimeRuntimePort } from "@voyant-travel/realtime"
-import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
-import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
+import { createRealtimeRuntimePortContribution } from "@voyant-travel/realtime/runtime-contributor"
+import { createRelationshipsRuntimePortContribution } from "@voyant-travel/relationships/runtime-contributor"
+import { createStorageRuntimePortContribution } from "@voyant-travel/storage/runtime-contributor"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
 import { createStorefrontRuntimePortContribution } from "@voyant-travel/storefront/runtime-contributor"
-import {
-  type TripsDatabaseRuntime,
-  tripsDatabaseRuntimePort,
-  tripsRoutesRuntimePort,
-} from "@voyant-travel/trips/voyant"
-import {
-  type WorkflowRunnerRegistryRuntime,
-  workflowRunnerRegistryRuntimePort,
-} from "@voyant-travel/workflow-runs/runtime-port"
+import { createTripsRuntimePortContribution } from "@voyant-travel/trips/runtime-contributor"
+import type { TripsDatabaseRuntime } from "@voyant-travel/trips/voyant"
+import { createWorkflowRunsRuntimePortContribution } from "@voyant-travel/workflow-runs/runtime-contributor"
+import type { WorkflowRunnerRegistryRuntime } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveOperatorCustomFields } from "../../lib/custom-fields"
 import { resolveNotificationProviders } from "../../lib/notifications"
@@ -69,10 +61,10 @@ import {
   createOperatorDocumentStorage,
   createOperatorInvoiceExchangeRateResolver,
   createOperatorInvoiceSettlementPollers,
+  createOperatorSmartbillRuntimePortContribution,
   generateContractPdfForBooking,
   operatorBindings,
   operatorPostgresDb,
-  operatorSmartbillRuntimeHost,
   readOperatorDocumentContentBase64,
   resolveOperatorContractDocumentGenerator,
   resolveOperatorDb,
@@ -174,10 +166,9 @@ function createDeploymentPortResources(
   capabilities: OperatorCapabilities = createDeploymentCapabilities(),
 ): VoyantGraphRuntimePorts {
   return {
-    [identityAccessRuntimePort.id]: runtimePortValue(
-      identityAccessRuntimePort,
-      createOperatorIdentityAccessRuntime(capabilities),
-    ),
+    ...createAuthRuntimePortContribution({
+      identityAccess: createOperatorIdentityAccessRuntime(capabilities),
+    }),
     ...createQuotesRuntimePortContribution({
       quotes: {
         resolveParticipantPersonById: async (db, personId) =>
@@ -190,9 +181,11 @@ function createDeploymentPortResources(
         runtime.createQuoteProposalRoutesOptions(),
       ),
     }),
-    [miceRuntimePort.id]: runtimePortValue(miceRuntimePort, {
-      resolveDelegatePersonById: async (db, personId) =>
-        (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+    ...createMiceRuntimePortContribution({
+      mice: {
+        resolveDelegatePersonById: async (db, personId) =>
+          (await capabilities.relationshipsService.getPersonById(db, personId)) != null,
+      },
     }),
     ...createBookingsRuntimePortContribution({
       bookings: createOperatorBookingsRuntimeProvider(capabilities),
@@ -228,7 +221,7 @@ function createDeploymentPortResources(
         updateBookingTaxSettings: settings.updateBookingTaxSettings,
       })),
     }),
-    [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost,
+    ...createOperatorSmartbillRuntimePortContribution(),
     ...createStorefrontRuntimePortContribution({
       storefront: createOperatorStorefrontRuntimeProvider(capabilities),
       paymentLink: import("./payment-link-runtime").then((runtime) =>
@@ -311,22 +304,28 @@ function createDeploymentPortResources(
         (runtime) => runtime.operatorInventoryBrochureRuntime,
       ),
     }),
-    [cruisesRoutesRuntimePort.id]: {
-      resolveSourceAdapterRegistry: (bindings: unknown) =>
-        import("../lib/booking-engine-runtime").then((runtime) =>
-          runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
-        ),
-    },
-    [actionLedgerHealthRuntimePort.id]: import("./action-ledger-health-runtime").then((runtime) =>
-      runtime.createOperatorActionLedgerHealthRuntime(),
-    ),
-    [relationshipsRouteRuntimePort.id]: {
-      customFields: resolveOperatorCustomFields,
-    },
-    [flightsRuntimePort.id]: import("./flights-runtime").then(
-      (runtime) => runtime.operatorFlightsRuntime,
-    ),
-    [notificationsRuntimePort.id]: createOperatorNotificationsRuntimeProvider(),
+    ...createCruisesRuntimePortContribution({
+      routes: {
+        resolveSourceAdapterRegistry: (bindings: unknown) =>
+          import("../lib/booking-engine-runtime").then((runtime) =>
+            runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
+          ),
+      },
+    }),
+    ...createActionLedgerRuntimePortContribution({
+      health: import("./action-ledger-health-runtime").then((runtime) =>
+        runtime.createOperatorActionLedgerHealthRuntime(),
+      ),
+    }),
+    ...createRelationshipsRuntimePortContribution({
+      routes: { customFields: resolveOperatorCustomFields },
+    }),
+    ...createFlightsRuntimePortContribution({
+      flights: import("./flights-runtime").then((runtime) => runtime.operatorFlightsRuntime),
+    }),
+    ...createNotificationsRuntimePortContribution({
+      notifications: createOperatorNotificationsRuntimeProvider(),
+    }),
     ...createLegalRuntimePortContribution({
       legal: {
         resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
@@ -366,24 +365,28 @@ function createDeploymentPortResources(
         },
       },
     }),
-    [channelPushRuntimePort.id]: import("./channel-push-runtime").then(
-      (runtime) => runtime.operatorChannelPushRuntime,
-    ),
-    [tripsRoutesRuntimePort.id]: createOperatorTripsRoutesOptions,
-    [tripsDatabaseRuntimePort.id]: {
-      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    } satisfies TripsDatabaseRuntime,
-    [storageMediaRuntimePort.id]: import("./media-runtime").then(
-      (runtime) => runtime.operatorStorageMediaRuntime,
-    ),
-    [realtimeRuntimePort.id]: {
-      resolveProviders: resolveRealtimeProviders,
-      bridgeRoutes: operatorRealtimeBridgeRoutes,
-    },
-    ...(workflowRunnerRegistry
-      ? { [workflowRunnerRegistryRuntimePort.id]: workflowRunnerRegistry }
-      : {}),
+    ...createDistributionRuntimePortContribution({
+      channelPush: import("./channel-push-runtime").then(
+        (runtime) => runtime.operatorChannelPushRuntime,
+      ),
+    }),
+    ...createTripsRuntimePortContribution({
+      routes: createOperatorTripsRoutesOptions,
+      database: {
+        withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
+          withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+      } satisfies TripsDatabaseRuntime,
+    }),
+    ...createStorageRuntimePortContribution({
+      media: import("./media-runtime").then((runtime) => runtime.operatorStorageMediaRuntime),
+    }),
+    ...createRealtimeRuntimePortContribution({
+      realtime: {
+        resolveProviders: resolveRealtimeProviders,
+        bridgeRoutes: operatorRealtimeBridgeRoutes,
+      },
+    }),
+    ...createWorkflowRunsRuntimePortContribution(workflowRunnerRegistry),
   }
 }
 
@@ -684,11 +687,6 @@ async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabi
       }
     },
   }
-}
-
-function runtimePortValue<T>(port: VoyantPort<T>, provider: T): T {
-  port.test(provider)
-  return provider
 }
 
 type NotificationDeliveryLike = {

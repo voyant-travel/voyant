@@ -8,6 +8,7 @@
     "./types": "./src/types.ts",
     "./service": "./src/service.ts",
     "./routes": "./src/routes.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/r2": "./src/providers/r2.ts",
@@ -47,6 +48,11 @@
         "types": "./dist/routes.d.ts",
         "import": "./dist/routes.js",
         "default": "./dist/routes.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

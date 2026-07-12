@@ -13,6 +13,7 @@
     "./routes": "./src/routes.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/voyant-cloud": "./src/providers/voyant-cloud.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts"
   },
   "scripts": {
@@ -84,6 +85,11 @@
         "types": "./dist/providers/voyant-cloud.d.ts",
         "import": "./dist/providers/voyant-cloud.js",
         "default": "./dist/providers/voyant-cloud.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

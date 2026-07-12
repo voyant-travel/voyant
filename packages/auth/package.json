@@ -56,6 +56,10 @@
       "types": "./src/identity-access-graph-runtime.ts",
       "default": "./src/identity-access-graph-runtime.ts"
     },
+    "./runtime-contributor": {
+      "types": "./src/runtime-contributor.ts",
+      "default": "./src/runtime-contributor.ts"
+    },
     "./voyant": {
       "types": "./src/voyant.ts",
       "default": "./src/voyant.ts"
@@ -120,6 +124,11 @@
         "types": "./dist/identity-access-graph-runtime.d.ts",
         "import": "./dist/identity-access-graph-runtime.js",
         "default": "./dist/identity-access-graph-runtime.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
