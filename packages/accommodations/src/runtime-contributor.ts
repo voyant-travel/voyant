@@ -2,11 +2,11 @@ import {
   type BookingsAccommodationRuntime,
   bookingsAccommodationRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import { catalogAccommodationsRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
 import {
   type FinanceAccommodationsPaymentPolicyRuntime,
   financeAccommodationsPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { catalogAccommodationsRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
 import { enrichStayBookingOverviewItems } from "./booking-overview-enricher.js"
 import { catalogAccommodationsRuntimeExtension } from "./catalog-runtime-extension.js"
 import {
