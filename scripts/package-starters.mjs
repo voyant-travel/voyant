@@ -109,7 +109,7 @@ export default defineConfig({
   )
   writeFileSync(
     join(stagingTemplate, ".env.example"),
-    `${["postgresql", "://postgres:postgres@localhost:5432/voyant"].join("")}\nPORT=8080\n`,
+    `DATABASE_URL=${["postgresql", "://postgres:postgres@localhost:5432/voyant"].join("")}\nPORT=8080\n`,
   )
   writeFileSync(
     join(stagingTemplate, "src/scripts/seed.ts"),

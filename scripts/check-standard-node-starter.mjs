@@ -114,6 +114,14 @@ function inspectGeneratedStarter(starterRoot) {
     inspectPackageJson(packageJsonPath)
   }
 
+  const envExamplePath = join(starterRoot, ".env.example")
+  if (
+    existsSync(envExamplePath) &&
+    !/^DATABASE_URL=postgresql:\/\//m.test(readFileSync(envExamplePath, "utf8"))
+  ) {
+    violations.push("generated .env.example must declare DATABASE_URL")
+  }
+
   const authoredSources = actualFiles
     .filter((path) => !["package.json", "voyant.config.ts"].includes(path))
     .map((path) => [path, readFileSync(join(starterRoot, path), "utf8")])

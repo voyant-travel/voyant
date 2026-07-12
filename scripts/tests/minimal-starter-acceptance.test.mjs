@@ -47,6 +47,11 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       app,
     )
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
+    write(
+      app,
+      "src/api/public/starter-proof/route.ts",
+      'export const GET = (c) => c.json({ route: "public" })\n',
+    )
     write(app, "src/admin/dashboard/index.tsx", 'export default { id: "project.dashboard" }\n')
     write(
       app,
@@ -79,7 +84,17 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
     const bom = JSON.parse(readFileSync(join(app, ".voyant/product-bom.generated.json"), "utf8"))
     assert.equal(graph.schemaVersion, "voyant.resolved-graph.v1")
     assert.ok(graph.modules.length > 30)
-    assert.ok(graph.modules.some((unit) => unit.localId === "project-api"))
+    const projectApi = graph.modules.find((unit) => unit.localId === "project-api")
+    assert.ok(projectApi)
+    assert.ok(
+      projectApi.api?.some(
+        (api) =>
+          api.id === "project.api.public.starter-proof" &&
+          api.surface === "public" &&
+          api.mount === "/starter-proof" &&
+          api.methods?.includes("GET"),
+      ),
+    )
     assert.ok(graph.modules.some((unit) => unit.localId === "project-workflows"))
     assert.ok(graph.modules.some((unit) => unit.localId === "project-subscribers-links"))
     assert.ok(graph.modules.some((unit) => unit.localId === "concierge"))
@@ -103,6 +118,28 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
     assert.match(projectRuntime, /GENERATED_GRAPH_RUNTIME_CONTRIBUTORS/)
     assert.match(projectRuntime, /@voyant-travel\/storefront\/runtime-contributor/)
     assert.doesNotMatch(projectRuntime, /createVoyantGraphRuntimePortStubs/)
+    assert.match(
+      readFileSync(join(app, ".voyant/runtime/project-api.generated.ts"), "utf8"),
+      /src\/api\/public\/starter-proof\/route/,
+    )
+    exec(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "--input-type=module",
+        "--eval",
+        [
+          'import { projectApiHonoModule } from "./.voyant/runtime/project-api.generated.ts"',
+          'const response = await projectApiHonoModule.publicRoutes.request("http://local/starter-proof")',
+          "if (response.status !== 200) throw new Error('Unexpected status: ' + response.status)",
+          "const body = await response.json()",
+          "if (body.route !== 'public') throw new Error('Unexpected body: ' + JSON.stringify(body))",
+        ].join("; "),
+      ],
+      app,
+      { NODE_OPTIONS: "--conditions=development" },
+    )
 
     exec(
       "pnpm",

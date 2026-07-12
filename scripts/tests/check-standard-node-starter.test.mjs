@@ -19,6 +19,16 @@ test("accepts the strict generated standard Node starter shape", () => {
   assert.match(run(root), /4 authored files, generic Node bootstrap, no product authority/)
 })
 
+test("rejects an environment example without a DATABASE_URL assignment", () => {
+  const root = fixture({
+    extraFiles: { ".env.example": "postgresql://localhost/voyant\nPORT=8080\n" },
+  })
+  assert.throws(
+    () => run(root),
+    (error) => String(error.stderr).includes("generated .env.example must declare DATABASE_URL"),
+  )
+})
+
 test("rejects standard modules, extensions, and plugins in generated config", () => {
   for (const property of ["modules", "extensions", "plugins"]) {
     const root = fixture({

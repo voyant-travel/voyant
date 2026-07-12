@@ -48,7 +48,7 @@ public surface.
 Applications may author deployment-local API routes in these directories:
 
 - `src/api/admin/**/route.ts` for the authenticated admin surface
-- `src/api/store/**/route.ts` for the authenticated public surface
+- `src/api/public/**/route.ts` for the authenticated public surface
 
 Each route file exports at least one named uppercase HTTP handler: `GET`,
 `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, or `OPTIONS`. Route files
