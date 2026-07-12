@@ -237,8 +237,10 @@ export default defineDeploymentExtension({
 `extension.module` is the module the routes attach to. If the extension owns
 tables, put them in `src/extensions/<name>/schema.ts` — the deployment drizzle
 configs glob `src/extensions/*/schema.ts` too, so they migrate exactly like
-custom-module schema. Discovery wires them via `extensionsFromGlob` in
-`src/api/composition.ts` and passes them as `createVoyantApp({ extensions })`.
+custom-module schema. Project resolution admits each extension as a path-owned
+graph unit and emits a static import in the generated project runtime. The
+generic graph factory context invokes its default export only when selected, so
+local authoring stays folder-based without an application-level registry.
 
 ## Custom admin UI (pages, widgets, nav)
 

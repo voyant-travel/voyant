@@ -33,9 +33,9 @@ export interface CreateAppConfig<TBindings extends VoyantBindings, TCapabilities
  *       db, auth, plugins, ...
  *     })
  *
- * Standard deployments usually call `@voyant-travel/framework`'s higher-level
- * `createVoyantApp({ providers, modules })` (which assembles the framework-owned
- * manifest + registry for you and delegates here) rather than this directly.
+ * Framework callers may use `createVoyantApp({ providers, modules })` for an
+ * explicit local registry. Standard product units are composed from the
+ * generated deployment graph instead of this registry path.
  */
 export function createApp<TBindings extends VoyantBindings, TCapabilities>(
   config: CreateAppConfig<TBindings, TCapabilities>,

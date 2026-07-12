@@ -2,7 +2,6 @@ import {
   composeVoyantGraphRuntime,
   createVoyantApp,
   createVoyantGraphRuntimePortStubs,
-  frameworkComposition,
   resolveStandardNodeGraphRuntime,
 } from "@voyant-travel/framework"
 import {
@@ -26,9 +25,8 @@ import {
  * deployment-specific routes (a payment provider's webhooks, niche modules like
  * MICE/cruises a starter installs) never leak into the published contract.
  *
- * Providers are never invoked here — doc generation only reads the mounted
- * route metadata, no request is served — so a deep stub satisfies the injected
- * `FrameworkProviders`/`db` surface.
+ * Runtime ports are fail-on-use inspection stubs: document generation reads
+ * route metadata without serving requests.
  */
 // biome-ignore lint/suspicious/noExplicitAny: coercion-safe provider/db stub; never called during doc generation.
 const deepStub: any = new Proxy(() => deepStub, {
@@ -77,29 +75,20 @@ export async function buildFrameworkOpenApiDocuments(): Promise<FrameworkOpenApi
     capabilities: deepStub,
     ports: createVoyantGraphRuntimePortStubs(runtime),
   })
-  const modules = Object.fromEntries([
-    ...runtime.modules.flatMap((unit) => {
-      const factory = frameworkComposition.modules[unit.id.replace("#", "/")]
-      return factory ? [[`legacy:${unit.id}`, factory] as const] : []
-    }),
-    ...composition.modules.map(
+  const modules = Object.fromEntries(
+    composition.modules.map(
       (module, index) => [`graph:${index}:${module.module.name}`, () => module] as const,
     ),
-  ])
-  const extensions = Object.fromEntries([
-    ...[...runtime.extensions, ...runtime.plugins].flatMap((unit) => {
-      const factory = frameworkComposition.extensions?.[unit.id.replace("#", "/")]
-      return factory ? [[`legacy:${unit.id}`, factory] as const] : []
-    }),
-    ...composition.extensions.map(
+  )
+  const extensions = Object.fromEntries(
+    composition.extensions.map(
       (extension, index) =>
         [`graph:${index}:${extension.extension.name}`, () => extension] as const,
     ),
-  ])
+  )
   const app = createVoyantApp({
     providers: deepStub,
     db: deepStub,
-    standard: false,
     modules,
     extensions,
   })

@@ -412,17 +412,25 @@ async function materializeProjectModuleConventions(
   discovery: ProjectConventionDiscovery,
   projectRoot: string,
 ): Promise<void> {
-  const modules = discovery.contributions.filter(
+  const runtimeUnits = discovery.contributions.filter(
     (contribution): contribution is ProjectConventionFileContribution =>
-      contribution.kind === "module",
+      contribution.kind === "module" || contribution.kind === "extension",
   )
-  if (modules.length === 0) return
+  if (runtimeUnits.length === 0) return
   const packageName = await admitProjectSourcePackage(materialized, projectRoot)
   materialized.project = {
     ...materialized.project,
     modules: [
       ...materialized.project.modules,
-      ...modules.map((module) => syntheticProjectModule(packageName, module)),
+      ...runtimeUnits
+        .filter(({ kind }) => kind === "module")
+        .map((unit) => syntheticProjectRuntimeUnit(packageName, unit)),
+    ],
+    extensions: [
+      ...(materialized.project.extensions ?? []),
+      ...runtimeUnits
+        .filter(({ kind }) => kind === "extension")
+        .map((unit) => syntheticProjectRuntimeUnit(packageName, unit)),
     ],
   }
 }
@@ -451,13 +459,14 @@ async function admitProjectSourcePackage(
   return packageName
 }
 
-function syntheticProjectModule(
+function syntheticProjectRuntimeUnit(
   packageName: string,
   contribution: ProjectConventionFileContribution,
 ): VoyantGraphUnitManifest {
   const name = path.basename(path.dirname(contribution.sourcePath))
   return {
-    schemaVersion: "voyant.module.v1",
+    schemaVersion:
+      contribution.kind === "extension" ? "voyant.extension.v1" : "voyant.module.v1",
     id: graphIdForSelection(packageName, `${packageName}#${name}`),
     packageName,
     localId: name,

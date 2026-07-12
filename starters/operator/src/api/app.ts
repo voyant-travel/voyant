@@ -14,11 +14,7 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import {
-  buildOperatorProviders,
-  buildOperatorRuntimePorts,
-  operatorGraphRuntimeBindings,
-} from "./composition"
+import { buildOperatorProviders, buildOperatorRuntimePorts } from "./composition"
 import { dbFromEnvForApp, httpDbFromEnvForApp } from "./lib/db"
 import { createOperatorWorkflowDriver, resolveOperatorDb } from "./runtime/operator-runtime-adapter"
 
@@ -41,7 +37,6 @@ export const operatorActionLedgerCapabilityRegistry =
 const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   capabilities: operatorProviders,
-  bindings: operatorGraphRuntimeBindings,
   ports: buildOperatorRuntimePorts(workflowRunnerRegistry, operatorProviders),
   outboundWebhooks: {
     enqueue: (event, bindings) => enqueueGraphWebhookEvent(resolveOperatorDb(bindings), event),

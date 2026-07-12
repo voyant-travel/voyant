@@ -1417,6 +1417,12 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | OpenAPI | Route-owned schemas plus shipped graph coverage report and allowlists | Package API bundle opts into documents and owns operation metadata; selected graph emits deployment-specific documents | API routes | Coverage has no unexplained allowlist and no operator OpenAPI catalog | #3080 |
 | Access resources and grants | Pass-through route scopes and existing Better Auth `Record<string, string[]>` permissions | Package owns `access.resources`; routes, tools, admin, workflows, and actions reference one `resource:action` catalog; project owns role presets | Identity, API operation ids | All references validate against one selected catalog; no central first-party permission catalog remains | #3080 |
 
+The central framework composition catalog has been deleted. Package manifests
+and their admitted runtime exports are the only product authority; generated
+project runtimes also include index-only local modules and extensions. Generic
+Hono manifest/registry helpers remain available for explicit consumer-owned
+composition, but they do not supply a standard product set.
+
 The first authority slice is documented in
 [`access-catalog-authority.md`](./access-catalog-authority.md). Bookings now proves selected resource
 ownership, deterministic lowering, exact-pair validation, compatibility overlay semantics, Hono

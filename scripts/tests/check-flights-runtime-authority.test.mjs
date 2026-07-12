@@ -24,7 +24,7 @@ async function createFixture(overrides = {}) {
       'defineGraphRuntimeFactory(({ getPort }) => getPort(flightsRuntimePort))\ncreateOrderPaymentSessions({ targetType: "flight_order" })\n',
     "flights/src/runtime-port.ts": '["resolveAdapter", "startCardPayment"]\n',
     "operator/src/api/composition.ts":
-      "export function buildOperatorRuntimePorts() { return { [flightsRuntimePort.id]: provider } }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = {}\nfunction bindingsFromExtensionFactories() {}\n",
+      "export function buildOperatorRuntimePorts() { return { [flightsRuntimePort.id]: provider } }\nfunction createLazyCatalogSearchRuntime() {}\n",
     "operator/src/api/runtime/flights-runtime.ts":
       "export const operatorFlightsRuntime: FlightsRuntime = { resolveAdapter, startCardPayment }\n",
     ...overrides,
@@ -65,7 +65,7 @@ describe("check-flights-runtime-authority", () => {
 
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must bind Flights through flightsRuntimePort\.id/)
-      assert.match(error.stderr, /must not bind Flights by package id/)
+      assert.match(error.stderr, /compatibility runtime bindings must stay deleted/)
       assert.match(error.stderr, /must not retain the Flights compatibility route loader/)
       return true
     })

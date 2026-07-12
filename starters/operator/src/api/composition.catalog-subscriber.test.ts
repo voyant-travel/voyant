@@ -15,14 +15,12 @@ import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime
 import {
   buildOperatorProviders,
   buildOperatorRuntimePorts,
-  operatorGraphRuntimeBindings,
 } from "./composition"
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({
     runtime,
     capabilities: buildOperatorProviders(),
-    bindings: operatorGraphRuntimeBindings,
     ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
   })
 }
@@ -89,7 +87,6 @@ describe("Operator Catalog subscriber composition", () => {
         modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/catalog"),
       },
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports,
     })
 

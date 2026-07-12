@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
@@ -47,26 +47,22 @@ for (const selection of standardSelections) {
   }
 }
 
-const frameworkComposition = readFileSync(
-  join(root, "packages/framework/src/composition-lazy.ts"),
-  "utf8",
-)
-if (frameworkComposition.split(/\r?\n/).length > 532) {
-  violations.push("composition-lazy.ts compatibility catalog grew beyond its ratchet")
+if (existsSync(join(root, "packages/framework/src/composition-lazy.ts"))) {
+  violations.push("framework composition-lazy.ts compatibility catalog must stay deleted")
 }
 
 const operatorComposition = readFileSync(
   join(root, "starters/operator/src/api/composition.ts"),
   "utf8",
 )
-const bindingsBody = operatorComposition.match(
-  /export const operatorGraphRuntimeBindings[\s\S]*?=\s*\{([\s\S]*?)\n\}/,
-)?.[1]
-const bindingIds = bindingsBody
-  ? [...bindingsBody.matchAll(/^\s*"([^"]+)"\s*:/gm)].map((m) => m[1])
-  : []
-if (bindingIds.length > 0) {
-  violations.push(`Operator package-specific runtime bindings remain: ${bindingIds.join(", ")}`)
+for (const symbol of [
+  "operatorGraphRuntimeBindings",
+  "deploymentLocalExtensions",
+  "bindingsFromExtensionFactories",
+]) {
+  if (operatorComposition.includes(symbol)) {
+    violations.push(`Operator compatibility binding symbol remains: ${symbol}`)
+  }
 }
 
 if (

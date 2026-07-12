@@ -176,6 +176,24 @@ describe("discoverProjectConventions", () => {
     ])
   })
 
+  it("discovers an index-only local extension for generated runtime composition", async () => {
+    const root = await projectFixture([
+      "src/extensions/booking-notes/index.ts",
+      "src/extensions/group/nested/index.ts",
+      "src/extensions/package-style/voyant.ts",
+    ])
+
+    const result = await discoverProjectConventions(root)
+
+    expect(result.contributions).toEqual([
+      {
+        id: "project.extension.booking-notes",
+        kind: "extension",
+        sourcePath: "src/extensions/booking-notes/index.ts",
+      },
+    ])
+  })
+
   it("ignores declaration and test files in subscriber and link directories", async () => {
     const root = await projectFixture([
       "src/subscribers/accepted.ts",

@@ -1,5 +1,4 @@
-// agent-quality: file-size exception -- owner: operator; this temporary cross-package
-// authority suite is deleted with operatorGraphRuntimeBindings in the central cutover.
+// agent-quality: file-size exception -- owner: operator; graph composition coverage.
 import { accommodationsContentRuntimePort } from "@voyant-travel/accommodations/graph-runtime"
 import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
 import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "@voyant-travel/bookings"
@@ -74,8 +73,6 @@ import {
 import {
   buildOperatorProviders,
   buildOperatorRuntimePorts,
-  deploymentLocalExtensions,
-  operatorGraphRuntimeBindings,
 } from "./composition"
 import { recordPaidBookingCancellationSettlement } from "./subscribers/booking-cancellation-settlement"
 import { closeTerminalBookingPaymentSchedules } from "./subscribers/booking-payment-cleanup"
@@ -85,7 +82,6 @@ async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({
     runtime,
     capabilities: buildOperatorProviders(),
-    bindings: operatorGraphRuntimeBindings,
     ports: buildOperatorRuntimePorts(workflowRunnerRegistry),
   })
 }
@@ -164,9 +160,6 @@ describe("operator graph runtime composition", () => {
         (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
       ),
     ).toHaveLength(1)
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
-      "@voyant-travel/distribution#channel-push-extension",
-    )
     expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
       channelPushRuntimePort.id,
     )
@@ -200,7 +193,6 @@ describe("operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
@@ -248,7 +240,6 @@ describe("operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
@@ -330,7 +321,6 @@ describe("operator graph runtime composition", () => {
     const composed = await composeVoyantGraphRuntime({
       runtime,
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports: {
         ...buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
         [legalBookingContractSubscriberRuntimePort.id]: {
@@ -380,7 +370,6 @@ describe("operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
@@ -398,12 +387,10 @@ describe("operator graph runtime composition", () => {
     expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
       legalBookingContractSubscriberRuntimePort.id,
     )
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/legal")
   })
 
   it("selects SmartBill package runtime through its typed Node host port", async () => {
     expect(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS).toContain("@voyant-travel/plugin-smartbill")
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/plugin-smartbill")
     expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
       smartbillRuntimeHostPort.id,
     )
@@ -531,7 +518,6 @@ describe("operator graph runtime composition", () => {
     const composed = await composeVoyantGraphRuntime({
       runtime,
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports: buildOperatorRuntimePorts(registry),
     })
     const runtimeModule = composed.modules.find(
@@ -624,7 +610,6 @@ describe("operator graph runtime composition", () => {
       composeVoyantGraphRuntime({
         runtime: createGeneratedGraphRuntime(),
         capabilities: buildOperatorProviders(),
-        bindings: operatorGraphRuntimeBindings,
         ports: missingDatabase,
       }),
     ).rejects.toThrow(/requires runtime port "commerce\.promotion-redemption-database"/)
@@ -640,7 +625,6 @@ describe("operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      bindings: operatorGraphRuntimeBindings,
       ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
     })
 
@@ -659,7 +643,6 @@ describe("operator graph runtime composition", () => {
       composeVoyantGraphRuntime({
         runtime: createGeneratedGraphRuntime(),
         capabilities: buildOperatorProviders(),
-        bindings: operatorGraphRuntimeBindings,
         ports: buildOperatorRuntimePorts(),
       }),
     ).rejects.toThrow(/requires runtime port "workflows\.runner-registry"/)
@@ -689,9 +672,6 @@ describe("operator graph runtime composition", () => {
   })
 
   it("composes index-only invitations, team, and MCP modules from generated imports", async () => {
-    for (const id of ["npm/operator#invitations", "npm/operator#team", "npm/operator#mcp"]) {
-      expect(operatorGraphRuntimeBindings).not.toHaveProperty(id)
-    }
     const composed = await composeOperatorGraph()
     const byName = (name: string) => composed.modules.find((module) => module.module.name === name)
 
@@ -701,7 +681,7 @@ describe("operator graph runtime composition", () => {
     expect(byName("mcp")?.lazyAdminRoutes).toBeTypeOf("function")
   })
 
-  it("composes graph package and local extensions without legacy duplicates", async () => {
+  it("composes graph package extensions without legacy duplicates", async () => {
     const composed = await composeOperatorGraph()
     const byName = (name: string) =>
       composed.extensions.find((extension) => extension.extension.name === name)
@@ -714,39 +694,11 @@ describe("operator graph runtime composition", () => {
     expect(byName("booking-schedule")?.publicPath).toBe("payment-policy")
     expect(byName("proposal")?.publicPath).toBe("proposals")
 
-    for (const id of Object.keys(deploymentLocalExtensions)) {
-      expect(operatorGraphRuntimeBindings).toHaveProperty(id)
-    }
-  })
-
-  it("keeps migrated package option wiring out of package-id bindings", () => {
-    for (const id of [
-      "@voyant-travel/bookings",
-      "@voyant-travel/bookings#requirements",
-      "@voyant-travel/catalog",
-      "@voyant-travel/finance",
-      "@voyant-travel/inventory",
-      "@voyant-travel/mice",
-      "@voyant-travel/quotes",
-      "@voyant-travel/finance#booking-tax-extension",
-      "@voyant-travel/quotes#proposal-extension",
-      "@voyant-travel/quotes#quote-version-snapshot-extension",
-    ]) {
-      expect(operatorGraphRuntimeBindings).not.toHaveProperty(id)
-    }
   })
 
   it("binds host runtimes by package-declared ports instead of package ids", async () => {
     const ports = buildOperatorRuntimePorts(new WorkflowRunnerRegistry())
 
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/relationships")
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/storage")
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/realtime")
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/notifications")
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/legal")
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
-      "@voyant-travel/commerce#catalog-checkout-extension",
-    )
     expect(Object.keys(ports)).toEqual(
       expect.arrayContaining([
         accommodationsContentRuntimePort.id,
@@ -788,10 +740,6 @@ describe("operator graph runtime composition", () => {
         tripsRoutesRuntimePort.id,
       ]),
     )
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty(
-      "@voyant-travel/distribution#channel-push-extension",
-    )
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/trips")
     await expect(composeOperatorGraph()).resolves.toBeDefined()
   })
 
@@ -815,8 +763,6 @@ describe("operator graph runtime composition", () => {
   })
 
   it("composes selected Flights exactly once and omits it when deselected", async () => {
-    expect(operatorGraphRuntimeBindings).not.toHaveProperty("@voyant-travel/flights")
-
     const runtime = createGeneratedGraphRuntime()
     const selected = await composeOperatorGraph(runtime)
     expect(selected.modules.filter((module) => module.module.name === "flights")).toHaveLength(1)

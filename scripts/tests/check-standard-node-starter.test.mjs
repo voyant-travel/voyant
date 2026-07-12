@@ -30,7 +30,7 @@ test("rejects standard selections repeated by authored config", () => {
   )
 })
 
-test("rejects every package-specific Operator binding", () => {
+test("rejects every compatibility binding registry", () => {
   const root = fixture({
     composition: `export const operatorGraphRuntimeBindings = {
   "@voyant-travel/plugin-smartbill": () => undefined,
@@ -39,7 +39,7 @@ test("rejects every package-specific Operator binding", () => {
   })
   assert.throws(
     () => run(root),
-    (error) => String(error.stderr).includes("Operator package-specific runtime bindings remain"),
+    (error) => String(error.stderr).includes("Operator compatibility binding symbol remains"),
   )
 })
 
@@ -60,8 +60,7 @@ function fixture(overrides = {}) {
   deployment: { target: "node", providers: { database: "postgres" } },
 })\n`,
     "packages/framework/src/operator-distribution.ts": `const modules = [{ resolve: "@voyant-travel/identity" }]\n`,
-    "packages/framework/src/composition-lazy.ts": "export const frameworkComposition = {}\n",
-    "starters/operator/src/api/composition.ts": "export const operatorGraphRuntimeBindings = {}\n",
+    "starters/operator/src/api/composition.ts": "export function buildOperatorRuntimePorts() {}\n",
     "packages/framework/src/project-artifact-paths.ts": `export const path = "product-bom.generated.json"\n`,
   }
   if (overrides.config) files["starters/operator/voyant.config.ts"] = overrides.config

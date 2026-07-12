@@ -626,6 +626,30 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect(runtimeSource).not.toContain(`${root}/src/modules`)
   })
 
+  it("lowers index-only project extensions into the generated graph runtime", async () => {
+    const root = projectRoot()
+    writeFile(
+      root,
+      "src/extensions/booking-notes/index.ts",
+      'export default { extension: { name: "booking-notes", module: "bookings" } }\n',
+    )
+
+    const resolution = await resolve(root, defineProject({ modules: [] }))
+
+    expect(resolution.graph.extensions).toEqual([
+      expect.objectContaining({
+        id: "npm/fixture#booking-notes",
+        runtime: { entry: "./src/extensions/booking-notes/index.ts", export: "default" },
+      }),
+    ])
+    const runtimeSource = resolution.artifacts.files.find(
+      (file) => file.path === resolution.artifacts.runtimeEntry,
+    )?.contents
+    expect(runtimeSource).toContain(
+      '"../../src/extensions/booking-notes/index.ts": () => import("../../src/extensions/booking-notes/index.ts")',
+    )
+  })
+
   it("composes an actual index-only project module without nested package metadata", async () => {
     const root = projectRoot()
     const scope = path.join(root, "node_modules", "@voyant-travel")

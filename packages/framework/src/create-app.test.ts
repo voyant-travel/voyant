@@ -1,40 +1,28 @@
+import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
-import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-import { createVoyantApp, optionalFamiliesToExclude } from "./create-app.js"
+import { createVoyantApp } from "./create-app.js"
 
-/** Cast a loose record to the providers slice the helper reads (avoids stubbing every field). */
-function providersWith(fields: Record<string, unknown>): Partial<FrameworkProviders> {
-  return fields as Partial<FrameworkProviders>
-}
+describe("createVoyantApp", () => {
+  it("composes only explicitly supplied local factories", () => {
+    const app = createVoyantApp({
+      providers: { value: "local" },
+      db: {} as never,
+      modules: {
+        local: ({ capabilities }) => ({
+          module: { name: capabilities.value },
+          adminRoutes: new Hono(),
+        }),
+      },
+      extensions: {
+        notes: () => ({ extension: { name: "notes", module: "local" } }),
+      },
+    })
 
-describe("optionalFamiliesToExclude (auto-exclude unwired optional families)", () => {
-  it("fails loudly when the legacy registry cannot compose selected standard units", () => {
-    expect(() => createVoyantApp({ providers: {} as never, db: {} as never })).toThrow(
-      /cannot compose graph-owned standard units.*@voyant-travel\/bookings/,
-    )
+    expect(app.moduleMounts?.map(({ moduleName }) => moduleName)).toContain("local")
   })
 
-  it("excludes @voyant-travel/flights when loadFlightAdminRoutes is not provided", () => {
-    expect(optionalFamiliesToExclude({})).toContain("@voyant-travel/flights")
-  })
-
-  it("keeps flights when the loader is provided", () => {
-    const excluded = optionalFamiliesToExclude(providersWith({ loadFlightAdminRoutes: () => {} }))
-    expect(excluded).not.toContain("@voyant-travel/flights")
-  })
-
-  it("does not exclude required (non-optional) families", () => {
-    // Only families in OPTIONAL_FAMILY_LOADERS can be auto-excluded; an empty
-    // providers object must not drop the core standard set.
-    expect(optionalFamiliesToExclude({})).toEqual(["@voyant-travel/flights"])
-  })
-
-  it("flights factory fails fast in direct composition when the loader is absent", () => {
-    // `createVoyantApp` excludes flights before the factory runs; a direct
-    // `frameworkComposition` mount that keeps flights but omits the loader must
-    // fail loudly rather than mount a routeless module in admin metadata.
-    const factory = frameworkComposition.modules["@voyant-travel/flights"]
-    if (!factory) throw new Error("expected a flights module factory")
-    expect(() => factory({ capabilities: {} } as never)).toThrow(/loadFlightAdminRoutes/)
+  it("does not mount a framework-owned standard set", () => {
+    const app = createVoyantApp({ providers: {}, db: {} as never })
+    expect(app.moduleMounts).toEqual([])
   })
 })

@@ -17,7 +17,6 @@
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
 import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
 
-import type { FrameworkProviders } from "./composition-lazy.js"
 import type { VoyantProjectManifest } from "./profile-types.js"
 
 export interface ResolveManagedCustomSourceOptions {
@@ -48,13 +47,13 @@ const EXTENSION_EXPORT_NAMES = [
  * no managed-module entry; managed profiles must fail loud at boot, never
  * silently drop a schema-owning route bundle.
  */
-export async function resolveManagedCustomModules(
+export async function resolveManagedCustomModules<TCapabilities = unknown>(
   project: Pick<VoyantProjectManifest, "customSource">,
   env: Record<string, unknown>,
   options: ResolveManagedCustomSourceOptions = {},
-): Promise<Record<string, ModuleFactory<FrameworkProviders>>> {
+): Promise<Record<string, ModuleFactory<TCapabilities>>> {
   void env
-  return resolveManagedCustomEntries<HonoModule, ModuleFactory<FrameworkProviders>>({
+  return resolveManagedCustomEntries<HonoModule, ModuleFactory<TCapabilities>>({
     specifiers: project.customSource?.modules ?? [],
     kind: "module",
     entryLabel: "managed-module",
@@ -71,13 +70,13 @@ export async function resolveManagedCustomModules(
  * exposes no managed-extension entry; managed profiles must fail loud at boot,
  * never silently drop admin/public extension routes.
  */
-export async function resolveManagedCustomExtensions(
+export async function resolveManagedCustomExtensions<TCapabilities = unknown>(
   project: Pick<VoyantProjectManifest, "customSource">,
   env: Record<string, unknown>,
   options: ResolveManagedCustomSourceOptions = {},
-): Promise<Record<string, ExtensionFactory<FrameworkProviders>>> {
+): Promise<Record<string, ExtensionFactory<TCapabilities>>> {
   void env
-  return resolveManagedCustomEntries<HonoExtension, ExtensionFactory<FrameworkProviders>>({
+  return resolveManagedCustomEntries<HonoExtension, ExtensionFactory<TCapabilities>>({
     specifiers: project.customSource?.extensions ?? [],
     kind: "extension",
     entryLabel: "managed-extension",

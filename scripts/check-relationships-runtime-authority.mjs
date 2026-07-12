@@ -37,13 +37,6 @@ const runtimePorts = section(
   "export function buildOperatorRuntimePorts",
   "function createLazyCatalogSearchRuntime",
 )
-const runtimeBindingsStart = composition.indexOf("export const operatorGraphRuntimeBindings")
-if (runtimeBindingsStart < 0) {
-  throw new Error(
-    "check-relationships-runtime-authority: could not locate operatorGraphRuntimeBindings",
-  )
-}
-const runtimeBindings = composition.slice(runtimeBindingsStart)
 
 if (
   !manifest.includes("runtimePorts: [requirePort(relationshipsRouteRuntimePort)]") ||
@@ -73,8 +66,8 @@ if (
 ) {
   violations.push("Operator must bind the generic Relationships runtime port")
 }
-if (runtimeBindings.includes('"@voyant-travel/relationships"')) {
-  violations.push("Operator must not bind Relationships runtime behavior by package id")
+if (composition.includes("operatorGraphRuntimeBindings")) {
+  violations.push("Operator compatibility runtime bindings must stay deleted")
 }
 
 if (violations.length > 0) {

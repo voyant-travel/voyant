@@ -37,11 +37,6 @@ const runtimePorts = section(
   "export function buildOperatorRuntimePorts",
   "const createOperatorTripsRoutesOptions",
 )
-const runtimeBindings = section(
-  composition,
-  "export const operatorGraphRuntimeBindings",
-  "function bindingsFromExtensionFactories",
-)
 
 if (
   !manifest.includes("requirePort(tripsRoutesRuntimePort)") ||
@@ -79,8 +74,8 @@ if (
 ) {
   violations.push("Operator must supply only the generic Trips runtime ports")
 }
-if (runtimeBindings.includes('"@voyant-travel/trips"')) {
-  violations.push("Operator must not bind Trips runtime behavior by package id")
+if (composition.includes("operatorGraphRuntimeBindings")) {
+  violations.push("Operator compatibility runtime bindings must stay deleted")
 }
 
 if (violations.length > 0) {

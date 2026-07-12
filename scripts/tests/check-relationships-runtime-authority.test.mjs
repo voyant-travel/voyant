@@ -21,7 +21,7 @@ async function createFixture(overrides = {}) {
     "relationships/src/runtime-port.ts":
       'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\n',
     "operator/src/api/composition.ts":
-      'import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"\nexport function buildOperatorRuntimePorts() { return { [relationshipsRouteRuntimePort.id]: {} } }\nfunction createLazyCatalogSearchRuntime() {}\nexport const operatorGraphRuntimeBindings = {}\nfunction bindingsFromModuleFactories() {}\n',
+      'import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"\nexport function buildOperatorRuntimePorts() { return { [relationshipsRouteRuntimePort.id]: {} } }\nfunction createLazyCatalogSearchRuntime() {}\n',
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -64,7 +64,7 @@ describe("check-relationships-runtime-authority", () => {
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must adapt its graph runtime factory through its typed port/)
       assert.match(error.stderr, /must not retain the preconfigured compatibility module export/)
-      assert.match(error.stderr, /must not bind Relationships runtime behavior by package id/)
+      assert.match(error.stderr, /compatibility runtime bindings must stay deleted/)
       return true
     })
   })

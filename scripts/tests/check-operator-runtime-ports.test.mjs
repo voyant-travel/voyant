@@ -38,7 +38,7 @@ const portNames = [
   "storefrontVerificationRuntimePort",
 ]
 
-async function createFixture({ binding = "", framework = "" } = {}) {
+async function createFixture({ binding = "", framework = false } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-package-authority-"))
   const operator = path.join(root, "operator/src/api/composition.ts")
   const frameworkFile = path.join(root, "framework/src/composition-lazy.ts")
@@ -46,9 +46,9 @@ async function createFixture({ binding = "", framework = "" } = {}) {
   await mkdir(path.dirname(frameworkFile), { recursive: true })
   await writeFile(
     operator,
-    `export function buildOperatorRuntimePorts() { return { ${portNames.map((name) => `[${name}.id]: {}`).join(",")} } }\nasync function createOperatorBookingsRuntimeProvider() {}\nexport const operatorGraphRuntimeBindings = { ${binding} }\nfunction bindingsFromExtensionFactories() {}\n`,
+    `export function buildOperatorRuntimePorts() { return { ${portNames.map((name) => `[${name}.id]: {}`).join(",")} } }\nasync function createOperatorBookingsRuntimeProvider() {}\n${binding}\n`,
   )
-  await writeFile(frameworkFile, framework)
+  if (framework) await writeFile(frameworkFile, "export const registry = {}\n")
   return root
 }
 
@@ -74,12 +74,12 @@ describe("check-operator-runtime-ports", () => {
 
   it("rejects restored Operator bindings and framework factories", async () => {
     const root = await createFixture({
-      binding: '"@voyant-travel/quotes": factory',
-      framework: 'const registry = { "@voyant-travel/quotes": factory }',
+      binding: 'export const operatorGraphRuntimeBindings = { "@voyant-travel/quotes": factory }',
+      framework: true,
     })
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must not return to package-keyed Operator bindings/)
-      assert.match(error.stderr, /must not return to frameworkComposition/)
+      assert.match(error.stderr, /operatorGraphRuntimeBindings must stay deleted/)
+      assert.match(error.stderr, /composition-lazy\.ts must stay deleted/)
       return true
     })
   })

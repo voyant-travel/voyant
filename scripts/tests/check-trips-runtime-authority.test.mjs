@@ -21,7 +21,7 @@ async function createFixture(overrides = {}) {
     "trips/src/runtime-port.ts":
       'definePort<TripsRoutesOptionsProvider>({ id: "trips.routes-runtime" })\ndefinePort<TripsDatabaseRuntime>({ id: "trips.database-runtime" })\n',
     "operator/src/api/composition.ts":
-      'import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"\nexport function buildOperatorRuntimePorts() { return { [tripsRoutesRuntimePort.id]: {}, [tripsDatabaseRuntimePort.id]: {} } }\nconst createOperatorTripsRoutesOptions = () => ({})\nexport const operatorGraphRuntimeBindings = {}\nfunction bindingsFromExtensionFactories() {}\n',
+      'import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"\nexport function buildOperatorRuntimePorts() { return { [tripsRoutesRuntimePort.id]: {}, [tripsDatabaseRuntimePort.id]: {} } }\nconst createOperatorTripsRoutesOptions = () => ({})\n',
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -63,7 +63,7 @@ describe("check-trips-runtime-authority", () => {
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must compose its routes and transactional lifecycle/)
       assert.match(error.stderr, /must not retain the preconfigured compatibility module export/)
-      assert.match(error.stderr, /must not bind Trips runtime behavior by package id/)
+      assert.match(error.stderr, /compatibility runtime bindings must stay deleted/)
       return true
     })
   })

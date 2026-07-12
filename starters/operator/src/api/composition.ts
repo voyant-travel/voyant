@@ -67,14 +67,9 @@ import {
 } from "@voyant-travel/finance/runtime-port"
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import {
-  extensionsFromGlob,
-  type FrameworkProviders,
-  type VoyantGraphRuntimeBindingContext,
-  type VoyantGraphRuntimeBindings,
   type VoyantGraphRuntimePorts,
 } from "@voyant-travel/framework"
 import { lazyProvider } from "@voyant-travel/hono"
-import type { ExtensionFactory } from "@voyant-travel/hono/composition"
 import {
   inventoryBrochureRuntimePort,
   inventoryContentRuntimePort,
@@ -157,12 +152,14 @@ type AsyncMethodProvider<T extends object> = {
  * resolver/service a module factory needs is gathered here so wiring lives in
  * one typed place rather than being threaded through `createApp`.
  */
-// `extends FrameworkProviders` is the compile-time guard that this container
-// satisfies the framework's injected provider contract (so the relocated
-// `frameworkComposition` factories can read it). A future framework provider
-// addition becomes required here, failing the operator typecheck until
-// `buildOperatorProviders` wires it — that's the intended forcing function.
-export interface OperatorCapabilities extends FrameworkProviders {
+// The compatibility base retains only types still shared with this deployment;
+// package runtime behavior is injected through typed graph ports below.
+type OperatorRelationshipsService = Pick<
+  typeof import("@voyant-travel/relationships").relationshipsService,
+  "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
+>
+
+export interface OperatorCapabilities {
   resolveNotificationProviders: typeof resolveNotificationProviders
   resolvePublicCheckoutBaseUrl: typeof resolvePublicCheckoutBaseUrlFromBindings
   resolveDocumentDownloadUrl: typeof resolveOperatorDocumentDownloadUrl
@@ -170,7 +167,7 @@ export interface OperatorCapabilities extends FrameworkProviders {
   resolveDb: typeof resolveOperatorDb
   createOperatorDocumentStorage: typeof createOperatorDocumentStorage
   resolveBankTransferDetails: typeof resolveBankTransferDetails
-  relationshipsService: FrameworkProviders["relationshipsService"]
+  relationshipsService: OperatorRelationshipsService
   closePaymentSchedulesForBooking: typeof closeTerminalBookingPaymentSchedules
   recordCancellationFinancialSettlement: typeof recordPaidBookingCancellationSettlement
   resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
@@ -196,10 +193,10 @@ export function buildOperatorProviders(): OperatorCapabilities {
     createBookingPiiService: createOperatorBookingPiiService,
     autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
     resolveBankTransferDetails,
-    relationshipsService: lazyProvider<FrameworkProviders["relationshipsService"]>(async () =>
+    relationshipsService: lazyProvider<OperatorRelationshipsService>(async () =>
       import("@voyant-travel/relationships").then(
         (m) =>
-          m.relationshipsService as AsyncMethodProvider<FrameworkProviders["relationshipsService"]>,
+          m.relationshipsService as AsyncMethodProvider<OperatorRelationshipsService>,
       ),
     ),
     closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
@@ -493,7 +490,8 @@ function createOperatorCatalogProjectionRuntimeProvider(): CatalogProjectionRunt
   }
 }
 
-const createOperatorTripsRoutesOptions: FrameworkProviders["createTripsRoutesOptions"] = () =>
+const createOperatorTripsRoutesOptions: import("@voyant-travel/trips").TripsRoutesOptionsProvider =
+  () =>
   import("./runtime/trips-runtime").then((runtime) => runtime.createOperatorTripsRoutesOptions())
 
 function createLazyCatalogSearchRuntime(
@@ -606,46 +604,6 @@ function createLazyCatalogIndexer(
       return (await loadIndexer()).bulkReindex(slice, stream, options)
     },
   }
-}
-
-/**
- * Custom extensions dropped into `src/extensions/<name>/index.ts` are
- * auto-discovered and mounted onto an EXISTING module's surface (the "custom
- * route on an existing module without forking" seam). Same build-time
- * `import.meta.glob` mechanism as modules; each default export is a
- * `HonoExtension`/`ExtensionFactory` (see `defineDeploymentExtension`) targeting
- * `extension.module`. Empty until a deployment adds one. The standard extensions
- * stay framework-owned (with injected provider closures); these are purely
- * deployment-local. See docs/architecture/custom-modules.md.
- */
-const discoveredExtensions = extensionsFromGlob<OperatorCapabilities>(
-  import.meta.glob("../extensions/*/index.ts", { eager: true }),
-)
-
-export const deploymentLocalExtensions: Record<string, ExtensionFactory<OperatorCapabilities>> = {
-  ...discoveredExtensions,
-}
-
-/**
- * Canonical package-owned units whose factories still need deployment options.
- * The keys are graph ids; package selection and runtime imports remain generated.
- */
-export const operatorGraphRuntimeBindings: VoyantGraphRuntimeBindings<OperatorCapabilities> = {
-  ...bindingsFromExtensionFactories({
-    ...deploymentLocalExtensions,
-  }),
-}
-
-function bindingsFromExtensionFactories(
-  factories: Record<string, ExtensionFactory<OperatorCapabilities>>,
-): VoyantGraphRuntimeBindings<OperatorCapabilities> {
-  return Object.fromEntries(
-    Object.entries(factories).map(([id, factory]) => [
-      id,
-      ({ capabilities }: VoyantGraphRuntimeBindingContext<OperatorCapabilities>) =>
-        factory({ capabilities, options: {} }),
-    ]),
-  )
 }
 
 async function createOperatorFinanceRuntimeProvider(capabilities: OperatorCapabilities) {

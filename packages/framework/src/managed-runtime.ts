@@ -148,8 +148,10 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
-import { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
+import {
+  type CreateVoyantAppConfig,
+  createVoyantApp,
+} from "./create-app.js"
 import {
   resolveManagedCustomExtensions,
   resolveManagedCustomModules,
@@ -160,7 +162,6 @@ import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.j
 import {
   getVoyantProjectRequirements,
   resolveActiveModuleIds,
-  toCreateVoyantAppProfileConfig,
   type VoyantProfileEnvRequirement,
   type VoyantProfileRequirements,
   type VoyantProjectDeploymentMode,
@@ -168,14 +169,10 @@ import {
   type VoyantProjectProviders,
   validateVoyantProject,
 } from "./profile.js"
-import {
-  composeVoyantGraphRuntime,
-  composeVoyantGraphRuntimeFacetModules,
-} from "./runtime-composition.js"
+import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import {
   registerVoyantGraphTools,
   type VoyantGraphRuntime,
-  type VoyantGraphRuntimeUnitLoader,
 } from "./runtime-lowering.js"
 import {
   type ResolvedVoyantGraphRuntimeValues,
@@ -249,8 +246,60 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   PORT?: string
 }
 
-type ManagedProfileAppModules = Record<string, ModuleFactory<FrameworkProviders>>
-type ManagedProfileAppExtensions = Record<string, ExtensionFactory<FrameworkProviders>>
+type ManagedRelationshipsService = Pick<
+  typeof relationshipsService,
+  "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
+>
+
+export interface ManagedProfileProviders {
+  relationshipsService: ManagedRelationshipsService
+  createTripsRoutesOptions: import("@voyant-travel/trips").TripsRoutesOptionsProvider
+  resolveNotificationProviders: (bindings: unknown) => NotificationProvider[]
+  resolvePublicCheckoutBaseUrl: (bindings: unknown) => string | null
+  resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) => Promise<string | null>
+  readDocumentContentBase64: (bindings: unknown, storageKey: string) => Promise<string | null>
+  resolveDb: (bindings: unknown) => VoyantDb
+  createOperatorDocumentStorage: typeof createDocumentStorage
+  resolveContractDocumentGenerator: () => undefined
+  createBookingPiiService: () => Promise<null>
+  autoGenerateContractOnConfirmed: { enabled: boolean; templateSlug: string }
+  resolveBankTransferDetails: typeof resolveBankTransferDetails
+  closePaymentSchedulesForBooking: (...args: never[]) => Promise<void>
+  recordCancellationFinancialSettlement: (...args: never[]) => Promise<null>
+  resolveBookingRequirementsProductSnapshot: (...args: never[]) => Promise<null>
+  resolveCatalogRuntime: typeof resolveManagedCatalogRuntime
+  createInvoiceExchangeRateResolver: typeof createInvoiceExchangeRateResolver
+  createInvoiceSettlementPollers: () => Record<string, never>
+  withDb: <T>(bindings: unknown, operation: (db: VoyantDb) => Promise<T>) => Promise<T>
+  storefrontIntakePersistence: import("@voyant-travel/storefront").StorefrontIntakePersistence
+  resolvePaymentStarters: () => Record<string, never>
+  resolveCardPaymentStarter: (
+    bindings: unknown,
+  ) => import("@voyant-travel/finance/card-payment").CardPaymentStarter | null
+  loadFlightAdminRoutes: typeof createManagedFlightAdminRoutes
+  loadMcpAdminRoutes: () => Promise<Hono>
+  loadCatalogBookingRoutes: typeof createManagedCatalogBookingRoutes
+  loadInventoryContentRoutes: typeof createManagedInventoryContentRoutes
+  loadCruisesContentRoutes: typeof createManagedCruisesContentRoutes
+  loadAccommodationsContentRoutes: typeof createManagedAccommodationsContentRoutes
+  loadStorageRoutes: typeof createManagedStorageRoutes
+  loadInventoryBrochureRoutes: typeof createManagedInventoryBrochureRoutes
+  loadPaymentLinkRoutes: () => Promise<Hono>
+  loadContractDocumentRoutes: typeof createManagedContractDocumentRoutes
+  createBookingScheduleRoutesOptions: typeof createManagedBookingScheduleRoutesOptions
+  loadBookingScheduleAdminRoutes: typeof createManagedBookingScheduleAdminRoutes
+  loadPaymentPolicyPublicRoutes: typeof createManagedPaymentPolicyPublicRoutes
+  loadQuoteVersionSnapshotRoutes: typeof createManagedQuoteVersionSnapshotRoutes
+  loadBookingMaintenanceRoutes: typeof createManagedBookingMaintenanceRoutes
+  loadActionLedgerHealthRoutes: typeof createManagedActionLedgerHealthRoutes
+  loadProposalAdminRoutes: typeof createManagedProposalAdminRoutes
+  loadProposalPublicRoutes: typeof createManagedProposalPublicRoutes
+  loadCatalogOffersRoutes: typeof createManagedCatalogOffersRoutes
+  loadCatalogCheckoutRoutes: typeof createManagedCatalogCheckoutRoutes
+}
+
+type ManagedProfileAppModules = Record<string, ModuleFactory<ManagedProfileProviders>>
+type ManagedProfileAppExtensions = Record<string, ExtensionFactory<ManagedProfileProviders>>
 
 export interface ManagedProfileRuntimeOptions {
   /** Existing compatibility input for callers that persist a profile snapshot. */
@@ -273,11 +322,11 @@ export interface ManagedProfileRuntimeOptions {
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
   env?: Record<string, unknown> | ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
-  providers?: Partial<FrameworkProviders>
+  providers?: Partial<ManagedProfileProviders>
   app?: Partial<
     Omit<
-      CreateVoyantAppConfig<ManagedProfileRuntimeEnv, FrameworkProviders>,
-      "providers" | "exclude" | "standard"
+      CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>,
+      "providers"
     >
   >
   /**
@@ -388,40 +437,27 @@ export async function loadManagedProfileRuntime(
   const customSourceOptions = options.importCustomSourceModule
     ? { importModule: options.importCustomSourceModule }
     : {}
-  const customModules = await resolveManagedCustomModules(
+  const customModules = await resolveManagedCustomModules<ManagedProfileProviders>(
     project,
     toPluginEnvRecord(env),
     customSourceOptions,
   )
   const providers = createManagedProfileProviders(options.providers, options.graphRuntime)
-  const graphOwnedRuntime = options.graphRuntime
-    ? runtimeWithoutLegacyRegistryUnits(options.graphRuntime)
-    : undefined
-  const graphComposition = graphOwnedRuntime
+  const graphComposition = options.graphRuntime
     ? await composeVoyantGraphRuntime({
-        runtime: graphOwnedRuntime,
+        runtime: options.graphRuntime,
         capabilities: providers,
         ports: options.runtimePorts,
       })
     : undefined
-  const legacyFacetRuntime = options.graphRuntime
-    ? runtimeWithOnlyLegacyRegistryUnits(options.graphRuntime)
-    : undefined
-  const graphFacetModules = legacyFacetRuntime
-    ? await composeVoyantGraphRuntimeFacetModules(legacyFacetRuntime, options.runtimePorts)
-    : []
   const actionLedgerCapabilities = options.graphRuntime
     ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)
     : createActionLedgerCapabilityRegistry([])
-  for (const [index, module] of graphFacetModules.entries()) {
-    customModules[`graph-runtime:${index}:${module.module.name}`] = () => module
-  }
-  const customExtensions = await resolveManagedCustomExtensions(
+  const customExtensions = await resolveManagedCustomExtensions<ManagedProfileProviders>(
     project,
     toPluginEnvRecord(env),
     customSourceOptions,
   )
-  addSelectedLegacyFactories(customModules, customExtensions, options.graphRuntime)
   for (const [index, module] of (graphComposition?.modules ?? []).entries()) {
     customModules[`selected-graph-module:${index}:${module.module.name}`] = () => module
   }
@@ -505,50 +541,6 @@ async function resolveManagedRuntimeProject(
   throw new Error("Managed runtime requires an admitted project manifest or profile snapshot path.")
 }
 
-function runtimeWithoutLegacyRegistryUnits(runtime: VoyantGraphRuntime): VoyantGraphRuntime {
-  return filterGraphRuntime(runtime, (unit, kind) => !hasLegacyRuntimeFactory(unit.id, kind))
-}
-
-function runtimeWithOnlyLegacyRegistryUnits(runtime: VoyantGraphRuntime): VoyantGraphRuntime {
-  return filterGraphRuntime(runtime, (unit, kind) => hasLegacyRuntimeFactory(unit.id, kind))
-}
-
-function filterGraphRuntime(
-  runtime: VoyantGraphRuntime,
-  keep: (unit: VoyantGraphRuntimeUnitLoader, kind: "module" | "extension" | "plugin") => boolean,
-): VoyantGraphRuntime {
-  return {
-    ...runtime,
-    modules: runtime.modules.filter((unit) => keep(unit, "module")),
-    extensions: runtime.extensions.filter((unit) => keep(unit, "extension")),
-    plugins: runtime.plugins.filter((unit) => keep(unit, "plugin")),
-  }
-}
-
-function hasLegacyRuntimeFactory(id: string, kind: "module" | "extension" | "plugin"): boolean {
-  const legacyId = id.replace("#", "/")
-  if (kind === "module") return frameworkComposition.modules[legacyId] !== undefined
-  return frameworkComposition.extensions?.[legacyId] !== undefined
-}
-
-function addSelectedLegacyFactories(
-  modules: ManagedProfileAppModules,
-  extensions: ManagedProfileAppExtensions,
-  runtime: VoyantGraphRuntime | undefined,
-): void {
-  if (!runtime) return
-  for (const unit of runtime.modules) {
-    const id = unit.id.replace("#", "/")
-    const factory = frameworkComposition.modules[id]
-    if (factory) modules[`selected-legacy-module:${unit.id}`] = factory
-  }
-  for (const unit of [...runtime.extensions, ...runtime.plugins]) {
-    const id = unit.id.replace("#", "/")
-    const factory = frameworkComposition.extensions?.[id]
-    if (factory) extensions[`selected-legacy-extension:${unit.id}`] = factory
-  }
-}
-
 function deploymentValueAliases(
   requirements: Pick<VoyantGraphDeploymentRequirements, "resources"> | undefined,
 ): Record<string, string[]> {
@@ -616,12 +608,12 @@ export function createManagedProfileApp(options: {
   project: VoyantProjectManifest
   env?: ManagedProfileRuntimeEnv
   auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
-  providers?: Partial<FrameworkProviders>
+  providers?: Partial<ManagedProfileProviders>
   graphRuntime?: VoyantGraphRuntime
   app?: Partial<
     Omit<
-      CreateVoyantAppConfig<ManagedProfileRuntimeEnv, FrameworkProviders>,
-      "providers" | "exclude" | "standard"
+      CreateVoyantAppConfig<ManagedProfileRuntimeEnv, ManagedProfileProviders>,
+      "providers"
     >
   >
   /**
@@ -666,8 +658,7 @@ export function createManagedProfileApp(options: {
     hasResolvedCustomModules: Object.keys(mergedModules).length > 0,
     hasResolvedCustomExtensions: Object.keys(mergedExtensions).length > 0,
   })
-  const bridge = toCreateVoyantAppProfileConfig(options.project)
-  return createVoyantApp<ManagedProfileRuntimeEnv, FrameworkProviders>({
+  return createVoyantApp<ManagedProfileRuntimeEnv, ManagedProfileProviders>({
     db: dbFromEnvForApp,
     dbTransactional: dbFromEnvForApp,
     outbox: true,
@@ -686,24 +677,22 @@ export function createManagedProfileApp(options: {
     // (routes) both flatten through `registerPlugins` at `createApp` boot.
     plugins: mergedPlugins as CreateVoyantAppConfig<
       ManagedProfileRuntimeEnv,
-      FrameworkProviders
+      ManagedProfileProviders
     >["plugins"],
     modules: mergedModules,
     extensions: mergedExtensions,
-    standard: false,
     basePath: options.app?.basePath ?? "/api",
     auth,
-    exclude: bridge.exclude,
     providers: createManagedProfileProviders(options.providers, options.graphRuntime),
   })
 }
 
 export function createManagedProfileProviders(
-  overrides: Partial<FrameworkProviders> = {},
+  overrides: Partial<ManagedProfileProviders> = {},
   graphRuntime?: VoyantGraphRuntime,
-): FrameworkProviders {
-  let providers: FrameworkProviders
-  const defaults: FrameworkProviders = {
+): ManagedProfileProviders {
+  let providers: ManagedProfileProviders
+  const defaults: ManagedProfileProviders = {
     resolveNotificationProviders: resolveManagedNotificationProviders,
     resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrl,
     resolveDocumentDownloadUrl: resolveDocumentDownloadUrl,
@@ -1817,12 +1806,12 @@ function createManagedProfileWorkflowDriver(env: ManagedProfileRuntimeEnv, defau
   return createInMemoryDriver()
 }
 
-function lazyRelationshipsService(): FrameworkProviders["relationshipsService"] {
-  let servicePromise: Promise<FrameworkProviders["relationshipsService"]> | undefined
+function lazyRelationshipsService(): ManagedRelationshipsService {
+  let servicePromise: Promise<ManagedRelationshipsService> | undefined
   const load = async () => {
     servicePromise ??= import("@voyant-travel/relationships").then(
       (m) =>
-        m.relationshipsService as AsyncMethodProvider<FrameworkProviders["relationshipsService"]>,
+        m.relationshipsService as AsyncMethodProvider<ManagedRelationshipsService>,
     )
     return servicePromise
   }
@@ -1834,7 +1823,7 @@ function lazyRelationshipsService(): FrameworkProviders["relationshipsService"] 
   }
 }
 
-function createNoopStorefrontIntakePersistence(): FrameworkProviders["storefrontIntakePersistence"] {
+function createNoopStorefrontIntakePersistence(): ManagedProfileProviders["storefrontIntakePersistence"] {
   return {
     findSignal: async () => null,
     createPerson: async () => null,
@@ -2610,7 +2599,7 @@ async function rejectManagedFlightConnectorRequest(): Promise<never> {
 }
 
 async function createManagedPaymentLinkRoutes(
-  resolveCardPaymentStarter: FrameworkProviders["resolveCardPaymentStarter"],
+  resolveCardPaymentStarter: ManagedProfileProviders["resolveCardPaymentStarter"],
 ) {
   const { createPaymentLinkRoutes } = await import("@voyant-travel/storefront/payment-link")
   return createPaymentLinkRoutes({
@@ -2633,7 +2622,7 @@ async function createManagedPaymentLinkRoutes(
 async function startManagedPaymentLinkCardPayment(
   c: Context,
   session: Parameters<PaymentLinkRoutesOptions["startCardPayment"]>[1],
-  resolveCardPaymentStarter: FrameworkProviders["resolveCardPaymentStarter"],
+  resolveCardPaymentStarter: ManagedProfileProviders["resolveCardPaymentStarter"],
 ): ReturnType<PaymentLinkRoutesOptions["startCardPayment"]> {
   const starter = resolveCardPaymentStarter?.(c.env) ?? null
   if (!starter) return { configured: false }

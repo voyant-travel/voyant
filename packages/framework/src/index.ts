@@ -12,14 +12,16 @@
  * email spam), and the BOM is the single thing that always tracks "the
  * framework version".
  *
- * Beyond the BOM, the package also owns the standard runtime composition: the
- * ordered manifest (`FRAMEWORK_RUNTIME_MANIFEST`) and the standard registry
- * factories (`frameworkComposition`) a deployment spreads — Workstream B of the
- * consolidated-deployments RFC.
+ * Runtime product selection and factories are owned by package manifests and
+ * the generated deployment graph. This package retains generic Hono composition
+ * helpers for deployment-local units.
  */
 
-export { type FrameworkProviders, frameworkComposition } from "./composition-lazy.js"
-export { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
+export {
+  type CreateVoyantAppConfig,
+  createVoyantApp,
+  type FrameworkProviders,
+} from "./create-app.js"
 export {
   type DeploymentExtensionDeclaration,
   type DeploymentModuleDeclaration,

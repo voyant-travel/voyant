@@ -39,11 +39,6 @@ const runtimePorts = section(
   "export function buildOperatorRuntimePorts",
   "function createLazyCatalogSearchRuntime",
 )
-const runtimeBindings = section(
-  composition,
-  "export const operatorGraphRuntimeBindings",
-  "function bindingsFromExtensionFactories",
-)
 
 if (packageJson.dependencies?.["@voyant-travel/finance"] !== "workspace:^") {
   violations.push("Flights must own its @voyant-travel/finance runtime dependency")
@@ -75,8 +70,8 @@ for (const method of ["resolveAdapter", "startCardPayment"]) {
 if (!runtimePorts.includes("[flightsRuntimePort.id]")) {
   violations.push("Operator must bind Flights through flightsRuntimePort.id")
 }
-if (runtimeBindings.includes('"@voyant-travel/flights"')) {
-  violations.push("Operator must not bind Flights by package id")
+if (composition.includes("operatorGraphRuntimeBindings")) {
+  violations.push("Operator compatibility runtime bindings must stay deleted")
 }
 if (composition.includes("loadFlightAdminRoutes")) {
   violations.push("Operator must not retain the Flights compatibility route loader")

@@ -20,7 +20,6 @@ import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime
 import {
   buildOperatorProviders,
   buildOperatorRuntimePorts,
-  operatorGraphRuntimeBindings,
 } from "./composition"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
@@ -103,7 +102,6 @@ function buildGraphComposition() {
   return composeVoyantGraphRuntime({
     runtime: createGeneratedGraphRuntime(),
     capabilities: buildOperatorProviders(),
-    bindings: operatorGraphRuntimeBindings,
     ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
   })
 }
