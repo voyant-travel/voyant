@@ -68,8 +68,8 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
     )
     write(
       app,
-      "src/subscribers/health-updated.ts",
-      'export default { id: "health.updated.sync", eventType: "health.updated", manifest: { id: "health.updated.sync", eventType: "health.updated", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
+      "src/subscribers/booking-created.ts",
+      'export default { id: "booking.created.health-sync", eventType: "booking.created", manifest: { id: "booking.created.health-sync", eventType: "booking.created", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
     )
     exec("pnpm", ["build"], app)
 
