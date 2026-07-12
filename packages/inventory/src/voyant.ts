@@ -46,6 +46,16 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#linkable.product",
       source: "@voyant-travel/inventory/linkables",
     },
+    {
+      id: "@voyant-travel/inventory#link.organization-product",
+      source: "@voyant-travel/inventory/standard-links",
+      export: "organizationProductLink",
+    },
+    {
+      id: "@voyant-travel/inventory#link.person-product",
+      source: "@voyant-travel/inventory/standard-links",
+      export: "personProductLink",
+    },
   ],
   events: [
     {

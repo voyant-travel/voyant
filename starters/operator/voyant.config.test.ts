@@ -10,7 +10,7 @@ const operatorRoot = process.cwd()
 describe("Operator project config", () => {
   it("authors only deployment differences and external plugins", () => {
     expect(config.modules).toHaveLength(35)
-    expect(config.extensions).toHaveLength(22)
+    expect(config.extensions).toHaveLength(24)
     expect(config.plugins).toHaveLength(2)
     expect(config.productBom).toEqual({
       schemaVersion: "voyant.product-bom-reference.v1",
@@ -28,7 +28,7 @@ describe("Operator project config", () => {
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)
-    expect(config.selections?.extensions).toHaveLength(22)
+    expect(config.selections?.extensions).toHaveLength(24)
     expect(config.selections?.plugins.map((selection) => selection.resolve)).toEqual([
       "@voyant-travel/plugin-netopia",
       "@voyant-travel/plugin-smartbill",

@@ -271,6 +271,14 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
       resolve: "@voyant-travel/legal/booking-contract-extension",
       owners: ["@voyant-travel/legal"],
     },
+    {
+      resolve: "@voyant-travel/legal/standard-product-links",
+      owners: ["@voyant-travel/legal", "@voyant-travel/finance"],
+    },
+    {
+      resolve: "@voyant-travel/mice/standard-product-links",
+      owners: ["@voyant-travel/mice", "@voyant-travel/quotes"],
+    },
   ],
 }
 

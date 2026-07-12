@@ -43,6 +43,13 @@ describe("MICE deployment manifests", () => {
         { id: "@voyant-travel/mice#linkable.roomingAssignment" },
         { id: "@voyant-travel/mice#linkable.rfp" },
         { id: "@voyant-travel/mice#linkable.bid" },
+        { id: "@voyant-travel/mice#link.bid-supplier" },
+        { id: "@voyant-travel/mice#link.delegate-booking" },
+        { id: "@voyant-travel/mice#link.delegate-person" },
+        { id: "@voyant-travel/mice#link.organization-program" },
+        { id: "@voyant-travel/mice#link.program-space-block" },
+        { id: "@voyant-travel/mice#link.rooming-room-block" },
+        { id: "@voyant-travel/mice#link.session-function-space" },
       ],
     })
   })

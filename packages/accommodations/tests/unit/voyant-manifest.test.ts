@@ -37,6 +37,9 @@ describe("accommodations deployment manifest", () => {
           id: "@voyant-travel/accommodations#linkable.roomBlock",
           source: "@voyant-travel/accommodations/linkables",
         },
+        { id: "@voyant-travel/accommodations#link.program-room-block" },
+        { id: "@voyant-travel/accommodations#link.room-block-property" },
+        { id: "@voyant-travel/accommodations#link.room-block-supplier" },
       ],
     })
   })

@@ -48,6 +48,7 @@ import {
 } from "./project-conventions.js"
 import {
   compileProjectSubscriberLinkConventions,
+  generateSelectedLinksSource,
   PROJECT_LINKS_GENERATED_PATH,
   PROJECT_SUBSCRIBERS_GENERATED_PATH,
   type ProjectSubscriberLinkConventionCompilation,
@@ -209,6 +210,24 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   await materializeRuntimeReferencePackages(graph, projectRoot, materialized.packages)
   if (materialized.packages.size !== packageCount) graph = await resolveGraph()
   const targetNeutralGraph = requireTargetNeutralGraph(graph)
+  const selectedLinks = [
+    ...targetNeutralGraph.modules,
+    ...targetNeutralGraph.extensions,
+    ...targetNeutralGraph.plugins,
+  ]
+    .flatMap((unit) => unit.links)
+    .filter(
+      (link): link is Required<Pick<typeof link, "id" | "source" | "export">> =>
+        typeof link.source === "string" && typeof link.export === "string",
+    )
+  const subscriberLinkFiles = projectSubscriberLinks.generatedFiles.map((file) =>
+    file.path === PROJECT_LINKS_GENERATED_PATH
+      ? {
+          ...file,
+          contents: generateSelectedLinksSource(projectSubscriberLinks.links, selectedLinks),
+        }
+      : file,
+  )
 
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
   const workflowRuntimeEntry = VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY
@@ -248,7 +267,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       }),
     },
     ...projectWorkflowJobs.generatedFiles,
-    ...projectSubscriberLinks.generatedFiles,
+    ...subscriberLinkFiles,
     { path: VOYANT_PROJECT_TOOLS_MANIFEST, contents: executableFacets.tools },
     { path: VOYANT_PROJECT_ACTIONS_MANIFEST, contents: executableFacets.actions },
     { path: VOYANT_PROJECT_WEBHOOKS_MANIFEST, contents: executableFacets.outboundWebhooks },

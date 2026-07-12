@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./linkables": "./src/linkables.ts",
+    "./standard-links": "./src/standard-links.ts",
     "./contract-document-routes": "./src/contract-document-routes.ts",
     "./contract-document": "./src/contracts/contract-document-service.ts",
     "./contract-variables": "./src/contracts/contract-variables.ts",
@@ -56,6 +57,9 @@
     "zod": "catalog:",
     "@voyant-travel/distribution": "workspace:^"
   },
+  "peerDependencies": {
+    "@voyant-travel/inventory": "workspace:^"
+  },
   "devDependencies": {
     "@voyant-travel/voyant-test-utils": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
@@ -80,6 +84,11 @@
         "types": "./dist/linkables.d.ts",
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
+      },
+      "./standard-links": {
+        "types": "./dist/standard-links.d.ts",
+        "import": "./dist/standard-links.js",
+        "default": "./dist/standard-links.js"
       },
       "./contract-document-routes": {
         "types": "./dist/contract-document-routes.d.ts",

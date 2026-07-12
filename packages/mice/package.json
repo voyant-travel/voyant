@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./linkables": "./src/linkables.ts",
+    "./standard-links": "./src/standard-links.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./routes": "./src/routes.ts",
@@ -32,6 +33,12 @@
     "hono": "catalog:",
     "zod": "catalog:"
   },
+  "peerDependencies": {
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/distribution": "workspace:^",
+    "@voyant-travel/quotes": "workspace:^",
+    "@voyant-travel/relationships": "workspace:^"
+  },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
@@ -55,6 +62,11 @@
         "types": "./dist/linkables.d.ts",
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
+      },
+      "./standard-links": {
+        "types": "./dist/standard-links.d.ts",
+        "import": "./dist/standard-links.js",
+        "default": "./dist/standard-links.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

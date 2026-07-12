@@ -58,6 +58,36 @@ export const legalVoyantModule = defineModule({
     { id: "@voyant-travel/legal#linkable.policyVersion", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.policyAcceptance", source: linkableSource },
     { id: "@voyant-travel/legal#linkable.term", source: linkableSource },
+    {
+      id: "@voyant-travel/legal#link.contract-booking",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractBookingLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.contract-organization",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractOrganizationLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.contract-person",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractPersonLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.contract-supplier",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractSupplierLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.policy-acceptance-booking",
+      source: "@voyant-travel/legal/standard-links",
+      export: "policyAcceptanceBookingLink",
+    },
+    {
+      id: "@voyant-travel/legal#link.policy-product",
+      source: "@voyant-travel/legal/standard-links",
+      export: "policyProductLink",
+    },
   ],
   events: [
     { id: "@voyant-travel/legal#event.contract.issued", eventType: "contract.issued" },
@@ -172,6 +202,21 @@ export const legalBookingContractVoyantExtension = defineExtension({
   meta: {
     ownership: "package",
   },
+})
+
+/** Neutral association selected explicitly by the standard product BOM. */
+export const legalStandardProductLinksVoyantExtension = defineExtension({
+  id: "@voyant-travel/legal#standard-product-links",
+  packageName: "@voyant-travel/legal",
+  localId: "legal.standard-product-links",
+  links: [
+    {
+      id: "@voyant-travel/legal#link.contract-invoice",
+      source: "@voyant-travel/legal/standard-links",
+      export: "contractInvoiceLink",
+    },
+  ],
+  meta: { ownership: "standard-product" },
 })
 
 export default legalVoyantModule

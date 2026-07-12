@@ -45,6 +45,12 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#linkable.policyVersion",
       "@voyant-travel/legal#linkable.policyAcceptance",
       "@voyant-travel/legal#linkable.term",
+      "@voyant-travel/legal#link.contract-booking",
+      "@voyant-travel/legal#link.contract-organization",
+      "@voyant-travel/legal#link.contract-person",
+      "@voyant-travel/legal#link.contract-supplier",
+      "@voyant-travel/legal#link.policy-acceptance-booking",
+      "@voyant-travel/legal#link.policy-product",
     ])
     expect(legalVoyantModule.events).toContainEqual({
       id: "@voyant-travel/legal#event.booking.contract.generated",

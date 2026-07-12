@@ -6,7 +6,7 @@ describe("framework project config", () => {
     const project = defineConfig()
 
     expect(project.modules).toHaveLength(35)
-    expect(project.extensions).toHaveLength(22)
+    expect(project.extensions).toHaveLength(24)
     expect(project.plugins).toEqual([])
     expect(project.productBom).toEqual({
       schemaVersion: "voyant.product-bom-reference.v1",

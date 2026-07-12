@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./linkables": "./src/linkables.ts",
+    "./standard-links": "./src/standard-links.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
@@ -43,6 +44,10 @@
     "hono": "catalog:",
     "zod": "catalog:"
   },
+  "peerDependencies": {
+    "@voyant-travel/distribution": "workspace:^",
+    "@voyant-travel/mice": "workspace:^"
+  },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
@@ -71,6 +76,11 @@
         "types": "./dist/linkables.d.ts",
         "import": "./dist/linkables.js",
         "default": "./dist/linkables.js"
+      },
+      "./standard-links": {
+        "types": "./dist/standard-links.d.ts",
+        "import": "./dist/standard-links.js",
+        "default": "./dist/standard-links.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",

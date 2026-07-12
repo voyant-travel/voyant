@@ -39,16 +39,16 @@ describe("standard Operator distribution", () => {
       "@voyant-travel/catalog-authoring",
       "@voyant-travel/workflow-runs",
     ])
-    expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toHaveLength(22)
+    expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toHaveLength(24)
     expect(STANDARD_OPERATOR_DISTRIBUTION.extensions).toContain(
       "@voyant-travel/distribution/extension",
     )
     expect(STANDARD_OPERATOR_DISTRIBUTION.extensions.slice(-2)).toEqual([
-      "@voyant-travel/notifications/reminder-subscribers-extension",
-      "@voyant-travel/legal/booking-contract-extension",
+      "@voyant-travel/legal/standard-product-links",
+      "@voyant-travel/mice/standard-product-links",
     ])
     expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.modules).size).toBe(35)
-    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.extensions).size).toBe(22)
+    expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.extensions).size).toBe(24)
     expect(STANDARD_OPERATOR_DISTRIBUTION).not.toHaveProperty("presetLineage")
   })
 

@@ -148,6 +148,8 @@ export interface VoyantGraphRouteOpenApi {
 export interface VoyantGraphFacetEntity {
   id: string
   source?: string
+  /** Named executable export when a facet source contains multiple declarations. */
+  export?: string
 }
 
 export interface VoyantGraphEvent extends VoyantGraphFacetEntity {

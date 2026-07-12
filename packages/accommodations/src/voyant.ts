@@ -35,6 +35,21 @@ export const accommodationsVoyantModule = defineModule({
       id: "@voyant-travel/accommodations#linkable.roomBlock",
       source: "@voyant-travel/accommodations/linkables",
     },
+    {
+      id: "@voyant-travel/accommodations#link.program-room-block",
+      source: "@voyant-travel/accommodations/standard-links",
+      export: "programRoomBlockLink",
+    },
+    {
+      id: "@voyant-travel/accommodations#link.room-block-property",
+      source: "@voyant-travel/accommodations/standard-links",
+      export: "roomBlockPropertyLink",
+    },
+    {
+      id: "@voyant-travel/accommodations#link.room-block-supplier",
+      source: "@voyant-travel/accommodations/standard-links",
+      export: "roomBlockSupplierLink",
+    },
   ],
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },

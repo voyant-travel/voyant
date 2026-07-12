@@ -41,6 +41,41 @@ export const miceVoyantModule = defineModule({
     },
     { id: "@voyant-travel/mice#linkable.rfp", source: "@voyant-travel/mice/linkables" },
     { id: "@voyant-travel/mice#linkable.bid", source: "@voyant-travel/mice/linkables" },
+    {
+      id: "@voyant-travel/mice#link.bid-supplier",
+      source: "@voyant-travel/mice/standard-links",
+      export: "bidSupplierLink",
+    },
+    {
+      id: "@voyant-travel/mice#link.delegate-booking",
+      source: "@voyant-travel/mice/standard-links",
+      export: "delegateBookingLink",
+    },
+    {
+      id: "@voyant-travel/mice#link.delegate-person",
+      source: "@voyant-travel/mice/standard-links",
+      export: "delegatePersonLink",
+    },
+    {
+      id: "@voyant-travel/mice#link.organization-program",
+      source: "@voyant-travel/mice/standard-links",
+      export: "organizationProgramLink",
+    },
+    {
+      id: "@voyant-travel/mice#link.program-space-block",
+      source: "@voyant-travel/mice/standard-links",
+      export: "programSpaceBlockLink",
+    },
+    {
+      id: "@voyant-travel/mice#link.rooming-room-block",
+      source: "@voyant-travel/mice/standard-links",
+      export: "roomingRoomBlockLink",
+    },
+    {
+      id: "@voyant-travel/mice#link.session-function-space",
+      source: "@voyant-travel/mice/standard-links",
+      export: "sessionFunctionSpaceLink",
+    },
   ],
   events: [
     {
@@ -99,6 +134,21 @@ export const miceBookingVoyantPlugin = defineExtension({
   meta: {
     ownership: "package",
   },
+})
+
+/** Neutral association selected explicitly by the standard product BOM. */
+export const miceStandardProductLinksVoyantExtension = defineExtension({
+  id: "@voyant-travel/mice#standard-product-links",
+  packageName: "@voyant-travel/mice",
+  localId: "mice.standard-product-links",
+  links: [
+    {
+      id: "@voyant-travel/mice#link.quote-program",
+      source: "@voyant-travel/mice/standard-links",
+      export: "quoteProgramLink",
+    },
+  ],
+  meta: { ownership: "standard-product" },
 })
 
 export default miceVoyantModule

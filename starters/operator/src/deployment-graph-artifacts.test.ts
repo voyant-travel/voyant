@@ -197,8 +197,12 @@ describe("loadOperatorDeploymentGraphArtifacts", () => {
       join(process.cwd(), ".voyant", "runtime/project-links.generated.ts"),
       "utf8",
     )
-    expect(projectLinks).toContain('import link0 from "../../src/links/bid-supplier.js"')
-    expect(projectLinks).toContain('import link19 from "../../src/links/session-function-space.js"')
+    expect(projectLinks).toContain(
+      'import { programRoomBlockLink as link0 } from "@voyant-travel/accommodations/standard-links"',
+    )
+    expect(projectLinks).toContain(
+      'import { sessionFunctionSpaceLink as link19 } from "@voyant-travel/mice/standard-links"',
+    )
   })
 
   it("fails when the artifact graph hash does not match the graph content hash", () => {

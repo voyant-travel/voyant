@@ -48,7 +48,11 @@ describe("inventory deployment manifests", () => {
       runtimePorts: [{ id: "inventory.runtime" }],
       schema: [{ id: "@voyant-travel/inventory#schema" }],
       migrations: [{ id: "@voyant-travel/inventory#migrations" }],
-      links: [{ id: "@voyant-travel/inventory#linkable.product" }],
+      links: [
+        { id: "@voyant-travel/inventory#linkable.product" },
+        { id: "@voyant-travel/inventory#link.organization-product" },
+        { id: "@voyant-travel/inventory#link.person-product" },
+      ],
       workflows: [
         {
           id: "products.generate-pdf",
