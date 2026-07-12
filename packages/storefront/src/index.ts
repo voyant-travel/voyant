@@ -1,5 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { registerStorefrontBookingBootstrapRuntime } from "./booking-bootstrap-subscriber-runtime.js"
@@ -218,9 +219,15 @@ export function createStorefrontHonoModule(options?: StorefrontHonoModuleOptions
         })
       },
     },
-    adminRoutes: createStorefrontAdminRoutes(options),
+    adminRoutes: stampOpenApiRegistryApiId(
+      createStorefrontAdminRoutes(options),
+      "@voyant-travel/storefront#api.admin",
+    ),
     publicPath: "/",
-    publicRoutes: createStorefrontPublicRoutes(options),
+    publicRoutes: stampOpenApiRegistryApiId(
+      createStorefrontPublicRoutes(options),
+      "@voyant-travel/storefront#api.public",
+    ),
     anonymous: storefrontAnonymousPublicPaths,
   }
 }

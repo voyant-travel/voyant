@@ -20,6 +20,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#api.admin",
           surface: "admin",
           mount: "storefront",
+          openapi: { document: "storefront" },
           runtime: {
             entry: "@voyant-travel/storefront",
             export: "createStorefrontHonoModule",
@@ -29,6 +30,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#api.public",
           surface: "public",
           mount: "/",
+          openapi: { document: "storefront" },
           anonymous: ["/leads", "/newsletter", "/offers"],
           runtime: {
             entry: "@voyant-travel/storefront",
@@ -112,6 +114,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/storefront#customer-portal.api",
             surface: "public",
             mount: "customer-portal",
+            openapi: { document: "customer-portal" },
             anonymous: ["/contact-exists"],
             runtime: {
               entry: "@voyant-travel/storefront/customer-portal",
@@ -134,6 +137,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/storefront#verification.api",
             surface: "public",
             mount: "storefront-verification",
+            openapi: { document: "storefront-verification" },
             anonymous: true,
             runtime: {
               entry: "@voyant-travel/storefront/verification",
@@ -160,6 +164,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#payment-link.api",
           surface: "public",
           mount: "/",
+          openapi: { document: "payment-link" },
           anonymous: ["payment-link-config", "payment-link"],
           runtime: {
             entry: "@voyant-travel/storefront/payment-link",

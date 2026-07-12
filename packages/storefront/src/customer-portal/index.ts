@@ -1,5 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { storefrontCustomerPortalRuntimePort } from "../runtime-port.js"
 
@@ -97,7 +98,10 @@ export function createCustomerPortalHonoModule(
 
   return {
     module,
-    publicRoutes: createPublicCustomerPortalRoutes(options),
+    publicRoutes: stampOpenApiRegistryApiId(
+      createPublicCustomerPortalRoutes(options),
+      "@voyant-travel/storefront#customer-portal.api",
+    ),
   }
 }
 
