@@ -69,7 +69,23 @@ function runtimePortStub(id: string): unknown {
   }
   const unavailableAsync = async () => unavailable()
   const registrySurface = { resolveRegistry: unavailableAsync }
+  const primitives = {
+    env: () => ({}),
+    database: {
+      resolve: unavailable,
+      fromContext: unavailable,
+      transaction: unavailableAsync,
+    },
+    storage: {
+      resolve: unavailable,
+      read: unavailableAsync,
+      downloadUrl: unavailableAsync,
+    },
+    events: { deliver: unavailableAsync },
+    config: { read: () => undefined },
+  }
   const stub = {
+    primitives,
     options: {},
     booking: {},
     publicRoutes: { resolveProductSnapshot: unavailableAsync },
@@ -126,8 +142,22 @@ function runtimePortStub(id: string): unknown {
     startCheckoutDeps: () => runtimeServiceStub(id),
     cancelTripComponentsDeps: () => runtimeServiceStub(id),
     resolveOperatorProfile: unavailableAsync,
+    resolveOperatorDefaultPaymentPolicy: unavailableAsync,
     resolveBookingTaxSettings: unavailableAsync,
     updateBookingTaxSettings: unavailableAsync,
+    resolveNotificationDispatcher: unavailable,
+    listBookingReminderRuns: unavailableAsync,
+    resolveSupplierPolicy: unavailableAsync,
+    resolveSupplierPolicyById: unavailableAsync,
+    resolveBookingPolicy: unavailableAsync,
+    resolveEntityPolicy: unavailableAsync,
+    resolveSupplierId: unavailableAsync,
+    createPaymentPolicyRuntime: () => runtimeServiceStub(id),
+    stampPolicySourceOnBooking: unavailableAsync,
+    readPolicySourceFromInternalNotes: unavailable,
+    resolvePaymentStarters: () => ({}),
+    provider: "inspection",
+    poller: unavailableAsync,
     getContract: unavailableAsync,
     listSignatures: unavailableAsync,
     sendContract: unavailableAsync,

@@ -66,6 +66,16 @@ describe("graph runtime composition", () => {
     expect(typeof provider.resolveSourceAdapterRegistry).toBe("function")
     expect(typeof provider.readConfig).toBe("function")
     expect(typeof provider.createStaleBookingHoldsRuntime).toBe("function")
+    expect(typeof provider.resolveNotificationDispatcher).toBe("function")
+    expect(typeof provider.resolveOperatorDefaultPaymentPolicy).toBe("function")
+    expect(typeof provider.createPaymentPolicyRuntime).toBe("function")
+    expect(typeof provider.resolvePaymentStarters).toBe("function")
+    expect(provider.provider).toBe("inspection")
+    expect(typeof provider.poller).toBe("function")
+    expect(provider.primitives).toMatchObject({
+      database: expect.any(Object),
+      storage: expect.any(Object),
+    })
     expect(provider.settings).toBeUndefined()
   })
 
