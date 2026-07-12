@@ -34,7 +34,7 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       ["-xzf", join(out, "voyant-starter-operator-0.0.0-test.tar.gz"), "-C", app],
       repoRoot,
     )
-    useInstalledCliArtifact(app)
+    useInstalledToolingArtifacts(app)
     exec(
       "pnpm",
       [
@@ -104,13 +104,18 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
   }
 })
 
-function useInstalledCliArtifact(app) {
+function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
   const installedCli = realpathSync(
     join(repoRoot, "starters/operator/node_modules/@voyant-travel/cli"),
   )
   packageJson.devDependencies["@voyant-travel/cli"] = `link:${installedCli}`
+  for (const dependency of ["tsx", "typescript"]) {
+    packageJson.devDependencies[dependency] = `link:${realpathSync(
+      join(repoRoot, "node_modules", dependency),
+    )}`
+  }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
 }
 
