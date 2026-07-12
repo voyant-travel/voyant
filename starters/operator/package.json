@@ -163,7 +163,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "@voyant-travel/cli": "^0.36.1",
+    "@voyant-travel/cli": "^0.37.0",
     "@voyant-travel/vite-config": "workspace:^",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",

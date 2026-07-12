@@ -27,7 +27,13 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@voyant-travel/accommodations": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/cruises": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-orm": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

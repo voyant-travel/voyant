@@ -311,8 +311,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@voyant-travel/accommodations": "workspace:^",
-    "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
