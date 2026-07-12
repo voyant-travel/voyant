@@ -1359,6 +1359,9 @@ importers:
       '@voyant-travel/products-contracts':
         specifier: workspace:^
         version: link:../products-contracts
+      '@voyant-travel/quotes-contracts':
+        specifier: workspace:^
+        version: link:../quotes-contracts
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -3809,9 +3812,6 @@ importers:
       '@voyant-travel/relationships-contracts':
         specifier: workspace:^
         version: link:../relationships-contracts
-      '@voyant-travel/storefront':
-        specifier: workspace:^
-        version: link:../storefront
       '@voyant-travel/tools':
         specifier: workspace:^
         version: link:../tools
