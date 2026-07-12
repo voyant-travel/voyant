@@ -21,7 +21,7 @@ async function createFixture(overrides = {}) {
     "trips/src/runtime-port.ts":
       'definePort<TripsRoutesOptionsProvider>({ id: "trips.routes-runtime" })\ndefinePort<TripsDatabaseRuntime>({ id: "trips.database-runtime" })\n',
     "operator/src/api/runtime/deployment-resources.ts":
-      "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ tripsRoutes: createOperatorTripsRoutesOptions, tripsDatabase: {} }) }\nconst createOperatorTripsRoutesOptions = () => ({})\n",
+      'import { createOperatorTripsRoutesOptions } from "./trips-runtime"\nfunction createBaseDeploymentCapabilities() { return { createTripsRoutesOptions: createOperatorTripsRoutesOptions } }\nfunction createLegacyDeploymentCapabilities() {}\nfunction createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ capabilities, primitives }) }\nexport function createOperatorDeploymentResources() {}\n',
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -57,7 +57,7 @@ describe("check-trips-runtime-authority", () => {
     const root = await createFixture({
       "trips/src/index.ts": "export const tripsHonoModule = {}\n",
       "operator/src/api/runtime/deployment-resources.ts":
-        'function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ tripsRoutes: createOperatorTripsRoutesOptions, tripsDatabase: {} }) }\nconst createOperatorTripsRoutesOptions = () => ({})\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\nfunction bindingsFromExtensionFactories() {}\n',
+        'import { createOperatorTripsRoutesOptions } from "./trips-runtime"\nfunction createBaseDeploymentCapabilities() { return { createTripsRoutesOptions: createOperatorTripsRoutesOptions } }\nfunction createLegacyDeploymentCapabilities() {}\nfunction createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ capabilities, primitives }) }\nexport function createOperatorDeploymentResources() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\nfunction bindingsFromExtensionFactories() {}\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {

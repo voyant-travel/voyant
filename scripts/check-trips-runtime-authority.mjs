@@ -32,10 +32,15 @@ const manifest = readRequired(join(tripsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(tripsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(tripsRoot, "src/runtime-port.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const capabilities = section(
+  composition,
+  "function createBaseDeploymentCapabilities",
+  "function createLegacyDeploymentCapabilities",
+)
 const runtimePorts = section(
   composition,
   "function createDeploymentPortResources",
-  "const createOperatorTripsRoutesOptions",
+  "export function createOperatorDeploymentResources",
 )
 
 if (
@@ -70,8 +75,10 @@ if (packageIndex.includes("tripsHonoModule")) {
 if (
   composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
   runtimePorts.includes("createTripsRuntimePortContribution") ||
-  !runtimePorts.includes("tripsRoutes: createOperatorTripsRoutesOptions") ||
-  !runtimePorts.includes("tripsDatabase:")
+  !composition.includes('import { createOperatorTripsRoutesOptions } from "./trips-runtime"') ||
+  !capabilities.includes("createTripsRoutesOptions: createOperatorTripsRoutesOptions") ||
+  !runtimePorts.includes("createGeneratedGraphRuntimePorts({") ||
+  !runtimePorts.includes("capabilities,")
 ) {
   violations.push("Operator must supply Trips host resources without enumerating its contributor")
 }

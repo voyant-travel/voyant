@@ -37,6 +37,7 @@ import {
   resolveOperatorDocumentDownloadUrl,
 } from "./operator-runtime-adapter"
 import { registerInventoryWorkflowService } from "./operator-workflow-services"
+import { createOperatorTripsRoutesOptions } from "./trips-runtime"
 
 type AsyncMethodProvider<T extends object> = {
   [K in keyof T]: T[K] extends (...args: infer Args) => infer Result
