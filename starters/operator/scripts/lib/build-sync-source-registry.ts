@@ -14,14 +14,13 @@ import {
   type SourceAdapterRegistry,
 } from "@voyant-travel/catalog/booking-engine"
 import {
+  CRUISE_ADAPTER_READ_CACHE_TTL_MS,
+  registerCruiseAdapters,
+} from "@voyant-travel/cruises/catalog-runtime-extension"
+import {
   prepareVoyantConnectSources,
   registerVoyantConnectSources,
 } from "@voyant-travel/plugin-voyant-connect"
-
-import {
-  CRUISE_ADAPTER_READ_CACHE_TTL_MS,
-  registerCruiseAdapters,
-} from "../../src/api/lib/cruise-adapters-runtime.js"
 
 export async function buildSyncSourceRegistry(
   env: NodeJS.ProcessEnv,

@@ -4,9 +4,8 @@ import {
   resolveCruiseAdapter,
 } from "@voyant-travel/cruises"
 import { cruiseAdapterToSourceAdapter } from "@voyant-travel/cruises/adapters"
+import { resetConfiguredCruiseAdapters } from "@voyant-travel/cruises/catalog-runtime-extension"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-
-import { resetConfiguredCruiseAdapters } from "../../src/api/lib/cruise-adapters-runtime.js"
 
 // The Connect mock returns a real cruise shim (so the seam's `.cruiseAdapter`
 // back-fill works and the kind is `cruise:connect`). The factory runs lazily at

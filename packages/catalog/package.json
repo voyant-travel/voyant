@@ -42,6 +42,7 @@
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
     "./projection-runtime": "./src/projection-runtime.ts",
     "./operator-runtime": "./src/operator-runtime.ts",
+    "./catalog-runtime": "./src/runtime/catalog-runtime.ts",
     "./api-runtime-ports": "./src/api-runtime-ports.ts",
     "./subscriber-runtime-ports": "./src/subscriber-runtime-ports.ts",
     "./booking-engine/operator-routes": "./src/booking-engine/operator-routes.ts",
@@ -287,6 +288,11 @@
         "types": "./dist/operator-runtime.d.ts",
         "import": "./dist/operator-runtime.js",
         "default": "./dist/operator-runtime.js"
+      },
+      "./catalog-runtime": {
+        "types": "./dist/runtime/catalog-runtime.d.ts",
+        "import": "./dist/runtime/catalog-runtime.js",
+        "default": "./dist/runtime/catalog-runtime.js"
       },
       "./api-runtime-ports": {
         "types": "./dist/api-runtime-ports.d.ts",

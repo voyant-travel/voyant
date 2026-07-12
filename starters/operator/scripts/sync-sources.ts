@@ -39,11 +39,11 @@ import {
   type IndexerDocument,
 } from "@voyant-travel/catalog"
 import { type SyncSourcesSummary, syncSources } from "@voyant-travel/catalog/booking-engine"
+import { getFieldPolicyRegistries, loadCatalogSlices } from "@voyant-travel/catalog/catalog-runtime"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
-import { getFieldPolicyRegistries, loadCatalogSlices } from "../src/api/lib/catalog-runtime.js"
 import { buildSyncSourceRegistry } from "./lib/build-sync-source-registry.js"
 import { asTypesenseClient } from "./lib/typesense-sdk-client.js"
 

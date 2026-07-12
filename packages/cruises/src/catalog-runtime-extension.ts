@@ -11,10 +11,10 @@ import { cruiseCabinFacetsCatalogPolicy } from "./catalog-policy-cabins.js"
 import { createCruiseDocumentBuilder, createCruisesRegistry } from "./service-catalog-plane.js"
 import { createCruiseCabinFacetProjectionExtension } from "./service-catalog-plane-cabins.js"
 
-const READ_CACHE_TTL_MS = 60_000
+export const CRUISE_ADAPTER_READ_CACHE_TTL_MS = 60_000
 
 export function withReadCache(adapter: CruiseAdapter): CruiseAdapter {
-  return memoizeCruiseAdapter(adapter, { ttlMs: READ_CACHE_TTL_MS })
+  return memoizeCruiseAdapter(adapter, { ttlMs: CRUISE_ADAPTER_READ_CACHE_TTL_MS })
 }
 
 function syncRegistry(registry: Parameters<CatalogCruisesRuntimeExtension["syncRegistry"]>[0]) {

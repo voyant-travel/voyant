@@ -39,6 +39,13 @@ import {
   type EmbeddingProvider,
   type IndexerDocument,
 } from "@voyant-travel/catalog"
+import {
+  CATALOG_VERTICALS,
+  createCruisesDocumentBuilder,
+  createProductsDocumentBuilder,
+  getFieldPolicyRegistries,
+  loadCatalogSlices,
+} from "@voyant-travel/catalog/catalog-runtime"
 import { charterProducts } from "@voyant-travel/charters/schema"
 import { createCharterDocumentBuilder } from "@voyant-travel/charters/service-catalog-plane"
 import { cruises } from "@voyant-travel/cruises/schema"
@@ -49,14 +56,6 @@ import { config } from "dotenv"
 import { and, eq } from "drizzle-orm"
 import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"
-
-import {
-  CATALOG_VERTICALS,
-  createCruisesDocumentBuilder,
-  createProductsDocumentBuilder,
-  getFieldPolicyRegistries,
-  loadCatalogSlices,
-} from "../src/api/lib/catalog-runtime.js"
 import {
   createTypesenseCollectionAdmin,
   createTypesenseDocumentSearch,
