@@ -141,18 +141,16 @@ jobs:
       # cached dist, so only the remaining packages build there.
       - name: Build (framework composition)
         # --filter builds framework AND its whole upstream dep graph; cap at
-        # concurrency=2 so a cold cache (e.g. right after a turbo-hash-invalidating
-        # change) can't coincide several heavy module builds and OOM the 16 GB
-        # runner (exit 137). framework's own build keeps its package-script heap.
-        run: pnpm turbo build --filter=@voyant-travel/framework --concurrency=2 --ui=stream --log-order=stream
+        # concurrency=1 because a cold cache can overlap multiple multi-gigabyte
+        # TypeScript builds even inside this dependency slice and exhaust the
+        # 16 GB runner. Framework's own build keeps its package-script heap.
+        run: pnpm turbo build --filter=@voyant-travel/framework --concurrency=1 --ui=stream --log-order=stream
 
       - name: Build
-        # concurrency=2: the framework dist grows with every admin route batch,
-        # which makes the downstream *-react / app builds heavier; at turbo's
-        # default (core-count) concurrency several heavy builds coincided and the
-        # OOM-killer SIGKILLed one (exit 137) on the 16 GB runner. Two-at-a-time
-        # keeps aggregate build RAM in budget. (Framework already built alone above.)
-        run: pnpm turbo build --concurrency=2 --ui=stream --log-order=stream
+        # Keep this serial as well: bookings-react alone can approach the 8 GB
+        # package heap, so any concurrent TypeScript build can exceed runner RAM.
+        # Framework already built in the preceding step and should hit cache.
+        run: pnpm turbo build --concurrency=1 --ui=stream --log-order=stream
 
       - name: Package export checks
         run: pnpm verify:package-exports
