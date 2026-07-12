@@ -2,13 +2,15 @@ import { type NotificationsRuntimeProvider, notificationsRuntimePort } from "./r
 
 type RuntimePortValue<T> = T | Promise<T>
 
-export interface NotificationsRuntimePortContribution {
-  notifications: RuntimePortValue<NotificationsRuntimeProvider>
+export interface NotificationsRuntimeContributorHost {
+  capabilities: {
+    loadNotificationsRuntime(): RuntimePortValue<NotificationsRuntimeProvider>
+  }
 }
 
 /** Package-owned registration map for Notifications deployment adapters. */
 export function createNotificationsRuntimePortContribution(
-  contribution: NotificationsRuntimePortContribution,
+  host: NotificationsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [notificationsRuntimePort.id]: contribution.notifications }
+  return { [notificationsRuntimePort.id]: host.capabilities.loadNotificationsRuntime() }
 }

@@ -3,13 +3,15 @@ import { storageMediaRuntimePort } from "./runtime-port.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 
-export interface StorageRuntimePortContribution {
-  media: RuntimePortValue<MediaRoutesOptions>
+export interface StorageRuntimeContributorHost {
+  capabilities: {
+    loadStorageMediaRuntime(): RuntimePortValue<MediaRoutesOptions>
+  }
 }
 
 /** Package-owned registration map for Storage deployment adapters. */
 export function createStorageRuntimePortContribution(
-  contribution: StorageRuntimePortContribution,
+  host: StorageRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [storageMediaRuntimePort.id]: contribution.media }
+  return { [storageMediaRuntimePort.id]: host.capabilities.loadStorageMediaRuntime() }
 }

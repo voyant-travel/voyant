@@ -16,9 +16,8 @@ export interface QuotesRuntimeContributorHost {
         personId: string,
       ): Promise<unknown>
     }
+    loadQuoteProposalRuntime(): RuntimePortValue<QuotesProposalRuntime & QuotesSnapshotRuntime>
   }
-  proposal: RuntimePortValue<QuotesProposalRuntime>
-  snapshot: RuntimePortValue<QuotesSnapshotRuntime>
 }
 
 /** Package-owned registration map for Quotes deployment adapters. */
@@ -29,9 +28,10 @@ export function createQuotesRuntimePortContribution(
     resolveParticipantPersonById: async (db, personId) =>
       (await host.capabilities.relationshipsService.getPersonById(db, personId)) != null,
   }
+  const proposal = Promise.resolve(host.capabilities.loadQuoteProposalRuntime())
   return {
     [quotesRuntimePort.id]: quotes,
-    [quotesProposalRuntimePort.id]: host.proposal,
-    [quotesSnapshotRuntimePort.id]: host.snapshot,
+    [quotesProposalRuntimePort.id]: proposal,
+    [quotesSnapshotRuntimePort.id]: proposal,
   }
 }

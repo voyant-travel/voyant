@@ -18,14 +18,23 @@ export interface StorefrontRuntimePortContribution {
   verification: RuntimePortValue<StorefrontVerificationRoutesOptions>
 }
 
+export interface StorefrontRuntimeContributorHost {
+  capabilities: {
+    loadStorefrontRuntime(): RuntimePortValue<StorefrontRuntimePortContribution>
+  }
+}
+
 /** Package-owned registration map for Storefront deployment adapters. */
 export function createStorefrontRuntimePortContribution(
-  contribution: StorefrontRuntimePortContribution,
+  host: StorefrontRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const contribution = Promise.resolve(host.capabilities.loadStorefrontRuntime())
   return {
-    [storefrontRuntimePort.id]: contribution.storefront,
-    [storefrontPaymentLinkRuntimePort.id]: contribution.paymentLink,
-    [storefrontCustomerPortalRuntimePort.id]: contribution.customerPortal,
-    [storefrontVerificationRuntimePort.id]: contribution.verification,
+    [storefrontRuntimePort.id]: contribution.then((runtime) => runtime.storefront),
+    [storefrontPaymentLinkRuntimePort.id]: contribution.then((runtime) => runtime.paymentLink),
+    [storefrontCustomerPortalRuntimePort.id]: contribution.then(
+      (runtime) => runtime.customerPortal,
+    ),
+    [storefrontVerificationRuntimePort.id]: contribution.then((runtime) => runtime.verification),
   }
 }

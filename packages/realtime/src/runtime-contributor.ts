@@ -3,13 +3,15 @@ import { realtimeRuntimePort } from "./runtime-port.js"
 
 type RuntimePortValue<T> = T | Promise<T>
 
-export interface RealtimeRuntimePortContribution {
-  realtime: RuntimePortValue<CreateRealtimeHonoModuleOptions>
+export interface RealtimeRuntimeContributorHost {
+  capabilities: {
+    loadRealtimeRuntime(): RuntimePortValue<CreateRealtimeHonoModuleOptions>
+  }
 }
 
 /** Package-owned registration map for Realtime deployment adapters. */
 export function createRealtimeRuntimePortContribution(
-  contribution: RealtimeRuntimePortContribution,
+  host: RealtimeRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  return { [realtimeRuntimePort.id]: contribution.realtime }
+  return { [realtimeRuntimePort.id]: host.capabilities.loadRealtimeRuntime() }
 }

@@ -12,12 +12,20 @@ export interface TripsRuntimePortContribution {
   tripsDatabase: RuntimePortValue<TripsDatabaseRuntime>
 }
 
+export interface TripsRuntimeContributorHost {
+  capabilities: {
+    createTripsRoutesOptions: TripsRoutesOptionsProvider
+    withDb: TripsDatabaseRuntime["withDb"]
+  }
+}
+
 /** Package-owned registration map for Trips deployment adapters. */
 export function createTripsRuntimePortContribution(
-  contribution: TripsRuntimePortContribution,
+  host: TripsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const tripsDatabase: TripsDatabaseRuntime = { withDb: host.capabilities.withDb }
   return {
-    [tripsRoutesRuntimePort.id]: contribution.tripsRoutes,
-    [tripsDatabaseRuntimePort.id]: contribution.tripsDatabase,
+    [tripsRoutesRuntimePort.id]: host.capabilities.createTripsRoutesOptions,
+    [tripsDatabaseRuntimePort.id]: tripsDatabase,
   }
 }

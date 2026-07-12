@@ -21,7 +21,6 @@ import type { CheckoutReminderRunRecord } from "@voyant-travel/finance/checkout-
 import { lazyProvider } from "@voyant-travel/hono"
 import type { LegalBookingContractSubscriberRuntime } from "@voyant-travel/legal/booking-contract-subscriber"
 import type { StorefrontIntakePersistence } from "@voyant-travel/storefront"
-import type { TripsDatabaseRuntime } from "@voyant-travel/trips/voyant"
 import type { WorkflowRunnerRegistryRuntime } from "@voyant-travel/workflow-runs/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createGeneratedGraphRuntimePorts } from "../../../.voyant/runtime/graph-runtime.generated"
@@ -75,24 +74,20 @@ type OperatorRelationshipsService = Pick<
   "getPersonById" | "getOrganizationById" | "loadPersonTravelSnapshot" | "upsertPersonFromContact"
 >
 
-interface OperatorCapabilities {
-  customFields: typeof resolveOperatorCustomFields
-  resolveNotificationProviders: typeof resolveNotificationProviders
-  resolvePublicCheckoutBaseUrl: typeof resolvePublicCheckoutBaseUrlFromBindings
-  resolveDocumentDownloadUrl: typeof resolveOperatorDocumentDownloadUrl
-  readDocumentContentBase64: typeof readOperatorDocumentContentBase64
-  resolveDb: typeof resolveOperatorDb
-  createOperatorDocumentStorage: typeof createOperatorDocumentStorage
-  resolveBankTransferDetails: typeof resolveBankTransferDetails
-  relationshipsService: OperatorRelationshipsService
-  resolveBookingRequirementsProductSnapshot: typeof resolveBookingRequirementsProductSnapshot
-}
+type OperatorCapabilities = ReturnType<typeof createDeploymentCapabilities>
 
 /**
  * Build the operator provider container (gathers deployment resolvers/loaders).
  * Providers are bindings-deferred closures, so no `env` is needed here.
  */
-function createDeploymentCapabilities(): OperatorCapabilities {
+function createDeploymentCapabilities() {
+  const storefrontIntakePersistence = lazyProvider<StorefrontIntakePersistence>(async () =>
+    import("./storefront-intake-runtime").then(
+      (m) =>
+        m.createRelationshipsStorefrontIntakePersistence() as AsyncMethodProvider<StorefrontIntakePersistence>,
+    ),
+  )
+
   return {
     customFields: resolveOperatorCustomFields,
     resolveNotificationProviders,
@@ -100,7 +95,8 @@ function createDeploymentCapabilities(): OperatorCapabilities {
     resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
     readDocumentContentBase64: readOperatorDocumentContentBase64,
     resolveDb: resolveOperatorDb,
-    withDb: (bindings, operation) => withDbFromEnv(bindings as AppBindings, operation),
+    withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+      withDbFromEnv(bindings as AppBindings, operation),
     createOperatorDocumentStorage,
     createInvoiceExchangeRateResolver: createOperatorInvoiceExchangeRateResolver,
     createInvoiceSettlementPollers: createOperatorInvoiceSettlementPollers,
@@ -117,13 +113,48 @@ function createDeploymentCapabilities(): OperatorCapabilities {
     // shape (the framework catalog factory consumes this directly).
     resolveCatalogRuntime: createLazyCatalogSearchRuntime,
     createTripsRoutesOptions: createOperatorTripsRoutesOptions,
-    resolveBookingRequirementsProductSnapshot,
-    storefrontIntakePersistence: lazyProvider<StorefrontIntakePersistence>(async () =>
-      import("./storefront-intake-runtime").then(
-        (m) =>
-          m.createRelationshipsStorefrontIntakePersistence() as AsyncMethodProvider<StorefrontIntakePersistence>,
+    resolveCruiseSourceAdapterRegistry: (bindings: unknown) =>
+      import("../lib/booking-engine-runtime").then((runtime) =>
+        runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
       ),
-    ),
+    loadFlightsRuntime: () =>
+      import("./flights-runtime").then((runtime) => runtime.operatorFlightsRuntime),
+    loadQuoteProposalRuntime: () =>
+      import("./quote-proposal-runtime").then((runtime) =>
+        runtime.createQuoteProposalRoutesOptions(),
+      ),
+    loadNotificationsRuntime: createOperatorNotificationsRuntimeProvider,
+    loadStorageMediaRuntime: () =>
+      import("./media-runtime").then((runtime) => runtime.operatorStorageMediaRuntime),
+    loadRealtimeRuntime: () => ({
+      resolveProviders: resolveRealtimeProviders,
+      bridgeRoutes: operatorRealtimeBridgeRoutes,
+    }),
+    loadStorefrontRuntime: async () => {
+      const [commerce, paymentLink] = await Promise.all([
+        import("@voyant-travel/commerce"),
+        import("./payment-link-runtime"),
+      ])
+      return {
+        storefront: {
+          offers: commerce.createCommerceStorefrontOfferResolvers(),
+          bookingIntents: {
+            withDb: (bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<unknown>) =>
+              withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
+          },
+          intake: { persistence: storefrontIntakePersistence },
+        },
+        paymentLink: paymentLink.createOperatorPaymentLinkRouteOptions(),
+        customerPortal: {
+          resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
+        },
+        verification: {
+          resolveProviders: resolveNotificationProviders,
+          email: { subject: "Your verification code" },
+        },
+      }
+    },
+    resolveBookingRequirementsProductSnapshot,
     resolvePaymentStarters: () => ({
       netopia: lazyProvider(async () =>
         import("@voyant-travel/plugin-netopia").then((m) => m.createNetopiaCheckoutStarter()),
@@ -148,12 +179,6 @@ function createDeploymentPortResources(
     capabilities,
     workflowRunnerRegistry,
     host: operatorSmartbillRuntimeHost,
-    proposal: import("./quote-proposal-runtime").then((runtime) =>
-      runtime.createQuoteProposalRoutesOptions(),
-    ),
-    snapshot: import("./quote-proposal-runtime").then((runtime) =>
-      runtime.createQuoteProposalRoutesOptions(),
-    ),
     bookings: createOperatorBookingsRuntimeProvider(capabilities),
     requirements: {
       publicRoutes: {
@@ -184,18 +209,6 @@ function createDeploymentPortResources(
       resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
       updateBookingTaxSettings: settings.updateBookingTaxSettings,
     })),
-    storefront: createOperatorStorefrontRuntimeProvider(capabilities),
-    paymentLink: import("./payment-link-runtime").then((runtime) =>
-      runtime.createOperatorPaymentLinkRouteOptions(),
-    ),
-    customerPortal: {
-      resolveDocumentDownloadUrl: (bindings, storageKey) =>
-        capabilities.resolveDocumentDownloadUrl(bindings, storageKey),
-    },
-    verification: {
-      resolveProviders: capabilities.resolveNotificationProviders,
-      email: { subject: "Your verification code" },
-    },
     search: {
       resolveRuntime: capabilities.resolveCatalogRuntime,
     },
@@ -256,17 +269,9 @@ function createDeploymentPortResources(
         registerInventoryWorkflowService(container, bindings as AppBindings),
     },
     brochure: import("./media-runtime").then((runtime) => runtime.operatorInventoryBrochureRuntime),
-    cruisesRoutes: {
-      resolveSourceAdapterRegistry: (bindings: unknown) =>
-        import("../lib/booking-engine-runtime").then((runtime) =>
-          runtime.ensureBookingEngineRegistry(operatorBindings(bindings)),
-        ),
-    },
     health: import("./action-ledger-health-runtime").then((runtime) =>
       runtime.createOperatorActionLedgerHealthRuntime(),
     ),
-    flights: import("./flights-runtime").then((runtime) => runtime.operatorFlightsRuntime),
-    notifications: createOperatorNotificationsRuntimeProvider(),
     legal: {
       resolveDocumentDownloadUrl: resolveOperatorDocumentDownloadUrl,
       resolveDocumentStorage: createOperatorDocumentStorage,
@@ -307,16 +312,6 @@ function createDeploymentPortResources(
     channelPush: import("./channel-push-runtime").then(
       (runtime) => runtime.operatorChannelPushRuntime,
     ),
-    tripsRoutes: createOperatorTripsRoutesOptions,
-    tripsDatabase: {
-      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T> =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    } satisfies TripsDatabaseRuntime,
-    media: import("./media-runtime").then((runtime) => runtime.operatorStorageMediaRuntime),
-    realtime: {
-      resolveProviders: resolveRealtimeProviders,
-      bridgeRoutes: operatorRealtimeBridgeRoutes,
-    },
   })
 }
 
@@ -371,18 +366,6 @@ async function createOperatorBookingsRuntimeProvider(
     },
     registerWorkflowService: ({ container, bindings }) =>
       registerBookingsWorkflowService(container, bindings as AppBindings),
-  }
-}
-
-async function createOperatorStorefrontRuntimeProvider(capabilities: OperatorCapabilities) {
-  const commerce = await import("@voyant-travel/commerce")
-  return {
-    offers: commerce.createCommerceStorefrontOfferResolvers(),
-    bookingIntents: {
-      withDb: (bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<unknown>) =>
-        withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
-    },
-    intake: { persistence: capabilities.storefrontIntakePersistence },
   }
 }
 
