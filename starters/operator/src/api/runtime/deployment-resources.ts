@@ -24,7 +24,7 @@ import {
 
 function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
   return {
-    env: (bindings) => operatorBindings(bindings) as Record<string, unknown>,
+    env: (bindings) => operatorBindings(bindings),
     database: {
       resolve: <TDatabase>(bindings: unknown) =>
         resolveOperatorDb(bindings) as unknown as TDatabase,
@@ -51,7 +51,7 @@ function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
       read: (bindings, key) => {
         if (key === "customFields") return resolveOperatorCustomFields
         if (key === "notificationProviders") return resolveNotificationProviders
-        return (operatorBindings(bindings) as Record<string, unknown> | undefined)?.[key]
+        return operatorBindings(bindings)?.[key]
       },
     },
   }

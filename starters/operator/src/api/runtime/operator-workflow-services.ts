@@ -28,7 +28,7 @@ import { operatorBindings, operatorPostgresDb } from "./operator-runtime-adapter
 type OperatorWorkflowBindings = AppBindings | NodeJS.ProcessEnv | Record<string, unknown>
 
 function workflowEnvironment(bindings: OperatorWorkflowBindings): NodeJS.ProcessEnv {
-  return resolveWorkflowEnvironment(bindings, process.env)
+  return resolveWorkflowEnvironment(operatorBindings(bindings), process.env)
 }
 
 /** Deployment adapter consumed by the Notifications package bootstrap. */

@@ -38,7 +38,7 @@ export interface OperatorCatalogContext {
 
 export function buildCatalogContext(c: Context): OperatorCatalogContext {
   const catalogRuntime = requireCatalogRuntimeServices()
-  const env = c.env as AppBindings & {
+  const env = c.env as unknown as Readonly<Record<string, unknown>> & {
     VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
     TENANT_ID?: string

@@ -15,8 +15,8 @@ import {
   resolveDocumentDownloadUrl,
 } from "../lib/storage"
 
-export function operatorBindings(bindings: unknown): AppBindings {
-  return bindings as AppBindings
+export function operatorBindings(bindings: unknown): AppBindings & Record<string, unknown> {
+  return bindings as unknown as AppBindings & Record<string, unknown>
 }
 
 export function operatorPostgresDb(db: VoyantDb): PostgresJsDatabase {
