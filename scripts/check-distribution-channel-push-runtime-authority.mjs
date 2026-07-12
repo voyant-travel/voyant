@@ -49,20 +49,25 @@ if (
   violations.push("Distribution manifest must declare the channel-push runtime port and factory")
 }
 if (
-  domainPackage.includes('"./runtime-contributor"') ||
-  domainPackage.includes('"export": "createDistributionRuntimePortContribution"')
+  !domainPackage.includes('"./runtime-contributor"') ||
+  !domainPackage.includes('"export": "createDistributionRuntimePortContribution"')
 ) {
-  violations.push("Distribution domain package must not own the standard Node contributor")
+  violations.push(
+    "Distribution domain package must publish its neutral Catalog extension contributor",
+  )
 }
 if (
   !adapterPackage.includes('"name": "@voyant-travel/distribution-node"') ||
   !adapterPackage.includes('"export": "createDistributionNodeRuntimePortContribution"') ||
-  !adapterContributor.includes("configureDistributionStandardNodeRuntime(host.primitives)")
+  !adapterContributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
+  !adapterContributor.includes(
+    "configureDistributionStandardNodeRuntime(host.primitives, services)",
+  )
 ) {
   violations.push("Distribution Node adapter must own generated runtime contribution")
 }
 for (const required of [
-  "getBookingEngineRegistryFromContext",
+  "requireCatalogRuntime().getSourceRegistryFromContext",
   "createChannelPushWorkflowRuntimeEntries",
   "primitives.database.resolve",
   "primitives.database.transaction",

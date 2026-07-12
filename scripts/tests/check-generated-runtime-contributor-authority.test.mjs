@@ -16,6 +16,7 @@ const packageFactories = {
   auth: "createAuthRuntimePortContribution",
   bookings: "createBookingsRuntimePortContribution",
   catalog: "createCatalogRuntimePortContribution",
+  charters: "createChartersRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
   cruises: "createCruisesRuntimePortContribution",
   distribution: "createDistributionRuntimePortContribution",
@@ -27,6 +28,8 @@ const packageFactories = {
   mice: "createMiceRuntimePortContribution",
   notifications: "createNotificationsRuntimePortContribution",
   "operator-settings": "createOperatorSettingsRuntimePortContribution",
+  operations: "createOperationsRuntimePortContribution",
+  "plugins/catalog-demo": "createCatalogDemoRuntimePortContribution",
   quotes: "createQuotesRuntimePortContribution",
   realtime: "createRealtimeRuntimePortContribution",
   relationships: "createRelationshipsRuntimePortContribution",
@@ -57,16 +60,19 @@ async function fixture(deploymentResources) {
   await write(
     root,
     "packages/framework/src/deployment-artifacts.ts",
-    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\n",
+    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\n",
   )
   await write(
     root,
     "packages/framework/src/runtime-contributors.generated.ts",
     Object.entries(packageFactories)
-      .map(
-        ([packageName, factory]) =>
-          `export { ${factory} } from "@voyant-travel/${packageName}/runtime-contributor"`,
-      )
+      .map(([packageName, factory]) => {
+        const publishedPackageName =
+          packageName === "plugins/catalog-demo"
+            ? "@voyant-travel/plugin-catalog-demo"
+            : `@voyant-travel/${packageName}`
+        return `export { ${factory} } from "${publishedPackageName}/runtime-contributor"`
+      })
       .join("\n"),
   )
   for (const [packageName, factory] of Object.entries(packageFactories)) {

@@ -2,6 +2,7 @@ import {
   type BookingsInventoryRuntime,
   bookingsInventoryRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import { catalogInventoryRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   type FinanceInventoryPaymentPolicyRuntime,
@@ -13,6 +14,7 @@ import {
   readPolicySourceFromInternalNotes,
   stampPolicySourceOnBooking,
 } from "./booking-payment-policy-runtime.js"
+import { catalogInventoryRuntimeExtension } from "./catalog-runtime-extension.js"
 import type { ProductBrochureRoutesOptions } from "./routes-brochure.js"
 import {
   type InventoryRuntime,
@@ -43,6 +45,7 @@ export function createInventoryRuntimePortContribution(
   const contribution = Promise.resolve(host.capabilities.loadInventoryRuntime())
   const brochure = createInventoryBrochureStandardNodeRuntime(host.primitives)
   return {
+    [catalogInventoryRuntimeExtensionPort.id]: catalogInventoryRuntimeExtension,
     [inventoryRuntimePort.id]: contribution.then((runtime) => runtime.inventory),
     [inventoryBrochureRuntimePort.id]: brochure,
     [bookingsInventoryRuntimePort.id]: {

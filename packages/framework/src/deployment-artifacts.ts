@@ -355,13 +355,40 @@ const GENERATED_GRAPH_RUNTIME_CONTRIBUTORS: readonly VoyantGraphRuntimeContribut
 ${contributorFactories}
 ]
 
-export type GeneratedGraphRuntimeContributorHost = VoyantGraphRuntimeContributorHost
+type GeneratedGraphRuntimeResolvedContributorHost = VoyantGraphRuntimeContributorHost
 ${contributorHostType}
+
+export type GeneratedGraphRuntimeContributorHost = Omit<
+  GeneratedGraphRuntimeResolvedContributorHost,
+  "getRuntimePort"
+>
 
 export function createGeneratedGraphRuntimePorts(
   host: GeneratedGraphRuntimeContributorHost,
 ): VoyantGraphRuntimePorts {
-  return Object.assign({}, ...GENERATED_GRAPH_RUNTIME_CONTRIBUTORS.map((contributor) => contributor(host)))
+  const ports: Record<string, unknown> = {}
+  const contributorHost = {
+    ...host,
+    getRuntimePort(port: { id: string }): unknown {
+      if (!Object.hasOwn(ports, port.id)) {
+        throw new Error(
+          \`Runtime port \${port.id} was read before its static contributor provided it.\`,
+        )
+      }
+      return ports[port.id]
+    },
+  } as unknown as GeneratedGraphRuntimeResolvedContributorHost
+
+  for (const contributor of GENERATED_GRAPH_RUNTIME_CONTRIBUTORS) {
+    const contribution = contributor(contributorHost)
+    for (const [id, value] of Object.entries(contribution)) {
+      if (Object.hasOwn(ports, id)) {
+        throw new Error(\`Runtime port \${id} has multiple static contributors.\`)
+      }
+      ports[id] = value
+    }
+  }
+  return ports
 }
 
 export function createGeneratedGraphRuntime(): VoyantGraphRuntime {

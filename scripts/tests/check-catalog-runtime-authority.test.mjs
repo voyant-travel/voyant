@@ -28,7 +28,10 @@ async function fixture() {
     ].flatMap((directory) => [
       `packages/${directory}/package.json`,
       `packages/${directory}/src/catalog-runtime-extension.ts`,
+      `packages/${directory}/src/runtime-contributor.ts`,
     ]),
+    "packages/core/src/runtime-host.ts",
+    "packages/framework/src/deployment-artifacts.ts",
     "packages/framework/src/runtime-packages.generated.ts",
     "packages/framework/src/runtime-contributors.generated.ts",
     "packages/typescript-config/dep-paths.json",
@@ -71,6 +74,39 @@ test("rejects starter-owned Catalog capability authority", async () => {
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
     /starter must not own Catalog runtime capabilities/,
+  )
+  await rm(root, { recursive: true })
+})
+
+test("rejects a generic host module loader", async () => {
+  const root = await fixture()
+  const file = path.join(root, "packages/core/src/runtime-host.ts")
+  await writeFile(file, `${await readFile(file, "utf8")}\ninterface Bad { modules: unknown }\n`)
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /must not expose a runtime module loader/,
+  )
+  await rm(root, { recursive: true })
+})
+
+test("rejects modules.import in Catalog composition", async () => {
+  const root = await fixture()
+  const file = path.join(root, "packages/catalog/src/runtime-contributor.ts")
+  await writeFile(file, `${await readFile(file, "utf8")}\nvoid modules.import\n`)
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /must not use modules\.import/,
+  )
+  await rm(root, { recursive: true })
+})
+
+test("rejects dynamic import in Catalog composition", async () => {
+  const root = await fixture()
+  const file = path.join(root, "packages/catalog/src/runtime.ts")
+  await writeFile(file, `${await readFile(file, "utf8")}\nconst bad = import("./runtime.js")\n`)
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /must not use dynamic import/,
   )
   await rm(root, { recursive: true })
 })

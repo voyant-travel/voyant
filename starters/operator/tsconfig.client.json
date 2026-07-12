@@ -612,6 +612,9 @@
       "@voyant-travel/charters/draft-shape": ["../../packages/charters/dist/draft-shape.d.ts"],
       "@voyant-travel/charters/public-routes": ["../../packages/charters/dist/routes-public.d.ts"],
       "@voyant-travel/charters/routes": ["../../packages/charters/dist/routes.d.ts"],
+      "@voyant-travel/charters/runtime-contributor": [
+        "../../packages/charters/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/charters/schema": ["../../packages/charters/dist/schema.d.ts"],
       "@voyant-travel/charters/service-catalog-plane": [
         "../../packages/charters/dist/service-catalog-plane.d.ts"
@@ -1829,6 +1832,9 @@
         "../../packages/operations/dist/resources/index.d.ts"
       ],
       "@voyant-travel/operations/routes": ["../../packages/operations/dist/routes.d.ts"],
+      "@voyant-travel/operations/runtime-contributor": [
+        "../../packages/operations/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/operations/schema": ["../../packages/operations/dist/schema.d.ts"],
       "@voyant-travel/operations/validation": ["../../packages/operations/dist/validation.d.ts"],
       "@voyant-travel/operations/voyant": ["../../packages/operations/dist/voyant.d.ts"],
@@ -1861,6 +1867,9 @@
       "@voyant-travel/plugin-catalog-demo": ["../../packages/plugins/catalog-demo/dist/index.d.ts"],
       "@voyant-travel/plugin-catalog-demo/catalog-runtime-extension": [
         "../../packages/plugins/catalog-demo/dist/catalog-runtime-extension.d.ts"
+      ],
+      "@voyant-travel/plugin-catalog-demo/runtime-contributor": [
+        "../../packages/plugins/catalog-demo/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/plugin-catalog-demo/voyant": [
         "../../packages/plugins/catalog-demo/dist/voyant.d.ts"

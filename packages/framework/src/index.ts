@@ -110,6 +110,7 @@ export {
   type VoyantGraphRuntimeComposition,
   type VoyantGraphRuntimeContributor,
   type VoyantGraphRuntimeContributorHost,
+  type VoyantGraphRuntimePortResolver,
   type VoyantGraphRuntimePorts,
 } from "./runtime-composition.js"
 export {

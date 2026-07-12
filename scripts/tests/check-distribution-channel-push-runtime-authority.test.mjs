@@ -23,13 +23,14 @@ async function createFixture(overrides = {}) {
       "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
     "distribution/src/channel-push/runtime-port.ts":
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
-    "distribution/package.json": '{"name":"@voyant-travel/distribution"}\n',
+    "distribution/package.json":
+      '{\n  "name": "@voyant-travel/distribution",\n  "exports": { "./runtime-contributor": "./src/runtime-contributor.ts" },\n  "voyant": { "runtime": { "export": "createDistributionRuntimePortContribution" } }\n}\n',
     "distribution-node/package.json":
       '{\n  "name": "@voyant-travel/distribution-node",\n  "voyant": { "runtime": { "export": "createDistributionNodeRuntimePortContribution" } }\n}\n',
     "distribution-node/src/runtime-contributor.ts":
-      "configureDistributionStandardNodeRuntime(host.primitives)\n",
+      "host.getRuntimePort(catalogRuntimeServicesPort)\nconfigureDistributionStandardNodeRuntime(host.primitives, services)\n",
     "distribution-node/src/standard-node-runtime.ts":
-      "getBookingEngineRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
+      "requireCatalogRuntime().getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
     "operator/src/api/runtime/deployment-resources.ts":
       "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
     "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",

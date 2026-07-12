@@ -32,13 +32,11 @@ for (const [name, source] of Object.entries(sources)) {
     if (source.includes(capability)) violations.push(`${name} retains ${capability}`)
   }
 }
-for (const [name, source] of [
-  ["Action Ledger", sources.actionPackage],
-  ["Distribution", sources.distributionPackage],
-]) {
-  if (source.includes('"./runtime-contributor"')) {
-    violations.push(`${name} domain package retains a target runtime contributor`)
-  }
+if (sources.actionPackage.includes('"./runtime-contributor"')) {
+  violations.push("Action Ledger domain package retains a target runtime contributor")
+}
+if (!sources.distributionPackage.includes('"createDistributionRuntimePortContribution"')) {
+  violations.push("Distribution domain package must publish its neutral Catalog contributor")
 }
 for (const [name, source, packageName, factory] of [
   [

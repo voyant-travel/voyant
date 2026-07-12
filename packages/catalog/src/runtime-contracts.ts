@@ -158,6 +158,38 @@ export interface CatalogRuntimeExtensions {
   catalogDemo: CatalogDemoRuntimeExtension
 }
 
+function extensionPort<T extends object>(id: string) {
+  return definePort<T>({
+    id,
+    test(provider) {
+      if (provider === null || typeof provider !== "object") {
+        throw new Error(`${id} provider must be an object.`)
+      }
+    },
+  })
+}
+
+export const catalogAccommodationsRuntimeExtensionPort =
+  extensionPort<CatalogAccommodationsRuntimeExtension>("catalog.extension.accommodations")
+export const catalogChartersRuntimeExtensionPort = extensionPort<CatalogChartersRuntimeExtension>(
+  "catalog.extension.charters",
+)
+export const catalogCommerceRuntimeExtensionPort = extensionPort<CatalogCommerceRuntimeExtension>(
+  "catalog.extension.commerce",
+)
+export const catalogDistributionRuntimeExtensionPort =
+  extensionPort<CatalogDistributionRuntimeExtension>("catalog.extension.distribution")
+export const catalogCruisesRuntimeExtensionPort = extensionPort<CatalogCruisesRuntimeExtension>(
+  "catalog.extension.cruises",
+)
+export const catalogInventoryRuntimeExtensionPort = extensionPort<CatalogInventoryRuntimeExtension>(
+  "catalog.extension.inventory",
+)
+export const catalogOperationsRuntimeExtensionPort =
+  extensionPort<CatalogOperationsRuntimeExtension>("catalog.extension.operations")
+export const catalogDemoRuntimeExtensionPort =
+  extensionPort<CatalogDemoRuntimeExtension>("catalog.extension.demo")
+
 export type CatalogBookingSnapshotRuntimeFactory = (
   bindings: unknown,
 ) => CatalogBookingSnapshotRuntime

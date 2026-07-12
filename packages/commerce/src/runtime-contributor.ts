@@ -1,3 +1,5 @@
+import { catalogCommerceRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
+import { catalogCommerceRuntimeExtension } from "./catalog-runtime-extension.js"
 import type { AcceptanceSignatureLegalPort } from "./checkout/acceptance-signature.js"
 import type { BookingMaintenanceRoutesOptions } from "./checkout/routes.js"
 import {
@@ -41,6 +43,7 @@ export function createCommerceRuntimePortContribution(
 ): Readonly<Record<string, unknown>> {
   const contribution = Promise.resolve(host.capabilities.loadCommerceRuntime())
   return {
+    [catalogCommerceRuntimeExtensionPort.id]: catalogCommerceRuntimeExtension,
     [bookingMaintenanceRuntimePort.id]: contribution.then((runtime) => runtime.bookingMaintenance),
     [catalogCheckoutApiRuntimePort.id]: contribution.then((runtime) => runtime.checkoutApi),
     [catalogCheckoutDatabaseRuntimePort.id]: contribution.then(

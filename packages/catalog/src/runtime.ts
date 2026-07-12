@@ -19,21 +19,24 @@ import {
   loadCatalogSlices,
   withEmbedding,
 } from "./runtime/catalog-runtime.js"
-import { loadCatalogRuntimeExtensions } from "./runtime/extensions.js"
 import { configureCatalogRuntimeHost } from "./runtime/host.js"
 import { createOperatorCatalogOffersRouteModuleOptions } from "./runtime/offers-runtime.js"
 import {
   createOperatorCatalogBookingSnapshotRuntime,
   createOperatorCatalogProjectionRuntime,
 } from "./runtime/subscriber-runtime.js"
-import { type CatalogRuntimeServices, installCatalogRuntimeServices } from "./runtime-contracts.js"
+import {
+  type CatalogRuntimeExtensions,
+  type CatalogRuntimeServices,
+  installCatalogRuntimeServices,
+} from "./runtime-contracts.js"
 import type { CatalogRuntimePortContribution } from "./runtime-contributor.js"
 
 /** Build the complete Catalog runtime from generic host resources. */
-export async function createCatalogRuntime(
+export function createCatalogRuntime(
   primitives: VoyantRuntimeHostPrimitives,
-): Promise<CatalogRuntimePortContribution> {
-  const extensions = await loadCatalogRuntimeExtensions(primitives.modules)
+  extensions: CatalogRuntimeExtensions,
+): CatalogRuntimePortContribution {
   configureCatalogRuntimeHost(primitives, extensions)
   let projectionRuntime:
     | ReturnType<typeof createOperatorCatalogProjectionRuntime>

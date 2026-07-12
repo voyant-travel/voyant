@@ -6,6 +6,32 @@ const root = path.resolve(rootIndex >= 0 ? process.argv[rootIndex + 1] : ".")
 const read = (file) => readFileSync(path.join(root, file), "utf8")
 const json = (file) => JSON.parse(read(file))
 const violations = []
+const ownerContributors = [
+  [
+    "accommodations",
+    "createAccommodationsRuntimePortContribution",
+    "catalogAccommodationsRuntimeExtensionPort",
+  ],
+  ["charters", "createChartersRuntimePortContribution", "catalogChartersRuntimeExtensionPort"],
+  ["commerce", "createCommerceRuntimePortContribution", "catalogCommerceRuntimeExtensionPort"],
+  ["cruises", "createCruisesRuntimePortContribution", "catalogCruisesRuntimeExtensionPort"],
+  [
+    "distribution",
+    "createDistributionRuntimePortContribution",
+    "catalogDistributionRuntimeExtensionPort",
+  ],
+  ["inventory", "createInventoryRuntimePortContribution", "catalogInventoryRuntimeExtensionPort"],
+  [
+    "operations",
+    "createOperationsRuntimePortContribution",
+    "catalogOperationsRuntimeExtensionPort",
+  ],
+  [
+    "plugins/catalog-demo",
+    "createCatalogDemoRuntimePortContribution",
+    "catalogDemoRuntimeExtensionPort",
+  ],
+]
 
 const catalog = json("packages/catalog/package.json")
 const cyclicPackages = [
@@ -63,14 +89,38 @@ for (const token of [
   "CatalogRuntimeServices",
   "catalogRuntimeServicesPort",
   "requireCatalogRuntimeServices",
+  ...ownerContributors.map(([, , port]) => port),
 ]) {
   if (!contracts.includes(token)) violations.push(`Catalog runtime contracts are missing ${token}`)
 }
 for (const token of ["createCatalogRuntimePortContribution", "catalogRuntimeServicesPort.id"]) {
   if (!contributor.includes(token)) violations.push(`Catalog contributor is missing ${token}`)
 }
-for (const token of ["loadCatalogRuntimeExtensions", "installCatalogRuntimeServices"]) {
+for (const token of ["installCatalogRuntimeServices"]) {
   if (!runtime.includes(token)) violations.push(`Catalog private runtime is missing ${token}`)
+}
+for (const [, , port] of ownerContributors) {
+  if (!contributor.includes(`host.getRuntimePort(${port})`)) {
+    violations.push(`Catalog contributor must resolve ${port} through the static host`)
+  }
+}
+
+const runtimeComposition = [
+  "packages/catalog/src/runtime.ts",
+  "packages/catalog/src/runtime-contributor.ts",
+  ...sourceFiles("packages/catalog/src/runtime").filter((file) => !file.endsWith(".test.ts")),
+]
+  .map((file) => read(file))
+  .join("\n")
+for (const [pattern, label] of [
+  [/\bimport\s*\(/, "dynamic import"],
+  [/\brequire\s*\(/, "runtime require"],
+  [/modules\.import/, "modules.import"],
+  [/primitives\.modules/, "primitives.modules"],
+]) {
+  if (pattern.test(runtimeComposition)) {
+    violations.push(`Catalog production runtime composition must not use ${label}`)
+  }
 }
 
 for (const [directory, exportName] of [
@@ -91,13 +141,44 @@ for (const [directory, exportName] of [
     violations.push(`${manifest.name} must implement ${exportName}`)
   }
 }
+for (const [directory, factory, port] of ownerContributors) {
+  const manifest = json(`packages/${directory}/package.json`)
+  const runtimeMetadata = manifest.voyant?.runtime
+  if (runtimeMetadata?.entry !== "./runtime-contributor" || runtimeMetadata?.export !== factory) {
+    violations.push(`${manifest.name} must declare ${factory} as its runtime contributor`)
+  }
+  if (!manifest.exports?.["./runtime-contributor"]) {
+    violations.push(`${manifest.name} must export ./runtime-contributor`)
+  }
+  const source = read(`packages/${directory}/src/runtime-contributor.ts`)
+  if (!source.includes(`[${port}.id]`)) {
+    violations.push(`${manifest.name} contributor must provide ${port}`)
+  }
+}
 
 const operatorResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
-if (!operatorResources.includes("modules:") || !operatorResources.includes("import: (specifier)")) {
-  violations.push("the host must expose a generic module import primitive")
+const runtimeHost = read("packages/core/src/runtime-host.ts")
+if (
+  /\bmodules\s*:|modules\.import|primitives\.modules/.test(`${runtimeHost}\n${operatorResources}`)
+) {
+  violations.push("generic host resources must not expose a runtime module loader")
 }
 if (/loadCatalogRuntime|catalogRuntimeRegistry|catalogCapabilities/.test(operatorResources)) {
   violations.push("the starter must not own Catalog runtime capabilities")
+}
+
+const generator = read("packages/framework/src/deployment-artifacts.ts")
+for (const token of [
+  "GeneratedGraphRuntimeResolvedContributorHost",
+  '"getRuntimePort"',
+  "const ports: Record<string, unknown> = {}",
+  "const contributorHost = {",
+  "contributor(contributorHost)",
+  "has multiple static contributors",
+]) {
+  if (!generator.includes(token)) {
+    violations.push(`generated static port composition is missing ${token}`)
+  }
 }
 
 for (const file of [

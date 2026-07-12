@@ -66,7 +66,7 @@ for (const required of [
 if (operatorResources.includes("loadMcpAdminRoutes")) {
   violations.push("operator deployment resources must not retain dormant loadMcpAdminRoutes")
 }
-for (const primitive of ["env:", "modules:", "database:", "storage:", "events:", "config:"]) {
+for (const primitive of ["env:", "database:", "storage:", "events:", "config:"]) {
   if (!operatorResources.includes(primitive)) {
     violations.push(`operator generic Node primitive contract is missing ${primitive}`)
   }

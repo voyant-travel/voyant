@@ -3,28 +3,27 @@ import {
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/runtime-contracts"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { VoyantPort } from "@voyant-travel/core/project"
 import { channelPushRuntimePort } from "@voyant-travel/distribution"
+import {
+  configureDistributionStandardNodeRuntime,
+  distributionStandardNodeRuntime,
+} from "./standard-node-runtime.js"
 
 export interface DistributionNodeRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
+  getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
 /** Supply Distribution channel-push through the standard Node target adapter. */
 export function createDistributionNodeRuntimePortContribution(
   host: DistributionNodeRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const runtime = Promise.all([
-    import("./standard-node-runtime.js"),
-    host.primitives.modules.import<{
-      createCatalogRuntimePortContribution(
-        input: DistributionNodeRuntimeContributorHost,
-      ): Readonly<Record<string, unknown>>
-    }>("@voyant-travel/catalog/runtime-contributor"),
-  ]).then(async ([module, catalog]) => {
-    const ports = catalog.createCatalogRuntimePortContribution(host)
-    const services = (await ports[catalogRuntimeServicesPort.id]) as CatalogRuntimeServices
-    module.configureDistributionStandardNodeRuntime(host.primitives, services)
-    return module.distributionStandardNodeRuntime
-  })
+  const runtime = Promise.resolve()
+    .then(() => host.getRuntimePort(catalogRuntimeServicesPort))
+    .then((services: CatalogRuntimeServices) => {
+      configureDistributionStandardNodeRuntime(host.primitives, services)
+      return distributionStandardNodeRuntime
+    })
   return { [channelPushRuntimePort.id]: runtime }
 }

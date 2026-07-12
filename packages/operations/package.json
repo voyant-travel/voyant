@@ -16,7 +16,8 @@
     "./routes": "./src/routes.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/operations.json",
-    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -116,6 +117,11 @@
         "types": "./dist/catalog-runtime-extension.d.ts",
         "import": "./dist/catalog-runtime-extension.js",
         "default": "./dist/catalog-runtime-extension.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       }
     },
     "main": "./dist/index.js",
@@ -146,6 +152,10 @@
       "@voyant-travel/availability",
       "@voyant-travel/db",
       "@voyant-travel/identity"
-    ]
+    ],
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createOperationsRuntimePortContribution"
+    }
   }
 }

@@ -148,6 +148,9 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("export function createGeneratedGraphRuntimePorts(")
     expect(source).toContain("& Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>[0]")
     expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
+    expect(source).toContain("getRuntimePort(port: { id: string })")
+    expect(source).toContain("contributor(contributorHost)")
+    expect(source).toContain("has multiple static contributors")
   })
 
   it("selects a canonical package contributor when compatibility provenance is stale", async () => {

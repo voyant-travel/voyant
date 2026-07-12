@@ -32,6 +32,9 @@
       "@voyant-travel/accommodations/routes-content": [
         "../accommodations/dist/routes-content.d.ts"
       ],
+      "@voyant-travel/accommodations/runtime-contributor": [
+        "../accommodations/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/accommodations/schema": ["../accommodations/dist/schema.d.ts"],
       "@voyant-travel/accommodations/service-catalog-plane": [
         "../accommodations/dist/service-catalog-plane.d.ts"
@@ -442,6 +445,7 @@
       "@voyant-travel/charters/draft-shape": ["../charters/dist/draft-shape.d.ts"],
       "@voyant-travel/charters/public-routes": ["../charters/dist/routes-public.d.ts"],
       "@voyant-travel/charters/routes": ["../charters/dist/routes.d.ts"],
+      "@voyant-travel/charters/runtime-contributor": ["../charters/dist/runtime-contributor.d.ts"],
       "@voyant-travel/charters/schema": ["../charters/dist/schema.d.ts"],
       "@voyant-travel/charters/service-catalog-plane": [
         "../charters/dist/service-catalog-plane.d.ts"
@@ -644,6 +648,7 @@
       "@voyant-travel/cruises/public-routes": ["../cruises/dist/routes-public.d.ts"],
       "@voyant-travel/cruises/routes": ["../cruises/dist/routes.d.ts"],
       "@voyant-travel/cruises/routes-content": ["../cruises/dist/routes-content.d.ts"],
+      "@voyant-travel/cruises/runtime-contributor": ["../cruises/dist/runtime-contributor.d.ts"],
       "@voyant-travel/cruises/runtime-port": ["../cruises/dist/runtime-port.d.ts"],
       "@voyant-travel/cruises/schema": ["../cruises/dist/schema.d.ts"],
       "@voyant-travel/cruises/service-catalog-plane": [
@@ -837,6 +842,9 @@
         "../distribution/dist/payment-policy-runtime.d.ts"
       ],
       "@voyant-travel/distribution/routes": ["../distribution/dist/routes.d.ts"],
+      "@voyant-travel/distribution/runtime-contributor": [
+        "../distribution/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/distribution/schema": ["../distribution/dist/schema.d.ts"],
       "@voyant-travel/distribution/suppliers/linkables": [
         "../distribution/dist/suppliers/linkables.d.ts"
@@ -1414,6 +1422,9 @@
       "@voyant-travel/operations/places/linkables": ["../operations/dist/places/linkables.d.ts"],
       "@voyant-travel/operations/resources": ["../operations/dist/resources/index.d.ts"],
       "@voyant-travel/operations/routes": ["../operations/dist/routes.d.ts"],
+      "@voyant-travel/operations/runtime-contributor": [
+        "../operations/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/operations/schema": ["../operations/dist/schema.d.ts"],
       "@voyant-travel/operations/validation": ["../operations/dist/validation.d.ts"],
       "@voyant-travel/operations/voyant": ["../operations/dist/voyant.d.ts"],
@@ -1433,6 +1444,9 @@
       "@voyant-travel/plugin-catalog-demo": ["../plugins/catalog-demo/dist/index.d.ts"],
       "@voyant-travel/plugin-catalog-demo/catalog-runtime-extension": [
         "../plugins/catalog-demo/dist/catalog-runtime-extension.d.ts"
+      ],
+      "@voyant-travel/plugin-catalog-demo/runtime-contributor": [
+        "../plugins/catalog-demo/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/plugin-catalog-demo/voyant": ["../plugins/catalog-demo/dist/voyant.d.ts"],
       "@voyant-travel/plugin-flights-demo": ["../plugins/flights-demo/dist/index.d.ts"],

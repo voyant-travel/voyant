@@ -14,6 +14,7 @@ const packageFactories = {
   auth: "createAuthRuntimePortContribution",
   bookings: "createBookingsRuntimePortContribution",
   catalog: "createCatalogRuntimePortContribution",
+  charters: "createChartersRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
   cruises: "createCruisesRuntimePortContribution",
   distribution: "createDistributionRuntimePortContribution",
@@ -25,6 +26,8 @@ const packageFactories = {
   mice: "createMiceRuntimePortContribution",
   notifications: "createNotificationsRuntimePortContribution",
   "operator-settings": "createOperatorSettingsRuntimePortContribution",
+  operations: "createOperationsRuntimePortContribution",
+  "plugins/catalog-demo": "createCatalogDemoRuntimePortContribution",
   quotes: "createQuotesRuntimePortContribution",
   realtime: "createRealtimeRuntimePortContribution",
   relationships: "createRelationshipsRuntimePortContribution",
@@ -67,6 +70,9 @@ for (const required of [
   "record.metadata?.runtime",
   "input.runtimeEntryOverrides?.[entry]",
   "contributor.importEntry",
+  "getRuntimePort",
+  "contributor(contributorHost)",
+  "has multiple static contributors",
 ]) {
   if (!generator.includes(required)) {
     violations.push(`graph runtime generator must contain ${required}`)
@@ -84,6 +90,10 @@ if (/require\s*\(|createRequire/.test(generator)) {
 
 for (const [index, [packageName, factory]] of Object.entries(packageFactories).entries()) {
   const packageJson = JSON.parse(packageJsonSources[index])
+  const publishedPackageName =
+    packageName === "plugins/catalog-demo"
+      ? "@voyant-travel/plugin-catalog-demo"
+      : `@voyant-travel/${packageName}`
   const runtime = packageJson.voyant?.runtime
   if (runtime?.entry !== "./runtime-contributor" || runtime?.export !== factory) {
     violations.push(`${packageName} must declare its package-owned runtime contributor metadata`)
@@ -93,7 +103,7 @@ for (const [index, [packageName, factory]] of Object.entries(packageFactories).e
   }
   if (
     !frameworkContributors.includes(
-      `export { ${factory} } from "@voyant-travel/${packageName}/runtime-contributor"`,
+      `export { ${factory} } from "${publishedPackageName}/runtime-contributor"`,
     )
   ) {
     violations.push(`${packageName} must be reachable through the generated framework barrel`)

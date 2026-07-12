@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./voyant": "./src/voyant.ts",
-    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -46,6 +47,11 @@
         "types": "./dist/catalog-runtime-extension.d.ts",
         "import": "./dist/catalog-runtime-extension.js",
         "default": "./dist/catalog-runtime-extension.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       }
     },
     "main": "./dist/index.js",
@@ -59,6 +65,10 @@
   "voyant": {
     "schemaVersion": "voyant.package.v1",
     "kind": "plugin",
-    "manifest": "./voyant"
+    "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createCatalogDemoRuntimePortContribution"
+    }
   }
 }
