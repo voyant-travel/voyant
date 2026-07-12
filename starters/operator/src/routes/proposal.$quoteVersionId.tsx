@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { PublicProposalPage } from "@voyant-travel/quotes-react/storefront"
+import { useStorefrontMessages } from "@voyant-travel/storefront-react/storefront"
 
 import { getApiUrl } from "@/lib/env"
-import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
+import { OperatorStorefrontMessagesProvider } from "@/lib/storefront-messages"
 
 export const Route = createFileRoute("/proposal/$quoteVersionId")({
   component: ProposalRoute,
@@ -10,9 +11,9 @@ export const Route = createFileRoute("/proposal/$quoteVersionId")({
 
 function ProposalRoute() {
   return (
-    <StorefrontMessagesProvider>
+    <OperatorStorefrontMessagesProvider>
       <ProposalRouteAdapter />
-    </StorefrontMessagesProvider>
+    </OperatorStorefrontMessagesProvider>
   )
 }
 

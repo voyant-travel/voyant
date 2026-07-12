@@ -1,8 +1,7 @@
 "use client"
 
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { SignUpPage, type SignUpPageMessages } from "@voyant-travel/auth-react/ui"
-import { buttonVariants } from "@voyant-travel/ui/components/button"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { CustomerSignUpPage } from "@voyant-travel/storefront-react/storefront"
 import { z } from "zod"
 
 import { authClient } from "@/lib/auth"
@@ -27,33 +26,15 @@ function CustomerSignUpRoute(): React.ReactElement | null {
     return null
   }
 
-  const messages: Partial<SignUpPageMessages> = {
-    title: "Create your travel account",
-    description: "Save traveler details and manage bookings without using the operator workspace.",
-    nameLabel: "Full name",
-    emailPlaceholder: "you@example.com",
-    submit: "Create account",
-    signingUp: "Creating account",
-  }
-
   return (
-    <div className="mx-auto max-w-md py-10">
-      <SignUpPage
-        redirectTo={redirectTo}
-        signInHref={`/shop/account/sign-in?next=${encodeURIComponent(redirectTo)}`}
-        messages={messages}
-        onSignedUp={async ({ email }) => {
-          void navigate({
-            to: "/shop/account/verify-email",
-            search: { email, next: redirectTo },
-          })
-        }}
-      />
-      <div className="mt-4 text-center">
-        <Link to="/shop" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-          Back to storefront
-        </Link>
-      </div>
-    </div>
+    <CustomerSignUpPage
+      redirectTo={redirectTo}
+      onNavigateToVerify={(email) =>
+        void navigate({
+          to: "/shop/account/verify-email",
+          search: { email, next: redirectTo },
+        })
+      }
+    />
   )
 }

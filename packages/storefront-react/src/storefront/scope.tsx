@@ -1,16 +1,15 @@
 "use client"
 
-import type { StorefrontMarketRecord } from "@voyant-travel/storefront-react"
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react"
+import type { StorefrontMarketRecord } from "../schemas.js"
 
 /**
  * Customer-facing storefront scope (voyant#2643).
  *
  * Holds the anonymous shopper's selected market / locale / currency and
  * persists it in `localStorage` so the choice survives reloads and navigation.
- * The scope is app-owned (like `storefront-i18n`) because persistence key and
- * defaults are deployment concerns; the market *data* comes from the packaged
- * `useStorefrontMarkets` hook.
+ * Persistence can be namespaced by the application while market data comes
+ * from the packaged `useStorefrontMarkets` hook.
  *
  * `marketId` is the catalog-search scope key — the shop page threads it into
  * `useCatalogSearch({ market })` and detail pages into `useBookingQuote({
@@ -31,14 +30,14 @@ interface StorefrontScopeContextValue extends StorefrontScope {
   setCurrency: (currency: string) => void
 }
 
-const STORAGE_KEY = "voyant.storefront.scope"
+const DEFAULT_STORAGE_KEY = "voyant.storefront.scope"
 
 const StorefrontScopeContext = createContext<StorefrontScopeContextValue | null>(null)
 
-function readPersistedScope(): StorefrontScope {
+function readPersistedScope(storageKey: string): StorefrontScope {
   if (typeof window === "undefined") return {}
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw = window.localStorage.getItem(storageKey)
     if (!raw) return {}
     const parsed = JSON.parse(raw) as Record<string, unknown>
     return {
@@ -51,22 +50,31 @@ function readPersistedScope(): StorefrontScope {
   }
 }
 
-function persistScope(scope: StorefrontScope): void {
+function persistScope(storageKey: string, scope: StorefrontScope): void {
   if (typeof window === "undefined") return
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(scope))
+    window.localStorage.setItem(storageKey, JSON.stringify(scope))
   } catch {
     // Ignore quota / disabled-storage errors — scope simply won't persist.
   }
 }
 
-export function StorefrontScopeProvider({ children }: { children: ReactNode }) {
-  const [scope, setScope] = useState<StorefrontScope>(readPersistedScope)
+export function StorefrontScopeProvider({
+  children,
+  storageKey = DEFAULT_STORAGE_KEY,
+}: {
+  children: ReactNode
+  storageKey?: string
+}) {
+  const [scope, setScope] = useState<StorefrontScope>(() => readPersistedScope(storageKey))
 
-  const update = useCallback((next: StorefrontScope) => {
-    setScope(next)
-    persistScope(next)
-  }, [])
+  const update = useCallback(
+    (next: StorefrontScope) => {
+      setScope(next)
+      persistScope(storageKey, next)
+    },
+    [storageKey],
+  )
 
   const value = useMemo<StorefrontScopeContextValue>(
     () => ({

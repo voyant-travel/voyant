@@ -4,18 +4,8 @@
 import { useMutation } from "@tanstack/react-query"
 import { formatMessage } from "@voyant-travel/i18n"
 import type { Trip, TripComponent } from "@voyant-travel/trips"
-import {
-  addTripComponent,
-  createTrip,
-  defaultFetcher,
-  getTrip,
-  priceTrip,
-  reserveTrip,
-  startTripCheckout,
-  type VoyantApiError,
-} from "@voyant-travel/trips-react"
 import { Badge } from "@voyant-travel/ui/components/badge"
-import { Button } from "@voyant-travel/ui/components/button"
+import { Button, buttonVariants } from "@voyant-travel/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import { Input } from "@voyant-travel/ui/components/input"
 import { Label } from "@voyant-travel/ui/components/label"
@@ -36,19 +26,121 @@ import {
   CreditCard,
   Landmark,
   Loader2,
+  LogIn,
   Plus,
   Route,
   Sparkles,
 } from "lucide-react"
 import { useMemo, useState } from "react"
-
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { defaultFetcher, type VoyantApiError } from "../client.js"
+import {
+  addTripComponent,
+  createTrip,
+  getTrip,
+  priceTrip,
+  reserveTrip,
+  startTripCheckout,
+} from "../operations.js"
 
 type ComponentTemplate = "product" | "stay" | "transfer"
 type CheckoutIntent = "card" | "bank_transfer" | "hold" | "inquiry"
 
-type StorefrontComposerMessages = ReturnType<typeof useAdminMessages>["trips"]["storefrontComposer"]
+export interface StorefrontComposerMessages {
+  heading: string
+  subheading: string
+  actions: { newTrip: string; price: string; reserve: string; checkout: string }
+  summary: {
+    title: string
+    status: string
+    notStarted: string
+    items: string
+    subtotal: string
+    tax: string
+    total: string
+  }
+  composerForm: {
+    title: string
+    typeLabel: string
+    typeProduct: string
+    typeStay: string
+    typeTransfer: string
+    titleLabel: string
+    amountLabel: string
+    catalogIdLabel: string
+    sourceLabel: string
+    paymentLabel: string
+    paymentCard: string
+    paymentBankTransfer: string
+    paymentHold: string
+    paymentInquiry: string
+    tripNotesLabel: string
+    addToTrip: string
+  }
+  emptyTimeline: string
+  componentFallback: string
+  componentTaxLine: string
+  statusMessages: {
+    tripCreated: string
+    componentAdded: string
+    tripPriced: string
+    tripReserved: string
+    redirecting: string
+    paymentSessionStarted: string
+    checkoutHandoff: string
+  }
+  errors: {
+    createTripFirst: string
+    priceTripFirst: string
+    reserveTripFirst: string
+    requestFailed: string
+  }
+}
+
+export interface StorefrontComposerGateMessages {
+  gateTitle: string
+  gateBody: string
+  gateSignIn: string
+  gateBrowse: string
+}
+
+export function StorefrontComposerPage({
+  apiUrl,
+  gateMessages,
+  messages,
+  signedIn,
+}: {
+  apiUrl: string
+  gateMessages: StorefrontComposerGateMessages
+  messages: StorefrontComposerMessages
+  signedIn: boolean
+}): React.ReactElement {
+  if (signedIn) return <StorefrontComposerBlock apiUrl={apiUrl} messages={messages} />
+
+  return (
+    <div className="mx-auto max-w-xl py-12">
+      <Card>
+        <CardHeader className="space-y-3">
+          <div className="flex size-12 items-center justify-center rounded-md bg-muted">
+            <Route className="size-6 text-primary" aria-hidden="true" />
+          </div>
+          <CardTitle>{gateMessages.gateTitle}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground text-sm">{gateMessages.gateBody}</p>
+          <div className="flex flex-wrap gap-2">
+            <a href="/shop/account/sign-in?next=/shop/composer" className={buttonVariants()}>
+              <LogIn className="size-4" aria-hidden="true" />
+              {gateMessages.gateSignIn}
+            </a>
+            <a href="/shop" className={buttonVariants({ variant: "outline" })}>
+              {gateMessages.gateBrowse}
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
 interface ComposerTripState {
   trip: Trip | null
@@ -90,8 +182,13 @@ const referenceTravelerParty = {
   ],
 }
 
-export function StorefrontComposerBlock(): React.ReactElement {
-  const t = useAdminMessages().trips.storefrontComposer
+export function StorefrontComposerBlock({
+  apiUrl,
+  messages: t,
+}: {
+  apiUrl: string
+  messages: StorefrontComposerMessages
+}): React.ReactElement {
   const [state, setState] = useState<ComposerTripState>({
     trip: null,
     message: null,
@@ -107,11 +204,11 @@ export function StorefrontComposerBlock(): React.ReactElement {
 
   const client = useMemo(
     () => ({
-      baseUrl: getApiUrl(),
+      baseUrl: apiUrl,
       fetcher: defaultFetcher,
       surface: "public" as const,
     }),
-    [],
+    [apiUrl],
   )
   const envelopeId = state.trip?.envelope.id
 

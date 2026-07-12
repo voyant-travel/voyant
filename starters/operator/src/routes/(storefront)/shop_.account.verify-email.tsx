@@ -1,7 +1,7 @@
 "use client"
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { VerifyEmailPage, type VerifyEmailPageMessages } from "@voyant-travel/auth-react/ui"
+import { CustomerVerifyEmailPage } from "@voyant-travel/storefront-react/storefront"
 import { z } from "zod"
 
 import { authClient } from "@/lib/auth"
@@ -19,36 +19,25 @@ function CustomerVerifyEmailRoute(): React.ReactElement {
   const { email, next } = Route.useSearch()
   const redirectTo = next || "/shop/account"
 
-  const messages: Partial<VerifyEmailPageMessages> = {
-    title: "Verify your email",
-    description: "Enter the verification code we sent before signing in.",
-    successTitle: "Email verified",
-    successDescription: "Your travel account is ready.",
-  }
-
   return (
-    <div className="mx-auto max-w-md py-10">
-      <VerifyEmailPage
-        mode="otp"
-        email={email}
-        signInHref={`/shop/account/sign-in?next=${encodeURIComponent(redirectTo)}&verify=1`}
-        messages={messages}
-        onCompleted={async () => {
-          await authClient.signOut()
-        }}
-        onResendVerification={async (targetEmail) => {
-          await authClient.emailOtp.sendVerificationOtp({
-            email: targetEmail,
-            type: "email-verification",
-          })
-        }}
-        onSignInClick={() => {
-          void navigate({
-            to: "/shop/account/sign-in",
-            search: { next: redirectTo, verify: "1" },
-          })
-        }}
-      />
-    </div>
+    <CustomerVerifyEmailPage
+      email={email}
+      redirectTo={redirectTo}
+      onCompleted={async () => {
+        await authClient.signOut()
+      }}
+      onResendVerification={async (targetEmail) => {
+        await authClient.emailOtp.sendVerificationOtp({
+          email: targetEmail,
+          type: "email-verification",
+        })
+      }}
+      onNavigateToSignIn={() =>
+        void navigate({
+          to: "/shop/account/sign-in",
+          search: { next: redirectTo, verify: "1" },
+        })
+      }
+    />
   )
 }

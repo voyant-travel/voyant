@@ -1,6 +1,5 @@
 "use client"
 
-import { useLocale } from "@voyant-travel/admin/providers/locale"
 import {
   createLocaleFormatters,
   createPackageMessagesContext,
@@ -10,13 +9,8 @@ import {
 import type { ReactNode } from "react"
 
 /**
- * App-owned i18n for the operator starter's customer-facing surfaces — the
- * `(storefront)` route group plus the standalone public pages (`/pay`,
- * `/proposal/$id`). These render to customers/external parties, not the
- * operator, but they live inside the same `AdminProvider` (mounted at
- * `__root`), so the customer locale is read from the shared
- * `useLocale().resolvedLocale` — the same `en`/`ro` selection the workspace
- * uses. Mirrors the package i18n pattern (`createPackageMessagesContext`).
+ * Customer-facing messages shared by storefront routes and standalone public
+ * pages. Applications select the locale and pass it to the provider.
  *
  * Romanian strings follow the codebase convention of ASCII (no diacritics),
  * matching the operator admin message files.
@@ -24,9 +18,11 @@ import type { ReactNode } from "react"
 
 const fallbackLocale = "en"
 
-const storefrontMessagesEn = {
+export const storefrontMessagesEn = {
   layout: {
     brand: "Voyant Storefront",
+    account: "Account",
+    signIn: "Sign in",
   },
   scope: {
     market: "Market",
@@ -251,9 +247,11 @@ const storefrontMessagesEn = {
 
 export type StorefrontMessages = typeof storefrontMessagesEn
 
-const storefrontMessagesRo: StorefrontMessages = {
+export const storefrontMessagesRo: StorefrontMessages = {
   layout: {
     brand: "Magazin Voyant",
+    account: "Cont",
+    signIn: "Autentificare",
   },
   scope: {
     market: "Piata",
@@ -489,17 +487,21 @@ const defaultStorefrontI18n: PackageI18nValue<StorefrontMessages> = {
 }
 
 /**
- * Resolves the customer locale from the shared admin `LocaleProvider`
- * (mounted at `__root`) and supplies the matching storefront messages.
+ * Supplies storefront messages without coupling the package to an app locale
+ * provider.
  */
-export function StorefrontMessagesProvider({ children }: { children: ReactNode }) {
-  const { resolvedLocale } = useLocale()
-
+export function StorefrontMessagesProvider({
+  children,
+  locale = fallbackLocale,
+}: {
+  children: ReactNode
+  locale?: string
+}) {
   return (
     <storefrontContext.ResolvedMessagesProvider
       definitions={storefrontMessageDefinitions}
       fallbackLocale={fallbackLocale}
-      locale={resolvedLocale}
+      locale={locale}
     >
       {children}
     </storefrontContext.ResolvedMessagesProvider>

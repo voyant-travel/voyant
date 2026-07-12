@@ -6,11 +6,11 @@ import {
   type StorefrontUiNavigation,
   StorefrontUiProvider,
   shopSearchSchema,
+  useStorefrontMessagesOrDefault,
+  useStorefrontScope,
 } from "@voyant-travel/storefront-react/storefront"
 
 import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
 
 export const Route = createFileRoute("/(storefront)/shop")({
   component: StorefrontIndexRoute,

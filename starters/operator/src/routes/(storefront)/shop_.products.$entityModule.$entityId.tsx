@@ -8,13 +8,13 @@ import {
   AccommodationDetailPage,
   type StorefrontUiNavigation,
   StorefrontUiProvider,
+  useStorefrontMessagesOrDefault,
+  useStorefrontScope,
 } from "@voyant-travel/storefront-react/storefront"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
 import type React from "react"
 
 import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
 
 export const Route = createFileRoute("/(storefront)/shop_/products/$entityModule/$entityId")({
   component: DetailPage,

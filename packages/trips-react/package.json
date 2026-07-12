@@ -15,7 +15,8 @@
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
     "./query-keys": "./src/query-keys.ts",
-    "./admin": "./src/admin/index.tsx"
+    "./admin": "./src/admin/index.tsx",
+    "./storefront": "./src/storefront/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -134,6 +135,11 @@
         "types": "./dist/admin/index.d.ts",
         "import": "./dist/admin/index.js",
         "default": "./dist/admin/index.js"
+      },
+      "./storefront": {
+        "types": "./dist/storefront/index.d.ts",
+        "import": "./dist/storefront/index.js",
+        "default": "./dist/storefront/index.js"
       }
     },
     "main": "./dist/index.js",

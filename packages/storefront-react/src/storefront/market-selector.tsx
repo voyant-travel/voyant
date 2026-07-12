@@ -1,9 +1,8 @@
 "use client"
 
-import { useStorefrontMarkets } from "@voyant-travel/storefront-react"
-
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
+import { useStorefrontMarkets } from "../hooks/use-storefront-markets.js"
+import { useStorefrontMessagesOrDefault } from "./messages.js"
+import { useStorefrontScope } from "./scope.js"
 
 /**
  * Anonymous market / currency / language selector (voyant#2643).

@@ -7,7 +7,7 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
-const starterFileRatchet = 159
+const starterFileRatchet = 154
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
@@ -38,6 +38,12 @@ for (const relativePath of [
   "starters/operator/src/routes/(storefront)/shop.test.ts",
   "starters/operator/src/components/voyant/checkout/payment-link-booking-summary.tsx",
   "starters/operator/src/components/voyant/checkout/payment-link-trip-summary.tsx",
+  "starters/operator/src/components/voyant/trips/storefront-composer-block.tsx",
+  "starters/operator/src/lib/customer-account.test.ts",
+  "starters/operator/src/lib/customer-account.tsx",
+  "starters/operator/src/lib/storefront-i18n.tsx",
+  "starters/operator/src/lib/storefront-scope.tsx",
+  "starters/operator/src/routes/(storefront)/storefront-market-selector.tsx",
 ]) {
   if (existsSync(join(root, relativePath))) {
     failures.push(`package-owned product UI must stay deleted from the starter: ${relativePath}`)
@@ -49,6 +55,13 @@ for (const [relativePath, maxLines] of new Map([
   ["starters/operator/src/routes/pay.tsx", 40],
   ["starters/operator/src/routes/pay_.$sessionId.tsx", 40],
   ["starters/operator/src/routes/accountant.$token.tsx", 30],
+  ["starters/operator/src/routes/(storefront)/route.tsx", 50],
+  ["starters/operator/src/routes/(storefront)/shop_.account.tsx", 35],
+  ["starters/operator/src/routes/(storefront)/shop_.account.sign-in.tsx", 40],
+  ["starters/operator/src/routes/(storefront)/shop_.account.sign-up.tsx", 45],
+  ["starters/operator/src/routes/(storefront)/shop_.account.verify-email.tsx", 45],
+  ["starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx", 35],
+  ["starters/operator/src/routes/(storefront)/shop_.composer.tsx", 40],
 ])) {
   const path = join(root, relativePath)
   if (!existsSync(path)) continue
@@ -64,6 +77,15 @@ for (const relativePath of [
   "packages/finance-react/src/storefront/public-payment-link-page.tsx",
   "packages/finance-react/src/storefront/payment-link-booking-summary.tsx",
   "packages/finance-react/src/storefront/payment-link-trip-summary.tsx",
+  "packages/storefront-react/src/storefront/confirmation-page.tsx",
+  "packages/storefront-react/src/storefront/customer-account-page.tsx",
+  "packages/storefront-react/src/storefront/customer-account-provider.tsx",
+  "packages/storefront-react/src/storefront/customer-auth-pages.tsx",
+  "packages/storefront-react/src/storefront/market-selector.tsx",
+  "packages/storefront-react/src/storefront/messages.tsx",
+  "packages/storefront-react/src/storefront/scope.tsx",
+  "packages/storefront-react/src/storefront/shell.tsx",
+  "packages/trips-react/src/storefront/storefront-composer-block.tsx",
 ]) {
   const path = join(root, relativePath)
   if (!existsSync(path)) {
@@ -114,9 +136,25 @@ const requiredTokens = new Map([
   ["packages/inventory-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
     "packages/storefront-react/src/storefront/index.ts",
-    ["StorefrontBrowsePage", "AccommodationDetailPage", "StorefrontUiProvider"],
+    [
+      "StorefrontBrowsePage",
+      "AccommodationDetailPage",
+      "StorefrontUiProvider",
+      "CustomerAccountPage",
+      "CustomerSignInPage",
+      "StorefrontConfirmationPage",
+      "StorefrontMarketSelector",
+      "StorefrontMessagesProvider",
+      "StorefrontScopeProvider",
+      "StorefrontShell",
+    ],
   ],
   ["packages/storefront-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
+  [
+    "packages/trips-react/src/storefront/index.ts",
+    ["StorefrontComposerBlock", "StorefrontComposerPage"],
+  ],
+  ["packages/trips-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
     "starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
     ['from "@voyant-travel/bookings-react/storefront"'],
@@ -132,6 +170,18 @@ const requiredTokens = new Map([
       'from "@voyant-travel/inventory-react/storefront"',
       'from "@voyant-travel/storefront-react/storefront"',
     ],
+  ],
+  [
+    "starters/operator/src/routes/(storefront)/shop_.account.tsx",
+    ['from "@voyant-travel/storefront-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx",
+    ['from "@voyant-travel/storefront-react/storefront"'],
+  ],
+  [
+    "starters/operator/src/routes/(storefront)/shop_.composer.tsx",
+    ['from "@voyant-travel/trips-react/storefront"'],
   ],
   [
     "starters/operator/src/routes/proposal.$quoteVersionId.tsx",

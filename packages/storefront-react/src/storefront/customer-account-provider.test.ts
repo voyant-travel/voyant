@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { rewriteCustomerAccountAuthUrl } from "./customer-account"
+import { rewriteCustomerAccountAuthUrl } from "./customer-account-provider.js"
 
 describe("rewriteCustomerAccountAuthUrl", () => {
   it("routes customer auth UI calls through the customer auth facade", () => {

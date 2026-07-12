@@ -1,13 +1,14 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
-import { buttonVariants } from "@voyant-travel/ui/components/button"
-import { cn } from "@voyant-travel/ui/lib/utils"
-import { CircleUserRound, LogIn } from "lucide-react"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
+import {
+  CustomerAccountProvider,
+  StorefrontScopeProvider,
+  StorefrontShell,
+} from "@voyant-travel/storefront-react/storefront"
 
 import { authClient } from "@/lib/auth"
-import { CustomerAccountProvider } from "@/lib/customer-account"
-import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
-import { StorefrontScopeProvider } from "@/lib/storefront-scope"
-import { StorefrontMarketSelector } from "./storefront-market-selector"
+import { getApiUrl } from "@/lib/env"
+import { OperatorStorefrontMessagesProvider } from "@/lib/storefront-messages"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 /**
  * `(storefront)` — simulated customer-facing surface inside the
@@ -23,51 +24,22 @@ export const Route = createFileRoute("/(storefront)")({
 
 function StorefrontLayout(): React.ReactElement {
   return (
-    <StorefrontMessagesProvider>
+    <OperatorStorefrontMessagesProvider>
       <StorefrontScopeProvider>
-        <CustomerAccountProvider>
+        <CustomerAccountProvider baseUrl={getApiUrl()} fetcher={operatorFetcher}>
           <StorefrontChrome />
         </CustomerAccountProvider>
       </StorefrontScopeProvider>
-    </StorefrontMessagesProvider>
+    </OperatorStorefrontMessagesProvider>
   )
 }
 
 function StorefrontChrome(): React.ReactElement {
-  const t = useStorefrontMessages().layout
   const { data: session, isPending } = authClient.useSession()
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center justify-between px-4 py-3">
-          <Link to="/shop" className="font-medium">
-            {t.brand}
-          </Link>
-          <nav className="flex items-center gap-2">
-            <StorefrontMarketSelector />
-            <Link
-              to={session ? "/shop/account" : "/shop/account/sign-in"}
-              search={session ? undefined : { next: "/shop/account" }}
-              aria-disabled={isPending}
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "sm" }),
-                isPending && "pointer-events-none opacity-50",
-              )}
-            >
-              {session ? (
-                <CircleUserRound className="size-4" aria-hidden="true" />
-              ) : (
-                <LogIn className="size-4" aria-hidden="true" />
-              )}
-              {session ? "Account" : "Sign in"}
-            </Link>
-          </nav>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">
-        <Outlet />
-      </main>
-    </div>
+    <StorefrontShell signedIn={Boolean(session)} sessionPending={isPending}>
+      <Outlet />
+    </StorefrontShell>
   )
 }

@@ -1,8 +1,9 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router"
 import { PaymentLinkResolverPage } from "@voyant-travel/finance-react/storefront"
+import { useStorefrontMessages } from "@voyant-travel/storefront-react/storefront"
 import { z } from "zod"
 
-import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
+import { OperatorStorefrontMessagesProvider } from "@/lib/storefront-messages"
 
 const searchSchema = z.object({
   orderID: z.string().optional(),
@@ -17,9 +18,9 @@ export const Route = createFileRoute("/pay")({
 
 function PayRoute() {
   return (
-    <StorefrontMessagesProvider>
+    <OperatorStorefrontMessagesProvider>
       <PayRouteAdapter />
-    </StorefrontMessagesProvider>
+    </OperatorStorefrontMessagesProvider>
   )
 }
 

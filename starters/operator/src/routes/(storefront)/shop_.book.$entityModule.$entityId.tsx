@@ -15,12 +15,14 @@ import {
 import type { CruiseContent } from "@voyant-travel/cruises/content-shape"
 import type { ProductContent } from "@voyant-travel/inventory/content-shape"
 import { getStorefrontCustomerProductDetailRoute } from "@voyant-travel/storefront-react"
+import {
+  useStorefrontMessagesOrDefault,
+  useStorefrontScope,
+} from "@voyant-travel/storefront-react/storefront"
 import { useMemo } from "react"
 import { z } from "zod"
 
 import { getApiUrl } from "@/lib/env"
-import { useStorefrontMessagesOrDefault } from "@/lib/storefront-i18n"
-import { useStorefrontScope } from "@/lib/storefront-scope"
 
 /**
  * Storefront booking-journey route. The customer arrives here from

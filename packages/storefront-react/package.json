@@ -39,6 +39,7 @@
     "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",
+    "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0",
@@ -56,6 +57,9 @@
     "@voyant-travel/catalog-react": {
       "optional": true
     },
+    "@voyant-travel/auth-react": {
+      "optional": true
+    },
     "@voyant-travel/ui": {
       "optional": true
     },
@@ -64,6 +68,7 @@
     }
   },
   "dependencies": {
+    "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^"
   },
   "devDependencies": {
@@ -71,6 +76,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/accommodations": "workspace:^",
+    "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",
     "@voyant-travel/react": "workspace:^",

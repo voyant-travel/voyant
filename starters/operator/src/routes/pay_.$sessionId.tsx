@@ -1,8 +1,9 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router"
 import { PublicPaymentLinkPage } from "@voyant-travel/finance-react/storefront"
+import { useStorefrontMessages } from "@voyant-travel/storefront-react/storefront"
 
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { StorefrontMessagesProvider, useStorefrontMessages } from "@/lib/storefront-i18n"
+import { OperatorStorefrontMessagesProvider } from "@/lib/storefront-messages"
 
 export const Route = createFileRoute("/pay_/$sessionId")({
   component: PaymentLinkRoute,
@@ -10,9 +11,9 @@ export const Route = createFileRoute("/pay_/$sessionId")({
 
 function PaymentLinkRoute() {
   return (
-    <StorefrontMessagesProvider>
+    <OperatorStorefrontMessagesProvider>
       <PaymentLinkRouteAdapter />
-    </StorefrontMessagesProvider>
+    </OperatorStorefrontMessagesProvider>
   )
 }
 
