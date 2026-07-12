@@ -1,10 +1,7 @@
 import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
 import type { Context } from "hono"
 
-import {
-  catalogSearchRuntimePort,
-  type CatalogSearchRuntimeOptions,
-} from "./api-runtime-ports.js"
+import { type CatalogSearchRuntimeOptions, catalogSearchRuntimePort } from "./api-runtime-ports.js"
 import { executeSemanticSearch } from "./search/semantic.js"
 import type { CatalogToolServices } from "./tools.js"
 
