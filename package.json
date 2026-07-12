@@ -36,6 +36,7 @@
     "verify:public-cache-policy": "node scripts/check-public-cache-policy.mjs",
     "verify:node-entrypoint": "node scripts/check-node-entrypoint.mjs",
     "verify:generic-node-bootstrap-authority": "node scripts/check-generic-node-bootstrap-authority.mjs",
+    "verify:node-host-dispatch-authority": "node scripts/check-node-host-dispatch-authority.mjs",
     "verify:node-runtime-authority": "node scripts/check-node-runtime-authority.mjs",
     "verify:node-runtime-product-authority": "node scripts/check-node-runtime-product-authority.mjs",
     "verify:profile-compatibility-boundary": "node scripts/check-profile-compatibility-boundary.mjs",

@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
+import "./check-node-host-dispatch-authority.mjs"
+
 const root = resolve(import.meta.dirname, "..")
 const violations = []
 const starterAdapterPath = "starters/operator/src/deployment-graph-artifacts.ts"
