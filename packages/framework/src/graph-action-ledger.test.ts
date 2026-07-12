@@ -145,8 +145,23 @@ describe("graph action-ledger lowering", () => {
       graphHash: "sha256:bookings-action-parity",
       accessCatalog: {
         resources: (bookingsVoyantModule.access?.resources ?? []).map((resource) => ({
-          ...resource,
+          id: resource.id,
           unitId: bookingsVoyantModule.id,
+          resource: resource.resource,
+          label: resource.label ?? resource.resource,
+          description: resource.description ?? resource.label ?? resource.resource,
+          wildcard: resource.wildcard ?? "allow",
+          actions: resource.actions.map((action) =>
+            typeof action === "string"
+              ? { action, label: action, description: action }
+              : {
+                  action: action.action,
+                  label: action.label ?? action.action,
+                  description: action.description ?? action.label ?? action.action,
+                  ...(action.wildcard ? { wildcard: action.wildcard } : {}),
+                },
+          ),
+          legacyActions: resource.legacyActions,
         })),
         presets: [],
       },
