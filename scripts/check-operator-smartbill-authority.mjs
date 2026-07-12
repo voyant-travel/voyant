@@ -29,11 +29,11 @@ const app = readRequired(join(operatorRoot, "src/api/app.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 
-if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.1") {
-  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.140.1")
+if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.2") {
+  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.140.2")
 }
-if (installedPackage.version !== "0.140.1") {
-  violations.push("installed SmartBill package must resolve to 0.140.1")
+if (installedPackage.version !== "0.140.2") {
+  violations.push("installed SmartBill package must resolve to 0.140.2")
 }
 if (
   installedPackage.voyant?.kind !== "plugin" ||

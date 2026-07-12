@@ -15,7 +15,7 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-smartbill-authority-"))
   const files = {
     "package.json": JSON.stringify({
-      dependencies: { "@voyant-travel/plugin-smartbill": "^0.140.1" },
+      dependencies: { "@voyant-travel/plugin-smartbill": "^0.140.2" },
     }),
     "voyant.config.ts":
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] }\n',
@@ -25,7 +25,7 @@ async function createFixture(overrides = {}) {
     "src/api/runtime/operator-runtime-adapter.ts":
       'import { createSmartbillSettlementPollers, type SmartbillRuntimeHost } from "@voyant-travel/plugin-smartbill/graph-runtime"\nexport const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {}\ncreateSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings))\n',
     "installed/package.json": JSON.stringify({
-      version: "0.140.1",
+      version: "0.140.2",
       voyant: {
         kind: "plugin",
         manifest: "./voyant",
