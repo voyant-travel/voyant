@@ -143,6 +143,7 @@ export {
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
+  type AnyAdminWidgetContribution,
   adminExtensionsFromGlob,
   adminRoutePageModule,
   adminWorkspaceHeaderActionsSlot,

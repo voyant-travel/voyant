@@ -213,7 +213,8 @@ export interface AdminWidgetContribution<Props = Record<string, unknown>> {
   component: React.ComponentType<Props>
 }
 
-type ErasedAdminWidgetContribution = AdminWidgetContribution<never>
+/** Heterogeneous widget contribution after slot-specific props are type-checked. */
+export type AnyAdminWidgetContribution = AdminWidgetContribution<never>
 
 export type AdminSettingsNavGroup = "general" | "products"
 
@@ -256,7 +257,7 @@ export interface AdminExtension {
   navigation?: ReadonlyArray<AdminNavigationContribution>
   routes?: ReadonlyArray<AdminUiRouteContribution>
   settingsPages?: ReadonlyArray<AdminSettingsPageContribution>
-  widgets?: ReadonlyArray<ErasedAdminWidgetContribution>
+  widgets?: ReadonlyArray<AnyAdminWidgetContribution>
 }
 
 export function defineAdminExtension<T extends AdminExtension>(extension: T): T {
@@ -477,7 +478,7 @@ export interface ResolveAdminWidgetsOptions {
 export function resolveAdminWidgets({
   slot,
   extensions = [],
-}: ResolveAdminWidgetsOptions): AdminWidgetContribution[] {
+}: ResolveAdminWidgetsOptions): AnyAdminWidgetContribution[] {
   const widgets = extensions
     .flatMap((extension) => extension.widgets ?? [])
     .filter((widget) => widget.slot === slot)
