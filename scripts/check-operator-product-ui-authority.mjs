@@ -203,7 +203,10 @@ const requiredTokens = new Map([
       'import.meta.glob("../admin/*/index.tsx"',
     ],
   ],
-  ["starters/operator/src/router.tsx", ['from "./admin.routes.generated"']],
+  [
+    "starters/operator/src/router.tsx",
+    ['from "./lib/admin-extensions"', "buildAdminExtensionRoutes"],
+  ],
 ])
 
 for (const [relativePath, tokens] of requiredTokens) {

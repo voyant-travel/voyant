@@ -1,3 +1,6 @@
+import type { AdminDestinationResolvers, AdminExtension } from "@voyant-travel/admin"
+import { buildAdminExtensionDestinations } from "@voyant-travel/admin/app"
+
 function searchString(params: Record<string, string | number | undefined>): string {
   const parts: string[] = []
   for (const [key, value] of Object.entries(params)) {
@@ -8,11 +11,13 @@ function searchString(params: Record<string, string | number | undefined>): stri
 }
 
 /**
- * Add the standard host-owned resolvers that cannot be generated from one
- * route contribution. Generated selected-graph routes remain authoritative
- * for every simple path-interpolation destination.
+ * Build selected-graph and project-local destinations, then add the standard
+ * host-owned resolvers that cannot be derived from one route contribution.
  */
-export function createAdminHostDestinations<TGenerated extends object>(generated: TGenerated) {
+export function createAdminHostDestinations(
+  extensions: ReadonlyArray<AdminExtension>,
+): AdminDestinationResolvers {
+  const generated = buildAdminExtensionDestinations(extensions)
   return {
     ...generated,
     "booking.detail": ({ bookingId, tab }: { bookingId: string; tab?: string }) =>
@@ -89,5 +94,5 @@ export function createAdminHostDestinations<TGenerated extends object>(generated
     "product.detail": ({ productId }: { productId: string }) =>
       `/products/${encodeURIComponent(productId)}`,
     "trip.create": () => "/trips/new",
-  }
+  } as AdminDestinationResolvers
 }

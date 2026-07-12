@@ -101,7 +101,71 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
   }
 })
 
-function runChecker({ graph, extensions, bundle, compatibility }) {
+test("rejects legacy committed admin generation artifacts and commands", () => {
+  const dir = mkdtempSync(join(tmpdir(), "voyant-admin-legacy-generation-"))
+  const graph = join(dir, "deployment-graph.generated.json")
+  const extensions = join(dir, "admin.extensions.generated.ts")
+  const bundle = join(dir, "selected-graph-admin.generated.ts")
+  const compatibility = join(dir, "admin-extensions.tsx")
+  const router = join(dir, "router.tsx")
+  const destinations = join(dir, "admin-destinations.ts")
+  const operatorPackage = join(dir, "package.json")
+  const adminHostDestinations = join(dir, "admin-host-destinations.ts")
+  const legacyRoutes = join(dir, "admin.routes.generated.tsx")
+  const legacyDestinations = join(dir, "admin.destinations.generated.ts")
+  const legacyGenerator = join(dir, "run-admin-generator.ts")
+
+  try {
+    writeFileSync(graph, JSON.stringify({ modules: [], plugins: [] }))
+    writeFileSync(bundle, "export const selectedGraphAdminExtensionFactories = {}\n")
+    writeFileSync(compatibility, "export const adminExtensions = []\n")
+    writeFileSync(router, "buildAdminExtensionRoutes(adminExtensions)\n")
+    writeFileSync(destinations, "createAdminHostDestinations(adminExtensions)\n")
+    writeFileSync(operatorPackage, JSON.stringify({ scripts: {} }))
+    writeFileSync(adminHostDestinations, "buildAdminExtensionDestinations(extensions)\n")
+
+    const options = {
+      graph,
+      extensions,
+      bundle,
+      compatibility,
+      router,
+      destinations,
+      operatorPackage,
+      adminHostDestinations,
+      legacyRoutes,
+      legacyDestinations,
+      legacyGenerator,
+    }
+    assert.doesNotThrow(() => runChecker(options))
+
+    writeFileSync(legacyRoutes, "// generated\n")
+    assert.throws(() => runChecker(options), /admin\.routes\.generated\.tsx must not exist/)
+    rmSync(legacyRoutes, { force: true })
+
+    writeFileSync(
+      operatorPackage,
+      JSON.stringify({ scripts: { "admin:check": "voyant admin generate --routes" } }),
+    )
+    assert.throws(() => runChecker(options), /legacy admin generation token/)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+function runChecker({
+  graph,
+  extensions,
+  bundle,
+  compatibility,
+  router = join(ROOT, "starters/operator/src/router.tsx"),
+  destinations = join(ROOT, "starters/operator/src/lib/admin-destinations.ts"),
+  operatorPackage = join(ROOT, "starters/operator/package.json"),
+  adminHostDestinations = join(ROOT, "packages/admin-host/src/admin-destinations.ts"),
+  legacyRoutes = join(ROOT, "starters/operator/src/admin.routes.generated.tsx"),
+  legacyDestinations = join(ROOT, "starters/operator/src/admin.destinations.generated.ts"),
+  legacyGenerator = join(ROOT, "starters/operator/scripts/run-admin-generator.ts"),
+}) {
   return execFileSync(
     process.execPath,
     [
@@ -114,6 +178,20 @@ function runChecker({ graph, extensions, bundle, compatibility }) {
       bundle,
       "--compatibility",
       compatibility,
+      "--router",
+      router,
+      "--destinations-source",
+      destinations,
+      "--operator-package",
+      operatorPackage,
+      "--admin-host-destinations",
+      adminHostDestinations,
+      "--legacy-routes",
+      legacyRoutes,
+      "--legacy-destinations",
+      legacyDestinations,
+      "--legacy-generator",
+      legacyGenerator,
     ],
     { encoding: "utf8" },
   )

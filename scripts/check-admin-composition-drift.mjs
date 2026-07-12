@@ -37,8 +37,31 @@ const COMPATIBILITY = optionPath(
   "--compatibility",
   join(ROOT, "starters/operator/src/lib/admin-extensions.tsx"),
 )
-const DESTINATIONS = join(ROOT, "starters/operator/src/admin.destinations.generated.ts")
-const ROUTES = join(ROOT, "starters/operator/src/admin.routes.generated.tsx")
+const ROUTER = optionPath("--router", join(ROOT, "starters/operator/src/router.tsx"))
+const DESTINATIONS = optionPath(
+  "--destinations-source",
+  join(ROOT, "starters/operator/src/lib/admin-destinations.ts"),
+)
+const OPERATOR_PACKAGE = optionPath(
+  "--operator-package",
+  join(ROOT, "starters/operator/package.json"),
+)
+const ADMIN_HOST_DESTINATIONS = optionPath(
+  "--admin-host-destinations",
+  join(ROOT, "packages/admin-host/src/admin-destinations.ts"),
+)
+const LEGACY_ROUTES = optionPath(
+  "--legacy-routes",
+  join(ROOT, "starters/operator/src/admin.routes.generated.tsx"),
+)
+const LEGACY_DESTINATIONS = optionPath(
+  "--legacy-destinations",
+  join(ROOT, "starters/operator/src/admin.destinations.generated.ts"),
+)
+const LEGACY_GENERATOR = optionPath(
+  "--legacy-generator",
+  join(ROOT, "starters/operator/scripts/run-admin-generator.ts"),
+)
 
 function optionPath(name, fallback) {
   const index = process.argv.indexOf(name)
@@ -131,6 +154,60 @@ if (existsSync(EXTENSIONS)) {
   )
 }
 
+for (const [label, file] of [
+  ["admin.routes.generated.tsx", LEGACY_ROUTES],
+  ["admin.destinations.generated.ts", LEGACY_DESTINATIONS],
+  ["run-admin-generator.ts", LEGACY_GENERATOR],
+]) {
+  if (existsSync(file)) {
+    violations.push(
+      `${label} must not exist; .voyant selected-graph admin composition is authoritative`,
+    )
+  }
+}
+
+const routerSource = existsSync(ROUTER) ? readFileSync(ROUTER, "utf8") : ""
+if (
+  !routerSource.includes("buildAdminExtensionRoutes") ||
+  !routerSource.includes("adminExtensions")
+) {
+  violations.push(
+    "Operator router must build routes from the selected-graph admin extension registry",
+  )
+}
+
+const destinationsSource = existsSync(DESTINATIONS) ? readFileSync(DESTINATIONS, "utf8") : ""
+if (
+  !destinationsSource.includes("createAdminHostDestinations(adminExtensions)") ||
+  destinationsSource.includes("admin.destinations.generated")
+) {
+  violations.push(
+    "Operator destinations must derive from the selected-graph admin extension registry",
+  )
+}
+
+const hostDestinationsSource = existsSync(ADMIN_HOST_DESTINATIONS)
+  ? readFileSync(ADMIN_HOST_DESTINATIONS, "utf8")
+  : ""
+if (!hostDestinationsSource.includes("buildAdminExtensionDestinations(extensions)")) {
+  violations.push("Admin host must derive destination resolvers from extension route metadata")
+}
+
+const operatorPackageSource = existsSync(OPERATOR_PACKAGE)
+  ? readFileSync(OPERATOR_PACKAGE, "utf8")
+  : ""
+for (const legacyToken of [
+  "admin:generate",
+  "admin:check",
+  "run-admin-generator",
+  "--routes",
+  "--destinations",
+]) {
+  if (operatorPackageSource.includes(legacyToken)) {
+    violations.push(`Operator package retains legacy admin generation token ${legacyToken}`)
+  }
+}
+
 const { packages: selected, bundledPackages } = readGraphSelectedAdminPackages()
 const expected = selected.filter(hasAdminSurface)
 const bundled = new Set(bundledPackages)
@@ -171,19 +248,6 @@ for (const name of actualBundle) {
     violations.push(
       `selected-graph-admin.generated.ts wires ${name} without a selected admin.runtime declaration`,
     )
-  }
-}
-
-// Internal consistency: routes + destinations should cover the same admin set.
-for (const [label, file] of [
-  ["admin.routes.generated.tsx", ROUTES],
-  ["admin.destinations.generated.ts", DESTINATIONS],
-]) {
-  const set = adminImportsIn(file)
-  if (set.size === 0 && expected.length > 0) {
-    // destinations/routes may import from different subpaths; only warn when
-    // the file references no admin domains at all while extensions has some.
-    if (!existsSync(file)) violations.push(`${label} is missing — run \`voyant admin generate\``)
   }
 }
 
