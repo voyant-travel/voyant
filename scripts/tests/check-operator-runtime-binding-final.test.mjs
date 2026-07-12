@@ -50,17 +50,17 @@ ${generatedArguments}
 }
 
 it("accepts package-owned defaults and generic primitives", async () => {
-  const root = await fixture("    capabilities,\n    primitives,")
+  const root = await fixture("    primitives,")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /10 package-owned runtime families/)
+  assert.match(result.stdout, /11 package-owned runtime families/)
 })
 
 it("rejects a package-specific generated runtime argument", async () => {
   const root = await fixture(
-    "    capabilities,\n    primitives,\n    finance: loadFinanceRuntime(),\n    host: operatorSmartbillRuntimeHost,",
+    "    primitives,\n    finance: loadFinanceRuntime(),\n    host: operatorSmartbillRuntimeHost,",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
-    /keys must be exactly capabilities,primitives/,
+    /keys must be exactly primitives/,
   )
 })

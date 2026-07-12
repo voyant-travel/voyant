@@ -7,7 +7,7 @@ import { miceVoyantModule } from "../../src/voyant.js"
 describe("MICE deployment authority", () => {
   it("declares its package-owned runtime factory and port", () => {
     expect(miceVoyantModule).toMatchObject({
-      runtimePorts: [{ id: "mice.runtime" }],
+      runtimePorts: [{ id: "mice.runtime" }, { id: "relationships.mice.runtime" }],
       api: [{ runtime: { export: "createMiceVoyantRuntime" } }],
     })
   })

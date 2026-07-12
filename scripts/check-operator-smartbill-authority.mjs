@@ -51,12 +51,8 @@ for (const forbidden of [
     violations.push(`operator runtime must not retain SmartBill bridge token ${forbidden}`)
   }
 }
-if (
-  !composition.includes("createGeneratedGraphRuntimePorts({\n    capabilities,\n    primitives,")
-) {
-  violations.push(
-    "generated runtime contributors must receive only generic capabilities and primitives",
-  )
+if (!composition.includes("createGeneratedGraphRuntimePorts({ primitives })")) {
+  violations.push("generated runtime contributors must receive only generic primitives")
 }
 if (/eventBus\.subscribe|descriptor\.register/.test(`${app}\n${starterAuthority}`)) {
   violations.push("Operator code must not own or register SmartBill subscriber descriptors")

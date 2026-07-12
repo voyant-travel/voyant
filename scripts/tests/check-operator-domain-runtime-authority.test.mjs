@@ -16,11 +16,11 @@ const checker = path.resolve(
 async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-domain-runtime-"))
   const files = {
-    "starters/operator/src/api/runtime/trips-runtime.ts":
-      "createTripsRouteRuntime createCatalogComponentAdapter createDemoFlightAdapter",
     "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts": "package composition",
     "starters/operator/src/api/runtime/operator-workflow-services.ts": "host adapters",
     "packages/trips/src/route-runtime.ts": "runtime",
+    "packages/trips/src/runtime.ts":
+      "createTripsRouteRuntime createCatalogComponentAdapter VoyantRuntimeHostPrimitives",
     "packages/trips/src/checkout/voyant-fx.ts": "runtime",
     "packages/finance/src/stale-booking-holds-runtime.ts": "runtime",
     "packages/distribution/src/channel-push/workflow-entry.ts": "runtime",
@@ -47,10 +47,10 @@ describe("operator domain runtime authority", () => {
 
   it("rejects a restored starter Trips implementation", async () => {
     const root = await fixture({
-      "starters/operator/src/api/runtime/trips-catalog-runtime.ts": "implementation",
+      "starters/operator/src/api/runtime/trips-runtime.ts": "implementation",
     })
     await assert.rejects(execFileAsync(process.execPath, [checker, "--root", root]), (error) =>
-      error.stderr.includes("must stay deleted"),
+      error.stderr.includes("Trips deployment adapter must stay deleted"),
     )
   })
 })

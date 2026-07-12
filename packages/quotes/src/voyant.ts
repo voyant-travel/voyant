@@ -1,4 +1,5 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
@@ -10,7 +11,7 @@ export const quotesVoyantModule = defineModule({
   id: "@voyant-travel/quotes",
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
-  runtimePorts: [requirePort(quotesRuntimePort)],
+  runtimePorts: [requirePort(quotesRuntimePort), requirePort(tripsRoutesRuntimePort)],
   api: [
     {
       id: "@voyant-travel/quotes#api",

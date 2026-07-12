@@ -1,4 +1,7 @@
+import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
+import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/checkout"
 import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { flightsRuntimePort } from "@voyant-travel/flights"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
 export {
@@ -12,7 +15,13 @@ export const tripsVoyantModule = defineModule({
   id: "@voyant-travel/trips",
   packageName: "@voyant-travel/trips",
   localId: "trips",
-  runtimePorts: [requirePort(tripsRoutesRuntimePort), requirePort(tripsDatabaseRuntimePort)],
+  runtimePorts: [
+    requirePort(tripsRoutesRuntimePort),
+    requirePort(tripsDatabaseRuntimePort),
+    requirePort(catalogRuntimeServicesPort),
+    requirePort(catalogCheckoutApiRuntimePort),
+    requirePort(flightsRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/trips#api.admin",

@@ -19,33 +19,19 @@ function readRequired(path) {
   return readFileSync(path, "utf8")
 }
 
-function section(source, start, end) {
-  const startIndex = source.indexOf(start)
-  const endIndex = source.indexOf(end, startIndex + start.length)
-  if (startIndex < 0 || endIndex < 0) {
-    throw new Error(`check-trips-runtime-authority: could not locate ${start}`)
-  }
-  return source.slice(startIndex, endIndex)
-}
-
 const manifest = readRequired(join(tripsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(tripsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(tripsRoot, "src/runtime-port.ts"))
+const runtimeContributor = readRequired(join(tripsRoot, "src/runtime-contributor.ts"))
+const runtime = readRequired(join(tripsRoot, "src/runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
-const capabilities = section(
-  composition,
-  "function createBaseDeploymentCapabilities",
-  "function createLegacyDeploymentCapabilities",
-)
-const runtimePorts = section(
-  composition,
-  "function createDeploymentPortResources",
-  "export function createOperatorDeploymentResources",
-)
 
 if (
   !manifest.includes("requirePort(tripsRoutesRuntimePort)") ||
   !manifest.includes("requirePort(tripsDatabaseRuntimePort)") ||
+  !manifest.includes("requirePort(catalogRuntimeServicesPort)") ||
+  !manifest.includes("requirePort(catalogCheckoutApiRuntimePort)") ||
+  !manifest.includes("requirePort(flightsRuntimePort)") ||
   !manifest.includes('export: "createTripsVoyantRuntime"')
 ) {
   violations.push("Trips manifest must own both runtime dependencies and its graph factory")
@@ -74,13 +60,21 @@ if (packageIndex.includes("tripsHonoModule")) {
 }
 if (
   composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
-  runtimePorts.includes("createTripsRuntimePortContribution") ||
-  !composition.includes('import { createOperatorTripsRoutesOptions } from "./trips-runtime"') ||
-  !capabilities.includes("createTripsRoutesOptions: createOperatorTripsRoutesOptions") ||
-  !runtimePorts.includes("createGeneratedGraphRuntimePorts({") ||
-  !runtimePorts.includes("capabilities,")
+  composition.includes("createOperatorTripsRoutesOptions") ||
+  composition.includes("createDeploymentCapabilities") ||
+  !composition.includes("createGeneratedGraphRuntimePorts({ primitives })")
 ) {
-  violations.push("Operator must supply Trips host resources without enumerating its contributor")
+  violations.push("Operator must expose only generic primitives to the generated Trips contributor")
+}
+if (
+  runtimeContributor.includes("host.capabilities") ||
+  !runtimeContributor.includes("host.getRuntimePort(catalogRuntimeServicesPort)") ||
+  !runtimeContributor.includes("host.getRuntimePort(catalogCheckoutApiRuntimePort)") ||
+  !runtimeContributor.includes("host.getRuntimePort(flightsRuntimePort)") ||
+  !runtimeContributor.includes("host.primitives.database.transaction") ||
+  !runtime.includes("createTripsRouteRuntime")
+) {
+  violations.push("Trips must own route and database assembly through primitives and static ports")
 }
 if (composition.includes("operatorGraphRuntimeBindings")) {
   violations.push("Operator compatibility runtime bindings must stay deleted")

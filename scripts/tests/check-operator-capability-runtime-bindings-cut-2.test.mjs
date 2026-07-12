@@ -12,9 +12,9 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-capability-runtime-bindings-cut-2.mjs")
 const requirements = {
   catalog: "host.primitives\nhost.getRuntimePort\nruntime.services.ensureSourceRegistry",
-  realtime: "host.primitives\ncreateRealtimeStandardNodeRuntime",
-  storage: "host.primitives\ncreateStorageStandardNodeRuntime",
-  trips: "host.capabilities.createTripsRoutesOptions\nhost.capabilities.withDb",
+  realtime: "host.primitives\ncreateRealtimeRuntime",
+  storage: "host.primitives\ncreateStorageRuntime",
+  trips: "host.primitives\nhost.getRuntimePort\ncreateTripsRoutesRuntime",
 }
 
 async function fixture(deploymentResources) {
@@ -38,15 +38,15 @@ async function fixture(deploymentResources) {
   return root
 }
 
-it("accepts the second capability-derived binding cut", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ capabilities, host })\n")
+it("accepts package-owned bindings from generic primitives and static ports", async () => {
+  const root = await fixture("return createGeneratedGraphRuntimePorts({ primitives })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(result.stdout, /4 package-owned families from generic host resources/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {
   const root = await fixture(
-    "return createGeneratedGraphRuntimePorts({\n    capabilities,\n    flights: runtime,\n  })\n",
+    "return createGeneratedGraphRuntimePorts({\n    primitives,\n    flights: runtime,\n  })\n",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),

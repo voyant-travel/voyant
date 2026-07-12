@@ -18,7 +18,13 @@ describe("trips deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/trips",
       packageName: "@voyant-travel/trips",
-      runtimePorts: [{ id: "trips.routes-runtime" }, { id: "trips.database-runtime" }],
+      runtimePorts: [
+        { id: "trips.routes-runtime" },
+        { id: "trips.database-runtime" },
+        { id: "catalog.runtime-services" },
+        { id: "commerce.checkout-api-options" },
+        { id: "flights.runtime" },
+      ],
       api: [
         {
           id: "@voyant-travel/trips#api.admin",

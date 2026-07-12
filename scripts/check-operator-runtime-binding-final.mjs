@@ -31,17 +31,18 @@ const [deploymentResources, ...contributors] = await Promise.all([
 
 const violations = []
 const generatedCall = deploymentResources.match(
-  /createGeneratedGraphRuntimePorts\(\{([\s\S]*?)\n\s*\}\)/,
+  /createGeneratedGraphRuntimePorts\(\{([^}]*)\}\)/,
 )?.[1]
 if (!generatedCall) {
   violations.push("deployment resources must call createGeneratedGraphRuntimePorts with an object")
 } else {
-  const keys = [...generatedCall.matchAll(/^\s{4}([A-Za-z][A-Za-z0-9]*)(?::|,)/gm)].map(
-    (match) => match[1],
-  )
-  if (keys.join(",") !== "capabilities,primitives") {
+  const keys = generatedCall
+    .split(",")
+    .map((entry) => entry.trim().split(":", 1)[0])
+    .filter(Boolean)
+  if (keys.join(",") !== "primitives") {
     violations.push(
-      `createGeneratedGraphRuntimePorts keys must be exactly capabilities,primitives; found ${keys.join(",") || "none"}`,
+      `createGeneratedGraphRuntimePorts keys must be exactly primitives; found ${keys.join(",") || "none"}`,
     )
   }
 }
@@ -64,5 +65,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-runtime-binding-final: OK (10 package-owned runtime families; ${Object.keys(contributorRequirements).length - 10} legacy capability families; 0 product-specific generated host arguments)`,
+  `check-operator-runtime-binding-final: OK (${Object.keys(contributorRequirements).length} package-owned runtime families; 0 legacy capability families)`,
 )

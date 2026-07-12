@@ -26,18 +26,16 @@ for (const path of [
   if (existsSync(join(root, path))) violations.push(`${path} must stay deleted`)
 }
 
-const tripsAdapter = read("starters/operator/src/api/runtime/trips-runtime.ts")
-if (lines(tripsAdapter) > 175) violations.push("Trips deployment adapter exceeds 175 lines")
-for (const token of ["submitBookingReservationPlan", "unixSecondsToIso", "previewCancellation("]) {
-  if (tripsAdapter.includes(token)) violations.push(`Trips deployment adapter retains ${token}`)
-}
+const tripsAdapterPath = "starters/operator/src/api/runtime/trips-runtime.ts"
+const tripsAdapter = existsSync(join(root, tripsAdapterPath)) ? read(tripsAdapterPath) : ""
+if (tripsAdapter) violations.push("Trips deployment adapter must stay deleted")
+const tripsRuntime = read("packages/trips/src/runtime.ts")
 for (const token of [
   "createTripsRouteRuntime",
   "createCatalogComponentAdapter",
-  "createDemoFlightAdapter",
+  "VoyantRuntimeHostPrimitives",
 ]) {
-  if (!tripsAdapter.includes(token))
-    violations.push(`Trips deployment adapter must inject ${token}`)
+  if (!tripsRuntime.includes(token)) violations.push(`Trips package runtime must own ${token}`)
 }
 
 const policyAdapter = read("starters/operator/src/api/runtime/booking-payment-policy-runtime.ts")
@@ -74,5 +72,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-domain-runtime-authority: OK (${lines(tripsAdapter) + lines(policyAdapter) + lines(workflowAdapter)} starter adapter lines)`,
+  `check-operator-domain-runtime-authority: OK (${lines(policyAdapter) + lines(workflowAdapter)} starter adapter lines; Trips package-owned)`,
 )

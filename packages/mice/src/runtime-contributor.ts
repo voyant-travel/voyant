@@ -1,25 +1,21 @@
+import type { VoyantPort } from "@voyant-travel/core/project"
+import { relationshipsMiceRuntimePort } from "@voyant-travel/relationships/voyant"
 import { type MiceRuntime, miceRuntimePort } from "./runtime-port.js"
 
-type ResolveDelegatePersonById = MiceRuntime["resolveDelegatePersonById"]
-
 export interface MiceRuntimeContributorHost {
-  capabilities: {
-    relationshipsService: {
-      getPersonById(
-        db: Parameters<ResolveDelegatePersonById>[0],
-        personId: string,
-      ): Promise<unknown>
-    }
-  }
+  getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
 /** Package-owned registration map for MICE deployment adapters. */
 export function createMiceRuntimePortContribution(
   host: MiceRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const mice: MiceRuntime = {
-    resolveDelegatePersonById: async (db, personId) =>
-      (await host.capabilities.relationshipsService.getPersonById(db, personId)) != null,
-  }
+  const mice = Promise.resolve()
+    .then(() => host.getRuntimePort(relationshipsMiceRuntimePort))
+    .then(
+      (relationships): MiceRuntime => ({
+        resolveDelegatePersonById: (db, personId) => relationships.personExists(db, personId),
+      }),
+    )
   return { [miceRuntimePort.id]: mice }
 }

@@ -1,3 +1,4 @@
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { cloudAdminMembersConfigFromRevalidate } from "./cloud-broker.js"
 import {
   type IdentityAccessRuntimeProvider,
@@ -16,11 +17,7 @@ interface InvitationNotificationProvider {
 }
 
 export interface AuthRuntimeContributorHost {
-  capabilities: {
-    resolveNotificationProviders(
-      bindings: Record<string, unknown>,
-    ): ReadonlyArray<InvitationNotificationProvider>
-  }
+  primitives: VoyantRuntimeHostPrimitives
 }
 
 /** Package-owned registration map for Auth deployment adapters. */
@@ -46,9 +43,14 @@ export function createAuthRuntimePortContribution(
       }
     },
     async sendInvitationEmail(bindings, message) {
-      const provider = host.capabilities
-        .resolveNotificationProviders(bindings)
-        .find((candidate) => candidate.channels.includes("email"))
+      const resolver = host.primitives.config.read(bindings, "notificationProviders")
+      const providers =
+        typeof resolver === "function"
+          ? (resolver(
+              host.primitives.env(bindings),
+            ) as ReadonlyArray<InvitationNotificationProvider>)
+          : []
+      const provider = providers.find((candidate) => candidate.channels.includes("email"))
       if (!provider) return false
       try {
         await provider.send({

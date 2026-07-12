@@ -30,31 +30,40 @@ async function fixture(deploymentResources) {
   await write(
     root,
     "packages/auth/src/runtime-contributor.ts",
-    "host.capabilities\ncloudAdminMembersConfigFromRevalidate\nauth.invitation\n",
+    "host.primitives.config.read\ncloudAdminMembersConfigFromRevalidate\nauth.invitation\n",
   )
   await write(
     root,
     "packages/mice/src/runtime-contributor.ts",
-    "host.capabilities.relationshipsService\nresolveDelegatePersonById\n",
+    "host.getRuntimePort(relationshipsMiceRuntimePort)\nresolveDelegatePersonById\n",
   )
-  await write(root, "packages/quotes/src/runtime-contributor.ts", "createQuotesRuntime(host)\n")
+  await write(
+    root,
+    "packages/quotes/src/runtime-contributor.ts",
+    "host.getRuntimePort(tripsRoutesRuntimePort)\ncreateQuotesRuntime(host, trips)\n",
+  )
   await write(
     root,
     "packages/relationships/src/runtime-contributor.ts",
-    "host.capabilities.customFields\n",
+    "host.primitives.config.read\nrelationshipsMiceRuntimePort.id\n",
+  )
+  await write(
+    root,
+    "packages/trips/src/runtime-contributor.ts",
+    "host.primitives\nhost.getRuntimePort(catalogRuntimeServicesPort)\n",
   )
   return root
 }
 
-it("accepts package bindings derived from generic host capabilities", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ capabilities, host })\n")
+it("accepts package bindings derived from primitives and static ports", async () => {
+  const root = await fixture("return createGeneratedGraphRuntimePorts({ primitives })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /4 package bindings derived from generic host capabilities/)
+  assert.match(result.stdout, /5 package bindings derived from primitives and static ports/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {
   const root = await fixture(
-    "return createGeneratedGraphRuntimePorts({ capabilities, mice: { resolveDelegatePersonById } })\n",
+    "return createGeneratedGraphRuntimePorts({ primitives, mice: { resolveDelegatePersonById } })\n",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),

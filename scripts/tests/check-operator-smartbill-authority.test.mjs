@@ -21,7 +21,7 @@ async function createFixture(overrides = {}) {
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-netopia" }] }\n',
     "starters/operator/src/api/app.ts": "export const app = mountApp({})\n",
     "starters/operator/src/api/runtime/deployment-resources.ts":
-      "return createGeneratedGraphRuntimePorts({\n    capabilities,\n    primitives,\n  })\n",
+      "return createGeneratedGraphRuntimePorts({ primitives })\n",
     "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "export const adapter = {}\n",
     "packages/finance/src/voyant.ts":
       'runtimePorts: [requirePort(financeInvoiceSettlementPollerRuntimePort, { optional: true, cardinality: "many" })]\n',
@@ -77,7 +77,7 @@ describe("check-operator-smartbill-authority", () => {
     })
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must not retain SmartBill bridge token/)
-      assert.match(error.stderr, /only generic capabilities and primitives/)
+      assert.match(error.stderr, /only generic primitives/)
       return true
     })
   })

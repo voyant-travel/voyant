@@ -1,6 +1,12 @@
+import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
+import { catalogCheckoutApiRuntimePort } from "@voyant-travel/commerce/checkout"
 import { commerceCardPaymentRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { VoyantPort } from "@voyant-travel/core/project"
+import { flightsRuntimePort } from "@voyant-travel/flights"
 import { storefrontPaymentLinkRuntimePort } from "@voyant-travel/storefront"
 import type { TripsRoutesOptionsProvider } from "./routes.js"
+import { createTripsRoutesRuntime } from "./runtime.js"
 import {
   type TripsDatabaseRuntime,
   tripsDatabaseRuntimePort,
@@ -19,21 +25,34 @@ export interface TripsRuntimePortContribution {
 }
 
 export interface TripsRuntimeContributorHost {
-  capabilities: {
-    createTripsRoutesOptions: TripsRoutesOptionsProvider
-    withDb: TripsDatabaseRuntime["withDb"]
-  }
+  primitives: VoyantRuntimeHostPrimitives
+  getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
 /** Package-owned registration map for Trips deployment adapters. */
 export function createTripsRuntimePortContribution(
   host: TripsRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
-  const tripsDatabase: TripsDatabaseRuntime = { withDb: host.capabilities.withDb }
+  const cardPayment = createCommerceCardPaymentRuntime()
+  const tripsRoutes = Promise.resolve()
+    .then(() =>
+      Promise.all([
+        host.getRuntimePort(catalogRuntimeServicesPort),
+        host.getRuntimePort(catalogCheckoutApiRuntimePort),
+        host.getRuntimePort(flightsRuntimePort),
+      ]),
+    )
+    .then(([catalog, checkout, flights]) =>
+      createTripsRoutesRuntime(host.primitives, { catalog, checkout, cardPayment, flights }),
+    )
+  const tripsDatabase: TripsDatabaseRuntime = {
+    withDb: (bindings, operation) =>
+      host.primitives.database.transaction(bindings, (database) => operation(database as never)),
+  }
   return {
-    [commerceCardPaymentRuntimePort.id]: createCommerceCardPaymentRuntime(),
+    [commerceCardPaymentRuntimePort.id]: cardPayment,
     [storefrontPaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions(),
-    [tripsRoutesRuntimePort.id]: host.capabilities.createTripsRoutesOptions,
+    [tripsRoutesRuntimePort.id]: tripsRoutes,
     [tripsDatabaseRuntimePort.id]: tripsDatabase,
   }
 }

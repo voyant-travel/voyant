@@ -1,6 +1,7 @@
 import type { EventBus } from "@voyant-travel/core"
 import { getOperatorSettings, toPublicOperatorSettings } from "@voyant-travel/operator-settings"
 import { relationshipsService } from "@voyant-travel/relationships"
+import type { TripsRoutesOptionsProvider } from "@voyant-travel/trips"
 import type { Context } from "hono"
 import type {
   QuotesRuntimeContribution,
@@ -9,8 +10,11 @@ import type {
 import type { QuotesProposalRuntime } from "./runtime-port.js"
 
 /** Build standard Node Quotes runtimes from generic primitives and package services. */
-export function createQuotesRuntime(host: QuotesRuntimeContributorHost): QuotesRuntimeContribution {
-  const tripRoutes = host.capabilities.createTripsRoutesOptions()
+export function createQuotesRuntime(
+  host: QuotesRuntimeContributorHost,
+  createTripsRoutesOptions: TripsRoutesOptionsProvider,
+): QuotesRuntimeContribution {
+  const tripRoutes = createTripsRoutesOptions()
   const resolveDb: QuotesProposalRuntime["resolveDb"] = (context) =>
     host.primitives.database.fromContext<ReturnType<QuotesProposalRuntime["resolveDb"]>>(context)
   return {

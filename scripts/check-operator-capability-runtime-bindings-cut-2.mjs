@@ -10,9 +10,9 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packageRequirements = {
   catalog: ["host.primitives", "host.getRuntimePort", "runtime.services.ensureSourceRegistry"],
-  realtime: ["host.primitives", "createRealtimeStandardNodeRuntime"],
-  storage: ["host.primitives", "createStorageStandardNodeRuntime"],
-  trips: ["host.capabilities.createTripsRoutesOptions", "host.capabilities.withDb"],
+  realtime: ["host.primitives", "createRealtimeRuntime"],
+  storage: ["host.primitives", "createStorageRuntime"],
+  trips: ["host.primitives", "host.getRuntimePort", "createTripsRoutesRuntime"],
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
@@ -42,8 +42,8 @@ for (const binding of explicitBindings) {
     violations.push(`deployment-resources.ts must not assemble the ${binding} binding`)
   }
 }
-if (!/createGeneratedGraphRuntimePorts\(\{\s*capabilities,/s.test(generatedCall)) {
-  violations.push("deployment-resources.ts must expose capabilities to generated contributors")
+if (!/createGeneratedGraphRuntimePorts\(\{\s*primitives\s*\}\)/s.test(generatedCall)) {
+  violations.push("deployment-resources.ts must expose only primitives to generated contributors")
 }
 for (const [index, [packageName, requirements]] of Object.entries(packageRequirements).entries()) {
   for (const requirement of requirements) {
