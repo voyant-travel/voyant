@@ -2,6 +2,7 @@ import type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
 
 import {
   canonicalJson,
+  isVoyantVersionCompatible,
   type ResolvedVoyantDeploymentGraph,
   type ResolvedVoyantGraphUnit,
   type VoyantGraphDiagnostic,
@@ -109,9 +110,7 @@ export class VoyantGraphLifecyclePlanError extends Error {
   readonly diagnostics: readonly VoyantGraphDiagnostic[]
 
   constructor(diagnostics: readonly VoyantGraphDiagnostic[]) {
-    super(
-      `Cannot lower graph lifecycle plan with ${diagnostics.length} incompatible event contract(s)`,
-    )
+    super(`Cannot lower graph lifecycle plan with ${diagnostics.length} compatibility error(s)`)
     this.name = "VoyantGraphLifecyclePlanError"
     this.diagnostics = diagnostics
   }
@@ -125,7 +124,10 @@ export function createVoyantGraphLifecyclePlan(
     return plan(input, [])
   }
   if (input.operation === "upgrade") {
-    const diagnostics = validateVoyantGraphEventCompatibility(input.previous, input.next)
+    const diagnostics = [
+      ...validateVoyantGraphUpgradeCompatibility(input.previous, input.next),
+      ...validateVoyantGraphEventCompatibility(input.previous, input.next),
+    ]
     if (diagnostics.length > 0) throw new VoyantGraphLifecyclePlanError(diagnostics)
   }
 
@@ -301,6 +303,38 @@ export function validateVoyantGraphEventCompatibility(
     }
   }
   return diagnostics
+}
+
+export function validateVoyantGraphUpgradeCompatibility(
+  previous: ResolvedVoyantDeploymentGraph,
+  next: ResolvedVoyantDeploymentGraph,
+): VoyantGraphDiagnostic[] {
+  const previousUnits = unitsById(previous)
+  const previousPackages = packageRecordsByName(previous)
+  return allUnits(next)
+    .flatMap((unit) => {
+      const range = unit.lifecycle?.compatibility?.upgradeFrom
+      if (!range || !previousUnits.has(unit.id)) return []
+      const previousVersion = previousPackages.get(unit.packageName)?.version
+      if (previousVersion && isVoyantVersionCompatible(previousVersion, range)) return []
+      return [
+        {
+          code: "VOYANT_GRAPH_INCOMPATIBLE_UPGRADE" as const,
+          severity: "error" as const,
+          source: unit.id,
+          facet: "lifecycle.compatibility.upgradeFrom",
+          message: previousVersion
+            ? `Unit "${unit.id}" does not admit upgrades from package version "${previousVersion}"; expected "${range}".`
+            : `Unit "${unit.id}" declares upgradeFrom "${range}", but the previous graph has no package version to validate.`,
+          hint: "Upgrade through a supported intermediate version or restore package version provenance in the previous graph.",
+        },
+      ]
+    })
+    .sort(
+      (left, right) =>
+        (left.source ?? "").localeCompare(right.source ?? "") ||
+        (left.facet ?? "").localeCompare(right.facet ?? ""),
+    )
 }
 
 async function rollback(

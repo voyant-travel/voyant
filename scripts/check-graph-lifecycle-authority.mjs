@@ -9,6 +9,7 @@ const rootArg = process.argv.indexOf("--root")
 const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaultRoot
 const paths = [
   "packages/core/src/project-facets.ts",
+  "packages/framework/src/deployment-graph.ts",
   "packages/framework/src/graph-lifecycle.ts",
   "packages/framework/src/index.ts",
 ]
@@ -28,4 +29,6 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
-console.log("Graph lifecycle authority: OK (upgrade, uninstall, cleanup, and retention accounted)")
+console.log(
+  "Graph lifecycle authority: OK (upgrade compatibility, uninstall, cleanup, and retention accounted)",
+)

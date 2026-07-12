@@ -134,6 +134,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_DUPLICATE_ID: "Two selected graph units resolved to the same graph id.",
   VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA:
     "An emitted-event payload schema is incompatible with its previous major-version contract.",
+  VOYANT_GRAPH_INCOMPATIBLE_UPGRADE:
+    "A selected package does not admit upgrades from the previous package version.",
   VOYANT_GRAPH_INVALID_CAPABILITY_TOKEN:
     "A provides/requires capability token does not match v1 namespace rules.",
   VOYANT_GRAPH_INVALID_ENTITY_ID: "A v1 facet entity is missing a stable id or uses an invalid id.",
@@ -2646,7 +2648,7 @@ function validatePackageAdmission(
     if (
       context.frameworkVersion &&
       compatibleWith?.framework &&
-      !isFrameworkVersionCompatible(context.frameworkVersion, compatibleWith.framework)
+      !isVoyantVersionCompatible(context.frameworkVersion, compatibleWith.framework)
     ) {
       diagnostics.push(
         diagnostic({
@@ -2744,7 +2746,8 @@ function validateRuntimeReferenceAdmission(
   return diagnostics
 }
 
-function isFrameworkVersionCompatible(version: string, range: string): boolean {
+/** Deterministic semver-range subset shared by package admission and graph lifecycle planning. */
+export function isVoyantVersionCompatible(version: string, range: string): boolean {
   const parsedVersion = parseVersion(version)
   if (!parsedVersion) return version === range
   const clauses = range

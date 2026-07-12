@@ -8,6 +8,7 @@ import {
   type VoyantGraphLifecycleExecutor,
   VoyantGraphLifecyclePlanError,
   validateVoyantGraphEventCompatibility,
+  validateVoyantGraphUpgradeCompatibility,
 } from "./graph-lifecycle.js"
 
 describe("graph lifecycle", () => {
@@ -66,6 +67,65 @@ describe("graph lifecycle", () => {
       "detach-unit:@acme/loyalty",
       "activate-unit:@acme/loyalty",
     ])
+  })
+
+  it("enforces the next package upgradeFrom range against previous package provenance", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [defineModule({ id: "@acme/loyalty" })] }),
+    })
+    const packageRecord = {
+      packageName: "@acme/loyalty",
+      source: { kind: "registry" as const },
+    }
+    const previous = {
+      ...graph,
+      contentHash: "sha256:previous",
+      packageRecords: [{ ...packageRecord, version: "1.4.2" }],
+    }
+    const next = {
+      ...graph,
+      contentHash: "sha256:next",
+      packageRecords: [{ ...packageRecord, version: "2.0.0" }],
+      modules: graph.modules.map((unit) => ({
+        ...unit,
+        lifecycle: { compatibility: { upgradeFrom: "^1.2.0" } },
+      })),
+    }
+
+    expect(validateVoyantGraphUpgradeCompatibility(previous, next)).toEqual([])
+    expect(
+      createVoyantGraphLifecyclePlan({
+        operationId: "supported-upgrade",
+        operation: "upgrade",
+        previous,
+        next,
+      }).steps,
+    ).not.toHaveLength(0)
+
+    const incompatiblePrevious = {
+      ...previous,
+      packageRecords: [{ ...packageRecord, version: "1.1.9" }],
+    }
+    expect(validateVoyantGraphUpgradeCompatibility(incompatiblePrevious, next)).toEqual([
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INCOMPATIBLE_UPGRADE",
+        facet: "lifecycle.compatibility.upgradeFrom",
+        message: expect.stringContaining('version "1.1.9"'),
+      }),
+    ])
+    expect(() =>
+      createVoyantGraphLifecyclePlan({
+        operationId: "unsupported-upgrade",
+        operation: "upgrade",
+        previous: incompatiblePrevious,
+        next,
+      }),
+    ).toThrow(VoyantGraphLifecyclePlanError)
+
+    expect(
+      validateVoyantGraphUpgradeCompatibility({ ...previous, packageRecords: [] }, next)[0]
+        ?.message,
+    ).toContain("no package version")
   })
 
   it("persists completed steps, rolls back reversible work, and safely retries", async () => {

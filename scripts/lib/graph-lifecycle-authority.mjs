@@ -1,4 +1,5 @@
 const requiredFacets = [
+  "runtime",
   "api",
   "schema",
   "migration",
@@ -28,6 +29,7 @@ const requiredFacets = [
 export function inspectGraphLifecycleAuthority(files) {
   const failures = []
   const lifecycle = files.get("packages/framework/src/graph-lifecycle.ts") ?? ""
+  const deploymentGraph = files.get("packages/framework/src/deployment-graph.ts") ?? ""
   const frameworkIndex = files.get("packages/framework/src/index.ts") ?? ""
   const facets = files.get("packages/core/src/project-facets.ts") ?? ""
 
@@ -37,8 +39,18 @@ export function inspectGraphLifecycleAuthority(files) {
   requireToken(lifecycle, "retainedDataConsequences(input.operation, unit)", failures)
   requireToken(lifecycle, "cleanup.on.includes(input.operation)", failures)
   requireToken(lifecycle, "packageRecordsByName(input.previous)", failures)
+  requireToken(
+    lifecycle,
+    "validateVoyantGraphUpgradeCompatibility(input.previous, input.next)",
+    failures,
+  )
+  requireToken(lifecycle, "isVoyantVersionCompatible(previousVersion, range)", failures)
+  requireToken(lifecycle, "but the previous graph has no package version to validate", failures)
+  requireToken(deploymentGraph, "export function isVoyantVersionCompatible", failures)
+  requireToken(deploymentGraph, "VOYANT_GRAPH_INCOMPATIBLE_UPGRADE", failures)
   requireToken(frameworkIndex, "VoyantGraphLifecycleConsequence", failures)
   requireToken(frameworkIndex, "VoyantGraphLifecycleFacet", failures)
+  requireToken(frameworkIndex, "validateVoyantGraphUpgradeCompatibility", failures)
   requireToken(
     lifecycle,
     'kind: "migrate-graph" | "detach-unit" | "release-resource" | "activate-unit"',

@@ -5,6 +5,7 @@ import { inspectGraphLifecycleAuthority } from "../lib/graph-lifecycle-authority
 
 function validFixture() {
   const facets = [
+    "runtime",
     "api",
     "schema",
     "migration",
@@ -40,7 +41,14 @@ function validFixture() {
        retainedDataConsequences(input.operation, unit)
        cleanup.on.includes(input.operation)
        packageRecordsByName(input.previous)
+       validateVoyantGraphUpgradeCompatibility(input.previous, input.next)
+       isVoyantVersionCompatible(previousVersion, range)
+       but the previous graph has no package version to validate
        kind: "migrate-graph" | "detach-unit" | "release-resource" | "activate-unit"`,
+    ],
+    [
+      "packages/framework/src/deployment-graph.ts",
+      "export function isVoyantVersionCompatible VOYANT_GRAPH_INCOMPATIBLE_UPGRADE",
     ],
     [
       "packages/core/src/project-facets.ts",
@@ -48,7 +56,7 @@ function validFixture() {
     ],
     [
       "packages/framework/src/index.ts",
-      "VoyantGraphLifecycleConsequence VoyantGraphLifecycleFacet",
+      "VoyantGraphLifecycleConsequence VoyantGraphLifecycleFacet validateVoyantGraphUpgradeCompatibility",
     ],
   ])
 }
@@ -67,6 +75,15 @@ describe("graph lifecycle authority checker", () => {
     assert.match(inspectGraphLifecycleAuthority(files).join("\n"), /webhook facet/)
   })
 
+  it("rejects missing runtime consequence accounting", () => {
+    const files = validFixture()
+    files.set(
+      "packages/framework/src/graph-lifecycle.ts",
+      files.get("packages/framework/src/graph-lifecycle.ts").replace('"runtime"', ""),
+    )
+    assert.match(inspectGraphLifecycleAuthority(files).join("\n"), /runtime facet/)
+  })
+
   it("rejects loss of retained-data consequences", () => {
     const files = validFixture()
     files.set(
@@ -76,6 +93,38 @@ describe("graph lifecycle authority checker", () => {
         .replace("retainedDataConsequences(input.operation, unit)", "[]"),
     )
     assert.match(inspectGraphLifecycleAuthority(files).join("\n"), /retainedDataConsequences/)
+  })
+
+  it("accepts upgradeFrom enforcement through the shared version-range utility", () => {
+    assert.deepEqual(inspectGraphLifecycleAuthority(validFixture()), [])
+  })
+
+  it("rejects planning that bypasses upgradeFrom range validation", () => {
+    const files = validFixture()
+    files.set(
+      "packages/framework/src/graph-lifecycle.ts",
+      files
+        .get("packages/framework/src/graph-lifecycle.ts")
+        .replace("validateVoyantGraphUpgradeCompatibility(input.previous, input.next)", "[]"),
+    )
+    assert.match(
+      inspectGraphLifecycleAuthority(files).join("\n"),
+      /validateVoyantGraphUpgradeCompatibility/,
+    )
+  })
+
+  it("rejects compatibility handling that does not fail closed without provenance", () => {
+    const files = validFixture()
+    files.set(
+      "packages/framework/src/graph-lifecycle.ts",
+      files
+        .get("packages/framework/src/graph-lifecycle.ts")
+        .replace(
+          "but the previous graph has no package version to validate",
+          "version unavailable",
+        ),
+    )
+    assert.match(inspectGraphLifecycleAuthority(files).join("\n"), /no package version/)
   })
 
   it("rejects opaque package lifecycle hooks", () => {

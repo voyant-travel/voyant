@@ -62,6 +62,7 @@ export {
   type VoyantGraphLifecycleStep,
   type VoyantGraphLifecycleStepState,
   validateVoyantGraphEventCompatibility,
+  validateVoyantGraphUpgradeCompatibility,
 } from "./graph-lifecycle.js"
 export {
   type SelectStandardOperatorDistributionOptions,
