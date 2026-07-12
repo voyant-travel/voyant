@@ -1,8 +1,8 @@
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
-} from "@voyant-travel/catalog/standard-node/booking-engine-runtime"
-import { applyOperatorTaxToQuoteResult } from "@voyant-travel/catalog/standard-node/booking-runtime"
+} from "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
+import { applyOperatorTaxToQuoteResult } from "@voyant-travel/catalog-node/standard-node/booking-runtime"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import type {
   CatalogCheckoutStartResult,

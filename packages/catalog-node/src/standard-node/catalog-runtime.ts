@@ -7,6 +7,21 @@
  */
 
 import { accommodationCatalogPolicy } from "@voyant-travel/accommodations/catalog-policy"
+import {
+  createFieldPolicyRegistry,
+  type FieldPolicyRegistry,
+} from "@voyant-travel/catalog/contract"
+import type { EmbeddingProvider } from "@voyant-travel/catalog/embeddings/contract"
+import type { IndexerAdapter, IndexerSlice } from "@voyant-travel/catalog/indexer/contract"
+import {
+  buildCatalogEmbeddingProvider,
+  buildCatalogSlices,
+  buildCatalogTypesenseIndexer,
+  DEFAULT_CATALOG_SLICES,
+  DEFAULT_CATALOG_VERTICALS,
+  withCatalogEmbedding,
+} from "@voyant-travel/catalog/operator-runtime"
+import type { DocumentBuilder } from "@voyant-travel/catalog/services/indexer"
 import { charterCatalogPolicy } from "@voyant-travel/charters/catalog-policy"
 import {
   createProductPricingProjectionExtension,
@@ -38,18 +53,6 @@ import { createProductDestinationsProjectionExtension } from "@voyant-travel/inv
 import { createProductTaxonomyProjectionExtension } from "@voyant-travel/inventory/service-catalog-plane-taxonomy"
 import { createProductDeparturesProjectionExtension } from "@voyant-travel/operations"
 import { asc, eq } from "drizzle-orm"
-import { createFieldPolicyRegistry, type FieldPolicyRegistry } from "../contract.js"
-import type { EmbeddingProvider } from "../embeddings/contract.js"
-import type { IndexerAdapter, IndexerSlice } from "../indexer/contract.js"
-import {
-  buildCatalogEmbeddingProvider,
-  buildCatalogSlices,
-  buildCatalogTypesenseIndexer,
-  DEFAULT_CATALOG_SLICES,
-  DEFAULT_CATALOG_VERTICALS,
-  withCatalogEmbedding,
-} from "../operator-runtime.js"
-import type { DocumentBuilder } from "../services/indexer-service.js"
 
 import {
   hasActiveSalesChannelMapping,

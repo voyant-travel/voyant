@@ -323,6 +323,9 @@
       "@voyant-travel/bookings/tools": ["../../packages/bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../../packages/bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../../packages/bookings/dist/voyant.d.ts"],
+      "@voyant-travel/bookings-node/runtime-contributor": [
+        "../../packages/bookings-node/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/bookings/workflow-runtime": [
         "../../packages/bookings/dist/workflow-runtime.d.ts"
       ],
@@ -456,11 +459,11 @@
       "@voyant-travel/catalog/projection-runtime": [
         "../../packages/catalog/dist/projection-runtime.d.ts"
       ],
-      "@voyant-travel/catalog/runtime-contributor": [
-        "../../packages/catalog/dist/runtime-contributor.d.ts"
+      "@voyant-travel/catalog-node/standard-node/*": [
+        "../../packages/catalog-node/dist/standard-node/*.d.ts"
       ],
-      "@voyant-travel/catalog/standard-node/*": [
-        "../../packages/catalog/dist/standard-node/*.d.ts"
+      "@voyant-travel/catalog-node/runtime-contributor": [
+        "../../packages/catalog-node/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/catalog/provenance": ["../../packages/catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../../packages/catalog/dist/schema.d.ts"],
@@ -1032,6 +1035,9 @@
       "@voyant-travel/finance/tools": ["../../packages/finance/dist/tools.d.ts"],
       "@voyant-travel/finance/validation": ["../../packages/finance/dist/validation.d.ts"],
       "@voyant-travel/finance/voyant": ["../../packages/finance/dist/voyant.d.ts"],
+      "@voyant-travel/finance-node/runtime-contributor": [
+        "../../packages/finance-node/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/flights": ["../../packages/flights/dist/index.d.ts"],
       "@voyant-travel/flights-contracts": ["../../packages/flights-contracts/dist/index.d.ts"],
       "@voyant-travel/flights-contracts/contract/adapter": [

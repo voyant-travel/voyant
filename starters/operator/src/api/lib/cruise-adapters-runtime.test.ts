@@ -4,7 +4,7 @@ import {
   resetConfiguredCruiseAdapters,
   syncVerticalRegistryFromCatalog,
   withReadCache,
-} from "@voyant-travel/catalog/standard-node/cruise-adapters-runtime"
+} from "@voyant-travel/catalog-node/standard-node/cruise-adapters-runtime"
 import {
   clearCruiseAdapters,
   MockCruiseAdapter,

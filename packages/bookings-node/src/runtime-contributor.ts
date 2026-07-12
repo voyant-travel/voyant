@@ -1,10 +1,10 @@
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import type { BookingRequirementsHonoModuleOptions } from "./requirements/index.js"
+import type { BookingRequirementsHonoModuleOptions } from "@voyant-travel/bookings/requirements"
 import {
   type BookingsRuntimeProvider,
   bookingRequirementsRuntimePort,
   bookingsRuntimePort,
-} from "./runtime-port.js"
+} from "@voyant-travel/bookings/runtime-port"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -13,13 +13,12 @@ export interface BookingsRuntimePortContribution {
   requirements: RuntimePortValue<BookingRequirementsHonoModuleOptions>
 }
 
-export interface BookingsRuntimeContributorHost {
+export interface BookingsNodeRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
 }
 
-/** Package-owned Bookings defaults lowered from the generic runtime host. */
-export function createBookingsRuntimePortContribution(
-  host: BookingsRuntimeContributorHost,
+export function createBookingsNodeRuntimePortContribution(
+  host: BookingsNodeRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const runtime = import("./standard-node-runtime.js").then((module) =>
     module.createBookingsStandardNodeRuntime(host.primitives),

@@ -362,7 +362,6 @@
         "../catalog/dist/services/sourced-entry-service.d.ts"
       ],
       "@voyant-travel/catalog/snapshot/schema": ["../catalog/dist/snapshot/schema.d.ts"],
-      "@voyant-travel/catalog/standard-node/*": ["../catalog/dist/standard-node/*.d.ts"],
       "@voyant-travel/catalog/tools": ["../catalog/dist/tools.d.ts"],
       "@voyant-travel/catalog/voyant": ["../catalog/dist/voyant.d.ts"],
       "@voyant-travel/charters": ["../charters/dist/index.d.ts"],

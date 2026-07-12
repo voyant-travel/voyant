@@ -1,16 +1,16 @@
 import { bookingItems } from "@voyant-travel/bookings/schema"
-import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { buildProductSnapshotInput } from "@voyant-travel/inventory/service-catalog-plane"
-import { and, eq, isNotNull } from "drizzle-orm"
 import type {
   CatalogBookingSnapshotExecutionContext,
   CatalogBookingSnapshotRuntime,
-} from "../booking-snapshot-subscriber-runtime.js"
+} from "@voyant-travel/catalog/booking-snapshot-subscriber"
 import {
   createCatalogBookingSnapshotRuntimeAdapter,
   createCatalogProjectionRuntimeAdapter,
-} from "../operator-runtime.js"
-import type { CatalogProjectionRuntime } from "../projection-runtime.js"
+} from "@voyant-travel/catalog/operator-runtime"
+import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { buildProductSnapshotInput } from "@voyant-travel/inventory/service-catalog-plane"
+import { and, eq, isNotNull } from "drizzle-orm"
 
 import {
   buildEmbeddingProvider,

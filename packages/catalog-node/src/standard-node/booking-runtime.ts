@@ -1,4 +1,24 @@
 import { bookingActivityLog, bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import {
+  type BookEntityResult,
+  type CatalogAvailabilitySlotsScope,
+  type CatalogBookingBookBody,
+  type CatalogBookingCommittedEvent,
+  type CatalogBookingRouteModuleOptions,
+  type CatalogBookingRoutesOptions,
+  catalogQuotesTable,
+  getOrderById,
+  OWNED_SOURCE_KIND,
+  type QuoteEntityResult,
+  type SlotRow,
+} from "@voyant-travel/catalog/booking-engine"
+import {
+  applyCatalogTaxToQuoteResult,
+  buildSourcedBookingRowValues,
+  createCatalogPackageHoldPreparer,
+  createSourcedBookingNumber,
+  resolveCatalogHoldTtlMs,
+} from "@voyant-travel/catalog/operator-runtime"
 import { createCatalogPromotionEvaluator } from "@voyant-travel/commerce"
 import { createVoyantConnectClient, type PackageOffer } from "@voyant-travel/connect-sdk"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -13,26 +33,6 @@ import { resolveVoyantConnectEnv } from "@voyant-travel/plugin-voyant-connect"
 import { and, asc, eq, gte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import {
-  type BookEntityResult,
-  type CatalogAvailabilitySlotsScope,
-  type CatalogBookingBookBody,
-  type CatalogBookingCommittedEvent,
-  type CatalogBookingRouteModuleOptions,
-  type CatalogBookingRoutesOptions,
-  catalogQuotesTable,
-  getOrderById,
-  OWNED_SOURCE_KIND,
-  type QuoteEntityResult,
-  type SlotRow,
-} from "../booking-engine/index.js"
-import {
-  applyCatalogTaxToQuoteResult,
-  buildSourcedBookingRowValues,
-  createCatalogPackageHoldPreparer,
-  createSourcedBookingNumber,
-  resolveCatalogHoldTtlMs,
-} from "../operator-runtime.js"
 import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,

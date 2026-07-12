@@ -1,0 +1,29 @@
+{
+  "extends": "@voyant-travel/voyant-typescript-config/base.json",
+  "compilerOptions": {
+    "composite": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@voyant-travel/accommodations/*": ["../accommodations/dist/*.d.ts"],
+      "@voyant-travel/bookings/*": ["../bookings/dist/*.d.ts"],
+      "@voyant-travel/catalog": ["../catalog/dist/index.d.ts"],
+      "@voyant-travel/catalog/*": ["../catalog/dist/*.d.ts"],
+      "@voyant-travel/charters/*": ["../charters/dist/*.d.ts"],
+      "@voyant-travel/commerce": ["../commerce/dist/index.d.ts"],
+      "@voyant-travel/core": ["../core/dist/index.d.ts"],
+      "@voyant-travel/cruises": ["../cruises/dist/index.d.ts"],
+      "@voyant-travel/cruises/*": ["../cruises/dist/*.d.ts"],
+      "@voyant-travel/db": ["../db/dist/index.d.ts"],
+      "@voyant-travel/db/*": ["../db/dist/*.d.ts"],
+      "@voyant-travel/distribution": ["../distribution/dist/index.d.ts"],
+      "@voyant-travel/finance": ["../finance/dist/index.d.ts"],
+      "@voyant-travel/inventory": ["../inventory/dist/index.d.ts"],
+      "@voyant-travel/inventory/*": ["../inventory/dist/*.d.ts"],
+      "@voyant-travel/operations": ["../operations/dist/index.d.ts"],
+      "@voyant-travel/operator-settings": ["../operator-settings/dist/index.d.ts"],
+      "@voyant-travel/plugin-catalog-demo": ["../plugins/catalog-demo/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

@@ -1,3 +1,5 @@
+import type { BookingsRuntimeProvider } from "@voyant-travel/bookings/runtime-port"
+import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "@voyant-travel/bookings/workflows"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
 import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
@@ -7,8 +9,6 @@ import { productCapabilities, products } from "@voyant-travel/inventory/schema"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { BookingsRuntimePortContribution } from "./runtime-contributor.js"
-import type { BookingsRuntimeProvider } from "./runtime-port.js"
-import { BOOKINGS_EXPIRE_STALE_HOLDS_RUNTIME_KEY } from "./workflow-entry.js"
 
 type ResolveCustomFields = NonNullable<BookingsRuntimeProvider["options"]["customFields"]>
 type RelationshipsService = Pick<

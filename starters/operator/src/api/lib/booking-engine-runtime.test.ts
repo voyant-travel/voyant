@@ -1,4 +1,4 @@
-import type { BookingEngineEnv } from "@voyant-travel/catalog/standard-node/booking-engine-runtime"
+import type { BookingEngineEnv } from "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 // Every test does a cold `vi.resetModules()` + dynamic `import()` of the runtime;
@@ -29,7 +29,7 @@ vi.mock("@voyant-travel/plugin-voyant-connect", () => ({
   },
 }))
 vi.mock("@voyant-travel/plugin-catalog-demo", () => ({ createDemoCatalogAdapter: vi.fn() }))
-vi.mock("@voyant-travel/catalog/standard-node/owned-booking-handlers", () => ({
+vi.mock("@voyant-travel/catalog-node/standard-node/owned-booking-handlers", () => ({
   createOwnedBookingHandlersRegistry: vi.fn(),
 }))
 
@@ -44,7 +44,7 @@ function genericAdapter() {
 
 async function loadRuntime() {
   vi.resetModules()
-  return import("@voyant-travel/catalog/standard-node/booking-engine-runtime")
+  return import("@voyant-travel/catalog-node/standard-node/booking-engine-runtime")
 }
 
 beforeEach(() => {

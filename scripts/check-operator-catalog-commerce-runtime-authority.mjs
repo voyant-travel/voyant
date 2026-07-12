@@ -10,7 +10,7 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, catalogContributor, commerceContributor] = await Promise.all([
   read("starters/operator/src/api/runtime/deployment-resources.ts"),
-  read("packages/catalog/src/runtime-contributor.ts"),
+  read("packages/catalog-node/src/runtime-contributor.ts"),
   read("packages/commerce/src/runtime-contributor.ts"),
 ])
 
@@ -39,7 +39,7 @@ for (const port of [...catalogPorts, ...commercePorts]) {
   }
 }
 for (const required of [
-  "createCatalogRuntimePortContribution",
+  "createCatalogNodeRuntimePortContribution",
   "createCommerceRuntimePortContribution",
 ]) {
   if (deploymentResources.includes(required)) {

@@ -8,7 +8,7 @@ vi.mock("@voyant-travel/inventory/service-content", () => ({ getProductContent }
 vi.mock("@voyant-travel/inventory/draft-shape", () => ({ buildProductDraftShape }))
 
 const { enrichProductQuoteShape } = await import(
-  "@voyant-travel/catalog/standard-node/booking-shape-enricher"
+  "@voyant-travel/catalog-node/standard-node/booking-shape-enricher"
 )
 
 const productShape = {

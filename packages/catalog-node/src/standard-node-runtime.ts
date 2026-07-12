@@ -1,6 +1,6 @@
+import type { CatalogSearchRuntime } from "@voyant-travel/catalog/search/routes"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { CatalogRuntimePortContribution } from "./runtime-contributor.js"
-import type { CatalogSearchRuntime } from "./search/routes.js"
 import { getBookingEngineRegistryFromContext } from "./standard-node/booking-engine-runtime.js"
 import { createOperatorCatalogBookingRouteModuleOptions } from "./standard-node/booking-runtime.js"
 import { buildEmbeddingProvider, buildTypesenseIndexer } from "./standard-node/catalog-runtime.js"

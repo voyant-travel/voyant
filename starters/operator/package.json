@@ -61,6 +61,7 @@
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/bookings-react": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/catalog-node": "workspace:^",
     "@voyant-travel/catalog-authoring": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/catalog-react": "workspace:^",

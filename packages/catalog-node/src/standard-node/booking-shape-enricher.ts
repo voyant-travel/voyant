@@ -1,6 +1,6 @@
+import { createProductQuoteShapeEnricher } from "@voyant-travel/catalog/operator-runtime"
 import { buildProductDraftShape } from "@voyant-travel/inventory/draft-shape"
 import { getProductContent } from "@voyant-travel/inventory/service-content"
-import { createProductQuoteShapeEnricher } from "../operator-runtime.js"
 
 export const enrichProductQuoteShape = createProductQuoteShapeEnricher({
   resolveContent: ({ db, entityId, locales, market, currency, registry, adapterContext }) =>

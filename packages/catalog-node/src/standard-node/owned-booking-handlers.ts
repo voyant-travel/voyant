@@ -1,11 +1,11 @@
 import { registerAccommodationBookingHandler } from "@voyant-travel/accommodations/booking-engine/operator-runtime"
-import { registerCruiseBookingHandler } from "@voyant-travel/cruises/booking-engine/operator-runtime"
-import { registerProductBookingHandler } from "@voyant-travel/inventory/booking-engine/operator-runtime"
 import {
   createOwnedBookingHandlerRegistry,
   type OwnedBookingHandlerRegistry,
   type SourceAdapterRegistry,
-} from "../booking-engine/index.js"
+} from "@voyant-travel/catalog/booking-engine"
+import { registerCruiseBookingHandler } from "@voyant-travel/cruises/booking-engine/operator-runtime"
+import { registerProductBookingHandler } from "@voyant-travel/inventory/booking-engine/operator-runtime"
 
 import { asPostgresDb } from "./booking-engine-db.js"
 import type { BookingEngineEnv } from "./booking-engine-runtime.js"

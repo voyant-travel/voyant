@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-capability-runtime-bindings-cut-2.mjs")
 const requirements = {
-  cruises: "host.primitives.env\nensureBookingEngineRegistry",
+  "catalog-node": "host.primitives.env\nensureBookingEngineRegistry",
   flights: "host.capabilities.loadFlightsRuntime()",
   notifications: "host.capabilities.loadNotificationsRuntime()",
   quotes: "host.capabilities.loadQuoteProposalRuntime()",

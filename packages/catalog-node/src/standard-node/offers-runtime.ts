@@ -1,12 +1,12 @@
-import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
-import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
-import type { Context } from "hono"
 import type {
   CatalogOffersAirportLabel,
   CatalogOffersConnectClient,
   CatalogOffersRouteModuleOptions,
-} from "../offers/operator-routes.js"
-import { createCatalogOffersTypesenseResolvers } from "../operator-runtime.js"
+} from "@voyant-travel/catalog/offers"
+import { createCatalogOffersTypesenseResolvers } from "@voyant-travel/catalog/operator-runtime"
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
+import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
+import type { Context } from "hono"
 
 interface PackageOffersEnv {
   VOYANT_API_KEY?: string

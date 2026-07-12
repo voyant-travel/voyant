@@ -13,12 +13,11 @@ const checker = path.join(repoRoot, "scripts/check-generated-runtime-contributor
 const packageFactories = {
   "action-ledger": "createActionLedgerRuntimePortContribution",
   auth: "createAuthRuntimePortContribution",
-  bookings: "createBookingsRuntimePortContribution",
-  catalog: "createCatalogRuntimePortContribution",
+  "bookings-node": "createBookingsNodeRuntimePortContribution",
+  "catalog-node": "createCatalogNodeRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
-  cruises: "createCruisesRuntimePortContribution",
   distribution: "createDistributionRuntimePortContribution",
-  finance: "createFinanceRuntimePortContribution",
+  "finance-node": "createFinanceNodeRuntimePortContribution",
   flights: "createFlightsRuntimePortContribution",
   inventory: "createInventoryRuntimePortContribution",
   legal: "createLegalRuntimePortContribution",
@@ -74,7 +73,7 @@ async function fixture(deploymentResources) {
 it("accepts generated static contributor composition", async () => {
   const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /20 package contributors statically selected/)
+  assert.match(result.stdout, /19 package contributors statically selected/)
 })
 
 it("rejects starter contributor enumeration", async () => {

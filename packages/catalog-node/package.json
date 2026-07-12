@@ -1,0 +1,92 @@
+{
+  "name": "@voyant-travel/catalog-node",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/runtime-contributor.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./standard-node/*": "./src/standard-node/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./standard-node/*": {
+        "types": "./dist/standard-node/*.d.ts",
+        "import": "./dist/standard-node/*.js",
+        "default": "./dist/standard-node/*.js"
+      }
+    },
+    "main": "./dist/runtime-contributor.js",
+    "types": "./dist/runtime-contributor.d.ts"
+  },
+  "dependencies": {
+    "@voyant-travel/accommodations": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
+    "@voyant-travel/charters": "workspace:^",
+    "@voyant-travel/commerce": "workspace:^",
+    "@voyant-travel/connect-sdk": "0.9.1",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/cruises": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/distribution": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/inventory": "workspace:^",
+    "@voyant-travel/operations": "workspace:^",
+    "@voyant-travel/operator-settings": "workspace:^",
+    "@voyant-travel/plugin-catalog-demo": "workspace:^",
+    "@voyant-travel/plugin-voyant-connect": "^0.3.2",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/catalog-node"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "library",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createCatalogNodeRuntimePortContribution"
+    },
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
+    }
+  }
+}

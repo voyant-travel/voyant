@@ -42,8 +42,9 @@
     "./index-subscribers": "./src/index-subscriber-runtime.ts",
     "./projection-runtime": "./src/projection-runtime.ts",
     "./operator-runtime": "./src/operator-runtime.ts",
-    "./runtime-contributor": "./src/runtime-contributor.ts",
-    "./standard-node/*": "./src/standard-node/*.ts",
+    "./api-runtime-ports": "./src/api-runtime-ports.ts",
+    "./subscriber-runtime-ports": "./src/subscriber-runtime-ports.ts",
+    "./booking-engine/operator-routes": "./src/booking-engine/operator-routes.ts",
     "./runtime-port": "./src/content-runtime-port.ts",
     "./draft-reaper-workflow": "./src/draft-reaper-workflow.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
@@ -57,10 +58,6 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
-    "runtime": {
-      "entry": "./runtime-contributor",
-      "export": "createCatalogRuntimePortContribution"
-    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [
@@ -285,15 +282,20 @@
         "import": "./dist/operator-runtime.js",
         "default": "./dist/operator-runtime.js"
       },
-      "./runtime-contributor": {
-        "types": "./dist/runtime-contributor.d.ts",
-        "import": "./dist/runtime-contributor.js",
-        "default": "./dist/runtime-contributor.js"
+      "./api-runtime-ports": {
+        "types": "./dist/api-runtime-ports.d.ts",
+        "import": "./dist/api-runtime-ports.js",
+        "default": "./dist/api-runtime-ports.js"
       },
-      "./standard-node/*": {
-        "types": "./dist/standard-node/*.d.ts",
-        "import": "./dist/standard-node/*.js",
-        "default": "./dist/standard-node/*.js"
+      "./subscriber-runtime-ports": {
+        "types": "./dist/subscriber-runtime-ports.d.ts",
+        "import": "./dist/subscriber-runtime-ports.js",
+        "default": "./dist/subscriber-runtime-ports.js"
+      },
+      "./booking-engine/operator-routes": {
+        "types": "./dist/booking-engine/operator-routes.d.ts",
+        "import": "./dist/booking-engine/operator-routes.js",
+        "default": "./dist/booking-engine/operator-routes.js"
       },
       "./runtime-port": {
         "types": "./dist/content-runtime-port.d.ts",
@@ -325,23 +327,10 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
-    "@voyant-travel/accommodations": "workspace:^",
-    "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
-    "@voyant-travel/charters": "workspace:^",
-    "@voyant-travel/commerce": "workspace:^",
-    "@voyant-travel/connect-sdk": "0.9.1",
     "@voyant-travel/core": "workspace:^",
-    "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/db": "workspace:^",
-    "@voyant-travel/distribution": "workspace:^",
-    "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
-    "@voyant-travel/inventory": "workspace:^",
-    "@voyant-travel/operations": "workspace:^",
-    "@voyant-travel/operator-settings": "workspace:^",
-    "@voyant-travel/plugin-catalog-demo": "workspace:^",
-    "@voyant-travel/plugin-voyant-connect": "^0.3.2",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",

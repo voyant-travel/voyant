@@ -14,7 +14,7 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
-} from "@voyant-travel/catalog/standard-node/catalog-runtime"
+} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
 import type { BulkReindexProductsService } from "@voyant-travel/commerce"
 import { products } from "@voyant-travel/inventory/schema"
 import { withDbFromEnv } from "./db.js"

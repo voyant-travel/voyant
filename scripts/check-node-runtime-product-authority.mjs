@@ -17,18 +17,18 @@ const migratedRuntimeLoaders = [
   "loadCatalogRuntime",
 ]
 const migratedContributors = await Promise.all(
-  ["bookings", "finance", "catalog"].map((name) =>
+  ["bookings-node", "finance-node", "catalog-node"].map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
 )
 const movedRuntimeFactories = await Promise.all([
-  read("packages/bookings/src/standard-node-runtime.ts"),
-  read("packages/finance/src/standard-node-runtime.ts"),
-  read("packages/catalog/src/standard-node-runtime.ts"),
-  read("packages/catalog/src/standard-node/booking-engine-runtime.ts"),
-  read("packages/catalog/src/standard-node/booking-runtime.ts"),
-  read("packages/catalog/src/standard-node/offers-runtime.ts"),
-  read("packages/catalog/src/standard-node/subscriber-runtime.ts"),
+  read("packages/bookings-node/src/standard-node-runtime.ts"),
+  read("packages/finance-node/src/standard-node-runtime.ts"),
+  read("packages/catalog-node/src/standard-node-runtime.ts"),
+  read("packages/catalog-node/src/standard-node/booking-engine-runtime.ts"),
+  read("packages/catalog-node/src/standard-node/booking-runtime.ts"),
+  read("packages/catalog-node/src/standard-node/offers-runtime.ts"),
+  read("packages/catalog-node/src/standard-node/subscriber-runtime.ts"),
 ])
 for (const loader of migratedRuntimeLoaders) {
   if (operatorResources.includes(loader)) {
@@ -42,6 +42,9 @@ for (const packageId of [
   "@voyant-travel/bookings",
   "@voyant-travel/finance",
   "@voyant-travel/catalog",
+  "@voyant-travel/bookings-node",
+  "@voyant-travel/finance-node",
+  "@voyant-travel/catalog-node",
 ]) {
   if (operatorResources.includes(packageId)) {
     violations.push(`${operatorResourcesPath} must not name migrated package ${packageId}`)
@@ -73,9 +76,7 @@ for (const primitive of ["env:", "database:", "storage:", "events:", "config:"])
 if (
   migratedContributors.some((source) => !source.includes("primitives: VoyantRuntimeHostPrimitives"))
 ) {
-  violations.push(
-    "migrated package contributors must accept the generic runtime primitive contract",
-  )
+  violations.push("Node adapter contributors must accept the generic runtime primitive contract")
 }
 for (const [source, required] of [
   [
@@ -165,6 +166,10 @@ for (const removedPath of [
   "starters/operator/src/api/lib/owned-booking-handlers.ts",
   "starters/operator/src/api/lib/booking-engine-db.ts",
   "starters/operator/src/api/lib/booking-requirements-product-snapshot.ts",
+  "packages/bookings/src/standard-node-runtime.ts",
+  "packages/finance/src/standard-node-runtime.ts",
+  "packages/catalog/src/standard-node-runtime.ts",
+  "packages/catalog/src/standard-node",
 ]) {
   if (existsSync(path.join(root, removedPath))) {
     violations.push(

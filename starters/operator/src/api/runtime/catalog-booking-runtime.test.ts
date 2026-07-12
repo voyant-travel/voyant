@@ -1,4 +1,4 @@
-import { buildSourcedBookingRows } from "@voyant-travel/catalog/standard-node/booking-runtime"
+import { buildSourcedBookingRows } from "@voyant-travel/catalog-node/standard-node/booking-runtime"
 import { describe, expect, it } from "vitest"
 
 describe("buildSourcedBookingRows", () => {

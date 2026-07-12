@@ -9,7 +9,7 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
-} from "@voyant-travel/catalog/standard-node/catalog-runtime"
+} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
 import {
   PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY,
   type PromotionBoundarySchedulerRuntime,
@@ -71,7 +71,7 @@ export async function registerDistributionWorkflowService(
   const env = workflowEnvironment(bindings)
   const appBindings = operatorBindings(bindings)
   const { ensureBookingEngineRegistry } = await import(
-    "@voyant-travel/catalog/standard-node/booking-engine-runtime"
+    "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
   )
   const entries = await createChannelPushWorkflowRuntimeEntries({
     resolveDb: () => createWorkflowDb(env),
@@ -108,11 +108,11 @@ export async function createOperatorWorkflowServiceResolver(
     createCatalogDraftReaperRuntime({
       withDb: (operation) => operation(createWorkflowDb(env)),
       resolveSourceRegistry: () =>
-        import("@voyant-travel/catalog/standard-node/booking-engine-runtime").then((runtime) =>
+        import("@voyant-travel/catalog-node/standard-node/booking-engine-runtime").then((runtime) =>
           runtime.ensureBookingEngineRegistry(appBindings),
         ),
       resolveOwnedHandlers: () =>
-        import("@voyant-travel/catalog/standard-node/booking-engine-runtime").then((runtime) =>
+        import("@voyant-travel/catalog-node/standard-node/booking-engine-runtime").then((runtime) =>
           runtime.getOwnedBookingHandlerRegistry(appBindings),
         ),
       reportFailure: (error, context) => reportBackgroundFailure("draft-reaper", error, context),
@@ -140,7 +140,7 @@ export async function createOperatorWorkflowServiceResolver(
             })
             await indexerService.ensureCollections()
             const { ensureBookingEngineRegistry } = await import(
-              "@voyant-travel/catalog/standard-node/booking-engine-runtime"
+              "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
             )
             return operation({
               db,

@@ -266,21 +266,9 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     ),
   ].sort((left, right) => left.localeCompare(right))
   const command = input.command ?? "voyant deployment graph emit"
-  const selectedPackageNames = new Set(
-    [...input.graph.modules, ...input.graph.extensions, ...input.graph.plugins].flatMap((unit) => {
-      const canonicalOwner = unit.id.includes("#")
-        ? unit.id.slice(0, unit.id.indexOf("#"))
-        : unit.id
-      return canonicalOwner.startsWith("@")
-        ? [unit.packageName, canonicalOwner]
-        : [unit.packageName]
-    }),
-  )
   const contributors = input.graph.packageRecords
     .flatMap((record) => {
-      const runtime = selectedPackageNames.has(record.packageName)
-        ? record.metadata?.runtime
-        : undefined
+      const runtime = record.metadata?.runtime
       if (!runtime) return []
       if (
         !runtime.entry.startsWith("./") ||

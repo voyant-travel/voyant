@@ -264,6 +264,9 @@
       "@voyant-travel/bookings/tools": ["../bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../bookings/dist/voyant.d.ts"],
+      "@voyant-travel/bookings-node/runtime-contributor": [
+        "../bookings-node/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/bookings/workflow-runtime": ["../bookings/dist/workflow-runtime.d.ts"],
       "@voyant-travel/bookings/workflows": ["../bookings/dist/workflow-entry.d.ts"],
       "@voyant-travel/catalog": ["../catalog/dist/index.d.ts"],
@@ -355,8 +358,17 @@
       "@voyant-travel/catalog/overlay/resolver": ["../catalog/dist/overlay/resolver.d.ts"],
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
-      "@voyant-travel/catalog/runtime-contributor": ["../catalog/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/catalog/standard-node/*": ["../catalog/dist/standard-node/*.d.ts"],
+      "@voyant-travel/catalog/api-runtime-ports": ["../catalog/dist/api-runtime-ports.d.ts"],
+      "@voyant-travel/catalog/booking-engine/operator-routes": [
+        "../catalog/dist/booking-engine/operator-routes.d.ts"
+      ],
+      "@voyant-travel/catalog/subscriber-runtime-ports": [
+        "../catalog/dist/subscriber-runtime-ports.d.ts"
+      ],
+      "@voyant-travel/catalog-node/standard-node/*": ["../catalog-node/dist/standard-node/*.d.ts"],
+      "@voyant-travel/catalog-node/runtime-contributor": [
+        "../catalog-node/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/catalog/provenance": ["../catalog/dist/provenance.d.ts"],
       "@voyant-travel/catalog/schema": ["../catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
@@ -821,6 +833,9 @@
       "@voyant-travel/finance/tools": ["../finance/dist/tools.d.ts"],
       "@voyant-travel/finance/validation": ["../finance/dist/validation.d.ts"],
       "@voyant-travel/finance/voyant": ["../finance/dist/voyant.d.ts"],
+      "@voyant-travel/finance-node/runtime-contributor": [
+        "../finance-node/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/flights": ["../flights/dist/index.d.ts"],
       "@voyant-travel/flights-contracts": ["../flights-contracts/dist/index.d.ts"],
       "@voyant-travel/flights-contracts/contract/adapter": [

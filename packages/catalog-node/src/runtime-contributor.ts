@@ -1,19 +1,26 @@
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import type { CatalogSearchRuntimeOptions } from "./api-runtime-ports.js"
+import type { CatalogSearchRuntimeOptions } from "@voyant-travel/catalog/api-runtime-ports"
 import {
   catalogBookingRuntimePort,
   catalogOffersRuntimePort,
   catalogSearchRuntimePort,
-} from "./api-runtime-ports.js"
-import type { CatalogBookingRouteModuleOptions } from "./booking-engine/operator-routes.js"
-import { type CatalogContentRuntime, catalogContentRuntimePort } from "./content-runtime-port.js"
-import type { CatalogOffersRouteModuleOptions } from "./offers/operator-routes.js"
+} from "@voyant-travel/catalog/api-runtime-ports"
+import type { CatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/booking-engine/operator-routes"
+import type { CatalogOffersRouteModuleOptions } from "@voyant-travel/catalog/offers"
+import {
+  type CatalogContentRuntime,
+  catalogContentRuntimePort,
+} from "@voyant-travel/catalog/runtime-port"
 import {
   type CatalogBookingSnapshotRuntimeProvider,
   type CatalogProjectionRuntimeProvider,
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
-} from "./subscriber-runtime-ports.js"
+} from "@voyant-travel/catalog/subscriber-runtime-ports"
+import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import {
+  type CruisesRoutesRuntime,
+  cruisesRoutesRuntimePort,
+} from "@voyant-travel/cruises/runtime-port"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -26,17 +33,22 @@ export interface CatalogRuntimePortContribution {
   bookingSnapshot: RuntimePortValue<CatalogBookingSnapshotRuntimeProvider>
 }
 
-export interface CatalogRuntimeContributorHost {
+export interface CatalogNodeRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
 }
 
-/** Package-owned Catalog defaults lowered from the generic runtime host. */
-export function createCatalogRuntimePortContribution(
-  host: CatalogRuntimeContributorHost,
+export function createCatalogNodeRuntimePortContribution(
+  host: CatalogNodeRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const contribution = import("./standard-node-runtime.js").then((module) =>
     module.createCatalogStandardNodeRuntime(host.primitives),
   )
+  const cruisesRoutes: CruisesRoutesRuntime = {
+    resolveSourceAdapterRegistry: (bindings) =>
+      import("./standard-node/booking-engine-runtime.js").then((runtime) =>
+        runtime.ensureBookingEngineRegistry(host.primitives.env(bindings)),
+      ),
+  }
   return {
     [catalogSearchRuntimePort.id]: contribution.then((runtime) => runtime.search),
     [catalogBookingRuntimePort.id]: contribution.then((runtime) => runtime.booking),
@@ -44,5 +56,6 @@ export function createCatalogRuntimePortContribution(
     [catalogContentRuntimePort.id]: contribution.then((runtime) => runtime.content),
     [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
+    [cruisesRoutesRuntimePort.id]: cruisesRoutes,
   }
 }

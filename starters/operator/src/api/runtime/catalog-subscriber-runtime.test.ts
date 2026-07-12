@@ -23,7 +23,7 @@ vi.mock("@voyant-travel/inventory/service-catalog-plane", () => ({
   buildProductSnapshotInput,
 }))
 
-vi.mock("@voyant-travel/catalog/standard-node/catalog-runtime", () => ({
+vi.mock("@voyant-travel/catalog-node/standard-node/catalog-runtime", () => ({
   buildEmbeddingProvider: () => undefined,
   buildTypesenseIndexer: () => ({}),
   createProductsDocumentBuilder: () => vi.fn(),
@@ -32,11 +32,11 @@ vi.mock("@voyant-travel/catalog/standard-node/catalog-runtime", () => ({
   withEmbedding: (builder: unknown) => builder,
 }))
 
-import { configureCatalogStandardNodeHost } from "@voyant-travel/catalog/standard-node/host"
+import { configureCatalogStandardNodeHost } from "@voyant-travel/catalog-node/standard-node/host"
 import {
   createOperatorCatalogBookingSnapshotRuntime,
   createOperatorCatalogProjectionRuntime,
-} from "@voyant-travel/catalog/standard-node/subscriber-runtime"
+} from "@voyant-travel/catalog-node/standard-node/subscriber-runtime"
 
 describe("Operator Catalog subscriber runtime ports", () => {
   beforeEach(() => {

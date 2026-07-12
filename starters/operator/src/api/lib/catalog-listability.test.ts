@@ -8,7 +8,7 @@
  * customer slices, but not legacy unchannelled customer slices.
  */
 
-import { isOwnedProductStorefrontListable } from "@voyant-travel/catalog/standard-node/catalog-listability"
+import { isOwnedProductStorefrontListable } from "@voyant-travel/catalog-node/standard-node/catalog-listability"
 import { describe, expect, it, vi } from "vitest"
 
 describe("isOwnedProductStorefrontListable", () => {

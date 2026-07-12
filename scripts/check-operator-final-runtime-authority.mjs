@@ -25,7 +25,7 @@ const packagePorts = {
 const contributorFactories = [
   "createActionLedgerRuntimePortContribution",
   "createAuthRuntimePortContribution",
-  "createCruisesRuntimePortContribution",
+  "createCatalogNodeRuntimePortContribution",
   "createDistributionRuntimePortContribution",
   "createFlightsRuntimePortContribution",
   "createMiceRuntimePortContribution",
@@ -41,7 +41,11 @@ const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.a
   read("starters/operator/src/api/runtime/deployment-resources.ts"),
   read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   ...Object.keys(packagePorts).map((packageName) =>
-    read(`packages/${packageName}/src/runtime-contributor.ts`),
+    read(
+      packageName === "cruises"
+        ? "packages/catalog-node/src/runtime-contributor.ts"
+        : `packages/${packageName}/src/runtime-contributor.ts`,
+    ),
   ),
 ])
 

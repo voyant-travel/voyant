@@ -1,12 +1,12 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import type { BookingTaxRouteOptions } from "./booking-tax.js"
-import type { FinanceHonoModuleOptions } from "./index.js"
-import type { FinanceBookingScheduleRuntime } from "./runtime-port.js"
+import type { FinanceHonoModuleOptions } from "@voyant-travel/finance"
+import type { BookingTaxRouteOptions } from "@voyant-travel/finance/booking-tax"
 import {
+  type FinanceBookingScheduleRuntime,
   financeBookingScheduleRuntimePort,
   financeBookingTaxRuntimePort,
   financeRuntimePort,
-} from "./runtime-port.js"
+} from "@voyant-travel/finance/runtime-port"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -16,13 +16,12 @@ export interface FinanceRuntimePortContribution {
   bookingTax: RuntimePortValue<BookingTaxRouteOptions>
 }
 
-export interface FinanceRuntimeContributorHost {
+export interface FinanceNodeRuntimeContributorHost {
   primitives: VoyantRuntimeHostPrimitives
 }
 
-/** Package-owned Finance defaults lowered from the generic runtime host. */
-export function createFinanceRuntimePortContribution(
-  host: FinanceRuntimeContributorHost,
+export function createFinanceNodeRuntimePortContribution(
+  host: FinanceNodeRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
   const runtime = import("./standard-node-runtime.js").then((module) =>
     module.createFinanceStandardNodeRuntime(host.primitives),

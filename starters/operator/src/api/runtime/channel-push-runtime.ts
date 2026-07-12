@@ -1,4 +1,4 @@
-import { getBookingEngineRegistryFromContext } from "@voyant-travel/catalog/standard-node/booking-engine-runtime"
+import { getBookingEngineRegistryFromContext } from "@voyant-travel/catalog-node/standard-node/booking-engine-runtime"
 import type { ChannelPushRuntime } from "@voyant-travel/distribution"
 import { registerDistributionWorkflowService } from "./operator-workflow-services"
 

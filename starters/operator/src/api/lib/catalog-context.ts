@@ -13,7 +13,7 @@ import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
   DEFAULT_SLICES,
-} from "@voyant-travel/catalog/standard-node/catalog-runtime"
+} from "@voyant-travel/catalog-node/standard-node/catalog-runtime"
 import { getResolvedExtraById } from "@voyant-travel/inventory/extras"
 import { getResolvedProductById } from "@voyant-travel/inventory/service-catalog-plane"
 import type { Context } from "hono"

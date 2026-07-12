@@ -4,6 +4,11 @@
  * vertical booking handlers live in focused registration modules.
  */
 
+import {
+  createSourceAdapterRegistry,
+  type OwnedBookingHandlerRegistry,
+  type SourceAdapterRegistry,
+} from "@voyant-travel/catalog/booking-engine"
 import { createDemoCatalogAdapter } from "@voyant-travel/plugin-catalog-demo"
 import {
   createVoyantConnectSources,
@@ -14,11 +19,6 @@ import {
   type VoyantConnectSourceConnection,
 } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
-import {
-  createSourceAdapterRegistry,
-  type OwnedBookingHandlerRegistry,
-  type SourceAdapterRegistry,
-} from "../booking-engine/index.js"
 import {
   CRUISE_ADAPTER_READ_CACHE_TTL_MS,
   registerCruiseAdapters,
