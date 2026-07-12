@@ -37,6 +37,14 @@ export type VoyantGraphRuntimeBindings<TCapabilities> = Readonly<
 
 export type VoyantGraphRuntimePorts = Readonly<Record<string, unknown>>
 
+/** Opaque Node-host resources consumed by package-owned runtime contributors. */
+export type VoyantGraphRuntimeContributorHost = Readonly<Record<string, unknown>>
+
+/** Build-time selected package hook that maps host resources to graph runtime ports. */
+export type VoyantGraphRuntimeContributor = (
+  host: VoyantGraphRuntimeContributorHost,
+) => VoyantGraphRuntimePorts
+
 /** Conforming, fail-on-use port shapes for graph inspection and boot probes. */
 export function createVoyantGraphRuntimePortStubs(
   runtime: VoyantGraphRuntime,

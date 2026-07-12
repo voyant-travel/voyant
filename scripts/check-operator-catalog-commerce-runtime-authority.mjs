@@ -39,11 +39,11 @@ for (const port of [...catalogPorts, ...commercePorts]) {
   }
 }
 for (const required of [
-  "createCatalogRuntimePortContribution({",
-  "createCommerceRuntimePortContribution({",
+  "createCatalogRuntimePortContribution",
+  "createCommerceRuntimePortContribution",
 ]) {
-  if (!deploymentResources.includes(required)) {
-    violations.push(`deployment-resources.ts must compose through ${required.slice(0, -2)}`)
+  if (deploymentResources.includes(required)) {
+    violations.push(`deployment-resources.ts must not enumerate ${required}`)
   }
 }
 for (const port of catalogPorts) {

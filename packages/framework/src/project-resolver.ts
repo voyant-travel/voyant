@@ -1152,6 +1152,7 @@ function parsePackageMetadata(
   }
   const compatibleWith = parseCompatibleWith(value.compatibleWith, packageName)
   const requires = parseCapabilityDeclaration(value.requires, packageName)
+  const runtime = parsePackageRuntime(value.runtime, packageName)
   if (value.schema !== undefined && typeof value.schema !== "string") {
     throw new Error(`resolveProject: ${packageName} package schema must be a string.`)
   }
@@ -1169,11 +1170,37 @@ function parsePackageMetadata(
     schemaVersion: "voyant.package.v1",
     kind: value.kind,
     ...(value.manifest === "./voyant" ? { manifest: "./voyant" as const } : {}),
+    ...(runtime ? { runtime } : {}),
     ...(compatibleWith ? { compatibleWith } : {}),
     ...(requires ? { requires } : {}),
     ...(typeof value.schema === "string" ? { schema: value.schema } : {}),
     ...(requiresSchemas.length > 0 ? { requiresSchemas: [...requiresSchemas].sort() } : {}),
   }
+}
+
+function parsePackageRuntime(
+  value: unknown,
+  packageName: string,
+): VoyantGraphPackageMetadata["runtime"] {
+  if (value === undefined) return undefined
+  if (!isRecord(value) || typeof value.entry !== "string" || typeof value.export !== "string") {
+    throw new Error(
+      `resolveProject: ${packageName} package runtime must declare string entry and export fields.`,
+    )
+  }
+  if (!value.entry.startsWith("./") || value.entry.includes("\\")) {
+    throw new Error(
+      `resolveProject: ${packageName} package runtime entry must be an owner-relative package export.`,
+    )
+  }
+  const parts = value.entry.slice(2).split("/")
+  if (parts.some((part) => part.length === 0 || part === "." || part === "..")) {
+    throw new Error(`resolveProject: ${packageName} package runtime entry is invalid.`)
+  }
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(value.export)) {
+    throw new Error(`resolveProject: ${packageName} package runtime export is invalid.`)
+  }
+  return { entry: value.entry, export: value.export }
 }
 
 function parseCompatibleWith(

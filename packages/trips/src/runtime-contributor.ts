@@ -8,8 +8,8 @@ import {
 type RuntimePortValue<T> = T | Promise<T>
 
 export interface TripsRuntimePortContribution {
-  routes: RuntimePortValue<TripsRoutesOptionsProvider>
-  database: RuntimePortValue<TripsDatabaseRuntime>
+  tripsRoutes: RuntimePortValue<TripsRoutesOptionsProvider>
+  tripsDatabase: RuntimePortValue<TripsDatabaseRuntime>
 }
 
 /** Package-owned registration map for Trips deployment adapters. */
@@ -17,7 +17,7 @@ export function createTripsRuntimePortContribution(
   contribution: TripsRuntimePortContribution,
 ): Readonly<Record<string, unknown>> {
   return {
-    [tripsRoutesRuntimePort.id]: contribution.routes,
-    [tripsDatabaseRuntimePort.id]: contribution.database,
+    [tripsRoutesRuntimePort.id]: contribution.tripsRoutes,
+    [tripsDatabaseRuntimePort.id]: contribution.tripsDatabase,
   }
 }

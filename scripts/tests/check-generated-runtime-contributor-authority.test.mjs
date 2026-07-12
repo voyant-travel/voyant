@@ -1,0 +1,88 @@
+import assert from "node:assert/strict"
+import { execFile } from "node:child_process"
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
+import { it } from "node:test"
+import { fileURLToPath } from "node:url"
+import { promisify } from "node:util"
+
+const execFileAsync = promisify(execFile)
+const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
+const checker = path.join(repoRoot, "scripts/check-generated-runtime-contributor-authority.mjs")
+const packageFactories = {
+  "action-ledger": "createActionLedgerRuntimePortContribution",
+  auth: "createAuthRuntimePortContribution",
+  bookings: "createBookingsRuntimePortContribution",
+  catalog: "createCatalogRuntimePortContribution",
+  commerce: "createCommerceRuntimePortContribution",
+  cruises: "createCruisesRuntimePortContribution",
+  distribution: "createDistributionRuntimePortContribution",
+  finance: "createFinanceRuntimePortContribution",
+  flights: "createFlightsRuntimePortContribution",
+  inventory: "createInventoryRuntimePortContribution",
+  legal: "createLegalRuntimePortContribution",
+  mice: "createMiceRuntimePortContribution",
+  notifications: "createNotificationsRuntimePortContribution",
+  quotes: "createQuotesRuntimePortContribution",
+  realtime: "createRealtimeRuntimePortContribution",
+  relationships: "createRelationshipsRuntimePortContribution",
+  storage: "createStorageRuntimePortContribution",
+  storefront: "createStorefrontRuntimePortContribution",
+  trips: "createTripsRuntimePortContribution",
+  "workflow-runs": "createWorkflowRunsRuntimePortContribution",
+}
+
+async function write(root, relativePath, contents) {
+  const target = path.join(root, relativePath)
+  await mkdir(path.dirname(target), { recursive: true })
+  await writeFile(target, contents)
+}
+
+async function fixture(deploymentResources) {
+  const root = await mkdtemp(path.join(tmpdir(), "voyant-generated-contributors-"))
+  await write(
+    root,
+    "starters/operator/src/api/runtime/deployment-resources.ts",
+    deploymentResources,
+  )
+  await write(
+    root,
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+    "export const operatorSmartbillRuntimeHost = {}\n",
+  )
+  await write(
+    root,
+    "packages/framework/src/deployment-artifacts.ts",
+    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\nas GENERATED_RUNTIME_CONTRIBUTOR_\n",
+  )
+  for (const [packageName, factory] of Object.entries(packageFactories)) {
+    await write(
+      root,
+      `packages/${packageName}/package.json`,
+      JSON.stringify({
+        exports: { "./runtime-contributor": "./src/runtime-contributor.ts" },
+        voyant: {
+          runtime: { entry: "./runtime-contributor", export: factory },
+        },
+      }),
+    )
+  }
+  return root
+}
+
+it("accepts generated static contributor composition", async () => {
+  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const result = await execFileAsync(process.execPath, [checker, "--root", root])
+  assert.match(result.stdout, /20 package contributors statically selected/)
+})
+
+it("rejects starter contributor enumeration", async () => {
+  const root = await fixture(
+    'import { createTripsRuntimePortContribution } from "@voyant-travel/trips/runtime-contributor"\nreturn createGeneratedGraphRuntimePorts({ host })\n',
+  )
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /must not import package runtime contributors/,
+  )
+})

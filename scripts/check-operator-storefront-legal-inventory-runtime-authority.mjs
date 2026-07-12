@@ -49,12 +49,12 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
 }
 
 for (const factory of [
-  "createStorefrontRuntimePortContribution({",
-  "createLegalRuntimePortContribution({",
-  "createInventoryRuntimePortContribution({",
+  "createStorefrontRuntimePortContribution",
+  "createLegalRuntimePortContribution",
+  "createInventoryRuntimePortContribution",
 ]) {
-  if (!deploymentResources.includes(factory)) {
-    violations.push(`deployment-resources.ts must compose through ${factory.slice(0, -2)}`)
+  if (deploymentResources.includes(factory)) {
+    violations.push(`deployment-resources.ts must not enumerate ${factory}`)
   }
 }
 

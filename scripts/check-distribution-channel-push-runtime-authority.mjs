@@ -56,10 +56,11 @@ if (
   violations.push("Distribution must publish the typed channel-push runtime dependency contract")
 }
 if (
-  !composition.includes('from "@voyant-travel/distribution/runtime-contributor"') ||
-  !composition.includes("createDistributionRuntimePortContribution")
+  composition.includes('from "@voyant-travel/distribution/runtime-contributor"') ||
+  composition.includes("createDistributionRuntimePortContribution") ||
+  !composition.includes("createGeneratedGraphRuntimePorts")
 ) {
-  violations.push("Operator must bind the Distribution channel-push runtime port")
+  violations.push("Operator must bind Distribution through generated contributor composition")
 }
 if (
   composition.includes('"@voyant-travel/distribution#channel-push-extension"') ||

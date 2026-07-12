@@ -41,20 +41,25 @@ if (
   !installedPackage.exports?.["./voyant"] ||
   !installedPackage.exports?.["./graph-runtime"] ||
   !installedPackage.exports?.["./runtime-contributor"] ||
+  installedPackage.voyant?.runtime?.entry !== "./runtime-contributor" ||
   !installedPackage.exports?.["./subscriber-runtime"]
 ) {
   violations.push(
-    "SmartBill must advertise plugin metadata plus ./voyant, ./graph-runtime, ./runtime-contributor, and ./subscriber-runtime exports",
+    "SmartBill must advertise plugin metadata plus graph, contributor, and subscriber runtime exports",
   )
 }
 if (!/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
   violations.push("voyant.config.ts must directly select @voyant-travel/plugin-smartbill")
 }
 if (
-  !composition.includes('from "@voyant-travel/plugin-smartbill/graph-runtime"') ||
-  !composition.includes("[smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost")
+  composition.includes("createSmartbillRuntimePortContribution") ||
+  composition.includes("smartbillRuntimeHostPort") ||
+  !composition.includes("host: operatorSmartbillRuntimeHost") ||
+  !composition.includes("createGeneratedGraphRuntimePorts")
 ) {
-  violations.push("generic Node composition must bind the typed smartbill.runtime-host port")
+  violations.push(
+    "generic Node composition must lower SmartBill through generated contributor metadata",
+  )
 }
 if (
   !nodeHost.includes('from "@voyant-travel/plugin-smartbill/graph-runtime"') ||

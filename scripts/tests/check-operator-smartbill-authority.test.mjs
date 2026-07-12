@@ -21,12 +21,19 @@ async function createFixture(overrides = {}) {
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] }\n',
     "src/api/app.ts": "export const app = mountApp({})\n",
     "src/api/runtime/deployment-resources.ts":
-      'import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"\nexport const ports = { [smartbillRuntimeHostPort.id]: operatorSmartbillRuntimeHost }\n',
+      "export const ports = createGeneratedGraphRuntimePorts({ host: operatorSmartbillRuntimeHost })\n",
     "src/api/runtime/operator-runtime-adapter.ts":
       'import { createSmartbillSettlementPollers, type SmartbillRuntimeHost } from "@voyant-travel/plugin-smartbill/graph-runtime"\nexport const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {}\ncreateSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings))\n',
     "installed/package.json": JSON.stringify({
       version: "0.140.1",
-      voyant: { kind: "plugin", manifest: "./voyant" },
+      voyant: {
+        kind: "plugin",
+        manifest: "./voyant",
+        runtime: {
+          entry: "./runtime-contributor",
+          export: "createSmartbillRuntimePortContribution",
+        },
+      },
       exports: {
         "./voyant": "./voyant.js",
         "./graph-runtime": "./graph-runtime.js",

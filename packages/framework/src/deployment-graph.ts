@@ -258,6 +258,8 @@ export interface VoyantGraphPackageMetadata {
   kind: VoyantGraphPackageKind
   /** Import-cheap package export containing package-owned graph declarations. */
   manifest?: string
+  /** Package-owned runtime-port contributor selected and statically lowered with the graph. */
+  runtime?: Required<Pick<VoyantGraphRuntimeReference, "entry" | "export">>
   compatibleWith?: {
     framework?: string
     targets?: readonly string[]

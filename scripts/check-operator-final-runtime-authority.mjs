@@ -66,18 +66,24 @@ for (const [index, [packageName, ports]] of Object.entries(packagePorts).entries
 }
 
 for (const factory of contributorFactories) {
-  if (!deploymentResources.includes(`${factory}(`)) {
-    violations.push(`deployment-resources.ts must compose through ${factory}`)
+  if (deploymentResources.includes(factory)) {
+    violations.push(`deployment-resources.ts must not enumerate ${factory}`)
   }
 }
 
-if (!deploymentResources.includes("createOperatorSmartbillRuntimePortContribution()")) {
+if (!deploymentResources.includes("createGeneratedGraphRuntimePorts({")) {
   violations.push(
-    "deployment-resources.ts must compose SmartBill through its compatibility contributor",
+    "deployment-resources.ts must compose selected contributors through generated graph source",
   )
 }
-if (!smartbillAdapter.includes("[smartbillRuntimeHostPort.id]")) {
-  violations.push("SmartBill compatibility contributor must own smartbillRuntimeHostPort")
+
+if (deploymentResources.includes("SmartbillRuntimePortContribution")) {
+  violations.push("deployment-resources.ts must not enumerate the SmartBill contributor")
+}
+if (smartbillAdapter.includes("smartbillRuntimeHostPort")) {
+  violations.push(
+    "Operator SmartBill adapter must expose host resources without registering a port",
+  )
 }
 
 if (violations.length > 0) {
@@ -86,5 +92,5 @@ if (violations.length > 0) {
 
 const movedCount = Object.values(packagePorts).flat().length
 console.log(
-  `check-operator-final-runtime-authority: OK (${movedCount} package-owned registrations; 1 external compatibility registration; 0 direct registrations remain)`,
+  `check-operator-final-runtime-authority: OK (${movedCount} package-owned registrations; generated SmartBill contributor; 0 direct registrations remain)`,
 )

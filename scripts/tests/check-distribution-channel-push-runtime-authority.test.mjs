@@ -24,7 +24,7 @@ async function createFixture(overrides = {}) {
     "distribution/src/channel-push/runtime-port.ts":
       'id: "distribution.channel-push-runtime"\nresolveRegistry\nregisterWorkflowService\n',
     "operator/src/api/runtime/deployment-resources.ts":
-      'import { createDistributionRuntimePortContribution } from "@voyant-travel/distribution/runtime-contributor"\ncreateDistributionRuntimePortContribution({ channelPush: operatorChannelPushRuntime })\n',
+      "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
     "operator/src/api/runtime/channel-push-runtime.ts":
       'import type { ChannelPushRuntime } from "@voyant-travel/distribution"\ngetBookingEngineRegistryFromContext\nregisterDistributionWorkflowService\n',
     "operator/src/api/runtime/operator-workflow-services.ts":
@@ -72,7 +72,7 @@ describe("check-distribution-channel-push-runtime-authority", () => {
     })
 
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must bind the Distribution channel-push runtime port/)
+      assert.match(error.stderr, /must bind Distribution through generated contributor composition/)
       assert.match(
         error.stderr,
         /must not restore the channel-push package-id compatibility binding/,

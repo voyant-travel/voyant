@@ -200,6 +200,33 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
   })
 
+  it("statically lowers selected package runtime contributors", async () => {
+    const resolved = await graphWithSelectedUnits([defineModule({ id: "@acme/voyant-loyalty" })])
+    const graph = {
+      ...resolved,
+      packageRecords: resolved.packageRecords.map((record) => ({
+        ...record,
+        metadata: {
+          schemaVersion: "voyant.package.v1" as const,
+          kind: "module" as const,
+          runtime: {
+            entry: "./runtime-contributor",
+            export: "createLoyaltyRuntimePortContribution",
+          },
+        },
+      })),
+    }
+
+    const source = buildGraphRuntimeModule({ graph })
+
+    expect(source).toContain(
+      'import { createLoyaltyRuntimePortContribution as GENERATED_RUNTIME_CONTRIBUTOR_0 } from "@acme/voyant-loyalty/runtime-contributor"',
+    )
+    expect(source).toContain("export function createGeneratedGraphRuntimePorts(")
+    expect(source).toContain("& Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>[0]")
+    expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
+  })
+
   it("lowers only opted-in package admin factories into one selected bundle", async () => {
     const graph = await graphWithSelectedUnits([
       defineModule({

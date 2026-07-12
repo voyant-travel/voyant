@@ -68,12 +68,12 @@ if (packageIndex.includes("tripsHonoModule")) {
   violations.push("Trips must not retain the preconfigured compatibility module export")
 }
 if (
-  !composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
-  !runtimePorts.includes("createTripsRuntimePortContribution") ||
-  !runtimePorts.includes("routes: createOperatorTripsRoutesOptions") ||
-  !runtimePorts.includes("database:")
+  composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
+  runtimePorts.includes("createTripsRuntimePortContribution") ||
+  !runtimePorts.includes("tripsRoutes: createOperatorTripsRoutesOptions") ||
+  !runtimePorts.includes("tripsDatabase:")
 ) {
-  violations.push("Operator must supply only the generic Trips runtime ports")
+  violations.push("Operator must supply Trips host resources without enumerating its contributor")
 }
 if (composition.includes("operatorGraphRuntimeBindings")) {
   violations.push("Operator compatibility runtime bindings must stay deleted")
