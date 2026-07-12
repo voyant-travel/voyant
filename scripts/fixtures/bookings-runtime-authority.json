@@ -1,0 +1,31 @@
+{
+  "packageName": "@voyant-travel/bookings",
+  "removedPackageName": "@voyant-travel/bookings-node",
+  "runtimeFactory": "createBookingsRuntimePortContribution",
+  "forbiddenProductionDependencies": [
+    "@voyant-travel/accommodations",
+    "@voyant-travel/finance",
+    "@voyant-travel/inventory",
+    "@voyant-travel/relationships",
+    "@voyant-travel/commerce",
+    "@voyant-travel/distribution"
+  ],
+  "providers": [
+    {
+      "port": "bookingsAccommodationRuntimePort",
+      "file": "packages/accommodations/src/runtime-contributor.ts"
+    },
+    {
+      "port": "bookingsFinanceRuntimePort",
+      "file": "packages/finance-node/src/runtime-contributor.ts"
+    },
+    {
+      "port": "bookingsInventoryRuntimePort",
+      "file": "packages/inventory/src/runtime-contributor.ts"
+    },
+    {
+      "port": "bookingsRelationshipsRuntimePort",
+      "file": "packages/relationships/src/runtime-contributor.ts"
+    }
+  ]
+}

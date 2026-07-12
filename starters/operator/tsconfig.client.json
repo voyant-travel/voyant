@@ -35,6 +35,9 @@
       "@voyant-travel/accommodations/routes-content": [
         "../../packages/accommodations/dist/routes-content.d.ts"
       ],
+      "@voyant-travel/accommodations/runtime-contributor": [
+        "../../packages/accommodations/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/accommodations/schema": ["../../packages/accommodations/dist/schema.d.ts"],
       "@voyant-travel/accommodations/service-catalog-plane": [
         "../../packages/accommodations/dist/service-catalog-plane.d.ts"
@@ -322,6 +325,9 @@
       "@voyant-travel/bookings/reservation-plans": [
         "../../packages/bookings/dist/reservation-plans.d.ts"
       ],
+      "@voyant-travel/bookings/runtime-contributor": [
+        "../../packages/bookings/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/bookings/routes": ["../../packages/bookings/dist/routes.d.ts"],
       "@voyant-travel/bookings/schema": ["../../packages/bookings/dist/schema.d.ts"],
       "@voyant-travel/bookings/status": ["../../packages/bookings/dist/status.d.ts"],
@@ -332,9 +338,6 @@
       "@voyant-travel/bookings/tools": ["../../packages/bookings/dist/tools.d.ts"],
       "@voyant-travel/bookings/validation": ["../../packages/bookings/dist/validation.d.ts"],
       "@voyant-travel/bookings/voyant": ["../../packages/bookings/dist/voyant.d.ts"],
-      "@voyant-travel/bookings-node/runtime-contributor": [
-        "../../packages/bookings-node/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/bookings/workflow-runtime": [
         "../../packages/bookings/dist/workflow-runtime.d.ts"
       ],

@@ -1,7 +1,13 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 
 import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
-import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "./runtime-port.js"
+import {
+  bookingsAccommodationRuntimePort,
+  bookingsConfigurationRuntimePort,
+  bookingsFinanceRuntimePort,
+  bookingsInventoryRuntimePort,
+  bookingsRelationshipsRuntimePort,
+} from "./runtime-port.js"
 
 const bookingsAdminRuntime = {
   entry: "@voyant-travel/bookings-react/admin",
@@ -17,7 +23,12 @@ export const bookingsVoyantModule = defineModule({
   packageName: "@voyant-travel/bookings",
   localId: "bookings",
   runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
-  runtimePorts: [requirePort(bookingsRuntimePort)],
+  runtimePorts: [
+    requirePort(bookingsConfigurationRuntimePort),
+    requirePort(bookingsAccommodationRuntimePort),
+    requirePort(bookingsFinanceRuntimePort),
+    requirePort(bookingsRelationshipsRuntimePort),
+  ],
   api: [
     {
       id: "@voyant-travel/bookings#api.admin",
@@ -298,7 +309,7 @@ export const bookingRequirementsVoyantModule = defineModule({
     entry: "@voyant-travel/bookings/requirements",
     export: "createBookingRequirementsVoyantRuntime",
   },
-  runtimePorts: [requirePort(bookingRequirementsRuntimePort)],
+  runtimePorts: [requirePort(bookingsInventoryRuntimePort)],
   api: [
     {
       id: "@voyant-travel/bookings#requirements.api",

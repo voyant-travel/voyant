@@ -2,9 +2,10 @@
 // This barrel keeps generated project artifacts resolvable through their direct framework dependency.
 // Package manifests remain the authority for contributor entrypoints and export names.
 
+export { createAccommodationsRuntimePortContribution } from "@voyant-travel/accommodations/runtime-contributor"
 export { createActionLedgerNodeRuntimePortContribution } from "@voyant-travel/action-ledger-node/runtime-contributor"
 export { createAuthRuntimePortContribution } from "@voyant-travel/auth/runtime-contributor"
-export { createBookingsNodeRuntimePortContribution } from "@voyant-travel/bookings-node/runtime-contributor"
+export { createBookingsRuntimePortContribution } from "@voyant-travel/bookings/runtime-contributor"
 export { createCatalogNodeRuntimePortContribution } from "@voyant-travel/catalog-node/runtime-contributor"
 export { createCommerceRuntimePortContribution } from "@voyant-travel/commerce/runtime-contributor"
 export { createDistributionNodeRuntimePortContribution } from "@voyant-travel/distribution-node/runtime-contributor"

@@ -914,43 +914,6 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
-  packages/bookings-node:
-    dependencies:
-      '@voyant-travel/accommodations':
-        specifier: workspace:^
-        version: link:../accommodations
-      '@voyant-travel/bookings':
-        specifier: workspace:^
-        version: link:../bookings
-      '@voyant-travel/core':
-        specifier: workspace:^
-        version: link:../core
-      '@voyant-travel/db':
-        specifier: workspace:^
-        version: link:../db
-      '@voyant-travel/finance':
-        specifier: workspace:^
-        version: link:../finance
-      '@voyant-travel/hono':
-        specifier: workspace:^
-        version: link:../hono
-      '@voyant-travel/inventory':
-        specifier: workspace:^
-        version: link:../inventory
-      '@voyant-travel/relationships':
-        specifier: workspace:^
-        version: link:../relationships
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
-    devDependencies:
-      '@voyant-travel/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
   packages/bookings-contracts:
     dependencies:
       '@voyant-travel/schema-kit':
@@ -1982,6 +1945,9 @@ importers:
       '@voyant-travel/accommodations':
         specifier: workspace:^
         version: link:../accommodations
+      '@voyant-travel/bookings':
+        specifier: workspace:^
+        version: link:../bookings
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -2273,9 +2239,6 @@ importers:
       '@voyant-travel/bookings':
         specifier: workspace:*
         version: link:../bookings
-      '@voyant-travel/bookings-node':
-        specifier: workspace:*
-        version: link:../bookings-node
       '@voyant-travel/bookings-react':
         specifier: workspace:*
         version: link:../bookings-react
@@ -3998,6 +3961,9 @@ importers:
       '@voyant-travel/action-ledger':
         specifier: workspace:^
         version: link:../action-ledger
+      '@voyant-travel/bookings':
+        specifier: workspace:^
+        version: link:../bookings
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core

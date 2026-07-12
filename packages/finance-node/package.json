@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@voyant-travel/accommodations": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/distribution": "workspace:^",

@@ -6,7 +6,6 @@
     "@voyant-travel/action-ledger-node",
     "@voyant-travel/auth",
     "@voyant-travel/bookings",
-    "@voyant-travel/bookings-node",
     "@voyant-travel/catalog",
     "@voyant-travel/catalog-node",
     "@voyant-travel/commerce",

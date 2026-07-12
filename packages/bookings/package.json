@@ -30,6 +30,7 @@
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status": "./src/status.ts",
     "./status-dispatch": "./src/status-dispatch.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
@@ -206,6 +207,11 @@
         "import": "./dist/status-dispatch.js",
         "default": "./dist/status-dispatch.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./runtime-port": {
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
@@ -238,6 +244,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createBookingsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

@@ -10,7 +10,7 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
   "action-ledger-node": "createActionLedgerStandardNodeRuntime",
-  "bookings-node": "createBookingsStandardNodeRuntime",
+  bookings: "bookingsConfigurationRuntimePort",
   "catalog-node": "createCatalogStandardNodeRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",
   "distribution-node": "configureDistributionStandardNodeRuntime",

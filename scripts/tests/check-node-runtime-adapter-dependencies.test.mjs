@@ -6,16 +6,16 @@ import {
 } from "../lib/node-runtime-adapter-dependency-policy.mjs"
 
 const adapter = {
-  packageName: "@test/bookings-node",
-  domainPackageNames: ["@test/bookings"],
+  packageName: "@test/reservations-node",
+  domainPackageNames: ["@test/reservations"],
 }
 
 test("accepts a leaf target adapter", () => {
   const manifests = [
-    { name: "@test/bookings", dependencies: { "@test/core": "workspace:^" } },
+    { name: "@test/reservations", dependencies: { "@test/core": "workspace:^" } },
     {
-      name: "@test/bookings-node",
-      dependencies: { "@test/bookings": "workspace:^" },
+      name: "@test/reservations-node",
+      dependencies: { "@test/reservations": "workspace:^" },
     },
     { name: "@test/core" },
   ]
@@ -26,18 +26,18 @@ test("accepts a leaf target adapter", () => {
 test("rejects a domain dependency back to its target adapter", () => {
   const manifests = [
     {
-      name: "@test/bookings",
-      dependencies: { "@test/bookings-node": "workspace:^" },
+      name: "@test/reservations",
+      dependencies: { "@test/reservations-node": "workspace:^" },
     },
     {
-      name: "@test/bookings-node",
-      dependencies: { "@test/bookings": "workspace:^" },
+      name: "@test/reservations-node",
+      dependencies: { "@test/reservations": "workspace:^" },
     },
   ]
   assert.deepEqual(adapterBoundaryViolations(manifests, [adapter]), [
-    "@test/bookings must not depend on leaf adapter @test/bookings-node",
+    "@test/reservations must not depend on leaf adapter @test/reservations-node",
   ])
   assert.deepEqual(findProductionDependencyCycles(manifests), [
-    ["@test/bookings", "@test/bookings-node", "@test/bookings"],
+    ["@test/reservations", "@test/reservations-node", "@test/reservations"],
   ])
 })

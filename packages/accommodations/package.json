@@ -20,6 +20,7 @@
     "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./payment-policy-runtime": "./src/payment-policy-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/accommodations.json",
@@ -148,6 +149,11 @@
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
       },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
       "./payment-policy-runtime": {
         "types": "./dist/payment-policy-runtime.d.ts",
         "import": "./dist/payment-policy-runtime.js",
@@ -173,6 +179,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createAccommodationsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

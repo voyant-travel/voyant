@@ -27,12 +27,6 @@ const adapters = [
     domainPackageNames: ["@voyant-travel/distribution"],
   },
   {
-    packageName: "@voyant-travel/bookings-node",
-    directory: "bookings-node",
-    factory: "createBookingsNodeRuntimePortContribution",
-    domainPackageNames: ["@voyant-travel/bookings"],
-  },
-  {
     packageName: "@voyant-travel/finance-node",
     directory: "finance-node",
     factory: "createFinanceNodeRuntimePortContribution",
@@ -150,7 +144,6 @@ for (const consolidated of consolidatedPackages) {
 }
 for (const domainPackageName of [
   "@voyant-travel/action-ledger",
-  "@voyant-travel/bookings",
   "@voyant-travel/finance",
   "@voyant-travel/catalog",
   "@voyant-travel/cruises",

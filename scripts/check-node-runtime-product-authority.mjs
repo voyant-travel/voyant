@@ -17,12 +17,12 @@ const migratedRuntimeLoaders = [
   "loadCatalogRuntime",
 ]
 const migratedContributors = await Promise.all(
-  ["bookings-node", "finance-node", "catalog-node"].map((name) =>
+  ["bookings", "finance-node", "catalog-node"].map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
 )
 const movedRuntimeFactories = await Promise.all([
-  read("packages/bookings-node/src/standard-node-runtime.ts"),
+  read("packages/bookings/src/runtime.ts"),
   read("packages/finance-node/src/standard-node-runtime.ts"),
   read("packages/catalog-node/src/standard-node-runtime.ts"),
   read("packages/catalog-node/src/standard-node/booking-engine-runtime.ts"),
@@ -42,7 +42,6 @@ for (const packageId of [
   "@voyant-travel/bookings",
   "@voyant-travel/finance",
   "@voyant-travel/catalog",
-  "@voyant-travel/bookings-node",
   "@voyant-travel/finance-node",
   "@voyant-travel/catalog-node",
 ]) {
@@ -82,10 +81,10 @@ for (const [source, required] of [
   [
     movedRuntimeFactories[0],
     [
-      "relationshipsService",
-      "enrichStayBookingOverviewItems",
-      "createFinanceStaleBookingHoldsRuntime",
-      "productCapabilities",
+      "relationships.upsertPersonFromContact",
+      "accommodation.enrichOverviewItems",
+      "finance.createStaleBookingHoldsRuntime",
+      "inventory.resolveProductSnapshot",
     ],
   ],
   [
@@ -166,7 +165,7 @@ for (const removedPath of [
   "starters/operator/src/api/lib/owned-booking-handlers.ts",
   "starters/operator/src/api/lib/booking-engine-db.ts",
   "starters/operator/src/api/lib/booking-requirements-product-snapshot.ts",
-  "packages/bookings/src/standard-node-runtime.ts",
+  "packages/bookings-node/package.json",
   "packages/finance/src/standard-node-runtime.ts",
   "packages/catalog/src/standard-node-runtime.ts",
   "packages/catalog/src/standard-node",

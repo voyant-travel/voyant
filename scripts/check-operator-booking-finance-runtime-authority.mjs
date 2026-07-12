@@ -11,13 +11,13 @@ const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, bookingsContributor, financeContributor, quotesContributor] =
   await Promise.all([
     read("starters/operator/src/api/runtime/deployment-resources.ts"),
-    read("packages/bookings-node/src/runtime-contributor.ts"),
+    read("packages/bookings/src/runtime-contributor.ts"),
     read("packages/finance-node/src/runtime-contributor.ts"),
     read("packages/quotes/src/runtime-contributor.ts"),
   ])
 
 const packagePorts = {
-  bookings: ["bookingsRuntimePort", "bookingRequirementsRuntimePort"],
+  bookings: ["bookingsConfigurationRuntimePort"],
   finance: [
     "financeRuntimePort",
     "financeBookingScheduleRuntimePort",
@@ -44,7 +44,7 @@ for (const [packageName, ports] of Object.entries(packagePorts)) {
 }
 
 for (const factory of [
-  "createBookingsNodeRuntimePortContribution",
+  "createBookingsRuntimePortContribution",
   "createFinanceNodeRuntimePortContribution",
   "createQuotesRuntimePortContribution",
 ]) {

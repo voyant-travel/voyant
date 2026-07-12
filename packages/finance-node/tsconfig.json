@@ -6,6 +6,7 @@
     "rootDir": "src",
     "paths": {
       "@voyant-travel/accommodations/*": ["../accommodations/dist/*.d.ts"],
+      "@voyant-travel/bookings/*": ["../bookings/dist/*.d.ts"],
       "@voyant-travel/core": ["../core/dist/index.d.ts"],
       "@voyant-travel/cruises/*": ["../cruises/dist/*.d.ts"],
       "@voyant-travel/distribution/*": ["../distribution/dist/*.d.ts"],

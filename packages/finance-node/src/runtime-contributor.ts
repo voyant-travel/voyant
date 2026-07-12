@@ -1,3 +1,7 @@
+import {
+  type BookingsFinanceRuntime,
+  bookingsFinanceRuntimePort,
+} from "@voyant-travel/bookings/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { FinanceHonoModuleOptions } from "@voyant-travel/finance"
 import type { BookingTaxRouteOptions } from "@voyant-travel/finance/booking-tax"
@@ -7,6 +11,7 @@ import {
   financeBookingTaxRuntimePort,
   financeRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import { createFinanceStaleBookingHoldsRuntime } from "@voyant-travel/finance/stale-booking-holds-runtime"
 
 type RuntimePortValue<T> = T | Promise<T>
 
@@ -30,5 +35,8 @@ export function createFinanceNodeRuntimePortContribution(
     [financeRuntimePort.id]: runtime.then((value) => value.finance),
     [financeBookingScheduleRuntimePort.id]: runtime.then((value) => value.bookingSchedule),
     [financeBookingTaxRuntimePort.id]: runtime.then((value) => value.bookingTax),
+    [bookingsFinanceRuntimePort.id]: {
+      createStaleBookingHoldsRuntime: createFinanceStaleBookingHoldsRuntime,
+    } satisfies BookingsFinanceRuntime,
   }
 }

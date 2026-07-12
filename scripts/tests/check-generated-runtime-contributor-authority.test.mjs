@@ -11,9 +11,10 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-generated-runtime-contributor-authority.mjs")
 const packageFactories = {
+  accommodations: "createAccommodationsRuntimePortContribution",
   "action-ledger-node": "createActionLedgerNodeRuntimePortContribution",
   auth: "createAuthRuntimePortContribution",
-  "bookings-node": "createBookingsNodeRuntimePortContribution",
+  bookings: "createBookingsRuntimePortContribution",
   "catalog-node": "createCatalogNodeRuntimePortContribution",
   commerce: "createCommerceRuntimePortContribution",
   "distribution-node": "createDistributionNodeRuntimePortContribution",
@@ -83,7 +84,7 @@ async function fixture(deploymentResources) {
 it("accepts generated static contributor composition", async () => {
   const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
-  assert.match(result.stdout, /19 package contributors statically selected/)
+  assert.match(result.stdout, /20 package contributors statically selected/)
 })
 
 it("rejects starter contributor enumeration", async () => {
