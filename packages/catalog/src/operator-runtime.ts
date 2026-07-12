@@ -702,7 +702,7 @@ export async function applyCatalogTaxToQuoteResult(input: {
 function totalPax(draft: Record<string, unknown> | undefined): number | null {
   const pax = asRecord(asRecord(draft?.configure)?.pax)
   if (!pax) return null
-  const total = Object.values(pax).reduce(
+  const total = Object.values(pax).reduce<number>(
     (sum, value) => sum + (typeof value === "number" && Number.isFinite(value) ? value : 0),
     0,
   )

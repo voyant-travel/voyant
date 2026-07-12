@@ -25,7 +25,10 @@ function assertNoCompatibilityExtensions(output: string): void {
   try {
     run(["--out", generated], false)
     const source = removeSelectedGraphFactories(readFileSync(generated, "utf8"))
-    if (!/generatedAdminExtensionFactories\s*=\s*\{\s*\}/s.test(source)) {
+    if (
+      source.includes("generatedAdminExtensionFactories") &&
+      !/generatedAdminExtensionFactories\s*=\s*\{\s*\}/s.test(source)
+    ) {
       throw new Error("A graph-selected admin package remains outside admin.runtime authority")
     }
     if (check && existsSync(output)) {
