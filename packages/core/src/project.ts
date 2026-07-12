@@ -56,6 +56,8 @@ export interface VoyantGraphCapabilityDeclaration {
 export interface VoyantGraphPortDeclaration {
   id: string
   optional?: boolean
+  /** Additive static contributor aggregation. Valid only in a unit's runtimePorts. */
+  cardinality?: "many"
 }
 
 export interface VoyantPort<TProvider> {
@@ -79,9 +81,13 @@ export function providePort<TProvider>(port: VoyantPort<TProvider>): VoyantGraph
 
 export function requirePort<TProvider>(
   port: VoyantPort<TProvider>,
-  options: { optional?: boolean } = {},
+  options: { optional?: boolean; cardinality?: "many" } = {},
 ): VoyantGraphPortDeclaration {
-  return { id: port.id, ...(options.optional ? { optional: true } : {}) }
+  return {
+    id: port.id,
+    ...(options.optional ? { optional: true } : {}),
+    ...(options.cardinality ? { cardinality: options.cardinality } : {}),
+  }
 }
 
 export async function assertPortConforms<TProvider>(
@@ -116,6 +122,7 @@ export interface VoyantGraphRuntimeFactoryContext {
   readonly runtimePorts: Readonly<Record<string, unknown>>
   hasPort<TProvider>(port: VoyantPort<TProvider>): boolean
   getPort<TProvider>(port: VoyantPort<TProvider>): Promise<TProvider>
+  getPorts<TProvider>(port: VoyantPort<TProvider>): Promise<readonly TProvider[]>
 }
 
 export type VoyantGraphRuntimeFactory<TResult = unknown> = (

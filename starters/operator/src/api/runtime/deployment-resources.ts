@@ -18,11 +18,9 @@ import { withDbFromEnv } from "../lib/db"
 import { createOperatorCheckoutStartOptions } from "./catalog-checkout-options"
 import {
   createOperatorDocumentStorage,
-  createOperatorInvoiceSettlementPollers,
   generateContractPdfForBooking,
   operatorBindings,
   operatorPostgresDb,
-  operatorSmartbillRuntimeHost,
   readOperatorDocumentContentBase64,
   resolveOperatorDb,
   resolveOperatorDocumentDownloadUrl,
@@ -107,7 +105,6 @@ function createNodeRuntimePrimitives(): VoyantRuntimeHostPrimitives {
       read: (bindings, key) => {
         if (key === "customFields") return resolveOperatorCustomFields
         if (key === "notificationProviders") return resolveNotificationProviders
-        if (key === "invoiceSettlementPollers") return createOperatorInvoiceSettlementPollers
         return (operatorBindings(bindings) as Record<string, unknown> | undefined)?.[key]
       },
     },
@@ -122,9 +119,6 @@ function createDeploymentPortResources(
   return createGeneratedGraphRuntimePorts({
     capabilities,
     primitives,
-    // @voyant-travel/plugin-smartbill is external and its generated contributor
-    // irreducibly requires resolveDatabase, resolveConfig, and resolveDocumentStorage.
-    host: operatorSmartbillRuntimeHost,
   })
 }
 

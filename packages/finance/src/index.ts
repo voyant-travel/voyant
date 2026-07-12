@@ -30,6 +30,7 @@ import { createFinanceRuntime } from "./runtime.js"
 import {
   financeCheckoutPaymentStartersRuntimePort,
   financeHostRuntimePort,
+  financeInvoiceSettlementPollerRuntimePort,
   financeNotificationsRuntimePort,
 } from "./runtime-port.js"
 
@@ -189,7 +190,7 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
 export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ api, getPort, hasPort }) => {
+  async ({ api, getPort, getPorts, hasPort }) => {
     const configured = createFinanceHonoModule(
       createFinanceRuntime(
         await getPort(financeHostRuntimePort),
@@ -197,6 +198,7 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
         hasPort(financeCheckoutPaymentStartersRuntimePort)
           ? await getPort(financeCheckoutPaymentStartersRuntimePort)
           : undefined,
+        await getPorts(financeInvoiceSettlementPollerRuntimePort),
       ),
     )
     const bootstrap = configured.module.bootstrap
@@ -337,13 +339,16 @@ export {
   type FinanceSettlementRouteOptions,
   type InvoiceSettlementPoller,
 } from "./routes-settlement.js"
+export { aggregateFinanceInvoiceSettlementPollers } from "./runtime.js"
 export {
+  type FinanceInvoiceSettlementPollerProvider,
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
   financeDistributionPaymentPolicyRuntimePort,
   financeHostRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
+  financeInvoiceSettlementPollerRuntimePort,
   financeNotificationsRuntimePort,
   financeOperatorSettingsRuntimePort,
 } from "./runtime-port.js"

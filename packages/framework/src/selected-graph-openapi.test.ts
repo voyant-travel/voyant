@@ -72,6 +72,7 @@ function unit(
     providers: [],
     requiredPorts: [],
     runtimePorts: [],
+    manyRuntimePorts: [],
     requiredRuntimePorts: [],
     accessScopes: [],
     tools: [],

@@ -30,7 +30,6 @@ async function fixture(generatedArguments) {
     "starters/operator/src/api/runtime/deployment-resources.ts": `
 return createGeneratedGraphRuntimePorts({
 ${generatedArguments}
-  // resolveDatabase resolveConfig resolveDocumentStorage
 })
 `,
     ...Object.fromEntries(
@@ -50,10 +49,8 @@ ${generatedArguments}
   return root
 }
 
-it("accepts package-owned defaults, generic primitives, and the irreducible SmartBill host", async () => {
-  const root = await fixture(
-    "    capabilities,\n    primitives,\n    host: operatorSmartbillRuntimeHost,",
-  )
+it("accepts package-owned defaults and generic primitives", async () => {
+  const root = await fixture("    capabilities,\n    primitives,")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(result.stdout, /10 package-owned runtime families/)
 })
@@ -64,6 +61,6 @@ it("rejects a package-specific generated runtime argument", async () => {
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
-    /keys must be exactly capabilities,primitives,host/,
+    /keys must be exactly capabilities,primitives/,
   )
 })

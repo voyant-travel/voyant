@@ -6,6 +6,7 @@ import {
   financeDistributionPaymentPolicyRuntimePort,
   financeHostRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
+  financeInvoiceSettlementPollerRuntimePort,
   financeNotificationsRuntimePort,
   financeOperatorSettingsRuntimePort,
 } from "./runtime-port.js"
@@ -25,6 +26,10 @@ export const financeVoyantModule = defineModule({
     requirePort(financeHostRuntimePort),
     requirePort(financeNotificationsRuntimePort),
     requirePort(financeCheckoutPaymentStartersRuntimePort, { optional: true }),
+    requirePort(financeInvoiceSettlementPollerRuntimePort, {
+      optional: true,
+      cardinality: "many",
+    }),
   ],
   provides: { capabilities: ["finance.payment-sessions"] },
   api: [

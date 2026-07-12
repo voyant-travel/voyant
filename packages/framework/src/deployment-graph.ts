@@ -1163,6 +1163,16 @@ function validateRuntimePortDeclarations(
         }),
       )
     }
+    if (port.cardinality !== undefined && port.cardinality !== "many") {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+          source,
+          facet: `runtimePorts[${index}].cardinality`,
+          message: 'Runtime port declaration cardinality must be "many" when provided.',
+        }),
+      )
+    }
   }
   return diagnostics
 }
@@ -1324,6 +1334,16 @@ function validateCapabilityDeclaration(
           source,
           facet: `${facet}.ports[${index}].optional`,
           message: "Port declaration optional must be a boolean when provided.",
+        }),
+      )
+    }
+    if (port.cardinality !== undefined) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ENTITY_ID",
+          source,
+          facet: `${facet}.ports[${index}].cardinality`,
+          message: "Port cardinality is supported only for statically composed runtimePorts.",
         }),
       )
     }

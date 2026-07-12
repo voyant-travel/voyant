@@ -10,4 +10,4 @@
 "@voyant-travel/workflow-runs": patch
 ---
 
-Derive the final package runtime bindings from deployment capabilities, leaving only the external SmartBill host as an explicit generated runtime resource.
+Derive the final package runtime bindings from generic deployment capabilities and primitives, with no product-specific generated runtime host resources.

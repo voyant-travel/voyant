@@ -1536,6 +1536,7 @@ describe("deployment graph v1", () => {
           defineModule({
             id: "@acme/voyant-loyalty",
             requires: { ports: [requirePort(bookingReadModel)] },
+            runtimePorts: [requirePort(bookingReadModel, { optional: true, cardinality: "many" })],
           }),
         ],
       }),
@@ -1543,6 +1544,9 @@ describe("deployment graph v1", () => {
 
     expect(graph.diagnostics).toEqual([])
     expect(graph.modules[1]?.requires.ports).toEqual([{ id: "booking.read-model" }])
+    expect(graph.modules[1]?.runtimePorts).toEqual([
+      { id: "booking.read-model", optional: true, cardinality: "many" },
+    ])
   })
 
   it("reports missing required ports while allowing optional ports", async () => {

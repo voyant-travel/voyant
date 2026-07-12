@@ -49,7 +49,6 @@ import {
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   notificationsRuntimePort,
 } from "@voyant-travel/notifications"
-import { smartbillRuntimeHostPort } from "@voyant-travel/plugin-smartbill/graph-runtime"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
@@ -385,25 +384,6 @@ describe("operator graph runtime composition", () => {
     expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
       legalBookingContractSubscriberRuntimePort.id,
     )
-  })
-
-  it("keeps SmartBill host support dormant when the optional plugin is not selected", async () => {
-    expect(GENERATED_GRAPH_RUNTIME_PLUGIN_IDS).not.toContain("@voyant-travel/plugin-smartbill")
-    expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
-      smartbillRuntimeHostPort.id,
-    )
-
-    const runtime = createGeneratedGraphRuntime()
-    const smartbill = runtime.plugins.find((unit) => unit.id === "@voyant-travel/plugin-smartbill")
-    const composed = await composeOperatorGraph()
-    const smartbillModule = composed.modules.find((module) => module.module.name === "smartbill")
-    const runtimeModule = composed.modules.find(
-      (module) => module.module.name === "plugin-smartbill.graph-runtime",
-    )
-
-    expect(smartbill).toBeUndefined()
-    expect(smartbillModule).toBeUndefined()
-    expect(runtimeModule).toBeUndefined()
   })
 
   it("graph-gates the Trips payment subscriber and its runtime service", async () => {

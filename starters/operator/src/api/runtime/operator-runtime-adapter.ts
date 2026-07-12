@@ -1,11 +1,6 @@
 import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import type { InvoiceSettlementPoller, ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
+import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
-import {
-  createSmartbillSettlementPollers,
-  type SmartbillRuntimeConfig,
-  type SmartbillRuntimeHost,
-} from "@voyant-travel/plugin-smartbill/graph-runtime"
 import {
   type CloudWorkflowsClientEnv,
   createCloudWorkflowDriver,
@@ -50,12 +45,6 @@ export function createOperatorDocumentStorage(bindings: unknown) {
   return createDocumentStorage(operatorBindings(bindings))
 }
 
-export const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {
-  resolveDatabase: (bindings) => operatorPostgresDb(resolveOperatorDb(bindings)),
-  resolveConfig: resolveOperatorSmartbillConfig,
-  resolveDocumentStorage: createOperatorDocumentStorage,
-}
-
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
   const env = operatorBindings(bindings)
   const apiKey = resolveVoyantDataApiKey(env)
@@ -71,13 +60,6 @@ export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
     }
     return resolver(input)
   }
-}
-
-export function createOperatorInvoiceSettlementPollers(bindings: unknown) {
-  return createSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings)) as Record<
-    string,
-    InvoiceSettlementPoller
-  >
 }
 
 export function operatorWorkflowCloudEnv(env: AppBindings): CloudWorkflowsClientEnv {
@@ -120,31 +102,4 @@ export async function generateContractPdfForBooking(
     bookingId,
     options,
   )
-}
-
-export function resolveOperatorSmartbillConfig(bindings: unknown): SmartbillRuntimeConfig | null {
-  const env = operatorBindings(bindings)
-  const username = nonEmpty(env.SMARTBILL_USERNAME)
-  const apiToken = nonEmpty(env.SMARTBILL_API_TOKEN) ?? nonEmpty(env.SMARTBILL_TOKEN)
-  const companyVatCode = nonEmpty(env.SMARTBILL_COMPANY_VAT_CODE)
-  const seriesName =
-    nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME) ?? nonEmpty(env.SMARTBILL_SERIES_NAME)
-  if (!username || !apiToken || !companyVatCode || !seriesName) return null
-
-  return {
-    username,
-    apiToken,
-    companyVatCode,
-    seriesName,
-    invoiceSeriesName: nonEmpty(env.SMARTBILL_INVOICE_SERIES_NAME),
-    proformaSeriesName: nonEmpty(env.SMARTBILL_PROFORMA_SERIES_NAME),
-    apiUrl: nonEmpty(env.SMARTBILL_API_URL),
-    language: nonEmpty(env.SMARTBILL_LANGUAGE),
-    art311SpecialRegime: env.SMARTBILL_ART_311_SPECIAL_REGIME === "true",
-  }
-}
-
-function nonEmpty(value: string | undefined): string | undefined {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : undefined
 }

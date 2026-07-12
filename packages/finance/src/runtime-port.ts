@@ -9,6 +9,7 @@ import type { CheckoutPaymentStarter } from "./checkout-service.js"
 import type { PaymentPolicy } from "./payment-policy.js"
 import type { PaymentPolicyEntityContext } from "./payment-policy-cascade.js"
 import type { BookingScheduleRoutesOptions } from "./payment-schedule/routes.js"
+import type { InvoiceSettlementPoller } from "./service-settlement.js"
 
 type PolicyReader = (db: PostgresJsDatabase, bookingId: string) => Promise<PaymentPolicy | null>
 type EntityPolicyReader = (
@@ -93,6 +94,11 @@ export interface FinanceCheckoutPaymentStartersRuntime {
   resolvePaymentStarters(bindings: Record<string, unknown>): Record<string, CheckoutPaymentStarter>
 }
 
+export interface FinanceInvoiceSettlementPollerProvider {
+  provider: string
+  poller: InvoiceSettlementPoller
+}
+
 export interface FinanceBookingScheduleRuntime {
   options: BookingScheduleRoutesOptions
   withDb<T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>): Promise<T>
@@ -133,3 +139,21 @@ export const financeCheckoutPaymentStartersRuntimePort =
   objectPort<FinanceCheckoutPaymentStartersRuntime>("finance.checkout-payment-starters.runtime", [
     "resolvePaymentStarters",
   ])
+export const financeInvoiceSettlementPollerRuntimePort =
+  definePort<FinanceInvoiceSettlementPollerProvider>({
+    id: "finance.invoice-settlement-poller",
+    test(provider) {
+      if (
+        provider === null ||
+        typeof provider !== "object" ||
+        typeof provider.provider !== "string" ||
+        provider.provider.trim() !== provider.provider ||
+        provider.provider.length === 0 ||
+        typeof provider.poller !== "function"
+      ) {
+        throw new Error(
+          "finance.invoice-settlement-poller provider must declare a canonical provider name and poller function.",
+        )
+      }
+    },
+  })

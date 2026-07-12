@@ -56,8 +56,8 @@ if (/create[A-Za-z0-9]+RuntimePortContribution/.test(deploymentResources)) {
 if (!deploymentResources.includes("return createGeneratedGraphRuntimePorts({")) {
   violations.push("Operator must compose one generated contributor set from opaque host resources")
 }
-if (/createOperatorSmartbillRuntimePortContribution|smartbillRuntimeHostPort/.test(adapter)) {
-  violations.push("Operator SmartBill adapter must not retain a compatibility contributor")
+if (/Smart[Bb]ill|smartbill|invoiceSettlementPollers/.test(`${deploymentResources}\n${adapter}`)) {
+  violations.push("Operator runtime must not retain SmartBill-specific contributor host authority")
 }
 for (const required of [
   "GENERATED_GRAPH_RUNTIME_CONTRIBUTORS",
@@ -71,6 +71,8 @@ for (const required of [
   "getRuntimePort",
   "contributor(contributorHost)",
   "has multiple static contributors",
+  "GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS",
+  "manyPortIds.has(id) ? [value] : value",
 ]) {
   if (!generator.includes(required)) {
     violations.push(`graph runtime generator must contain ${required}`)

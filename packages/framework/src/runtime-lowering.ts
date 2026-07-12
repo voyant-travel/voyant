@@ -164,6 +164,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   providers?: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts?: readonly string[]
   runtimePorts?: readonly string[]
+  manyRuntimePorts?: readonly string[]
   requiredRuntimePorts?: readonly string[]
   accessScopes?: readonly string[]
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
@@ -223,6 +224,7 @@ export interface VoyantGraphRuntimeUnitLoader
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   requiredPorts: readonly string[]
   runtimePorts: readonly string[]
+  manyRuntimePorts: readonly string[]
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
@@ -372,6 +374,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   providers: readonly VoyantGraphRuntimeProviderDefinition[]
   requiredPorts: readonly string[]
   runtimePorts: readonly string[]
+  manyRuntimePorts: readonly string[]
   requiredRuntimePorts: readonly string[]
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolDefinition[]
@@ -504,6 +507,7 @@ function normalizeRuntimeUnitDefinition(
     providers: [...(unit.providers ?? [])],
     requiredPorts: sortedUnique(unit.requiredPorts ?? []),
     runtimePorts,
+    manyRuntimePorts: sortedUnique(unit.manyRuntimePorts ?? []),
     requiredRuntimePorts:
       unit.requiredRuntimePorts === undefined
         ? runtimePorts
@@ -630,6 +634,7 @@ function createRuntimeUnitLoader(
     providers,
     requiredPorts: unit.requiredPorts,
     runtimePorts: unit.runtimePorts,
+    manyRuntimePorts: unit.manyRuntimePorts,
     requiredRuntimePorts: unit.requiredRuntimePorts,
     accessScopes: unit.accessScopes,
     tools,

@@ -54,12 +54,12 @@ export type VoyantGraphRuntimeContributor = (
 export function createVoyantGraphRuntimePortStubs(
   runtime: VoyantGraphRuntime,
 ): VoyantGraphRuntimePorts {
-  const ids = new Set(
-    [...runtime.modules, ...runtime.extensions, ...runtime.plugins].flatMap(
-      (unit) => unit.requiredRuntimePorts,
-    ),
+  const units = [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
+  const ids = new Set(units.flatMap((unit) => unit.requiredRuntimePorts))
+  const manyIds = new Set(units.flatMap((unit) => unit.manyRuntimePorts))
+  return Object.fromEntries(
+    [...ids].map((id) => [id, manyIds.has(id) ? [runtimePortStub(id)] : runtimePortStub(id)]),
   )
-  return Object.fromEntries([...ids].map((id) => [id, runtimePortStub(id)]))
 }
 
 function runtimePortStub(id: string): unknown {
@@ -598,6 +598,11 @@ function createRuntimeFactoryContext(
     },
     getPort: async <TProvider>(port: VoyantPort<TProvider>): Promise<TProvider> => {
       assertDeclaredRuntimePort(unit, port)
+      if (unit.manyRuntimePorts.includes(port.id)) {
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" must read many-valued port "${port.id}" with getPorts().`,
+        )
+      }
       if (!Object.hasOwn(ports ?? {}, port.id)) {
         const requirement = unit.requiredRuntimePorts.includes(port.id)
           ? "requires runtime port"
@@ -609,6 +614,30 @@ function createRuntimeFactoryContext(
       const provider = await (ports![port.id] as TProvider | Promise<TProvider>)
       await port.test(provider)
       return provider
+    },
+    getPorts: async <TProvider>(port: VoyantPort<TProvider>): Promise<readonly TProvider[]> => {
+      assertDeclaredRuntimePort(unit, port)
+      if (!unit.manyRuntimePorts.includes(port.id)) {
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" cannot read one-valued port "${port.id}" with getPorts().`,
+        )
+      }
+      if (!Object.hasOwn(ports ?? {}, port.id)) {
+        if (!unit.requiredRuntimePorts.includes(port.id)) return []
+        throw new Error(
+          `composeVoyantGraphRuntime: ${unit.kind} "${unit.id}" requires runtime port "${port.id}", but the deployment did not bind it.`,
+        )
+      }
+      const providers = await (ports![port.id] as
+        | readonly TProvider[]
+        | Promise<readonly TProvider[]>)
+      if (!Array.isArray(providers)) {
+        throw new Error(
+          `composeVoyantGraphRuntime: many-valued port "${port.id}" must be bound as an array.`,
+        )
+      }
+      for (const provider of providers) await port.test(provider)
+      return providers
     },
   }
 }

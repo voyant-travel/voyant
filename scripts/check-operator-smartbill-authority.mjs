@@ -10,11 +10,8 @@ const pathOption = (name, fallback) => {
   if (!value) throw new Error(`${name} requires a path`)
   return value
 }
-const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
-const installedPackageRoot = pathOption(
-  "--installed-package-root",
-  join(operatorRoot, "node_modules/@voyant-travel/plugin-smartbill"),
-)
+const root = pathOption("--root", ROOT)
+const operatorRoot = pathOption("--operator-root", join(root, "starters/operator"))
 const violations = []
 
 function readRequired(path) {
@@ -23,68 +20,88 @@ function readRequired(path) {
 }
 
 const operatorPackage = JSON.parse(readRequired(join(operatorRoot, "package.json")))
-const installedPackage = JSON.parse(readRequired(join(installedPackageRoot, "package.json")))
 const config = readRequired(join(operatorRoot, "voyant.config.ts"))
 const app = readRequired(join(operatorRoot, "src/api/app.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
 const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
+const financeManifest = readRequired(join(root, "packages/finance/src/voyant.ts"))
+const financeRuntime = readRequired(join(root, "packages/finance/src/runtime.ts"))
+const financeRuntimePort = readRequired(join(root, "packages/finance/src/runtime-port.ts"))
+const financeIndex = readRequired(join(root, "packages/finance/src/index.ts"))
+const coreProject = readRequired(join(root, "packages/core/src/project.ts"))
+const graphGenerator = readRequired(join(root, "packages/framework/src/deployment-artifacts.ts"))
 
+// The bridge removal intentionally does not claim an unpublished adapter release.
 if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.2") {
-  violations.push("operator must depend on @voyant-travel/plugin-smartbill ^0.140.2")
-}
-if (installedPackage.version !== "0.140.2") {
-  violations.push("installed SmartBill package must resolve to 0.140.2")
-}
-if (
-  installedPackage.voyant?.kind !== "plugin" ||
-  installedPackage.voyant?.manifest !== "./voyant" ||
-  !installedPackage.exports?.["./voyant"] ||
-  !installedPackage.exports?.["./graph-runtime"] ||
-  !installedPackage.exports?.["./runtime-contributor"] ||
-  installedPackage.voyant?.runtime?.entry !== "./runtime-contributor" ||
-  !installedPackage.exports?.["./subscriber-runtime"]
-) {
-  violations.push(
-    "SmartBill must advertise plugin metadata plus graph, contributor, and subscriber runtime exports",
-  )
+  violations.push("operator SmartBill dependency must remain at the last published ^0.140.2")
 }
 if (/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
   violations.push("the default voyant.config.ts must not select @voyant-travel/plugin-smartbill")
 }
+
+const starterAuthority = `${composition}\n${nodeHost}`
+for (const forbidden of [
+  "operatorSmartbillRuntimeHost",
+  "resolveOperatorSmartbillConfig",
+  "createOperatorInvoiceSettlementPollers",
+  "invoiceSettlementPollers",
+  "@voyant-travel/plugin-smartbill",
+]) {
+  if (starterAuthority.includes(forbidden)) {
+    violations.push(`operator runtime must not retain SmartBill bridge token ${forbidden}`)
+  }
+}
 if (
-  composition.includes("createSmartbillRuntimePortContribution") ||
-  composition.includes("smartbillRuntimeHostPort") ||
-  !composition.includes("host: operatorSmartbillRuntimeHost") ||
-  !composition.includes("createGeneratedGraphRuntimePorts")
+  !composition.includes("createGeneratedGraphRuntimePorts({\n    capabilities,\n    primitives,")
 ) {
   violations.push(
-    "generic Node composition must lower SmartBill through generated contributor metadata",
+    "generated runtime contributors must receive only generic capabilities and primitives",
   )
 }
-if (
-  !nodeHost.includes('from "@voyant-travel/plugin-smartbill/graph-runtime"') ||
-  !nodeHost.includes("operatorSmartbillRuntimeHost: SmartbillRuntimeHost") ||
-  !nodeHost.includes("createSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings))")
-) {
-  violations.push("Node host must provide typed SmartBill dependencies and package-owned pollers")
-}
-if (/"@voyant-travel\/plugin-smartbill"\s*:/.test(composition)) {
-  violations.push("Operator must not bind SmartBill behavior by package id")
-}
-if (/eventBus\.subscribe|descriptor\.register/.test(`${app}\n${composition}\n${nodeHost}`)) {
+if (/eventBus\.subscribe|descriptor\.register/.test(`${app}\n${starterAuthority}`)) {
   violations.push("Operator code must not own or register SmartBill subscriber descriptors")
 }
 if (/smartbillOperatorBundle|subscribers\/smartbill/.test(app)) {
   violations.push("operator app must not mount or import a SmartBill compatibility bundle")
 }
 for (const relativePath of [
+  "src/api/runtime/operator-runtime-adapter.smartbill.test.ts",
   "src/api/runtime/smartbill-subscriber-runtime.ts",
   "src/api/runtime/smartbill-subscriber-runtime.test.ts",
   "src/api/subscribers/smartbill-bundle.ts",
   "src/api/subscribers/smartbill.ts",
 ]) {
-  if (existsSync(join(operatorRoot, relativePath)))
+  if (existsSync(join(operatorRoot, relativePath))) {
     violations.push(`${relativePath} must stay deleted`)
+  }
+}
+
+for (const [source, token] of [
+  [financeManifest, "requirePort(financeInvoiceSettlementPollerRuntimePort, {"],
+  [financeManifest, 'cardinality: "many"'],
+  [financeRuntimePort, "FinanceInvoiceSettlementPollerProvider"],
+  [financeRuntimePort, 'id: "finance.invoice-settlement-poller"'],
+  [financeRuntime, "aggregateFinanceInvoiceSettlementPollers("],
+  [financeIndex, "await getPorts(financeInvoiceSettlementPollerRuntimePort)"],
+  [coreProject, "getPorts<TProvider>(port: VoyantPort<TProvider>)"],
+  [graphGenerator, "GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS"],
+  [graphGenerator, "values.push(value)"],
+  [graphGenerator, "has multiple static contributors"],
+]) {
+  if (!source.includes(token)) {
+    violations.push(`static multi-provider authority is missing ${token}`)
+  }
+}
+if (financeRuntime.includes('config.read(bindings, "invoiceSettlementPollers")')) {
+  violations.push("Finance runtime must not read invoiceSettlementPollers from host config")
+}
+if (!financeRuntime.includes("Object.hasOwn(pollers, provider.provider)")) {
+  violations.push("Finance must reject duplicate invoicing provider names")
+}
+for (const forbidden of ["import(", "require(", "createRequire", "new Map(", "packageId"]) {
+  if (`${financeRuntime}\n${financeRuntimePort}`.includes(forbidden)) {
+    violations.push(`Finance settlement provider composition must stay static: found ${forbidden}`)
+  }
 }
 
 if (violations.length > 0) {
@@ -94,5 +111,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-operator-smartbill-authority: OK (optional package admission; typed Node host support retained)",
+  "check-operator-smartbill-authority: OK (starter bridge removed; optional many-valued Finance provider port is authoritative)",
 )

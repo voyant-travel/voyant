@@ -265,6 +265,25 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
       ),
     ),
   ].sort((left, right) => left.localeCompare(right))
+  const runtimePortCardinalities = new Map<string, "one" | "many">()
+  const runtimePortDeclarations = [
+    ...input.graph.modules,
+    ...input.graph.extensions,
+    ...input.graph.plugins,
+  ].flatMap((unit) => unit.runtimePorts ?? [])
+  for (const port of runtimePortDeclarations) {
+    const cardinality = port.cardinality ?? "one"
+    const existing = runtimePortCardinalities.get(port.id)
+    if (existing && existing !== cardinality) {
+      throw new Error(
+        `buildGraphRuntimeModule: runtime port "${port.id}" mixes one and many cardinalities.`,
+      )
+    }
+    runtimePortCardinalities.set(port.id, cardinality)
+  }
+  const manyRuntimePorts = [
+    ...new Set([...modules, ...extensions, ...plugins].flatMap((unit) => unit.manyRuntimePorts)),
+  ].sort((left, right) => left.localeCompare(right))
   const command = input.command ?? "voyant deployment graph emit"
   const contributors = input.graph.packageRecords
     .flatMap((record) => {
@@ -344,6 +363,7 @@ export const GENERATED_GRAPH_RUNTIME_EXTENSION_IDS = ${formatConstArray(
 export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
   )}
+export const GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS = ${formatConstArray(manyRuntimePorts)}
 export const GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN = ${formatGeneratedValue(
     input.graph.webhookPlan,
     0,
@@ -367,6 +387,7 @@ export function createGeneratedGraphRuntimePorts(
   host: GeneratedGraphRuntimeContributorHost,
 ): VoyantGraphRuntimePorts {
   const ports: Record<string, unknown> = {}
+  const manyPortIds = new Set<string>(GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS)
   const contributorHost = {
     ...host,
     getRuntimePort(port: { id: string }): unknown {
@@ -383,9 +404,17 @@ export function createGeneratedGraphRuntimePorts(
     const contribution = contributor(contributorHost)
     for (const [id, value] of Object.entries(contribution)) {
       if (Object.hasOwn(ports, id)) {
-        throw new Error(\`Runtime port \${id} has multiple static contributors.\`)
+        if (!manyPortIds.has(id)) {
+          throw new Error(\`Runtime port \${id} has multiple static contributors.\`)
+        }
+        const values = ports[id]
+        if (!Array.isArray(values)) {
+          throw new Error(\`Many-valued runtime port \${id} was not initialized as an array.\`)
+        }
+        values.push(value)
+        continue
       }
-      ports[id] = value
+      ports[id] = manyPortIds.has(id) ? [value] : value
     }
   }
   return ports

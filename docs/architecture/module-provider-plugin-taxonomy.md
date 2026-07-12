@@ -270,6 +270,23 @@ Verification:
   app chunk with `node scripts/measure-static-import-closure.mjs <dist/server/assets/app-*.js>`.
   The script walks static imports and stops at dynamic `import(...)` boundaries.
 
+### 9b. Declare additive provider ports explicitly
+
+Most runtime ports have exactly one statically selected contributor. A module
+that intentionally accepts additive providers declares its runtime port with
+`cardinality: "many"` and reads it with `getPorts(...)`. Generated composition
+preserves selected contributor order for these ports and continues to reject
+duplicate contributors for ordinary one-valued ports.
+
+The owning module must then aggregate provider identities deterministically and
+fail on duplicate identities. Deployment starters must not translate selected
+adapter packages into a mutable registry or config-injected provider map.
+
+Rule:
+
+Use a many-valued runtime port only when independently selected packages are
+genuinely additive. Keep replaceable single-provider seams one-valued.
+
 ### 10. Prefer clear names that reveal the package role
 
 Prefer names that reveal whether the package is:

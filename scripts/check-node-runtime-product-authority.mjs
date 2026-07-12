@@ -53,14 +53,18 @@ for (const forbidden of ["GraphSelectedNodeRuntimeAdapters", "runtimeAdapters", 
     violations.push(`${operatorResourcesPath} retains central adapter authority ${forbidden}`)
   }
 }
-for (const required of [
-  'key === "customFields"',
-  'key === "notificationProviders"',
-  'key === "invoiceSettlementPollers"',
-  "createOperatorInvoiceSettlementPollers",
-]) {
+for (const required of ['key === "customFields"', 'key === "notificationProviders"']) {
   if (!operatorResources.includes(required)) {
     violations.push(`operator generic config primitive is missing behavior adapter ${required}`)
+  }
+}
+for (const removedBridge of [
+  'key === "invoiceSettlementPollers"',
+  "createOperatorInvoiceSettlementPollers",
+  "operatorSmartbillRuntimeHost",
+]) {
+  if (operatorResources.includes(removedBridge)) {
+    violations.push(`operator generic config primitive retains SmartBill bridge ${removedBridge}`)
   }
 }
 if (operatorResources.includes("loadMcpAdminRoutes")) {
@@ -95,6 +99,7 @@ for (const [source, required] of [
       "settings.resolveBookingTaxSettings",
       "inventory.createPaymentPolicyRuntime",
       "createVoyantDataFxExchangeRateResolver",
+      "aggregateFinanceInvoiceSettlementPollers",
     ],
   ],
   [

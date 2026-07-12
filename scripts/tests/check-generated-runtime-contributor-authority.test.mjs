@@ -53,12 +53,12 @@ async function fixture(deploymentResources) {
   await write(
     root,
     "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
-    "export const operatorSmartbillRuntimeHost = {}\n",
+    "export const operatorRuntimeAdapter = {}\n",
   )
   await write(
     root,
     "packages/framework/src/deployment-artifacts.ts",
-    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\n",
+    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\nmanyPortIds.has(id) ? [value] : value\n",
   )
   await write(
     root,

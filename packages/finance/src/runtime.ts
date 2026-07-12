@@ -13,23 +13,27 @@ import type {
   FinanceDistributionPaymentPolicyRuntime,
   FinanceHostRuntime,
   FinanceInventoryPaymentPolicyRuntime,
+  FinanceInvoiceSettlementPollerProvider,
   FinanceNotificationsRuntime,
   FinanceOperatorSettingsRuntime,
 } from "./runtime-port.js"
+import type { InvoiceSettlementPoller } from "./service-settlement.js"
 
 /** Compose Finance's main HTTP runtime from generic host and selected providers. */
 export function createFinanceRuntime(
   host: FinanceHostRuntime,
   notifications: FinanceNotificationsRuntime,
   checkoutPaymentStarters?: FinanceCheckoutPaymentStartersRuntime,
+  invoiceSettlementPollerProviders: readonly FinanceInvoiceSettlementPollerProvider[] = [],
 ): FinanceHonoModuleOptions {
   const { primitives } = host
   return {
     resolveDocumentDownloadUrl: primitives.storage.downloadUrl,
     resolveInvoiceExchangeRateResolver: (bindings) =>
       createExchangeRateResolver(primitives, bindings),
-    resolveInvoiceSettlementPollers: (bindings) =>
-      resolveInvoiceSettlementPollers(primitives, bindings),
+    invoiceSettlementPollers: aggregateFinanceInvoiceSettlementPollers(
+      invoiceSettlementPollerProviders,
+    ),
     invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
       bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
     resolveNotificationDispatcher: notifications.resolveNotificationDispatcher,
@@ -106,12 +110,21 @@ function createExchangeRateResolver(
   })
 }
 
-function resolveInvoiceSettlementPollers(
-  primitives: FinanceHostRuntime["primitives"],
-  bindings: unknown,
-) {
-  const resolver = primitives.config.read(bindings, "invoiceSettlementPollers")
-  return typeof resolver === "function" ? resolver(bindings) : {}
+export function aggregateFinanceInvoiceSettlementPollers(
+  providers: readonly FinanceInvoiceSettlementPollerProvider[],
+): Readonly<Record<string, InvoiceSettlementPoller>> {
+  const pollers: Record<string, InvoiceSettlementPoller> = {}
+  for (const provider of [...providers].sort((left, right) =>
+    left.provider < right.provider ? -1 : left.provider > right.provider ? 1 : 0,
+  )) {
+    if (Object.hasOwn(pollers, provider.provider)) {
+      throw new Error(
+        `Finance invoice settlement poller provider "${provider.provider}" was selected more than once.`,
+      )
+    }
+    pollers[provider.provider] = provider.poller
+  }
+  return Object.freeze(pollers)
 }
 
 function resolveBankTransferDetails(env: Readonly<Record<string, unknown>>) {

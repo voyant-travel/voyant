@@ -124,7 +124,12 @@ describe("deployment graph artifacts", () => {
   })
 
   it("statically lowers selected package runtime contributors", async () => {
-    const resolved = await graphWithSelectedUnits([defineModule({ id: "@acme/voyant-loyalty" })])
+    const resolved = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/voyant-loyalty",
+        runtimePorts: [{ id: "loyalty.provider", optional: true, cardinality: "many" }],
+      }),
+    ])
     const graph = {
       ...resolved,
       packageRecords: resolved.packageRecords.map((record) => ({
@@ -151,6 +156,11 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain("getRuntimePort(port: { id: string })")
     expect(source).toContain("contributor(contributorHost)")
     expect(source).toContain("has multiple static contributors")
+    expect(source).toContain(
+      'GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS = [\n  "loyalty.provider",\n] as const',
+    )
+    expect(source).toContain("manyPortIds.has(id) ? [value] : value")
+    expect(source).toContain("values.push(value)")
   })
 
   it("selects a canonical package contributor when compatibility provenance is stale", async () => {

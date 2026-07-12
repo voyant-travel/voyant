@@ -673,6 +673,53 @@ describe("graph runtime composition", () => {
     })
   })
 
+  it("reads optional many-valued runtime ports without collapsing contributors", async () => {
+    const providerPort = definePort<{ name: string }>({
+      id: "loyalty.providers",
+      test: () => {},
+    })
+    const factory = defineGraphRuntimeFactory(async ({ getPorts }) => ({
+      module: { name: (await getPorts(providerPort)).map(({ name }) => name).join(",") || "none" },
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:many-runtime-port",
+      entries: { "@acme/loyalty": async () => ({ createLoyaltyModule: factory }) },
+      modules: [
+        {
+          id: "@acme/loyalty",
+          kind: "module",
+          packageName: "@acme/loyalty",
+          order: 0,
+          runtimePorts: [providerPort.id],
+          manyRuntimePorts: [providerPort.id],
+          requiredRuntimePorts: [],
+          routes: [
+            {
+              route: {
+                id: "@acme/loyalty#api",
+                surface: "admin",
+                runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+              },
+              importEntry: "@acme/loyalty",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).resolves.toMatchObject({
+      modules: [{ module: { name: "none" } }],
+    })
+    await expect(
+      composeVoyantGraphRuntime({
+        runtime,
+        capabilities: {},
+        ports: { [providerPort.id]: [{ name: "alpha" }, { name: "zeta" }] },
+      }),
+    ).resolves.toMatchObject({ modules: [{ module: { name: "alpha,zeta" } }] })
+  })
+
   it("runs a port's conformance kit before exposing a deployment binding", async () => {
     const runtimePort = definePort<{ ready: boolean }>({
       id: "loyalty.runtime",

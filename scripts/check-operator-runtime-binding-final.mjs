@@ -39,9 +39,9 @@ if (!generatedCall) {
   const keys = [...generatedCall.matchAll(/^\s{4}([A-Za-z][A-Za-z0-9]*)(?::|,)/gm)].map(
     (match) => match[1],
   )
-  if (keys.join(",") !== "capabilities,primitives,host") {
+  if (keys.join(",") !== "capabilities,primitives") {
     violations.push(
-      `createGeneratedGraphRuntimePorts keys must be exactly capabilities,primitives,host; found ${keys.join(",") || "none"}`,
+      `createGeneratedGraphRuntimePorts keys must be exactly capabilities,primitives; found ${keys.join(",") || "none"}`,
     )
   }
 }
@@ -59,19 +59,10 @@ for (const [index, [packageName, requirement]] of Object.entries(
 if (generatedCall?.includes("workflowRunnerRegistry,")) {
   violations.push("workflowRunnerRegistry must not be a generated runtime argument key")
 }
-for (const method of ["resolveDatabase", "resolveConfig", "resolveDocumentStorage"]) {
-  if (!generatedCall?.includes(method)) {
-    violations.push(`SmartBill host comment must document irreducible ${method}`)
-  }
-}
-if (!generatedCall?.includes("host: operatorSmartbillRuntimeHost")) {
-  violations.push("the external SmartBill contributor must retain its typed host resource")
-}
-
 if (violations.length > 0) {
   throw new Error(`check-operator-runtime-binding-final:\n- ${violations.join("\n- ")}`)
 }
 
 console.log(
-  `check-operator-runtime-binding-final: OK (10 package-owned runtime families; ${Object.keys(contributorRequirements).length - 10} legacy capability families)`,
+  `check-operator-runtime-binding-final: OK (10 package-owned runtime families; ${Object.keys(contributorRequirements).length - 10} legacy capability families; 0 product-specific generated host arguments)`,
 )

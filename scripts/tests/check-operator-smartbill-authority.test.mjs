@@ -14,33 +14,25 @@ const checkerPath = path.join(repoRoot, "scripts/check-operator-smartbill-author
 async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-smartbill-authority-"))
   const files = {
-    "package.json": JSON.stringify({
+    "starters/operator/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/plugin-smartbill": "^0.140.2" },
     }),
-    "voyant.config.ts":
+    "starters/operator/voyant.config.ts":
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-netopia" }] }\n',
-    "src/api/app.ts": "export const app = mountApp({})\n",
-    "src/api/runtime/deployment-resources.ts":
-      "export const ports = createGeneratedGraphRuntimePorts({ host: operatorSmartbillRuntimeHost })\n",
-    "src/api/runtime/operator-runtime-adapter.ts":
-      'import { createSmartbillSettlementPollers, type SmartbillRuntimeHost } from "@voyant-travel/plugin-smartbill/graph-runtime"\nexport const operatorSmartbillRuntimeHost: SmartbillRuntimeHost = {}\ncreateSmartbillSettlementPollers(resolveOperatorSmartbillConfig(bindings))\n',
-    "installed/package.json": JSON.stringify({
-      version: "0.140.2",
-      voyant: {
-        kind: "plugin",
-        manifest: "./voyant",
-        runtime: {
-          entry: "./runtime-contributor",
-          export: "createSmartbillRuntimePortContribution",
-        },
-      },
-      exports: {
-        "./voyant": "./voyant.js",
-        "./graph-runtime": "./graph-runtime.js",
-        "./runtime-contributor": "./runtime-contributor.js",
-        "./subscriber-runtime": "./subscriber-runtime.js",
-      },
-    }),
+    "starters/operator/src/api/app.ts": "export const app = mountApp({})\n",
+    "starters/operator/src/api/runtime/deployment-resources.ts":
+      "return createGeneratedGraphRuntimePorts({\n    capabilities,\n    primitives,\n  })\n",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "export const adapter = {}\n",
+    "packages/finance/src/voyant.ts":
+      'runtimePorts: [requirePort(financeInvoiceSettlementPollerRuntimePort, { optional: true, cardinality: "many" })]\n',
+    "packages/finance/src/runtime-port.ts":
+      'export interface FinanceInvoiceSettlementPollerProvider {}\nid: "finance.invoice-settlement-poller"\n',
+    "packages/finance/src/runtime.ts":
+      "aggregateFinanceInvoiceSettlementPollers(providers)\nObject.hasOwn(pollers, provider.provider)\n",
+    "packages/finance/src/index.ts": "await getPorts(financeInvoiceSettlementPollerRuntimePort)\n",
+    "packages/core/src/project.ts": "getPorts<TProvider>(port: VoyantPort<TProvider>)\n",
+    "packages/framework/src/deployment-artifacts.ts":
+      "GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nvalues.push(value)\nhas multiple static contributors\n",
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -54,55 +46,47 @@ async function createFixture(overrides = {}) {
 async function runChecker(root) {
   return execFileAsync(
     process.execPath,
-    [
-      checkerPath,
-      "--operator-root",
-      root,
-      "--installed-package-root",
-      path.join(root, "installed"),
-    ],
+    [checkerPath, "--root", root, "--operator-root", path.join(root, "starters/operator")],
     { cwd: root },
   )
 }
 
 describe("check-operator-smartbill-authority", () => {
-  it("accepts optional package admission with a typed Node host port", async () => {
-    const root = await createFixture()
-
-    const result = await runChecker(root)
-
+  it("accepts a static optional many-valued Finance provider without a starter bridge", async () => {
+    const result = await runChecker(await createFixture())
     assert.match(result.stdout, /check-operator-smartbill-authority: OK/)
   })
 
   it("rejects selecting SmartBill in the default project", async () => {
     const root = await createFixture({
-      "voyant.config.ts":
+      "starters/operator/voyant.config.ts":
         'export default { plugins: [{ resolve: "@voyant-travel/plugin-smartbill" }] }\n',
     })
-
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /default voyant\.config\.ts must not select/)
       return true
     })
   })
 
-  it("rejects compatibility mounts and operator-owned descriptor registration", async () => {
+  it("rejects starter-owned SmartBill bridges and config injection", async () => {
     const root = await createFixture({
-      "src/api/app.ts":
-        'import { smartbillOperatorBundle } from "./subscribers/smartbill-bundle"\n',
-      "src/api/runtime/operator-runtime-adapter.ts":
-        'eventBus.subscribe("invoice.issued", handler)\ndescriptor.register(context)\n',
-      "src/api/runtime/smartbill-subscriber-runtime.ts":
-        'eventBus.subscribe("invoice.issued", handler)\ndescriptor.register(context)\n',
-      "src/api/subscribers/smartbill.ts": "export const legacy = true\n",
+      "starters/operator/src/api/runtime/deployment-resources.ts":
+        "createGeneratedGraphRuntimePorts({ capabilities, primitives, host: operatorSmartbillRuntimeHost })\ninvoiceSettlementPollers\n",
+      "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
+        'import "@voyant-travel/plugin-smartbill"\nresolveOperatorSmartbillConfig\n',
     })
-
     await assert.rejects(runChecker(root), (error) => {
-      assert.match(error.stderr, /must not own or register SmartBill subscriber descriptors/)
-      assert.match(error.stderr, /must not mount or import a SmartBill compatibility bundle/)
-      assert.match(error.stderr, /smartbill-subscriber-runtime\.ts must stay deleted/)
-      assert.match(error.stderr, /smartbill\.ts must stay deleted/)
+      assert.match(error.stderr, /must not retain SmartBill bridge token/)
+      assert.match(error.stderr, /only generic capabilities and primitives/)
       return true
     })
+  })
+
+  it("rejects duplicate-overwriting Finance aggregation", async () => {
+    const root = await createFixture({
+      "packages/finance/src/runtime.ts":
+        "aggregateFinanceInvoiceSettlementPollers(providers)\npollers[provider.provider] = provider.poller\n",
+    })
+    await assert.rejects(runChecker(root), /must reject duplicate invoicing provider names/)
   })
 })
