@@ -97,35 +97,11 @@ describe("ensureBookingEngineRegistry", () => {
   })
 })
 
-describe("Connect connection cache + cruise memoize", () => {
-  it("passes a KV-backed connection cache and cruise memoize to the warm", async () => {
-    const kv = {
-      get: vi.fn().mockResolvedValue(null),
-      put: vi.fn().mockResolvedValue(undefined),
-    }
-    const { ensureBookingEngineRegistry } = await loadRuntime()
-    await ensureBookingEngineRegistry({ ...CONNECT_ENV, CACHE: kv as never })
-
-    const opts = prepareVoyantConnectSources.mock.calls[0]![1]
-    expect(opts.cruise?.memoize?.ttlMs).toBeGreaterThan(0)
-    expect(opts.connectionCache).toBeDefined()
-
-    // The cache reads/writes the operator-scoped KV key with a TTL.
-    await opts.connectionCache.get()
-    expect(kv.get).toHaveBeenCalledWith("voyant-connect:connections:op_1")
-    await opts.connectionCache.set([{ id: "conn_1" }])
-    expect(kv.put).toHaveBeenCalledWith(
-      "voyant-connect:connections:op_1",
-      JSON.stringify([{ id: "conn_1" }]),
-      expect.objectContaining({ expirationTtl: expect.any(Number) }),
-    )
-  })
-
-  it("omits the connection cache when no CACHE binding is present", async () => {
+describe("Connect cruise memoize", () => {
+  it("passes cruise memoization to the warm", async () => {
     const { ensureBookingEngineRegistry } = await loadRuntime()
     await ensureBookingEngineRegistry(CONNECT_ENV)
     const opts = prepareVoyantConnectSources.mock.calls[0]![1]
-    expect(opts.connectionCache).toBeUndefined()
     expect(opts.cruise?.memoize?.ttlMs).toBeGreaterThan(0)
   })
 })
