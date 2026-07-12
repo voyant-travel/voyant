@@ -56,12 +56,9 @@ describe("finance deployment manifest", () => {
       unitId: "@voyant-travel/finance",
       projectConfig: {},
       api: [{ id: "finance.admin", surface: "admin" }],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
-      runtimePorts: {},
       hasPort: () => true,
       getPort: async <TProvider>() => ({}) as TProvider,
-      getPorts: async <TProvider>() => [] as TProvider[],
-    })
+    } as never)
 
     expect(runtime.adminRoutes).toBeDefined()
     expect(runtime.publicRoutes).toBeUndefined()
