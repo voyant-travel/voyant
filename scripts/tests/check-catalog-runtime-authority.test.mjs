@@ -32,11 +32,8 @@ async function fixture() {
     ]),
     "packages/core/src/runtime-host.ts",
     "packages/framework/src/deployment-artifacts.ts",
-    "packages/framework/src/runtime-packages.generated.ts",
-    "packages/framework/src/runtime-contributors.generated.ts",
     "packages/typescript-config/dep-paths.json",
     "starters/operator/src/api/runtime/deployment-resources.ts",
-    "release.runtime-packages.generated.json",
     "pnpm-lock.yaml",
   ]
   for (const entry of entries) {

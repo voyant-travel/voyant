@@ -58,21 +58,11 @@ async function fixture(deploymentResources) {
   await write(
     root,
     "packages/framework/src/deployment-artifacts.ts",
-    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\nmanyPortIds.has(id) ? [value] : value\n",
+    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.entry\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\nmanyPortIds.has(id) ? [value] : value\n",
   )
-  await write(
-    root,
-    "packages/framework/src/runtime-contributors.generated.ts",
-    Object.entries(packageFactories)
-      .map(([packageName, factory]) => {
-        const publishedPackageName =
-          packageName === "plugins/catalog-demo"
-            ? "@voyant-travel/plugin-catalog-demo"
-            : `@voyant-travel/${packageName}`
-        return `export { ${factory} } from "${publishedPackageName}/runtime-contributor"`
-      })
-      .join("\n"),
-  )
+  await write(root, "packages/framework/src/project-resolver.ts", "local project overrides only\n")
+  await write(root, "scripts/emit-deployment-graph.ts", "local project overrides only\n")
+  await write(root, "scripts/generate-framework-bom.mjs", "writeFileSync(PKG, nextPkg)\n")
   for (const [packageName, factory] of Object.entries(packageFactories)) {
     await write(
       root,
@@ -93,7 +83,29 @@ it("accepts generated static contributor composition", async () => {
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(
     result.stdout,
-    new RegExp(`${Object.keys(packageFactories).length} package contributors statically selected`),
+    new RegExp(`${Object.keys(packageFactories).length} package-owned contributors`),
+  )
+})
+
+it("rejects a restored generated contributor barrel", async () => {
+  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  await write(root, "packages/framework/src/runtime-contributors.generated.ts", "export {}\n")
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /retired generated resolver input/,
+  )
+})
+
+it("rejects generated runtime catalog consumption by the resolver", async () => {
+  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  await write(
+    root,
+    "packages/framework/src/project-resolver.ts",
+    'import { FRAMEWORK_RUNTIME_PACKAGES } from "./runtime-packages.generated.js"\n',
+  )
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /must not consume a generated runtime discovery catalog/,
   )
 })
 

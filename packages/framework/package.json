@@ -20,7 +20,6 @@
     "./project-runtime": "./src/project-runtime.ts",
     "./node-host": "./src/node-host.ts",
     "./node-runtime": "./src/node-runtime.ts",
-    "./runtime-contributors": "./src/runtime-contributors.generated.ts",
     "./scheduled-jobs": "./src/scheduled-jobs.ts"
   },
   "files": [
@@ -85,13 +84,11 @@
     "@voyant-travel/operations-react": "workspace:*",
     "@voyant-travel/operator-settings": "workspace:*",
     "@voyant-travel/operator-settings-react": "workspace:*",
-    "@voyant-travel/plugin-catalog-demo": "workspace:*",
-    "@voyant-travel/plugin-flights-demo": "workspace:*",
-    "@voyant-travel/plugin-sanity-cms": "workspace:*",
     "@voyant-travel/public-document-delivery": "workspace:*",
     "@voyant-travel/quotes": "workspace:*",
     "@voyant-travel/quotes-react": "workspace:*",
     "@voyant-travel/realtime": "workspace:*",
+    "@voyant-travel/realtime-react": "workspace:*",
     "@voyant-travel/relationships": "workspace:*",
     "@voyant-travel/relationships-react": "workspace:*",
     "@voyant-travel/storage": "workspace:*",
@@ -191,10 +188,6 @@
       "./node-runtime": {
         "types": "./dist/node-runtime.d.ts",
         "import": "./dist/node-runtime.js"
-      },
-      "./runtime-contributors": {
-        "types": "./dist/runtime-contributors.generated.d.ts",
-        "import": "./dist/runtime-contributors.generated.js"
       },
       "./scheduled-jobs": {
         "types": "./dist/scheduled-jobs.d.ts",

@@ -2196,15 +2196,6 @@ importers:
       '@voyant-travel/operator-settings-react':
         specifier: workspace:*
         version: link:../operator-settings-react
-      '@voyant-travel/plugin-catalog-demo':
-        specifier: workspace:*
-        version: link:../plugins/catalog-demo
-      '@voyant-travel/plugin-flights-demo':
-        specifier: workspace:*
-        version: link:../plugins/flights-demo
-      '@voyant-travel/plugin-sanity-cms':
-        specifier: workspace:*
-        version: link:../plugins/sanity-cms
       '@voyant-travel/plugin-voyant-connect':
         specifier: ^0.3.2
         version: 0.3.2(@voyant-travel/catalog@packages+catalog)(@voyant-travel/cruises@packages+cruises)(@voyant-travel/data-sdk@0.7.1)
@@ -2220,6 +2211,9 @@ importers:
       '@voyant-travel/realtime':
         specifier: workspace:*
         version: link:../realtime
+      '@voyant-travel/realtime-react':
+        specifier: workspace:*
+        version: link:../realtime-react
       '@voyant-travel/relationships':
         specifier: workspace:*
         version: link:../relationships
@@ -2235,6 +2229,9 @@ importers:
       '@voyant-travel/storefront':
         specifier: workspace:*
         version: link:../storefront
+      '@voyant-travel/storefront-react':
+        specifier: workspace:*
+        version: link:../storefront-react
       '@voyant-travel/tools':
         specifier: workspace:*
         version: link:../tools

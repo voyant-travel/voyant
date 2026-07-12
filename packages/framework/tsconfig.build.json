@@ -966,9 +966,6 @@
       "@voyant-travel/framework/project-workflow-job-conventions": [
         "./dist/project-workflow-job-conventions.d.ts"
       ],
-      "@voyant-travel/framework/runtime-contributors": [
-        "./dist/runtime-contributors.generated.d.ts"
-      ],
       "@voyant-travel/framework/scheduled-jobs": ["./dist/scheduled-jobs.d.ts"],
       "@voyant-travel/framework/selected-graph-openapi": ["./dist/selected-graph-openapi.d.ts"],
       "@voyant-travel/hono": ["../hono/dist/index.d.ts"],

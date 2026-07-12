@@ -88,9 +88,9 @@ Five workstreams, ordered later by risk and dependency.
   ```
 - A deployment depends on the **meta version only**; `voyant upgrade` bumps it, transitively pinning the whole known-good set. The compatibility matrix is resolved *inside* the BOM — the deployment never sees it.
 
-**The membership set is mechanically defined** (now feeding the BOM's `dependencies` instead of a `fixed` group): "every workspace package that exports a `HonoModule`/`HonoExtension` and is **mounted** via `voyant.config` `modules`," emitted to a committed `release.runtime-packages.generated.json`. **`additionalSchemas` is excluded** (migrated-but-not-mounted optional verticals like `charters`/`cruises` stay on their own cadence). The `check-lockstep-membership` gate keeps non-runtime packages (`*-react`, `*-contracts`, plugins, infra, apps, tooling) out of the set, so they publish on their own cadence and external consumers pin them independently.
+**The membership set is mechanically defined** from the canonical authored standard Operator distribution and each selected workspace package's `voyant.package.v1` metadata. It is not emitted as a checked-in resolver input. The `check-lockstep-membership` gate verifies authored selections against workspace metadata and prevents generated discovery catalogs from returning, while `generate-framework-bom.mjs` derives publish dependencies from the standard product declaration and its recursive manifest-reference closure.
 
-**Release tooling:** at release time the BOM's `dependencies` are regenerated from `release.runtime-packages.generated.json` at each package's just-published version, and the BOM version bumps. Only the BOM + actually-changed packages publish — no per-package republish, no spam.
+**Release tooling:** at release time the BOM's `dependencies` are regenerated from the authored distribution and workspace manifests at each package's just-published version, and the BOM version bumps. This generated package metadata is output-only and is never consulted by graph resolution. Only the BOM + actually-changed packages publish — no per-package republish, no spam.
 
 **Effort:** low–medium (the membership checker exists; add BOM generation to the release pipeline + a `voyant upgrade` that bumps the meta).
 

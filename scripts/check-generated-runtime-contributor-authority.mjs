@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -35,18 +36,36 @@ const packageFactories = {
   "workflow-runs": "createWorkflowRunsRuntimePortContribution",
 }
 
-const [deploymentResources, adapter, generator, frameworkContributors, ...packageJsonSources] =
-  await Promise.all([
-    read("starters/operator/src/api/runtime/deployment-resources.ts"),
-    read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
-    read("packages/framework/src/deployment-artifacts.ts"),
-    read("packages/framework/src/runtime-contributors.generated.ts"),
-    ...Object.keys(packageFactories).map((packageName) =>
-      read(`packages/${packageName}/package.json`),
-    ),
-  ])
+const [
+  deploymentResources,
+  adapter,
+  generator,
+  resolver,
+  emitter,
+  bomGenerator,
+  ...packageJsonSources
+] = await Promise.all([
+  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  read("packages/framework/src/deployment-artifacts.ts"),
+  read("packages/framework/src/project-resolver.ts"),
+  read("scripts/emit-deployment-graph.ts"),
+  read("scripts/generate-framework-bom.mjs"),
+  ...Object.keys(packageFactories).map((packageName) =>
+    read(`packages/${packageName}/package.json`),
+  ),
+])
 
 const violations = []
+for (const retiredPath of [
+  "release.runtime-packages.generated.json",
+  "packages/framework/src/runtime-packages.generated.ts",
+  "packages/framework/src/runtime-contributors.generated.ts",
+]) {
+  if (existsSync(path.join(root, retiredPath))) {
+    violations.push(`${retiredPath} is a retired generated resolver input`)
+  }
+}
 if (/from\s+["'][^"']+\/runtime-contributor["']/.test(deploymentResources)) {
   violations.push("Operator deployment resources must not import package runtime contributors")
 }
@@ -87,26 +106,37 @@ if (
 if (/require\s*\(|createRequire/.test(generator)) {
   violations.push("graph runtime contributor lowering must not add runtime require")
 }
+if (!generator.includes("record.metadata?.runtime") || !generator.includes("contributor.entry")) {
+  violations.push("graph runtime generation must import admitted package runtime entries directly")
+}
+for (const [name, source] of [
+  ["project resolver", resolver],
+  ["graph emitter", emitter],
+  ["BOM generator", bomGenerator],
+]) {
+  if (
+    /runtime-packages\.generated|runtime-contributors\.generated|framework\/runtime-contributors/.test(
+      source,
+    )
+  ) {
+    violations.push(`${name} must not consume a generated runtime discovery catalog`)
+  }
+}
+if (!bomGenerator.includes("writeFileSync(PKG, nextPkg)")) {
+  violations.push("BOM generation must retain output-only framework publish dependencies")
+}
+if (/writeFileSync\((?:SRC|CONTRIBUTORS|MANIFEST)/.test(bomGenerator)) {
+  violations.push("BOM generation must not emit resolver discovery inputs")
+}
 
 for (const [index, [packageName, factory]] of Object.entries(packageFactories).entries()) {
   const packageJson = JSON.parse(packageJsonSources[index])
-  const publishedPackageName =
-    packageName === "plugins/catalog-demo"
-      ? "@voyant-travel/plugin-catalog-demo"
-      : `@voyant-travel/${packageName}`
   const runtime = packageJson.voyant?.runtime
   if (runtime?.entry !== "./runtime-contributor" || runtime?.export !== factory) {
     violations.push(`${packageName} must declare its package-owned runtime contributor metadata`)
   }
   if (!packageJson.exports?.["./runtime-contributor"]) {
     violations.push(`${packageName} must export ./runtime-contributor`)
-  }
-  if (
-    !frameworkContributors.includes(
-      `export { ${factory} } from "${publishedPackageName}/runtime-contributor"`,
-    )
-  ) {
-    violations.push(`${packageName} must be reachable through the generated framework barrel`)
   }
 }
 
@@ -115,5 +145,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-generated-runtime-contributor-authority: OK (${Object.keys(packageFactories).length} package contributors statically selected; 0 starter imports or calls)`,
+  `check-generated-runtime-contributor-authority: OK (${Object.keys(packageFactories).length} package-owned contributors; direct admitted imports; 0 generated discovery inputs)`,
 )

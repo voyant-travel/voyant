@@ -1254,9 +1254,6 @@
       "@voyant-travel/framework/project-workflow-job-conventions": [
         "../../packages/framework/dist/project-workflow-job-conventions.d.ts"
       ],
-      "@voyant-travel/framework/runtime-contributors": [
-        "../../packages/framework/dist/runtime-contributors.generated.d.ts"
-      ],
       "@voyant-travel/framework/scheduled-jobs": [
         "../../packages/framework/dist/scheduled-jobs.d.ts"
       ],

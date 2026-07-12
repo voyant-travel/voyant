@@ -21,7 +21,6 @@ import {
   type ResolvedProjectArtifacts,
   runtimeReferencePackageNames,
 } from "../../packages/framework/src/project-resolver.ts"
-import { FRAMEWORK_RUNTIME_PACKAGES } from "../../packages/framework/src/runtime-packages.generated.ts"
 import type { VoyantScheduledJob } from "../../packages/framework/src/scheduled-jobs.ts"
 import { readPnpmLockfilePackageRecords } from "./deployment-graph-provenance.mjs"
 import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"
@@ -122,12 +121,6 @@ export async function resolveOperatorDeploymentGraph(
     admission: OPERATOR_GRAPH_ADMISSION_POLICY,
   } as const
   const discoveredGraph = await resolveDeploymentGraph(graphInput)
-  const discoveredPackageNames = new Set(
-    discoveredGraph.packageRecords.map((record) => record.packageName),
-  )
-  const additionalRuntimePackageNames = FRAMEWORK_RUNTIME_PACKAGES.filter(
-    (packageName) => !discoveredPackageNames.has(packageName),
-  )
   const selectedPackageRecords = withOperatorNodePackageCompatibility(
     withOperatorDeploymentLocalPackageRecords(
       readPnpmLockfilePackageRecords({
@@ -137,7 +130,6 @@ export async function resolveOperatorDeploymentGraph(
         packageNames: [
           "@voyant-travel/framework",
           "@voyant-travel/framework-migrations",
-          ...additionalRuntimePackageNames,
           ...discoveredGraph.packageRecords.map((record) => record.packageName),
         ],
       }),

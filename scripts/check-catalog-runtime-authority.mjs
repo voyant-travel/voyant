@@ -181,14 +181,17 @@ for (const token of [
   }
 }
 
-for (const file of [
+for (const file of ["packages/typescript-config/dep-paths.json", "pnpm-lock.yaml"]) {
+  if (read(file).includes("catalog-node")) violations.push(`${file} retains the retired package`)
+}
+for (const retired of [
   "release.runtime-packages.generated.json",
   "packages/framework/src/runtime-packages.generated.ts",
   "packages/framework/src/runtime-contributors.generated.ts",
-  "packages/typescript-config/dep-paths.json",
-  "pnpm-lock.yaml",
 ]) {
-  if (read(file).includes("catalog-node")) violations.push(`${file} retains the retired package`)
+  if (existsSync(path.join(root, retired))) {
+    violations.push(`${retired} is a retired generated resolver input`)
+  }
 }
 
 if (violations.length) {

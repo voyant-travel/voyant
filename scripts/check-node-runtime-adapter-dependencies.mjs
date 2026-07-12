@@ -54,8 +54,7 @@ const consolidatedPackages = [
 ]
 const manifests = readWorkspaceManifests()
 const byName = new Map(manifests.map((manifest) => [manifest.name, manifest]))
-const runtimeBom = JSON.parse(read("release.runtime-packages.generated.json")).runtimePackages
-const generatedBom = read("packages/framework/src/runtime-packages.generated.ts")
+const standardDistribution = read("packages/framework/src/operator-distribution.ts")
 const framework = byName.get("@voyant-travel/framework")
 const starterAuthority = [
   read("starters/operator/voyant.config.ts"),
@@ -86,11 +85,8 @@ for (const adapter of adapters) {
   if (!manifest?.exports?.["./runtime-contributor"]) {
     violations.push(`${adapter.packageName} must export ./runtime-contributor`)
   }
-  if (!runtimeBom.includes(adapter.packageName)) {
-    violations.push(`${adapter.packageName} must be selected by the standard Node runtime BOM`)
-  }
-  if (!generatedBom.includes(`"${adapter.packageName}"`)) {
-    violations.push(`${adapter.packageName} is missing from generated framework BOM membership`)
+  if (!standardDistribution.includes(`resolve: "${adapter.packageName}`)) {
+    violations.push(`${adapter.packageName} must be selected by the authored standard product BOM`)
   }
   if (!framework?.dependencies?.[adapter.packageName]) {
     violations.push(`${adapter.packageName} must be supplied by the framework BOM dependency set`)
@@ -117,12 +113,9 @@ for (const consolidated of consolidatedPackages) {
   if (manifest?.exports?.["./standard-node"]) {
     violations.push(`${consolidated.packageName} must not expose a target-labelled runtime`)
   }
-  if (!runtimeBom.includes(consolidated.packageName)) {
-    violations.push(`${consolidated.packageName} must be selected by the standard Node runtime BOM`)
-  }
-  if (!generatedBom.includes(`"${consolidated.packageName}"`)) {
+  if (!standardDistribution.includes(`resolve: "${consolidated.packageName}`)) {
     violations.push(
-      `${consolidated.packageName} is missing from generated framework BOM membership`,
+      `${consolidated.packageName} must be selected by the authored standard product BOM`,
     )
   }
   if (!framework?.dependencies?.[consolidated.packageName]) {
@@ -139,8 +132,8 @@ for (const domainPackageName of ["@voyant-travel/action-ledger"]) {
   if (byName.has(`${domainPackageName}-node`)) {
     violations.push(`${domainPackageName}-node must stay deleted`)
   }
-  if (runtimeBom.includes(`${domainPackageName}-node`)) {
-    violations.push(`${domainPackageName}-node must not remain in the runtime BOM`)
+  if (standardDistribution.includes(`resolve: "${domainPackageName}-node`)) {
+    violations.push(`${domainPackageName}-node must not remain in the standard product BOM`)
   }
   if (framework?.dependencies?.[`${domainPackageName}-node`]) {
     violations.push(`${domainPackageName}-node must not remain in the framework BOM`)
@@ -152,14 +145,12 @@ for (const domainPackageName of ["@voyant-travel/action-ledger"]) {
     violations.push(`${domainPackageName} must not export an empty deployment-target contributor`)
   }
 }
-if (!graphResolver.includes("FRAMEWORK_RUNTIME_PACKAGES.filter(")) {
-  violations.push("Operator graph resolution must admit standard BOM runtime package records")
-}
 if (
-  !graphResolver.includes("additionalRuntimePackageNames") ||
-  !graphResolver.includes("!discoveredPackageNames.has(packageName)")
+  /FRAMEWORK_RUNTIME_PACKAGES|runtime-packages\.generated|additionalRuntimePackageNames/.test(
+    graphResolver,
+  )
 ) {
-  violations.push("Operator graph resolution must not re-admit already selected product packages")
+  violations.push("Operator graph resolution must not consume a generated runtime package catalog")
 }
 if (
   !graphResolver.includes(
@@ -171,9 +162,9 @@ if (
 if (!graphGenerator.includes("const runtime = record.metadata?.runtime")) {
   violations.push("Graph runtime generation must lower contributors from admitted package records")
 }
-if (!graphEmitter.includes('overrides[entry] = "@voyant-travel/framework/runtime-contributors"')) {
+if (graphEmitter.includes("@voyant-travel/framework/runtime-contributors")) {
   violations.push(
-    "standard runtime contributors must resolve through the direct framework dependency",
+    "standard runtime contributors must import their admitted package entries directly",
   )
 }
 if (graphGenerator.includes("selectedPackageNames.has(record.packageName)")) {
