@@ -286,4 +286,35 @@ describe("buildSelectedGraphOpenApiDocuments", () => {
     expect(Object.keys(documents.get("identity-read")?.paths?.[path] ?? {})).toEqual(["get"])
     expect(Object.keys(documents.get("identity-write")?.paths?.[path] ?? {})).toEqual(["post"])
   })
+
+  it("requires exact operation ownership for root-mounted bundles", async () => {
+    const apiId = "@voyant-travel/storefront#api.public"
+    const ownedPath = "/v1/public/storefront"
+    const unrelatedPath = "/v1/public/bookings"
+    const app = documentedApp([unrelatedPath])
+    app.openapi(
+      createRoute({
+        method: "get",
+        path: ownedPath,
+        responses: {
+          200: {
+            content: { "application/json": { schema: z.object({ ok: z.boolean() }) } },
+            description: "OK",
+          },
+        },
+        "x-voyant-api-id": apiId,
+      }),
+      (context) => context.json({ ok: true }),
+    )
+    const storefront = unit("@voyant-travel/storefront", [route(apiId, "/", "storefront", ["GET"])])
+
+    const documents = await buildSelectedGraphOpenApiDocuments({
+      runtime: runtime([storefront]),
+      app,
+      options,
+    })
+
+    expect(Object.keys(documents.get("storefront")?.paths ?? {})).toEqual([ownedPath])
+    expect(documents.get("storefront")?.paths?.[unrelatedPath]).toBeUndefined()
+  })
 })

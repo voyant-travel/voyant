@@ -68,6 +68,7 @@ export async function buildSelectedGraphOpenApiDocuments(
 
         const explicitApiId = value["x-voyant-api-id"]
         if (typeof explicitApiId === "string" && explicitApiId !== claim.route.id) continue
+        if (claim.mount === "/" && explicitApiId !== claim.route.id) continue
         if (!isWithinMount(path, claim.mount) && explicitApiId !== claim.route.id) continue
 
         const operation = `${method.toUpperCase()} ${path}`

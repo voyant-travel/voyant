@@ -56,6 +56,6 @@ for (const file of [
 }
 
 const coverageChecker = readFileSync("scripts/check-deployment-graph-openapi-coverage.mjs", "utf8")
-assert.match(coverageChecker, /MIN_PACKAGE_OWNED_API_BUNDLES = 43/)
+assert.match(coverageChecker, /MIN_PACKAGE_OWNED_API_BUNDLES = 65/)
 
 console.log(`check-retail-openapi-authority: OK (${claims.size} package-owned API bundles)`)

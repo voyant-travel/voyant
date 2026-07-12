@@ -26,8 +26,20 @@ const REPO_ROOT = resolve(process.cwd(), "../..")
 const PACKAGE_OPENAPI_ROOTS = new Map([
   ["action-ledger", join(REPO_ROOT, "packages/action-ledger/openapi")],
   ["distribution", join(REPO_ROOT, "packages/distribution/openapi")],
+  ["external-refs", join(REPO_ROOT, "packages/distribution/openapi")],
   ["mice", join(REPO_ROOT, "packages/mice/openapi")],
+  ["operations", join(REPO_ROOT, "packages/operations/openapi")],
+  ["operator-settings", join(REPO_ROOT, "packages/operator-settings/openapi")],
   ["relationships", join(REPO_ROOT, "packages/relationships/openapi")],
+  ["storage-media", join(REPO_ROOT, "packages/storage/openapi")],
+  ["storage-uploads", join(REPO_ROOT, "packages/storage/openapi")],
+  ["storage-video-upload-ticket", join(REPO_ROOT, "packages/storage/openapi")],
+  ["storefront", join(REPO_ROOT, "packages/storefront/openapi")],
+  ["customer-portal", join(REPO_ROOT, "packages/storefront/openapi")],
+  ["payment-link", join(REPO_ROOT, "packages/storefront/openapi")],
+  ["storefront-verification", join(REPO_ROOT, "packages/storefront/openapi")],
+  ["suppliers", join(REPO_ROOT, "packages/distribution/openapi")],
+  ["workflow-runs", join(REPO_ROOT, "packages/workflow-runs/openapi")],
 ])
 const docs = await buildOperatorOpenApiDocuments()
 const serialize = (doc: unknown) => `${JSON.stringify(doc, null, 2)}\n`
