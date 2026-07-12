@@ -16,9 +16,12 @@ const checker = path.join(
 const fixturePaths = [
   "starters/operator/src/api/runtime/deployment-resources.ts",
   "packages/action-ledger/package.json",
-  "packages/action-ledger-node/package.json",
-  "packages/action-ledger-node/src/runtime-contributor.ts",
-  "packages/action-ledger-node/src/standard-node-runtime.ts",
+  "packages/action-ledger/src/graph-runtime.ts",
+  "packages/action-ledger/src/runtime-port.ts",
+  "packages/action-ledger/src/voyant.ts",
+  "packages/bookings/src/runtime-contributor.ts",
+  "packages/finance/src/runtime-contributor.ts",
+  "packages/inventory/src/runtime-contributor.ts",
   "packages/distribution/package.json",
   "packages/distribution-node/package.json",
   "packages/distribution-node/src/runtime-contributor.ts",
@@ -38,9 +41,25 @@ async function fixture() {
   return root
 }
 
-test("accepts package-owned standard Node runtime authority", async () => {
+test("accepts package-owned static runtime authority", async () => {
   const result = await execFileAsync(process.execPath, [checker, "--root", await fixture()])
-  assert.match(result.stdout, /leaf adapters and package registry authority/)
+  assert.match(result.stdout, /Action Ledger static ports/)
+})
+
+test("rejects a missing domain drift contribution", async () => {
+  const root = await fixture()
+  const target = path.join(root, "packages/bookings/src/runtime-contributor.ts")
+  await writeFile(
+    target,
+    (await readFile(target, "utf8")).replace(
+      "[actionLedgerBookingDriftRuntimePort.id]",
+      "[removed.id]",
+    ),
+  )
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /actionLedgerBookingDriftRuntimePort must be supplied/,
+  )
 })
 
 test("rejects a restored host capability", async () => {

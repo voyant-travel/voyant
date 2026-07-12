@@ -65,15 +65,6 @@
       ],
       "@voyant-travel/accommodations/voyant": ["../../packages/accommodations/dist/voyant.d.ts"],
       "@voyant-travel/action-ledger": ["../../packages/action-ledger/dist/index.d.ts"],
-      "@voyant-travel/action-ledger-node": [
-        "../../packages/action-ledger-node/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/action-ledger-node/runtime-contributor": [
-        "../../packages/action-ledger-node/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/action-ledger-node/standard-node-runtime": [
-        "../../packages/action-ledger-node/dist/standard-node-runtime.d.ts"
-      ],
       "@voyant-travel/action-ledger-react": ["../../packages/action-ledger-react/dist/index.d.ts"],
       "@voyant-travel/action-ledger-react/admin": [
         "../../packages/action-ledger-react/dist/admin/index.d.ts"
@@ -98,6 +89,9 @@
         "../../packages/action-ledger/dist/request-context.d.ts"
       ],
       "@voyant-travel/action-ledger/routes": ["../../packages/action-ledger/dist/routes.d.ts"],
+      "@voyant-travel/action-ledger/runtime-port": [
+        "../../packages/action-ledger/dist/runtime-port.d.ts"
+      ],
       "@voyant-travel/action-ledger/schema": ["../../packages/action-ledger/dist/schema.d.ts"],
       "@voyant-travel/action-ledger/service": ["../../packages/action-ledger/dist/service.d.ts"],
       "@voyant-travel/action-ledger/timeline": ["../../packages/action-ledger/dist/timeline.d.ts"],
@@ -263,12 +257,6 @@
       "@voyant-travel/bookings-contracts/validation": [
         "../../packages/bookings-contracts/dist/validation.d.ts"
       ],
-      "@voyant-travel/bookings-node": [
-        "../../packages/bookings-node/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/bookings-node/runtime-contributor": [
-        "../../packages/bookings-node/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/bookings-react": ["../../packages/bookings-react/dist/index.d.ts"],
       "@voyant-travel/bookings-react/admin": [
         "../../packages/bookings-react/dist/admin/index.d.ts"
@@ -371,10 +359,10 @@
       "@voyant-travel/bookings/reservation-plans": [
         "../../packages/bookings/dist/reservation-plans.d.ts"
       ],
+      "@voyant-travel/bookings/routes": ["../../packages/bookings/dist/routes.d.ts"],
       "@voyant-travel/bookings/runtime-contributor": [
         "../../packages/bookings/dist/runtime-contributor.d.ts"
       ],
-      "@voyant-travel/bookings/routes": ["../../packages/bookings/dist/routes.d.ts"],
       "@voyant-travel/bookings/runtime-port": ["../../packages/bookings/dist/runtime-port.d.ts"],
       "@voyant-travel/bookings/schema": ["../../packages/bookings/dist/schema.d.ts"],
       "@voyant-travel/bookings/status": ["../../packages/bookings/dist/status.d.ts"],
@@ -1099,10 +1087,6 @@
       "@voyant-travel/finance-contracts/validation": [
         "../../packages/finance-contracts/dist/validation.d.ts"
       ],
-      "@voyant-travel/finance-node": ["../../packages/finance-node/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/finance-node/runtime-contributor": [
-        "../../packages/finance-node/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/finance-react": ["../../packages/finance-react/dist/index.d.ts"],
       "@voyant-travel/finance-react/admin": ["../../packages/finance-react/dist/admin/index.d.ts"],
       "@voyant-travel/finance-react/checkout": ["../../packages/finance-react/dist/checkout.d.ts"],
@@ -1158,6 +1142,9 @@
         "../../packages/finance/dist/validation-public.d.ts"
       ],
       "@voyant-travel/finance/routes": ["../../packages/finance/dist/routes.d.ts"],
+      "@voyant-travel/finance/runtime-contributor": [
+        "../../packages/finance/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/finance/runtime-port": ["../../packages/finance/dist/runtime-port.d.ts"],
       "@voyant-travel/finance/schema": ["../../packages/finance/dist/schema.d.ts"],
       "@voyant-travel/finance/setup/vouchers": [
@@ -1169,13 +1156,7 @@
       "@voyant-travel/finance/tools": ["../../packages/finance/dist/mcp-runtime.d.ts"],
       "@voyant-travel/finance/validation": ["../../packages/finance/dist/validation.d.ts"],
       "@voyant-travel/finance/voyant": ["../../packages/finance/dist/voyant.d.ts"],
-      "@voyant-travel/finance/runtime-contributor": [
-        "../../packages/finance/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/flights": ["../../packages/flights/dist/index.d.ts"],
-      "@voyant-travel/flights/runtime-contributor": [
-        "../../packages/flights/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/flights-contracts": ["../../packages/flights-contracts/dist/index.d.ts"],
       "@voyant-travel/flights-contracts/contract/adapter": [
         "../../packages/flights-contracts/dist/contract/adapter.d.ts"
@@ -1197,10 +1178,6 @@
       ],
       "@voyant-travel/flights-contracts/snapshot": [
         "../../packages/flights-contracts/dist/snapshot.d.ts"
-      ],
-      "@voyant-travel/flights-node": ["../../packages/flights-node/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/flights-node/runtime-contributor": [
-        "../../packages/flights-node/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/flights-react": ["../../packages/flights-react/dist/index.d.ts"],
       "@voyant-travel/flights-react/admin": ["../../packages/flights-react/dist/admin/index.d.ts"],
@@ -1242,6 +1219,9 @@
       ],
       "@voyant-travel/flights/reference/static-bundle": [
         "../../packages/flights/dist/reference/static-bundle.d.ts"
+      ],
+      "@voyant-travel/flights/runtime-contributor": [
+        "../../packages/flights/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/flights/snapshot": ["../../packages/flights/dist/snapshot.d.ts"],
       "@voyant-travel/flights/voyant": ["../../packages/flights/dist/voyant.d.ts"],
@@ -1500,10 +1480,6 @@
       ],
       "@voyant-travel/inventory/workflows": ["../../packages/inventory/dist/workflow-entry.d.ts"],
       "@voyant-travel/legal": ["../../packages/legal/dist/index.d.ts"],
-      "@voyant-travel/legal/runtime-contributor": [
-        "../../packages/legal/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/legal/runtime": ["../../packages/legal/dist/runtime.d.ts"],
       "@voyant-travel/legal-contracts": ["../../packages/legal-contracts/dist/index.d.ts"],
       "@voyant-travel/legal-contracts/contracts/validation": [
         "../../packages/legal-contracts/dist/contracts/validation.d.ts"
@@ -1516,13 +1492,6 @@
       ],
       "@voyant-travel/legal-contracts/terms/validation": [
         "../../packages/legal-contracts/dist/terms/validation.d.ts"
-      ],
-      "@voyant-travel/legal-node": ["../../packages/legal-node/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/legal-node/runtime-contributor": [
-        "../../packages/legal-node/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/legal-node/standard-node-runtime": [
-        "../../packages/legal-node/dist/standard-node-runtime.d.ts"
       ],
       "@voyant-travel/legal-react": ["../../packages/legal-react/dist/index.d.ts"],
       "@voyant-travel/legal-react/admin": ["../../packages/legal-react/dist/admin/index.d.ts"],
@@ -1576,6 +1545,10 @@
       "@voyant-travel/legal/policies/validation": [
         "../../packages/legal/dist/policies/validation.d.ts"
       ],
+      "@voyant-travel/legal/runtime": ["../../packages/legal/dist/runtime.d.ts"],
+      "@voyant-travel/legal/runtime-contributor": [
+        "../../packages/legal/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/legal/runtime-port": ["../../packages/legal/dist/runtime-port.d.ts"],
       "@voyant-travel/legal/schema": ["../../packages/legal/dist/schema.d.ts"],
       "@voyant-travel/legal/standard-links": ["../../packages/legal/dist/standard-links.d.ts"],
@@ -1614,9 +1587,6 @@
       "@voyant-travel/mice/validation": ["../../packages/mice/dist/validation.d.ts"],
       "@voyant-travel/mice/voyant": ["../../packages/mice/dist/voyant.d.ts"],
       "@voyant-travel/notifications": ["../../packages/notifications/dist/index.d.ts"],
-      "@voyant-travel/notifications/runtime-contributor": [
-        "../../packages/notifications/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/notifications-react": ["../../packages/notifications-react/dist/index.d.ts"],
       "@voyant-travel/notifications-react/admin": [
         "../../packages/notifications-react/dist/admin/index.d.ts"
@@ -1656,6 +1626,9 @@
         "../../packages/notifications/dist/providers/voyant-cloud-sms.d.ts"
       ],
       "@voyant-travel/notifications/routes": ["../../packages/notifications/dist/routes.d.ts"],
+      "@voyant-travel/notifications/runtime-contributor": [
+        "../../packages/notifications/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/notifications/runtime-port": [
         "../../packages/notifications/dist/runtime-port.d.ts"
       ],
@@ -1923,16 +1896,9 @@
         "../../packages/public-document-delivery/dist/voyant.d.ts"
       ],
       "@voyant-travel/quotes": ["../../packages/quotes/dist/index.d.ts"],
-      "@voyant-travel/quotes/runtime-contributor": [
-        "../../packages/quotes/dist/runtime-contributor.d.ts"
-      ],
       "@voyant-travel/quotes-contracts": ["../../packages/quotes-contracts/dist/index.d.ts"],
       "@voyant-travel/quotes-contracts/validation": [
         "../../packages/quotes-contracts/dist/validation.d.ts"
-      ],
-      "@voyant-travel/quotes-node": ["../../packages/quotes-node/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/quotes-node/runtime-contributor": [
-        "../../packages/quotes-node/dist/runtime-contributor.d.ts"
       ],
       "@voyant-travel/quotes-react": ["../../packages/quotes-react/dist/index.d.ts"],
       "@voyant-travel/quotes-react/admin": ["../../packages/quotes-react/dist/admin/index.d.ts"],
@@ -1958,6 +1924,9 @@
       "@voyant-travel/quotes/linkables": ["../../packages/quotes/dist/linkables.d.ts"],
       "@voyant-travel/quotes/proposal-routes": ["../../packages/quotes/dist/proposal-routes.d.ts"],
       "@voyant-travel/quotes/routes": ["../../packages/quotes/dist/routes/index.d.ts"],
+      "@voyant-travel/quotes/runtime-contributor": [
+        "../../packages/quotes/dist/runtime-contributor.d.ts"
+      ],
       "@voyant-travel/quotes/schema": ["../../packages/quotes/dist/schema.d.ts"],
       "@voyant-travel/quotes/tools": ["../../packages/quotes/dist/mcp-runtime.d.ts"],
       "@voyant-travel/quotes/validation": ["../../packages/quotes/dist/validation.d.ts"],
@@ -2171,9 +2140,6 @@
       ],
       "@voyant-travel/storefront/public-routes": [
         "../../packages/storefront/dist/routes-public.d.ts"
-      ],
-      "@voyant-travel/storefront/relationships-intake": [
-        "../../packages/storefront/dist/relationships-intake-persistence.d.ts"
       ],
       "@voyant-travel/storefront/runtime-contributor": [
         "../../packages/storefront/dist/runtime-contributor.d.ts"

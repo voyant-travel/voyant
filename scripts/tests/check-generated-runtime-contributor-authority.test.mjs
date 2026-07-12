@@ -12,7 +12,6 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-generated-runtime-contributor-authority.mjs")
 const packageFactories = {
   accommodations: "createAccommodationsRuntimePortContribution",
-  "action-ledger-node": "createActionLedgerNodeRuntimePortContribution",
   auth: "createAuthRuntimePortContribution",
   bookings: "createBookingsRuntimePortContribution",
   catalog: "createCatalogRuntimePortContribution",

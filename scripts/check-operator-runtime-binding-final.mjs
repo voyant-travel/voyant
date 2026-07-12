@@ -9,7 +9,6 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const contributorRequirements = {
-  "action-ledger-node": "createActionLedgerStandardNodeRuntime",
   bookings: "bookingsConfigurationRuntimePort",
   catalog: "createCatalogRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",

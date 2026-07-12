@@ -3,7 +3,6 @@
 // Package manifests remain the authority for contributor entrypoints and export names.
 
 export { createAccommodationsRuntimePortContribution } from "@voyant-travel/accommodations/runtime-contributor"
-export { createActionLedgerNodeRuntimePortContribution } from "@voyant-travel/action-ledger-node/runtime-contributor"
 export { createAuthRuntimePortContribution } from "@voyant-travel/auth/runtime-contributor"
 export { createBookingsRuntimePortContribution } from "@voyant-travel/bookings/runtime-contributor"
 export { createCatalogRuntimePortContribution } from "@voyant-travel/catalog/runtime-contributor"

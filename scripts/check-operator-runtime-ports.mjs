@@ -15,7 +15,9 @@ const app = await readFile(path.join(operatorRoot, "src/api/app.ts"), "utf8")
 const resources = await readFile(resourcesPath, "utf8")
 
 const migratedPorts = [
-  "actionLedgerHealthRuntimePort",
+  "actionLedgerBookingDriftRuntimePort",
+  "actionLedgerFinanceDriftRuntimePort",
+  "actionLedgerInventoryDriftRuntimePort",
   "bookingMaintenanceRuntimePort",
   "bookingRequirementsRuntimePort",
   "bookingsRuntimePort",

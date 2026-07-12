@@ -1,5 +1,9 @@
 // agent-quality: file-size exception -- owner: operator; graph composition coverage.
-import { actionLedgerHealthRuntimePort } from "@voyant-travel/action-ledger/graph-runtime"
+import {
+  actionLedgerBookingDriftRuntimePort,
+  actionLedgerFinanceDriftRuntimePort,
+  actionLedgerInventoryDriftRuntimePort,
+} from "@voyant-travel/action-ledger/graph-runtime"
 import { bookingRequirementsRuntimePort, bookingsRuntimePort } from "@voyant-travel/bookings"
 import {
   catalogBookingRuntimePort,
@@ -686,7 +690,9 @@ describe("operator graph runtime composition", () => {
 
     expect(Object.keys(ports)).toEqual(
       expect.arrayContaining([
-        actionLedgerHealthRuntimePort.id,
+        actionLedgerBookingDriftRuntimePort.id,
+        actionLedgerFinanceDriftRuntimePort.id,
+        actionLedgerInventoryDriftRuntimePort.id,
         bookingMaintenanceRuntimePort.id,
         bookingRequirementsRuntimePort.id,
         bookingsRuntimePort.id,

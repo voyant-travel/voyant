@@ -12,9 +12,12 @@ const read = (relativePath) => {
 const sources = {
   deploymentResources: read("starters/operator/src/api/runtime/deployment-resources.ts"),
   actionPackage: read("packages/action-ledger/package.json"),
-  actionAdapterPackage: read("packages/action-ledger-node/package.json"),
-  actionContributor: read("packages/action-ledger-node/src/runtime-contributor.ts"),
-  actionRuntime: read("packages/action-ledger-node/src/standard-node-runtime.ts"),
+  actionGraphRuntime: read("packages/action-ledger/src/graph-runtime.ts"),
+  actionRuntimePorts: read("packages/action-ledger/src/runtime-port.ts"),
+  actionManifest: read("packages/action-ledger/src/voyant.ts"),
+  bookingsContributor: read("packages/bookings/src/runtime-contributor.ts"),
+  financeContributor: read("packages/finance/src/runtime-contributor.ts"),
+  inventoryContributor: read("packages/inventory/src/runtime-contributor.ts"),
   distributionPackage: read("packages/distribution/package.json"),
   distributionAdapterPackage: read("packages/distribution-node/package.json"),
   distributionContributor: read("packages/distribution-node/src/runtime-contributor.ts"),
@@ -33,18 +36,12 @@ for (const [name, source] of Object.entries(sources)) {
   }
 }
 if (sources.actionPackage.includes('"./runtime-contributor"')) {
-  violations.push("Action Ledger domain package retains a target runtime contributor")
+  violations.push("Action Ledger must not need an empty deployment-target contributor")
 }
 if (!sources.distributionPackage.includes('"createDistributionRuntimePortContribution"')) {
   violations.push("Distribution domain package must publish its neutral Catalog contributor")
 }
 for (const [name, source, packageName, factory] of [
-  [
-    "Action Ledger",
-    sources.actionAdapterPackage,
-    "@voyant-travel/action-ledger-node",
-    "createActionLedgerNodeRuntimePortContribution",
-  ],
   [
     "Distribution",
     sources.distributionAdapterPackage,
@@ -56,17 +53,26 @@ for (const [name, source, packageName, factory] of [
     violations.push(`${name} Node adapter metadata is incomplete`)
   }
 }
-for (const required of [
-  "checkBookingActionLedgerDrift",
-  "checkFinanceActionLedgerDrift",
-  "checkProductActionLedgerDrift",
+for (const [port, method, contributor] of [
+  ["actionLedgerBookingDriftRuntimePort", "checkBookingDrift", sources.bookingsContributor],
+  ["actionLedgerFinanceDriftRuntimePort", "checkFinanceDrift", sources.financeContributor],
+  ["actionLedgerInventoryDriftRuntimePort", "checkProductDrift", sources.inventoryContributor],
 ]) {
-  if (!sources.actionRuntime.includes(required)) {
-    violations.push(`Action Ledger Node runtime must contain ${required}`)
+  if (!sources.actionRuntimePorts.includes(`export const ${port}`)) {
+    violations.push(`Action Ledger must declare ${port}`)
+  }
+  if (!sources.actionManifest.includes(`requirePort(${port})`)) {
+    violations.push(`Action Ledger health extension must require ${port}`)
+  }
+  if (!sources.actionGraphRuntime.includes(`getPort(${port})`)) {
+    violations.push(`Action Ledger graph runtime must resolve ${port}`)
+  }
+  if (!contributor.includes(`[${port}.id]`) || !contributor.includes(method)) {
+    violations.push(`${port} must be supplied by its domain contributor`)
   }
 }
-if (!sources.actionContributor.includes("createActionLedgerStandardNodeRuntime")) {
-  violations.push("Action Ledger Node contributor must load the standard runtime")
+if (existsSync(path.join(root, "packages/action-ledger-node/package.json"))) {
+  violations.push("packages/action-ledger-node must stay deleted")
 }
 if (!sources.distributionContributor.includes("host.primitives")) {
   violations.push("Distribution Node contributor must use generic host primitives")
@@ -93,5 +99,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-action-distribution-workflow-runtime-authority: OK (leaf adapters and package registry authority)",
+  "check-action-distribution-workflow-runtime-authority: OK (Action Ledger static ports, Distribution leaf adapter, and package registry authority)",
 )

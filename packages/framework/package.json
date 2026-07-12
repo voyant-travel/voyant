@@ -51,7 +51,6 @@
   "dependencies": {
     "@voyant-travel/accommodations": "workspace:*",
     "@voyant-travel/action-ledger": "workspace:*",
-    "@voyant-travel/action-ledger-node": "workspace:*",
     "@voyant-travel/action-ledger-react": "workspace:*",
     "@voyant-travel/auth": "workspace:*",
     "@voyant-travel/availability": "workspace:*",

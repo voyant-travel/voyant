@@ -13,6 +13,7 @@
     "./fingerprint": "./src/fingerprint.ts",
     "./health": "./src/health-routes.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./timeline": "./src/timeline.ts",
     "./request-context": "./src/request-context.ts",
     "./routes": "./src/routes.ts",
@@ -108,6 +109,11 @@
         "types": "./dist/graph-runtime.d.ts",
         "import": "./dist/graph-runtime.js",
         "default": "./dist/graph-runtime.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

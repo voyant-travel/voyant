@@ -5,7 +5,6 @@
 export const FRAMEWORK_RUNTIME_PACKAGES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
-  "@voyant-travel/action-ledger-node",
   "@voyant-travel/auth",
   "@voyant-travel/bookings",
   "@voyant-travel/catalog",
@@ -31,7 +30,6 @@ export const FRAMEWORK_RUNTIME_PACKAGES = [
 export const FRAMEWORK_STANDARD_PACKAGES = [
   "@voyant-travel/accommodations",
   "@voyant-travel/action-ledger",
-  "@voyant-travel/action-ledger-node",
   "@voyant-travel/action-ledger-react",
   "@voyant-travel/auth",
   "@voyant-travel/availability",

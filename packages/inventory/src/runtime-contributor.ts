@@ -1,4 +1,8 @@
 import {
+  type ActionLedgerInventoryDriftRuntime,
+  actionLedgerInventoryDriftRuntimePort,
+} from "@voyant-travel/action-ledger/runtime-port"
+import {
   type BookingsInventoryRuntime,
   bookingsInventoryRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
@@ -9,6 +13,7 @@ import {
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { and, eq } from "drizzle-orm"
+import { checkProductActionLedgerDrift } from "./action-ledger-drift.js"
 import {
   createInventoryPaymentPolicyRuntime,
   readPolicySourceFromInternalNotes,
@@ -46,6 +51,9 @@ export function createInventoryRuntimePortContribution(
   const brochure = createInventoryBrochureStandardNodeRuntime(host.primitives)
   return {
     [catalogInventoryRuntimeExtensionPort.id]: catalogInventoryRuntimeExtension,
+    [actionLedgerInventoryDriftRuntimePort.id]: {
+      checkProductDrift: checkProductActionLedgerDrift,
+    } satisfies ActionLedgerInventoryDriftRuntime,
     [inventoryRuntimePort.id]: contribution.then((runtime) => runtime.inventory),
     [inventoryBrochureRuntimePort.id]: brochure,
     [bookingsInventoryRuntimePort.id]: {

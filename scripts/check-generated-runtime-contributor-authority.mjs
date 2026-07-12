@@ -10,7 +10,6 @@ const root = path.resolve(argument("--root", "."))
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const packageFactories = {
   accommodations: "createAccommodationsRuntimePortContribution",
-  "action-ledger-node": "createActionLedgerNodeRuntimePortContribution",
   auth: "createAuthRuntimePortContribution",
   bookings: "createBookingsRuntimePortContribution",
   catalog: "createCatalogRuntimePortContribution",

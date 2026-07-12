@@ -1,6 +1,8 @@
 ---
 "@voyant-travel/action-ledger": patch
-"@voyant-travel/action-ledger-node": minor
+"@voyant-travel/bookings": patch
+"@voyant-travel/finance": patch
+"@voyant-travel/inventory": patch
 "@voyant-travel/distribution": patch
 "@voyant-travel/distribution-node": minor
 "@voyant-travel/workflow-runs": patch
@@ -8,4 +10,4 @@
 "operator": patch
 ---
 
-Move Action Ledger health and Distribution channel-push standard Node composition into BOM-selected leaf adapters, and make Workflow Runs own runner registration authority.
+Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, retain Distribution's temporary leaf adapter, and make Workflow Runs own runner registration authority.

@@ -1,9 +1,0 @@
-{
-  "extends": "@voyant-travel/voyant-typescript-config/base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
-  },
-  "include": ["src/**/*.ts"]
-}

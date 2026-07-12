@@ -11,7 +11,6 @@ const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-final.mjs")
 const contributors = {
-  "action-ledger-node": "createActionLedgerStandardNodeRuntime",
   bookings: "bookingsConfigurationRuntimePort",
   catalog: "createCatalogRuntime",
   commerce: "host.capabilities.loadCommerceRuntime()",

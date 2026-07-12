@@ -50,7 +50,6 @@
     "@tiptap/starter-kit": "^3.27.1",
     "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/action-ledger": "workspace:^",
-    "@voyant-travel/action-ledger-node": "workspace:^",
     "@voyant-travel/action-ledger-react": "workspace:^",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/admin-app": "workspace:^",

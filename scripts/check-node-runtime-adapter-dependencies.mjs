@@ -10,17 +10,6 @@ const root = path.resolve(rootArgumentIndex >= 0 ? process.argv[rootArgumentInde
 const read = (relativePath) => readFileSync(path.join(root, relativePath), "utf8")
 const adapters = [
   {
-    packageName: "@voyant-travel/action-ledger-node",
-    directory: "action-ledger-node",
-    factory: "createActionLedgerNodeRuntimePortContribution",
-    domainPackageNames: [
-      "@voyant-travel/action-ledger",
-      "@voyant-travel/bookings",
-      "@voyant-travel/finance",
-      "@voyant-travel/inventory",
-    ],
-  },
-  {
     packageName: "@voyant-travel/distribution-node",
     directory: "distribution-node",
     factory: "createDistributionNodeRuntimePortContribution",
@@ -147,11 +136,20 @@ for (const consolidated of consolidatedPackages) {
 }
 for (const domainPackageName of ["@voyant-travel/action-ledger"]) {
   const domain = byName.get(domainPackageName)
+  if (byName.has(`${domainPackageName}-node`)) {
+    violations.push(`${domainPackageName}-node must stay deleted`)
+  }
+  if (runtimeBom.includes(`${domainPackageName}-node`)) {
+    violations.push(`${domainPackageName}-node must not remain in the runtime BOM`)
+  }
+  if (framework?.dependencies?.[`${domainPackageName}-node`]) {
+    violations.push(`${domainPackageName}-node must not remain in the framework BOM`)
+  }
   if (domain?.voyant?.runtime) {
-    violations.push(`${domainPackageName} must not retain standard Node contributor metadata`)
+    violations.push(`${domainPackageName} must not need a deployment-target contributor`)
   }
   if (domain?.exports?.["./runtime-contributor"]) {
-    violations.push(`${domainPackageName} must not export a target runtime contributor`)
+    violations.push(`${domainPackageName} must not export an empty deployment-target contributor`)
   }
 }
 if (!graphResolver.includes("FRAMEWORK_RUNTIME_PACKAGES.filter(")) {

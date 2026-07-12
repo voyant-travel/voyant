@@ -3,7 +3,6 @@
   "runtimePackages": [
     "@voyant-travel/accommodations",
     "@voyant-travel/action-ledger",
-    "@voyant-travel/action-ledger-node",
     "@voyant-travel/auth",
     "@voyant-travel/bookings",
     "@voyant-travel/catalog",

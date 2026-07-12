@@ -40,13 +40,6 @@
       ],
       "@voyant-travel/accommodations/voyant": ["../accommodations/dist/voyant.d.ts"],
       "@voyant-travel/action-ledger": ["../action-ledger/dist/index.d.ts"],
-      "@voyant-travel/action-ledger-node": ["../action-ledger-node/dist/runtime-contributor.d.ts"],
-      "@voyant-travel/action-ledger-node/runtime-contributor": [
-        "../action-ledger-node/dist/runtime-contributor.d.ts"
-      ],
-      "@voyant-travel/action-ledger-node/standard-node-runtime": [
-        "../action-ledger-node/dist/standard-node-runtime.d.ts"
-      ],
       "@voyant-travel/action-ledger-react": ["../action-ledger-react/dist/index.d.ts"],
       "@voyant-travel/action-ledger-react/admin": ["../action-ledger-react/dist/admin/index.d.ts"],
       "@voyant-travel/action-ledger-react/provider": ["../action-ledger-react/dist/provider.d.ts"],
@@ -59,6 +52,7 @@
         "../action-ledger/dist/request-context.d.ts"
       ],
       "@voyant-travel/action-ledger/routes": ["../action-ledger/dist/routes.d.ts"],
+      "@voyant-travel/action-ledger/runtime-port": ["../action-ledger/dist/runtime-port.d.ts"],
       "@voyant-travel/action-ledger/schema": ["../action-ledger/dist/schema.d.ts"],
       "@voyant-travel/action-ledger/service": ["../action-ledger/dist/service.d.ts"],
       "@voyant-travel/action-ledger/timeline": ["../action-ledger/dist/timeline.d.ts"],
@@ -602,9 +596,7 @@
       "@voyant-travel/cruises/public-routes": ["../cruises/dist/routes-public.d.ts"],
       "@voyant-travel/cruises/routes": ["../cruises/dist/routes.d.ts"],
       "@voyant-travel/cruises/routes-content": ["../cruises/dist/routes-content.d.ts"],
-      "@voyant-travel/cruises/runtime-contributor": [
-        "../cruises/dist/runtime-contributor.d.ts"
-      ],
+      "@voyant-travel/cruises/runtime-contributor": ["../cruises/dist/runtime-contributor.d.ts"],
       "@voyant-travel/cruises/schema": ["../cruises/dist/schema.d.ts"],
       "@voyant-travel/cruises/service-catalog-plane": [
         "../cruises/dist/service-catalog-plane.d.ts"
