@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=8192
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -74,11 +74,10 @@ jobs:
       # (concurrency=1), each alone with its own package-script heap.
       #
       # `typecheck` dependsOn `^build`, so this also executes the same multi-gigabyte
-      # *-react and aggregator builds as the Build job. Keep it serial: two processes
-      # with 8 GB heap ceilings can exhaust a 16 GB runner before accounting for
-      # Turbo, pnpm, and the OS.
+      # *-react and aggregator builds as the Build job. Keep it serial so only one
+      # process can use the 12 GB heap allowance on the 16 GB runner.
       - name: Typecheck (packages)
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=1 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
+        run: NODE_OPTIONS=--max-old-space-size=12288 pnpm turbo run typecheck --continue --concurrency=1 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
 
       - name: Typecheck (composition points)
         # Serial (concurrency=1): operator app, openapi spec, framework composition
@@ -113,8 +112,8 @@ jobs:
       HUSKY: 0
       # The composed framework app's tsc build grows with each module's
       # OpenAPIHono route chain; match the heap the typecheck/db-checks jobs
-      # already use so `tsc -p` doesn't OOM at the default ~4GB (voyant#2114).
-      NODE_OPTIONS: --max-old-space-size=8192
+      # already use. Serial execution keeps this 12 GB process inside runner RAM.
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -244,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=8192
+      NODE_OPTIONS: --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
