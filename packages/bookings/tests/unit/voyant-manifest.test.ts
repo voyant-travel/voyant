@@ -153,8 +153,11 @@ describe("bookings deployment manifest", () => {
       unitId: "@voyant-travel/bookings",
       projectConfig: {},
       api: [{ id: "bookings.public", surface: "public" as const }],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: async <TProvider>() => ({ options: {} }) as unknown as TProvider,
+      getPorts: async <TProvider>() => [] as TProvider[],
     }
     const bookings = await createBookingsVoyantRuntime(context)
     const requirements = await createBookingRequirementsVoyantRuntime({

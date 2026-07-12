@@ -130,8 +130,11 @@ describe("distribution deployment manifests", () => {
       unitId: distributionChannelPushVoyantPlugin.id,
       projectConfig: {},
       api: distributionChannelPushVoyantPlugin.api ?? [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     const context = {
       bindings: { DATABASE_URL: "postgres://test" },

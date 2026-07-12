@@ -114,8 +114,11 @@ describe("flights deployment manifest", () => {
       unitId: "@voyant-travel/flights",
       projectConfig: {},
       api: flightsVoyantModule.api ?? [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     expect(runtime.module).toEqual({ name: "flights" })
     expect(runtime.adminRoutes).toBeDefined()

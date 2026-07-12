@@ -139,8 +139,11 @@ describe("Legal booking-contract subscriber runtime", () => {
       unitId: "@voyant-travel/legal#booking-contract-extension",
       projectConfig: {},
       api: [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: async () => ({ createRuntime }),
+      getPorts: async () => [],
     })
     const container = createContainer()
 

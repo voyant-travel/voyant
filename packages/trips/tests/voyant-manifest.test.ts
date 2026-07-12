@@ -91,10 +91,13 @@ describe("trips deployment manifest", () => {
       api: tripsVoyantModule.api!.filter(({ surface }) =>
         selection === "both" ? true : surface === selection,
       ),
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async (port) =>
         port.id === tripsRoutesRuntimePort.id ? routeOptions : databaseRuntime,
       ) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     const bindings = { DATABASE_URL: "postgres://test" }
     const container = createContainer()

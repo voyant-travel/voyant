@@ -48,8 +48,11 @@ describe("relationships deployment manifest", () => {
       unitId: relationshipsVoyantModule.id,
       projectConfig: {},
       api: relationshipsVoyantModule.api ?? [],
+      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => ({ customFields })) as never,
+      getPorts: vi.fn(async () => []) as never,
     })
     const container = createContainer()
     await module.module.bootstrap?.({ bindings: {}, container, eventBus: createEventBus() })
