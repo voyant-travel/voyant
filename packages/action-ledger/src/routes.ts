@@ -24,7 +24,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { openApiValidationHook } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import {
   actionApprovalListQuerySchema,
@@ -925,23 +925,24 @@ const listEntriesRootRoute = createRoute({
   },
 })
 
-export const actionLedgerAdminRoutes = new OpenAPIHono<Env>({
-  defaultHook: openApiValidationHook,
-})
-  .openapi(listEntriesRootRoute, async (c) => {
-    const result = await actionLedgerService.listEntries(c.get("db"), c.req.valid("query"))
-    return c.json(
-      {
-        data: result.entries.map(serializeActionLedgerEntry),
-        pageInfo: { nextCursor: result.nextCursor },
-      } satisfies ActionLedgerListResponse,
-      200,
-    )
-  })
-  .route("/", entriesRoutes)
-  .route("/", approvalsRoutes)
-  .route("/", delegationsRoutes)
-  .route("/", relayOutboxRoutes)
+export const actionLedgerAdminRoutes = stampOpenApiRegistryApiId(
+  new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listEntriesRootRoute, async (c) => {
+      const result = await actionLedgerService.listEntries(c.get("db"), c.req.valid("query"))
+      return c.json(
+        {
+          data: result.entries.map(serializeActionLedgerEntry),
+          pageInfo: { nextCursor: result.nextCursor },
+        } satisfies ActionLedgerListResponse,
+        200,
+      )
+    })
+    .route("/", entriesRoutes)
+    .route("/", approvalsRoutes)
+    .route("/", delegationsRoutes)
+    .route("/", relayOutboxRoutes),
+  "@voyant-travel/action-ledger#api.admin",
+)
 
 export type ActionLedgerAdminRoutes = typeof actionLedgerAdminRoutes
 

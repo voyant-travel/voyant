@@ -14,11 +14,10 @@
  * an import cycle, those drift checks are INJECTED by the deployment as
  * structurally-typed option functions; this package never imports them.
  */
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { parseJsonBody, parseQuery } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
-import { Hono } from "hono"
-import { z } from "zod"
 
 import {
   type RunActionLedgerCanaryInput,
@@ -81,6 +80,65 @@ const actionLedgerHealthCheckBodySchema = actionLedgerHealthQuerySchema.extend({
   principalId: z.string().trim().min(1).optional(),
   idempotencyKey: z.string().trim().min(1).optional(),
   payloadRef: z.string().trim().min(1).optional(),
+})
+
+const actionLedgerDriftCheckResultSchema = z.object({
+  ok: z.boolean(),
+  rows: z.array(
+    z.object({
+      check: z.string(),
+      missingCount: z.number().int().nonnegative(),
+      sampleIds: z.array(z.string()),
+    }),
+  ),
+})
+
+const actionLedgerHealthResponseSchema = z.object({
+  data: z.object({
+    ok: z.boolean(),
+    canary: z
+      .object({
+        ok: z.boolean(),
+        actionId: z.string(),
+        replayed: z.boolean(),
+        observedWrite: z.boolean(),
+        observedRelay: z.boolean(),
+      })
+      .nullable(),
+    bookingDrift: actionLedgerDriftCheckResultSchema,
+    financeDrift: actionLedgerDriftCheckResultSchema,
+    productDrift: actionLedgerDriftCheckResultSchema,
+  }),
+})
+
+const healthResponses = {
+  200: {
+    description: "The action ledger and domain projections are healthy",
+    content: { "application/json": { schema: actionLedgerHealthResponseSchema } },
+  },
+  503: {
+    description: "An action ledger or domain projection health check failed",
+    content: { "application/json": { schema: actionLedgerHealthResponseSchema } },
+  },
+} as const
+
+const getActionLedgerHealthRoute = createRoute({
+  method: "get",
+  path: "/health",
+  request: { query: actionLedgerHealthQuerySchema },
+  responses: healthResponses,
+})
+
+const checkActionLedgerHealthRoute = createRoute({
+  method: "post",
+  path: "/health/check",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: actionLedgerHealthCheckBodySchema } },
+    },
+  },
+  responses: healthResponses,
 })
 
 export interface ActionLedgerHealthResponse {
@@ -160,14 +218,14 @@ export interface ActionLedgerHealthRoutesOptions {
  * `/v1/admin/action-ledger`). The deployment injects the per-module drift
  * checks via `options`.
  */
-export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutesOptions): Hono<{
-  Variables: ActionLedgerHealthVariables
-}> {
+export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutesOptions) {
   const { checkBookingDrift, checkFinanceDrift, checkProductDrift, runCanaryCheck } = options
-  const hono = new Hono<{ Variables: ActionLedgerHealthVariables }>()
+  const hono = new OpenAPIHono<{ Variables: ActionLedgerHealthVariables }>({
+    defaultHook: openApiValidationHook,
+  })
 
-  hono.get("/health", async (c) => {
-    const query = parseQuery(c, actionLedgerHealthQuerySchema)
+  hono.openapi(getActionLedgerHealthRoute, async (c) => {
+    const query = c.req.valid("query")
     const data = await runActionLedgerHealthCheck({
       db: c.get("db"),
       drift: {
@@ -181,11 +239,13 @@ export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutes
       ...(runCanaryCheck ? { runCanaryCheck } : {}),
     })
 
-    return c.json({ data } satisfies ActionLedgerHealthResponse, data.ok ? 200 : 503)
+    return data.ok
+      ? c.json({ data } satisfies ActionLedgerHealthResponse, 200)
+      : c.json({ data } satisfies ActionLedgerHealthResponse, 503)
   })
 
-  hono.post("/health/check", async (c) => {
-    const body = await parseJsonBody(c, actionLedgerHealthCheckBodySchema)
+  hono.openapi(checkActionLedgerHealthRoute, async (c) => {
+    const body = c.req.valid("json")
     const data = await runActionLedgerHealthCheck({
       db: c.get("db"),
       drift: {
@@ -205,10 +265,12 @@ export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutes
       ...(runCanaryCheck ? { runCanaryCheck } : {}),
     })
 
-    return c.json({ data } satisfies ActionLedgerHealthResponse, data.ok ? 200 : 503)
+    return data.ok
+      ? c.json({ data } satisfies ActionLedgerHealthResponse, 200)
+      : c.json({ data } satisfies ActionLedgerHealthResponse, 503)
   })
 
-  return hono
+  return stampOpenApiRegistryApiId(hono, "@voyant-travel/action-ledger#health-extension.api")
 }
 
 /** Package-owned descriptor; domain-specific drift checks remain injected. */

@@ -1,12 +1,11 @@
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { ApiHttpError, parseJsonBody } from "@voyant-travel/hono"
+import { ApiHttpError, openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
-import { Hono as HonoApp } from "hono"
-import { z } from "zod"
 
 import { createFinanceBookingTaxRuntime } from "./runtime.js"
 import { financeOperatorSettingsRuntimePort } from "./runtime-port.js"
@@ -30,9 +29,95 @@ export type BookingTaxSettings = {
   taxPolicyProfileId?: string | null
 }
 
+type ResolvedBookingTaxSettings = {
+  taxPriceMode: "inclusive" | "exclusive"
+  taxPolicyProfileId: string | null
+}
+
 export type ResolveBookingTaxSettings = (
   db: PostgresJsDatabase,
 ) => BookingTaxSettings | null | undefined | Promise<BookingTaxSettings | null | undefined>
+
+const taxPreviewBodySchema = z.object({
+  productId: z.string().min(1),
+  subtotalCents: z.number().int().min(0),
+  currency: z.string().min(3).max(8),
+})
+
+const bookingTaxSettingsPatchSchema = z.object({
+  taxPriceMode: z.enum(["inclusive", "exclusive"]).optional(),
+  taxPolicyProfileId: z.string().min(1).nullable().optional(),
+})
+
+const bookingTaxSettingsResponseSchema = z.object({
+  data: z.object({
+    taxPriceMode: z.enum(["inclusive", "exclusive"]),
+    taxPolicyProfileId: z.string().nullable(),
+  }),
+})
+
+const bookingTaxPreviewResponseSchema = z.object({
+  data: z.object({
+    subtotalCents: z.number().int().nonnegative(),
+    taxCents: z.number().int().nonnegative(),
+    totalCents: z.number().int().nonnegative(),
+    currency: z.string(),
+    taxRate: z
+      .object({
+        code: z.string(),
+        label: z.string(),
+        rateBasisPoints: z.number().int(),
+        priceMode: z.enum(["inclusive", "exclusive"]),
+      })
+      .nullable(),
+  }),
+})
+
+const getBookingTaxSettingsRoute = createRoute({
+  method: "get",
+  path: "/tax-settings",
+  responses: {
+    200: {
+      description: "The effective booking tax settings",
+      content: { "application/json": { schema: bookingTaxSettingsResponseSchema } },
+    },
+  },
+})
+
+const updateBookingTaxSettingsRoute = createRoute({
+  method: "patch",
+  path: "/tax-settings",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: bookingTaxSettingsPatchSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The updated booking tax settings",
+      content: { "application/json": { schema: bookingTaxSettingsResponseSchema } },
+    },
+    409: { description: "This deployment does not support tax setting updates" },
+  },
+})
+
+const previewBookingTaxRoute = createRoute({
+  method: "post",
+  path: "/tax-preview",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: taxPreviewBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The calculated tax preview",
+      content: { "application/json": { schema: bookingTaxPreviewResponseSchema } },
+    },
+  },
+})
 
 export type UpdateBookingTaxSettings = (
   db: PostgresJsDatabase,
@@ -53,17 +138,6 @@ export interface ResolveBookingSellTaxRateOptions {
 export interface BookingTaxRouteOptions extends ResolveBookingSellTaxRateOptions {
   updateBookingTaxSettings?: UpdateBookingTaxSettings
 }
-
-const taxPreviewBodySchema = z.object({
-  productId: z.string().min(1),
-  subtotalCents: z.number().int().min(0),
-  currency: z.string().min(3).max(8),
-})
-
-const bookingTaxSettingsPatchSchema = z.object({
-  taxPriceMode: z.enum(["inclusive", "exclusive"]).optional(),
-  taxPolicyProfileId: z.string().min(1).nullable().optional(),
-})
 
 export async function resolveBookingSellTaxRate(
   db: PostgresJsDatabase,
@@ -113,7 +187,7 @@ export async function resolveBookingSellTaxRate(
 async function resolveBookingTaxSettingsOrDefault(
   db: PostgresJsDatabase,
   options: ResolveBookingSellTaxRateOptions = {},
-): Promise<BookingTaxSettings> {
+): Promise<ResolvedBookingTaxSettings> {
   const settings =
     options.settings !== undefined
       ? options.settings
@@ -299,17 +373,20 @@ async function resolveProductTaxClassRate(
 }
 
 export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
-  return new HonoApp<{
+  const routes = new OpenAPIHono<{
     Variables: {
       db: PostgresJsDatabase
     }
-  }>()
-    .get("/tax-settings", async (c) => {
-      return c.json({
-        data: await resolveBookingTaxSettingsOrDefault(c.get("db"), options),
-      })
+  }>({ defaultHook: openApiValidationHook })
+    .openapi(getBookingTaxSettingsRoute, async (c) => {
+      return c.json(
+        {
+          data: await resolveBookingTaxSettingsOrDefault(c.get("db"), options),
+        },
+        200,
+      )
     })
-    .patch("/tax-settings", async (c) => {
+    .openapi(updateBookingTaxSettingsRoute, async (c) => {
       if (!options.updateBookingTaxSettings) {
         throw new ApiHttpError("Booking tax settings updates are not configured", {
           status: 409,
@@ -318,7 +395,7 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
       }
 
       const current = await resolveBookingTaxSettingsOrDefault(c.get("db"), options)
-      const patch = await parseJsonBody(c, bookingTaxSettingsPatchSchema)
+      const patch = c.req.valid("json")
       const next = await options.updateBookingTaxSettings(c.get("db"), {
         taxPriceMode: patch.taxPriceMode ?? current.taxPriceMode,
         taxPolicyProfileId:
@@ -327,12 +404,15 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
             : patch.taxPolicyProfileId,
       })
 
-      return c.json({
-        data: await resolveBookingTaxSettingsOrDefault(c.get("db"), { settings: next }),
-      })
+      return c.json(
+        {
+          data: await resolveBookingTaxSettingsOrDefault(c.get("db"), { settings: next }),
+        },
+        200,
+      )
     })
-    .post("/tax-preview", async (c) => {
-      const body = await parseJsonBody(c, taxPreviewBodySchema)
+    .openapi(previewBookingTaxRoute, async (c) => {
+      const body = c.req.valid("json")
       const taxRate = await resolveBookingSellTaxRate(
         c.get("db"),
         { productId: body.productId },
@@ -341,15 +421,18 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
       const taxLine = computeBookingItemTaxLine(taxRate, body.subtotalCents, body.currency)
 
       if (!taxRate || !taxLine) {
-        return c.json({
-          data: {
-            subtotalCents: body.subtotalCents,
-            taxCents: 0,
-            totalCents: body.subtotalCents,
-            currency: body.currency,
-            taxRate: null,
+        return c.json(
+          {
+            data: {
+              subtotalCents: body.subtotalCents,
+              taxCents: 0,
+              totalCents: body.subtotalCents,
+              currency: body.currency,
+              taxRate: null,
+            },
           },
-        })
+          200,
+        )
       }
 
       const inclusive = taxLine.includedInPrice
@@ -358,21 +441,26 @@ export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
         : body.subtotalCents
       const total = inclusive ? body.subtotalCents : body.subtotalCents + taxLine.amountCents
 
-      return c.json({
-        data: {
-          subtotalCents: displaySubtotal,
-          taxCents: taxLine.amountCents,
-          totalCents: total,
-          currency: body.currency,
-          taxRate: {
-            code: taxRate.code,
-            label: taxRate.label,
-            rateBasisPoints: Math.round(taxRate.rate * 10_000),
-            priceMode: taxRate.priceMode,
+      return c.json(
+        {
+          data: {
+            subtotalCents: displaySubtotal,
+            taxCents: taxLine.amountCents,
+            totalCents: total,
+            currency: body.currency,
+            taxRate: {
+              code: taxRate.code,
+              label: taxRate.label,
+              rateBasisPoints: Math.round(taxRate.rate * 10_000),
+              priceMode: taxRate.priceMode,
+            },
           },
         },
-      })
+        200,
+      )
     })
+
+  return stampOpenApiRegistryApiId(routes, "@voyant-travel/finance#booking-tax-extension.api")
 }
 
 export function mountBookingTaxRoutes(hono: Hono, options: BookingTaxRouteOptions = {}): void {
