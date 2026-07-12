@@ -2,6 +2,7 @@
 "@voyant-travel/admin-app": patch
 "@voyant-travel/admin-host": patch
 "@voyant-travel/admin": patch
+"@voyant-travel/framework": patch
 "@voyant-travel/operator-settings-react": patch
 "@voyant-travel/operator-settings": patch
 "@voyant-travel/relationships-react": patch

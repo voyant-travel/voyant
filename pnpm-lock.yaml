@@ -2184,6 +2184,9 @@ importers:
       '@voyant-travel/operator-settings':
         specifier: workspace:*
         version: link:../operator-settings
+      '@voyant-travel/operator-settings-react':
+        specifier: workspace:*
+        version: link:../operator-settings-react
       '@voyant-travel/plugin-catalog-demo':
         specifier: workspace:*
         version: link:../plugins/catalog-demo
@@ -3376,9 +3379,6 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyant-travel/operator-settings-react':
-        specifier: workspace:^
-        version: link:../operator-settings-react
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
