@@ -211,6 +211,20 @@ function inspectRepositoryAuthority(repoRoot) {
   }
 
   for (const relativePath of [
+    "starters/operator/scripts/seed-flights-reference.ts",
+    "starters/operator/scripts/seed-flights-reference-aircraft.ts",
+    "starters/operator/scripts/seed-flights-reference-airlines.ts",
+    "starters/operator/scripts/seed-flights-reference-airports.ts",
+    "starters/operator/scripts/seed-flights-reference-airports-europe.ts",
+    "starters/operator/scripts/seed-flights-reference-airports-global.ts",
+    "starters/operator/scripts/seed-flights-reference-types.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`Flights reference fixture must remain package-owned: ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
     "starters/operator/src/api/lib/catalog-context.ts",
     "starters/operator/src/api/lib/storage.ts",
     "starters/operator/src/api/runtime/payment-config.ts",

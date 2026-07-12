@@ -12,6 +12,7 @@
     "./orchestration/fan-out": "./src/orchestration/fan-out.ts",
     "./snapshot": "./src/snapshot.ts",
     "./reference/contract": "./src/reference/contract.ts",
+    "./reference/fixtures": "./src/reference/fixtures.ts",
     "./reference/local-postgres": "./src/reference/local-postgres.ts",
     "./reference/static-bundle": "./src/reference/static-bundle.ts",
     "./hono": "./src/hono.ts",
@@ -102,6 +103,11 @@
         "types": "./dist/reference/contract.d.ts",
         "import": "./dist/reference/contract.js",
         "default": "./dist/reference/contract.js"
+      },
+      "./reference/fixtures": {
+        "types": "./dist/reference/fixtures.d.ts",
+        "import": "./dist/reference/fixtures.js",
+        "default": "./dist/reference/fixtures.js"
       },
       "./reference/local-postgres": {
         "types": "./dist/reference/local-postgres.d.ts",

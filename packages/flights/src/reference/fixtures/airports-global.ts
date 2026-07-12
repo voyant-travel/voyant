@@ -1,6 +1,6 @@
-import type { AirportSeedRow } from "./seed-flights-reference-types"
+import type { AirportFixtureRow } from "./types.js"
 
-export const GLOBAL_AIRPORTS: AirportSeedRow[] = [
+export const GLOBAL_AIRPORTS: AirportFixtureRow[] = [
   // ── North America (15) ─────────────────────────────────────────────────
   {
     iataCode: "JFK",
