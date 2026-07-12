@@ -79,6 +79,7 @@ function runtimePortStub(id: string): unknown {
     createService: () => runtimeServiceStub(id),
     resolveRuntime: unavailableAsync,
     resolveRegistry: unavailableAsync,
+    resolveSourceAdapterRegistry: unavailableAsync,
     getProductContent: unavailableAsync,
     listAvailabilitySlots: unavailableAsync,
     getOwnedProductById: unavailableAsync,
