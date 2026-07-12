@@ -75,7 +75,10 @@ describe("flights deployment manifest", () => {
     expect(runtime.publicRoutes).toBeUndefined()
     expect(runtime.webhookRoutes).toBeUndefined()
 
-    const document = (runtime.adminRoutes as OpenApiDocumentSource).getOpenAPI31Document({
+    if (!isOpenApiDocumentSource(runtime.adminRoutes)) {
+      throw new Error("Flights admin routes must expose an OpenAPI document.")
+    }
+    const document = runtime.adminRoutes.getOpenAPI31Document({
       openapi: "3.1.0",
       info: { title: "Flights", version: "1" },
     })
@@ -123,4 +126,13 @@ interface OpenApiDocumentSource {
   getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
     paths?: Record<string, Record<string, unknown>>
   }
+}
+
+function isOpenApiDocumentSource(value: unknown): value is OpenApiDocumentSource {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "getOpenAPI31Document" in value &&
+    typeof value.getOpenAPI31Document === "function"
+  )
 }
