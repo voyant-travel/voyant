@@ -1,13 +1,8 @@
 // agent-quality: file-size exception -- this entry is the resident Node runtime
-// composition boundary. Graph boot, legacy profile adaptation, environment
-// binding assembly, and generic Node infrastructure stay together while
-// compatibility is retired incrementally.
-import { readFile } from "node:fs/promises"
+// composition boundary for graph boot, environment bindings, and generic Node
+// infrastructure.
 
-import {
-  type ActionLedgerCapabilityRegistry,
-  createActionLedgerCapabilityRegistry,
-} from "@voyant-travel/action-ledger/capability"
+import type { ActionLedgerCapabilityRegistry } from "@voyant-travel/action-ledger/capability"
 import {
   createVoyantCloudAdminAuthPlugin,
   revalidateVoyantCloudAdminAuthSession,
@@ -55,23 +50,9 @@ import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
-import {
-  resolveManagedCustomExtensions,
-  resolveManagedCustomModules,
-} from "./custom-source-resolution.js"
 import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
+import type { VoyantDeploymentEnvRequirement, VoyantDeploymentMode } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
-import { type ManagedPlugin, resolveManagedPlugins } from "./plugin-resolution.js"
-import {
-  getVoyantProjectRequirements,
-  resolveActiveModuleIds,
-  type VoyantProfileEnvRequirement,
-  type VoyantProfileRequirements,
-  type VoyantProjectDeploymentMode,
-  type VoyantProjectManifest,
-  type VoyantProjectProviders,
-  validateVoyantProject,
-} from "./profile.js"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 import {
@@ -79,21 +60,7 @@ import {
   resolveVoyantGraphRuntimeValues,
 } from "./runtime-values.js"
 
-export {
-  type ResolveManagedCustomSourceOptions,
-  resolveManagedCustomExtensions,
-  resolveManagedCustomModules,
-} from "./custom-source-resolution.js"
-
-export {
-  type ManagedPlugin,
-  type ResolveManagedPluginsOptions,
-  resolveManagedPlugins,
-  type VoyantManagedPluginContext,
-  type VoyantManagedPluginFactory,
-} from "./plugin-resolution.js"
-
-export interface ManagedProfileRuntimeEnv extends VoyantBindings {
+export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   DATABASE_URL_DIRECT?: string
   DATABASE_URL_REPLICAS?: string
   R2_S3_ENDPOINT?: string
@@ -125,80 +92,12 @@ export interface ManagedProfileRuntimeEnv extends VoyantBindings {
   PORT?: string
 }
 
-export type VoyantNodeRuntimeEnv = ManagedProfileRuntimeEnv
-
 /** Generic host resources available only to deployment-local factories. */
 export type VoyantNodeRuntimeResources = Readonly<Record<string, unknown>>
 
-type ManagedProfileAppModules = Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
-type ManagedProfileAppExtensions = Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>
-
-export interface ManagedProfileRuntimeOptions {
-  /** Existing compatibility input for callers that persist a profile snapshot. */
-  profileSnapshotPath?: string
-  /** Admitted in-memory project manifest for graph-native Node hosts. */
-  project?: VoyantProjectManifest
-  /**
-   * Resolved deployment mode and providers supplied by a checked graph artifact.
-   * Omit this only for legacy snapshot-only callers.
-   */
-  deployment?: ManagedProfileRuntimeDeployment
-  /**
-   * Resolved deployment requirements supplied by a checked graph artifact.
-   * Omit this only for legacy snapshot-only callers.
-   */
-  deploymentRequirements?: VoyantGraphDeploymentRequirements
-  /** Admitted generated runtime for graph-owned tools and other executable facets. */
-  graphRuntime?: VoyantGraphRuntime
-  /** Host implementations for graph-selected package runtime ports. */
-  runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
-  /** Generic resources available to deployment-local factories. */
-  resources?: VoyantNodeRuntimeResources
-  env?: Record<string, unknown> | VoyantNodeRuntimeEnv
-  auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
-  /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
-  providers?: VoyantNodeRuntimeResources
-  app?: Partial<
-    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
-  >
-  /**
-   * Override how snapshot `plugins` specifiers are imported. Defaults to dynamic
-   * `import()`; injectable so Cloud (or tests) can resolve plugins from a
-   * pre-bundled registry instead of node resolution.
-   */
-  importPluginModule?: (specifier: string) => Promise<Record<string, unknown>>
-  /**
-   * Override how snapshot `customSource.modules` and `customSource.extensions`
-   * specifiers are imported. Defaults to dynamic `import()`; injectable so Cloud
-   * (or tests) can resolve custom source packages from a pre-bundled registry
-   * instead of node resolution.
-   */
-  importCustomSourceModule?: (specifier: string) => Promise<Record<string, unknown>>
-}
-
-export interface ManagedProfileRuntimeDeployment {
-  mode: VoyantProjectDeploymentMode
-  providers: VoyantProjectProviders
-}
-
-export interface ManagedProfileRuntime {
-  project: VoyantProjectManifest
-  requirements: VoyantProfileRequirements
-  env: VoyantNodeRuntimeEnv
-  graphValues?: ResolvedVoyantGraphRuntimeValues
-  app: ReturnType<typeof createManagedProfileApp>
-  actionLedgerCapabilities: ActionLedgerCapabilityRegistry
-  fetch: (
-    request: Request,
-    env?: VoyantNodeRuntimeEnv,
-    ctx?: ExecutionContextLike,
-  ) => Response | Promise<Response>
-  start: (options?: Partial<CreateNodeServerOptions<VoyantNodeRuntimeEnv>>) => NodeServerHandle
-}
-
 /** Graph-native deployment settings consumed by the resident Node host. */
 export interface VoyantNodeRuntimeDeployment {
-  mode: VoyantProjectDeploymentMode
+  mode: VoyantDeploymentMode
   providers: Readonly<Record<string, string>>
 }
 
@@ -211,12 +110,12 @@ export interface VoyantNodeRuntimeOptions {
   /** Generic resources available to deployment-local factories. */
   resources?: VoyantNodeRuntimeResources
   applicationId?: string
-  env?: Record<string, unknown> | ManagedProfileRuntimeEnv
-  auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
+  env?: Record<string, unknown> | VoyantNodeRuntimeEnv
+  auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
   /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
+    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
 }
 
@@ -225,16 +124,16 @@ export interface VoyantNodeRuntime {
   graphRuntime: VoyantGraphRuntime
   deployment: VoyantNodeRuntimeDeployment
   requirements: VoyantGraphDeploymentRequirements
-  env: ManagedProfileRuntimeEnv
+  env: VoyantNodeRuntimeEnv
   graphValues: ResolvedVoyantGraphRuntimeValues
   app: ReturnType<typeof createVoyantNodeApp>
   actionLedgerCapabilities: ActionLedgerCapabilityRegistry
   fetch: (
     request: Request,
-    env?: ManagedProfileRuntimeEnv,
+    env?: VoyantNodeRuntimeEnv,
     ctx?: ExecutionContextLike,
   ) => Response | Promise<Response>
-  start: (options?: Partial<CreateNodeServerOptions<ManagedProfileRuntimeEnv>>) => NodeServerHandle
+  start: (options?: Partial<CreateNodeServerOptions<VoyantNodeRuntimeEnv>>) => NodeServerHandle
 }
 
 let pooledDb: { url: string; db: VoyantDb } | undefined
@@ -258,7 +157,7 @@ const MANAGED_CLOUD_AUTH_REQUIRED_ENV = [
 const MANAGED_FULL_ACCESS_SCOPES = ["*"]
 const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
 
-interface ManagedSharedStores {
+interface NodeSharedStores {
   CACHE: KVStore
   RATE_LIMIT: KVStore
   RATE_LIMIT_STORE: RateLimitStore
@@ -268,14 +167,14 @@ interface ManagedSharedStores {
 export async function loadVoyantNodeRuntime(
   options: VoyantNodeRuntimeOptions,
 ): Promise<VoyantNodeRuntime> {
-  const env = createManagedProfileNodeEnv(options.env ?? process.env)
+  const env = createVoyantNodeEnv(options.env ?? process.env)
   const requirements = options.deploymentRequirements
   const graphValues = await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
     deploymentValues: toPluginEnvRecord(env),
     deploymentValueAliases: deploymentValueAliases(requirements),
   })
   const activeModules = options.graphRuntime.modules.map((unit) => unit.localId ?? unit.id)
-  const auth = resolveManagedProfileAuthIntegration({
+  const auth = resolveVoyantNodeAuthIntegration({
     env,
     auth: options.app?.auth ?? options.auth,
     activeModules,
@@ -362,144 +261,6 @@ export async function startVoyantNodeRuntime(
   return runtime.start(options.server)
 }
 
-export async function loadManagedProfileRuntime(
-  options: ManagedProfileRuntimeOptions,
-): Promise<ManagedProfileRuntime> {
-  const project = applyManagedRuntimeDeployment(
-    await resolveManagedRuntimeProject(options),
-    options.deployment,
-  )
-  const env = createManagedProfileNodeEnv(options.env ?? process.env)
-  const profileRequirements = getVoyantProjectRequirements(project)
-  const requirements: VoyantProfileRequirements = {
-    ...profileRequirements,
-    ...(options.deploymentRequirements
-      ? { resources: options.deploymentRequirements.resources }
-      : {}),
-  }
-  const graphValues = options.graphRuntime
-    ? await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
-        deploymentValues: toPluginEnvRecord(env),
-        deploymentValueAliases: deploymentValueAliases(requirements),
-      })
-    : undefined
-  const auth = resolveManagedProfileAuthIntegration({
-    env,
-    auth: options.app?.auth ?? options.auth,
-    activeModules: resolveActiveModuleIds(project),
-  })
-  const plugins = await resolveManagedPlugins(
-    project,
-    toPluginEnvRecord(env),
-    options.importPluginModule ? { importModule: options.importPluginModule } : {},
-  )
-  const customSourceOptions = options.importCustomSourceModule
-    ? { importModule: options.importCustomSourceModule }
-    : {}
-  const customModules = await resolveManagedCustomModules<VoyantNodeRuntimeResources>(
-    project,
-    toPluginEnvRecord(env),
-    customSourceOptions,
-  )
-  const resources = { ...(options.providers ?? {}), ...(options.resources ?? {}) }
-  const graphComposition = options.graphRuntime
-    ? await composeVoyantGraphRuntime({
-        runtime: options.graphRuntime,
-        capabilities: resources,
-        ports: options.runtimePorts,
-      })
-    : undefined
-  const actionLedgerCapabilities = options.graphRuntime
-    ? lowerVoyantGraphActionsToActionLedgerRegistry(options.graphRuntime)
-    : createActionLedgerCapabilityRegistry([])
-  const customExtensions = await resolveManagedCustomExtensions<VoyantNodeRuntimeResources>(
-    project,
-    toPluginEnvRecord(env),
-    customSourceOptions,
-  )
-  for (const [index, module] of (graphComposition?.modules ?? []).entries()) {
-    customModules[`selected-graph-module:${index}:${module.module.name}`] = () => module
-  }
-  for (const [index, extension] of (graphComposition?.extensions ?? []).entries()) {
-    customExtensions[`selected-graph-extension:${index}:${extension.extension.name}`] = () =>
-      extension
-  }
-  assertManagedProfileRuntimeSupport({
-    project,
-    requirements,
-    env,
-    hasAuthIntegration: Boolean(auth),
-    hasResolvedPlugins: plugins.length > 0,
-    hasResolvedCustomModules: Object.keys(customModules).length > 0,
-    hasResolvedCustomExtensions: Object.keys(customExtensions).length > 0,
-  })
-  const app = createManagedProfileApp({
-    project,
-    env,
-    auth,
-    resources,
-    app: graphComposition
-      ? {
-          ...options.app,
-          publicPaths: [
-            ...(options.app?.publicPaths ?? []),
-            ...graphComposition.routePosture.publicPaths,
-          ],
-          dbTransactionalPaths: [
-            ...(options.app?.dbTransactionalPaths ?? []),
-            ...graphComposition.routePosture.transactionalPaths,
-          ],
-          accessResources: [
-            ...(options.app?.accessResources ?? []),
-            ...graphComposition.accessResources,
-          ],
-        }
-      : options.app,
-    plugins,
-    modules: customModules,
-    extensions: customExtensions,
-    graphRuntime: options.graphRuntime,
-  })
-
-  return {
-    project,
-    requirements,
-    env,
-    ...(graphValues ? { graphValues } : {}),
-    app,
-    actionLedgerCapabilities,
-    fetch: (request, bindings = env, ctx = createNoopExecutionContext()) =>
-      app.fetch(request, bindings, toHonoExecutionContext(ctx)),
-    start: (serverOptions = {}) =>
-      createNodeServer<ManagedProfileRuntimeEnv>({
-        fetch: (request, bindings, ctx) =>
-          app.fetch(request, bindings, toHonoExecutionContext(ctx)),
-        env,
-        port: Number.parseInt(env.PORT ?? "8080", 10),
-        ...(env.ORIGIN_TRUST_SECRET ? { originTrustSecret: env.ORIGIN_TRUST_SECRET } : {}),
-        ...serverOptions,
-      }),
-  }
-}
-
-async function resolveManagedRuntimeProject(
-  options: Pick<ManagedProfileRuntimeOptions, "profileSnapshotPath" | "project">,
-): Promise<VoyantProjectManifest> {
-  if (options.project) {
-    const validation = validateVoyantProject(options.project)
-    if (!validation.ok) {
-      throw new Error(
-        `Invalid managed runtime project:\n${validation.issues
-          .map((issue) => `- ${issue.path || "<root>"}: ${issue.message}`)
-          .join("\n")}`,
-      )
-    }
-    return options.project
-  }
-  if (options.profileSnapshotPath) return loadManagedProfileSnapshot(options.profileSnapshotPath)
-  throw new Error("Managed runtime requires an admitted project manifest or profile snapshot path.")
-}
-
 function deploymentValueAliases(
   requirements: Pick<VoyantGraphDeploymentRequirements, "resources"> | undefined,
 ): Record<string, string[]> {
@@ -515,31 +276,6 @@ function deploymentValueAliases(
   return aliases
 }
 
-export async function startManagedProfileRuntime(
-  options: ManagedProfileRuntimeOptions & {
-    server?: Partial<CreateNodeServerOptions<ManagedProfileRuntimeEnv>>
-  },
-): Promise<NodeServerHandle> {
-  const runtime = await loadManagedProfileRuntime(options)
-  return runtime.start(options.server)
-}
-
-export async function loadManagedProfileSnapshot(
-  profileSnapshotPath: string,
-): Promise<VoyantProjectManifest> {
-  const raw = await readFile(profileSnapshotPath, "utf8")
-  const parsed = JSON.parse(raw) as unknown
-  const validation = validateVoyantProject(parsed)
-  if (!validation.ok) {
-    throw new Error(
-      `Invalid managed profile snapshot:\n${validation.issues
-        .map((issue) => `- ${issue.path || "<root>"}: ${issue.message}`)
-        .join("\n")}`,
-    )
-  }
-  return parsed as VoyantProjectManifest
-}
-
 export function createVoyantNodeApp(options: {
   applicationId: string
   activeModules: readonly string[]
@@ -551,10 +287,10 @@ export function createVoyantNodeApp(options: {
   app?: Partial<
     Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
   >
-  modules?: ManagedProfileAppModules
-  extensions?: ManagedProfileAppExtensions
+  modules?: Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
+  extensions?: Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>
 }) {
-  const auth = resolveManagedProfileAuthIntegration({
+  const auth = resolveVoyantNodeAuthIntegration({
     env: options.env,
     auth: options.app?.auth ?? options.auth,
     activeModules: options.activeModules,
@@ -565,7 +301,7 @@ export function createVoyantNodeApp(options: {
     outbox: true,
     workflows: {
       driver: (bindings) =>
-        createManagedProfileWorkflowDriver(bindings as VoyantNodeRuntimeEnv, options.applicationId),
+        createVoyantNodeWorkflowDriver(bindings as VoyantNodeRuntimeEnv, options.applicationId),
       environment: options.env?.VOYANT_CLOUD_ENVIRONMENT ?? "development",
       projectId: options.env?.VOYANT_CLOUD_APP_SLUG ?? options.applicationId,
     },
@@ -584,120 +320,15 @@ export function createVoyantNodeApp(options: {
   })
 }
 
-function applyManagedRuntimeDeployment(
-  snapshot: VoyantProjectManifest,
-  deployment: ManagedProfileRuntimeDeployment | undefined,
-): VoyantProjectManifest {
-  if (!deployment) return snapshot
-
-  const { providers: _snapshotProviders, ...projectWithoutSnapshotProviders } = snapshot
-  const project: VoyantProjectManifest = {
-    ...projectWithoutSnapshotProviders,
-    mode: deployment.mode,
-    ...(deployment.mode === "managed-cloud" ? {} : { providers: deployment.providers }),
-  }
-  const validation = validateVoyantProject(project)
-  if (!validation.ok) {
-    throw new Error(
-      `Invalid graph runtime deployment:\n${validation.issues
-        .map((issue) => `- ${issue.path || "<root>"}: ${issue.message}`)
-        .join("\n")}`,
-    )
-  }
-  return project
-}
-
-export function createManagedProfileApp(options: {
-  project: VoyantProjectManifest
-  env?: ManagedProfileRuntimeEnv
-  auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
-  resources?: VoyantNodeRuntimeResources
-  /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
-  providers?: VoyantNodeRuntimeResources
-  graphRuntime?: VoyantGraphRuntime
-  app?: Partial<
-    Omit<CreateVoyantAppConfig<ManagedProfileRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
-  >
-  /**
-   * Plugins resolved from the snapshot's `plugins` list (see
-   * {@link resolveManagedPlugins}), merged after any `app.plugins`. When the
-   * snapshot declares plugins, either these or `app.plugins` must be non-empty.
-   */
-  plugins?: ManagedPlugin[]
-  /**
-   * Module factories resolved from the snapshot's `customSource.modules` list
-   * (see {@link resolveManagedCustomModules}), merged after any `app.modules`.
-   * When the snapshot declares custom modules, either these or `app.modules`
-   * must be non-empty.
-   */
-  modules?: ManagedProfileAppModules
-  /**
-   * Extension factories resolved from the snapshot's `customSource.extensions`
-   * list (see {@link resolveManagedCustomExtensions}), merged after any
-   * `app.extensions`. When the snapshot declares custom extensions, either these
-   * or `app.extensions` must be non-empty.
-   */
-  extensions?: ManagedProfileAppExtensions
-}) {
-  const auth = resolveManagedProfileAuthIntegration({
-    env: options.env,
-    auth: options.app?.auth ?? options.auth,
-    activeModules: resolveActiveModuleIds(options.project),
-  })
-  const mergedPlugins = [...(options.app?.plugins ?? []), ...(options.plugins ?? [])]
-  const mergedModules: ManagedProfileAppModules = {
-    ...(options.app?.modules ?? {}),
-    ...(options.modules ?? {}),
-  }
-  const mergedExtensions: ManagedProfileAppExtensions = {
-    ...(options.app?.extensions ?? {}),
-    ...(options.extensions ?? {}),
-  }
-  assertManagedProfileAppSupport({
-    project: options.project,
-    hasAuthIntegration: Boolean(auth),
-    hasResolvedPlugins: mergedPlugins.length > 0,
-    hasResolvedCustomModules: Object.keys(mergedModules).length > 0,
-    hasResolvedCustomExtensions: Object.keys(mergedExtensions).length > 0,
-  })
-  return createVoyantApp<ManagedProfileRuntimeEnv, VoyantNodeRuntimeResources>({
-    db: dbFromEnvForApp,
-    dbTransactional: dbFromEnvForApp,
-    outbox: true,
-    workflows: {
-      driver: (bindings) =>
-        createManagedProfileWorkflowDriver(
-          bindings as ManagedProfileRuntimeEnv,
-          options.project.profile,
-        ),
-      environment: options.env?.VOYANT_CLOUD_ENVIRONMENT ?? "development",
-      projectId: options.env?.VOYANT_CLOUD_APP_SLUG ?? options.project.profile,
-    },
-    ...options.app,
-    // Managed integration bundles are registered like a starter's inline
-    // `plugins: [...]`; core plugins (subscribers/workflows) and Hono bundles
-    // (routes) both flatten through `registerPlugins` at `createApp` boot.
-    plugins: mergedPlugins as CreateVoyantAppConfig<
-      ManagedProfileRuntimeEnv,
-      VoyantNodeRuntimeResources
-    >["plugins"],
-    modules: mergedModules,
-    extensions: mergedExtensions,
-    basePath: options.app?.basePath ?? "/api",
-    auth,
-    providers: { ...(options.providers ?? {}), ...(options.resources ?? {}) },
-  })
-}
-
-export function createManagedProfileNodeEnv(
-  processEnv: Record<string, unknown> | ManagedProfileRuntimeEnv,
-): ManagedProfileRuntimeEnv {
+export function createVoyantNodeEnv(
+  processEnv: Record<string, unknown> | VoyantNodeRuntimeEnv,
+): VoyantNodeRuntimeEnv {
   const raw: Record<string, unknown> = Object.fromEntries(Object.entries(processEnv))
   const stringEnv = Object.fromEntries(
     Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   )
-  const stores = createManagedSharedStores(raw, stringEnv)
-  return composeNodeEnv<ManagedProfileRuntimeEnv>(stringEnv, {
+  const stores = createNodeSharedStores(raw, stringEnv)
+  return composeNodeEnv<VoyantNodeRuntimeEnv>(stringEnv, {
     kv: {
       CACHE: stores.CACHE,
       RATE_LIMIT: stores.RATE_LIMIT,
@@ -716,12 +347,12 @@ export function createManagedProfileNodeEnv(
   })
 }
 
-function resolveManagedProfileAuthIntegration(options: {
-  env?: ManagedProfileRuntimeEnv
-  auth?: VoyantAuthIntegration<ManagedProfileRuntimeEnv>
+function resolveVoyantNodeAuthIntegration(options: {
+  env?: VoyantNodeRuntimeEnv
+  auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
   /** Active module ids surfaced on `/auth/bootstrap-status` for admin gating (voyant#3063). */
   activeModules?: readonly string[]
-}): VoyantAuthIntegration<ManagedProfileRuntimeEnv> | undefined {
+}): VoyantAuthIntegration<VoyantNodeRuntimeEnv> | undefined {
   if (options.auth) return options.auth
   if (!isManagedVoyantCloudAuthMode(options.env)) return undefined
   return createManagedCloudAdminAuthIntegration(options.activeModules ?? [])
@@ -729,10 +360,10 @@ function resolveManagedProfileAuthIntegration(options: {
 
 function createManagedCloudAdminAuthIntegration(
   activeModules: readonly string[],
-): VoyantAuthIntegration<ManagedProfileRuntimeEnv> {
+): VoyantAuthIntegration<VoyantNodeRuntimeEnv> {
   return {
     handler: () => {
-      const app = createManagedCloudAuthApp(activeModules)
+      const app = createVoyantCloudAuthApp(activeModules)
       return {
         fetch: (request, env, ctx) => app.fetch(request, env, ctx as never),
       }
@@ -810,14 +441,14 @@ function createManagedCloudAdminAuthIntegration(
   }
 }
 
-type ManagedAuthHonoEnv = { Bindings: ManagedProfileRuntimeEnv }
+type NodeAuthHonoEnv = { Bindings: VoyantNodeRuntimeEnv }
 
-export function createManagedCloudAuthApp(
+export function createVoyantCloudAuthApp(
   activeModules: readonly string[] = [],
-): Hono<ManagedAuthHonoEnv> {
-  const auth = new Hono<ManagedAuthHonoEnv>()
+): Hono<NodeAuthHonoEnv> {
+  const auth = new Hono<NodeAuthHonoEnv>()
 
-  async function startCloudAuth(c: Context<ManagedAuthHonoEnv>) {
+  async function startCloudAuth(c: Context<NodeAuthHonoEnv>) {
     if (!isManagedVoyantCloudAuthMode(c.env)) {
       return c.json({ error: "Not found" }, 404)
     }
@@ -898,7 +529,7 @@ export function createManagedCloudAuthApp(
  * mirrors the operator starter's `CurrentUser` so the packaged admin UI can
  * resolve its current user directly from the managed API.
  */
-export type ManagedCurrentUser = {
+export type VoyantNodeCurrentUser = {
   id: string
   email: string
   firstName: string | null
@@ -912,23 +543,22 @@ export type ManagedCurrentUser = {
   profilePictureUrl: string | null
 }
 
-export type ManagedBootstrapStatus = {
+export type VoyantNodeBootstrapStatus = {
   hasUsers: boolean
   authMode: "local" | "voyant-cloud"
   /**
    * The active module ids for this deployment (voyant#3063). The source-free
    * managed admin — a shared, framework-version-tagged image — reads this to
-   * gate its composition so it shows only the modules the profile activates,
-   * instead of every module the image can compose. Always the resolved set the
-   * API actually mounts (see {@link resolveActiveModuleIds}).
+   * gate its composition to the modules admitted by the deployment graph,
+   * instead of every module the image can compose.
    */
   modules: string[]
 }
 
 async function resolveManagedCurrentUser(
-  env: ManagedProfileRuntimeEnv,
+  env: VoyantNodeRuntimeEnv,
   request: Request,
-): Promise<ManagedCurrentUser | null> {
+): Promise<VoyantNodeCurrentUser | null> {
   const db = resolveDb(env)
   const betterAuth = createManagedBetterAuth(env, db)
   const session = await betterAuth.api.getSession({ headers: request.headers })
@@ -962,7 +592,7 @@ async function resolveManagedCurrentUser(
     lastName: row.lastName ?? null,
     locale: row.locale ?? "en",
     timezone: row.timezone ?? null,
-    uiPrefs: (row.uiPrefs as ManagedCurrentUser["uiPrefs"]) ?? null,
+    uiPrefs: (row.uiPrefs as VoyantNodeCurrentUser["uiPrefs"]) ?? null,
     isSuperAdmin: row.isSuperAdmin ?? false,
     isSupportUser: row.isSupportUser ?? false,
     createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
@@ -971,10 +601,10 @@ async function resolveManagedCurrentUser(
 }
 
 async function resolveManagedBootstrapStatus(
-  env: ManagedProfileRuntimeEnv,
+  env: VoyantNodeRuntimeEnv,
   _request: Request,
   activeModules: readonly string[],
-): Promise<ManagedBootstrapStatus> {
+): Promise<VoyantNodeBootstrapStatus> {
   const modules = [...activeModules]
   if (isManagedVoyantCloudAuthMode(env)) {
     return { hasUsers: true, authMode: "voyant-cloud", modules }
@@ -985,7 +615,7 @@ async function resolveManagedBootstrapStatus(
   return { hasUsers: (row?.count ?? 0) > 0, authMode: "local", modules }
 }
 
-function createManagedBetterAuth(env: ManagedProfileRuntimeEnv, db: VoyantDb) {
+function createManagedBetterAuth(env: VoyantNodeRuntimeEnv, db: VoyantDb) {
   const cloudAuthExchange = isManagedVoyantCloudAuthMode(env)
     ? getManagedCloudAuthExchangeConfig(env)
     : null
@@ -1011,7 +641,7 @@ function createManagedBetterAuth(env: ManagedProfileRuntimeEnv, db: VoyantDb) {
 }
 
 function resolveManagedAdminAuthMode(
-  env: ManagedProfileRuntimeEnv | undefined,
+  env: VoyantNodeRuntimeEnv | undefined,
 ): "local" | "voyant-cloud" {
   const mode = env?.VOYANT_ADMIN_AUTH_MODE?.trim() || "local"
   if (mode === "local" || mode === "voyant-cloud") return mode
@@ -1022,11 +652,11 @@ function resolveManagedAdminAuthMode(
   return "voyant-cloud"
 }
 
-function isManagedVoyantCloudAuthMode(env: ManagedProfileRuntimeEnv | undefined): boolean {
+function isManagedVoyantCloudAuthMode(env: VoyantNodeRuntimeEnv | undefined): boolean {
   return resolveManagedAdminAuthMode(env) === "voyant-cloud"
 }
 
-function getManagedCloudAuthStartConfig(env: ManagedProfileRuntimeEnv) {
+function getManagedCloudAuthStartConfig(env: VoyantNodeRuntimeEnv) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const cloudAuthStartUrl = env.VOYANT_CLOUD_ADMIN_AUTH_START_URL?.trim()
   const cookieSecret = env.SESSION_CLAIMS_SECRET?.trim()
@@ -1041,7 +671,7 @@ function getManagedCloudAuthStartConfig(env: ManagedProfileRuntimeEnv) {
   }
 }
 
-function getManagedCloudAuthExchangeConfig(env: ManagedProfileRuntimeEnv) {
+function getManagedCloudAuthExchangeConfig(env: VoyantNodeRuntimeEnv) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const exchangeUrl = env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?.trim()
   const assertionJwksUrl = env.VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL?.trim()
@@ -1057,7 +687,7 @@ function getManagedCloudAuthExchangeConfig(env: ManagedProfileRuntimeEnv) {
   }
 }
 
-function getManagedCloudAuthRevalidateConfig(env: ManagedProfileRuntimeEnv) {
+function getManagedCloudAuthRevalidateConfig(env: VoyantNodeRuntimeEnv) {
   const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
   const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
   const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
@@ -1109,7 +739,7 @@ function managedRequestNextPath(request: Request): string {
   return `${url.pathname}${url.search}${url.hash}` || "/"
 }
 
-function getManagedAuthBaseUrl(env: ManagedProfileRuntimeEnv): string {
+function getManagedAuthBaseUrl(env: VoyantNodeRuntimeEnv): string {
   const appUrl = getManagedAppUrl(env)
   try {
     const parsed = new URL(appUrl)
@@ -1119,7 +749,7 @@ function getManagedAuthBaseUrl(env: ManagedProfileRuntimeEnv): string {
   }
 }
 
-function getManagedPublicApiBaseUrl(env: ManagedProfileRuntimeEnv): string {
+function getManagedPublicApiBaseUrl(env: VoyantNodeRuntimeEnv): string {
   const candidate =
     env.API_BASE_URL?.trim() || env.APP_URL?.trim() || `${getManagedAppUrl(env)}/api`
   const normalized = normalizeManagedUrl(candidate)
@@ -1137,7 +767,7 @@ function getManagedPublicApiBaseUrl(env: ManagedProfileRuntimeEnv): string {
   return normalized
 }
 
-function getManagedTrustedOrigins(env: ManagedProfileRuntimeEnv): string[] {
+function getManagedTrustedOrigins(env: VoyantNodeRuntimeEnv): string[] {
   return Array.from(
     new Set(
       [
@@ -1153,7 +783,7 @@ function getManagedTrustedOrigins(env: ManagedProfileRuntimeEnv): string[] {
   ).map(normalizeManagedUrl)
 }
 
-function getManagedAppUrl(env: ManagedProfileRuntimeEnv): string {
+function getManagedAppUrl(env: VoyantNodeRuntimeEnv): string {
   const candidates = [
     env.APP_URL,
     env.DASH_BASE_URL,
@@ -1174,10 +804,10 @@ function normalizeManagedUrl(url: string): string {
   return url.trim().replace(/\/$/, "")
 }
 
-function createManagedSharedStores(
+function createNodeSharedStores(
   raw: Record<string, unknown>,
   env: Record<string, string>,
-): ManagedSharedStores {
+): NodeSharedStores {
   const injectedCache = isKvNamespace(raw.CACHE) ? raw.CACHE : undefined
   const injectedRateLimit = isKvNamespace(raw.RATE_LIMIT) ? raw.RATE_LIMIT : undefined
   const redisUrl = env.REDIS_URL?.trim()
@@ -1197,7 +827,7 @@ function createManagedSharedStores(
   }
 
   if (dbUrlValue && isPostgresConnectionUrl(dbUrlValue)) {
-    const runtimeEnv: ManagedProfileRuntimeEnv = {
+    const runtimeEnv: VoyantNodeRuntimeEnv = {
       ...env,
       DATABASE_URL: env.DATABASE_URL ?? dbUrlValue,
     }
@@ -1227,37 +857,13 @@ function isPostgresConnectionUrl(value: string): boolean {
   }
 }
 
-function assertManagedProfileRuntimeSupport(options: {
-  project: VoyantProjectManifest
-  requirements: VoyantProfileRequirements
-  env: ManagedProfileRuntimeEnv
-  hasAuthIntegration: boolean
-  hasResolvedPlugins: boolean
-  hasResolvedCustomModules: boolean
-  hasResolvedCustomExtensions: boolean
-}) {
-  const issues = [
-    ...managedProfileAppSupportIssues({
-      project: options.project,
-      hasAuthIntegration: options.hasAuthIntegration,
-      hasResolvedPlugins: options.hasResolvedPlugins,
-      hasResolvedCustomModules: options.hasResolvedCustomModules,
-      hasResolvedCustomExtensions: options.hasResolvedCustomExtensions,
-    }),
-    ...managedProfileEnvIssues(options.requirements, options.env),
-  ]
-  if (issues.length > 0) {
-    throw new Error(`Managed profile runtime is not ready to start:\n${formatIssues(issues)}`)
-  }
-}
-
 function assertVoyantNodeRuntimeSupport(options: {
-  mode: VoyantProjectDeploymentMode
+  mode: VoyantDeploymentMode
   requirements: VoyantGraphDeploymentRequirements
-  env: ManagedProfileRuntimeEnv
+  env: VoyantNodeRuntimeEnv
   hasAuthIntegration: boolean
 }) {
-  const issues = managedProfileEnvIssues(options.requirements, options.env)
+  const issues = nodeRuntimeEnvIssues(options.requirements, options.env)
   if (options.mode === "managed-cloud" && !options.hasAuthIntegration) {
     issues.push(
       "managed-cloud applications require VOYANT_ADMIN_AUTH_MODE=voyant-cloud with Cloud admin auth env, or an injected admin auth integration",
@@ -1268,60 +874,9 @@ function assertVoyantNodeRuntimeSupport(options: {
   }
 }
 
-function assertManagedProfileAppSupport(options: {
-  project: VoyantProjectManifest
-  hasAuthIntegration: boolean
-  hasResolvedPlugins: boolean
-  hasResolvedCustomModules: boolean
-  hasResolvedCustomExtensions: boolean
-}) {
-  const issues = managedProfileAppSupportIssues(options)
-  if (issues.length > 0) {
-    throw new Error(`Managed profile app is not ready to start:\n${formatIssues(issues)}`)
-  }
-}
-
-function managedProfileAppSupportIssues(options: {
-  project: VoyantProjectManifest
-  hasAuthIntegration: boolean
-  hasResolvedPlugins: boolean
-  hasResolvedCustomModules: boolean
-  hasResolvedCustomExtensions: boolean
-}): string[] {
-  const { project } = options
-  const issues: string[] = []
-  if (project.plugins.length > 0 && !options.hasResolvedPlugins) {
-    issues.push(
-      `snapshot plugins were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.plugins.join(
-        ", ",
-      )}`,
-    )
-  }
-  if ((project.customSource?.modules?.length ?? 0) > 0 && !options.hasResolvedCustomModules) {
-    issues.push(
-      `snapshot customSource.modules were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.customSource?.modules?.join(
-        ", ",
-      )}`,
-    )
-  }
-  if ((project.customSource?.extensions?.length ?? 0) > 0 && !options.hasResolvedCustomExtensions) {
-    issues.push(
-      `snapshot customSource.extensions were declared but not resolved by @voyant-travel/framework/managed-runtime: ${project.customSource?.extensions?.join(
-        ", ",
-      )}`,
-    )
-  }
-  if (project.mode === "managed-cloud" && !options.hasAuthIntegration) {
-    issues.push(
-      "managed-cloud profiles require VOYANT_ADMIN_AUTH_MODE=voyant-cloud with Cloud admin auth env, or an injected admin auth integration",
-    )
-  }
-  return issues
-}
-
-function managedProfileEnvIssues(
-  requirements: Pick<VoyantProfileRequirements, "resources">,
-  env: ManagedProfileRuntimeEnv,
+function nodeRuntimeEnvIssues(
+  requirements: Pick<VoyantGraphDeploymentRequirements, "resources">,
+  env: VoyantNodeRuntimeEnv,
 ): string[] {
   const issues: string[] = []
   for (const resource of requirements.resources) {
@@ -1358,7 +913,7 @@ function formatIssues(issues: readonly string[]): string {
   return issues.map((issue) => `- ${issue}`).join("\n")
 }
 
-function getEnvValue(env: ManagedProfileRuntimeEnv, name: string): unknown {
+function getEnvValue(env: VoyantNodeRuntimeEnv, name: string): unknown {
   return Reflect.get(env, name)
 }
 
@@ -1368,7 +923,7 @@ function hasValue(value: unknown): boolean {
 
 function hasFormat(
   value: unknown,
-  format: NonNullable<VoyantProfileEnvRequirement["format"]>,
+  format: NonNullable<VoyantDeploymentEnvRequirement["format"]>,
 ): boolean {
   if (typeof value !== "string" || value.trim().length === 0) return false
   try {
@@ -1382,20 +937,20 @@ function hasFormat(
   }
 }
 
-function formatDescription(format: NonNullable<VoyantProfileEnvRequirement["format"]>): string {
+function formatDescription(format: NonNullable<VoyantDeploymentEnvRequirement["format"]>): string {
   if (format === "postgres-url") return "a Postgres URL"
   if (format === "redis-url") return "a Redis URL"
   return "an HTTP(S) URL"
 }
 
-function dbUrl(env: ManagedProfileRuntimeEnv): string {
+function dbUrl(env: VoyantNodeRuntimeEnv): string {
   const url = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
-  if (!url) throw new Error("Managed profile runtime requires DATABASE_URL.")
+  if (!url) throw new Error("Voyant Node runtime requires DATABASE_URL.")
   return url
 }
 
 function resolveDb(env: unknown): VoyantDb {
-  const bindings = env as ManagedProfileRuntimeEnv
+  const bindings = env as VoyantNodeRuntimeEnv
   const url = dbUrl(bindings)
   if (pooledDb?.url !== url) {
     const replicas = parseReplicaUrls(bindings.DATABASE_URL_REPLICAS, url)
@@ -1410,7 +965,7 @@ function resolveDb(env: unknown): VoyantDb {
   return pooledDb.db
 }
 
-function dbFromEnvForApp(env: ManagedProfileRuntimeEnv): VoyantDb {
+function dbFromEnvForApp(env: VoyantNodeRuntimeEnv): VoyantDb {
   return resolveDb(env)
 }
 
@@ -1451,7 +1006,7 @@ function isR2Bucket(value: unknown): value is R2BucketShim {
   return typeof value === "object" && value !== null && "get" in value && "put" in value
 }
 
-function createManagedProfileWorkflowDriver(env: ManagedProfileRuntimeEnv, defaultAppSlug: string) {
+function createVoyantNodeWorkflowDriver(env: VoyantNodeRuntimeEnv, defaultAppSlug: string) {
   if (env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()) {
     return () =>
       createCloudWorkflowDriver({
@@ -1471,7 +1026,7 @@ function createManagedProfileWorkflowDriver(env: ManagedProfileRuntimeEnv, defau
  * record for plugin factories to read secrets/connection config from. A real
  * mapper rather than a cast — the managed env has no index signature.
  */
-function toPluginEnvRecord(env: ManagedProfileRuntimeEnv): Record<string, unknown> {
+function toPluginEnvRecord(env: VoyantNodeRuntimeEnv): Record<string, unknown> {
   return Object.fromEntries(Object.entries(env))
 }
 

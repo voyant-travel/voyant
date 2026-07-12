@@ -3,4 +3,4 @@
 "@voyant-travel/framework": minor
 ---
 
-Retire profile snapshot fields and generation from graph-native Node deployment artifacts, isolate deprecated profile conversion APIs on compatibility subpaths, and rename generic admin hosting APIs.
+Remove the framework's snapshot-era profile, managed runtime, managed jobs, profile-to-graph conversion, and dynamic profile composition exports. Graph projects and the generic Node runtime are now the only framework deployment authority; generic deployment mode and provider validation remain supported.

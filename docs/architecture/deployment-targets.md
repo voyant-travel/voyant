@@ -34,12 +34,11 @@ workload class well. On Node none of it is necessary.
   adds a real per-request `waitUntil` (background work tracked + drained on
   shutdown), an origin-trust gate, an HTTP `scheduled()` hook, graceful
   SIGTERM/SIGINT drain, and serves the client build (`dist/client`).
-- **Managed Cloud entry:** `@voyant-travel/framework/managed-runtime` boots
-  managed product profiles from serialized profile snapshots without importing
-  starter-local files. Cloud packages this framework-owned entry with
-  provisioned env/secrets; storefront/site artifacts remain separate apps that
-  consume the managed API for the selected profile. Today that profile is the
-  standard managed `operator` profile, but the entry is not named after it.
+- **Managed Cloud entry:** `@voyant-travel/framework/node-runtime` boots the
+  admitted generated graph with provisioned environment and secrets. Cloud does
+  not synthesize or load a serialized product profile; the same graph-native
+  Node entry serves managed-cloud, self-hosted, and local deployment modes.
+  Storefront/site artifacts remain separate apps that consume the Node API.
 - **Bindings are real Node providers, not Cloudflare emulation.** The resolved
   deployment graph's `deployment.providers` map selects the concrete Node
   providers. `memory` uses in-process KV/object storage, `redis`/`postgres`

@@ -5,19 +5,19 @@ Default generators must not emit a managed-profile JSON file, runtime entries
 must not carry a profile snapshot field, and starter readers must not require a
 snapshot artifact or environment override.
 
-Snapshot-era contracts remain only for external callers that have not yet
-migrated:
+The framework snapshot compatibility contract is retired. The `profile`,
+`managed-jobs`, `managed-runtime`, and `managed-profile-compatibility` subpaths
+are not published, and the corresponding source adapters, validators, dynamic
+profile plugin/custom-source resolvers, and tests do not exist. There is no
+runtime path from a serialized Operator profile to application composition.
 
-- `@voyant-travel/framework/profile` validates the legacy serialized contract.
-- `@voyant-travel/framework/managed-jobs` derives legacy provisioning data.
-- `@voyant-travel/framework/managed-runtime` aliases the graph-native Node
-  runtime for old imports.
-- `@voyant-travel/framework/managed-profile-compatibility` contains the legacy
-  profile-to-graph conversion API.
-- `@voyant-travel/admin-host/managed-profile-compatibility` contains the old
-  admin host names.
+Framework code, generated artifacts, starters, and generic hosts use project,
+graph, deployment, scheduled-job, and Node-host vocabulary. Deployment modes
+and provider validation remain generic in `deployment-types.ts` and graph
+admission. The `managed-cloud` deployment mode is not a profile snapshot and
+remains supported by the graph-native Node host.
 
-These subpaths are deprecated. New framework code, generated artifacts,
-starters, and generic hosts must use graph, deployment, scheduled-job, and admin
-host vocabulary. Historical architecture documents may retain the old terms
-when describing the superseded design.
+The admin host retains a separate deprecated naming-only compatibility subpath;
+it does not reconstruct product composition or consume profile snapshots.
+Historical architecture documents may retain old terms when describing the
+superseded design.

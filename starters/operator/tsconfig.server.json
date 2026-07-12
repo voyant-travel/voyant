@@ -1111,15 +1111,10 @@
       "@voyant-travel/framework/graph-lifecycle": [
         "../../packages/framework/dist/graph-lifecycle.d.ts"
       ],
-      "@voyant-travel/framework/managed-jobs": ["../../packages/framework/dist/managed-jobs.d.ts"],
-      "@voyant-travel/framework/managed-runtime": [
-        "../../packages/framework/dist/managed-runtime.d.ts"
-      ],
       "@voyant-travel/framework/node-host": ["../../packages/framework/dist/node-host.d.ts"],
       "@voyant-travel/framework/operator-distribution": [
         "../../packages/framework/dist/operator-distribution.d.ts"
       ],
-      "@voyant-travel/framework/profile": ["../../packages/framework/dist/profile.d.ts"],
       "@voyant-travel/framework/project": ["../../packages/framework/dist/project.d.ts"],
       "@voyant-travel/framework/project-admin-conventions": [
         "../../packages/framework/dist/project-admin-conventions.d.ts"

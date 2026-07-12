@@ -4,7 +4,6 @@ import path from "node:path"
 const root = process.cwd()
 const operatorRuntime = await read("packages/operator-runtime/src/index.ts")
 const nodeRuntime = await read("packages/framework/src/node-runtime.ts")
-const managedRuntime = await read("packages/framework/src/managed-runtime.ts")
 const deploymentArtifacts = await read("packages/framework/src/deployment-artifacts.ts")
 const frameworkPackage = JSON.parse(await read("packages/framework/package.json"))
 const violations = []
@@ -42,13 +41,6 @@ for (const required of [
   }
 }
 
-if (!managedRuntime.includes('export * from "./node-runtime.js"')) {
-  violations.push("managed-runtime must remain a compatibility wrapper over node-runtime")
-}
-if (managedRuntime.includes("function loadManagedProfileRuntime")) {
-  violations.push("managed-runtime must not regain runtime implementation authority")
-}
-
 if (!deploymentArtifacts.includes("@voyant-travel/framework/node-runtime")) {
   violations.push("generated deployment entries must import the generic Node runtime")
 }
@@ -60,6 +52,19 @@ if (frameworkPackage.exports?.["./node-runtime"] !== "./src/node-runtime.ts") {
 }
 if (!frameworkPackage.publishConfig?.exports?.["./node-runtime"]) {
   violations.push("framework must publish the ./node-runtime distribution entry")
+}
+for (const retiredExport of [
+  "./profile",
+  "./managed-jobs",
+  "./managed-profile-compatibility",
+  "./managed-runtime",
+]) {
+  if (
+    frameworkPackage.exports?.[retiredExport] ||
+    frameworkPackage.publishConfig?.exports?.[retiredExport]
+  ) {
+    violations.push(`framework must not publish retired compatibility export ${retiredExport}`)
+  }
 }
 
 if (violations.length > 0) {

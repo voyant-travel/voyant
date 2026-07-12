@@ -35,17 +35,17 @@ importing product services or assembling product tool contexts.
 
 ## Compatibility Boundary
 
-`@voyant-travel/framework/managed-runtime`, `managed-jobs`, `profile`, and
-`managed-profile-compatibility` remain temporarily published for existing
-external snapshot-generated deployments and Cloud callers. They are deprecated
-and may not be imported by generated applications or graph-native framework
-modules.
+Framework profile compatibility has been removed. The `managed-runtime`,
+`managed-jobs`, `profile`, and `managed-profile-compatibility` subpaths are not
+published, and `node-runtime` exports no profile manifest, snapshot loader, or
+profile-to-application composition API. Graph-native deployment mode and
+resource validation remain part of the Node host.
 
 The v1 deployment-artifact manifest and generated Node entry no longer carry a
 profile snapshot path. A runtime entry has `kind: "node"` and boots from its
 admitted graph runtime, deployment settings, and graph-derived requirements.
-Generic admin hosting uses `serveAdminHost` and `createAdminSsrHandler`; the old
-names exist only on the admin-host compatibility subpath.
+Generic admin hosting uses `serveAdminHost` and `createAdminSsrHandler`; old
+admin-host names exist only on that package's naming compatibility subpath.
 
 `scripts/check-node-runtime-authority.mjs` enforces the public subpath, direct
 graph boot in generated entries, and the absence of managed-profile synthesis
@@ -54,5 +54,5 @@ from `packages/operator-runtime`.
 first-party product imports, exact and justified infrastructure import
 exceptions, absence of the retired product provider surface, and package-owned
 runtime authority for the selected product set.
-`scripts/check-profile-compatibility-boundary.mjs` enforces the snapshot
-compatibility retirement boundary.
+`scripts/check-profile-compatibility-boundary.mjs` enforces deletion of the
+snapshot sources and exports and rejects profile composition in the Node host.

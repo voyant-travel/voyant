@@ -19,9 +19,7 @@ import {
   VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
   validateGraphUnitManifest,
 } from "./deployment-graph.js"
-import { resolveManagedProfileDeploymentGraph } from "./managed-profile-compatibility.js"
 import { assertPortConforms, definePort, providePort, requirePort } from "./ports.js"
-import { defineVoyantProject } from "./profile.js"
 
 describe("deployment graph v1", () => {
   it("defines closed module, extension, and plugin manifests", () => {
@@ -1283,119 +1281,6 @@ describe("deployment graph v1", () => {
     })
 
     expect(lowerBoundGraph.diagnostics).toEqual([])
-  })
-
-  it("bridges managed operator snapshots into explicit graph units", async () => {
-    const profile = defineVoyantProject({
-      profile: "operator",
-      frameworkVersion: "0.24.1",
-      modules: ["bookings", "finance", "relationships"],
-      plugins: ["@voyant-travel/plugin-netopia"],
-      customSource: {
-        modules: ["@acme/voyant-loyalty"],
-        extensions: ["@acme/voyant-loyalty-admin"],
-      },
-    })
-
-    const graph = await resolveManagedProfileDeploymentGraph(profile)
-
-    expect(graph.schemaVersion).toBe("voyant.resolved-graph.v1")
-    expect(graph.project.presetLineage).toBe("operator-standard")
-    expect(graph.deployment.target).toBe("node")
-    expect(graph.deployment.providers).toEqual(
-      expect.objectContaining({
-        database: "postgres",
-        storage: "s3",
-        cache: "redis",
-        sharedState: "redis",
-        rateLimit: "redis",
-        auth: "voyant-cloud",
-        workflows: "voyant-cloud",
-      }),
-    )
-    expect(graph.requirements.resources).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ resourceKey: "redis", provider: "redis" }),
-        expect.objectContaining({ resourceKey: "object-storage", provider: "s3" }),
-        expect.objectContaining({ resourceKey: "auth:voyant-cloud", provider: "voyant-cloud" }),
-        expect.objectContaining({
-          resourceKey: "workflows:voyant-cloud",
-          provider: "voyant-cloud",
-        }),
-      ]),
-    )
-    expect(graph.modules.map((unit) => unit.id)).toEqual(
-      expect.arrayContaining([
-        "@voyant-travel/bookings",
-        "@voyant-travel/finance",
-        "@voyant-travel/relationships",
-        "@acme/voyant-loyalty",
-      ]),
-    )
-    expect(graph.modules.map((unit) => unit.id)).not.toContain("@voyant-travel/flights")
-    const commerce = graph.modules.find((unit) => unit.id === "@voyant-travel/commerce")
-    expect(commerce?.workflows).toEqual([])
-    expect(commerce?.events).toEqual([])
-    expect(commerce?.subscribers).toEqual([])
-    expect(graph.extensions.map((unit) => unit.id)).toContain("@acme/voyant-loyalty-admin")
-    expect(graph.plugins.map((unit) => unit.id)).toEqual(["@voyant-travel/plugin-netopia"])
-    expect(graph.packageRecords).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          packageName: "@voyant-travel/framework",
-          version: "0.24.1",
-          source: { kind: "unknown" },
-        }),
-        expect.objectContaining({
-          packageName: "@acme/voyant-loyalty",
-          source: { kind: "unknown" },
-        }),
-        expect.objectContaining({
-          packageName: "@acme/voyant-loyalty-admin",
-          source: { kind: "unknown" },
-        }),
-        expect.objectContaining({
-          packageName: "@voyant-travel/plugin-netopia",
-          source: { kind: "unknown" },
-        }),
-      ]),
-    )
-    expect(graph.diagnostics).toEqual([])
-  })
-
-  it("projects managed scheduled jobs into graph provisioning metadata", async () => {
-    const graph = await resolveManagedProfileDeploymentGraph(
-      defineVoyantProject({
-        profile: "operator",
-        frameworkVersion: "0.24.1",
-        modules: ["bookings", "catalog"],
-        plugins: [],
-      }),
-    )
-
-    expect(graph.provisioning.scheduledJobs).toEqual([
-      expect.objectContaining({
-        id: "draft-reaper",
-        cron: "5 * * * *",
-        route: "/__voyant/scheduled",
-        module: "catalog",
-      }),
-      expect.objectContaining({
-        id: "outbox-drain",
-        cron: "*/2 * * * *",
-        route: "/__voyant/scheduled",
-        module: "framework",
-      }),
-      expect.objectContaining({
-        id: "promotion-boundary-scheduler",
-        cron: "*/5 * * * *",
-        route: "/__voyant/scheduled",
-        module: "commerce",
-      }),
-    ])
-    expect(graph.provisioning.scheduledJobs.map((job) => job.id)).not.toEqual(
-      expect.arrayContaining(["channel-push-availability"]),
-    )
   })
 
   it("validates admission policy against inferred package records", async () => {

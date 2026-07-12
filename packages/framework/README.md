@@ -36,10 +36,6 @@ deterministic.
 ## Exports
 
 - `FRAMEWORK_RUNTIME_PACKAGES` — the pinned runtime-module names (e.g. for `voyant upgrade`).
-- `@voyant-travel/framework/profile` - deprecated snapshot compatibility for
-  existing external deployments. New applications author graph projects.
-- `@voyant-travel/framework/managed-profile-compatibility` - deprecated
-  profile-to-graph conversion for snapshot-era external callers only.
 - `@voyant-travel/framework/scheduled-jobs` - graph-neutral standard scheduled
   job declarations.
 - `@voyant-travel/framework/deployment-graph` — v1 project/deployment graph
@@ -47,3 +43,7 @@ deterministic.
 - `@voyant-travel/framework/deployment-artifacts` — pure lowering helpers that
   turn a resolved graph into deterministic JSON, artifact manifests, and tiny
   Node runtime entry modules for build/deploy tooling.
+
+Profile snapshots and their managed runtime/conversion subpaths are no longer
+published. Applications author projects through `@voyant-travel/framework/project`
+and boot the admitted graph through `@voyant-travel/framework/node-runtime`.

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 const root = resolve(import.meta.dirname, "..")
@@ -47,17 +47,47 @@ const emitter = read("scripts/emit-deployment-graph.ts")
 requireAbsent(emitter, "profileOutput", "default profile output")
 requireAbsent(emitter, "compatibilityManagedProfile", "default profile conversion")
 
-const compatibilityFiles = [
+const retiredFiles = [
   "packages/framework/src/profile.ts",
   "packages/framework/src/profile-types.ts",
+  "packages/framework/src/profile-validation.ts",
   "packages/framework/src/managed-jobs.ts",
   "packages/framework/src/managed-profile-compatibility.ts",
   "packages/framework/src/managed-runtime.ts",
-  "packages/admin-host/src/managed-profile-compatibility.ts",
+  "packages/framework/src/plugin-resolution.ts",
+  "packages/framework/src/custom-source-resolution.ts",
 ]
-for (const file of compatibilityFiles) {
-  requireText(read(file), "deprecated", `${file} deprecation marker`)
+for (const file of retiredFiles) {
+  if (existsSync(resolve(root, file))) violations.push(`${file}: retired compatibility file exists`)
 }
+
+const frameworkPackage = JSON.parse(read("packages/framework/package.json"))
+for (const subpath of [
+  "./profile",
+  "./managed-jobs",
+  "./managed-profile-compatibility",
+  "./managed-runtime",
+]) {
+  if (frameworkPackage.exports?.[subpath] || frameworkPackage.publishConfig?.exports?.[subpath]) {
+    violations.push(`packages/framework/package.json: retired export exists: ${subpath}`)
+  }
+}
+
+const nodeRuntime = read("packages/framework/src/node-runtime.ts")
+for (const token of [
+  "ManagedProfileRuntime",
+  "loadManagedProfileRuntime",
+  "startManagedProfileRuntime",
+  "loadManagedProfileSnapshot",
+  "createManagedProfileApp",
+  "VoyantProjectManifest",
+  "profileSnapshotPath",
+]) {
+  requireAbsent(nodeRuntime, token, "Node runtime profile compatibility token")
+}
+
+requireText(nodeRuntime, "VoyantDeploymentMode", "graph-native deployment mode")
+requireText(nodeRuntime, "VoyantGraphDeploymentRequirements", "graph-native requirements")
 
 if (violations.length > 0) {
   console.error("Profile compatibility boundary check failed:")

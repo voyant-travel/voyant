@@ -1,9 +1,10 @@
-# Managed profile runtime
+# Managed Profile Runtime (Retired)
 
-Status: compatibility rule
+Status: historical
 
-> Compatibility status: this entry remains supported for persisted profile
-> snapshots. New generated applications boot through the graph-native
+> Snapshot-driven runtime composition and the
+> `@voyant-travel/framework/managed-runtime` export were removed. Generated
+> applications boot their admitted graph through the graph-native
 > [`node-runtime` authority](./node-runtime-authority.md).
 
 `@voyant-travel/framework/managed-runtime` is the compatibility runtime entry

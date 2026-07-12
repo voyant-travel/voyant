@@ -56,17 +56,8 @@ for (const [relativePath, tokens] of requiredSourceTokens) {
   }
 }
 
-const centralJobs = readFileSync(join(root, "packages/framework/src/managed-jobs.ts"), "utf8")
-for (const id of [
-  "outbox-drain",
-  "channel-push-booking-link",
-  "channel-push-availability",
-  "channel-push-content",
-  "external-cruise-catalog-refresh",
-]) {
-  if (centralJobs.includes(`id: "${id}"`)) {
-    violations.push(`packages/framework/src/managed-jobs.ts must not centrally activate ${id}`)
-  }
+if (existsSync(join(root, "packages/framework/src/managed-jobs.ts"))) {
+  violations.push("packages/framework/src/managed-jobs.ts must remain deleted")
 }
 
 if (violations.length > 0) {

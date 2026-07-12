@@ -15,13 +15,13 @@ import {
   type VoyantGraphRuntimeTarget,
   type VoyantGraphUnitManifest,
 } from "../../packages/framework/src/deployment-graph.ts"
-import type { ManagedScheduledJob } from "../../packages/framework/src/managed-jobs.ts"
-import type { VoyantProjectProviders } from "../../packages/framework/src/profile-types.ts"
+import type { VoyantDeploymentProviders } from "../../packages/framework/src/deployment-types.ts"
 import {
   inferredNodeRuntimePackageMetadata,
   type ResolvedProjectArtifacts,
   runtimeReferencePackageNames,
 } from "../../packages/framework/src/project-resolver.ts"
+import type { VoyantScheduledJob } from "../../packages/framework/src/scheduled-jobs.ts"
 import { readPnpmLockfilePackageRecords } from "./deployment-graph-provenance.mjs"
 import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"
 
@@ -29,7 +29,7 @@ export interface OperatorAuthoredProject extends VoyantGraphProject {
   deployment: {
     target: VoyantGraphRuntimeTarget
     mode: "local" | "managed-cloud" | "self-hosted"
-    providers: VoyantProjectProviders
+    providers: VoyantDeploymentProviders
     migrations?: NonNullable<VoyantGraphProject["deployment"]>["migrations"]
   }
 }
@@ -45,7 +45,7 @@ interface ResolveOperatorDeploymentGraphOptions {
   projectRoot: string
   repoRoot: string
   frameworkVersion: string
-  scheduledJobs?: readonly ManagedScheduledJob[]
+  scheduledJobs?: readonly VoyantScheduledJob[]
 }
 
 export const OPERATOR_GRAPH_ADMISSION_POLICY = {
@@ -357,10 +357,10 @@ function deploymentMode(value: unknown): OperatorAuthoredProject["deployment"]["
     : undefined
 }
 
-function stringRecord(value: unknown): VoyantProjectProviders | undefined {
+function stringRecord(value: unknown): VoyantDeploymentProviders | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined
   const entries = Object.entries(value)
   return entries.every((entry): entry is [string, string] => typeof entry[1] === "string")
-    ? (Object.fromEntries(entries) as VoyantProjectProviders)
+    ? (Object.fromEntries(entries) as VoyantDeploymentProviders)
     : undefined
 }

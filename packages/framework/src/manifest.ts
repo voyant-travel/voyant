@@ -103,8 +103,8 @@ export function ownedExtensionsForExcludedModules(excluded: Iterable<string>): s
  * Apply `exclude` to the standard set (ADR-0007), returning the module/extension
  * specifiers that should mount. Pure and provider-free (manifest math only, no
  * runtime composition), so it is unit-testable, reusable by tooling (`db doctor`),
- * and safe to import from the lightweight `@voyant-travel/framework/profile`
- * subpath. Throws — fail-loud at boot, never a runtime 500 — when `exclude` names
+ * and safe to import from framework tooling. Throws -- fail loud during graph
+ * resolution, never as a runtime 500 -- when `exclude` names
  * a specifier absent from the standard set (a typo), names an `isRequired` module,
  * or leaves a still-mounted module's `requires` unmet (drop the consumers too).
  */

@@ -1,4 +1,9 @@
-# Managed Profile Contract
+# Managed Profile Contract (Retired)
+
+> Historical document. The serialized managed profile contract and
+> `@voyant-travel/framework/profile` export were removed. Applications now use
+> `defineConfig` and graph project types from `@voyant-travel/framework/project`.
+> See [Profile Compatibility Retirement](./profile-compatibility-retirement.md).
 
 Status: accepted
 
