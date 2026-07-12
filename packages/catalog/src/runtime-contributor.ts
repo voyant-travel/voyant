@@ -18,9 +18,19 @@ import {
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
-import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
+import {
+  type FinanceOperatorSettingsRuntime,
+  financeOperatorSettingsRuntimePort,
+} from "@voyant-travel/finance/runtime-port"
 import { createCatalogRuntime } from "./runtime.js"
 import {
+  type CatalogAccommodationsRuntimeExtension,
+  type CatalogChartersRuntimeExtension,
+  type CatalogCommerceRuntimeExtension,
+  type CatalogCruisesRuntimeExtension,
+  type CatalogDistributionRuntimeExtension,
+  type CatalogInventoryRuntimeExtension,
+  type CatalogOperationsRuntimeExtension,
   type CatalogRuntimeServices,
   catalogAccommodationsRuntimeExtensionPort,
   catalogChartersRuntimeExtensionPort,
@@ -56,14 +66,20 @@ export function createCatalogRuntimePortContribution(
   const contribution = Promise.resolve()
     .then(() =>
       Promise.all([
-        host.getRuntimePort(catalogAccommodationsRuntimeExtensionPort),
-        host.getRuntimePort(catalogChartersRuntimeExtensionPort),
-        host.getRuntimePort(catalogCommerceRuntimeExtensionPort),
-        host.getRuntimePort(catalogDistributionRuntimeExtensionPort),
-        host.getRuntimePort(catalogCruisesRuntimeExtensionPort),
-        host.getRuntimePort(catalogInventoryRuntimeExtensionPort),
-        host.getRuntimePort(catalogOperationsRuntimeExtensionPort),
-        host.getRuntimePort(financeOperatorSettingsRuntimePort),
+        host.getRuntimePort<CatalogAccommodationsRuntimeExtension>(
+          catalogAccommodationsRuntimeExtensionPort,
+        ),
+        host.getRuntimePort<CatalogChartersRuntimeExtension>(catalogChartersRuntimeExtensionPort),
+        host.getRuntimePort<CatalogCommerceRuntimeExtension>(catalogCommerceRuntimeExtensionPort),
+        host.getRuntimePort<CatalogDistributionRuntimeExtension>(
+          catalogDistributionRuntimeExtensionPort,
+        ),
+        host.getRuntimePort<CatalogCruisesRuntimeExtension>(catalogCruisesRuntimeExtensionPort),
+        host.getRuntimePort<CatalogInventoryRuntimeExtension>(catalogInventoryRuntimeExtensionPort),
+        host.getRuntimePort<CatalogOperationsRuntimeExtension>(
+          catalogOperationsRuntimeExtensionPort,
+        ),
+        host.getRuntimePort<FinanceOperatorSettingsRuntime>(financeOperatorSettingsRuntimePort),
       ]),
     )
     .then(
@@ -92,9 +108,10 @@ export function createCatalogRuntimePortContribution(
         ),
     )
   const cruisesRoutes = {
-    resolveSourceAdapterRegistry: async (bindings) => {
+    resolveSourceAdapterRegistry: async (bindings: unknown) => {
       const runtime = await contribution
-      return runtime.services.ensureSourceRegistry(host.primitives.env(bindings))
+      const services = await runtime.services
+      return services.ensureSourceRegistry(host.primitives.env(bindings))
     },
   }
   return {
