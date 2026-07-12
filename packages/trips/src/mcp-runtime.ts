@@ -1,8 +1,8 @@
 import { defineToolContextContribution, requireService } from "@voyant-travel/tools"
 import type { Context } from "hono"
+import type { TripsRoutesOptions } from "./routes.js"
 import { tripsService } from "./service.js"
 import type { TripsToolServices } from "./tools.js"
-import type { TripsRoutesOptions } from "./routes.js"
 
 export * from "./tools.js"
 

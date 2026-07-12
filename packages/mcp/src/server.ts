@@ -17,9 +17,9 @@ import { StreamableHTTPTransport } from "@hono/mcp"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
+  createToolRegistry,
   TOOL_CONTEXT_CONTRIBUTION_EXPORT,
   TOOL_CONTRACT_VERSION,
-  createToolRegistry,
   type ToolContext,
   type ToolContextContribution,
   ToolError,
@@ -163,8 +163,7 @@ async function buildContributedContext(
 ): Promise<ToolContext> {
   const base = await options.buildContext(c)
   const resources = options.buildResources?.(c) ?? {}
-  let context: ToolContext & Record<string, unknown> = base as ToolContext &
-    Record<string, unknown>
+  let context: ToolContext & Record<string, unknown> = base as ToolContext & Record<string, unknown>
   for (const contribution of contributions) {
     const contributed = await contribution.contribute({ request: c, context, resources })
     const undeclared = Object.keys(contributed).filter((key) => !contribution.context.includes(key))

@@ -5,8 +5,8 @@ export {
 } from "./binding.js"
 export {
   defineToolContextContribution,
-  TOOL_CONTEXT_CONTRIBUTION_EXPORT,
   type ResolverScope,
+  TOOL_CONTEXT_CONTRIBUTION_EXPORT,
   type ToolContext,
   type ToolContextContribution,
   type ToolContextContributionInput,

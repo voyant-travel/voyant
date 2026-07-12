@@ -1,9 +1,6 @@
 import { defineToolContextContribution, requireService } from "@voyant-travel/tools"
 import type { Context } from "hono"
-import {
-  createNotificationService,
-  notificationsService,
-} from "./service.js"
+import { createNotificationService, notificationsService } from "./service.js"
 import type { NotificationsToolServices } from "./tools.js"
 import type { NotificationProvider } from "./types.js"
 
@@ -21,11 +18,10 @@ export const voyantToolContextContribution = defineToolContextContribution({
       listDeliveries: (query) => notificationsService.listDeliveries(c.var.db, query),
       getDeliveryById: (id) => notificationsService.getDeliveryById(c.var.db, id),
       sendTemplated: (input) =>
-        notificationsService.sendNotification(
-          c.var.db,
-          createNotificationService(providers),
-          { ...input, targetType: "other" },
-        ),
+        notificationsService.sendNotification(c.var.db, createNotificationService(providers), {
+          ...input,
+          targetType: "other",
+        }),
     }
     return { notifications }
   },

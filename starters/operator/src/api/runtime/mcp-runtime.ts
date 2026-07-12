@@ -3,10 +3,7 @@ import type { VoyantGraphRuntime } from "@voyant-travel/framework/deployment-art
 import { createGraphMcpHonoApp } from "@voyant-travel/mcp"
 import type { Hono } from "hono"
 import { createGeneratedGraphRuntime } from "../../../.voyant/runtime/graph-runtime.generated"
-import {
-  buildOperatorMcpBaseContext,
-  buildOperatorMcpResources,
-} from "./mcp-deployment-resources"
+import { buildOperatorMcpBaseContext, buildOperatorMcpResources } from "./mcp-deployment-resources"
 
 export function buildMcpAdminRoutes(
   graphRuntime: VoyantGraphRuntime = createGeneratedGraphRuntime(),

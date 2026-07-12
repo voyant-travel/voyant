@@ -12,9 +12,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listPeople: (query: Parameters<typeof relationshipsService.listPeople>[1]) =>
           relationshipsService.listPeople(db, query),
         getPersonById: (id: string) => relationshipsService.getPersonById(db, id),
-        listOrganizations: (
-          query: Parameters<typeof relationshipsService.listOrganizations>[1],
-        ) => relationshipsService.listOrganizations(db, query),
+        listOrganizations: (query: Parameters<typeof relationshipsService.listOrganizations>[1]) =>
+          relationshipsService.listOrganizations(db, query),
         getOrganizationById: (id: string) => relationshipsService.getOrganizationById(db, id),
       },
     }
