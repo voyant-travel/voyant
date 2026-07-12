@@ -3,6 +3,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import { registerBookingFinancialLifecycle } from "@voyant-travel/bookings"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import { financeBookingLifecycle } from "./booking-lifecycle.js"
 import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
@@ -148,15 +149,17 @@ export interface FinanceHonoModuleOptions
     BookingTaxRouteOptions {}
 
 export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
-  const adminRoutes = new OpenAPIHono()
-    .route("/", financeRoutes)
-    .route("/", createFinanceCheckoutAdminRoutes(options))
-    .route("/", financeActionLedgerRoutes)
-    .route("/", supplierInvoiceRoutes)
-    .route("/", createInvoiceFxRoutes(options))
-    .route("/", createFinanceAdminDocumentRoutes(options))
-    .route("/", createFinanceAdminSettlementRoutes(options))
-    .route("/", createBookingTaxRoutes(options))
+  const adminRoutes = stampOpenApiRegistryApiId(
+    new OpenAPIHono()
+      .route("/", financeRoutes)
+      .route("/", createFinanceCheckoutAdminRoutes(options))
+      .route("/", financeActionLedgerRoutes)
+      .route("/", supplierInvoiceRoutes)
+      .route("/", createInvoiceFxRoutes(options))
+      .route("/", createFinanceAdminDocumentRoutes(options))
+      .route("/", createFinanceAdminSettlementRoutes(options)),
+    "@voyant-travel/finance#api.admin",
+  ).route("/", createBookingTaxRoutes(options))
 
   const module: Module = {
     ...financeModule,
@@ -176,9 +179,12 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
     },
   }
 
-  const publicRoutes = new OpenAPIHono()
-    .route("/", createPublicFinanceRoutes(options))
-    .route("/", createFinanceCheckoutRoutes(options))
+  const publicRoutes = stampOpenApiRegistryApiId(
+    new OpenAPIHono()
+      .route("/", createPublicFinanceRoutes(options))
+      .route("/", createFinanceCheckoutRoutes(options)),
+    "@voyant-travel/finance#api.public",
+  )
 
   return {
     module,

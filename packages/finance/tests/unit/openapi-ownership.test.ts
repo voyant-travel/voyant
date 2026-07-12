@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
 import { createBookingTaxRoutes } from "../../src/booking-tax.js"
+import { createFinanceHonoModule } from "../../src/index.js"
 
 const document = JSON.parse(
   readFileSync(new URL("../../openapi/admin/booking-tax.json", import.meta.url), "utf8"),
@@ -31,5 +32,19 @@ describe("booking tax OpenAPI ownership", () => {
     ]
 
     expect(operations.every((operation) => operation?.["x-voyant-api-id"] === apiId)).toBe(true)
+  })
+
+  it("stamps base Finance routes without overwriting extension ownership", () => {
+    const routes = createFinanceHonoModule().adminRoutes as ReturnType<
+      typeof createBookingTaxRoutes
+    >
+    const live = routes.getOpenAPIDocument({ info: { title: "test", version: "1" } })
+
+    expect(live.paths?.["/payment-sessions"]?.get?.["x-voyant-api-id"]).toBe(
+      "@voyant-travel/finance#api.admin",
+    )
+    expect(live.paths?.["/tax-settings"]?.get?.["x-voyant-api-id"]).toBe(
+      "@voyant-travel/finance#booking-tax-extension.api",
+    )
   })
 })

@@ -56,7 +56,7 @@ describe("Operator project config", () => {
 
     expect(config.plugins[0]).not.toHaveProperty("api")
     expect(packageRecord).toMatchObject({
-      version: "0.105.20",
+      version: "0.105.21",
       metadata: {
         kind: "plugin",
         manifest: "./voyant",
