@@ -1,5 +1,21 @@
 # @voyant-travel/auth
 
+## 0.128.0
+
+### Minor Changes
+
+- 4bc540f: Remove the top-level `useSecureCookies` compatibility option from
+  `createBetterAuth`. Configure this Better Auth setting through
+  `advanced.useSecureCookies` instead. See [Migrating Auth to
+  0.128](../../docs/migrations/migrating-to-0.128.md) for the caller rewrite.
+
+### Patch Changes
+
+- Updated dependencies [3f6694b]
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/hono@0.126.1
+
 ## 0.127.0
 
 ### Minor Changes

@@ -1,5 +1,31 @@
 # @voyant-travel/framework
 
+## 0.42.0
+
+### Minor Changes
+
+- 318ca57: Require generated runtime units to provide explicit selected IDs and admitted API runtime reference IDs instead of inferring compatibility metadata during runtime lowering.
+
+  See [Migrating Framework to 0.42](https://github.com/voyant-travel/voyant/blob/main/docs/migrations/migrating-to-0.42.md) for required caller and fixture updates.
+
+- 3f6694b: Select the customer Storefront presentation through the deployment graph. Project resolution now emits a selected presentation factory artifact, and the standard Operator emits Storefront routes only when that presentation is selected.
+
+### Patch Changes
+
+- Updated dependencies [4bc540f]
+- Updated dependencies [3f6694b]
+  - @voyant-travel/auth@0.128.0
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/operator-standard@0.3.0
+  - @voyant-travel/action-ledger@0.108.2
+  - @voyant-travel/cruises@0.154.0
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/hono@0.126.1
+  - @voyant-travel/mcp@0.2.2
+  - @voyant-travel/storage@0.109.2
+  - @voyant-travel/workflows@0.119.0
+  - @voyant-travel/workflows-orchestrator@0.119.0
+
 ## 0.41.0
 
 ### Minor Changes

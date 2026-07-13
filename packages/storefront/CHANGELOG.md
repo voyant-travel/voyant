@@ -1,5 +1,25 @@
 # @voyant-travel/storefront
 
+## 0.157.0
+
+### Minor Changes
+
+- 3f6694b: Select the customer Storefront presentation through the deployment graph. Project resolution now emits a selected presentation factory artifact, and the standard Operator emits Storefront routes only when that presentation is selected.
+
+### Patch Changes
+
+- Updated dependencies [bb6e890]
+- Updated dependencies [3f6694b]
+  - @voyant-travel/legal@0.155.0
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/bookings@0.155.0
+  - @voyant-travel/commerce@0.35.2
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/finance@0.155.0
+  - @voyant-travel/hono@0.126.1
+  - @voyant-travel/identity@0.155.0
+  - @voyant-travel/relationships@0.124.3
+
 ## 0.156.0
 
 ### Patch Changes

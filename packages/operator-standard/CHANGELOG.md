@@ -1,5 +1,72 @@
 # @voyant-travel/operator-standard
 
+## 0.3.0
+
+### Minor Changes
+
+- 3f6694b: Select the customer Storefront presentation through the deployment graph. Project resolution now emits a selected presentation factory artifact, and the standard Operator emits Storefront routes only when that presentation is selected.
+
+### Patch Changes
+
+- Updated dependencies [4bc540f]
+- Updated dependencies [bb6e890]
+- Updated dependencies [3f6694b]
+- Updated dependencies [37031e9]
+  - @voyant-travel/auth@0.128.0
+  - @voyant-travel/legal@0.155.0
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/storefront@0.157.0
+  - @voyant-travel/workflow-runs@0.119.0
+  - @voyant-travel/auth-react@0.128.0
+  - @voyant-travel/legal-react@0.155.0
+  - @voyant-travel/notifications@0.126.1
+  - @voyant-travel/accommodations@0.115.0
+  - @voyant-travel/action-ledger@0.108.2
+  - @voyant-travel/availability@0.2.8
+  - @voyant-travel/bookings@0.155.0
+  - @voyant-travel/catalog@0.153.0
+  - @voyant-travel/catalog-authoring@0.107.7
+  - @voyant-travel/charters@0.153.0
+  - @voyant-travel/commerce@0.35.2
+  - @voyant-travel/cruises@0.154.0
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/distribution@0.145.0
+  - @voyant-travel/finance@0.155.0
+  - @voyant-travel/flights@0.155.0
+  - @voyant-travel/identity@0.155.0
+  - @voyant-travel/inventory@0.9.2
+  - @voyant-travel/mcp@0.2.2
+  - @voyant-travel/mice@0.11.0
+  - @voyant-travel/operations@0.6.8
+  - @voyant-travel/operator-settings@0.3.8
+  - @voyant-travel/public-document-delivery@0.3.2
+  - @voyant-travel/quotes@0.128.2
+  - @voyant-travel/realtime@0.4.2
+  - @voyant-travel/relationships@0.124.3
+  - @voyant-travel/storage@0.109.2
+  - @voyant-travel/trips@0.146.0
+  - @voyant-travel/storefront-react@0.157.0
+  - @voyant-travel/admin-app@0.47.0
+  - @voyant-travel/quotes-react@0.153.0
+  - @voyant-travel/bookings-react@0.155.0
+  - @voyant-travel/cruises-react@0.154.0
+  - @voyant-travel/inventory-react@0.37.0
+  - @voyant-travel/admin-host@0.5.0
+  - @voyant-travel/operator-settings-react@0.8.0
+  - @voyant-travel/action-ledger-react@0.42.0
+  - @voyant-travel/distribution-react@0.145.0
+  - @voyant-travel/finance-react@0.155.0
+  - @voyant-travel/operations-react@0.36.0
+  - @voyant-travel/trips-react@0.146.0
+  - @voyant-travel/catalog-react@0.153.0
+  - @voyant-travel/commerce-react@0.37.0
+  - @voyant-travel/flights-react@0.155.0
+  - @voyant-travel/relationships-react@0.155.0
+  - @voyant-travel/mice-react@0.23.0
+  - @voyant-travel/notifications-react@0.126.1
+  - @voyant-travel/workflows@0.119.0
+  - @voyant-travel/workflows-orchestrator@0.119.0
+
 ## 0.2.3
 
 ### Patch Changes
