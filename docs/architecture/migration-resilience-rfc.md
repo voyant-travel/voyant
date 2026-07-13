@@ -462,7 +462,7 @@ defer runtime derivation (the hard part) to last.
    generated-schema route first, since it gives true drift detection for free.
 4. **Timestamp vs lint for ordering** — start with the duplicate-prefix lint;
    only adopt timestamp prefixes if collisions persist.
-5. **Plugin-shipped schema** — distributable plugins (`HonoPlugin`) currently have
+5. **Plugin-shipped schema** — distributable plugins (`HonoBundle`) currently have
    no schema/migration story; align them with the per-package declaration once
    §4.3 lands.
 

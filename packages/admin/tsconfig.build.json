@@ -914,6 +914,7 @@
       "@voyant-travel/hono/auth": ["../hono/dist/auth/index.d.ts"],
       "@voyant-travel/hono/auth/crypto": ["../hono/dist/auth/crypto.d.ts"],
       "@voyant-travel/hono/auth/session-jwt": ["../hono/dist/auth/session-jwt.d.ts"],
+      "@voyant-travel/hono/bundle": ["../hono/dist/bundle.d.ts"],
       "@voyant-travel/hono/composition": ["../hono/dist/composition.d.ts"],
       "@voyant-travel/hono/document-download": ["../hono/dist/document-download.d.ts"],
       "@voyant-travel/hono/middleware": ["../hono/dist/middleware/index.d.ts"],
@@ -939,10 +940,6 @@
       "@voyant-travel/hono/observability": ["../hono/dist/observability/index.d.ts"],
       "@voyant-travel/hono/observability/reporter": ["../hono/dist/observability/reporter.d.ts"],
       "@voyant-travel/hono/openapi": ["../hono/dist/openapi.d.ts"],
-      "@voyant-travel/hono/plugin": ["../hono/dist/plugin.d.ts"],
-      "@voyant-travel/hono/public-document-delivery": [
-        "../hono/dist/public-document-delivery.d.ts"
-      ],
       "@voyant-travel/hono/types": ["../hono/dist/types.d.ts"],
       "@voyant-travel/i18n": ["../i18n/dist/index.d.ts"],
       "@voyant-travel/identity": ["../identity/dist/index.d.ts"],

@@ -78,10 +78,8 @@ Transport taxonomy note:
 
 - `@voyant-travel/hono` is the default HTTP transport adapter for Voyant, not a
   plugin package in the same sense as Netopia or SmartBill
-- the current `HonoPlugin` / `@voyant-travel/hono/plugin` naming is legacy
-  bundle-contribution terminology inside the Hono transport and should be
-  revisited in a future taxonomy cleanup, likely toward a `HonoBundle` /
-  `@voyant-travel/hono/bundle` style surface
+- reusable Hono transport contributions use the `HonoBundle` terminology;
+  product integrations remain plugins at the project configuration boundary
 
 This document reflects the source tree on `main` as of 2026-04-14 and calls
 out where the latest published npm train still lags behind source.

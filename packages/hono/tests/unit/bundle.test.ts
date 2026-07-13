@@ -4,15 +4,13 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { mountApp } from "../../src/app.js"
-import type { HonoExtension, HonoModule } from "../../src/module.js"
 import {
   defineHonoBundle,
-  defineHonoPlugin,
   defineLazyHonoBundle,
   expandHonoBundles,
-  expandHonoPlugins,
   type HonoBundleInput,
-} from "../../src/plugin.js"
+} from "../../src/bundle.js"
+import type { HonoExtension, HonoModule } from "../../src/module.js"
 import type { DbFactory, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -37,14 +35,7 @@ function makeModule(name: string, surface: "admin" | "public"): HonoModule {
   }
 }
 
-describe("expandHonoPlugins", () => {
-  it("supports the bundle aliases", () => {
-    const bundle = defineHonoBundle({ name: "bundle", modules: [makeModule("bundle", "admin")] })
-    const result = expandHonoBundles([bundle])
-    expect(result.modules).toHaveLength(1)
-    expect(result.modules[0]?.module.name).toBe("bundle")
-  })
-
+describe("expandHonoBundles", () => {
   it("collects bundle-declared anonymous absolute paths (ADR-0008)", () => {
     const result = expandHonoBundles([
       defineHonoBundle({ name: "netopia", anonymous: ["/v1/finance/providers/netopia/callback"] }),
@@ -57,30 +48,30 @@ describe("expandHonoPlugins", () => {
     ])
   })
 
-  it("returns empty collections for no plugins", () => {
-    const result = expandHonoPlugins([])
+  it("returns empty collections for no bundles", () => {
+    const result = expandHonoBundles([])
     expect(result.modules).toEqual([])
     expect(result.extensions).toEqual([])
     expect(result.subscribers).toEqual([])
     expect(result.links).toEqual([])
   })
 
-  it("flattens modules from plugins in order", () => {
+  it("flattens modules from bundles in order", () => {
     const m1 = makeModule("m1", "admin")
     const m2 = makeModule("m2", "admin")
-    const plugin = defineHonoPlugin({ name: "p1", modules: [m1, m2] })
-    const result = expandHonoPlugins([plugin])
+    const bundle = defineHonoBundle({ name: "p1", modules: [m1, m2] })
+    const result = expandHonoBundles([bundle])
     expect(result.modules).toEqual([m1, m2])
   })
 
-  it("throws on duplicate plugin names", () => {
-    const p1 = defineHonoPlugin({ name: "dup" })
-    const p2 = defineHonoPlugin({ name: "dup" })
-    expect(() => expandHonoPlugins([p1, p2])).toThrow(/Duplicate (plugin|bundle) name/)
+  it("throws on duplicate bundle names", () => {
+    const p1 = defineHonoBundle({ name: "dup" })
+    const p2 = defineHonoBundle({ name: "dup" })
+    expect(() => expandHonoBundles([p1, p2])).toThrow(/Duplicate bundle name/)
   })
 
-  it("defineHonoPlugin returns the plugin unchanged", () => {
-    const p = defineHonoPlugin({ name: "x", version: "1.0.0" })
+  it("defineHonoBundle returns the bundle unchanged", () => {
+    const p = defineHonoBundle({ name: "x", version: "1.0.0" })
     expect(p.name).toBe("x")
     expect(p.version).toBe("1.0.0")
   })
@@ -97,7 +88,7 @@ describe("mountApp with plugins", () => {
   }
 
   it("mounts plugin-contributed admin routes", async () => {
-    const plugin = defineHonoPlugin({
+    const plugin = defineHonoBundle({
       name: "widgets",
       modules: [makeModule("widgets", "admin")],
     })
@@ -110,7 +101,7 @@ describe("mountApp with plugins", () => {
   })
 
   it("mounts plugin-contributed public routes", async () => {
-    const plugin = defineHonoPlugin({
+    const plugin = defineHonoBundle({
       name: "catalog",
       modules: [makeModule("catalog", "public")],
     })
@@ -172,7 +163,7 @@ describe("mountApp with plugins", () => {
   it("combines top-level modules with plugin modules", async () => {
     const top = makeModule("top", "admin")
     const viaPlugin = makeModule("viaPlugin", "admin")
-    const plugin = defineHonoPlugin({ name: "p", modules: [viaPlugin] })
+    const plugin = defineHonoBundle({ name: "p", modules: [viaPlugin] })
     const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
@@ -197,7 +188,7 @@ describe("mountApp with plugins", () => {
         return c.json({ result: svc.ping() })
       }),
     }
-    const plugin = defineHonoPlugin({ name: "svc-plugin", modules: [mod] })
+    const plugin = defineHonoBundle({ name: "svc-plugin", modules: [mod] })
     const app = build([plugin])
     const res = await app.request("/v1/admin/svc/check", {}, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(200)
@@ -207,8 +198,8 @@ describe("mountApp with plugins", () => {
   })
 
   it("throws on duplicate plugin names when passed to mountApp", () => {
-    const p1 = defineHonoPlugin({ name: "dup" })
-    const p2 = defineHonoPlugin({ name: "dup" })
+    const p1 = defineHonoBundle({ name: "dup" })
+    const p2 = defineHonoBundle({ name: "dup" })
     expect(() =>
       mountApp({
         // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
@@ -286,7 +277,7 @@ describe("mountApp with plugins", () => {
 
   it("wires plugin subscribers to the app event bus", async () => {
     const handler = vi.fn()
-    const plugin = defineHonoPlugin({
+    const plugin = defineHonoBundle({
       name: "events",
       subscribers: [{ event: "booking.created", handler }],
       modules: [
@@ -332,7 +323,7 @@ describe("mountApp with plugins", () => {
         },
       },
     }
-    const plugin = defineHonoPlugin({
+    const plugin = defineHonoBundle({
       name: "boot-plugin",
       bootstrap: () => {
         calls.push("plugin")
@@ -369,7 +360,7 @@ describe("mountApp with plugins", () => {
         return c.json(runtime)
       }),
     }
-    const throwingPlugin = defineHonoPlugin({
+    const throwingPlugin = defineHonoBundle({
       name: "throwing",
       bootstrap: () => {
         throw new Error("missing env NETOPIA_URL")

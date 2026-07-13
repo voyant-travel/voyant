@@ -13,6 +13,18 @@ export {
   unsignCookie,
   verifySession,
 } from "./auth/index.js"
+export type {
+  ExpandedHonoBundles,
+  HonoBundle,
+  HonoBundleInput,
+  LazyHonoBundle,
+} from "./bundle.js"
+export {
+  defineHonoBundle,
+  defineLazyHonoBundle,
+  expandHonoBundles,
+  isLazyHonoBundle,
+} from "./bundle.js"
 export { type CreateAppConfig, createApp } from "./create-app.js"
 export type {
   AuthenticatedR2DocumentDownloadResolver,
@@ -73,22 +85,6 @@ export {
 export { stampOpenApiRegistryApiId } from "./openapi-ownership.js"
 export { openApiValidationHook } from "./openapi-validation.js"
 export type {
-  ExpandedHonoBundles,
-  ExpandedHonoPlugins,
-  HonoBundle,
-  HonoBundleInput,
-  HonoPlugin,
-  LazyHonoBundle,
-} from "./plugin.js"
-export {
-  defineHonoBundle,
-  defineHonoPlugin,
-  defineLazyHonoBundle,
-  expandHonoBundles,
-  expandHonoPlugins,
-  isLazyHonoBundle,
-} from "./plugin.js"
-export type {
   CreatePublicCapabilityOptions,
   PublicCapabilityCookieOptions,
   PublicCapabilityPayload,
@@ -100,23 +96,6 @@ export {
   serializePublicCapabilityCookie,
   verifyPublicCapabilityToken,
 } from "./public-capability.js"
-export {
-  type CreatePublicDocumentDeliveryInput,
-  createDrizzlePublicDocumentDeliveryGrantStore,
-  createPublicDocumentDeliveryGrant,
-  createPublicDocumentDeliveryHonoModule,
-  createPublicDocumentDeliveryRoutes,
-  type PublicDocumentDeliveryAccessContext,
-  type PublicDocumentDeliveryEnvelope,
-  type PublicDocumentDeliveryGrant,
-  type PublicDocumentDeliveryGrantStore,
-  type PublicDocumentDeliveryResolution,
-  type PublicDocumentDeliveryRouteOptions,
-  type PublicDocumentDeliverySource,
-  type RevokePublicDocumentDeliveryGrantInput,
-  resolvePublicDocumentDeliveryGrant,
-  revokePublicDocumentDeliveryGrant,
-} from "./public-document-delivery.js"
 export type {
   DbFactory,
   DbFactorySelector,

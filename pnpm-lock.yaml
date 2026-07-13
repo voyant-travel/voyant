@@ -2233,9 +2233,6 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
-      '@voyant-travel/public-document-delivery':
-        specifier: workspace:^
-        version: link:../public-document-delivery
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types

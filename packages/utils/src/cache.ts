@@ -11,7 +11,7 @@
  *   const cache = new Cache(kv)
  *   const value = await cache.get('key') ?? await cache.set('key', data, 300)
  *
- * NOTE: Upstash Redis has been removed. Use Cloudflare KV instead.
+ * Redis-backed caching is available through `createRedisKvStore`.
  */
 
 /**
@@ -181,27 +181,4 @@ export function createCache(kv?: KVStore | null): Cache {
  */
 export function createCacheFromEnv(env: { CACHE?: KVStore }): Cache {
   return new Cache(env.CACHE ?? null)
-}
-
-// ============================================================================
-// Legacy Redis compatibility (deprecated - will be removed)
-// ============================================================================
-
-/**
- * @deprecated Use KV directly instead
- */
-export function getRedis(): null {
-  console.warn("[cache] Upstash Redis has been removed. Use Cloudflare KV instead.")
-  return null
-}
-
-/**
- * @deprecated Use KV directly instead
- */
-export function getRedisFromEnv(_env: {
-  UPSTASH_REDIS_REST_URL?: string
-  UPSTASH_REDIS_REST_TOKEN?: string
-}): null {
-  console.warn("[cache] Upstash Redis has been removed. Use Cloudflare KV instead.")
-  return null
 }
