@@ -31,7 +31,7 @@ interface StoredRecord {
  * exits.
  */
 export function createLocalStorageProvider(options: LocalStorageOptions = {}): StorageProvider {
-  const name = options.name ?? "local"
+  const name = options.name ?? "memory"
   const baseUrl = options.baseUrl ?? "local://"
   const generateKey =
     options.generateKey ??
@@ -49,7 +49,7 @@ export function createLocalStorageProvider(options: LocalStorageOptions = {}): S
     if (opts.contentType !== undefined) record.contentType = opts.contentType
     if (opts.metadata !== undefined) record.metadata = opts.metadata
     store.set(key, record)
-    return { key, url: `${baseUrl}${key}` }
+    return { key, url: `${baseUrl}${encodeKey(key)}` }
   }
 
   return {
@@ -59,7 +59,7 @@ export function createLocalStorageProvider(options: LocalStorageOptions = {}): S
       store.delete(key)
     },
     async signedUrl(key) {
-      return `${baseUrl}${key}`
+      return `${baseUrl}${encodeKey(key)}`
     },
     async get(key) {
       const record = store.get(key)
@@ -70,6 +70,13 @@ export function createLocalStorageProvider(options: LocalStorageOptions = {}): S
       return copy.buffer
     },
   }
+}
+
+function encodeKey(key: string): string {
+  return key
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/")
 }
 
 async function toBytes(body: StorageUploadBody): Promise<Uint8Array> {

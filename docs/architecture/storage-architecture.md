@@ -131,19 +131,23 @@ Rule:
 Use a narrow shared storage contract and keep backend differences inside the
 adapter.
 
-### 7. Template defaults should expose both media and document storage
+### 7. Resolve logical media and document stores
 
-Templates should not expose only one generic bucket when the product already
-has public and private storage needs.
+Application code should not consume vendor bucket bindings. The host resolves
+two logical stores:
 
-A sensible default is:
+- `media` for public/editorial assets
+- `documents` for private generated or uploaded documents
 
-- `MEDIA_BUCKET` for public/editorial assets
-- `DOCUMENTS_BUCKET` for private generated or uploaded documents
+The selected `s3-compatible` provider maps those names to
+`STORAGE_MEDIA_BUCKET` and `STORAGE_DOCUMENTS_BUCKET`. A package-selected custom
+`storage.object` provider can map them to any backend without changing
+application modules. Custom adapters own their config and secret declarations
+and return the shared `StorageProviderResolver` contract.
 
 Rule:
 
-Template storage bindings should reflect the real storage classes Voyant needs.
+Storage consumers should request logical stores, never vendor bindings.
 
 ## Access Patterns
 

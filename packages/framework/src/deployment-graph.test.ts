@@ -56,6 +56,30 @@ describe("deployment graph v1", () => {
     expect(validateGraphUnitManifest(module)).toEqual([])
   })
 
+  it("requires provider value usage to reference declarations from the same manifest", () => {
+    const plugin = definePlugin({
+      id: "@acme/voyant-storage",
+      providers: [
+        {
+          id: "@acme/voyant-storage#provider.custom",
+          port: "storage.object",
+          selection: { role: "storage", value: "custom" },
+          uses: { secrets: ["@acme/voyant-storage#secret.missing"] },
+          runtime: { entry: "@acme/voyant-storage/provider", export: "createStorageResolver" },
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(plugin)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "providers[0].uses.secrets",
+        }),
+      ]),
+    )
+  })
+
   it("normalizes legacy v1 projects without an extension lane", async () => {
     const plugin = definePlugin({ id: "@acme/voyant-fiscal#smartbill" })
     const project = defineProject({ modules: [], plugins: [plugin] })
@@ -183,6 +207,11 @@ describe("deployment graph v1", () => {
         {
           id: "@acme/voyant-loyalty#provider.ledger",
           port: "acme.loyalty.ledger",
+          uses: {
+            config: ["@acme/voyant-loyalty#config.tiers"],
+            secrets: ["@acme/voyant-loyalty#secret.webhook"],
+            resources: ["@acme/voyant-loyalty#resource.store"],
+          },
           runtime: { entry: "@acme/voyant-loyalty/provider", export: "ledgerProvider" },
         },
       ],

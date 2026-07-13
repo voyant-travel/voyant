@@ -33,19 +33,16 @@ import {
   type CreateNodeServerOptions,
   composeNodeEnv,
   createMemoryKvNamespace,
-  createMemoryR2Bucket,
   createNodeServer,
-  createR2BucketShim,
   type ExecutionContextLike,
   type KvNamespaceShim,
   type NodeServerHandle,
-  type R2BucketShim,
 } from "@voyant-travel/runtime-core"
 import {
-  createDocumentStorage,
   readDocumentContentBase64,
   resolveDocumentDownloadUrl,
 } from "@voyant-travel/storage/runtime"
+import type { StorageProvider, StorageProviderResolver } from "@voyant-travel/storage/types"
 import { scopesForRole } from "@voyant-travel/types/member-roles"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
@@ -69,6 +66,13 @@ import type {
   VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
+import { createVoyantNodeStorageResolver } from "./node-object-storage.js"
+import {
+  resolveVoyantNodeProviderPlan,
+  type VoyantNodeKvProvider,
+  type VoyantNodeProviderPlan,
+  validateVoyantNodeProviderPlanEnv,
+} from "./node-provider-plan.js"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import type { VoyantGraphRuntime } from "./runtime-lowering.js"
 import {
@@ -79,13 +83,14 @@ import {
 export interface VoyantNodeRuntimeEnv extends VoyantBindings {
   DATABASE_URL_DIRECT?: string
   DATABASE_URL_REPLICAS?: string
-  R2_S3_ENDPOINT?: string
-  R2_ACCESS_KEY_ID?: string
-  R2_SECRET_ACCESS_KEY?: string
-  R2_BUCKET_MEDIA?: string
-  R2_BUCKET_DOCUMENTS?: string
-  MEDIA_BUCKET?: R2BucketShim
-  DOCUMENTS_BUCKET?: R2BucketShim
+  S3_ENDPOINT?: string
+  S3_REGION?: string
+  S3_ACCESS_KEY_ID?: string
+  S3_SECRET_ACCESS_KEY?: string
+  S3_SESSION_TOKEN?: string
+  S3_FORCE_PATH_STYLE?: string
+  STORAGE_MEDIA_BUCKET?: string
+  STORAGE_DOCUMENTS_BUCKET?: string
   MEDIA_PUBLIC_BASE_URL?: string
   API_BASE_URL?: string
   REDIS_URL?: string
@@ -110,6 +115,7 @@ export interface VoyantNodeRuntimeEnv extends VoyantBindings {
 
 export interface CreateVoyantNodeRuntimeHostPrimitivesOptions {
   env: VoyantNodeRuntimeEnv
+  storage?: StorageProviderResolver
   config?: Readonly<Record<string, unknown>>
   deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
 }
@@ -154,9 +160,15 @@ export function createVoyantNodeRuntimeHostPrimitives(
       },
     },
     storage: {
-      resolve: (bindings) => createDocumentStorage(bindingsEnv(bindings)),
-      read: (bindings, key) => readDocumentContentBase64(bindingsEnv(bindings), key),
-      downloadUrl: (bindings, key) => resolveDocumentDownloadUrl(bindingsEnv(bindings), key),
+      resolve: (_bindings, name) => options.storage?.resolve(name) ?? null,
+      read: (_bindings, key) =>
+        readDocumentContentBase64(options.storage?.resolve("documents") ?? null, key),
+      downloadUrl: (bindings, key) =>
+        resolveDocumentDownloadUrl(
+          bindingsEnv(bindings),
+          options.storage?.resolve("documents") ?? null,
+          key,
+        ),
     },
     events: {
       deliver: (event, bindings) => {
@@ -252,15 +264,31 @@ const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
 
 interface NodeSharedStores {
   CACHE: KVStore
+  SHARED_STATE: KVStore
   RATE_LIMIT: KVStore
   RATE_LIMIT_STORE: RateLimitStore
 }
+
+interface NodeSharedProviderResources {
+  redisKv?: KVStore
+  redisRateLimit?: RateLimitStore
+  postgresKv?: KVStore
+  postgresRateLimit?: RateLimitStore
+}
+
+const MATERIALIZED_NODE_ENVS = new WeakMap<object, string>()
 
 /** Boot a generated application graph without constructing a profile compatibility manifest. */
 export async function loadVoyantNodeRuntime(
   options: VoyantNodeRuntimeOptions,
 ): Promise<VoyantNodeRuntime> {
-  const env = createVoyantNodeEnv(options.env ?? process.env)
+  const providerPlan = resolveVoyantNodeProviderPlan(options.deployment.providers)
+  const providerEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
+  const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, providerEnv)
+  if (providerIssues.length > 0) {
+    throw new Error(`Voyant Node provider plan is not ready:\n${formatIssues(providerIssues)}`)
+  }
+  const env = createVoyantNodeEnv(options.env ?? process.env, providerPlan)
   assertVoyantNodeWorkflowProviderConfigured(options.deployment, env)
   const requirements = options.deploymentRequirements
   const graphValues = await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
@@ -423,29 +451,38 @@ export function createVoyantNodeApp(options: {
 
 export function createVoyantNodeEnv(
   processEnv: Record<string, unknown> | VoyantNodeRuntimeEnv,
+  providerPlan: VoyantNodeProviderPlan = {
+    storage: "memory",
+    cache: "memory",
+    sharedState: "memory",
+    rateLimit: "memory",
+  },
 ): VoyantNodeRuntimeEnv {
+  const providerPlanKey = nodeProviderPlanKey(providerPlan)
+  if (MATERIALIZED_NODE_ENVS.get(processEnv) === providerPlanKey) {
+    return processEnv as VoyantNodeRuntimeEnv
+  }
   const raw: Record<string, unknown> = Object.fromEntries(Object.entries(processEnv))
   const stringEnv = Object.fromEntries(
     Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   )
-  const stores = createNodeSharedStores(raw, stringEnv)
-  return composeNodeEnv<VoyantNodeRuntimeEnv>(stringEnv, {
+  const stores = createNodeSharedStores(stringEnv, providerPlan)
+  const env = composeNodeEnv<VoyantNodeRuntimeEnv>(stringEnv, {
     kv: {
       CACHE: stores.CACHE,
+      SHARED_STATE: stores.SHARED_STATE,
       RATE_LIMIT: stores.RATE_LIMIT,
-    },
-    r2: {
-      MEDIA_BUCKET: isR2Bucket(raw.MEDIA_BUCKET)
-        ? raw.MEDIA_BUCKET
-        : objectStore(stringEnv.R2_BUCKET_MEDIA, stringEnv),
-      DOCUMENTS_BUCKET: isR2Bucket(raw.DOCUMENTS_BUCKET)
-        ? raw.DOCUMENTS_BUCKET
-        : objectStore(stringEnv.R2_BUCKET_DOCUMENTS, stringEnv),
     },
     extra: {
       RATE_LIMIT_STORE: stores.RATE_LIMIT_STORE,
     },
   })
+  MATERIALIZED_NODE_ENVS.set(env, providerPlanKey)
+  return env
+}
+
+function nodeProviderPlanKey(plan: VoyantNodeProviderPlan): string {
+  return [plan.storage, plan.cache, plan.sharedState, plan.rateLimit].join("\0")
 }
 
 function resolveVoyantNodeAuthIntegration(options: {
@@ -906,47 +943,91 @@ function normalizeManagedUrl(url: string): string {
 }
 
 function createNodeSharedStores(
-  raw: Record<string, unknown>,
   env: Record<string, string>,
+  plan: VoyantNodeProviderPlan,
 ): NodeSharedStores {
-  const injectedCache = isKvNamespace(raw.CACHE) ? raw.CACHE : undefined
-  const injectedRateLimit = isKvNamespace(raw.RATE_LIMIT) ? raw.RATE_LIMIT : undefined
-  const redisUrl = env.REDIS_URL?.trim()
-  const dbUrlValue = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
-
   const l1Cache = createMemoryKvNamespace()
+  const l1SharedState = createMemoryKvNamespace()
   const l1RateLimit = createMemoryKvNamespace()
-
-  if (redisUrl) {
-    const l2Cache = createRedisKvStore(redisUrl)
-    const l2RateLimitKv = createRedisKvStore(redisUrl)
-    return {
-      CACHE: injectedCache ?? createTieredKvStore(l1Cache, l2Cache),
-      RATE_LIMIT: injectedRateLimit ?? createTieredKvStore(l1RateLimit, l2RateLimitKv),
-      RATE_LIMIT_STORE: createRedisRateLimitStore(redisUrl),
-    }
+  const selectedProviders = [plan.cache, plan.sharedState, plan.rateLimit]
+  const redisUrl = selectedProviders.includes("redis")
+    ? requireNodeEnv(env, "REDIS_URL")
+    : undefined
+  const postgresDatabase = selectedProviders.includes("postgres")
+    ? resolveProviderDatabase(env)
+    : undefined
+  const resources: NodeSharedProviderResources = {
+    ...(redisUrl
+      ? {
+          redisKv: createRedisKvStore(redisUrl),
+          redisRateLimit: createRedisRateLimitStore(redisUrl),
+        }
+      : {}),
+    ...(postgresDatabase
+      ? {
+          postgresKv: createPostgresKvStore(postgresDatabase),
+          postgresRateLimit: createPostgresFixedWindowRateLimitStore(postgresDatabase),
+        }
+      : {}),
   }
-
-  if (dbUrlValue && isPostgresConnectionUrl(dbUrlValue)) {
-    const runtimeEnv: VoyantNodeRuntimeEnv = {
-      ...env,
-      DATABASE_URL: env.DATABASE_URL ?? dbUrlValue,
-    }
-    const db = resolveDb(runtimeEnv)
-    const l2Cache = createPostgresKvStore(db)
-    const l2RateLimitKv = createPostgresKvStore(db)
-    return {
-      CACHE: injectedCache ?? createTieredKvStore(l1Cache, l2Cache),
-      RATE_LIMIT: injectedRateLimit ?? createTieredKvStore(l1RateLimit, l2RateLimitKv),
-      RATE_LIMIT_STORE: createPostgresFixedWindowRateLimitStore(db),
-    }
-  }
-
   return {
-    CACHE: injectedCache ?? l1Cache,
-    RATE_LIMIT: injectedRateLimit ?? l1RateLimit,
-    RATE_LIMIT_STORE: createMemoryRateLimitStore(),
+    CACHE: selectedCacheStore(plan.cache, l1Cache, resources),
+    SHARED_STATE: selectedAuthoritativeKvStore(plan.sharedState, l1SharedState, resources),
+    RATE_LIMIT: selectedAuthoritativeKvStore(plan.rateLimit, l1RateLimit, resources),
+    RATE_LIMIT_STORE: selectedRateLimitStore(plan.rateLimit, resources),
   }
+}
+
+function selectedCacheStore(
+  provider: VoyantNodeKvProvider,
+  memory: KvNamespaceShim,
+  resources: NodeSharedProviderResources,
+): KVStore {
+  if (provider === "memory") return memory
+  if (provider === "redis") {
+    return createTieredKvStore(memory, requireProviderResource(resources.redisKv))
+  }
+  return createTieredKvStore(memory, requireProviderResource(resources.postgresKv))
+}
+
+function selectedAuthoritativeKvStore(
+  provider: VoyantNodeKvProvider,
+  memory: KvNamespaceShim,
+  resources: NodeSharedProviderResources,
+): KVStore {
+  if (provider === "memory") return memory
+  if (provider === "redis") return requireProviderResource(resources.redisKv)
+  return requireProviderResource(resources.postgresKv)
+}
+
+function selectedRateLimitStore(
+  provider: VoyantNodeKvProvider,
+  resources: NodeSharedProviderResources,
+): RateLimitStore {
+  if (provider === "memory") return createMemoryRateLimitStore()
+  if (provider === "redis") {
+    return requireProviderResource(resources.redisRateLimit)
+  }
+  return requireProviderResource(resources.postgresRateLimit)
+}
+
+function requireProviderResource<T>(resource: T | undefined): T {
+  if (resource !== undefined) return resource
+  throw new Error("Selected Node provider resource was not initialized")
+}
+
+function resolveProviderDatabase(env: Record<string, string>): VoyantDb {
+  const databaseUrl = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
+  if (!databaseUrl || !isPostgresConnectionUrl(databaseUrl)) {
+    throw new Error("Postgres Node provider requires DATABASE_URL or DATABASE_URL_DIRECT")
+  }
+  return resolveDb({ ...env, DATABASE_URL: env.DATABASE_URL ?? databaseUrl })
+}
+
+function requireNodeEnv(env: Record<string, string>, name: string): string {
+  const value = env[name]?.trim()
+  if (value) return value
+  throw new Error(`${name} is required by the selected Node provider`)
 }
 
 function isPostgresConnectionUrl(value: string): boolean {
@@ -1048,33 +1129,11 @@ function resolveDb(env: unknown): VoyantDb {
   return resolveNodeDatabase(env as VoyantNodeRuntimeEnv) as VoyantDb
 }
 
-function objectStore(
-  bucket: string | undefined,
-  env: Record<string, string | undefined>,
-): R2BucketShim {
-  if (env.R2_S3_ENDPOINT && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && bucket) {
-    return createR2BucketShim({
-      endpoint: env.R2_S3_ENDPOINT,
-      bucket,
-      accessKeyId: env.R2_ACCESS_KEY_ID,
-      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    })
-  }
-  return createMemoryR2Bucket()
-}
-
-function isKvNamespace(value: unknown): value is KvNamespaceShim {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "get" in value &&
-    "put" in value &&
-    "delete" in value
-  )
-}
-
-function isR2Bucket(value: unknown): value is R2BucketShim {
-  return typeof value === "object" && value !== null && "get" in value && "put" in value
+export type { StorageProvider, StorageProviderResolver, VoyantNodeProviderPlan }
+export {
+  createVoyantNodeStorageResolver,
+  resolveVoyantNodeProviderPlan,
+  validateVoyantNodeProviderPlanEnv,
 }
 
 export type VoyantNodeWorkflowProvider = VoyantDeploymentProviders["workflows"]

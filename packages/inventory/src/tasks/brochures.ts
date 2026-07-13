@@ -98,7 +98,7 @@ export async function generateAndStoreProductBrochure(
   try {
     url =
       uploaded.url ||
-      (options.signedUrlExpiresIn
+      (options.signedUrlExpiresIn && options.storage.signedUrl
         ? await options.storage.signedUrl(uploaded.key, options.signedUrlExpiresIn)
         : null)
   } catch (err) {

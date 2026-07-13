@@ -10,7 +10,6 @@ import {
 type RuntimeEnv = Readonly<
   Partial<
     Record<
-      | "MEDIA_BUCKET"
       | "APP_URL"
       | "VOYANT_API_KEY"
       | "VOYANT_CLOUD_API_KEY"

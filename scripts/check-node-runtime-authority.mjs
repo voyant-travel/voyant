@@ -53,6 +53,13 @@ for (const required of [
   "deploymentRequirements: graph.requirements",
   "runtimePorts: deploymentResources.ports",
   "outboundWebhooks: deploymentResources.outboundWebhooks",
+  "resolveVoyantNodeProviderPlan(generated.deployment.providers)",
+  "createVoyantNodeStorageResolver",
+  "validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)",
+  "createVoyantNodeEnv(rawEnv, providerPlan)",
+  "resolveVoyantGraphRuntimeProviders",
+  'ports: ["storage.object"]',
+  'getProvider<unknown>("storage.object")',
 ]) {
   if (!operatorRuntime.includes(required)) {
     violations.push(`runtime must consume graph-native Node runtime authority: ${required}`)
@@ -66,6 +73,9 @@ if (operatorRuntime.includes("enqueuePostgresWebhookEvent")) {
     "runtime must resolve outbound webhook providers through the package-owned adapter",
   )
 }
+if (!operatorRuntime.includes("...options.host,\n    env,\n    storage,")) {
+  violations.push("graph-selected storage must override incidental host storage configuration")
+}
 
 for (const required of [
   "createVoyantNodeRuntimeHostPrimitives",
@@ -74,9 +84,27 @@ for (const required of [
   "VOYANT_NODE_HOST_REQUIREMENT_MISSING",
   'VoyantNodeHostRequirementError("events.deliver")',
   "VoyantNodeRuntimeOptions",
+  "validateVoyantNodeProviderPlanEnv",
+  "selectedCacheStore(plan.cache",
+  "selectedAuthoritativeKvStore(plan.sharedState",
+  "selectedAuthoritativeKvStore(plan.rateLimit",
+  "selectedRateLimitStore(plan.rateLimit",
+  "MATERIALIZED_NODE_ENVS.get(processEnv) === providerPlanKey",
 ]) {
   if (!nodeRuntime.includes(required)) {
     violations.push(`framework node-runtime must export ${required}`)
+  }
+}
+for (const retiredStorageToken of [
+  "createR2BucketShim",
+  "createMemoryR2Bucket",
+  "R2BucketShim",
+  "R2_S3_ENDPOINT",
+  "R2_BUCKET_MEDIA",
+  "R2_BUCKET_DOCUMENTS",
+]) {
+  if (nodeRuntime.includes(retiredStorageToken)) {
+    violations.push(`framework node-runtime must not restore ${retiredStorageToken}`)
   }
 }
 if (!deploymentArtifacts.includes("createRuntimePorts: createGeneratedGraphRuntimePorts")) {

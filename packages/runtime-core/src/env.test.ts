@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import { composeNodeEnv } from "./env.js"
 import type { KvNamespaceShim } from "./memory-kv.js"
-import type { R2BucketShim } from "./r2.js"
 
 const fakeKv = {} as KvNamespaceShim
-const fakeR2 = {} as R2BucketShim
 
 describe("composeNodeEnv", () => {
   it("spreads defined string vars and drops undefined", () => {
@@ -14,14 +12,10 @@ describe("composeNodeEnv", () => {
     expect("MISSING" in env).toBe(false)
   })
 
-  it("attaches KV and R2 providers under their binding names", () => {
-    const env = composeNodeEnv(
-      { FOO: "bar" },
-      { kv: { CACHE: fakeKv }, r2: { DOCUMENTS_BUCKET: fakeR2 } },
-    )
+  it("attaches KV providers under their binding names", () => {
+    const env = composeNodeEnv({ FOO: "bar" }, { kv: { CACHE: fakeKv } })
     expect(env.FOO).toBe("bar")
     expect(env.CACHE).toBe(fakeKv)
-    expect(env.DOCUMENTS_BUCKET).toBe(fakeR2)
   })
 
   it("lets a binding provider win over a same-named string var", () => {

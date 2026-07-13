@@ -206,7 +206,7 @@
             }
           },
           "503": {
-            "description": "Contract document storage not configured (missing DOCUMENTS_BUCKET)",
+            "description": "Contract document storage is not configured",
             "content": {
               "application/json": {
                 "schema": {

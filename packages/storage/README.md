@@ -1,69 +1,80 @@
 # @voyant-travel/storage
 
-Storage provider abstraction for Voyant. `StorageProvider` interface plus providers for local (in-memory), Cloudflare R2, and S3-compatible (AWS SigV4 via Web Crypto — works in Cloudflare Workers).
+Vendor-neutral object storage contracts and built-in Node providers for Voyant.
 
-## Install
+## Providers
 
-```bash
-pnpm add @voyant-travel/storage
-```
+- `memory` keeps objects in process for local development and tests.
+- `s3-compatible` uses AWS SDK v3 for AWS S3 and compatible services such as
+  Cloudflare R2, Google Cloud Storage's XML API, and MinIO.
+- `custom` loads a selected `storage.object` provider from an adapter package.
 
-## Usage
-
-```typescript
-import { createStorageService } from "@voyant-travel/storage"
-import { s3Provider } from "@voyant-travel/storage/providers/s3"
-
-const storage = createStorageService(
-  s3Provider({
-    region: "us-east-1",
-    bucket: "my-bucket",
-    accessKeyId: env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-  }),
-)
-
-await storage.upload({ key: "files/x.pdf", body: buffer })
-const url = await storage.signedUrl({ key: "files/x.pdf", expiresIn: 300 })
-```
-
-The S3 provider supports `forcePathStyle` and a custom `endpoint` for S3-compatible services (Wasabi, MinIO, etc.). SigV4 signing is verified against AWS canonical test vectors.
-
-The R2 binding provider cannot mint signed URLs by itself. Configure either
-`publicBaseUrl` or a custom `signer` before calling `signedUrl`; otherwise the
-provider throws instead of returning a raw storage key.
-
-For private R2 documents that should be downloaded through an authenticated
-application route, do not use `publicUrl()` or call `signedUrl()` without a real
-signer. Wire the route-level `resolveDocumentDownloadUrl` callback with the
-shared Hono helper instead:
+Deployments select the provider through `deployment.providers.storage`.
+Credentials configure the selected provider; their presence never changes the
+selection. Application code resolves logical `media` and `documents` stores and
+does not depend on vendor bucket bindings.
 
 ```typescript
-import { createAuthenticatedR2DocumentDownloadResolver } from "@voyant-travel/hono/document-download"
+import { createS3CompatibleStorageProvider } from "@voyant-travel/storage/providers/s3-compatible"
 
-const resolveDocumentDownloadUrl = createAuthenticatedR2DocumentDownloadResolver({
-  apiBaseUrl: (bindings: { API_BASE_URL?: string; DOCUMENTS_BUCKET?: unknown }) =>
-    bindings.API_BASE_URL ?? null,
-  routePrefix: "/v1/admin/documents/files",
-  bucketBindingName: "DOCUMENTS_BUCKET",
+const documents = createS3CompatibleStorageProvider({
+  region: "us-east-1",
+  bucket: "documents",
+  // endpoint and explicit credentials are optional for normal AWS SDK resolution.
 })
 ```
 
-That returns an authenticated Worker/app URL such as
-`https://api.example.com/v1/admin/documents/files/contracts/invoice.pdf` while
-preserving folder segments in the storage key.
+Adapter packages can verify custom implementations with
+`assertStorageProviderConformance` from `@voyant-travel/storage/conformance`.
+They declare the provider in their package-owned Voyant manifest:
+
+```typescript
+import { definePlugin } from "@voyant-travel/core/project"
+
+export default definePlugin({
+  id: "@acme/voyant-storage",
+  config: [
+    { id: "@acme/voyant-storage#config.endpoint", key: "STORAGE_ENDPOINT" },
+  ],
+  secrets: [
+    { id: "@acme/voyant-storage#secret.token", key: "STORAGE_TOKEN", required: true },
+  ],
+  providers: [
+    {
+      id: "@acme/voyant-storage#provider.custom",
+      port: "storage.object",
+      selection: { role: "storage", value: "custom" },
+      uses: {
+        config: ["@acme/voyant-storage#config.endpoint"],
+        secrets: ["@acme/voyant-storage#secret.token"],
+      },
+      runtime: {
+        entry: "@acme/voyant-storage/provider",
+        export: "createStorageResolver",
+      },
+    },
+  ],
+})
+```
+
+The factory returns a `StorageProviderResolver`. Boot fails when `custom` is
+selected but the graph has no matching provider. Embedded hosts and tests may
+still pass an explicit resolver through
+`createVoyantProjectServerEntry({ host: { storage } })`.
+
+Provider factories may read only the unit-owned config, secret, and resource
+declaration IDs listed in `uses`. Port-scoped boot therefore does not validate
+unrelated settings from a multi-provider plugin package.
 
 ## Exports
 
 | Entry | Description |
 | --- | --- |
-| `.` | Barrel re-exports |
-| `./types` | `StorageProvider` interface |
-| `./service` | `createStorageService` |
+| `.` | Storage contracts and service helpers |
+| `./types` | `StorageProvider` and `StorageProviderResolver` |
+| `./conformance` | Portable provider conformance runner |
 | `./providers/local` | In-memory provider |
-| `./providers/r2` | Cloudflare R2 binding provider |
-| `./providers/s3` | S3 provider with SigV4 |
-| `./lib/sigv4` | `signRequest`, `presignUrl` primitives |
+| `./providers/s3-compatible` | AWS SDK v3 S3-compatible provider |
 
 ## License
 

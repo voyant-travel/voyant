@@ -87,6 +87,14 @@ Providers should:
 - stay focused on one execution seam
 - hide vendor-specific details behind that contract
 
+Object storage is one provider role, not one role per vendor. Its built-in
+values are `memory` and `s3-compatible`; AWS S3, Cloudflare R2, Google Cloud
+Storage's XML API, MinIO, and similar services configure the latter through
+endpoint and credential settings. A custom adapter package declares a selected
+`storage.object` provider factory and returns the same logical-store resolver
+contract. Application modules resolve `media` and `documents`, never vendor
+buckets or bindings.
+
 Rule:
 
 If the question is “how do I swap one implementation for another?”, the answer

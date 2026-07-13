@@ -573,7 +573,7 @@ async function generateContractDocumentAttempt(
       bindings: runtime.bindings ?? {},
     })
   } catch (err) {
-    // Generator failures (Cloud SDK 5xx, R2 outage, malformed
+    // Generator failures (Cloud SDK 5xx, storage outage, malformed
     // template) are silently fatal at this layer — the caller
     // (subscriber / workflow step) only sees `generator_failed`
     // and can't tell why. Log here so the wrangler dev log /

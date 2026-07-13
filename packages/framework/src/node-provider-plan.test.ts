@@ -24,25 +24,25 @@ describe("resolveVoyantNodeProviderPlan", () => {
       validateVoyantNodeProviderPlanEnv(plan, {
         REDIS_URL: "redis://example.test:6379",
         DATABASE_URL: "postgres://user:pass@example.test:5432/voyant",
-        R2_S3_ENDPOINT: "https://r2.example.test",
-        R2_ACCESS_KEY_ID: "key",
-        R2_SECRET_ACCESS_KEY: "secret",
-        R2_BUCKET_MEDIA: "media",
-        R2_BUCKET_DOCUMENTS: "documents",
+        S3_ENDPOINT: "https://objects.example.test",
+        S3_ACCESS_KEY_ID: "key",
+        S3_SECRET_ACCESS_KEY: "secret",
+        STORAGE_MEDIA_BUCKET: "media",
+        STORAGE_DOCUMENTS_BUCKET: "documents",
       }),
     ).toEqual([])
   })
 
   it("maps redis, postgres, and object storage graph providers to the Node plan", () => {
     const plan = resolveVoyantNodeProviderPlan({
-      storage: "r2",
+      storage: "s3-compatible",
       cache: "redis",
       sharedState: "redis",
       rateLimit: "postgres",
     })
 
     expect(plan).toEqual({
-      storage: "r2",
+      storage: "s3-compatible",
       cache: "redis",
       sharedState: "redis",
       rateLimit: "postgres",
@@ -51,18 +51,16 @@ describe("resolveVoyantNodeProviderPlan", () => {
 
   it("validates env required by the selected graph providers", () => {
     const plan = resolveVoyantNodeProviderPlan({
-      storage: "s3",
+      storage: "s3-compatible",
       cache: "redis",
       sharedState: "redis",
       rateLimit: "postgres",
     })
 
     expect(validateVoyantNodeProviderPlanEnv(plan, {})).toEqual([
-      "env R2_S3_ENDPOINT is required by the Node provider plan",
-      "env R2_ACCESS_KEY_ID is required by the Node provider plan",
-      "env R2_SECRET_ACCESS_KEY is required by the Node provider plan",
-      "env R2_BUCKET_MEDIA is required by the Node provider plan",
-      "env R2_BUCKET_DOCUMENTS is required by the Node provider plan",
+      "env S3_REGION is required by the Node provider plan",
+      "env STORAGE_MEDIA_BUCKET is required by the Node provider plan",
+      "env STORAGE_DOCUMENTS_BUCKET is required by the Node provider plan",
       "env REDIS_URL is required by the Node provider plan",
       "env DATABASE_URL or DATABASE_URL_DIRECT is required by the Node provider plan",
     ])

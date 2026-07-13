@@ -21,6 +21,18 @@ describe("createLocalStorageProvider", () => {
     expect(result.url).toBe("local://custom/path/a.bin")
   })
 
+  it("encodes URL-significant key characters without changing the stored key", async () => {
+    const store = createLocalStorageProvider({ baseUrl: "http://localhost:3300/api/media/" })
+    const key = "brochures/Summer #1?.pdf"
+    const result = await store.upload(new Uint8Array([1]), { key })
+
+    expect(result).toEqual({
+      key,
+      url: "http://localhost:3300/api/media/brochures/Summer%20%231%3F.pdf",
+    })
+    await expect(store.get(key)).resolves.toBeInstanceOf(ArrayBuffer)
+  })
+
   it("returns null for missing keys", async () => {
     const store = createLocalStorageProvider()
     expect(await store.get("nope")).toBeNull()

@@ -1462,6 +1462,11 @@ function validatePromotedFacets(
   validateEntityArray(input.resources, "resources", source, diagnostics, (entry, facet) => {
     requireNonEmptyString(entry.kind, `${facet}.kind`, source, diagnostics)
   })
+  const providerUseIds = {
+    config: facetEntityIds(input.config),
+    secrets: facetEntityIds(input.secrets),
+    resources: facetEntityIds(input.resources),
+  }
   validateEntityArray(input.providers, "providers", source, diagnostics, (entry, facet) => {
     requireNonEmptyString(entry.port, `${facet}.port`, source, diagnostics)
     if (entry.selection !== undefined) {
@@ -1480,6 +1485,40 @@ function validatePromotedFacets(
           source,
           diagnostics,
         )
+      }
+    }
+    if (entry.uses !== undefined) {
+      if (!isRecord(entry.uses)) {
+        invalidFacet(
+          `${facet}.uses`,
+          source,
+          diagnostics,
+          "Provider uses must declare config, secrets, or resources arrays.",
+        )
+      } else {
+        for (const useFacet of ["config", "secrets", "resources"] as const) {
+          const ids = entry.uses[useFacet]
+          if (ids === undefined) continue
+          if (!isStringArray(ids) || ids.some((id) => id.length === 0)) {
+            invalidFacet(
+              `${facet}.uses.${useFacet}`,
+              source,
+              diagnostics,
+              `Provider ${useFacet} uses must be an array of declaration ids.`,
+            )
+            continue
+          }
+          for (const id of ids) {
+            if (!providerUseIds[useFacet].has(id)) {
+              invalidFacet(
+                `${facet}.uses.${useFacet}`,
+                source,
+                diagnostics,
+                `Provider references undeclared ${useFacet} id "${id}".`,
+              )
+            }
+          }
+        }
       }
     }
     validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
@@ -1660,6 +1699,13 @@ function validatePromotedFacets(
     }
   }
   return diagnostics
+}
+
+function facetEntityIds(value: unknown): Set<string> {
+  if (!Array.isArray(value)) return new Set()
+  return new Set(
+    value.flatMap((entry) => (isRecord(entry) && typeof entry.id === "string" ? [entry.id] : [])),
+  )
 }
 
 function validateAccessFacet(

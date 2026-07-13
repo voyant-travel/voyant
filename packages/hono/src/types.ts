@@ -41,6 +41,7 @@ export interface VoyantBindings {
   RATE_LIMIT?: KVStore
   RATE_LIMIT_STORE?: import("./middleware/rate-limit.js").RateLimitStore
   CACHE?: KVStore
+  SHARED_STATE?: KVStore
   RATE_LIMITER?: import("./middleware/rate-limit.js").CloudflareRateLimiterBinding
   /**
    * Workers Analytics Engine dataset receiving per-request metrics

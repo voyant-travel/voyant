@@ -4,13 +4,12 @@
     "starters/operator/src/api/lib/storage.ts"
   ],
   "storageRuntimeTokens": [
-    "MEDIA_BUCKET",
-    "DOCUMENTS_BUCKET",
+    "primitives.storage.resolve",
+    "\"media\"",
     "VOYANT_API_KEY",
     "VOYANT_CLOUD_API_KEY",
     "VOYANT_CLOUD_API_URL",
     "VOYANT_CLOUD_USER_AGENT",
-    "/api/v1/admin/media/",
     "/v1/admin/documents/files/",
     "application/octet-stream"
   ],

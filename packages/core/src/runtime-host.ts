@@ -7,7 +7,7 @@ export interface VoyantRuntimeHostPrimitives {
     transaction<T>(bindings: unknown, operation: (database: unknown) => Promise<T>): Promise<T>
   }
   storage: {
-    resolve(bindings: unknown): unknown
+    resolve(bindings: unknown, name: "documents" | "media" | (string & {})): unknown
     read(bindings: unknown, key: string): Promise<string | null>
     downloadUrl(bindings: unknown, key: string): Promise<string | null>
   }

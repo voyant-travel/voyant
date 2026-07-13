@@ -42,10 +42,12 @@ workload class well. On Node none of it is necessary.
 - **Bindings are real Node providers, not Cloudflare emulation.** The resolved
   deployment graph's `deployment.providers` map selects the concrete Node
   providers. `memory` uses in-process KV/object storage, `redis`/`postgres`
-  back selected KV and rate-limit stores, and `r2`/`s3` backs object storage via
-  `createR2BucketShim`. Env vars configure the graph-selected provider; their
-  mere presence must not change provider choice. There is no `caches.default`
-  shim (the public-cache middleware reads `env.CACHE` directly).
+  back selected KV and rate-limit stores, and `s3-compatible` uses AWS SDK v3
+  for AWS S3 or compatible services. `custom` resolves the selected
+  `storage.object` provider factory from an adapter package. Env vars configure
+  the graph-selected provider; their mere presence must not change provider
+  choice. There is no `caches.default` shim (the public-cache middleware reads
+  `env.CACHE` directly).
 - **Build:** `pnpm --filter operator build` (Vite, no `@cloudflare/vite-plugin`)
   emits `dist/client` + `dist/server/server.js`. **Run:** `pnpm --filter operator
   start` (`node dist/server/server.js`).
@@ -73,8 +75,8 @@ workload class well. On Node none of it is necessary.
   §2.6.
   The canonical graph `DATABASE_URL` requirement accepts `DATABASE_URL_DIRECT`
   as a compatible alias, so either value satisfies pre-boot validation. The
-  graph also verifies Postgres/Redis connection URLs and S3-compatible endpoints
-  before boot.
+  graph also verifies Postgres/Redis connection URLs and selected object-storage
+  requirements before boot.
 - **Crons:** declared runtime-neutrally by selected package manifests. On Node
   they can't run on a timer inside the process, so deployment tooling consumes
   the admitted graph and fans them out to Cloud Scheduler jobs that POST
@@ -131,9 +133,9 @@ and graph artifact/resource validation, that `pnpm --filter operator dev` and
 `pnpm --filter operator db:migrate` preflight graph resource env, that the Docker
 target consumes the graph-checked build artifacts, and that the app entry keeps
 those graphs lazy. The Node entrypoint check also asserts provider bindings are
-selected from `deployment.providers`, so adding `REDIS_URL`, `DATABASE_URL`, or
-R2 env cannot silently alter runtime providers unless the graph selects those
-providers.
+selected from `deployment.providers`, so adding Redis, database, or object-store
+credentials cannot silently alter runtime providers unless the graph selects
+those providers.
 
 ## Stop-the-bleed policy
 

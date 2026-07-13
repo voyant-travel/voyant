@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
-  createAuthenticatedR2DocumentDownloadResolver,
+  createAuthenticatedDocumentDownloadResolver,
   encodeStorageKeyPath,
   resolveStoredDocumentDownload,
 } from "../../src/document-download.js"
@@ -109,11 +109,10 @@ describe("resolveStoredDocumentDownload", () => {
   })
 })
 
-describe("createAuthenticatedR2DocumentDownloadResolver", () => {
+describe("createAuthenticatedDocumentDownloadResolver", () => {
   it("builds authenticated route URLs and encodes storage key path segments", () => {
-    const resolver = createAuthenticatedR2DocumentDownloadResolver<{
+    const resolver = createAuthenticatedDocumentDownloadResolver<{
       API_BASE_URL: string
-      DOCUMENTS_BUCKET: unknown
     }>({
       apiBaseUrl: (bindings) => bindings.API_BASE_URL,
       routePrefix: "/v1/admin/documents/files/",
@@ -123,7 +122,6 @@ describe("createAuthenticatedR2DocumentDownloadResolver", () => {
       resolver(
         {
           API_BASE_URL: "https://api.example.com/",
-          DOCUMENTS_BUCKET: {},
         },
         "contracts/2026 June/invoice #1.pdf",
       ),
@@ -132,19 +130,19 @@ describe("createAuthenticatedR2DocumentDownloadResolver", () => {
     )
   })
 
-  it("returns null when the expected bucket binding is absent", () => {
-    const resolver = createAuthenticatedR2DocumentDownloadResolver({
+  it("returns null when the selected storage provider is unavailable", () => {
+    const resolver = createAuthenticatedDocumentDownloadResolver({
       apiBaseUrl: "https://api.example.com",
+      isAvailable: () => false,
     })
 
     expect(resolver({}, "contracts/example.pdf")).toBeNull()
   })
 
-  it("allows deployments to disable the bucket binding guard", () => {
-    const resolver = createAuthenticatedR2DocumentDownloadResolver({
+  it("does not require vendor bindings", () => {
+    const resolver = createAuthenticatedDocumentDownloadResolver({
       apiBaseUrl: "https://api.example.com/api",
       routePrefix: "v1/admin/documents/files",
-      bucketBindingName: null,
     })
 
     expect(resolver({}, "contracts/example.pdf")).toBe(
@@ -153,13 +151,11 @@ describe("createAuthenticatedR2DocumentDownloadResolver", () => {
   })
 
   it("returns null when the API base URL is not configured", () => {
-    const resolver = createAuthenticatedR2DocumentDownloadResolver<{
-      DOCUMENTS_BUCKET: unknown
-    }>({
+    const resolver = createAuthenticatedDocumentDownloadResolver({
       apiBaseUrl: () => "",
     })
 
-    expect(resolver({ DOCUMENTS_BUCKET: {} }, "contracts/example.pdf")).toBeNull()
+    expect(resolver({}, "contracts/example.pdf")).toBeNull()
   })
 })
 

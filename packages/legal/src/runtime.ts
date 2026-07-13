@@ -195,7 +195,10 @@ function resolveStorage(
   primitives: VoyantRuntimeHostPrimitives,
   bindings: unknown,
 ): StorageProvider | null {
-  return (primitives.storage.resolve(bindings) as StorageProvider | null | undefined) ?? null
+  return (
+    (primitives.storage.resolve(bindings, "documents") as StorageProvider | null | undefined) ??
+    null
+  )
 }
 
 function resolveCloudPdfClient(env: Readonly<Record<string, unknown>>): VoyantCloudClient | null {

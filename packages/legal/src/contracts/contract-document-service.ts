@@ -17,7 +17,7 @@
  * injected via `ContractDocumentServiceOptions`:
  *
  *   - `resolveGenerator()` — the concrete PDF engine + document storage
- *     (R2 / browser-rendering / pdf-lib). Returns `null` when storage isn't
+ *     (object storage / browser-rendering / pdf-lib). Returns `null` when storage isn't
  *     configured, which surfaces as a `null` generate result (→ 503).
  *   - `autoGenerateOptions` — the `AutoGenerateContractOptions` carrying the
  *     template slug / scope / series identity and the operator-injected
@@ -166,7 +166,7 @@ export function createContractDocumentService(
       throw new Error(
         `Contract PDF generation failed: ${result.status} (${reason}). ` +
           "Check wrangler logs for the underlying generator error " +
-          "(Cloud SDK call, R2 upload, or template render).",
+          "(Cloud SDK call, storage upload, or template render).",
       )
     },
 

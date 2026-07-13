@@ -14,8 +14,6 @@
     "./wait-until": "./src/wait-until.ts",
     "./env": "./src/env.ts",
     "./memory-kv": "./src/memory-kv.ts",
-    "./memory-r2": "./src/memory-r2.ts",
-    "./r2": "./src/r2.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {
@@ -23,7 +21,7 @@
     "lint": "biome check src/ tests/",
     "test": "vitest run",
     "build": "pnpm run clean && tsc -p tsconfig.build.json",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "clean": "rm -rf dist tsconfig*.tsbuildinfo",
     "prepack": "pnpm --workspace-concurrency=1 --filter @voyant-travel/runtime-core... run build"
   },
   "files": [
@@ -77,16 +75,6 @@
         "import": "./dist/memory-kv.js",
         "default": "./dist/memory-kv.js"
       },
-      "./memory-r2": {
-        "types": "./dist/memory-r2.d.ts",
-        "import": "./dist/memory-r2.js",
-        "default": "./dist/memory-r2.js"
-      },
-      "./r2": {
-        "types": "./dist/r2.d.ts",
-        "import": "./dist/r2.js",
-        "default": "./dist/r2.js"
-      },
       "./types": {
         "types": "./dist/types.d.ts",
         "import": "./dist/types.js",
@@ -98,7 +86,6 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.6",
-    "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^"
   },
   "devDependencies": {

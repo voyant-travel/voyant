@@ -49,6 +49,11 @@ if (
 for (const token of policy.storageRuntimeTokens) {
   if (!storageRuntime.includes(token)) failures.push(`Storage runtime must preserve ${token}`)
 }
+for (const legacyToken of ["MEDIA_BUCKET", "DOCUMENTS_BUCKET", "R2Bucket", "createR2"]) {
+  if (storageRuntime.includes(legacyToken)) {
+    failures.push(`Storage runtime must not restore legacy binding token ${legacyToken}`)
+  }
+}
 for (const token of policy.brochureRuntimeTokens) {
   if (!brochureRuntime.includes(token)) failures.push(`Brochure runtime must preserve ${token}`)
 }

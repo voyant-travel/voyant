@@ -42,7 +42,7 @@ export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
    * `templateSlug` is supplied + a `documentGenerator` is resolvable, every
    * booking.confirmed event creates a contract against the template's
    * current version and generates its attachment via the configured
-   * generator (R2-backed PDF, etc.).
+   * generator (object-storage-backed PDF, etc.).
    */
   autoGenerateContractOnConfirmed?: AutoGenerateContractOptions
 }

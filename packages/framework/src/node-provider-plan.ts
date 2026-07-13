@@ -1,4 +1,4 @@
-export type VoyantNodeObjectStorageProvider = "memory" | "r2" | "s3"
+export type VoyantNodeObjectStorageProvider = "memory" | "s3-compatible" | "custom"
 export type VoyantNodeKvProvider = "memory" | "postgres" | "redis"
 
 export interface VoyantNodeProviderPlan {
@@ -27,12 +27,10 @@ export function validateVoyantNodeProviderPlanEnv(
 ): string[] {
   const required = new Set<string>()
   let requiresPostgresUrl = false
-  if (plan.storage === "r2" || plan.storage === "s3") {
-    required.add("R2_S3_ENDPOINT")
-    required.add("R2_ACCESS_KEY_ID")
-    required.add("R2_SECRET_ACCESS_KEY")
-    required.add("R2_BUCKET_MEDIA")
-    required.add("R2_BUCKET_DOCUMENTS")
+  if (plan.storage === "s3-compatible") {
+    required.add("S3_REGION")
+    required.add("STORAGE_MEDIA_BUCKET")
+    required.add("STORAGE_DOCUMENTS_BUCKET")
   }
 
   for (const role of KV_PROVIDER_ROLES) {
@@ -55,7 +53,7 @@ function objectStorageProvider(
 ): VoyantNodeObjectStorageProvider {
   const provider = requireProvider(providers, role)
   if (provider === "none" || provider === "memory") return "memory"
-  if (provider === "r2" || provider === "s3") return provider
+  if (provider === "s3-compatible" || provider === "custom") return provider
   throw new Error(
     `deployment graph providers.${role}=${provider} is not supported by the Node runtime`,
   )

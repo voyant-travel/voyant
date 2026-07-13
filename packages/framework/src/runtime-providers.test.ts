@@ -9,6 +9,7 @@ import {
 function createRuntime(options: {
   selection?: string
   duplicate?: boolean
+  unrelatedRequiredConfig?: boolean
   importProvider?: Mock<() => Promise<unknown>>
 }) {
   const importProvider =
@@ -29,6 +30,11 @@ function createRuntime(options: {
       selection: { role: "ledger", value },
       runtime: { entry: "./provider", export: "createProvider" },
       config: { transport: "https" },
+      uses: {
+        config: ["config.endpoint"],
+        secrets: ["secret.token"],
+        resources: ["resource.api"],
+      },
     },
     referenceId,
   })
@@ -63,6 +69,18 @@ function createRuntime(options: {
             unitId,
             declaration: { id: "config.endpoint", key: "endpoint", required: true },
           },
+          ...(options.unrelatedRequiredConfig
+            ? [
+                {
+                  unitId,
+                  declaration: {
+                    id: "config.unrelated-required",
+                    key: "UNRELATED_REQUIRED",
+                    required: true,
+                  },
+                },
+              ]
+            : []),
         ],
         secrets: [{ unitId, declaration: { id: "secret.token", key: "TOKEN", required: true } }],
         resources: [
@@ -148,5 +166,37 @@ describe("graph runtime providers", () => {
       expect(error).toBeInstanceOf(VoyantGraphRuntimeProviderError)
       expect(setup.importProvider).not.toHaveBeenCalled()
     }
+  })
+
+  it("scopes provider resolution and runtime values to requested ports", async () => {
+    const { importProvider, runtime } = createRuntime({
+      selection: "remote",
+      unrelatedRequiredConfig: true,
+    })
+
+    const providers = await resolveVoyantGraphRuntimeProviders(runtime, {
+      ports: ["ledger.client"],
+      deploymentValues: { endpoint: "https://ledger.test", TOKEN: "secret" },
+    })
+
+    await expect(providers.getProvider("ledger.client")).resolves.toMatchObject({
+      endpoint: "https://ledger.test",
+    })
+    expect(importProvider).toHaveBeenCalledTimes(1)
+  })
+
+  it("requires every explicitly requested provider port", async () => {
+    const { runtime } = createRuntime({ selection: "remote" })
+
+    await expect(
+      resolveVoyantGraphRuntimeProviders(runtime, { ports: ["storage.object"] }),
+    ).rejects.toMatchObject({
+      issues: [
+        {
+          code: "VOYANT_GRAPH_RUNTIME_PROVIDER_MISSING",
+          port: "storage.object",
+        },
+      ],
+    })
   })
 })

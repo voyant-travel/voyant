@@ -12,7 +12,6 @@ export type {
   MemoryKvOptions,
 } from "./memory-kv.js"
 export { createMemoryKvNamespace } from "./memory-kv.js"
-export { createMemoryR2Bucket } from "./memory-r2.js"
 export type {
   CreateNodeServerOptions,
   NodeServerHandle,
@@ -24,13 +23,6 @@ export {
   SCHEDULED_PATH,
   scheduledHandler,
 } from "./node-server.js"
-export type {
-  R2BucketShim,
-  R2BucketShimOptions,
-  R2Fetch,
-  R2ShimObject,
-} from "./r2.js"
-export { createR2BucketShim } from "./r2.js"
 export type { SsrManifest, SsrManifestRouter } from "./ssr-manifest.js"
 export { restrictSsrManifestToActiveRoutes, withActiveRouteSsrManifest } from "./ssr-manifest.js"
 export type { OriginTrustOptions } from "./trust.js"

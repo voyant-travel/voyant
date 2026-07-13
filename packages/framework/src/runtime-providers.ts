@@ -62,6 +62,8 @@ export type VoyantGraphProviderFactory<T = unknown> = (
 export interface ResolveVoyantGraphRuntimeProvidersInput
   extends ResolveVoyantGraphRuntimeValuesInput {
   resourceValues?: Readonly<Record<string, unknown>>
+  /** Resolve only these ports and the runtime values owned by their selected providers. */
+  ports?: readonly string[]
 }
 
 export interface SelectedVoyantGraphRuntimeProvider {
@@ -83,11 +85,20 @@ export async function resolveVoyantGraphRuntimeProviders(
   runtime: VoyantGraphRuntime,
   input: ResolveVoyantGraphRuntimeProvidersInput = {},
 ): Promise<ResolvedVoyantGraphRuntimeProviders> {
-  const values = await resolveVoyantGraphRuntimeValues(runtime, input)
+  const requestedPorts = input.ports ? new Set(input.ports) : undefined
   const selected = runtime.providers.filter(({ declaration }) => {
     const match = declaration.selection
-    return match !== undefined && runtime.providerSelections[match.role] === match.value
+    return (
+      match !== undefined &&
+      runtime.providerSelections[match.role] === match.value &&
+      (!requestedPorts || requestedPorts.has(declaration.port))
+    )
   })
+  for (const provider of selected) assertProviderUses(provider, runtime)
+  const values = await resolveVoyantGraphRuntimeValues(
+    requestedPorts ? scopeRuntimeToProviders(runtime, selected) : runtime,
+    input,
+  )
   const byPort = new Map<string, VoyantGraphRuntimeProviderLoader[]>()
   for (const provider of selected) {
     const providers = byPort.get(provider.declaration.port) ?? []
@@ -96,9 +107,10 @@ export async function resolveVoyantGraphRuntimeProviders(
   }
 
   const issues: VoyantGraphRuntimeProviderIssue[] = []
-  for (const port of new Set([...runtime.requiredPorts, ...byPort.keys()])) {
+  const portsToValidate = requestedPorts ?? new Set([...runtime.requiredPorts, ...byPort.keys()])
+  for (const port of portsToValidate) {
     const providers = byPort.get(port) ?? []
-    if (providers.length === 0 && runtime.requiredPorts.includes(port)) {
+    if (providers.length === 0 && (requestedPorts || runtime.requiredPorts.includes(port))) {
       issues.push({
         code: "VOYANT_GRAPH_RUNTIME_PROVIDER_MISSING",
         port,
@@ -146,6 +158,56 @@ export async function resolveVoyantGraphRuntimeProviders(
   }
 }
 
+function scopeRuntimeToProviders(
+  runtime: VoyantGraphRuntime,
+  providers: readonly VoyantGraphRuntimeProviderLoader[],
+): VoyantGraphRuntime {
+  const unitIds = new Set(providers.map(({ unitId }) => unitId))
+  const configIds = providerUseIds(providers, "config")
+  const secretIds = providerUseIds(providers, "secrets")
+  const resourceIds = providerUseIds(providers, "resources")
+  const includeUnit = ({ id }: { id: string }) => unitIds.has(id)
+  return {
+    ...runtime,
+    modules: runtime.modules.filter(includeUnit),
+    extensions: runtime.extensions.filter(includeUnit),
+    plugins: runtime.plugins.filter(includeUnit),
+    config: runtime.config.filter(({ declaration }) => configIds.has(declaration.id)),
+    secrets: runtime.secrets.filter(({ declaration }) => secretIds.has(declaration.id)),
+    resources: runtime.resources.filter(({ declaration }) => resourceIds.has(declaration.id)),
+    providers: [...providers],
+    requiredPorts: [],
+  }
+}
+
+function providerUseIds(
+  providers: readonly VoyantGraphRuntimeProviderLoader[],
+  facet: "config" | "secrets" | "resources",
+): Set<string> {
+  return new Set(providers.flatMap(({ declaration }) => declaration.uses?.[facet] ?? []))
+}
+
+function assertProviderUses(
+  provider: VoyantGraphRuntimeProviderLoader,
+  runtime: VoyantGraphRuntime,
+): void {
+  const known = {
+    config: runtime.config,
+    secrets: runtime.secrets,
+    resources: runtime.resources,
+  }
+  for (const facet of ["config", "secrets", "resources"] as const) {
+    for (const id of provider.declaration.uses?.[facet] ?? []) {
+      const definition = known[facet].find(({ declaration }) => declaration.id === id)
+      if (!definition || definition.unitId !== provider.unitId) {
+        throw new Error(
+          `Provider "${provider.declaration.id}" declares unowned graph ${facet} declaration "${id}".`,
+        )
+      }
+    }
+  }
+}
+
 async function instantiateProvider(
   provider: VoyantGraphRuntimeProviderLoader,
   runtime: VoyantGraphRuntime,
@@ -162,18 +224,12 @@ async function instantiateProvider(
       },
     ])
   }
-  const ownedResources = runtime.resources.filter(({ unitId }) => unitId === provider.unitId)
-  const ownedConfig = new Set(
-    runtime.config
-      .filter(({ unitId }) => unitId === provider.unitId)
-      .map(({ declaration }) => declaration.id),
+  const ownedConfig = new Set(provider.declaration.uses?.config ?? [])
+  const ownedSecrets = new Set(provider.declaration.uses?.secrets ?? [])
+  const ownedResourceIds = new Set(provider.declaration.uses?.resources ?? [])
+  const ownedResources = runtime.resources.filter(({ declaration }) =>
+    ownedResourceIds.has(declaration.id),
   )
-  const ownedSecrets = new Set(
-    runtime.secrets
-      .filter(({ unitId }) => unitId === provider.unitId)
-      .map(({ declaration }) => declaration.id),
-  )
-  const ownedResourceIds = new Set(ownedResources.map(({ declaration }) => declaration.id))
   const requireOwned = (ids: ReadonlySet<string>, id: string, facet: string) => {
     if (!ids.has(id)) {
       throw new Error(
