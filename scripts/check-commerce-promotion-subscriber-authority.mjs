@@ -13,7 +13,7 @@ const paths = {
   catalogBridge: "starters/operator/src/api/subscribers/catalog-bridge.ts",
   contributor: "packages/commerce/src/runtime-contributor.ts",
   runtime: "packages/commerce/src/runtime.ts",
-  composition: "packages/operator-runtime/src/deployment-resources.ts",
+  composition: "packages/runtime/src/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(
@@ -31,7 +31,7 @@ const sources = Object.fromEntries(
 const failures = []
 for (const retiredPath of [
   "starters/operator/src/api/app.ts",
-  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  "starters/operator/src/api/runtime/runtime-adapter.ts",
   "starters/operator/src/api/runtime/operator-workflow-services.ts",
 ]) {
   if (existsSync(path.join(repoRoot, retiredPath)))

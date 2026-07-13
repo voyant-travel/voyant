@@ -37,8 +37,8 @@ const contributorFactories = [
 ]
 
 const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.all([
-  read("packages/operator-runtime/src/deployment-resources.ts"),
-  read("packages/operator-runtime/src/index.ts"),
+  read("packages/runtime/src/deployment-resources.ts"),
+  read("packages/runtime/src/index.ts"),
   ...Object.keys(packagePorts).map((packageName) =>
     read(
       packageName === "cruises"
@@ -49,8 +49,8 @@ const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.a
 ])
 
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 const directRegistrations = deploymentResources.match(/\[[A-Za-z][A-Za-z0-9]*Port\.id\]/g) ?? []
 if (directRegistrations.length > 0) {

@@ -1,5 +1,5 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyant-travel/runtime"
+import { createWorkerFetch, withActiveRouteSsrManifest } from "@voyant-travel/runtime-core"
 import { federatedOperatorApiDispatch } from "./hono-api-dispatch"
 
 const startHandler = createStartHandler(withActiveRouteSsrManifest(defaultStreamHandler))

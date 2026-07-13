@@ -3,7 +3,7 @@ import type {
   CatalogOffersConnectClient,
   CatalogOffersRouteModuleOptions,
 } from "@voyant-travel/catalog/offers"
-import { createCatalogOffersTypesenseResolvers } from "@voyant-travel/catalog/operator-runtime"
+import { createCatalogOffersTypesenseResolvers } from "@voyant-travel/catalog/runtime-support"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"

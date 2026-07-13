@@ -36,7 +36,7 @@
     "./routes-content": "./src/routes-content.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine.ts",
-    "./booking-engine/operator-runtime": "./src/booking-engine/product-runtime.ts",
+    "./booking-engine/runtime": "./src/booking-engine/product-runtime.ts",
     "./booking-payment-policy-runtime": "./src/booking-payment-policy-runtime.ts",
     "./extras": "./src/extras.ts",
     "./authoring": "./src/authoring.ts",
@@ -268,7 +268,7 @@
         "import": "./dist/booking-engine.js",
         "default": "./dist/booking-engine.js"
       },
-      "./booking-engine/operator-runtime": {
+      "./booking-engine/runtime": {
         "types": "./dist/booking-engine/product-runtime.d.ts",
         "import": "./dist/booking-engine/product-runtime.js",
         "default": "./dist/booking-engine/product-runtime.js"

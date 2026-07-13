@@ -1,7 +1,7 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
-import { createOperatorDeploymentResources } from "./deployment-resources.js"
+import { createVoyantDeploymentResources } from "./deployment-resources.js"
 
 function primitives(): VoyantRuntimeHostPrimitives {
   return {
@@ -21,12 +21,12 @@ function primitives(): VoyantRuntimeHostPrimitives {
   }
 }
 
-describe("createOperatorDeploymentResources", () => {
+describe("createVoyantDeploymentResources", () => {
   it("lowers the generated runtime ports from the exact injected primitives", () => {
     const hostPrimitives = primitives()
     const createRuntimePorts = vi.fn(() => ({ "example.port": { ready: true } }))
 
-    const resources = createOperatorDeploymentResources({
+    const resources = createVoyantDeploymentResources({
       primitives: hostPrimitives,
       createRuntimePorts,
     })
@@ -43,7 +43,7 @@ describe("createOperatorDeploymentResources", () => {
     const hostPrimitives = primitives()
     const event = { id: "event_1" }
     const bindings = { DATABASE_URL: "postgres://example.invalid/voyant" }
-    const resources = createOperatorDeploymentResources({
+    const resources = createVoyantDeploymentResources({
       primitives: hostPrimitives,
       createRuntimePorts: () => ({}),
     })

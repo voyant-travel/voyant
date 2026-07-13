@@ -40,7 +40,7 @@ import {
   type KvNamespaceShim,
   type NodeServerHandle,
   type R2BucketShim,
-} from "@voyant-travel/runtime"
+} from "@voyant-travel/runtime-core"
 import {
   createDocumentStorage,
   readDocumentContentBase64,
@@ -124,10 +124,10 @@ export function createVoyantNodeRuntimeHostPrimitives(
     bindings && typeof bindings === "object" ? (bindings as VoyantNodeRuntimeEnv) : fallbackEnv
 
   return {
-    env: (bindings) => bindingsEnv(bindings) as unknown as Readonly<Record<string, unknown>>,
+    env: (bindings) => ({ ...bindingsEnv(bindings) }),
     database: {
       resolve: <TDatabase>(bindings: unknown) =>
-        resolveDb(bindingsEnv(bindings)) as unknown as TDatabase,
+        asRuntimeDatabase<TDatabase>(resolveDb(bindingsEnv(bindings))),
       fromContext: <TDatabase>(context: unknown) => {
         const candidate = context as {
           env?: VoyantNodeRuntimeEnv
@@ -163,6 +163,10 @@ export function createVoyantNodeRuntimeHostPrimitives(
           : Reflect.get(bindingsEnv(bindings), key),
     },
   }
+}
+
+function asRuntimeDatabase<TDatabase>(database: VoyantDb): TDatabase {
+  return database as TDatabase
 }
 
 /** Generic host resources available only to deployment-local factories. */

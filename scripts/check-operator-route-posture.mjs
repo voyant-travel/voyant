@@ -7,7 +7,7 @@ const HOST = optionPath("--host", join(ROOT, "packages/framework/src/node-runtim
 const RETIRED_APP = optionPath("--retired-app", join(ROOT, "starters/operator/src/api/app.ts"))
 const RETIRED_ADAPTER = optionPath(
   "--retired-adapter",
-  join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  join(ROOT, "starters/operator/src/api/runtime/runtime-adapter.ts"),
 )
 const LEGACY_PUBLIC_PATHS = optionPath(
   "--legacy-public-paths",
@@ -34,7 +34,7 @@ if (existsSync(RETIRED_APP)) {
   violations.push("starters/operator/src/api/app.ts must stay deleted")
 }
 if (existsSync(RETIRED_ADAPTER)) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 if (existsSync(LEGACY_PUBLIC_PATHS)) {
   violations.push("starters/operator/src/api/public-paths.ts must stay deleted")

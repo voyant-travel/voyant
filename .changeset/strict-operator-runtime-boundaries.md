@@ -1,5 +1,5 @@
 ---
-"@voyant-travel/operator-runtime": patch
+"@voyant-travel/runtime": patch
 ---
 
 Validate required auth secrets at the Operator auth boundary, adapt the generic

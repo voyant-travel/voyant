@@ -20,7 +20,7 @@ const runtime = { withDb: (operation) => databaseRuntime.withDb(context.bindings
 container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
 `,
     "packages/trips/src/runtime.ts": "VoyantRuntimeHostPrimitives\n",
-    "packages/operator-runtime/src/deployment-resources.ts": `
+    "packages/runtime/src/deployment-resources.ts": `
 options.createRuntimePorts({ primitives })
 `,
     ...overrides,
@@ -64,7 +64,7 @@ export const restored = true
 
   it("rejects manual descriptor registration in composition", async () => {
     const root = await createFixture({
-      "packages/operator-runtime/src/deployment-resources.ts": `
+      "packages/runtime/src/deployment-resources.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
     withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>

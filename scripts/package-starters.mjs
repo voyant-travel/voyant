@@ -61,9 +61,7 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
   const cliDependency = localLinks
     ? `link:${resolve(repoRoot, "..", "cli", "packages", "cli")}`
     : `^${version}`
-  const startCommand = localLinks
-    ? `tsx ${join(workspacePackageDirectory("@voyant-travel/operator-runtime"), "src/cli.ts")}`
-    : "voyant-operator start"
+  const startCommand = "voyant start"
   const buildCommand = localLinks ? "NODE_OPTIONS=--import=tsx voyant build" : "voyant build"
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
@@ -79,7 +77,7 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     },
     dependencies: {
       "@voyant-travel/framework": dependency("@voyant-travel/framework"),
-      "@voyant-travel/operator-runtime": dependency("@voyant-travel/operator-runtime"),
+      "@voyant-travel/runtime": dependency("@voyant-travel/runtime"),
       "@voyant-travel/operator-standard": dependency("@voyant-travel/operator-standard"),
     },
     devDependencies: {

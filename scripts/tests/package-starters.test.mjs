@@ -45,9 +45,9 @@ test("operator release archive contains only the minimal authored project", () =
 
     const packageJson = JSON.parse(readFileSync(join(fixture.extractDir, "package.json"), "utf8"))
     assert.equal(packageJson.scripts.build, "voyant build")
-    assert.equal(packageJson.scripts.start, "voyant-operator start")
+    assert.equal(packageJson.scripts.start, "voyant start")
     assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
-    assert.equal(typeof packageJson.dependencies["@voyant-travel/operator-runtime"], "string")
+    assert.equal(typeof packageJson.dependencies["@voyant-travel/runtime"], "string")
     assert.equal(packageJson.dependencies["@voyant-travel/plugin-smartbill"], undefined)
     const dependencySpecs = Object.values({
       ...packageJson.dependencies,

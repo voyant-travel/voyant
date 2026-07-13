@@ -19,6 +19,7 @@ export const OPERATOR_GENERATED_METADATA_FILES = [
 ]
 const RETIRED_OPERATOR_GENERATED_FILES = [
   "admin/selected-graph-admin.generated.ts",
+  "graph-runtime.generated.ts",
   "runtime-entry.generated.ts",
   "runtime/graph-runtime.generated.ts",
 ]

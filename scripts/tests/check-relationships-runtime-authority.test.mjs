@@ -22,7 +22,7 @@ async function createFixture(overrides = {}) {
       'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\ndefinePort<RelationshipsMiceRuntime>({ id: "relationships.mice.runtime" })\n',
     "relationships/src/runtime-contributor.ts":
       'host.primitives.config.read(db, "customFields")\n[relationshipsMiceRuntimePort.id]\n',
-    "operator-runtime/src/deployment-resources.ts":
+    "runtime/src/deployment-resources.ts":
       "function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\n",
     ...overrides,
   }
@@ -40,9 +40,9 @@ async function runChecker(root) {
     [
       checkerPath,
       "--composition",
-      path.join(root, "operator-runtime/src/deployment-resources.ts"),
+      path.join(root, "runtime/src/deployment-resources.ts"),
       "--retired-adapter",
-      path.join(root, "operator/src/api/runtime/operator-runtime-adapter.ts"),
+      path.join(root, "operator/src/api/runtime/runtime-adapter.ts"),
       "--relationships-root",
       path.join(root, "relationships"),
     ],
@@ -61,7 +61,7 @@ describe("check-relationships-runtime-authority", () => {
     const root = await createFixture({
       "relationships/src/index.ts":
         "export const relationshipsHonoModule = createRelationshipsHonoModule()\n",
-      "operator-runtime/src/deployment-resources.ts":
+      "runtime/src/deployment-resources.ts":
         'function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\n',
     })
 

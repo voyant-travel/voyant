@@ -1,6 +1,6 @@
 ---
 "@voyant-travel/framework": minor
-"@voyant-travel/operator-runtime": minor
+"@voyant-travel/runtime": minor
 "@voyant-travel/openapi": minor
 ---
 

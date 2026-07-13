@@ -28,7 +28,7 @@ workload class well. On Node none of it is necessary.
 ### How the operator runs on Node
 
 - **Entry:** `starters/operator/src/server.ts` is a generic bootstrap for
-  `@voyant-travel/operator-runtime`. The package loads the admitted generated
+  `@voyant-travel/runtime`. The package loads the admitted generated
   graph, links, access catalog, workflow graph, schedules, and provider plan;
   owns API/auth dispatch, admin SSR/static hosting, `waitUntil`, scheduled
   workflow execution, origin trust, and graceful shutdown; and serves the
@@ -63,7 +63,7 @@ workload class well. On Node none of it is necessary.
   contract; it is not a parallel deployment shape.
 - **Reusable host contract:** `@voyant-travel/framework/node-host` owns graph
   artifact admission and graph-selected provider planning, while
-  `@voyant-travel/operator-runtime` owns the complete resident application host.
+  `@voyant-travel/runtime` owns the complete resident application host.
   An application keeps only the generic server bootstrap and explicit project
   customization inputs.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:

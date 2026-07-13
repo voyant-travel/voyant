@@ -16,13 +16,13 @@ const read = (relativePath) => {
 for (const retiredPath of [
   "starters/operator/src/api/runtime/contract-document-runtime.ts",
   "starters/operator/src/api/runtime/contract-document-variables.ts",
-  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  "starters/operator/src/api/runtime/runtime-adapter.ts",
   "packages/legal-node",
 ]) {
   if (existsSync(path.join(root, retiredPath))) violations.push(`${retiredPath} must stay deleted`)
 }
 
-const deploymentResources = read("packages/operator-runtime/src/deployment-resources.ts")
+const deploymentResources = read("packages/runtime/src/deployment-resources.ts")
 const legalManifest = JSON.parse(read("packages/legal/package.json") || "{}")
 const contributor = read("packages/legal/src/runtime-contributor.ts")
 const runtime = read("packages/legal/src/runtime.ts")

@@ -25,14 +25,14 @@ for (const file of [
     violations.push(`${file}: generic tests must be framework-owned`)
 }
 
-const runtime = read("packages/operator-runtime/src/index.ts")
+const runtime = read("packages/runtime/src/index.ts")
 for (const token of [
-  "loadOperatorProject",
+  "loadVoyantProject",
   "dispatchScheduledProjectJob",
-  "loadOperatorProjectWorkflowRuntime",
-  "createOperatorProjectServerEntry",
+  "loadVoyantProjectWorkflowRuntime",
+  "createVoyantProjectServerEntry",
 ]) {
-  requireText(runtime, token, "packages/operator-runtime/src/index.ts")
+  requireText(runtime, token, "packages/runtime/src/index.ts")
 }
 
 for (const file of [

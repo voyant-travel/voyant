@@ -65,7 +65,7 @@ describe("check-operator-route-posture", () => {
 
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /api\/app\.ts must stay deleted/)
-      assert.match(error.stderr, /operator-runtime-adapter\.ts must stay deleted/)
+      assert.match(error.stderr, /runtime-adapter\.ts must stay deleted/)
       assert.match(error.stderr, /public-paths\.ts must stay deleted/)
       assert.match(error.stderr, /must not contain starter public-path adapters/)
       assert.match(error.stderr, /graph-owned Netopia route adapter/)

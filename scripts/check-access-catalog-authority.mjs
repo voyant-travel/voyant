@@ -120,7 +120,7 @@ assert.deepEqual(presets.get("agent-staff")?.grants, [
 assert.deepEqual(presets.get("editor")?.grants, ["bookings:read", "bookings:write"])
 
 for (const [relativePath, pattern] of [
-  ["packages/operator-runtime/src/index.ts", /graphRuntime\.accessCatalog/],
+  ["packages/runtime/src/index.ts", /graphRuntime\.accessCatalog/],
   [
     "packages/operator-standard/src/standard-route-files.ts",
     /access\/selected-access-catalog\.generated/,

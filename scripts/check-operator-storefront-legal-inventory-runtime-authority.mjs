@@ -18,7 +18,7 @@ const [
   legalContributor,
   inventoryContributor,
 ] = await Promise.all([
-  read("packages/operator-runtime/src/deployment-resources.ts"),
+  read("packages/runtime/src/deployment-resources.ts"),
   read("packages/storefront/src/runtime-contributor.ts"),
   read("packages/relationships/src/runtime-contributor.ts"),
   read("packages/notifications/src/runtime-contributor.ts"),
@@ -53,8 +53,8 @@ const contributors = {
 }
 
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 for (const [packageName, ports] of Object.entries(packagePorts)) {
   for (const port of ports) {

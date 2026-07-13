@@ -16,8 +16,8 @@
       "@voyant-travel/accommodations/booking-engine": [
         "../accommodations/dist/booking-engine/index.d.ts"
       ],
-      "@voyant-travel/accommodations/booking-engine/operator-runtime": [
-        "../accommodations/dist/booking-engine/operator-runtime.d.ts"
+      "@voyant-travel/accommodations/booking-engine/runtime": [
+        "../accommodations/dist/booking-engine/runtime.d.ts"
       ],
       "@voyant-travel/accommodations/booking-overview-enricher": [
         "../accommodations/dist/booking-overview-enricher.d.ts"
@@ -392,7 +392,6 @@
       "@voyant-travel/catalog/operations/typesense": [
         "../catalog/dist/indexer/typesense-operations.d.ts"
       ],
-      "@voyant-travel/catalog/operator-runtime": ["../catalog/dist/operator-runtime.d.ts"],
       "@voyant-travel/catalog/overlay/resolver": ["../catalog/dist/overlay/resolver.d.ts"],
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],
@@ -400,6 +399,7 @@
       "@voyant-travel/catalog/runtime-contracts": ["../catalog/dist/runtime-contracts.d.ts"],
       "@voyant-travel/catalog/runtime-contributor": ["../catalog/dist/runtime-contributor.d.ts"],
       "@voyant-travel/catalog/runtime-port": ["../catalog/dist/content-runtime-port.d.ts"],
+      "@voyant-travel/catalog/runtime-support": ["../catalog/dist/runtime-support.d.ts"],
       "@voyant-travel/catalog/schema": ["../catalog/dist/schema.d.ts"],
       "@voyant-travel/catalog/schema-sourced-entries": [
         "../catalog/dist/schema-sourced-entries.d.ts"
@@ -523,8 +523,8 @@
       "@voyant-travel/cruises-react/ui": ["../cruises-react/dist/ui.d.ts"],
       "@voyant-travel/cruises/adapters": ["../cruises/dist/adapters/index.d.ts"],
       "@voyant-travel/cruises/booking-engine": ["../cruises/dist/booking-engine/index.d.ts"],
-      "@voyant-travel/cruises/booking-engine/operator-runtime": [
-        "../cruises/dist/booking-engine/operator-runtime.d.ts"
+      "@voyant-travel/cruises/booking-engine/runtime": [
+        "../cruises/dist/booking-engine/runtime.d.ts"
       ],
       "@voyant-travel/cruises/booking-extension": ["../cruises/dist/booking-extension.d.ts"],
       "@voyant-travel/cruises/catalog-policy": ["../cruises/dist/catalog-policy.d.ts"],
@@ -965,7 +965,7 @@
       "@voyant-travel/inventory/authoring/schema": ["../inventory/dist/authoring/schema.d.ts"],
       "@voyant-travel/inventory/authoring/spec": ["../inventory/dist/authoring/spec.d.ts"],
       "@voyant-travel/inventory/booking-engine": ["../inventory/dist/booking-engine.d.ts"],
-      "@voyant-travel/inventory/booking-engine/operator-runtime": [
+      "@voyant-travel/inventory/booking-engine/runtime": [
         "../inventory/dist/booking-engine/product-runtime.d.ts"
       ],
       "@voyant-travel/inventory/booking-extension": ["../inventory/dist/booking-extension.d.ts"],
@@ -1301,14 +1301,6 @@
       "@voyant-travel/operations/schema": ["../operations/dist/schema.d.ts"],
       "@voyant-travel/operations/validation": ["../operations/dist/validation.d.ts"],
       "@voyant-travel/operations/voyant": ["../operations/dist/voyant.d.ts"],
-      "@voyant-travel/operator-runtime": ["../operator-runtime/dist/index.d.ts"],
-      "@voyant-travel/operator-runtime/deployment-resources": [
-        "../operator-runtime/dist/deployment-resources.d.ts"
-      ],
-      "@voyant-travel/operator-runtime/openapi": ["../operator-runtime/dist/openapi.d.ts"],
-      "@voyant-travel/operator-runtime/workflow-entry": [
-        "../operator-runtime/dist/workflow-entry.d.ts"
-      ],
       "@voyant-travel/operator-settings": ["../operator-settings/dist/index.d.ts"],
       "@voyant-travel/operator-settings-react": ["../operator-settings-react/dist/index.d.ts"],
       "@voyant-travel/operator-settings-react/settings": [
@@ -1462,17 +1454,21 @@
       "@voyant-travel/relationships/validation": ["../relationships/dist/validation.d.ts"],
       "@voyant-travel/relationships/voyant": ["../relationships/dist/voyant.d.ts"],
       "@voyant-travel/runtime": ["../runtime/dist/index.d.ts"],
-      "@voyant-travel/runtime/api-dispatch": ["../runtime/dist/api-dispatch.d.ts"],
-      "@voyant-travel/runtime/env": ["../runtime/dist/env.d.ts"],
-      "@voyant-travel/runtime/memory-kv": ["../runtime/dist/memory-kv.d.ts"],
-      "@voyant-travel/runtime/memory-r2": ["../runtime/dist/memory-r2.d.ts"],
-      "@voyant-travel/runtime/node-server": ["../runtime/dist/node-server.d.ts"],
-      "@voyant-travel/runtime/r2": ["../runtime/dist/r2.d.ts"],
-      "@voyant-travel/runtime/ssr-manifest": ["../runtime/dist/ssr-manifest.d.ts"],
-      "@voyant-travel/runtime/trust": ["../runtime/dist/trust.d.ts"],
-      "@voyant-travel/runtime/types": ["../runtime/dist/types.d.ts"],
-      "@voyant-travel/runtime/wait-until": ["../runtime/dist/wait-until.d.ts"],
-      "@voyant-travel/runtime/worker-fetch": ["../runtime/dist/worker-fetch.d.ts"],
+      "@voyant-travel/runtime-core": ["../runtime-core/dist/index.d.ts"],
+      "@voyant-travel/runtime-core/api-dispatch": ["../runtime-core/dist/api-dispatch.d.ts"],
+      "@voyant-travel/runtime-core/env": ["../runtime-core/dist/env.d.ts"],
+      "@voyant-travel/runtime-core/memory-kv": ["../runtime-core/dist/memory-kv.d.ts"],
+      "@voyant-travel/runtime-core/memory-r2": ["../runtime-core/dist/memory-r2.d.ts"],
+      "@voyant-travel/runtime-core/node-server": ["../runtime-core/dist/node-server.d.ts"],
+      "@voyant-travel/runtime-core/r2": ["../runtime-core/dist/r2.d.ts"],
+      "@voyant-travel/runtime-core/ssr-manifest": ["../runtime-core/dist/ssr-manifest.d.ts"],
+      "@voyant-travel/runtime-core/trust": ["../runtime-core/dist/trust.d.ts"],
+      "@voyant-travel/runtime-core/types": ["../runtime-core/dist/types.d.ts"],
+      "@voyant-travel/runtime-core/wait-until": ["../runtime-core/dist/wait-until.d.ts"],
+      "@voyant-travel/runtime-core/worker-fetch": ["../runtime-core/dist/worker-fetch.d.ts"],
+      "@voyant-travel/runtime/deployment-resources": ["../runtime/dist/deployment-resources.d.ts"],
+      "@voyant-travel/runtime/openapi": ["../runtime/dist/openapi.d.ts"],
+      "@voyant-travel/runtime/workflow-entry": ["../runtime/dist/workflow-entry.d.ts"],
       "@voyant-travel/schema-kit": ["../schema-kit/dist/index.d.ts"],
       "@voyant-travel/schema-kit/kms": ["../schema-kit/dist/kms.d.ts"],
       "@voyant-travel/schema-kit/query-params": ["../schema-kit/dist/query-params.d.ts"],

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 
 const workflowServicesPath = "starters/operator/src/api/runtime/operator-workflow-services.ts"
-const workflowRuntimePath = "packages/operator-runtime/src/index.ts"
+const workflowRuntimePath = "packages/runtime/src/index.ts"
 const workflowRuntime = await readFile(workflowRuntimePath, "utf8")
 const packageBootstrapAssertions = [
   ["packages/catalog/src/runtime-contributor.ts", "CATALOG_DRAFT_REAPER_RUNTIME_KEY"],

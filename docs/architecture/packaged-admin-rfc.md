@@ -320,7 +320,7 @@ becomes a documented, versioned contract of the admin package.
 
 Directly per voyant#1641's suggested directions:
 
-- **`@voyant-travel/runtime`** (or an export of `@voyant-travel/hono`):
+- **`@voyant-travel/runtime-core`** (or an export of `@voyant-travel/hono`):
   `createWorkerFetch({ ssrHandler, authApp, apiApp })` — the current
   `hono-api-dispatch.ts` (97 LOC) plus the **fetch-side** parts of `entry.ts`:
   API/auth/SSR dispatch and the SSR-manifest-restriction logic (#1642).

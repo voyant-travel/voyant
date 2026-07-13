@@ -13,13 +13,13 @@ const brochureRuntime = read("packages/inventory/src/brochure-runtime.ts")
 const inventoryGraphRuntime = read("packages/inventory/src/graph-runtime.ts")
 const inventoryManifest = read("packages/inventory/src/voyant.ts")
 const nodeRuntime = read("packages/framework/src/node-runtime.ts")
-const deploymentResources = read("packages/operator-runtime/src/deployment-resources.ts")
+const deploymentResources = read("packages/runtime/src/deployment-resources.ts")
 const storagePackage = JSON.parse(read("packages/storage/package.json"))
 const inventoryPackage = JSON.parse(read("packages/inventory/package.json"))
 const policy = JSON.parse(read("scripts/fixtures/storage-media-runtime-policy.json"))
 
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  failures.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  failures.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 
 for (const relativePath of policy.forbiddenStarterPaths) {

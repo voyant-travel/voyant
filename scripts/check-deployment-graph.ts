@@ -392,7 +392,7 @@ async function main(): Promise<void> {
     }
   }
   const operatorRuntimeSource = await readFile(
-    join(repoRoot, "packages/operator-runtime/src/index.ts"),
+    join(repoRoot, "packages/runtime/src/index.ts"),
     "utf8",
   )
   const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")

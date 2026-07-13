@@ -12,7 +12,7 @@ import {
   createVoyantNodeEnv,
   createVoyantNodeRuntimeHostPrimitives,
 } from "@voyant-travel/framework/node-runtime"
-import { createOperatorDeploymentResources } from "@voyant-travel/operator-runtime/deployment-resources"
+import { createVoyantDeploymentResources } from "@voyant-travel/runtime/deployment-resources"
 import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
@@ -27,7 +27,7 @@ const createDeploymentResources = () => {
     env,
     deliverEvent: async () => undefined,
   })
-  return createOperatorDeploymentResources({
+  return createVoyantDeploymentResources({
     primitives,
     createRuntimePorts: createGeneratedGraphRuntimePorts,
   })

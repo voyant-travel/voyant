@@ -1,12 +1,12 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 
-export interface CreateOperatorDeploymentResourcesOptions {
+export interface CreateVoyantDeploymentResourcesOptions {
   primitives: VoyantRuntimeHostPrimitives
   createRuntimePorts(host: { primitives: VoyantRuntimeHostPrimitives }): VoyantGraphRuntimePorts
 }
 
-export interface OperatorDeploymentResources {
+export interface VoyantDeploymentResources {
   capabilities: Readonly<Record<string, never>>
   primitives: VoyantRuntimeHostPrimitives
   ports: VoyantGraphRuntimePorts
@@ -15,10 +15,10 @@ export interface OperatorDeploymentResources {
   }
 }
 
-/** Build the domain-neutral resources consumed by a statically generated Operator graph. */
-export function createOperatorDeploymentResources(
-  options: CreateOperatorDeploymentResourcesOptions,
-): OperatorDeploymentResources {
+/** Build the domain-neutral resources consumed by a statically generated Voyant graph. */
+export function createVoyantDeploymentResources(
+  options: CreateVoyantDeploymentResourcesOptions,
+): VoyantDeploymentResources {
   const { primitives } = options
   return {
     capabilities: {},

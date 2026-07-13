@@ -124,7 +124,7 @@
   - @voyant-travel/relationships@0.123.4
   - @voyant-travel/storefront@0.153.4
   - @voyant-travel/trips@0.142.4
-  - @voyant-travel/runtime@0.5.2
+  - @voyant-travel/runtime-core@0.5.2
   - @voyant-travel/workflows@0.115.2
   - @voyant-travel/workflows-orchestrator@0.115.2
 
@@ -353,7 +353,7 @@
   - @voyant-travel/hono@0.122.4
   - @voyant-travel/auth@0.124.1
   - @voyant-travel/types@0.107.2
-  - @voyant-travel/runtime@0.5.1
+  - @voyant-travel/runtime-core@0.5.1
   - @voyant-travel/workflows@0.112.0
   - @voyant-travel/workflows-orchestrator@0.112.0
 
@@ -498,7 +498,7 @@
 
 - e232b21: Support stable schedule-id dispatch for scheduled Node runtime hooks.
 - Updated dependencies [e232b21]
-  - @voyant-travel/runtime@0.5.0
+  - @voyant-travel/runtime-core@0.5.0
 
 ## 0.28.0
 
@@ -668,7 +668,7 @@
   framework so Voyant Cloud can provision managed deployments with no build
   (voyant#3032).
 
-  Managed-profile deployments run a fixed `voyant-operator-runtime:<framework-version>`
+  Managed-profile deployments run a fixed `voyant-runtime:<framework-version>`
   image with no build step, so Cloud needs both the Cloud Scheduler job set and the
   workflow release manifest derivable purely from a profile snapshot. Both were
   reachable only from `starters/operator` (the cron list) or a build artifact (the
@@ -962,7 +962,7 @@
   - @voyant-travel/utils@0.106.0
   - @voyant-travel/db@0.110.0
   - @voyant-travel/hono@0.122.0
-  - @voyant-travel/runtime@0.4.2
+  - @voyant-travel/runtime-core@0.4.2
   - @voyant-travel/inventory@0.7.3
   - @voyant-travel/bookings@0.143.0
   - @voyant-travel/finance@0.143.0

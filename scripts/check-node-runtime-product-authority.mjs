@@ -4,11 +4,11 @@ import path from "node:path"
 
 const root = process.cwd()
 const nodeRuntime = await read("packages/framework/src/node-runtime.ts")
-const operatorResourcesPath = "packages/operator-runtime/src/deployment-resources.ts"
+const operatorResourcesPath = "packages/runtime/src/deployment-resources.ts"
 const operatorResources = await read(operatorResourcesPath)
-const operatorRuntimePath = "packages/operator-runtime/src/index.ts"
+const operatorRuntimePath = "packages/runtime/src/index.ts"
 const operatorRuntime = await read(operatorRuntimePath)
-const retiredOperatorAdapterPath = "starters/operator/src/api/runtime/operator-runtime-adapter.ts"
+const retiredOperatorAdapterPath = "starters/operator/src/api/runtime/runtime-adapter.ts"
 const violations = []
 
 if (existsSync(path.join(root, retiredOperatorAdapterPath))) {
@@ -214,7 +214,7 @@ const allowedInfrastructureImports = new Map([
   ["@voyant-travel/db/schema/iam", "reads the infrastructure-owned auth identity schema"],
   ["@voyant-travel/hono", "provides the generic HTTP, auth, database, and rate-limit contracts"],
   ["@voyant-travel/hono/composition", "types deployment-local graph factories"],
-  ["@voyant-travel/runtime", "provides the resident Node server and storage shims"],
+  ["@voyant-travel/runtime-core", "provides the resident Node server and storage shims"],
   ["@voyant-travel/storage/runtime", "adapts the generic Node document object store"],
   ["@voyant-travel/types/member-roles", "maps authenticated infrastructure roles to scopes"],
   ["@voyant-travel/utils/cache", "types the generic cache resource"],

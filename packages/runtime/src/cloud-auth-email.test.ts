@@ -9,7 +9,7 @@ vi.mock("@voyant-travel/cloud-sdk", () => ({
   getVoyantCloudClient: mocks.getVoyantCloudClient,
 }))
 
-import { resolveOperatorCloudAuthEmailSender } from "./cloud-auth-email.js"
+import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -18,13 +18,13 @@ beforeEach(() => {
 
 describe("Operator cloud auth email", () => {
   it("stays disabled when no cloud API key is configured", () => {
-    expect(resolveOperatorCloudAuthEmailSender({})).toBeNull()
-    expect(resolveOperatorCloudAuthEmailSender({ VOYANT_API_KEY: "local-dev" })).toBeNull()
+    expect(resolveVoyantCloudAuthEmailSender({})).toBeNull()
+    expect(resolveVoyantCloudAuthEmailSender({ VOYANT_API_KEY: "local-dev" })).toBeNull()
     expect(mocks.getVoyantCloudClient).not.toHaveBeenCalled()
   })
 
   it("sends password reset and verification messages through Voyant Cloud", async () => {
-    const sender = resolveOperatorCloudAuthEmailSender({
+    const sender = resolveVoyantCloudAuthEmailSender({
       VOYANT_API_KEY: "vc_test",
       VOYANT_CLOUD_API_URL: "https://cloud.example.test",
       VOYANT_CLOUD_USER_AGENT: "operator-test",
@@ -74,7 +74,7 @@ describe("Operator cloud auth email", () => {
   })
 
   it("uses the standard sender and generic OTP subject defaults", async () => {
-    const sender = resolveOperatorCloudAuthEmailSender({ VOYANT_CLOUD_API_KEY: "vc_other" })
+    const sender = resolveVoyantCloudAuthEmailSender({ VOYANT_CLOUD_API_KEY: "vc_other" })
     await sender?.sendVerificationOtp({
       email: "user@example.test",
       otp: "654321",

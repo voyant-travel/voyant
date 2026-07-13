@@ -1,5 +1,5 @@
-import { createProductQuoteShapeEnricher } from "@voyant-travel/catalog/operator-runtime"
 import type { CatalogInventoryRuntimeExtension } from "@voyant-travel/catalog/runtime-contracts"
+import { createProductQuoteShapeEnricher } from "@voyant-travel/catalog/runtime-support"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

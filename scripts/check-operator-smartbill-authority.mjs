@@ -13,8 +13,8 @@ const pathOption = (name, fallback) => {
 const root = pathOption("--root", ROOT)
 const operatorRoot = pathOption("--operator-root", join(root, "starters/operator"))
 const operatorRuntimePath = pathOption(
-  "--operator-runtime",
-  join(root, "packages/operator-runtime/src/deployment-resources.ts"),
+  "--runtime",
+  join(root, "packages/runtime/src/deployment-resources.ts"),
 )
 const violations = []
 
@@ -60,8 +60,8 @@ if (/eventBus\.subscribe|descriptor\.register/.test(starterAuthority)) {
 }
 for (const relativePath of [
   "src/api/app.ts",
-  "src/api/runtime/operator-runtime-adapter.ts",
-  "src/api/runtime/operator-runtime-adapter.smartbill.test.ts",
+  "src/api/runtime/runtime-adapter.ts",
+  "src/api/runtime/runtime-adapter.smartbill.test.ts",
   "src/api/runtime/smartbill-subscriber-runtime.ts",
   "src/api/runtime/smartbill-subscriber-runtime.test.ts",
   "src/api/subscribers/smartbill-bundle.ts",

@@ -11,7 +11,7 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, catalogContributor, commerceContributor, tripsContributor] =
   await Promise.all([
-    read("packages/operator-runtime/src/deployment-resources.ts"),
+    read("packages/runtime/src/deployment-resources.ts"),
     read("packages/catalog/src/runtime-contributor.ts"),
     read("packages/commerce/src/runtime-contributor.ts"),
     read("packages/trips/src/runtime-contributor.ts"),
@@ -41,8 +41,8 @@ const commercePorts = [
 ]
 
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 for (const port of [...catalogPorts, ...commercePorts]) {
   if (deploymentResources.includes(port)) {

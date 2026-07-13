@@ -17,7 +17,7 @@
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
-    "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
+    "./booking-engine/runtime": "./src/booking-engine/runtime.ts",
     "./routes-content": "./src/routes-content.ts",
     "./graph-runtime": "./src/graph-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
@@ -135,10 +135,10 @@
         "import": "./dist/booking-engine/index.js",
         "default": "./dist/booking-engine/index.js"
       },
-      "./booking-engine/operator-runtime": {
-        "types": "./dist/booking-engine/operator-runtime.d.ts",
-        "import": "./dist/booking-engine/operator-runtime.js",
-        "default": "./dist/booking-engine/operator-runtime.js"
+      "./booking-engine/runtime": {
+        "types": "./dist/booking-engine/runtime.d.ts",
+        "import": "./dist/booking-engine/runtime.js",
+        "default": "./dist/booking-engine/runtime.js"
       },
       "./routes-content": {
         "types": "./dist/routes-content.d.ts",

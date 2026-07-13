@@ -2,8 +2,8 @@ import { requestBodyLimit } from "@voyant-travel/hono/middleware/body-size"
 import { cors } from "@voyant-travel/hono/middleware/cors"
 import { rateLimit } from "@voyant-travel/hono/middleware/rate-limit"
 import { securityHeaders } from "@voyant-travel/hono/middleware/security-headers"
-import { createApiDispatch, lazyApp } from "@voyant-travel/runtime"
-import type { FetchApp } from "@voyant-travel/runtime/types"
+import { createApiDispatch, lazyApp } from "@voyant-travel/runtime-core"
+import type { FetchApp } from "@voyant-travel/runtime-core/types"
 import { Hono } from "hono"
 
 const loadFederatedOperatorApiApp = lazyApp<CloudflareBindings, ExecutionContext>(() =>

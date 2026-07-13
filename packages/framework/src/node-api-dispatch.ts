@@ -2,9 +2,9 @@ import { requestBodyLimit } from "@voyant-travel/hono/middleware/body-size"
 import { cors } from "@voyant-travel/hono/middleware/cors"
 import { rateLimit } from "@voyant-travel/hono/middleware/rate-limit"
 import { securityHeaders } from "@voyant-travel/hono/middleware/security-headers"
-import { createApiDispatch, lazyApp } from "@voyant-travel/runtime"
-import type { ApiDispatch } from "@voyant-travel/runtime/api-dispatch"
-import type { AppLoader, FetchApp, WaitUntilContext } from "@voyant-travel/runtime/types"
+import { createApiDispatch, lazyApp } from "@voyant-travel/runtime-core"
+import type { ApiDispatch } from "@voyant-travel/runtime-core/api-dispatch"
+import type { AppLoader, FetchApp, WaitUntilContext } from "@voyant-travel/runtime-core/types"
 import { Hono } from "hono"
 
 export interface CreateVoyantNodeApiDispatchOptions<
@@ -38,7 +38,7 @@ export function createVoyantNodeApiDispatch<
       return authHandler.fetch(
         context.req.raw,
         context.env,
-        context.executionCtx as unknown as TContext,
+        asRequestContext<TContext>(context.executionCtx),
       )
     })
     return authApp as FetchApp<TEnvironment, TContext>
@@ -50,4 +50,8 @@ export function createVoyantNodeApiDispatch<
     warmApiOnAuth: false,
     ...(options.rewriteAppPath ? { rewriteAppPath: options.rewriteAppPath } : {}),
   })
+}
+
+function asRequestContext<TContext extends WaitUntilContext>(context: WaitUntilContext): TContext {
+  return context as TContext
 }

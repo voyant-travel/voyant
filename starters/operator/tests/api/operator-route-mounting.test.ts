@@ -16,7 +16,7 @@ import {
   createVoyantNodeRuntimeHostPrimitives,
 } from "@voyant-travel/framework/node-runtime"
 import { mountApp } from "@voyant-travel/hono"
-import { createOperatorDeploymentResources } from "@voyant-travel/operator-runtime/deployment-resources"
+import { createVoyantDeploymentResources } from "@voyant-travel/runtime/deployment-resources"
 import { describe, expect, it, vi } from "vitest"
 
 import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
@@ -109,7 +109,7 @@ function buildGraphComposition() {
   })
   return composeVoyantGraphRuntime({
     runtime: createGeneratedGraphRuntime(),
-    ...createOperatorDeploymentResources({
+    ...createVoyantDeploymentResources({
       primitives,
       createRuntimePorts: createGeneratedGraphRuntimePorts,
     }),

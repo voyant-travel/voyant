@@ -1,11 +1,13 @@
 # Generic Node Runtime Authority
 
-Voyant application graphs execute in a resident Node process. The public boot
-boundary is `@voyant-travel/framework/node-runtime`; generated project and
-deployment artifacts provide its admitted `VoyantGraphRuntime`, deployment
-mode/providers, deployment requirements, and runtime-port implementations.
+Voyant application graphs execute in a resident Node process. The public project
+boot boundary is `@voyant-travel/runtime`; generated project and deployment
+artifacts provide its admitted `VoyantGraphRuntime`, deployment mode/providers,
+deployment requirements, and runtime-port implementations. Framework-level Node
+composition remains an implementation dependency of that host, while
+`@voyant-travel/runtime-core` contains low-level HTTP and storage primitives.
 
-`packages/operator-runtime` is a generic generated-project host. It verifies
+`packages/runtime` is a generic generated-project host. It verifies
 the generated graph hash and serves the packaged admin application without
 reconstructing a snapshot-era project contract or inferring package/runtime
 membership outside the generated graph.
@@ -49,7 +51,7 @@ admin-host names exist only on that package's naming compatibility subpath.
 
 `scripts/check-node-runtime-authority.mjs` enforces the public subpath, direct
 graph boot in generated entries, and the absence of managed-profile synthesis
-from `packages/operator-runtime`.
+from `packages/runtime`.
 `scripts/check-node-runtime-product-authority.mjs` separately requires zero
 first-party product imports, exact and justified infrastructure import
 exceptions, absence of the retired product provider surface, and package-owned

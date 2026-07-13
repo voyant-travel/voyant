@@ -274,7 +274,7 @@ compose it through the registry. Do not add new product route families through
 
 The operator starter already has evidence for this split. Files such as
 `catalog-booking-runtime.ts`, `contract-document-runtime.ts`,
-`operator-runtime-adapter.ts`, `trips-runtime.ts`, and
+`runtime-adapter.ts`, `trips-runtime.ts`, and
 `storefront-intake-runtime.ts` are deployment adapters today. The route
 ownership work should deepen that pattern: keep adapter resolution in the
 starter, but move reusable route interfaces back to the owning packages.

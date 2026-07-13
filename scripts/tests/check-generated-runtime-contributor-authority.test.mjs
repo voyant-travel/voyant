@@ -46,10 +46,10 @@ async function fixture(operatorRuntime) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-generated-contributors-"))
   await write(
     root,
-    "packages/operator-runtime/src/deployment-resources.ts",
-    "export function createOperatorDeploymentResources(options) { return { ports: options.createRuntimePorts({ primitives }) } }\n",
+    "packages/runtime/src/deployment-resources.ts",
+    "export function createVoyantDeploymentResources(options) { return { ports: options.createRuntimePorts({ primitives }) } }\n",
   )
-  await write(root, "packages/operator-runtime/src/index.ts", operatorRuntime)
+  await write(root, "packages/runtime/src/index.ts", operatorRuntime)
   await write(
     root,
     "packages/framework/src/deployment-artifacts.ts",

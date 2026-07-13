@@ -11,7 +11,7 @@ const paths = {
   manifest: "packages/trips/src/voyant.ts",
   packageRuntime: "packages/trips/src/index.ts",
   tripsRuntime: "packages/trips/src/runtime.ts",
-  composition: "packages/operator-runtime/src/deployment-resources.ts",
+  composition: "packages/runtime/src/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(
@@ -26,7 +26,7 @@ const sources = Object.fromEntries(
 const failures = []
 for (const retiredPath of [
   "starters/operator/src/api/app.ts",
-  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  "starters/operator/src/api/runtime/runtime-adapter.ts",
 ]) {
   if (existsSync(path.join(repoRoot, retiredPath)))
     failures.push(`${retiredPath} must stay deleted`)

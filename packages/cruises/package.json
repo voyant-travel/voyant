@@ -24,7 +24,7 @@
     "./graph-runtime": "./src/graph-runtime.ts",
     "./draft-shape": "./src/draft-shape.ts",
     "./booking-engine": "./src/booking-engine/index.ts",
-    "./booking-engine/operator-runtime": "./src/booking-engine/operator-runtime.ts",
+    "./booking-engine/runtime": "./src/booking-engine/runtime.ts",
     "./service-pricing": "./src/service-pricing.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
@@ -169,10 +169,10 @@
         "import": "./dist/booking-engine/index.js",
         "default": "./dist/booking-engine/index.js"
       },
-      "./booking-engine/operator-runtime": {
-        "types": "./dist/booking-engine/operator-runtime.d.ts",
-        "import": "./dist/booking-engine/operator-runtime.js",
-        "default": "./dist/booking-engine/operator-runtime.js"
+      "./booking-engine/runtime": {
+        "types": "./dist/booking-engine/runtime.d.ts",
+        "import": "./dist/booking-engine/runtime.js",
+        "default": "./dist/booking-engine/runtime.js"
       },
       "./service-pricing": {
         "types": "./dist/service-pricing.d.ts",

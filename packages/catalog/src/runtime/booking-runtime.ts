@@ -16,8 +16,8 @@ import {
   createCatalogPackageHoldPreparer,
   createSourcedBookingNumber,
   resolveCatalogHoldTtlMs,
-} from "@voyant-travel/catalog/operator-runtime"
-import { createVoyantConnectClient, type PackageOffer } from "@voyant-travel/connect-sdk"
+} from "@voyant-travel/catalog/runtime-support"
+import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import {
@@ -153,7 +153,7 @@ const prepareConnectPackageBookParameters = createCatalogPackageHoldPreparer({
       apiKey: config.apiKey,
       operatorId: config.operatorId,
       baseUrl: config.baseUrl,
-    }).packages.lock(connectionId, offer as unknown as PackageOffer)
+    }).packages.lock(connectionId, offer)
     return hold.id
   },
 })

@@ -6,7 +6,7 @@ import {
 } from "./adapters/index.js"
 import { memoizeCruiseAdapter } from "./adapters/memoize.js"
 import { hasCruiseAdapter, registerCruiseAdapter } from "./adapters/registry.js"
-import { registerCruiseBookingHandler } from "./booking-engine/operator-runtime.js"
+import { registerCruiseBookingHandler } from "./booking-engine/runtime.js"
 import { cruiseCabinFacetsCatalogPolicy } from "./catalog-policy-cabins.js"
 import { createCruiseDocumentBuilder, createCruisesRegistry } from "./service-catalog-plane.js"
 import { createCruiseCabinFacetProjectionExtension } from "./service-catalog-plane-cabins.js"

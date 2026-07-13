@@ -220,7 +220,7 @@ beforeEach(() => {
 describe("package-owned vertical booking handlers", () => {
   it("wires accommodation commits to booking, traveler, item, stay, and daily-rate rows", async () => {
     const { registerAccommodationBookingHandler } = await import(
-      "@voyant-travel/accommodations/booking-engine/operator-runtime"
+      "@voyant-travel/accommodations/booking-engine/runtime"
     )
     const registry = { register: vi.fn() }
     const { db, inserts } = createInsertDb()
@@ -296,7 +296,7 @@ describe("package-owned vertical booking handlers", () => {
 
   it("falls back to local cruise rows when sourced cruise content is absent", async () => {
     const { registerCruiseBookingHandler } = await import(
-      "@voyant-travel/cruises/booking-engine/operator-runtime"
+      "@voyant-travel/cruises/booking-engine/runtime"
     )
     const registry = { register: vi.fn() }
     mocks.getCruiseContent.mockResolvedValue(null)

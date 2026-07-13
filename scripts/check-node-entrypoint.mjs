@@ -3,7 +3,7 @@ import { join, resolve } from "node:path"
 
 const root = resolve(import.meta.dirname, "..")
 const serverPath = "starters/operator/src/server.ts"
-const runtimePath = "packages/operator-runtime/src/index.ts"
+const runtimePath = "packages/runtime/src/index.ts"
 const violations = []
 
 for (const retired of [
@@ -17,10 +17,10 @@ for (const retired of [
 }
 
 const server = read(serverPath)
-if (!server.includes('from "@voyant-travel/operator-runtime"')) {
-  violations.push(`${serverPath} must delegate to @voyant-travel/operator-runtime`)
+if (!server.includes('from "@voyant-travel/runtime"')) {
+  violations.push(`${serverPath} must delegate to @voyant-travel/runtime`)
 }
-if (!server.includes("createOperatorProjectServerEntry")) {
+if (!server.includes("createVoyantProjectServerEntry")) {
   violations.push(`${serverPath} must create the generic project server entry`)
 }
 if (server.split("\n").length > 16) violations.push(`${serverPath} exceeds 16 lines`)

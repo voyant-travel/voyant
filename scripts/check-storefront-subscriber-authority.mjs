@@ -11,7 +11,7 @@ const paths = {
   manifest: "packages/storefront/src/voyant.ts",
   descriptor: "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts",
   storefrontModule: "packages/storefront/src/index.ts",
-  operatorComposition: "packages/operator-runtime/src/deployment-resources.ts",
+  operatorComposition: "packages/runtime/src/deployment-resources.ts",
   storefrontContributor: "packages/storefront/src/runtime-contributor.ts",
   relationshipsContributor: "packages/relationships/src/runtime-contributor.ts",
   notificationsContributor: "packages/notifications/src/runtime-contributor.ts",
@@ -30,7 +30,7 @@ const sources = Object.fromEntries(
 const failures = []
 for (const retiredPath of [
   "starters/operator/src/api/app.ts",
-  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  "starters/operator/src/api/runtime/runtime-adapter.ts",
 ]) {
   if (existsSync(path.join(repoRoot, retiredPath)))
     failures.push(`${retiredPath} must stay deleted`)

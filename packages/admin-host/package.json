@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.0.6",
-    "@voyant-travel/runtime": "workspace:^"
+    "@voyant-travel/runtime-core": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-router": "^1.170.17",

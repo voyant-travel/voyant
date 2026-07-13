@@ -15,7 +15,7 @@ const filePaths = [
   "packages/finance/src/runtime-contributor.ts",
   "packages/inventory/src/runtime-contributor.ts",
   "packages/relationships/src/runtime-contributor.ts",
-  "packages/operator-runtime/src/deployment-resources.ts",
+  "packages/runtime/src/deployment-resources.ts",
   "packages/core/src/runtime-host.ts",
 ]
 const files = new Map(
@@ -29,8 +29,8 @@ const violations = inspectBookingsRuntimeAuthority({
   manifests: readWorkspaceManifests(root),
   policy,
 })
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 
 if (violations.length > 0) {

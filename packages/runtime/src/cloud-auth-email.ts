@@ -67,7 +67,7 @@ function escapeHtml(value: string): string {
 }
 
 /** Resolve the standard Operator auth mail transport from Node environment values. */
-export function resolveOperatorCloudAuthEmailSender(
+export function resolveVoyantCloudAuthEmailSender(
   env: CloudAuthEmailEnv,
 ): OperatorAuthEmailSender | null {
   const apiKey = resolveApiKey(env)

@@ -62,12 +62,15 @@ test("emits disposable operator config with rebased declaration paths", () => {
     assert.match(routeGenerator, /VOYANT_ROUTE_FILE_IGNORE_PATTERN/)
 
     write(root, "starters/operator/.voyant/tsconfig.legacy.json", "{}\n")
+    write(root, "starters/operator/.voyant/graph-runtime.generated.ts", "export {}\n")
     write(root, "starters/operator/.voyant/runtime/graph-runtime.generated.ts", "export {}\n")
     assert.deepEqual(writeOperatorStarterMetadata(root, { check: true }), [
+      "unexpected:graph-runtime.generated.ts",
       "unexpected:runtime/graph-runtime.generated.ts",
       "unexpected:tsconfig.legacy.json",
     ])
     assert.deepEqual(writeOperatorStarterMetadata(root), [
+      "unexpected:graph-runtime.generated.ts",
       "unexpected:runtime/graph-runtime.generated.ts",
       "unexpected:tsconfig.legacy.json",
     ])

@@ -9,7 +9,7 @@ import { promisify } from "node:util"
 
 const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
-const checkerPath = path.join(repoRoot, "scripts/check-operator-runtime-ports.mjs")
+const checkerPath = path.join(repoRoot, "scripts/check-runtime-ports.mjs")
 async function createFixture({
   appExtra = "",
   composition = false,
@@ -19,8 +19,8 @@ async function createFixture({
 } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-package-authority-"))
   const app = path.join(root, "operator/src/api/app.ts")
-  const adapter = path.join(root, "operator/src/api/runtime/operator-runtime-adapter.ts")
-  const resources = path.join(root, "operator-runtime/src/deployment-resources.ts")
+  const adapter = path.join(root, "operator/src/api/runtime/runtime-adapter.ts")
+  const resources = path.join(root, "runtime/src/deployment-resources.ts")
   const frameworkFile = path.join(root, "framework/src/composition-lazy.ts")
   await mkdir(path.dirname(adapter), { recursive: true })
   await mkdir(path.dirname(resources), { recursive: true })
@@ -31,7 +31,7 @@ async function createFixture({
       ? `const deploymentResources = createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts)\nconst graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...deploymentResources })\n${appExtra}\n`
       : `const graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts) })\n${appExtra}\n`,
   )
-  await writeFile(resources, "export function createOperatorDeploymentResources() { return {} }\n")
+  await writeFile(resources, "export function createVoyantDeploymentResources() { return {} }\n")
   await writeFile(adapter, "export function createOperatorRuntimeDeploymentResources() {}\n")
   if (retiredResources) {
     await writeFile(
@@ -55,13 +55,13 @@ function runChecker(root) {
       "--framework-root",
       path.join(root, "framework"),
       "--runtime-root",
-      path.join(root, "operator-runtime"),
+      path.join(root, "runtime"),
     ],
     { cwd: root },
   )
 }
 
-describe("check-operator-runtime-ports", () => {
+describe("check-runtime-ports", () => {
   it("accepts the opaque deployment-resource composition boundary", async () => {
     const result = await runChecker(await createFixture())
     assert.match(result.stdout, /0 product runtime-port entries in app composition/)

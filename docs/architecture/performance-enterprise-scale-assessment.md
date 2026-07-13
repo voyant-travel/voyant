@@ -127,7 +127,7 @@ recomputed per request, against the 128 MB ceiling. **This is also the path that
 - The operator API app composes **27 modules + 7 extensions + 7 plugin bundles**
   (`starters/operator/src/api/composition.ts:132-170`); first `/api/*` call per isolate paid
   ~2.4s instantiating it (#1636). The lean-auth split + background warm-up
-  (`packages/runtime/src/api-dispatch.ts:86-99`) mitigates but does not change the model:
+  (`packages/runtime-core/src/api-dispatch.ts:86-99`) mitigates but does not change the model:
   storefront reads, checkout writes, admin, SSR, and workflows still share one isolate's memory
   and one failure domain (#1686: catalog load took down auth + admin).
 - Bundle work landed (#1631 → #1637, #1679: client entry 3.57→1.75 MB) — keep going, but
