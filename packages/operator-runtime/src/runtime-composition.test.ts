@@ -123,7 +123,15 @@ afterEach(async () => {
 describe("Operator runtime composition", () => {
   it("wires graph outbound webhooks through the neutral Node delivery helper", async () => {
     const projectRoot = await createGeneratedProject()
-    await loadOperatorProject({ projectRoot, adminAssetsDir: path.join(projectRoot, "admin") })
+    await loadOperatorProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: {
+        DATABASE_URL: "postgres://example.invalid/voyant",
+        BETTER_AUTH_SECRET: "test-better-auth-secret",
+        SESSION_CLAIMS_SECRET: "test-session-claims-secret",
+      },
+    })
 
     const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {
       outboundWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }

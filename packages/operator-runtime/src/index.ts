@@ -3,7 +3,10 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
-import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/operator-node-runtime"
+import {
+  createOperatorAuthNodeRuntime,
+  type OperatorAuthNodeEnv,
+} from "@voyant-travel/auth/operator-node-runtime"
 import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
@@ -87,6 +90,7 @@ export async function loadOperatorProject(
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
   const env = createVoyantNodeEnv(options.env ?? process.env)
+  const authEnv = requireOperatorAuthEnv(env)
   const workflowRunnerRegistry = new WorkflowRunnerRegistry()
   const primitives = createVoyantNodeRuntimeHostPrimitives({
     env,
@@ -95,7 +99,9 @@ export async function loadOperatorProject(
       options.host?.deliverEvent ??
       ((event, bindings) =>
         enqueuePostgresWebhookEvent(
-          resolveNodeDatabase(bindings as Parameters<typeof resolveNodeDatabase>[0]),
+          resolveNodeDatabase(bindings as Parameters<typeof resolveNodeDatabase>[0]) as Parameters<
+            typeof enqueuePostgresWebhookEvent
+          >[0],
           event as EventEnvelope,
         )),
   })
@@ -124,11 +130,13 @@ export async function loadOperatorProject(
     app: {
       linkDefinitions: projectLinks,
       auth: {
-        handler: () => authRuntime.handler,
-        resolve: ({ request, env }) => authRuntime.resolveAuthRequest(request, env),
-        hasPermission: ({ request, env }) => authRuntime.hasAuthPermission(request, env),
-        validateApiKey: ({ env, db, apiKey }) =>
-          authRuntime.validateApiTokenAccess(env, db, apiKey),
+        handler: () => ({
+          fetch: (request, _env, ctx) =>
+            authRuntime.handler.fetch(request, authEnv, toExecutionContext(ctx)),
+        }),
+        resolve: ({ request }) => authRuntime.resolveAuthRequest(request, authEnv),
+        hasPermission: ({ request }) => authRuntime.hasAuthPermission(request, authEnv),
+        validateApiKey: ({ db, apiKey }) => authRuntime.validateApiTokenAccess(authEnv, db, apiKey),
       },
       additionalRoutes: (app) => {
         mountWorkflowRunsAdminRoutes(app, {
@@ -161,7 +169,12 @@ export async function loadOperatorProject(
     graphHash: generated.graphHash,
     runtime,
     runtimePorts: deploymentResources.ports,
-    auth: authRuntime,
+    auth: {
+      getBootstrapStatusForRequest: (request, requestEnv) =>
+        authRuntime.getBootstrapStatusForRequest(request, requireOperatorAuthEnv(requestEnv)),
+      getCurrentUserForRequest: (request, requestEnv) =>
+        authRuntime.getCurrentUserForRequest(request, requireOperatorAuthEnv(requestEnv)),
+    },
     fetch,
     start: ({ port } = {}) =>
       createNodeServer<VoyantNodeRuntimeEnv>({
@@ -344,7 +357,7 @@ async function resolveAdminAssetsDir(projectRoot: string, explicit?: string): Pr
   }
   // Vite serves assets itself in development; the static middleware may point
   // at the future build directory without creating project-owned artifacts.
-  return candidates[0]
+  return candidates[0]!
 }
 
 async function pathExists(candidate: string): Promise<boolean> {
@@ -386,7 +399,7 @@ async function dispatchScheduledProjectJob(input: {
   })
   await runScheduledWorkflow(
     job,
-    { ...input.event, cron: job.cron },
+    { scheduledTime: input.event.scheduledTime },
     {
       projectId: input.bindings.VOYANT_CLOUD_APP_SLUG ?? path.basename(input.projectRoot),
       environment: input.bindings.VOYANT_CLOUD_ENVIRONMENT ?? "development",
@@ -440,6 +453,19 @@ function createNoopContext(): import("@voyant-travel/runtime").ExecutionContextL
   return { waitUntil: () => undefined }
 }
 
+function requireOperatorAuthEnv(env: VoyantNodeRuntimeEnv): OperatorAuthNodeEnv {
+  const betterAuthSecret = env.BETTER_AUTH_SECRET?.trim()
+  const sessionClaimsSecret = env.SESSION_CLAIMS_SECRET?.trim()
+  if (!betterAuthSecret || !sessionClaimsSecret) {
+    throw new Error("Voyant Operator auth requires BETTER_AUTH_SECRET and SESSION_CLAIMS_SECRET.")
+  }
+  return {
+    ...env,
+    BETTER_AUTH_SECRET: betterAuthSecret,
+    SESSION_CLAIMS_SECRET: sessionClaimsSecret,
+  }
+}
+
 let defaultProject: Promise<OperatorProjectHost> | undefined
 
 function loadDefaultProject(): Promise<OperatorProjectHost> {
@@ -459,11 +485,13 @@ export async function getOperatorProjectCurrentUser(request: Request, env: Voyan
 }
 
 function toExecutionContext(
-  ctx: import("@voyant-travel/runtime").ExecutionContextLike,
+  ctx?:
+    | import("@voyant-travel/runtime").ExecutionContextLike
+    | import("@voyant-travel/hono").VoyantExecutionContext,
 ): import("hono").ExecutionContext {
   return {
-    waitUntil: (promise) => ctx.waitUntil(promise),
-    passThroughOnException: () => ctx.passThroughOnException?.(),
+    waitUntil: (promise) => ctx?.waitUntil?.(promise),
+    passThroughOnException: () => ctx?.passThroughOnException?.(),
     props: undefined,
   }
 }

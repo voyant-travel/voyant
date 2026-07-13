@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import type { VoyantGraphRuntime } from "@voyant-travel/framework"
+import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "@voyant-travel/framework"
 import type { LazyMount, ModuleMount } from "@voyant-travel/hono/openapi"
 import { describe, expect, it } from "vitest"
 
@@ -33,20 +33,49 @@ function documentedApp() {
 }
 
 function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | "plugins"> {
-  const unit = (id: string, surface: "admin" | "public", mount: string, document: string) => ({
-    id,
-    packageName: id.split("#")[0]!,
-    routes: [
-      {
-        route: {
-          id: `${id}#api.${surface}`,
-          surface,
-          mount,
-          openapi: { document },
-        },
+  const unit = (
+    id: string,
+    surface: "admin" | "public",
+    mount: string,
+    document: string,
+  ): VoyantGraphRuntimeUnitLoader => {
+    const route = {
+      id: `${id}#api.${surface}`,
+      surface,
+      mount,
+      openapi: { document },
+    } as const
+    return {
+      id,
+      localId: id.split("/").at(-1),
+      kind: "module",
+      packageName: id.split("#")[0]!,
+      order: 0,
+      projectConfig: {},
+      references: [],
+      config: [],
+      secrets: [],
+      resources: [],
+      providers: [],
+      requiredPorts: [],
+      runtimePorts: [],
+      manyRuntimePorts: [],
+      requiredRuntimePorts: [],
+      accessScopes: [],
+      tools: [],
+      workflows: [],
+      actions: [],
+      selectedIds: {
+        routes: [route.id],
+        tools: [],
+        workflows: [],
+        events: [],
+        webhooks: [],
       },
-    ],
-  })
+      routes: [{ route, importEntry: id, load: async () => ({}) }],
+      load: async () => [],
+    }
+  }
 
   return {
     modules: [
@@ -55,7 +84,7 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
     ],
     extensions: [],
     plugins: [],
-  } as Pick<VoyantGraphRuntime, "modules" | "extensions" | "plugins">
+  }
 }
 
 describe("buildOperatorOpenApiDocuments", () => {
