@@ -69,16 +69,29 @@ for (const retiredPath of [
     violations.push(`${retiredPath} is a retired generated resolver input`)
   }
 }
-if (/from\s+["'][^"']+\/runtime-contributor["']/.test(`${deploymentResources}\n${operatorRuntime}`)) {
+if (
+  /from\s+["'][^"']+\/runtime-contributor["']/.test(`${deploymentResources}\n${operatorRuntime}`)
+) {
   violations.push("Operator deployment resources must not import package runtime contributors")
 }
-if (/create[A-Za-z0-9]+RuntimePortContribution/.test(`${deploymentResources}\n${operatorRuntime}`)) {
+if (
+  /create[A-Za-z0-9]+RuntimePortContribution/.test(`${deploymentResources}\n${operatorRuntime}`)
+) {
   violations.push("Operator deployment resources must not call package runtime contributors")
 }
-if (!operatorRuntime.includes("generated.createRuntimePorts({ primitives })")) {
-  violations.push("Operator must compose one generated contributor set from opaque host resources")
+if (
+  !operatorRuntime.includes("createRuntimePorts: generated.createRuntimePorts") ||
+  !deploymentResources.includes("ports: options.createRuntimePorts({ primitives })")
+) {
+  violations.push(
+    "Operator must compose one generated contributor set through opaque deployment resources",
+  )
 }
-if (/Smart[Bb]ill|smartbill|invoiceSettlementPollers/.test(`${deploymentResources}\n${operatorRuntime}`)) {
+if (
+  /Smart[Bb]ill|smartbill|invoiceSettlementPollers/.test(
+    `${deploymentResources}\n${operatorRuntime}`,
+  )
+) {
   violations.push("Operator runtime must not retain SmartBill-specific contributor host authority")
 }
 for (const required of [

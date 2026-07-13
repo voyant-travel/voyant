@@ -81,7 +81,13 @@ if (app && !directResourceComposition && !assignedResourceComposition) {
 if (app && !app.includes("createGeneratedGraphRuntimePorts")) {
   violations.push("Operator app must inject its statically generated runtime ports")
 }
-if (!app && runtime && !runtime.includes("generated.createRuntimePorts({ primitives })")) {
+if (
+  !app &&
+  runtime &&
+  (!runtime.includes("createOperatorDeploymentResources") ||
+    !runtime.includes("runtimePorts: deploymentResources.ports") ||
+    !resources.includes("options.createRuntimePorts({ primitives })"))
+) {
   violations.push("operator-runtime must inject statically generated runtime ports")
 }
 for (const port of migratedPorts) {

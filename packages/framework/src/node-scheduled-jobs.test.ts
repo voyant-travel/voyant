@@ -64,7 +64,7 @@ describe("renderGoogleCloudSchedulerScript", () => {
     )
 
     expect(script).toContain(
-      "gcloud scheduler jobs create http operator-voyant-travel-bookings-schedule-expire-holds",
+      "gcloud scheduler jobs create http voyant-voyant-travel-bookings-schedule-expire-holds",
     )
     expect(script).toContain("--schedule='*/5 * * * *'")
     expect(script).toContain("schedule=%40voyant-travel%2Fbookings%23schedule.expire-holds")

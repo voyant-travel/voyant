@@ -51,7 +51,7 @@ export function renderGoogleCloudSchedulerScript(
   const targetUrl = requiredOption("targetUrl", options.targetUrl).replace(/\/$/, "")
   const trustSecret = requiredOption("originTrustSecret", options.originTrustSecret)
   const timeZone = options.timeZone ?? "Etc/UTC"
-  const jobPrefix = schedulerJobName(options.jobPrefix ?? "operator")
+  const jobPrefix = schedulerJobName(options.jobPrefix ?? "voyant")
   const lines = [
     "#!/usr/bin/env bash",
     "# Generated from the admitted Voyant deployment graph. Review before running.",
