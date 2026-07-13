@@ -7,7 +7,7 @@ export interface OutboundWebhookDeliveryEnqueuer {
 }
 
 export interface ResolveOutboundWebhookDeliveryEnqueuerOptions {
-  provider: string
+  provider: unknown
   createPostgres?: () => OutboundWebhookDeliveryEnqueuer
   host?: OutboundWebhookDeliveryEnqueuer
 }
@@ -18,7 +18,7 @@ export function resolveOutboundWebhookDeliveryEnqueuer(
 ): OutboundWebhookDeliveryEnqueuer | undefined {
   const { provider } = options
 
-  if (!provider) {
+  if (typeof provider !== "string" || provider.length === 0) {
     throw new Error("deployment provider outboundWebhooks must be explicitly selected")
   }
 

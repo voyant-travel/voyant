@@ -37,6 +37,12 @@ describe("outbound webhook enqueue providers", () => {
         createPostgres: () => postgres,
       }),
     ).toThrow(/must be explicitly selected/)
+    expect(() =>
+      resolveOutboundWebhookDeliveryEnqueuer({
+        provider: undefined,
+        createPostgres: () => postgres,
+      }),
+    ).toThrow(/must be explicitly selected/)
     expect(() => resolveOutboundWebhookDeliveryEnqueuer({ provider: "host" })).toThrow(
       /requires host\.deliverEvent/,
     )
