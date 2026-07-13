@@ -172,11 +172,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      # `--conditions=development` makes drizzle-kit load the workspace TS-source
-      # schema (this job does NOT build dist, so the default condition resolves
-      # to absent dist and push would materialise an EMPTY schema). Mirrors the
-      # `checks` job's migration-drift step.
-      NODE_OPTIONS: --conditions=development --max-old-space-size=8192
+      # This job does not build package dist. Resolve development exports and
+      # let the graph-native migration runner load workspace TypeScript source.
+      NODE_OPTIONS: --conditions=development --import=tsx --max-old-space-size=8192
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       # The user is a superuser (CREATEDB) — the replay oracle creates and drops
@@ -243,7 +241,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=12288
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
