@@ -18,6 +18,9 @@ const args = parseArgs(process.argv.slice(2))
 const version = resolveVersion(args.version)
 const outDir = resolve(repoRoot, args.outDir ?? ".release/starters")
 const starters = ["operator"]
+const standardNodeStarter = readJson(
+  join(repoRoot, "packages", "framework", "src", "standard-node-starter.json"),
+)
 const catalogVersions = readCatalogVersions()
 const workspaceVersions = readWorkspaceVersions()
 
@@ -42,17 +45,7 @@ for (const starter of starters) {
 
 function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
   mkdirSync(stagingTemplate, { recursive: true })
-  for (const directory of [
-    "src/api/admin",
-    "src/api/public",
-    "src/admin",
-    "src/modules",
-    "src/workflows",
-    "src/jobs",
-    "src/subscribers",
-    "src/links",
-    "src/scripts",
-  ]) {
+  for (const directory of standardNodeStarter.optionalDirectories) {
     mkdirSync(join(stagingTemplate, directory), { recursive: true })
   }
 
@@ -68,23 +61,16 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     private: true,
     license: "Apache-2.0",
     type: "module",
-    scripts: {
-      dev: "voyant develop",
-      build: "voyant build",
-      start: "voyant start",
-      seed: "voyant exec ./src/scripts/seed.ts",
-      "db:migrate": "voyant migrate",
-    },
-    dependencies: {
-      "@voyant-travel/framework": dependency("@voyant-travel/framework"),
-      "@voyant-travel/runtime": dependency("@voyant-travel/runtime"),
-      "@voyant-travel/operator-standard": dependency("@voyant-travel/operator-standard"),
-    },
-    devDependencies: {
-      "@voyant-travel/cli": cliDependency,
-      tsx: catalogVersions.get("tsx"),
-      typescript: catalogVersions.get("typescript"),
-    },
+    scripts: standardNodeStarter.packageScripts,
+    dependencies: Object.fromEntries(
+      standardNodeStarter.runtimeDependencies.map((name) => [name, dependency(name)]),
+    ),
+    devDependencies: Object.fromEntries(
+      standardNodeStarter.developmentDependencies.map((name) => [
+        name,
+        name === "@voyant-travel/cli" ? cliDependency : requiredCatalogVersion(name),
+      ]),
+    ),
   })
   writeFileSync(
     join(stagingTemplate, "voyant.config.ts"),
@@ -92,11 +78,15 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
 
 export default defineConfig({
   deployment: {
-    target: "node",
-    providers: { database: "postgres" },
+    target: "${standardNodeStarter.deploymentTarget}",
+    providers: { database: "${standardNodeStarter.databaseProvider}" },
   },
 })
 `,
+  )
+  writeFileSync(
+    join(stagingTemplate, ".gitignore"),
+    `${standardNodeStarter.gitignoreEntries.join("\n")}\n`,
   )
   writeFileSync(
     join(stagingTemplate, ".env.example"),
@@ -111,6 +101,12 @@ export default defineConfig({
 function requiredWorkspaceVersion(name) {
   const value = workspaceVersions.get(name)
   if (!value) throw new Error(`Missing workspace package for starter dependency: ${name}`)
+  return value
+}
+
+function requiredCatalogVersion(name) {
+  const value = catalogVersions.get(name)
+  if (!value) throw new Error(`Missing catalog version for starter dependency: ${name}`)
   return value
 }
 

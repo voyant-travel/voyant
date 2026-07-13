@@ -15,6 +15,9 @@ import { fileURLToPath } from "node:url"
 const scriptRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const root = argumentPath("--root") ?? scriptRoot
 const suppliedStarterDir = argumentPath("--starter-dir")
+const standardNodeStarter = readJson(
+  join(scriptRoot, "packages", "framework", "src", "standard-node-starter.json"),
+)
 const generatedRoot = suppliedStarterDir
   ? undefined
   : mkdtempSync(join(tmpdir(), "voyant-starter-gate-"))
@@ -32,7 +35,7 @@ try {
     process.exitCode = 1
   } else {
     console.log(
-      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no copied metadata or database authority; CLI-owned lifecycle)",
+      `check-standard-node-starter: OK (packaged: ${authoredFiles().length} authored files; checked-in: no copied metadata or database authority; CLI-owned lifecycle)`,
     )
   }
 } finally {
@@ -52,18 +55,8 @@ function generateStandardStarter(repoRoot, outputRoot, destination) {
 }
 
 function inspectGeneratedStarter(starterRoot) {
-  const expectedDirectories = [
-    "src/admin",
-    "src/api/admin",
-    "src/api/public",
-    "src/jobs",
-    "src/links",
-    "src/modules",
-    "src/scripts",
-    "src/subscribers",
-    "src/workflows",
-  ]
-  const expectedFiles = [".env.example", "package.json", "src/scripts/seed.ts", "voyant.config.ts"]
+  const expectedDirectories = standardNodeStarter.optionalDirectories
+  const expectedFiles = authoredFiles()
   const actualFiles = walkFiles(starterRoot)
 
   if (actualFiles.join("\n") !== expectedFiles.join("\n")) {
@@ -82,17 +75,9 @@ function inspectGeneratedStarter(starterRoot) {
       violations.push(`generated starter must not contain package-owned ${forbidden}`)
     }
   }
-  for (const directory of [
-    "src/admin",
-    "src/api/admin",
-    "src/api/public",
-    "src/jobs",
-    "src/links",
-    "src/modules",
-    "src/subscribers",
-    "src/workflows",
-  ]) {
+  for (const directory of expectedDirectories) {
     if (
+      directory !== dirname(standardNodeStarter.seedEntry) &&
       existsSync(join(starterRoot, directory)) &&
       walkFiles(join(starterRoot, directory)).length > 0
     ) {
@@ -122,6 +107,16 @@ function inspectGeneratedStarter(starterRoot) {
     violations.push("generated .env.example must declare DATABASE_URL")
   }
 
+  const gitignorePath = join(starterRoot, ".gitignore")
+  if (existsSync(gitignorePath)) {
+    const entries = readFileSync(gitignorePath, "utf8").split(/\r?\n/).filter(Boolean)
+    if (entries.join("\n") !== standardNodeStarter.gitignoreEntries.join("\n")) {
+      violations.push(
+        `generated .gitignore must match the standard Node starter contract: ${standardNodeStarter.gitignoreEntries.join(", ")}`,
+      )
+    }
+  }
+
   const authoredSources = actualFiles
     .filter((path) => !["package.json", "voyant.config.ts"].includes(path))
     .map((path) => [path, readFileSync(join(starterRoot, path), "utf8")])
@@ -138,8 +133,8 @@ function inspectConfig(configPath) {
 
 export default defineConfig({
   deployment: {
-    target: "node",
-    providers: { database: "postgres" },
+    target: "${standardNodeStarter.deploymentTarget}",
+    providers: { database: "${standardNodeStarter.databaseProvider}" },
   },
 })
 `
@@ -166,13 +161,7 @@ export default defineConfig({
 
 function inspectPackageJson(packageJsonPath) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  const expectedScripts = {
-    dev: "voyant develop",
-    build: "voyant build",
-    start: "voyant start",
-    seed: "voyant exec ./src/scripts/seed.ts",
-    "db:migrate": "voyant migrate",
-  }
+  const expectedScripts = standardNodeStarter.packageScripts
   for (const [name, command] of Object.entries(expectedScripts)) {
     if (packageJson.scripts?.[name] !== command) {
       violations.push(`generated starter script ${name} must be exactly ${JSON.stringify(command)}`)
@@ -188,11 +177,11 @@ function inspectPackageJson(packageJsonPath) {
     .filter((name) => name.startsWith("@voyant-travel/"))
     .sort()
   const expectedDependencies = [
-    "@voyant-travel/cli",
-    "@voyant-travel/framework",
-    "@voyant-travel/operator-standard",
-    "@voyant-travel/runtime",
+    ...standardNodeStarter.runtimeDependencies,
+    ...standardNodeStarter.developmentDependencies,
   ]
+    .filter((name) => name.startsWith("@voyant-travel/"))
+    .sort()
   if (firstPartyDependencies.join("\n") !== expectedDependencies.join("\n")) {
     violations.push(
       `generated starter dependencies must expose only CLI, framework, standard product distribution, and generic Node runtime; found ${firstPartyDependencies.join(", ")}`,
@@ -485,6 +474,14 @@ function walkFiles(root) {
   }
   visit(root)
   return files.sort()
+}
+
+function authoredFiles() {
+  return [...standardNodeStarter.rootFiles, standardNodeStarter.seedEntry].sort()
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"))
 }
 
 function argumentPath(flag) {

@@ -33,25 +33,21 @@ export default defineAdminExtension({
 
 ## How it composes
 
-- **nav + widgets** merge through `src/lib/admin-presentation.tsx`
-  (`createAdminHostPresentation`) and resolve
-  through the shared `resolveAdminNavigation` / `resolveAdminWidgets`.
-- **page routes** are grafted into the TanStack route tree at runtime by
-  `src/router.tsx` (`buildAdminExtensionRoutes`). Discovered pages are reachable
-  by string navigation (`<Link to="/concierge">`); they are not in the generated
-  typed-link map.
+- **navigation and widgets** are emitted into the generated project admin graph
+  under `.voyant/admin/` and merged with selected package contributions.
+- **page routes** are added to the TanStack route tree by the generated admin
+  composition. Discovered pages are reachable by string navigation
+  (`<Link to="/concierge">`); they are not in the generated typed-link map.
 
-Discovery is **build-time** — Vite compiles `import.meta.glob` to static imports,
-so it works on Cloudflare Workers. The directory is empty (just this README)
-until a deployment adds an extension.
+Discovery is build-time and produces static imports. The directory contains only
+this guidance until the integration application needs a project-owned extension.
 
 ## Notes
 
 - Keep page components lazy where possible (`page: () => import("./page.js")`)
   so they land in their own chunk instead of the workspace-chrome bundle.
-- Widget `slot` names are the ones the starter exposes (see
-  `src/lib/admin-presentation.tsx`). Targeting an unknown slot simply renders
-  nothing.
+- Widget `slot` names come from the selected admin contribution contracts.
+  Targeting an unknown slot renders nothing.
 
 See `docs/architecture/custom-modules.md` for the full extend-without-forking
 guide.
