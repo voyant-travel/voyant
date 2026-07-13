@@ -4045,6 +4045,21 @@ importers:
 
   packages/runtime:
     dependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.2
+        version: 4.3.2(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+      '@tanstack/devtools-vite':
+        specifier: ^0.8.1
+        version: 0.8.1(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+      '@tanstack/react-start':
+        specifier: ^1.168.27
+        version: 1.168.27(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(rollup@4.60.2)(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+      '@tanstack/router-generator':
+        specifier: 1.167.18
+        version: 1.167.18
+      '@vitejs/plugin-react':
+        specifier: ^6.0.3
+        version: 6.0.3(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
       '@voyant-travel/admin-host':
         specifier: workspace:^
         version: link:../admin-host
@@ -4069,6 +4084,9 @@ importers:
       '@voyant-travel/runtime-core':
         specifier: workspace:^
         version: link:../runtime-core
+      '@voyant-travel/vite-config':
+        specifier: workspace:^
+        version: link:../vite-config
       '@voyant-travel/webhook-delivery':
         specifier: workspace:^
         version: link:../webhook-delivery
@@ -4081,6 +4099,9 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.22.4
+      vite:
+        specifier: 'catalog:'
+        version: 8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3)
     devDependencies:
       '@hono/zod-openapi':
         specifier: 'catalog:'
