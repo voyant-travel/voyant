@@ -12,6 +12,7 @@ export type VoyantDeploymentProviderRole =
   | "auth"
   | "scheduledJobs"
   | "workflows"
+  | "outboundWebhooks"
 
 export interface VoyantDeploymentProviders {
   database: "postgres"
@@ -25,6 +26,7 @@ export interface VoyantDeploymentProviders {
   auth: "voyant-cloud" | "better-auth"
   scheduledJobs: "cloud-scheduler" | "node-cron" | "none"
   workflows: "voyant-cloud" | "self-hosted" | "none"
+  outboundWebhooks: "postgres" | "host" | "none"
 }
 
 export type VoyantDeploymentEnvValueFormat = "postgres-url" | "redis-url" | "http-url"
@@ -59,6 +61,7 @@ export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
   auth: "voyant-cloud",
   scheduledJobs: "cloud-scheduler",
   workflows: "voyant-cloud",
+  outboundWebhooks: "postgres",
 } as const satisfies VoyantDeploymentProviders
 
 export const DEPLOYMENT_PROVIDER_CONTRACTS = {
@@ -73,6 +76,7 @@ export const DEPLOYMENT_PROVIDER_CONTRACTS = {
   auth: ["voyant-cloud", "better-auth"],
   scheduledJobs: ["cloud-scheduler", "node-cron", "none"],
   workflows: ["voyant-cloud", "self-hosted", "none"],
+  outboundWebhooks: ["postgres", "host", "none"],
 } as const satisfies Record<VoyantDeploymentProviderRole, readonly string[]>
 
 export const DEPLOYMENT_PROVIDER_ROLES = Object.keys(

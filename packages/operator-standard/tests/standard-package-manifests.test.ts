@@ -10,6 +10,10 @@ import {
 import { STANDARD_OPERATOR_DEPLOYMENT } from "../src/index.js"
 
 describe("standard package manifests", () => {
+  it("selects durable Postgres outbound webhook enqueueing explicitly", () => {
+    expect(STANDARD_OPERATOR_DEPLOYMENT.providers?.outboundWebhooks).toBe("postgres")
+  })
+
   it("resolves a package-owned module manifest without starter synthesis", async () => {
     expect(validateGraphUnitManifest(bookingsVoyantModule, "module")).toEqual([])
 

@@ -188,6 +188,24 @@ function envForProvider(
       variable("VOYANT_CLOUD_ENVIRONMENT", "Cloud environment name.", false),
     ]
   }
+  if (role === "outboundWebhooks" && provider === "postgres") {
+    return [
+      secret(
+        "DATABASE_URL",
+        "Postgres URL used by the durable outbound webhook enqueue provider.",
+        true,
+        ["DATABASE_URL_DIRECT"],
+        "postgres-url",
+      ),
+      secret(
+        "DATABASE_URL_DIRECT",
+        "Direct Postgres URL for durable outbound webhook enqueueing.",
+        false,
+        [],
+        "postgres-url",
+      ),
+    ]
+  }
   return []
 }
 

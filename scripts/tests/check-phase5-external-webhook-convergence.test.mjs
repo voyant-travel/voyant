@@ -35,6 +35,17 @@ describe("external webhook delivery convergence authority", () => {
     )
   })
 
+  it("accepts an explicit object-record mapper at the Postgres JSON boundary", () => {
+    assert.deepEqual(
+      inspectExternalWebhookDeliveryConvergence({
+        ...valid,
+        store:
+          "requestPayload: objectRecord(input.requestPayload) deliveryContract: objectRecord(input.deliveryContract)",
+      }),
+      [],
+    )
+  })
+
   it("rejects inline HTTP and retry behavior from enqueue paths", () => {
     const failures = inspectExternalWebhookDeliveryConvergence({
       ...valid,

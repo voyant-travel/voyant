@@ -46,9 +46,21 @@ describe("createVoyantDeploymentResources", () => {
     const resources = createVoyantDeploymentResources({
       primitives: hostPrimitives,
       createRuntimePorts: () => ({}),
+      outboundWebhooks: { enqueue: hostPrimitives.events.deliver },
     })
 
-    await expect(resources.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["queued"])
+    await expect(resources.outboundWebhooks?.enqueue(event as never, bindings)).resolves.toEqual([
+      "queued",
+    ])
     expect(hostPrimitives.events.deliver).toHaveBeenCalledWith(event, bindings)
+  })
+
+  it("omits outbound webhook composition when no enqueuer is selected", () => {
+    const resources = createVoyantDeploymentResources({
+      primitives: primitives(),
+      createRuntimePorts: () => ({}),
+    })
+
+    expect(resources.outboundWebhooks).toBeUndefined()
   })
 })
