@@ -126,11 +126,7 @@ describe("Operator runtime composition", () => {
     await loadOperatorProject({
       projectRoot,
       adminAssetsDir: path.join(projectRoot, "admin"),
-      env: {
-        DATABASE_URL: "postgres://example.invalid/voyant",
-        BETTER_AUTH_SECRET: "test-better-auth-secret",
-        SESSION_CLAIMS_SECRET: "test-session-claims-secret",
-      },
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
     })
 
     const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {

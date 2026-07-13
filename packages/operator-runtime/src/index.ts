@@ -3,10 +3,7 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
-import {
-  createOperatorAuthNodeRuntime,
-  type OperatorAuthNodeEnv,
-} from "@voyant-travel/auth/operator-node-runtime"
+import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/operator-node-runtime"
 import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
@@ -25,6 +22,7 @@ import { enqueuePostgresWebhookEvent } from "@voyant-travel/webhook-delivery/pos
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { tsImport } from "tsx/esm/api"
 
+import { requireOperatorAuthEnv } from "./auth-env.js"
 import { createOperatorDeploymentResources } from "./deployment-resources.js"
 
 export {
@@ -90,7 +88,6 @@ export async function loadOperatorProject(
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
   const env = createVoyantNodeEnv(options.env ?? process.env)
-  const authEnv = requireOperatorAuthEnv(env)
   const workflowRunnerRegistry = new WorkflowRunnerRegistry()
   const primitives = createVoyantNodeRuntimeHostPrimitives({
     env,
@@ -131,12 +128,19 @@ export async function loadOperatorProject(
       linkDefinitions: projectLinks,
       auth: {
         handler: () => ({
-          fetch: (request, _env, ctx) =>
-            authRuntime.handler.fetch(request, authEnv, toExecutionContext(ctx)),
+          fetch: (request, requestEnv, ctx) =>
+            authRuntime.handler.fetch(
+              request,
+              requireOperatorAuthEnv(requestEnv),
+              toExecutionContext(ctx),
+            ),
         }),
-        resolve: ({ request }) => authRuntime.resolveAuthRequest(request, authEnv),
-        hasPermission: ({ request }) => authRuntime.hasAuthPermission(request, authEnv),
-        validateApiKey: ({ db, apiKey }) => authRuntime.validateApiTokenAccess(authEnv, db, apiKey),
+        resolve: ({ request, env: requestEnv }) =>
+          authRuntime.resolveAuthRequest(request, requireOperatorAuthEnv(requestEnv)),
+        hasPermission: ({ request, env: requestEnv }) =>
+          authRuntime.hasAuthPermission(request, requireOperatorAuthEnv(requestEnv)),
+        validateApiKey: ({ env: requestEnv, db, apiKey }) =>
+          authRuntime.validateApiTokenAccess(requireOperatorAuthEnv(requestEnv), db, apiKey),
       },
       additionalRoutes: (app) => {
         mountWorkflowRunsAdminRoutes(app, {
@@ -451,19 +455,6 @@ export async function loadOperatorProjectWorkflowRuntime(
 
 function createNoopContext(): import("@voyant-travel/runtime").ExecutionContextLike {
   return { waitUntil: () => undefined }
-}
-
-function requireOperatorAuthEnv(env: VoyantNodeRuntimeEnv): OperatorAuthNodeEnv {
-  const betterAuthSecret = env.BETTER_AUTH_SECRET?.trim()
-  const sessionClaimsSecret = env.SESSION_CLAIMS_SECRET?.trim()
-  if (!betterAuthSecret || !sessionClaimsSecret) {
-    throw new Error("Voyant Operator auth requires BETTER_AUTH_SECRET and SESSION_CLAIMS_SECRET.")
-  }
-  return {
-    ...env,
-    BETTER_AUTH_SECRET: betterAuthSecret,
-    SESSION_CLAIMS_SECRET: sessionClaimsSecret,
-  }
 }
 
 let defaultProject: Promise<OperatorProjectHost> | undefined
