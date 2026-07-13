@@ -65,26 +65,26 @@ jobs:
         run: pnpm lint
 
       # Typecheck is split so the heavy COMPOSITION POINTS each get the runner to
-      # themselves. As @hono/zod-openapi adoption grows the admin surface, three
-      # tsc programs balloon: the operator app, the @voyant-travel/openapi spec
-      # package, and the @voyant-travel/framework composition. Each now needs
+      # themselves. As @hono/zod-openapi adoption grows the admin surface, two
+      # tsc programs balloon: the operator app and the @voyant-travel/framework
+      # composition. Each now needs
       # >8 GB and would either blow its own heap (exit 134) or, run concurrently,
       # oversubscribe the 16 GB runner and get OOM-killed (exit 137). So the
-      # packages fan out below, then the three heavy programs run one-at-a-time
+      # packages fan out below, then the two heavy programs run one-at-a-time
       # (concurrency=1), each alone with its own package-script heap.
       #
       # `typecheck` dependsOn `^build`, so this also executes the same multi-gigabyte
       # *-react and aggregator builds as the Build job. Keep it serial so only one
       # process can use the 12 GB heap allowance on the 16 GB runner.
       - name: Typecheck (packages)
-        run: NODE_OPTIONS=--max-old-space-size=12288 pnpm turbo run typecheck --continue --concurrency=1 --filter=!./starters/operator --filter=!@voyant-travel/openapi --filter=!@voyant-travel/framework --ui=stream --log-order=stream
+        run: NODE_OPTIONS=--max-old-space-size=12288 pnpm turbo run typecheck --continue --concurrency=1 --filter=!./starters/operator --filter=!@voyant-travel/framework --ui=stream --log-order=stream
 
       - name: Typecheck (composition points)
-        # Serial (concurrency=1): operator app, openapi spec, framework composition
-        # each run alone with the full runner + their own heap (see each package's
-        # package.json). Deps are cached from the step above, so only these three
+        # Serial (concurrency=1): operator app and framework composition each run
+        # alone with the full runner + their own heap (see each package's
+        # package.json). Deps are cached from the step above, so only these two
         # programs run live here.
-        run: pnpm turbo run typecheck --concurrency=1 --filter=@voyant-travel/framework --filter=@voyant-travel/openapi --filter=./starters/operator --ui=stream --log-order=stream
+        run: pnpm turbo run typecheck --concurrency=1 --filter=@voyant-travel/framework --filter=./starters/operator --ui=stream --log-order=stream
 
       - name: Test
         run: pnpm turbo run test --continue --ui=stream --log-order=stream

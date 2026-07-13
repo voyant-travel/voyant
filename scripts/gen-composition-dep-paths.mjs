@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Generates a tsconfig `paths` map that points every workspace package
 // specifier at its built `dist/*.d.ts` declaration, and injects it into the
-// composition-point typecheck configs (the operator server program, the
-// framework composition, and the openapi spec package).
+// composition-point typecheck configs (the operator server program and the
+// framework composition).
 //
-// Why: those three tsc programs compose ~every module's routes, and because
+// Why: those two tsc programs compose ~every module's routes, and because
 // each package's `exports` points at SOURCE (`./src/index.ts`), tsc transitively
 // re-typechecks all module source — a working set that grows with every
 // @hono/zod-openapi admin batch and OOMs the CI runner (voyant#2114). `paths`
@@ -173,16 +173,14 @@ const packages = collectPackages()
 
 // The composition-point typecheck programs that would otherwise re-infer module
 // source. The operator programs are disposable `.voyant` metadata generated
-// from packages/typescript-config/dep-paths.json. Framework + openapi retain
-// dedicated checked-in configs because they are package-owned build inputs.
+// from packages/typescript-config/dep-paths.json. Framework retains dedicated
+// checked-in configs because they are package-owned build inputs.
 const CONFIGS = [
   "packages/framework/tsconfig.typecheck.json",
   "packages/framework/tsconfig.build.json",
-  "packages/openapi/tsconfig.typecheck.json",
 ]
 injectPaths(CONFIGS[0], {})
 injectPaths(CONFIGS[1], {})
-injectPaths(CONFIGS[2], {})
 
 // Normalize formatting so this generator's output is byte-stable (the
 // freshness check re-runs it and asserts no diff). Biome owns JSON formatting.

@@ -14,7 +14,6 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const CONFIGS = [
   "packages/framework/tsconfig.typecheck.json",
   "packages/framework/tsconfig.build.json",
-  "packages/openapi/tsconfig.typecheck.json",
 ]
 
 const before = CONFIGS.map((f) => readFileSync(join(ROOT, f), "utf8"))
