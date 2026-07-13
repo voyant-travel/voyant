@@ -47,7 +47,9 @@ Projects may add an optional root `vite.config.ts`. Vite loads and merges it for
 both development and production builds, so project-specific plugins and normal
 Vite options require no lifecycle-script changes. Voyant's inline configuration
 remains authoritative for the generated routes, TanStack Start application,
-React integration, and Node SSR target.
+React integration, Node SSR target, and `dist` output root. Projects must not
+set `build.outDir`: the Node server, client assets, and generated deployment
+artifacts use the fixed `dist/server`, `dist/client`, and `dist/.voyant` layout.
 
 ```bash
 pnpm add -D vite vite-plugin-inspect

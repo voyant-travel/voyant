@@ -46,7 +46,8 @@ request compiles the API module graph on demand (a few seconds), then it's warm.
 When the project needs additional Vite plugins or ordinary Vite options, add an
 optional root `vite.config.ts`. `voyant develop` and `voyant build` discover and
 merge it automatically; do not copy or replace Voyant's generated configuration
-under `.voyant/`.
+under `.voyant/`. The `build.outDir` option is reserved because the Node server,
+client assets, and deployment artifacts share the fixed `dist` layout.
 
 ## Production (Node)
 
