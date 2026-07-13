@@ -365,7 +365,6 @@ export interface ResolvedVoyantDeploymentGraph {
   schemaVersion: typeof VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION
   contentHash: string
   project: {
-    presetLineage?: string
     productBom?: import("@voyant-travel/core/project").VoyantProductBomReference
   }
   deployment: {
@@ -694,7 +693,6 @@ export async function resolveDeploymentGraph(
   const graphWithoutHash: Omit<ResolvedVoyantDeploymentGraph, "contentHash"> = {
     schemaVersion: VOYANT_RESOLVED_GRAPH_SCHEMA_VERSION,
     project: {
-      ...(input.project.presetLineage ? { presetLineage: input.project.presetLineage } : {}),
       ...(input.project.productBom ? { productBom: input.project.productBom } : {}),
     },
     deployment: {

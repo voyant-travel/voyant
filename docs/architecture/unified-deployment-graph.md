@@ -127,8 +127,9 @@ modules, capabilities, product surfaces, and substrate requirements.
 
 Package compatibility should target framework version, the Node runtime
 contract, deployment mode, and required capabilities/surfaces. It should not
-target `profiles: ["operator"]`, expose `presetLineage` as authored runtime
-behavior, or treat a hosting provider as a runtime.
+target `profiles: ["operator"]` or treat a hosting provider as a runtime.
+Compatibility translation must end at explicit graph selections; profile
+lineage is not part of the authored or resolved graph contract.
 
 ### 2. Default to Voyant Cloud, but keep Node substrate lowering separate
 

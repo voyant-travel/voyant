@@ -21,7 +21,6 @@ describe("framework project config", () => {
     expect(project.extensions.map((unit) => unit.schemaVersion)).toEqual(
       Array.from({ length: 24 }, () => "voyant.extension.v1"),
     )
-    expect(project).not.toHaveProperty("presetLineage")
   })
 
   it("appends authored differences in their independent unit lanes", () => {

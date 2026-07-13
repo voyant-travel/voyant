@@ -188,9 +188,6 @@ async function main(): Promise<void> {
       `expected resolved operator graph runtime target node, got ${operatorGraph.deployment.target}`,
     )
   }
-  if (operatorGraph.project?.presetLineage !== resolvedOperator.project.presetLineage) {
-    failures.push("expected resolved operator graph to preserve declared preset lineage")
-  }
   for (const id of declaredOperatorModuleIds) {
     if (!operatorModuleIds.has(id)) {
       failures.push(`expected resolved operator graph to include declared module ${id}`)

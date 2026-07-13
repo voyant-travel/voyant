@@ -400,7 +400,6 @@ export interface VoyantGraphProjectDeployment {
 
 export interface DefineVoyantGraphProjectInput {
   schemaVersion?: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
-  presetLineage?: string
   productBom?: VoyantProductBomReference
   modules: readonly DefineVoyantGraphProjectUnitInput[]
   extensions?: readonly DefineVoyantGraphProjectUnitInput[]
@@ -412,7 +411,6 @@ export interface DefineVoyantGraphProjectInput {
 
 export interface VoyantGraphProject {
   schemaVersion: typeof VOYANT_GRAPH_PROJECT_SCHEMA_VERSION
-  presetLineage?: string
   productBom?: VoyantProductBomReference
   modules: readonly VoyantGraphUnitManifest[]
   extensions: readonly VoyantGraphUnitManifest[]
@@ -454,7 +452,6 @@ export function defineProject(input: DefineVoyantGraphProjectInput): VoyantGraph
 
   return {
     schemaVersion,
-    ...(input.presetLineage ? { presetLineage: input.presetLineage } : {}),
     ...(input.productBom ? { productBom: normalizeProductBomReference(input.productBom) } : {}),
     modules: modules.units,
     extensions: extensions.units,
