@@ -1,5 +1,26 @@
 # @voyant-travel/db
 
+## 0.114.0
+
+### Minor Changes
+
+- 4d0eeed: Remove deprecated beta compatibility surfaces in favor of their canonical APIs.
+
+  - Import Hono transport bundles from `@voyant-travel/hono/bundle` and use
+    `HonoBundle`, `defineHonoBundle`, and `expandHonoBundles`.
+  - Import public document delivery APIs from
+    `@voyant-travel/public-document-delivery`.
+  - Use permission-named API key helpers instead of the removed scope aliases.
+  - Use `createRedisKvStore` for Redis-backed caching instead of the removed
+    no-op Redis compatibility functions.
+  - Use `entityTagColumns` instead of `tagsCoreColumns`.
+
+### Patch Changes
+
+- Updated dependencies [bef5b7c]
+  - @voyant-travel/core@0.120.0
+  - @voyant-travel/workflows@0.118.0
+
 ## 0.113.0
 
 ### Minor Changes

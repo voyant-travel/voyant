@@ -1,5 +1,32 @@
 # @voyant-travel/finance
 
+## 0.154.0
+
+### Patch Changes
+
+- 4d0eeed: Remove deprecated beta compatibility surfaces in favor of their canonical APIs.
+
+  - Import Hono transport bundles from `@voyant-travel/hono/bundle` and use
+    `HonoBundle`, `defineHonoBundle`, and `expandHonoBundles`.
+  - Import public document delivery APIs from
+    `@voyant-travel/public-document-delivery`.
+  - Use permission-named API key helpers instead of the removed scope aliases.
+  - Use `createRedisKvStore` for Redis-backed caching instead of the removed
+    no-op Redis compatibility functions.
+  - Use `entityTagColumns` instead of `tagsCoreColumns`.
+
+- Updated dependencies [4d0eeed]
+- Updated dependencies [bef5b7c]
+  - @voyant-travel/hono@0.126.0
+  - @voyant-travel/types@0.109.0
+  - @voyant-travel/utils@0.107.0
+  - @voyant-travel/db@0.114.0
+  - @voyant-travel/core@0.120.0
+  - @voyant-travel/action-ledger@0.108.1
+  - @voyant-travel/bookings@0.154.0
+  - @voyant-travel/public-document-delivery@0.3.1
+  - @voyant-travel/storage@0.109.1
+
 ## 0.153.0
 
 ### Minor Changes

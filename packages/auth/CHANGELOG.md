@@ -1,5 +1,21 @@
 # @voyant-travel/auth
 
+## 0.127.0
+
+### Minor Changes
+
+- d4fa159: Rename the Node runtime subpath from `@voyant-travel/auth/operator-node-runtime` to `@voyant-travel/auth/node-runtime`.
+
+### Patch Changes
+
+- Updated dependencies [4d0eeed]
+- Updated dependencies [bef5b7c]
+  - @voyant-travel/hono@0.126.0
+  - @voyant-travel/types@0.109.0
+  - @voyant-travel/utils@0.107.0
+  - @voyant-travel/db@0.114.0
+  - @voyant-travel/core@0.120.0
+
 ## 0.126.0
 
 ### Minor Changes

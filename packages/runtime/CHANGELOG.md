@@ -1,5 +1,23 @@
 # @voyant-travel/runtime
 
+## 0.7.4
+
+### Patch Changes
+
+- Updated dependencies [4d0eeed]
+- Updated dependencies [abbb9cd]
+- Updated dependencies [bef5b7c]
+- Updated dependencies [d4fa159]
+  - @voyant-travel/hono@0.126.0
+  - @voyant-travel/db@0.114.0
+  - @voyant-travel/framework@0.41.0
+  - @voyant-travel/core@0.120.0
+  - @voyant-travel/auth@0.127.0
+  - @voyant-travel/workflow-runs@0.118.0
+  - @voyant-travel/admin-host@0.4.0
+  - @voyant-travel/runtime-core@0.6.1
+  - @voyant-travel/webhook-delivery@0.2.1
+
 ## 0.7.3
 
 ### Patch Changes
