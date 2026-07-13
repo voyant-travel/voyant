@@ -22,6 +22,8 @@ import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 
+import { packedFileExportsName } from "./lib/packed-exports.mjs"
+
 const execFileAsync = promisify(execFile)
 const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
 const REUSE_DIST =
@@ -39,6 +41,21 @@ const financeContractsPaymentBodyExports = [
   "updatePaymentSessionBodySchema",
 ]
 const packedExportChecks = [
+  {
+    packageName: "@voyant-travel/workflows",
+    entries: [
+      {
+        path: "dist/index.js",
+        label: "root runtime",
+        requiredExports: ["defineWorkflow"],
+      },
+      {
+        path: "dist/index.d.ts",
+        label: "root declaration",
+        requiredExports: ["defineWorkflow"],
+      },
+    ],
+  },
   {
     packageName: "@voyant-travel/finance-contracts",
     entries: [
@@ -336,10 +353,6 @@ function collectPackedLegacyVoyantSpecifiers(extractRoot, packInfo) {
   return problems
 }
 
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-}
-
 function collectPackedExportProblems(extractRoot, packageName) {
   const check = packedExportChecks.find((candidate) => candidate.packageName === packageName)
   if (!check) return []
@@ -352,11 +365,9 @@ function collectPackedExportProblems(extractRoot, packageName) {
       continue
     }
 
-    const source = fs.readFileSync(entryPath, "utf8")
-    const missingExports = entry.requiredExports.filter((name) => {
-      const pattern = new RegExp(`\\b${escapeRegExp(name)}\\b`)
-      return !pattern.test(source)
-    })
+    const missingExports = entry.requiredExports.filter(
+      (name) => !packedFileExportsName(extractRoot, entry.path, name),
+    )
 
     if (missingExports.length > 0) {
       problems.push(
