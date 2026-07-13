@@ -1,10 +1,14 @@
 # Custom fields
 
 Declare deployment-specific fields on core entities (bookings, people,
-organizations, products, …) without forking. A file here default-exports one or
-more `defineCustomField(...)` declarations; they're auto-discovered into the
-deployment's registry (`src/lib/custom-fields.ts`), which the services that
-read/write those entities consult.
+organizations, products, etc.) without forking. A file here default-exports one
+or more `defineCustomField(...)` declarations. Project code collects these
+declarations at build time and supplies one registry resolver through
+`createVoyantProjectServerEntry({ host: { config: { customFields } } })`.
+
+This directory is a recommended layout, not a runtime scan or an automatic
+project convention. See `docs/architecture/custom-fields.md` for the complete
+eager-glob, database-definition merge, and selected runtime-port wiring.
 
 ```ts
 // src/custom-fields/booking.ts
