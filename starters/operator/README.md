@@ -1,20 +1,21 @@
-# Operator Starter
+# Operator Integration Application
 
-The Voyant starter for tour operators. A resident **Node** process that serves
-the `/v1/*` API and SSR dashboard, with Voyant Workflows as the default durable
-task runtime.
+This checked-in application exercises the complete operator product inside the
+Voyant monorepo. It is integration coverage for workspace packages, generated
+metadata, the Node host, and the SSR dashboard; it is not the consumer starter
+template and should not be copied into a new project.
 
-Node is the first-class production target for the operator: the composed graph is
-built once and reused for the process lifetime, avoiding the per-request graph
-evaluation that makes Cloudflare Workers unsuitable for a composed operator API.
-See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md)
-(voyant#2966).
+Consumer projects come from `scripts/package-starters.mjs`. Their canonical
+authored shape is `STANDARD_NODE_STARTER`, documented in
+[standard-node-starter-acceptance.md](../../docs/architecture/standard-node-starter-acceptance.md).
+Keep integration-only source, tests, and workspace dependencies here rather
+than adding them to the generated starter.
 
 ## Stack
 
 - **Runtime**: Node (resident process — e.g. Cloud Run), booted by the
   `createVoyantProjectServerEntry` host from `@voyant-travel/runtime`
-- **Framework**: TanStack Start + React 19 (Vite build, no `@cloudflare/vite-plugin`)
+- **Framework**: TanStack Start + React 19
 - **UI**: Shared `@voyant-travel/ui` components and styles + Tailwind CSS v4
 - **DB**: Postgres via pooled node-postgres (`DATABASE_URL_DIRECT`, the Node
   production default); neon-http/WS remain fallback adapters
@@ -26,15 +27,14 @@ See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment
 ```bash
 cp .env.example .env          # fill in DATABASE_URL, BETTER_AUTH_SECRET, …
 pnpm -F operator dev          # Voyant development server + SSR (port 3300)
-pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
 ## Project customization
 
-Add project-owned behavior under `src/api/admin`, `src/api/public`,
-`src/workflows`, `src/jobs`, `src/subscribers`, and `src/links`. Each directory
-contains the exact file convention and a minimal example. `voyant build`
-discovers these files and emits the corresponding static graph entries; no
+The directories under `src/api`, `src/admin`, `src/modules`, `src/extensions`,
+`src/workflows`, `src/jobs`, `src/subscribers`, and `src/links` exercise every
+supported project convention. Their README files document each convention.
+`voyant build` discovers convention entries and emits static graph entries; no
 central registration file is required.
 
 The Voyant CLI loads `.env` for local lifecycle commands while preserving
@@ -163,45 +163,6 @@ project root.
 - `/*` — TanStack Start SSR dashboard
 - `/healthz` — liveness probe (Node runtime)
 - `/__voyant/scheduled?schedule=<id>` — Cloud Scheduler hook (origin-trust gated)
-
-## External cruise adapters
-
-External cruise inventory (any upstream — Voyant Connect is just one option) is
-wired in **one place**: `src/api/lib/cruise-adapters-runtime.ts`. Add your
-connector's `CruiseAdapter` to `configuredCruiseAdapters`:
-
-```ts
-import { createMyCruiseAdapter } from "my-cruise-connector"
-
-export function configuredCruiseAdapters(env: CruiseAdapterEnv): CruiseAdapter[] {
-  if (!_configured) {
-    const adapters: CruiseAdapter[] = []
-    adapters.push(createMyCruiseAdapter({ token: env.MY_CRUISE_ADAPTER_TOKEN }))
-    _configured = adapters
-  }
-  return _configured
-}
-```
-
-That single registration reaches every path: a cruise adapter is registered into
-both the **vertical** registry (admin/public external cruise detail, refresh,
-detach, external booking — `cruiseAdminRoutes` / `cruisePublicRoutes`, mounted at
-`/v1/{admin,public}/cruises`) and the **catalog** `SourceAdapterRegistry` (content,
-discovery/sync, snapshot capture, booking-engine sourced inventory). The same seam
-runs in the live API and the external-cruise-refresh workflow. Bulk source sync is
-an operational command composed from the selected deployment graph; it is not
-implemented inside the standard project starter.
-
-Owned adapters are wrapped with a short-TTL read cache (`memoizeCruiseAdapter`,
-60s) automatically — push the **raw** adapter, don't pre-wrap. Repeated
-detail/sailing/ship reads within an isolate then skip the upstream call (listings
-stay live). Voyant Connect cruise reads are cached upstream in the plugin.
-
-Missing config is a no-op — with no connector and Voyant Connect unconfigured,
-external cruise reads return a clean `adapter_not_registered`, never a boot
-failure. Voyant Connect cruise sources, when configured, are back-filled into the
-vertical registry automatically (no manual entry needed). See
-`docs/architecture/cruises-module.md` §10 for the adapter contract.
 
 ## Operator Shell
 

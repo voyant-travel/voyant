@@ -6,25 +6,53 @@ describe("standard Node starter contract", () => {
     expect(JSON.parse(buildStandardNodeStarterSnapshot())).toEqual(STANDARD_NODE_STARTER)
     expect(STANDARD_NODE_STARTER).toMatchInlineSnapshot(`
       {
+        "databaseProvider": "postgres",
         "defaultPlugins": [],
         "deploymentTarget": "node",
+        "developmentDependencies": [
+          "@voyant-travel/cli",
+          "tsx",
+          "typescript",
+        ],
+        "gitignoreEntries": [
+          ".voyant/",
+          "dist/",
+          "node_modules/",
+          ".env",
+          ".env.*",
+          "!.env.example",
+        ],
         "optionalDirectories": [
           "src/api/admin",
           "src/api/public",
           "src/admin",
           "src/modules",
+          "src/extensions",
           "src/workflows",
           "src/jobs",
           "src/subscribers",
           "src/links",
           "src/scripts",
         ],
+        "packageScripts": {
+          "build": "voyant build",
+          "db:migrate": "voyant migrate",
+          "dev": "voyant develop",
+          "seed": "voyant exec ./src/scripts/seed.ts",
+          "start": "voyant start",
+        },
         "rootFiles": [
           ".env.example",
+          ".gitignore",
           "package.json",
           "voyant.config.ts",
         ],
-        "schemaVersion": "voyant.node-starter.v1",
+        "runtimeDependencies": [
+          "@voyant-travel/framework",
+          "@voyant-travel/runtime",
+          "@voyant-travel/operator-standard",
+        ],
+        "schemaVersion": "voyant.node-starter.v2",
         "seedEntry": "src/scripts/seed.ts",
       }
     `)

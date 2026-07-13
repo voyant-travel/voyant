@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "voyant.node-starter.v2",
+  "rootFiles": [".env.example", ".gitignore", "package.json", "voyant.config.ts"],
+  "optionalDirectories": [
+    "src/api/admin",
+    "src/api/public",
+    "src/admin",
+    "src/modules",
+    "src/extensions",
+    "src/workflows",
+    "src/jobs",
+    "src/subscribers",
+    "src/links",
+    "src/scripts"
+  ],
+  "seedEntry": "src/scripts/seed.ts",
+  "deploymentTarget": "node",
+  "databaseProvider": "postgres",
+  "defaultPlugins": [],
+  "packageScripts": {
+    "dev": "voyant develop",
+    "build": "voyant build",
+    "start": "voyant start",
+    "seed": "voyant exec ./src/scripts/seed.ts",
+    "db:migrate": "voyant migrate"
+  },
+  "runtimeDependencies": [
+    "@voyant-travel/framework",
+    "@voyant-travel/runtime",
+    "@voyant-travel/operator-standard"
+  ],
+  "developmentDependencies": ["@voyant-travel/cli", "tsx", "typescript"],
+  "gitignoreEntries": [".voyant/", "dist/", "node_modules/", ".env", ".env.*", "!.env.example"]
+}

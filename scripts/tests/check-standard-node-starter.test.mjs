@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 const checker = join(repoRoot, "scripts/check-standard-node-starter.mjs")
+const standardNodeStarter = JSON.parse(
+  readFileSync(join(repoRoot, "packages/framework/src/standard-node-starter.json"), "utf8"),
+)
 const roots = []
 
 afterEach(() => {
@@ -18,7 +21,16 @@ test("accepts the strict generated standard Node starter shape", () => {
   const root = fixture()
   assert.match(
     run(root),
-    /packaged: 4 authored files; checked-in: no copied metadata or database authority; CLI-owned lifecycle/,
+    /packaged: 5 authored files; checked-in: no copied metadata or database authority; CLI-owned lifecycle/,
+  )
+})
+
+test("rejects a generated gitignore that does not protect disposable and local files", () => {
+  const root = fixture({ extraFiles: { ".gitignore": "node_modules/\n" } })
+  assert.throws(
+    () => run(root),
+    (error) =>
+      String(error.stderr).includes(".gitignore must match the standard Node starter contract"),
   )
 })
 
@@ -91,7 +103,7 @@ test("rejects extra authored files beyond the small-tree ratchet", () => {
   const root = fixture({ extraFiles: { "src/start.ts": "export const product = true\n" } })
   assert.throws(
     () => run(root),
-    (error) => String(error.stderr).includes("must contain exactly 4 files"),
+    (error) => String(error.stderr).includes("must contain exactly 5 files"),
   )
 })
 
@@ -109,10 +121,11 @@ test("rejects first-party package IDs in the authored seed source", () => {
 
 test("rejects a missing optional project convention directory", () => {
   const root = fixture()
-  rmSync(join(root, "src/jobs"), { recursive: true })
+  rmSync(join(root, "src/extensions"), { recursive: true })
   assert.throws(
     () => run(root),
-    (error) => String(error.stderr).includes("must expose optional project directory src/jobs"),
+    (error) =>
+      String(error.stderr).includes("must expose optional project directory src/extensions"),
   )
 })
 
@@ -357,13 +370,7 @@ function fixture(overrides = {}) {
   const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-starter-"))
   roots.push(root)
   const packageJson = overrides.packageJson ?? {
-    scripts: {
-      dev: "voyant develop",
-      build: "voyant build",
-      start: "voyant start",
-      seed: "voyant exec ./src/scripts/seed.ts",
-      "db:migrate": "voyant migrate",
-    },
+    scripts: standardNodeStarter.packageScripts,
     dependencies: {
       "@voyant-travel/framework": "1.0.0",
       "@voyant-travel/runtime": "1.0.0",
@@ -373,6 +380,7 @@ function fixture(overrides = {}) {
   }
   const files = {
     ".env.example": "DATABASE_URL=postgresql://localhost/voyant\n",
+    ".gitignore": `${standardNodeStarter.gitignoreEntries.join("\n")}\n`,
     "package.json": `${JSON.stringify(packageJson, null, 2)}\n`,
     "src/scripts/seed.ts": 'console.info("Add project seed data here.")\n',
     "voyant.config.ts":
@@ -388,17 +396,7 @@ export default defineConfig({
 `,
     ...overrides.extraFiles,
   }
-  for (const directory of [
-    "src/api/admin",
-    "src/api/public",
-    "src/admin",
-    "src/modules",
-    "src/workflows",
-    "src/jobs",
-    "src/subscribers",
-    "src/links",
-    "src/scripts",
-  ]) {
+  for (const directory of standardNodeStarter.optionalDirectories) {
     mkdirSync(join(root, directory), { recursive: true })
   }
   for (const [path, contents] of Object.entries(files)) {

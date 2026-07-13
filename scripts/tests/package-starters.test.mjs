@@ -7,6 +7,9 @@ import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
+const standardNodeStarter = JSON.parse(
+  readFileSync(join(repoRoot, "packages/framework/src/standard-node-starter.json"), "utf8"),
+)
 
 test("operator release archive contains only the minimal authored project", () => {
   assert.equal(
@@ -17,38 +20,28 @@ test("operator release archive contains only the minimal authored project", () =
   const fixture = packageAndExtract()
   try {
     const files = listFiles(fixture.extractDir)
-    assert.deepEqual(files, [
-      ".env.example",
-      "package.json",
-      "src/scripts/seed.ts",
-      "voyant.config.ts",
-    ])
+    assert.deepEqual(
+      files,
+      [...standardNodeStarter.rootFiles, standardNodeStarter.seedEntry].sort(),
+    )
 
-    for (const directory of [
-      "src/api/admin",
-      "src/api/public",
-      "src/admin",
-      "src/modules",
-      "src/workflows",
-      "src/jobs",
-      "src/subscribers",
-      "src/links",
-    ]) {
+    for (const directory of standardNodeStarter.optionalDirectories) {
       assert.equal(existsSync(join(fixture.extractDir, directory)), true, directory)
     }
+
+    assert.equal(
+      readFileSync(join(fixture.extractDir, ".gitignore"), "utf8"),
+      `${standardNodeStarter.gitignoreEntries.join("\n")}\n`,
+    )
 
     const config = readFileSync(join(fixture.extractDir, "voyant.config.ts"), "utf8")
     assert.doesNotMatch(config, /\b(?:modules|extensions|plugins|access)\s*:/)
     assert.doesNotMatch(config, /smartbill/i)
-    assert.match(config, /target:\s*"node"/)
-    assert.match(config, /database:\s*"postgres"/)
+    assert.match(config, new RegExp(`target:\\s*"${standardNodeStarter.deploymentTarget}"`))
+    assert.match(config, new RegExp(`database:\\s*"${standardNodeStarter.databaseProvider}"`))
 
     const packageJson = JSON.parse(readFileSync(join(fixture.extractDir, "package.json"), "utf8"))
-    assert.equal(packageJson.scripts.dev, "voyant develop")
-    assert.equal(packageJson.scripts.build, "voyant build")
-    assert.equal(packageJson.scripts.start, "voyant start")
-    assert.equal(packageJson.scripts.seed, "voyant exec ./src/scripts/seed.ts")
-    assert.equal(packageJson.scripts["db:migrate"], "voyant migrate")
+    assert.deepEqual(packageJson.scripts, standardNodeStarter.packageScripts)
     assert.equal(packageJson.scripts["graph:emit"], undefined)
     assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
     assert.equal(typeof packageJson.dependencies["@voyant-travel/runtime"], "string")
