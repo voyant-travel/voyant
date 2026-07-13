@@ -1,5 +1,13 @@
 # @voyant-travel/operator-standard
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [0defbd6]
+  - @voyant-travel/catalog@0.151.1
+  - @voyant-travel/catalog-react@0.151.1
+
 ## 0.2.0
 
 ### Minor Changes

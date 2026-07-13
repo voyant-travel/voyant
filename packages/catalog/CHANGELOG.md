@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.151.1
+
+### Patch Changes
+
+- 0defbd6: Fix catalog-offer index enrichment and dynamic hotel lookup for deployments whose default catalog scope uses a non-default locale, market, or channel.
+
 ## 0.151.0
 
 ### Minor Changes
