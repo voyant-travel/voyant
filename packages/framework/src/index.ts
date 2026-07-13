@@ -20,7 +20,6 @@
 export {
   type CreateVoyantAppConfig,
   createVoyantApp,
-  type FrameworkProviders,
 } from "./create-app.js"
 export {
   DEFAULT_MANAGED_CLOUD_PROVIDERS,

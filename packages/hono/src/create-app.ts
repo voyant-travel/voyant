@@ -33,7 +33,7 @@ export interface CreateAppConfig<TBindings extends VoyantBindings, TCapabilities
  *       db, auth, plugins, ...
  *     })
  *
- * Framework callers may use `createVoyantApp({ providers, modules })` for an
+ * Framework callers may use `createVoyantApp({ resources, modules })` for an
  * explicit local registry. Standard product units are composed from the
  * generated deployment graph instead of this registry path.
  */

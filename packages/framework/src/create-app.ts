@@ -6,45 +6,39 @@ import type {
 } from "@voyant-travel/hono/composition"
 
 /**
- * Deprecated compatibility marker for deployment capability containers.
- * Product packages own their provider types through declared runtime ports.
- */
-export type FrameworkProviders = Record<never, never>
-
-/**
- * Config for {@link createVoyantApp}: the injected providers + deployment-local
+ * Config for {@link createVoyantApp}: the deployment-local resources and
  * additions, plus everything else `createApp` takes (db, auth, workflows,
  * outbox, publicPaths, …) — minus the `manifest`/`registry`/`capabilities` the
  * framework now assembles for you.
  */
-export interface CreateVoyantAppConfig<TBindings extends VoyantBindings, TProviders>
-  extends Omit<CreateAppConfig<TBindings, TProviders>, "manifest" | "registry" | "capabilities"> {
+export interface CreateVoyantAppConfig<TBindings extends VoyantBindings, TResources>
+  extends Omit<CreateAppConfig<TBindings, TResources>, "manifest" | "registry" | "capabilities"> {
   /** Capabilities passed only to the explicitly supplied local factories. */
-  providers: TProviders
+  resources: TResources
   /** Explicit module factories. Standard product units come from the generated graph runtime. */
-  modules?: Record<string, ModuleFactory<TProviders>>
+  modules?: Record<string, ModuleFactory<TResources>>
   /** Explicit extension factories. */
-  extensions?: Record<string, ExtensionFactory<TProviders>>
+  extensions?: Record<string, ExtensionFactory<TResources>>
 }
 
 /** Compose only explicitly supplied factories through the generic Hono machinery. */
-export function createVoyantApp<TBindings extends VoyantBindings, TProviders>(
-  config: CreateVoyantAppConfig<TBindings, TProviders>,
+export function createVoyantApp<TBindings extends VoyantBindings, TResources>(
+  config: CreateVoyantAppConfig<TBindings, TResources>,
 ) {
-  const { providers, modules = {}, extensions = {}, ...rest } = config
+  const { resources, modules = {}, extensions = {}, ...rest } = config
 
-  const registry: CompositionRegistry<TProviders> = {
+  const registry: CompositionRegistry<TResources> = {
     modules,
     extensions,
   }
 
-  return createApp<TBindings, TProviders>({
+  return createApp<TBindings, TResources>({
     ...rest,
     manifest: {
       modules: Object.keys(modules),
       extensions: Object.keys(extensions),
     },
     registry,
-    capabilities: providers,
-  } as CreateAppConfig<TBindings, TProviders>)
+    capabilities: resources,
+  } as CreateAppConfig<TBindings, TResources>)
 }

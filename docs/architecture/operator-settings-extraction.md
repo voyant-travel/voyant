@@ -3,7 +3,7 @@
 - **Status:** Superseded by package manifests, typed runtime ports, and generated graph composition
 - **Date:** 2026-06-17
 - **Feeds:** `consolidated-deployments-rfc.md` Workstream B step 4 · `operator-registry-classification.md` ("Recommendation: extract operator-settings")
-- **Prereq met:** the registry relocation + `createVoyantApp` convergence (Workstream B steps 1–3) are merged. The deployment is now config + injected `providers` + two deployment-local module families (`invitations`, `operator-settings`). This note assesses turning the second one into a standard package.
+- **Prereq met:** the registry relocation + `createVoyantApp` convergence (Workstream B steps 1–3) are merged. The deployment is now config + injected resources + two deployment-local module families (`invitations`, `operator-settings`). This note assesses turning the second one into a standard package.
 
 ## Summary
 
