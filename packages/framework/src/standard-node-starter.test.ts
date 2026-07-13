@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest"
-import { buildStandardNodeStarterSnapshot, STANDARD_NODE_STARTER } from "./standard-node-starter.js"
+import { describe, expect, expectTypeOf, it } from "vitest"
+import {
+  buildStandardNodeStarterSnapshot,
+  STANDARD_NODE_STARTER,
+  VOYANT_STANDARD_NODE_STARTER_SCHEMA_VERSION,
+} from "./standard-node-starter.js"
 
 describe("standard Node starter contract", () => {
   it("keeps the consumer-authored tree small and domain-conventional", () => {
@@ -65,5 +69,16 @@ describe("standard Node starter contract", () => {
   it("requires integrations to be selected explicitly", () => {
     expect(STANDARD_NODE_STARTER.defaultPlugins).toEqual([])
     expect(buildStandardNodeStarterSnapshot()).not.toMatch(/smartbill/i)
+  })
+
+  it("preserves literal readonly types for consumers", () => {
+    expectTypeOf(
+      VOYANT_STANDARD_NODE_STARTER_SCHEMA_VERSION,
+    ).toEqualTypeOf<"voyant.node-starter.v2">()
+    expectTypeOf<(typeof STANDARD_NODE_STARTER.rootFiles)[number]>().toEqualTypeOf<
+      ".env.example" | ".gitignore" | "package.json" | "voyant.config.ts"
+    >()
+    expectTypeOf(STANDARD_NODE_STARTER.rootFiles).toMatchTypeOf<readonly string[]>()
+    expectTypeOf(STANDARD_NODE_STARTER.defaultPlugins).toEqualTypeOf<readonly []>()
   })
 })
