@@ -114,11 +114,11 @@ jobs:
         id: release_plan
         run: pnpm release:plan
 
-      # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
-      # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
+      # Version bumps can invalidate most workspace build caches. Serialize the
+      # release build to stay within the runner's memory limit.
       - name: Build pending publish workspaces
         if: steps.release_plan.outputs.pending == 'true'
-        run: pnpm turbo build ${{ steps.release_plan.outputs.turbo_filters }} --continue --concurrency=4
+        run: pnpm turbo build ${{ steps.release_plan.outputs.turbo_filters }} --continue --concurrency=1
 
       - name: Verify package exports
         if: steps.release_plan.outputs.pending == 'true'
