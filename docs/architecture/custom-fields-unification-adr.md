@@ -104,15 +104,15 @@ column on the entity. `custom_field_values` is retired.**
      (synthetic value-ids `entityType::entityId::definitionId`; bidirectional
      typed↔jsonb mapping; cross-table writes via `sql.identifier`). Round-trip
      integration-tested.
-   - 3c — idempotent `backfill-custom-fields.ts` (merge-safe `backfilled ||
-     current`), run once during the upgrade.
+   - 3c — package-owned post-cutline data migration (merge-safe `backfilled ||
+     current`), applied automatically during the graph migration plan.
 4. **Retire `custom_field_values`** + export/invoice/search consume
    `customFieldsVisibleIn`.
-   - 4a — table removed from the schema; **guarded** DROP migration (bundle
-     `0004`) that RAISES if the table still has rows, so a deployment that hasn't
-     run the backfill fails the migration instead of losing data. The merge flow
-     now merges `custom_fields` instead of value rows; backfill gains `--clear`.
-     ✅ landed.
+   - 4a — table removed from the schema. The package-owned migration copies and
+     validates every legacy row before dropping the table in the same
+     transaction; unknown entity types, missing definitions, missing target
+     tables, and orphaned entity ids abort without data loss. The older bundle
+     guard remains immutable migration history. ✅ landed.
    - 4b — readers consume `customFieldsVisibleIn`.
      - **Export ✅** — the people CSV export appends a column per export-visible
        custom field (`exportPeopleCsv` + `resolveVisibleCustomFields`).

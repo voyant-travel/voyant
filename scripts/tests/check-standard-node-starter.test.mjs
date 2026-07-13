@@ -134,6 +134,7 @@ test("rejects database authority in the checked-in starter", () => {
 
 test("rejects restored checked-in starter compatibility authority", () => {
   for (const relativePath of [
+    "starters/operator/scripts/backfill-custom-fields.ts",
     "starters/operator/src/api/lib/catalog-context.ts",
     "starters/operator/src/api/runtime/payment-config.ts",
     "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
