@@ -222,15 +222,6 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
       (link): link is Required<Pick<typeof link, "id" | "source" | "export">> =>
         typeof link.source === "string" && typeof link.export === "string",
     )
-  const subscriberLinkFiles = projectSubscriberLinks.generatedFiles.map((file) =>
-    file.path === PROJECT_LINKS_GENERATED_PATH
-      ? {
-          ...file,
-          contents: generateSelectedLinksSource(projectSubscriberLinks.links, selectedLinks),
-        }
-      : file,
-  )
-
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
   const workflowRuntimeEntry = VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY
   const migrationRunner = VOYANT_PROJECT_MIGRATION_RUNNER
@@ -240,6 +231,19 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     materialized.packages,
     projectRoot,
     runtimeEntry,
+    selectedLinks.map((link) => link.source),
+  )
+  const subscriberLinkFiles = projectSubscriberLinks.generatedFiles.map((file) =>
+    file.path === PROJECT_LINKS_GENERATED_PATH
+      ? {
+          ...file,
+          contents: generateSelectedLinksSource(
+            projectSubscriberLinks.links,
+            selectedLinks,
+            runtimeEntryOverrides,
+          ),
+        }
+      : file,
   )
   const files: FrameworkGeneratedProjectFile[] = [
     ...(targetNeutralGraph.project.productBom
@@ -833,31 +837,40 @@ async function buildLocalRuntimeEntryOverrides(
   packages: ReadonlyMap<string, InspectedPackage>,
   projectRoot: string,
   runtimeEntry: string,
+  extraPackageEntries: readonly string[] = [],
 ): Promise<Record<string, string>> {
   const overrides: Record<string, string> = {}
   const runtimeDirectory = path.dirname(path.join(projectRoot, ".voyant", runtimeEntry))
-  for (const unit of [...graph.modules, ...graph.extensions, ...graph.plugins]) {
-    const inspected = packages.get(unit.packageName)
-    if (inspected?.record.source.kind !== "file") continue
+  const references = [
+    ...runtimePackageReferences([...graph.modules, ...graph.extensions, ...graph.plugins]),
+    ...[...packages.values()].flatMap(({ record }) =>
+      record.metadata?.runtime
+        ? [{ ownerPackageName: record.packageName, entry: record.metadata.runtime.entry }]
+        : [],
+    ),
+    ...extraPackageEntries.map((entry) => ({
+      ownerPackageName: packageNameFromSpecifier(entry),
+      entry,
+    })),
+  ]
+  for (const reference of references) {
+    const packageName = runtimeReferencePackageName(reference)
+    const inspected = packages.get(packageName)
+    if (!inspected) continue
     const projectSource =
       inspected.directory === projectRoot && inspected.record.source.reference === "."
     const packageJson = projectSource ? undefined : await readPackageJson(inspected.directory)
-    for (const reference of runtimePackageReferences([unit])) {
-      if (runtimeReferencePackageName(reference) !== unit.packageName) continue
-      const packageEntry = lowerOwnerRuntimeEntry(unit.packageName, reference.entry)
-      const target = projectSource
-        ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
-        : resolvePackageExportTarget(
-            inspected.directory,
-            packageJson!.exports,
-            packageEntry === unit.packageName
-              ? "."
-              : `./${packageEntry.slice(unit.packageName.length + 1)}`,
-            unit.packageName,
-          )
-      const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
-      overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
-    }
+    const packageEntry = lowerOwnerRuntimeEntry(reference.ownerPackageName, reference.entry)
+    const target = projectSource
+      ? resolveProjectSourceRuntimeTarget(projectRoot, reference.entry)
+      : resolvePackageExportTarget(
+          inspected.directory,
+          packageJson!.exports,
+          packageEntry === packageName ? "." : `./${packageEntry.slice(packageName.length + 1)}`,
+          packageName,
+        )
+    const relative = path.relative(runtimeDirectory, target).replaceAll("\\", "/")
+    overrides[packageEntry] = relative.startsWith(".") ? relative : `./${relative}`
   }
   return overrides
 }

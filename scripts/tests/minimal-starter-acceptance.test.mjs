@@ -116,11 +116,22 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
     )
     assert.match(projectRuntime, /createRuntimePorts: createGeneratedGraphRuntimePorts/)
     assert.match(projectRuntime, /GENERATED_GRAPH_RUNTIME_CONTRIBUTORS/)
-    assert.match(projectRuntime, /@voyant-travel\/storefront\/runtime-contributor/)
+    assert.match(
+      projectRuntime,
+      /operator-standard\/node_modules\/@voyant-travel\/storefront\/src\/runtime-contributor/,
+    )
+    assert.doesNotMatch(
+      projectRuntime,
+      /^import .* from "@voyant-travel\/accommodations\/runtime-contributor"/m,
+    )
     assert.doesNotMatch(projectRuntime, /createVoyantGraphRuntimePortStubs/)
     assert.match(
       readFileSync(join(app, ".voyant/runtime/project-api.generated.ts"), "utf8"),
       /src\/api\/public\/starter-proof\/route/,
+    )
+    assert.doesNotMatch(
+      readFileSync(join(app, ".voyant/runtime/project-links.generated.ts"), "utf8"),
+      /from "@voyant-travel\/accommodations\/standard-links"/,
     )
     exec(
       process.execPath,
@@ -159,13 +170,9 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  const installedCli = realpathSync(
-    join(repoRoot, "starters/operator/node_modules/@voyant-travel/cli"),
-  )
-  packageJson.devDependencies["@voyant-travel/cli"] = `link:${installedCli}`
   for (const dependency of ["tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
-      join(repoRoot, "node_modules", dependency),
+      join(repoRoot, "starters/operator/node_modules", dependency),
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)

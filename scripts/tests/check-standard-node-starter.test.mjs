@@ -156,7 +156,7 @@ test("rejects restored checked-in starter compatibility authority", () => {
       (error) =>
         String(error.stderr).includes(
           relativePath === "starters/operator/scripts/backfill-custom-fields.ts"
-            ? `standard starter operational authority must stay deleted: ${relativePath}`
+            ? `checked-in starter authority must stay deleted: ${relativePath}`
             : `checked-in starter authority must stay deleted: ${relativePath}`,
         ),
     )
@@ -175,7 +175,7 @@ test("rejects restored starter-owned Flights reference fixtures", () => {
     () => run(starter, root),
     (error) =>
       String(error.stderr).includes(
-        "standard starter operational authority must stay deleted: starters/operator/scripts/seed-flights-reference-airlines.ts",
+        "Flights reference fixture must remain package-owned: starters/operator/scripts/seed-flights-reference-airlines.ts",
       ),
   )
 })
@@ -259,6 +259,11 @@ test("rejects restored generic or demo operational scripts in the checked-in sta
 })
 
 function run(starterDir, root = repoRoot) {
+  if (root !== repoRoot) {
+    const gitignore = join(root, "starters/operator/.gitignore")
+    mkdirSync(dirname(gitignore), { recursive: true })
+    writeFileSync(gitignore, ".voyant/\n")
+  }
   return execFileSync(process.execPath, [checker, "--root", root, "--starter-dir", starterDir], {
     cwd: repoRoot,
     encoding: "utf8",

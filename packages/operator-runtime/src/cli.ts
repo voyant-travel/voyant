@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { once } from "node:events"
+
 import { startOperatorProject } from "./index.js"
 
 const args = process.argv.slice(2).filter((value) => value !== "--")
@@ -14,6 +16,7 @@ const handle = await startOperatorProject({ port })
 console.info(`[operator-runtime] Node host listening on :${handle.port}`)
 
 if (args.includes("--probe")) {
+  if (!handle.server.listening) await once(handle.server, "listening")
   const response = await fetch(`http://127.0.0.1:${handle.port}/healthz`)
   if (!response.ok || (await response.text()) !== "ok") {
     await handle.close()
