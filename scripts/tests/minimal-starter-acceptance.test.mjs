@@ -1,6 +1,14 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { test } from "node:test"
@@ -170,6 +178,13 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  const siblingCli = resolve(repoRoot, "..", "cli", "packages", "cli")
+  const installedCli = realpathSync(
+    join(repoRoot, "starters/operator/node_modules/@voyant-travel/cli"),
+  )
+  packageJson.devDependencies["@voyant-travel/cli"] = `link:${
+    existsSync(siblingCli) ? siblingCli : installedCli
+  }`
   for (const dependency of ["tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
       join(repoRoot, "starters/operator/node_modules", dependency),
