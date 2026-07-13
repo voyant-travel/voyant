@@ -3,11 +3,11 @@ import type {
   CatalogBookingSnapshotExecutionContext,
   CatalogBookingSnapshotRuntime,
 } from "@voyant-travel/catalog/booking-snapshot-subscriber"
+import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
 import {
   createCatalogBookingSnapshotRuntimeAdapter,
   createCatalogProjectionRuntimeAdapter,
-} from "@voyant-travel/catalog/operator-runtime"
-import type { CatalogProjectionRuntime } from "@voyant-travel/catalog/projection-runtime"
+} from "@voyant-travel/catalog/runtime-support"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { and, eq, isNotNull } from "drizzle-orm"
 

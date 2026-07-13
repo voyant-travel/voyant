@@ -73,7 +73,7 @@ test("rejects package-specific bootstrap dependencies and commands", () => {
       scripts: { start: "tsx src/start.ts" },
       dependencies: {
         "@voyant-travel/framework": "1.0.0",
-        "@voyant-travel/operator-runtime": "1.0.0",
+        "@voyant-travel/runtime": "1.0.0",
         "@voyant-travel/bookings": "1.0.0",
       },
       devDependencies: { "@voyant-travel/cli": "1.0.0" },
@@ -82,7 +82,7 @@ test("rejects package-specific bootstrap dependencies and commands", () => {
   assert.throws(
     () => run(root),
     (error) =>
-      String(error.stderr).includes('generic "voyant-operator start" Node bootstrap') &&
+      String(error.stderr).includes('generic "voyant start" Node bootstrap') &&
       String(error.stderr).includes("generic Node runtime"),
   )
 })
@@ -361,10 +361,10 @@ function fixture(overrides = {}) {
   const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-starter-"))
   roots.push(root)
   const packageJson = overrides.packageJson ?? {
-    scripts: { start: "voyant-operator start" },
+    scripts: { start: "voyant start" },
     dependencies: {
       "@voyant-travel/framework": "1.0.0",
-      "@voyant-travel/operator-runtime": "1.0.0",
+      "@voyant-travel/runtime": "1.0.0",
       "@voyant-travel/operator-standard": "1.0.0",
     },
     devDependencies: { "@voyant-travel/cli": "1.0.0" },

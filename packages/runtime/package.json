@@ -1,30 +1,48 @@
 {
   "name": "@voyant-travel/runtime",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./api-dispatch": "./src/api-dispatch.ts",
-    "./ssr-manifest": "./src/ssr-manifest.ts",
-    "./worker-fetch": "./src/worker-fetch.ts",
-    "./node-server": "./src/node-server.ts",
-    "./trust": "./src/trust.ts",
-    "./wait-until": "./src/wait-until.ts",
-    "./env": "./src/env.ts",
-    "./memory-kv": "./src/memory-kv.ts",
-    "./memory-r2": "./src/memory-r2.ts",
-    "./r2": "./src/r2.ts",
-    "./types": "./src/types.ts"
+    "./deployment-resources": "./src/deployment-resources.ts",
+    "./workflow-entry": "./src/workflow-entry.ts",
+    "./openapi": "./src/openapi.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.typecheck.json",
-    "lint": "biome check src/ tests/",
-    "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "pnpm run clean && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.build.json",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm --workspace-concurrency=1 --filter @voyant-travel/runtime... run build",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@voyant-travel/admin-host": "workspace:^",
+    "@voyant-travel/auth": "workspace:^",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
+    "@voyant-travel/framework": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/runtime-core": "workspace:^",
+    "@voyant-travel/webhook-delivery": "workspace:^",
+    "@voyant-travel/workflow-runs": "workspace:^",
+    "hono": "catalog:",
+    "tsx": "catalog:"
+  },
+  "devDependencies": {
+    "@hono/zod-openapi": "catalog:",
+    "@types/node": "catalog:",
+    "@voyant-travel/accommodations": "workspace:^",
+    "@voyant-travel/bookings": "workspace:^",
+    "@voyant-travel/cruises": "workspace:^",
+    "@voyant-travel/finance": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "drizzle-orm": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist"
@@ -37,75 +55,24 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
-      "./api-dispatch": {
-        "types": "./dist/api-dispatch.d.ts",
-        "import": "./dist/api-dispatch.js",
-        "default": "./dist/api-dispatch.js"
+      "./deployment-resources": {
+        "types": "./dist/deployment-resources.d.ts",
+        "import": "./dist/deployment-resources.js",
+        "default": "./dist/deployment-resources.js"
       },
-      "./ssr-manifest": {
-        "types": "./dist/ssr-manifest.d.ts",
-        "import": "./dist/ssr-manifest.js",
-        "default": "./dist/ssr-manifest.js"
+      "./workflow-entry": {
+        "types": "./dist/workflow-entry.d.ts",
+        "import": "./dist/workflow-entry.js",
+        "default": "./dist/workflow-entry.js"
       },
-      "./worker-fetch": {
-        "types": "./dist/worker-fetch.d.ts",
-        "import": "./dist/worker-fetch.js",
-        "default": "./dist/worker-fetch.js"
-      },
-      "./node-server": {
-        "types": "./dist/node-server.d.ts",
-        "import": "./dist/node-server.js",
-        "default": "./dist/node-server.js"
-      },
-      "./trust": {
-        "types": "./dist/trust.d.ts",
-        "import": "./dist/trust.js",
-        "default": "./dist/trust.js"
-      },
-      "./wait-until": {
-        "types": "./dist/wait-until.d.ts",
-        "import": "./dist/wait-until.js",
-        "default": "./dist/wait-until.js"
-      },
-      "./env": {
-        "types": "./dist/env.d.ts",
-        "import": "./dist/env.js",
-        "default": "./dist/env.js"
-      },
-      "./memory-kv": {
-        "types": "./dist/memory-kv.d.ts",
-        "import": "./dist/memory-kv.js",
-        "default": "./dist/memory-kv.js"
-      },
-      "./memory-r2": {
-        "types": "./dist/memory-r2.d.ts",
-        "import": "./dist/memory-r2.js",
-        "default": "./dist/memory-r2.js"
-      },
-      "./r2": {
-        "types": "./dist/r2.d.ts",
-        "import": "./dist/r2.js",
-        "default": "./dist/r2.js"
-      },
-      "./types": {
-        "types": "./dist/types.d.ts",
-        "import": "./dist/types.js",
-        "default": "./dist/types.js"
+      "./openapi": {
+        "types": "./dist/openapi.d.ts",
+        "import": "./dist/openapi.js",
+        "default": "./dist/openapi.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
-  },
-  "dependencies": {
-    "@hono/node-server": "^2.0.6",
-    "@voyant-travel/storage": "workspace:^",
-    "@voyant-travel/utils": "workspace:^"
-  },
-  "devDependencies": {
-    "@types/node": "catalog:",
-    "@voyant-travel/voyant-typescript-config": "workspace:^",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
   },
   "repository": {
     "type": "git",

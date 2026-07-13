@@ -12,7 +12,7 @@ for (const file of forbiddenStarterFiles) {
   assert(!existsSync(path.join(root, file)), `${file} must remain package-owned`)
 }
 
-const runtimeFile = "packages/operator-runtime/src/openapi.ts"
+const runtimeFile = "packages/runtime/src/openapi.ts"
 const runtimeSource = readFileSync(path.join(root, runtimeFile), "utf8")
 
 const prohibited = [

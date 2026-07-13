@@ -1,9 +1,9 @@
 import type { VoyantGraphRuntime } from "@voyant-travel/framework"
-import type { CreateOperatorDeploymentResourcesOptions } from "@voyant-travel/operator-runtime/deployment-resources"
+import type { CreateVoyantDeploymentResourcesOptions } from "@voyant-travel/runtime/deployment-resources"
 
 interface GeneratedProjectRuntimeModule {
   createGeneratedGraphRuntime(): VoyantGraphRuntime
-  createGeneratedGraphRuntimePorts: CreateOperatorDeploymentResourcesOptions["createRuntimePorts"]
+  createGeneratedGraphRuntimePorts: CreateVoyantDeploymentResourcesOptions["createRuntimePorts"]
   GENERATED_GRAPH_RUNTIME_EXTENSION_IDS: readonly string[]
   GENERATED_GRAPH_RUNTIME_MODULE_IDS: readonly string[]
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS: readonly string[]

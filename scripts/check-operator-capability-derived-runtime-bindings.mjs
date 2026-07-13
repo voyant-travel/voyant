@@ -10,7 +10,7 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, auth, mice, quotes, relationships, trips] = await Promise.all([
-  read("packages/operator-runtime/src/deployment-resources.ts"),
+  read("packages/runtime/src/deployment-resources.ts"),
   read("packages/auth/src/runtime-contributor.ts"),
   read("packages/mice/src/runtime-contributor.ts"),
   read("packages/quotes/src/runtime-contributor.ts"),
@@ -19,8 +19,8 @@ const [deploymentResources, auth, mice, quotes, relationships, trips] = await Pr
 ])
 
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 const explicitBindings = ["identityAccess", "mice", "quotes", "relationshipsRoutes"]
 

@@ -95,7 +95,7 @@ needed — see platform#1014.
 gives Cloud a **source-free API** runtime entry: it boots `createVoyantApp` from
 a serialized profile snapshot with no `starters/operator` import. There is no
 equivalent for the **admin UI**. To put the admin into
-`voyant-operator-runtime:<framework-version>` (platform#954), Cloud must today
+`voyant-runtime:<framework-version>` (platform#954), Cloud must today
 copy `starters/operator/src/*` (route tree, providers, TanStack Start server
 entry, generated files) and its `vite.config.ts` (chunking + SSR config). That
 copied build config is load-bearing and diverges — the exact
@@ -166,7 +166,7 @@ Key facts that shape the design:
    `@/routes/_workspace` import.** If that glue is packaged (or injected), the
    generated tree is package-portable.
 3. **SSR + Node host are thin** (`ssr-handler.ts` 22 lines, host boot in
-   `server.ts`) and already lean on `@voyant-travel/runtime`
+   `server.ts`) and already lean on `@voyant-travel/runtime-core`
    (`createWorkerFetch`, `lazySsr`, `createNodeServer`, `withActiveRouteSsrManifest`).
    The serving layer is a small, well-bounded extraction.
 4. **The app-shell file-routes** (`_workspace`, `(auth)`, `__root`) are the one

@@ -12,8 +12,8 @@ See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment
 
 ## Stack
 
-- **Runtime**: Node (resident process — e.g. Cloud Run), booted by
-  `src/server.ts` via `createNodeServer` from `@voyant-travel/runtime`
+- **Runtime**: Node (resident process — e.g. Cloud Run), booted by the
+  `createVoyantProjectServerEntry` host from `@voyant-travel/runtime`
 - **Framework**: TanStack Start + React 19 (Vite build, no `@cloudflare/vite-plugin`)
 - **UI**: Shared `@voyant-travel/ui` components and styles + Tailwind CSS v4
 - **DB**: Postgres via pooled node-postgres (`DATABASE_URL_DIRECT`, the Node
@@ -28,6 +28,14 @@ cp .env.example .env          # fill in DATABASE_URL, BETTER_AUTH_SECRET, …
 pnpm -F operator dev          # Vite dev server + SSR (port 3300)
 pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
+
+## Project customization
+
+Add project-owned behavior under `src/api/admin`, `src/api/public`,
+`src/workflows`, `src/jobs`, `src/subscribers`, and `src/links`. Each directory
+contains the exact file convention and a minimal example. `voyant build`
+discovers these files and emits the corresponding static graph entries; no
+central registration file is required.
 
 Vite loads `.env` during development and the production command uses Node's
 native `--env-file-if-exists` support. Platform environment variables remain

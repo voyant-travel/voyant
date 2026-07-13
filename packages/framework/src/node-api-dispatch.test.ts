@@ -1,4 +1,4 @@
-import type { FetchApp, WaitUntilContext } from "@voyant-travel/runtime/types"
+import type { FetchApp, WaitUntilContext } from "@voyant-travel/runtime-core/types"
 import { describe, expect, it, vi } from "vitest"
 
 import { createVoyantNodeApiDispatch } from "./node-api-dispatch.js"

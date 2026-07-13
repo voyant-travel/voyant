@@ -16,11 +16,8 @@ for (const helper of [
 
 const packageAuthorities = [
   ["packages/inventory/src/booking-engine/product-runtime.ts", "registerProductBookingHandler"],
-  [
-    "packages/accommodations/src/booking-engine/operator-runtime.ts",
-    "registerAccommodationBookingHandler",
-  ],
-  ["packages/cruises/src/booking-engine/operator-runtime.ts", "registerCruiseBookingHandler"],
+  ["packages/accommodations/src/booking-engine/runtime.ts", "registerAccommodationBookingHandler"],
+  ["packages/cruises/src/booking-engine/runtime.ts", "registerCruiseBookingHandler"],
 ]
 for (const [relativePath, registration] of packageAuthorities) {
   const source = readFileSync(resolve(root, relativePath), "utf8")

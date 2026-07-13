@@ -166,8 +166,8 @@ export default defineConfig({
 
 function inspectPackageJson(packageJsonPath) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  if (packageJson.scripts?.start !== "voyant-operator start") {
-    violations.push('generated starter must use the generic "voyant-operator start" Node bootstrap')
+  if (packageJson.scripts?.start !== "voyant start") {
+    violations.push('generated starter must use the generic "voyant start" Node bootstrap')
   }
   const firstPartyDependencies = Object.keys({
     ...packageJson.dependencies,
@@ -178,8 +178,8 @@ function inspectPackageJson(packageJsonPath) {
   const expectedDependencies = [
     "@voyant-travel/cli",
     "@voyant-travel/framework",
-    "@voyant-travel/operator-runtime",
     "@voyant-travel/operator-standard",
+    "@voyant-travel/runtime",
   ]
   if (firstPartyDependencies.join("\n") !== expectedDependencies.join("\n")) {
     violations.push(
@@ -300,11 +300,8 @@ function inspectRepositoryAuthority(repoRoot) {
     }
   }
 
-  const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
-  const deploymentResourcesPath = join(
-    repoRoot,
-    "packages/operator-runtime/src/deployment-resources.ts",
-  )
+  const operatorRuntimePath = join(repoRoot, "packages/runtime/src/index.ts")
+  const deploymentResourcesPath = join(repoRoot, "packages/runtime/src/deployment-resources.ts")
   const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
   if (
     existsSync(operatorRuntimePath) &&
@@ -353,10 +350,7 @@ function inspectRepositoryAuthority(repoRoot) {
   if (existsSync(retiredResourcesPath)) {
     violations.push("starter-owned deployment-resources.ts must stay deleted")
   }
-  const adapterPath = join(
-    repoRoot,
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
-  )
+  const adapterPath = join(repoRoot, "starters/operator/src/api/runtime/runtime-adapter.ts")
   if (existsSync(adapterPath)) {
     const resources = readFileSync(adapterPath, "utf8")
     for (const symbol of [

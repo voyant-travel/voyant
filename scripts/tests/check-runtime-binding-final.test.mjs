@@ -9,7 +9,7 @@ import { promisify } from "node:util"
 
 const execFileAsync = promisify(execFile)
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
-const checker = path.join(repoRoot, "scripts/check-operator-runtime-binding-final.mjs")
+const checker = path.join(repoRoot, "scripts/check-runtime-binding-final.mjs")
 const contributors = {
   bookings: "bookingsConfigurationRuntimePort",
   catalog: "createCatalogRuntime",
@@ -27,7 +27,7 @@ const contributors = {
 async function fixture(generatedArguments) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-runtime-binding-final-"))
   const files = {
-    "packages/operator-runtime/src/deployment-resources.ts": `
+    "packages/runtime/src/deployment-resources.ts": `
 return options.createRuntimePorts({
 ${generatedArguments}
 })

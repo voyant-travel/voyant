@@ -98,7 +98,7 @@ vi.mock("@voyant-travel/hono/observability/reporter", () => ({
   consoleReporter: () => ({}),
 }))
 
-vi.mock("@voyant-travel/runtime", () => ({
+vi.mock("@voyant-travel/runtime-core", () => ({
   createNodeServer: mocks.createNodeServer,
 }))
 
@@ -137,7 +137,7 @@ vi.mock("tsx/esm/api", () => ({
   }),
 }))
 
-import { loadOperatorProject, loadOperatorProjectWorkflowRuntime } from "./index.js"
+import { loadVoyantProject, loadVoyantProjectWorkflowRuntime } from "./index.js"
 
 const temporaryRoots: string[] = []
 
@@ -151,12 +151,12 @@ afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, { recursive: true })))
 })
 
-describe("Operator runtime composition", () => {
+describe("Voyant project runtime composition", () => {
   it("selects admin assets from the same generated artifact layout", async () => {
     const developmentRoot = await createGeneratedProject()
     await mkdir(path.join(developmentRoot, ".voyant/admin/client"), { recursive: true })
     await mkdir(path.join(developmentRoot, "dist/client"), { recursive: true })
-    await loadOperatorProject({
+    await loadVoyantProject({
       projectRoot: developmentRoot,
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
     })
@@ -167,7 +167,7 @@ describe("Operator runtime composition", () => {
     const distributionRoot = await createGeneratedProject([], "dist/.voyant")
     await mkdir(path.join(distributionRoot, ".voyant/admin/client"), { recursive: true })
     await mkdir(path.join(distributionRoot, "dist/client"), { recursive: true })
-    await loadOperatorProject({
+    await loadVoyantProject({
       projectRoot: distributionRoot,
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
     })
@@ -190,7 +190,7 @@ describe("Operator runtime composition", () => {
     )
     await mkdir(path.join(projectRoot, "dist/client"), { recursive: true })
 
-    const project = await loadOperatorProject({
+    const project = await loadVoyantProject({
       projectRoot,
       env: { DATABASE_URL: "postgres://example.invalid/voyant", NODE_ENV: "production" },
     })
@@ -212,7 +212,7 @@ describe("Operator runtime composition", () => {
     )
     await mkdir(path.join(projectRoot, "dist/client"), { recursive: true })
 
-    await loadOperatorProject({
+    await loadVoyantProject({
       projectRoot,
       env: { DATABASE_URL: "postgres://example.invalid/voyant", NODE_ENV: "production" },
     })
@@ -224,7 +224,7 @@ describe("Operator runtime composition", () => {
 
   it("rewrites persisted legacy media URLs before API dispatch", async () => {
     const projectRoot = await createGeneratedProject()
-    const project = await loadOperatorProject({
+    const project = await loadVoyantProject({
       projectRoot,
       adminAssetsDir: path.join(projectRoot, "admin"),
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
@@ -243,7 +243,7 @@ describe("Operator runtime composition", () => {
 
   it("provides the standard cloud email resolver to the auth runtime", async () => {
     const projectRoot = await createGeneratedProject()
-    await loadOperatorProject({
+    await loadVoyantProject({
       projectRoot,
       adminAssetsDir: path.join(projectRoot, "admin"),
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
@@ -256,7 +256,7 @@ describe("Operator runtime composition", () => {
 
   it("wires graph outbound webhooks through the neutral Node delivery helper", async () => {
     const projectRoot = await createGeneratedProject()
-    await loadOperatorProject({
+    await loadVoyantProject({
       projectRoot,
       adminAssetsDir: path.join(projectRoot, "admin"),
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
@@ -281,7 +281,7 @@ describe("Operator runtime composition", () => {
   it("passes graph runtime ports into scheduled package workflow composition", async () => {
     const artifactRoot = path.join(await createGeneratedProject(), ".voyant")
 
-    await loadOperatorProjectWorkflowRuntime({
+    await loadVoyantProjectWorkflowRuntime({
       projectRoot: path.dirname(artifactRoot),
       artifactRoot,
       runtime: mocks.nodeRuntime as never,
@@ -311,7 +311,7 @@ describe("Operator runtime composition", () => {
         workflowId: "catalog.reap-expired-booking-drafts",
       },
     ])
-    const project = await loadOperatorProject({
+    const project = await loadVoyantProject({
       projectRoot,
       adminAssetsDir: path.join(projectRoot, "admin"),
       env: { DATABASE_URL: "postgres://example.invalid/voyant" },
@@ -345,7 +345,7 @@ async function createGeneratedProject(
   scheduledJobs: readonly Readonly<Record<string, unknown>>[] = [],
   layout = ".voyant",
 ): Promise<string> {
-  const projectRoot = await mkdtemp(path.join(tmpdir(), "voyant-operator-runtime-"))
+  const projectRoot = await mkdtemp(path.join(tmpdir(), "voyant-runtime-"))
   temporaryRoots.push(projectRoot)
   const artifactRoot = path.join(projectRoot, layout)
   const runtimeDir = path.join(artifactRoot, "runtime")

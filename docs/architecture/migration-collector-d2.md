@@ -115,7 +115,7 @@ Validating the D.1 single-folder collapse (2026-06-20) surfaced that the replay-
 
 ## Graph deployments: custom module migrations (voyant#3069)
 
-A **source-free managed image** (`voyant-operator-runtime:<framework-version>`,
+A **source-free managed image** (`voyant-runtime:<framework-version>`,
 platform#953/#954) runs migrations with **no drizzle-kit generation** and no
 generated schema-path list — so `discoverMigrationSources` (which maps schema
 paths → package roots) doesn't apply. The managed booter instead knows only the

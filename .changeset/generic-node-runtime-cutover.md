@@ -1,6 +1,6 @@
 ---
 "@voyant-travel/framework": minor
-"@voyant-travel/operator-runtime": minor
+"@voyant-travel/runtime": minor
 ---
 
 Add the graph-native generic Node runtime API and boot generated project and

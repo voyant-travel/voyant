@@ -1,7 +1,7 @@
 ---
 "@voyant-travel/framework": patch
 "@voyant-travel/framework-migrations": patch
-"@voyant-travel/operator-runtime": patch
+"@voyant-travel/runtime": patch
 "@voyant-travel/relationships": patch
 ---
 

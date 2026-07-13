@@ -39,7 +39,7 @@
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
-    "@voyant-travel/runtime": "workspace:^",
+    "@voyant-travel/runtime-core": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
     "@voyant-travel/workflows-react": "workspace:^",

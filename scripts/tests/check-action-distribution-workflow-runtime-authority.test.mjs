@@ -14,7 +14,7 @@ const checker = path.join(
   "scripts/check-action-distribution-workflow-runtime-authority.mjs",
 )
 const fixturePaths = [
-  "packages/operator-runtime/src/deployment-resources.ts",
+  "packages/runtime/src/deployment-resources.ts",
   "packages/action-ledger/package.json",
   "packages/action-ledger/src/graph-runtime.ts",
   "packages/action-ledger/src/runtime-port.ts",

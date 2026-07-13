@@ -49,7 +49,7 @@ const factory = defineGraphRuntimeFactory(async ({ getPort }) => {
   }}
 })
 `,
-    "packages/operator-runtime/src/deployment-resources.ts": "const ports = {}\n",
+    "packages/runtime/src/deployment-resources.ts": "const ports = {}\n",
     ...overrides,
   }
   for (const [relativePath, source] of Object.entries(files)) {

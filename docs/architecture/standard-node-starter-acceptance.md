@@ -22,8 +22,8 @@ The gate requires:
 
 - `voyant.config.ts` contains only the Node deployment target and database
   provider choice; it contains no standard modules, extensions, or plugins.
-- `package.json` delegates startup to the generic `voyant-operator start`
-  bootstrap and names only the CLI, framework, and Operator runtime as Voyant
+- `package.json` delegates startup to the generic `voyant start` bootstrap and
+  names only the CLI, framework, standard product distribution, and runtime as Voyant
   dependencies.
 - no package-owned OpenAPI documents, migrations, links, subscribers, jobs,
   workflows, admin entries, or API routes are copied into the project.

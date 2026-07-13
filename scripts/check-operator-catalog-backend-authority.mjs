@@ -14,7 +14,7 @@ for (const relativePath of [
   }
 }
 
-const packageRuntimePath = "packages/catalog/src/operator-runtime.ts"
+const packageRuntimePath = "packages/catalog/src/runtime-support.ts"
 const packageRuntime = readFileSync(resolve(root, packageRuntimePath), "utf8")
 for (const authority of [
   "buildCatalogSlices",

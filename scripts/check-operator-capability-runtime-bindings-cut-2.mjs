@@ -17,7 +17,7 @@ const packageRequirements = {
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
-  read("packages/operator-runtime/src/deployment-resources.ts"),
+  read("packages/runtime/src/deployment-resources.ts"),
   ...Object.keys(packageRequirements).map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
@@ -37,8 +37,8 @@ const explicitBindings = [
   "realtime",
 ]
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 
 for (const binding of explicitBindings) {

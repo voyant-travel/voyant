@@ -59,7 +59,6 @@ import {
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   notificationsRuntimePort,
 } from "@voyant-travel/notifications"
-import { createOperatorDeploymentResources } from "@voyant-travel/operator-runtime/deployment-resources"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
@@ -67,6 +66,7 @@ import {
 } from "@voyant-travel/quotes"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
+import { createVoyantDeploymentResources } from "@voyant-travel/runtime/deployment-resources"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import {
   storefrontBookingIntentsRuntimePort,
@@ -96,7 +96,7 @@ const createDeploymentResources = () => {
     env,
     deliverEvent: async () => undefined,
   })
-  return createOperatorDeploymentResources({
+  return createVoyantDeploymentResources({
     primitives,
     createRuntimePorts: createGeneratedGraphRuntimePorts,
   })

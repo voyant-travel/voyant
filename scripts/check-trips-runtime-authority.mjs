@@ -12,11 +12,11 @@ const pathOption = (name, fallback) => {
 }
 const compositionPath = pathOption(
   "--composition",
-  join(ROOT, "packages/operator-runtime/src/deployment-resources.ts"),
+  join(ROOT, "packages/runtime/src/deployment-resources.ts"),
 )
 const retiredAdapterPath = pathOption(
   "--retired-adapter",
-  join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  join(ROOT, "starters/operator/src/api/runtime/runtime-adapter.ts"),
 )
 const tripsRoot = pathOption("--trips-root", join(ROOT, "packages/trips"))
 const violations = []
@@ -38,7 +38,7 @@ const runtime = readRequired(join(tripsRoot, "src/runtime.ts"))
 const composition = readRequired(compositionPath)
 
 if (existsSync(retiredAdapterPath)) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 
 if (

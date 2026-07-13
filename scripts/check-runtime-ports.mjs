@@ -9,7 +9,7 @@ function argument(name, fallback) {
 
 const operatorRoot = argument("--operator-root", "starters/operator")
 const frameworkRoot = argument("--framework-root", "packages/framework")
-const runtimeRoot = argument("--runtime-root", "packages/operator-runtime")
+const runtimeRoot = argument("--runtime-root", "packages/runtime")
 const compositionPath = path.join(operatorRoot, "src/api/composition.ts")
 const retiredResourcesPath = path.join(operatorRoot, "src/api/runtime/deployment-resources.ts")
 const appPath = path.join(operatorRoot, "src/api/app.ts")
@@ -55,8 +55,8 @@ if (existsSync(compositionPath)) {
 if (existsSync(retiredResourcesPath)) {
   violations.push("starters/operator/src/api/runtime/deployment-resources.ts must stay deleted")
 }
-if (!resources.includes("export function createOperatorDeploymentResources")) {
-  violations.push("operator-runtime must expose one graph deployment resource factory")
+if (!resources.includes("export function createVoyantDeploymentResources")) {
+  violations.push("runtime must expose one graph deployment resource factory")
 }
 for (const legacyExport of [
   "export function buildOperatorProviders",
@@ -84,11 +84,11 @@ if (app && !app.includes("createGeneratedGraphRuntimePorts")) {
 if (
   !app &&
   runtime &&
-  (!runtime.includes("createOperatorDeploymentResources") ||
+  (!runtime.includes("createVoyantDeploymentResources") ||
     !runtime.includes("runtimePorts: deploymentResources.ports") ||
     !resources.includes("options.createRuntimePorts({ primitives })"))
 ) {
-  violations.push("operator-runtime must inject statically generated runtime ports")
+  violations.push("runtime must inject statically generated runtime ports")
 }
 for (const port of migratedPorts) {
   if (app.includes(port)) violations.push(`Operator app must not own ${port}`)
@@ -107,9 +107,9 @@ if (existsSync(path.join(frameworkRoot, "src/composition-lazy.ts"))) {
 }
 
 if (violations.length > 0) {
-  throw new Error(`check-operator-runtime-ports:\n- ${violations.join("\n- ")}`)
+  throw new Error(`check-runtime-ports:\n- ${violations.join("\n- ")}`)
 }
 
 console.log(
-  `check-operator-runtime-ports: OK (0 product runtime-port entries in app composition; ${migratedPorts.length} resources are behind the deployment boundary)`,
+  `check-runtime-ports: OK (0 product runtime-port entries in app composition; ${migratedPorts.length} resources are behind the deployment boundary)`,
 )

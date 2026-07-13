@@ -366,7 +366,7 @@ Acceptance:
 
 ### PR 11: operator runtime adapter wiring
 
-Branch: `tc/11-operator-runtime-adapters`
+Branch: `tc/11-runtime-adapters`
 
 Scope:
 

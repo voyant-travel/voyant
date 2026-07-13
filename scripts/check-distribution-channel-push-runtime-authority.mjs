@@ -14,7 +14,7 @@ const distributionRoot = pathOption("--distribution-root", join(ROOT, "packages/
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
 const compositionPath = pathOption(
   "--composition",
-  join(ROOT, "packages/operator-runtime/src/deployment-resources.ts"),
+  join(ROOT, "packages/runtime/src/deployment-resources.ts"),
 )
 const deploymentGraphCheckerPath = pathOption(
   "--deployment-graph-checker",
@@ -46,8 +46,8 @@ const workflowServices = existsSync(workflowServicesPath)
   : ""
 const deploymentGraphChecker = readRequired(deploymentGraphCheckerPath)
 
-if (existsSync(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(join(operatorRoot, "src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 
 if (

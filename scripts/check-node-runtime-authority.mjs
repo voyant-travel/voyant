@@ -1,12 +1,36 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
 const root = process.cwd()
-const operatorRuntime = await read("packages/operator-runtime/src/index.ts")
+const operatorRuntime = await read("packages/runtime/src/index.ts")
 const nodeRuntime = await read("packages/framework/src/node-runtime.ts")
 const deploymentArtifacts = await read("packages/framework/src/deployment-artifacts.ts")
 const frameworkPackage = JSON.parse(await read("packages/framework/package.json"))
+const runtimePackage = JSON.parse(await read("packages/runtime/package.json"))
+const runtimeCorePackage = JSON.parse(await read("packages/runtime-core/package.json"))
 const violations = []
+
+if (existsSync(path.join(root, "packages/operator-runtime"))) {
+  violations.push("the retired packages/operator-runtime directory must stay deleted")
+}
+if (runtimePackage.name !== "@voyant-travel/runtime") {
+  violations.push("packages/runtime must be the public @voyant-travel/runtime host")
+}
+if (runtimeCorePackage.name !== "@voyant-travel/runtime-core") {
+  violations.push("packages/runtime-core must own low-level runtime primitives")
+}
+if (runtimePackage.dependencies?.["@voyant-travel/runtime-core"] !== "workspace:^") {
+  violations.push("the public runtime host must depend on runtime-core")
+}
+if (runtimePackage.bin || runtimePackage.publishConfig?.bin) {
+  violations.push("the runtime package must not publish a CLI binary")
+}
+for (const retiredCliSource of ["cli.ts", "cli-arguments.ts", "cli-arguments.test.ts"]) {
+  if (existsSync(path.join(root, "packages/runtime/src", retiredCliSource))) {
+    violations.push(`runtime CLI source must stay deleted: ${retiredCliSource}`)
+  }
+}
 
 for (const forbidden of [
   "voyant.managed-profile.v1",
@@ -15,27 +39,25 @@ for (const forbidden of [
   "loadManagedProfileRuntime",
 ]) {
   if (operatorRuntime.includes(forbidden)) {
-    violations.push(`operator-runtime must not contain compatibility runtime token ${forbidden}`)
+    violations.push(`runtime must not contain compatibility runtime token ${forbidden}`)
   }
 }
 
 for (const required of [
   "@voyant-travel/framework/node-runtime",
   "createVoyantNodeRuntimeHostPrimitives",
-  "createOperatorDeploymentResources",
+  "createVoyantDeploymentResources",
   "loadVoyantNodeRuntime",
   "deploymentRequirements: graph.requirements",
   "runtimePorts: deploymentResources.ports",
   "outboundWebhooks: deploymentResources.outboundWebhooks",
 ]) {
   if (!operatorRuntime.includes(required)) {
-    violations.push(
-      `operator-runtime must consume graph-native Node runtime authority: ${required}`,
-    )
+    violations.push(`runtime must consume graph-native Node runtime authority: ${required}`)
   }
 }
 if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {
-  violations.push("operator-runtime must not boot selected package routes with runtime port stubs")
+  violations.push("runtime must not boot selected package routes with runtime port stubs")
 }
 
 for (const required of [

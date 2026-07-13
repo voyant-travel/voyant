@@ -30,7 +30,7 @@ const ports = {
     "packages/operator-standard/src/index.ts": `
 const extensions = [{ resolve: "@voyant-travel/legal/booking-contract-extension" }]
 `,
-    "packages/operator-runtime/src/deployment-resources.ts": "const ports = {}\n",
+    "packages/runtime/src/deployment-resources.ts": "const ports = {}\n",
     "starters/operator/voyant.config.ts": "export default defineConfig({})\n",
     ...overrides,
   }
@@ -81,7 +81,7 @@ legalBookingContractConfirmedSubscriber.register(context)
 
   it("rejects a package-id-specific Operator Legal binding", async () => {
     const root = await createFixture({
-      "packages/operator-runtime/src/deployment-resources.ts": `
+      "packages/runtime/src/deployment-resources.ts": `
 const ports = {}
 const bindings = { "@voyant-travel/legal": createLegalHonoModule }
 `,

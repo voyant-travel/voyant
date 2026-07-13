@@ -1,5 +1,5 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { withActiveRouteSsrManifest } from "@voyant-travel/runtime"
+import { withActiveRouteSsrManifest } from "@voyant-travel/runtime-core"
 import type { ExecutionContext } from "hono"
 
 /** The SSR request handler produced by {@link createAdminSsrHandler}. */

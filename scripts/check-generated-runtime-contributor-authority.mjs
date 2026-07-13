@@ -44,8 +44,8 @@ const [
   bomGenerator,
   ...packageJsonSources
 ] = await Promise.all([
-  read("packages/operator-runtime/src/deployment-resources.ts"),
-  read("packages/operator-runtime/src/index.ts"),
+  read("packages/runtime/src/deployment-resources.ts"),
+  read("packages/runtime/src/index.ts"),
   read("packages/framework/src/deployment-artifacts.ts"),
   read("packages/framework/src/runtime-composition.ts"),
   read("packages/framework/src/project-resolver.ts"),
@@ -57,8 +57,8 @@ const [
 ])
 
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 for (const retiredPath of [
   "release.runtime-packages.generated.json",

@@ -633,7 +633,7 @@ their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract. The Operator application does
 not expose or assemble that bridge: it passes the generated runtime one opaque
-deployment-resource object created by `@voyant-travel/operator-runtime`. The
+deployment-resource object created by `@voyant-travel/runtime`. The
 project injects only its concrete Node database, storage, configuration, event,
 and generated runtime-port adapters; the stable resource shape remains
 package-owned. Package selection and route ordering remain graph-derived.

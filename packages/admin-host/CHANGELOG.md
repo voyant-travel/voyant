@@ -5,7 +5,7 @@
 ### Patch Changes
 
 - Updated dependencies [e232b21]
-  - @voyant-travel/runtime@0.5.0
+  - @voyant-travel/runtime-core@0.5.0
 
 ## 0.2.0
 

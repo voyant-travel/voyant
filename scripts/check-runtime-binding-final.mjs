@@ -24,15 +24,15 @@ const contributorRequirements = {
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
-  read("packages/operator-runtime/src/deployment-resources.ts"),
+  read("packages/runtime/src/deployment-resources.ts"),
   ...Object.keys(contributorRequirements).map((packageName) =>
     read(`packages/${packageName}/src/runtime-contributor.ts`),
   ),
 ])
 
 const violations = []
-if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
-  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
 const generatedCall = deploymentResources.match(/options\.createRuntimePorts\(\{([^}]*)\}\)/)?.[1]
 if (!generatedCall) {
@@ -63,9 +63,9 @@ if (generatedCall?.includes("workflowRunnerRegistry,")) {
   violations.push("workflowRunnerRegistry must not be a generated runtime argument key")
 }
 if (violations.length > 0) {
-  throw new Error(`check-operator-runtime-binding-final:\n- ${violations.join("\n- ")}`)
+  throw new Error(`check-runtime-binding-final:\n- ${violations.join("\n- ")}`)
 }
 
 console.log(
-  `check-operator-runtime-binding-final: OK (${Object.keys(contributorRequirements).length} package-owned runtime families; 0 legacy capability families)`,
+  `check-runtime-binding-final: OK (${Object.keys(contributorRequirements).length} package-owned runtime families; 0 legacy capability families)`,
 )

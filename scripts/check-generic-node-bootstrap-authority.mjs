@@ -8,7 +8,7 @@ const violations = []
 const retiredAdapters = [
   "starters/operator/src/api/app.ts",
   "starters/operator/src/api/auth/handler.ts",
-  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  "starters/operator/src/api/runtime/runtime-adapter.ts",
 ]
 const frameworkFiles = [
   "packages/framework/src/node-deployment-artifacts.ts",
@@ -41,8 +41,8 @@ requireText(frameworkPackage, '"./node-host": "./src/node-host.ts"', "framework 
 requireText(frameworkPackage, '"./node-host"', "framework publish exports")
 
 const server = read("starters/operator/src/server.ts")
-requireText(server, 'from "@voyant-travel/operator-runtime"', "Operator Node server")
-requireText(server, "createOperatorProjectServerEntry", "Operator Node server")
+requireText(server, 'from "@voyant-travel/runtime"', "Operator Node server")
+requireText(server, "createVoyantProjectServerEntry", "Operator Node server")
 if (server.split("\n").length > 16)
   violations.push("Operator Node server exceeds 16-line bootstrap budget")
 for (const forbidden of [

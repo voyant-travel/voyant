@@ -1,3 +1,8 @@
+// agent-quality: file-size exception -- owner: catalog; this package rename preserves the
+// existing runtime-support facade without mixing in a behavior-changing decomposition.
+
+import type { PackageOffer } from "@voyant-travel/connect-sdk"
+
 import type { SourceAdapterContext } from "./adapter/contract.js"
 import type {
   BookEntityResult,
@@ -553,7 +558,7 @@ export function createCatalogPackageHoldPreparer(options: {
   lock(input: {
     context: unknown
     connectionId: string
-    offer: Record<string, unknown>
+    offer: PackageOffer
   }): Promise<string | null>
 }) {
   return async ({
@@ -580,7 +585,7 @@ export function createCatalogPackageHoldPreparer(options: {
 
 function isPackageOffer(
   offer: Record<string, unknown> | undefined,
-): offer is Record<string, unknown> {
+): offer is Record<string, unknown> & PackageOffer {
   return Boolean(
     offer &&
       stringValue(offer.id) &&

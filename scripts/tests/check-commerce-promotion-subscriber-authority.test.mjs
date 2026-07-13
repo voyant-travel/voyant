@@ -57,7 +57,7 @@ promotionsBulkReindex: {
   },
 },
 `,
-    "packages/operator-runtime/src/deployment-resources.ts": "",
+    "packages/runtime/src/deployment-resources.ts": "",
     ...overrides,
   }
 
