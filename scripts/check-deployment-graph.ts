@@ -18,7 +18,6 @@ import {
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
-import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
 import {
   type OperatorAuthoredProject,
@@ -60,14 +59,12 @@ async function main(): Promise<void> {
     projectRoot: operatorRoot,
     repoRoot,
     frameworkVersion: frameworkPackage.version,
-    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
   })
   const repeatedOperator = await resolveOperatorDeploymentGraph({
     project: authoredOperatorProject,
     projectRoot: operatorRoot,
     repoRoot,
     frameworkVersion: frameworkPackage.version,
-    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
   })
   const first = resolvedOperator.graph
   const second = repeatedOperator.graph
@@ -348,6 +345,8 @@ async function main(): Promise<void> {
     failures.push("expected starters/operator/.gitignore to ignore .voyant/")
   }
   for (const [ownerId, workflowId] of [
+    ["@voyant-travel/catalog", "catalog.reap-expired-booking-drafts"],
+    ["@voyant-travel/commerce", "commerce.process-promotion-boundaries"],
     ["@voyant-travel/bookings", "bookings.expire-stale-holds"],
     ["@voyant-travel/notifications", "notifications.send-due-reminders"],
   ] as const) {
