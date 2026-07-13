@@ -21,7 +21,6 @@ import {
   type ResolvedProjectArtifacts,
   runtimeReferencePackageNames,
 } from "../../packages/framework/src/project-resolver.ts"
-import type { VoyantScheduledJob } from "../../packages/framework/src/scheduled-jobs.ts"
 import { readPnpmLockfilePackageRecords } from "./deployment-graph-provenance.mjs"
 import { loadVoyantPackageManifests } from "./load-voyant-package-manifests.ts"
 
@@ -45,7 +44,6 @@ interface ResolveOperatorDeploymentGraphOptions {
   projectRoot: string
   repoRoot: string
   frameworkVersion: string
-  scheduledJobs?: readonly VoyantScheduledJob[]
 }
 
 export const OPERATOR_GRAPH_ADMISSION_POLICY = {
@@ -118,7 +116,6 @@ export async function resolveOperatorDeploymentGraph(
   const graphInput = {
     project: resolved.project,
     deployment: resolved.deployment,
-    scheduledJobs: options.scheduledJobs,
     frameworkVersion: options.frameworkVersion,
     target: resolved.deployment.target,
     mode: resolved.deployment.mode,

@@ -36,8 +36,9 @@ selected package records and each package's `voyant.package.v1` metadata.
 
 ## Exports
 
-- `@voyant-travel/framework/scheduled-jobs` - graph-neutral standard scheduled
-  job declarations.
+- `@voyant-travel/framework/scheduled-jobs` - graph-neutral scheduled-job
+  contract and Node trigger route. Product schedules are declared by their
+  owning package manifests.
 - `@voyant-travel/framework/deployment-graph` — v1 project/deployment graph
   declarations, resolver diagnostics, and deterministic resolved graph hashing.
 - `@voyant-travel/framework/deployment-artifacts` — pure lowering helpers that

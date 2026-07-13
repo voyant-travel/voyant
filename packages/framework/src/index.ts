@@ -165,7 +165,6 @@ export {
 } from "./runtime-values.js"
 export {
   SCHEDULED_JOB_ROUTE,
-  STANDARD_OPERATOR_SCHEDULED_JOBS,
   type VoyantScheduledJob,
 } from "./scheduled-jobs.js"
 export {
