@@ -22,16 +22,29 @@ describe("production project start", () => {
     const handle = {} as NodeServerHandle
     const builtStart = vi.fn(async () => handle)
     const loadProject = vi.fn()
+    const env = { NODE_ENV: "production" }
+    const host = { config: { custom: true } }
 
     await expect(
       startVoyantProjectWithDependencies(
-        { port: 4400, preferBuiltAdminAssets: true, projectRoot: "/workspace/operator" },
+        {
+          adminAssetsDir: "/workspace/operator/dist/client",
+          env,
+          host,
+          port: 4400,
+          preferBuiltAdminAssets: true,
+          projectRoot: "/workspace/operator",
+        },
         { loadBuiltStart: vi.fn(async () => builtStart), loadProject },
       ),
     ).resolves.toBe(handle)
 
     expect(builtStart).toHaveBeenCalledWith({
+      adminAssetsDir: "/workspace/operator/dist/client",
+      env,
+      host,
       port: 4400,
+      preferBuiltAdminAssets: true,
       projectRoot: "/workspace/operator",
     })
     expect(loadProject).not.toHaveBeenCalled()

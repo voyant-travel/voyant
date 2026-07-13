@@ -264,14 +264,19 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
   if (!(await pathExists(authoredServerEntry))) {
     await writeGeneratedFile(
       bootstrap.serverEntry,
-      `import { createVoyantProjectServerEntry } from "@voyant-travel/runtime"
+      `import {
+  createVoyantProjectServerEntry,
+  type LoadVoyantProjectOptions,
+} from "@voyant-travel/runtime"
 
 const server = createVoyantProjectServerEntry()
 
 export default {
   fetch: server.fetch,
-  start: (options: { port?: number; projectRoot?: string } = {}) =>
-    createVoyantProjectServerEntry({ projectRoot: options.projectRoot }).start({ port: options.port }),
+  start: (options: LoadVoyantProjectOptions & { port?: number } = {}) => {
+    const { port, ...projectOptions } = options
+    return createVoyantProjectServerEntry(projectOptions).start({ port })
+  },
 }
 `,
     )

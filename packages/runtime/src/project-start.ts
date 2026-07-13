@@ -16,13 +16,12 @@ interface ProjectHost {
   start(options?: { port?: number }): NodeServerHandle
 }
 
-export type BuiltProjectStart = (options: {
-  port?: number
-  projectRoot: string
-}) => Promise<NodeServerHandle>
+export type BuiltProjectStart<TOptions extends ProjectStartOptions = ProjectStartOptions> = (
+  options: TOptions & { projectRoot: string },
+) => Promise<NodeServerHandle>
 
 export interface ProjectStartDependencies<TOptions extends ProjectStartOptions> {
-  loadBuiltStart(projectRoot: string): Promise<BuiltProjectStart | undefined>
+  loadBuiltStart(projectRoot: string): Promise<BuiltProjectStart<TOptions> | undefined>
   loadProject(options: TOptions & { projectRoot: string }): Promise<ProjectHost>
 }
 
@@ -33,16 +32,16 @@ export async function startVoyantProjectWithDependencies<TOptions extends Projec
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   if (options.preferBuiltAdminAssets) {
     const builtStart = await dependencies.loadBuiltStart(projectRoot)
-    if (builtStart) return builtStart({ port: options.port, projectRoot })
+    if (builtStart) return builtStart({ ...options, projectRoot })
   }
 
   const host = await dependencies.loadProject({ ...options, projectRoot })
   return host.start({ port: options.port })
 }
 
-export async function loadBuiltProjectStart(
+export async function loadBuiltProjectStart<TOptions extends ProjectStartOptions>(
   projectRoot: string,
-): Promise<BuiltProjectStart | undefined> {
+): Promise<BuiltProjectStart<TOptions> | undefined> {
   const entry = path.join(projectRoot, BUILT_SERVER_ENTRY)
   try {
     await access(entry)
@@ -51,7 +50,7 @@ export async function loadBuiltProjectStart(
   }
 
   const namespace = (await import(pathToFileURL(entry).href)) as {
-    default?: { start?: BuiltProjectStart }
+    default?: { start?: BuiltProjectStart<TOptions> }
   }
   return typeof namespace.default?.start === "function"
     ? namespace.default.start.bind(namespace.default)

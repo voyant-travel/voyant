@@ -232,7 +232,7 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
       stylesEntry: path.join(projectRoot, ".voyant/app/styles.css"),
     })
     await expect(readText(bootstrap.serverEntry)).resolves.toContain(
-      "createVoyantProjectServerEntry({ projectRoot: options.projectRoot }).start",
+      "createVoyantProjectServerEntry(projectOptions).start",
     )
     await expect(readText(bootstrap.routerEntry!)).resolves.toContain(
       'from "@acme/operator/standard-frontend"',
