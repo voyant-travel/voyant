@@ -1,4 +1,4 @@
-import type { OperatorAuthNodeEnv } from "@voyant-travel/auth/operator-node-runtime"
+import type { OperatorAuthNodeEnv } from "@voyant-travel/auth/node-runtime"
 import type { VoyantNodeRuntimeEnv } from "@voyant-travel/framework/node-runtime"
 
 export function requireVoyantAuthEnv(env: VoyantNodeRuntimeEnv): OperatorAuthNodeEnv {
