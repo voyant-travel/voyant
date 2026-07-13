@@ -86,7 +86,7 @@ test("minimal starter installs, builds, and boots the Node host", {
     )
     exec("pnpm", ["build"], app)
     assert.ok(existsSync(join(app, "dist/client")))
-    assert.ok(existsSync(join(app, "dist/server")))
+    assert.ok(existsSync(join(app, "dist/server/server.js")))
     assert.ok(existsSync(join(app, "dist/.voyant/deployment-graph.generated.json")))
     assert.ok(existsSync(join(app, "dist/server/.voyant/deployment-graph.generated.json")))
 
