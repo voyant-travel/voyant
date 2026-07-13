@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
-import * as workflows from "../index.js"
 import * as workflowConfig from "../config.js"
+import * as workflows from "../index.js"
 
 interface ConditionalExport {
   types: string
