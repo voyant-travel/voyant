@@ -499,6 +499,12 @@ are reproducible outputs and are never application-authored source-of-truth
 files. A contributor adding a package-owned facet should be able to test it from
 the package and select it from a project without changing `starters/operator`.
 
+The standard Operator frontend follows the same rule. Auth, storefront,
+workspace, payment, accountant, and proposal behavior is package-owned; its
+TanStack file-route registrations and `routeTree.gen.ts` are generated under
+`.voyant/`. The checked-in starter must not copy those standard routes into
+`src/routes`.
+
 ## Foundational V1 Substrate
 
 The first implementation intentionally includes only facets that map to current

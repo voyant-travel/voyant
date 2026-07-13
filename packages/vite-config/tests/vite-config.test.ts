@@ -1,7 +1,12 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { pathToFileURL } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   VOYANT_SSR_OPTIMIZE_DEPS,
+  voyantGeneratedRoutes,
   voyantStartViteConfig,
   voyantVendorChunk,
 } from "../src/index.js"
@@ -47,6 +52,41 @@ describe("voyantVendorChunk", () => {
   })
 })
 
+describe("voyantGeneratedRoutes", () => {
+  it("writes package-owned route files under the ignored graph directory", () => {
+    const root = mkdtempSync(join(tmpdir(), "voyant-routes-"))
+    try {
+      const generated = voyantGeneratedRoutes({
+        appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+        files: [{ path: "(auth)/sign-in.tsx", source: "export const Route = true" }],
+      })
+
+      expect(generated.routesDirectory).toBe(join(root, ".voyant/routes"))
+      expect(generated.generatedRouteTree).toBe(join(root, ".voyant/routeTree.gen.ts"))
+      expect(readFileSync(join(generated.routesDirectory, "(auth)/sign-in.tsx"), "utf8")).toBe(
+        "export const Route = true\n",
+      )
+      expect(existsSync(join(root, "src/routes"))).toBe(false)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it("rejects route paths that can escape the generated directory", () => {
+    const root = mkdtempSync(join(tmpdir(), "voyant-routes-"))
+    try {
+      expect(() =>
+        voyantGeneratedRoutes({
+          appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+          files: [{ path: "../route.tsx", source: "" }],
+        }),
+      ).toThrow("Invalid generated route path")
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})
+
 describe("voyantStartViteConfig", () => {
   const base = {
     appRootUrl: "file:///repo/starters/operator/vite.config.ts",
@@ -80,6 +120,12 @@ describe("voyantStartViteConfig", () => {
     const include = config.ssr?.optimizeDeps?.include ?? []
 
     expect(include).toEqual([...VOYANT_SSR_OPTIMIZE_DEPS, "my-lib"])
+  })
+
+  it("does not force optional state libraries into every app", () => {
+    expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("zustand")
+    expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("zustand/react/shallow")
+    expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("immer")
   })
 
   it("allows dev tunnel hosts by default and supports an explicit host list", () => {
