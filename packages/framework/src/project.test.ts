@@ -131,7 +131,8 @@ describe("framework project resolver", () => {
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
       "access/selected-access-catalog.generated.ts",
       "admin/project-admin.generated.ts",
-      "admin/selected-graph-admin.generated.ts",
+      "admin/selected-graph-admin.generated.d.ts",
+      "admin/selected-graph-admin.generated.js",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
@@ -142,7 +143,7 @@ describe("framework project resolver", () => {
       "runtime/project-workflows.generated.ts",
     ])
     expect(
-      first.artifacts.files.find((file) => file.path === "admin/selected-graph-admin.generated.ts")
+      first.artifacts.files.find((file) => file.path === "admin/selected-graph-admin.generated.js")
         ?.contents,
     ).toContain("selectedGraphAdminExtensionFactories")
     const runtimeSource = first.artifacts.files.find(

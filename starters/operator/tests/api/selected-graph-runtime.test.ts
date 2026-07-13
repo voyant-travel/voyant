@@ -88,7 +88,7 @@ import {
   GENERATED_GRAPH_RUNTIME_EXTENSION_IDS,
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
-} from "../../.voyant/runtime/project-runtime.generated"
+} from "./generated-project-runtime.js"
 
 const createDeploymentResources = () => {
   const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })

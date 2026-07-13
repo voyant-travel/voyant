@@ -874,7 +874,7 @@ including Bookings, Catalog, and Inventory:
 
 - the package manifest opts its import-cheap admin extension factory into
   `admin.runtime` and retains its stable route declarations
-- project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
+- project resolution emits `.voyant/admin/selected-graph-admin.generated.js` with a bounded adjacent declaration facade
   from only selected units with `admin.runtime`; package page modules remain
   behind the lazy imports owned by the UI export
 - each selected package adapter owns its Operator nav-copy keys and icons and
@@ -1432,6 +1432,13 @@ The graph keeps the project-relative runtime entry while generated code receives
 a resolver-private relative import. The operator resolver adapter requires
 `resolveProject({ project, projectRoot, configPath })` and then adds target
 admission, lockfile provenance, and runtime-maintenance schedules.
+
+Statically selected runtime contributors share one bounded framework host
+contract: runtime host primitives plus runtime-port resolution. Generated source
+checks every contributor against that contract directly; it must not infer a
+product-wide intersection from package function parameters. Package-specific
+host capabilities belong behind declared runtime ports rather than in the
+application bootstrap type.
 
 The same resolver compiles `src/api/{admin,public}/**/route.ts` into individual
 graph API facets backed by one generated static Hono adapter, and compiles

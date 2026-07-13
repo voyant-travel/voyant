@@ -31,7 +31,7 @@ const EXTENSIONS = optionPath(
 )
 const BUNDLE = optionPath(
   "--bundle",
-  join(ROOT, "starters/operator/.voyant/admin/selected-graph-admin.generated.ts"),
+  join(ROOT, "starters/operator/.voyant/admin/selected-graph-admin.generated.js"),
 )
 const PRESENTATION = optionPath(
   "--presentation",
@@ -312,7 +312,7 @@ for (const name of bundled) {
   const runtimeEntry = bundledRuntimeEntries.get(name)
   if (!runtimeEntry || !bundleContainsRuntimeEntry(BUNDLE, runtimeEntry)) {
     violations.push(
-      `${name} declares admin.runtime entry ${runtimeEntry ?? "<missing>"} but it is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
+      `${name} declares admin.runtime entry ${runtimeEntry ?? "<missing>"} but it is missing from selected-graph-admin.generated.js — refresh the selected graph artifacts`,
     )
   }
   if (presentationSelectedFactories.has(name)) {
@@ -346,7 +346,7 @@ for (const packageName of actualBundlePackages) {
     )
   ) {
     violations.push(
-      `selected-graph-admin.generated.ts wires ${packageName} without a selected admin.runtime declaration`,
+      `selected-graph-admin.generated.js wires ${packageName} without a selected admin.runtime declaration`,
     )
   }
 }

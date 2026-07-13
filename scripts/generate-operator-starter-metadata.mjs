@@ -12,10 +12,12 @@ export const OPERATOR_GENERATED_METADATA_FILES = [
   "env.d.ts",
   "tsconfig.client.json",
   "tsconfig.server.json",
+  "tsconfig.tests-smoke.json",
   "vite.config.ts",
   "vitest.config.ts",
 ]
 const RETIRED_OPERATOR_GENERATED_FILES = [
+  "admin/selected-graph-admin.generated.ts",
   "runtime-entry.generated.ts",
   "runtime/graph-runtime.generated.ts",
 ]
@@ -41,16 +43,7 @@ export function buildOperatorStarterMetadata(root = repoRoot) {
     noFallthroughCasesInSwitch: true,
     noUncheckedSideEffectImports: true,
   }
-  const serverFiles = [
-    "entry.ts",
-    "start.ts",
-    "scheduled-crons.ts",
-    "workflow-runtime.ts",
-    "hono-api-dispatch.ts",
-    "hono-api-dispatch.test.ts",
-    "workflow-runtime-bundle.test.ts",
-    "workflow-runtime.test.ts",
-  ]
+  const serverFiles = ["server.ts", "start.ts"]
 
   return new Map([
     [
@@ -63,7 +56,13 @@ type AppBindings = import("@voyant-travel/framework/node-runtime").VoyantNodeRun
       "tsconfig.client.json",
       json({
         compilerOptions: { ...baseCompilerOptions, paths },
-        include: ["../src/**/*.tsx", "../src/**/*.ts", "./**/*.ts", "./**/*.tsx"],
+        include: [
+          "../src/**/*.tsx",
+          "../src/**/*.ts",
+          "../tests/selected-graph-*-admin.test.ts",
+          "./**/*.ts",
+          "./**/*.tsx",
+        ],
         exclude: [
           "../node_modules",
           "../src/api/**",
@@ -83,13 +82,13 @@ type AppBindings = import("@voyant-travel/framework/node-runtime").VoyantNodeRun
         compilerOptions: { ...baseCompilerOptions, paths },
         include: [
           ...serverFiles.map((file) => `../src/${file}`),
-          "../tests/**/*.ts",
           "../src/api/**/*.ts",
           "../src/modules/**/*.ts",
           "../src/links/**/*.ts",
           "../src/extensions/**/*.ts",
           "../src/custom-fields/**/*.ts",
-          "./**/*.ts",
+          "./vite.config.ts",
+          "./vitest.config.ts",
         ],
         exclude: [
           "../node_modules",
@@ -103,7 +102,21 @@ type AppBindings = import("@voyant-travel/framework/node-runtime").VoyantNodeRun
           "./routes/**",
           "./routeTree.gen.ts",
           "./admin/**",
+          "./runtime/**",
         ],
+      }),
+    ],
+    [
+      "tsconfig.tests-smoke.json",
+      json({
+        compilerOptions: { ...baseCompilerOptions, paths },
+        include: [
+          "../tests/api/action-ledger-schema-mount.test.ts",
+          "../tests/api/operator-route-mounting.test.ts",
+          "../tests/api/selected-catalog-runtime.test.ts",
+          "../tests/voyant.config.test.ts",
+        ],
+        exclude: ["../node_modules", "./runtime/**"],
       }),
     ],
     ["vite.config.ts", viteConfigSource()],

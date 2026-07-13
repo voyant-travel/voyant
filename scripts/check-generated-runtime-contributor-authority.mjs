@@ -39,6 +39,7 @@ const [
   deploymentResources,
   operatorRuntime,
   generator,
+  runtimeComposition,
   resolver,
   bomGenerator,
   ...packageJsonSources
@@ -46,6 +47,7 @@ const [
   read("packages/operator-runtime/src/deployment-resources.ts"),
   read("packages/operator-runtime/src/index.ts"),
   read("packages/framework/src/deployment-artifacts.ts"),
+  read("packages/framework/src/runtime-composition.ts"),
   read("packages/framework/src/project-resolver.ts"),
   read("scripts/generate-standard-product-distribution.mjs"),
   ...Object.keys(packageFactories).map((packageName) => {
@@ -96,7 +98,7 @@ for (const required of [
   "GENERATED_GRAPH_RUNTIME_CONTRIBUTORS",
   "GENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS",
   "GeneratedGraphRuntimeContributorHost",
-  "Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_",
+  "const GENERATED_GRAPH_RUNTIME_CONTRIBUTORS: readonly VoyantGraphRuntimeContributor[]",
   "createGeneratedGraphRuntimePorts",
   "record.metadata?.runtime",
   "input.runtimeEntryOverrides?.[entry]",
@@ -110,6 +112,20 @@ for (const required of [
   if (!generator.includes(required)) {
     violations.push(`graph runtime generator must contain ${required}`)
   }
+}
+if (!/GENERATED_RUNTIME_CONTRIBUTOR_\$\{index\},/.test(generator)) {
+  violations.push("generated contributors must enter the typed array directly")
+}
+if (/Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_|asRuntimeContributor/.test(generator)) {
+  violations.push("generated contributor composition must not infer a product-wide host type")
+}
+if (
+  !runtimeComposition.includes(
+    "interface VoyantGraphRuntimeContributorHost extends VoyantGraphRuntimePortResolver",
+  ) ||
+  !runtimeComposition.includes("primitives: VoyantRuntimeHostPrimitives")
+) {
+  violations.push("runtime contributors must share the bounded framework host contract")
 }
 if (
   !generator.includes("contributor.exportName") ||

@@ -118,6 +118,9 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       readFileSync(join(app, ".voyant/admin/project-admin.generated.ts"), "utf8"),
       /src\/admin\/dashboard\/index/,
     )
+    assert.ok(existsSync(join(app, ".voyant/admin/selected-graph-admin.generated.js")))
+    assert.ok(existsSync(join(app, ".voyant/admin/selected-graph-admin.generated.d.ts")))
+    assert.ok(!existsSync(join(app, ".voyant/admin/selected-graph-admin.generated.ts")))
     const projectRuntime = readFileSync(
       join(app, ".voyant/runtime/project-runtime.generated.ts"),
       "utf8",

@@ -175,7 +175,8 @@ if (/loadCatalogRuntime|catalogRuntimeRegistry|catalogCapabilities/.test(operato
 
 const generator = read("packages/framework/src/deployment-artifacts.ts")
 for (const token of [
-  "GeneratedGraphRuntimeResolvedContributorHost",
+  "GeneratedGraphRuntimeContributorHost",
+  "asserts value is VoyantGraphRuntimeContributorHost",
   '"getRuntimePort"',
   "const ports: Record<string, unknown> = {}",
   "const contributorHost = {",

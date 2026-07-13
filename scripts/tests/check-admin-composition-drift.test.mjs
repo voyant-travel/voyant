@@ -84,7 +84,7 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
     )
     assert.throws(
       () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
-      /missing from selected-graph-admin\.generated\.ts/,
+      /missing from selected-graph-admin\.generated\.js/,
     )
     writeFileSync(
       bundle,

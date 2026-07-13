@@ -35,7 +35,18 @@ test("emits disposable operator config with rebased declaration paths", () => {
     const server = JSON.parse(
       readFileSync(join(root, "starters/operator/.voyant/tsconfig.server.json"), "utf8"),
     )
-    assert.ok(server.include.includes("../tests/**/*.ts"))
+    assert.ok(server.include.includes("../src/server.ts"))
+    assert.ok(!server.include.includes("../tests/**/*.ts"))
+    assert.ok(server.include.includes("./vite.config.ts"))
+    assert.ok(server.include.includes("./vitest.config.ts"))
+    assert.ok(!server.include.includes("./**/*.ts"))
+    assert.ok(server.exclude.includes("./runtime/**"))
+    const smokeTests = JSON.parse(
+      readFileSync(join(root, "starters/operator/.voyant/tsconfig.tests-smoke.json"), "utf8"),
+    )
+    assert.ok(smokeTests.include.includes("../tests/api/operator-route-mounting.test.ts"))
+    assert.ok(smokeTests.include.includes("../tests/voyant.config.test.ts"))
+    assert.ok(smokeTests.exclude.includes("./runtime/**"))
     const vitest = readFileSync(join(root, "starters/operator/.voyant/vitest.config.ts"), "utf8")
     assert.match(vitest, /include: \["tests\/\*\*\/\*\.test\.ts", "tests\/\*\*\/\*\.test\.tsx"\]/)
     assert.match(

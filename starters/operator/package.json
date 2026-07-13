@@ -10,7 +10,7 @@
     "preview": "pnpm run build && vite preview --config .voyant/vite.config.ts",
     "measure": "node ../../scripts/measure-standard-node-starter.mjs --require-build",
     "start": "node --env-file-if-exists=.env dist/server/server.js",
-    "typecheck": "pnpm run graph:emit && NODE_OPTIONS=--max-old-space-size=14336 tsc -p .voyant/tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=14336 tsc -p .voyant/tsconfig.client.json",
+    "typecheck": "pnpm run graph:emit && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.tests-smoke.json && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.client.json",
     "test": "pnpm run graph:emit && vitest run --config .voyant/vitest.config.ts --passWithNoTests",
     "graph:check": "node ../../scripts/generate-operator-starter-metadata.mjs --check && voyant db doctor --fail-on-drift",
     "graph:emit": "node ../../scripts/generate-operator-starter-metadata.mjs --emit && voyant build",

@@ -23,7 +23,7 @@ import { accessCatalog } from "../../.voyant/access/selected-access-catalog.gene
 import {
   createGeneratedGraphRuntime,
   createGeneratedGraphRuntimePorts,
-} from "../../.voyant/runtime/project-runtime.generated"
+} from "./generated-project-runtime.js"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never

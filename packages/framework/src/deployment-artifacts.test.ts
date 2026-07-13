@@ -4,6 +4,7 @@ import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
   buildDeploymentMigrationSources,
+  buildGraphAdminBundleDeclarationModule,
   buildGraphAdminBundleModule,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
@@ -168,7 +169,9 @@ describe("deployment graph artifacts", () => {
     )
     expect(source).toContain("export function createGeneratedGraphRuntimePorts(")
     expect(source).not.toContain("createRuntimePorts:")
-    expect(source).toContain("& Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>[0]")
+    expect(source).toContain("GENERATED_RUNTIME_CONTRIBUTOR_0,")
+    expect(source).not.toContain("Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>")
+    expect(source).not.toContain("asRuntimeContributor")
     expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
     expect(source).toContain("getRuntimePort(port: { id: string })")
     expect(source).toContain("contributor(contributorHost)")
@@ -250,9 +253,15 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"@acme/voyant-loyalty": selectedAdminFactory0')
     expect(source).not.toContain("createReportsAdminExtension")
     expect(source).toContain("Page bodies stay lazy in package UI exports")
-    expect(source).toContain("satisfies Readonly<Record<string, SelectedAdminExtensionFactory>>")
+    expect(source).not.toContain("SelectedAdminExtensionFactory")
+    expect(source).not.toContain(" as const")
     expect(source).toContain("export function createSelectedGraphAdminExtensions(")
     expect(source).toContain("Object.values(selectedGraphAdminExtensionFactories)")
+
+    const declaration = buildGraphAdminBundleDeclarationModule({ graph })
+    expect(declaration).toContain("SelectedAdminExtensionFactoryContext")
+    expect(declaration).toContain("ReadonlyArray<AdminExtension>")
+    expect(declaration).not.toContain("selectedAdminFactory0")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {

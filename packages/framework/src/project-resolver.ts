@@ -14,6 +14,7 @@ import type {
 } from "@voyant-travel/core/project"
 import {
   buildGraphAccessCatalogModule,
+  buildGraphAdminBundleDeclarationModule,
   buildGraphAdminBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
@@ -37,6 +38,7 @@ import {
 import {
   VOYANT_PROJECT_ACCESS_CATALOG_ENTRY,
   VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
+  VOYANT_PROJECT_ADMIN_BUNDLE_TYPES_ENTRY,
   VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
   VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project-artifact-paths.js"
@@ -269,6 +271,13 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
         graph: targetNeutralGraph,
         command: "voyant project resolve",
         runtimeEntryOverrides,
+      }),
+    },
+    {
+      path: VOYANT_PROJECT_ADMIN_BUNDLE_TYPES_ENTRY,
+      contents: buildGraphAdminBundleDeclarationModule({
+        graph: targetNeutralGraph,
+        command: "voyant project resolve",
       }),
     },
     ...projectWorkflowJobs.generatedFiles,
