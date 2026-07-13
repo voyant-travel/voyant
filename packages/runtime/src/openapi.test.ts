@@ -63,8 +63,9 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
           entityId: route.id,
           runtime,
           importEntry: id,
-          load: async () => ({}),
-          loadModule: async () => ({ fixtureModule: {} }),
+          load: async <T = unknown>() => ({}) as T,
+          loadModule: async <T extends Record<string, unknown> = Record<string, unknown>>() =>
+            ({ fixtureModule: {} }) as T,
         },
       ],
       config: [],
