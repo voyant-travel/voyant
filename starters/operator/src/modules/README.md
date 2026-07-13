@@ -38,6 +38,40 @@ export default defineDeploymentModule({
 The resolver creates the graph unit from the project package name and directory
 name, then emits a project-relative static import under `.voyant/runtime`.
 
+## Inbound webhook routes
+
+Direct `src/modules` entries are runtime-only. They can expose admin and public
+routes, but they cannot declare graph-governed inbound webhooks. A module that
+returns `webhookRoutes` must use the project-owned workspace-package shape so
+its manifest can declare both the webhook API and the inbound webhook:
+
+```ts
+// packages/qa-probe/src/voyant.ts
+import { defineModule } from "@voyant-travel/core/project"
+
+export const qaProbeVoyantModule = defineModule({
+  id: "@acme/qa-probe",
+  packageName: "@acme/qa-probe",
+  runtime: { entry: "@acme/qa-probe", export: "default" },
+  api: [{
+    id: "@acme/qa-probe#api.webhook",
+    surface: "webhook",
+    mount: "qa-probe",
+    runtime: { entry: "@acme/qa-probe", export: "default" },
+  }],
+  webhooks: [{
+    id: "@acme/qa-probe#webhook.inbound",
+    direction: "inbound",
+    apiId: "@acme/qa-probe#api.webhook",
+  }],
+})
+```
+
+Select that local package with `modules: [{ resolve:
+"./packages/qa-probe" }]` in `voyant.config.ts`. See the [complete package
+metadata, runtime, and manifest
+pattern](../../../../docs/architecture/custom-modules.md#inbound-webhook-modules).
+
 ## Database migrations
 
 Generate an app-local module's migrations with Drizzle Kit directly; migration

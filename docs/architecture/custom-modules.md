@@ -129,6 +129,100 @@ one project-root source using the root package name, and emits a static relative
 import from `.voyant/runtime`. No nested `package.json`, package export, local
 `voyant.ts`, config selection, or deployment binding is required.
 
+## Inbound webhook modules
+
+Inbound webhook routes are graph-governed because they change anonymous route
+posture. A direct `src/modules/<name>/index.ts` convention is runtime-only and
+cannot declare `api` or `webhooks` facets. If it returns `webhookRoutes`,
+`voyant build` fails with `PROJECT_WEBHOOK_DECLARATION_REQUIRED` before runtime.
+
+Use a project-owned workspace package when the module needs inbound webhooks.
+The package must publish its runtime and import-cheap manifest separately:
+
+```jsonc
+// packages/qa-probe/package.json
+{
+  "name": "@acme/qa-probe",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./voyant": "./src/voyant.ts"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "module",
+    "manifest": "./voyant",
+    "compatibleWith": {
+      "framework": "*",
+      "targets": ["node"],
+      "modes": ["local", "managed-cloud", "self-hosted"]
+    }
+  }
+}
+```
+
+The runtime owns the concrete Hono routes:
+
+```ts
+// packages/qa-probe/src/index.ts
+import { defineDeploymentModule } from "@voyant-travel/framework"
+import { Hono } from "hono"
+
+const webhookRoutes = new Hono()
+webhookRoutes.post("/demo", (c) => c.json({ ok: true }))
+
+export default defineDeploymentModule({
+  module: { name: "qa-probe" },
+  webhookRoutes,
+})
+```
+
+The manifest declares the executable webhook API and binds an inbound webhook
+to it. Both declarations are required:
+
+```ts
+// packages/qa-probe/src/voyant.ts
+import { defineModule } from "@voyant-travel/core/project"
+
+const runtime = { entry: "@acme/qa-probe", export: "default" } as const
+
+export const qaProbeVoyantModule = defineModule({
+  id: "@acme/qa-probe",
+  packageName: "@acme/qa-probe",
+  localId: "qa-probe",
+  runtime,
+  api: [
+    {
+      id: "@acme/qa-probe#api.webhook",
+      surface: "webhook",
+      mount: "qa-probe",
+      runtime,
+    },
+  ],
+  webhooks: [
+    {
+      id: "@acme/qa-probe#webhook.inbound",
+      direction: "inbound",
+      apiId: "@acme/qa-probe#api.webhook",
+    },
+  ],
+})
+```
+
+Select the local package as an application-owned difference:
+
+```ts
+// voyant.config.ts
+import { defineConfig } from "@voyant-travel/framework/project"
+
+export default defineConfig({
+  modules: [{ resolve: "./packages/qa-probe" }],
+})
+```
+
+The resulting callback is mounted beneath `/v1/qa-probe`. Package-owned schema
+and migrations, if any, follow the persistent-module rules below.
+
 ## Persistent modules
 
 Direct `src/modules` entries are runtime-only. A module that owns tables uses
