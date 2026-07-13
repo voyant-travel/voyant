@@ -38,6 +38,9 @@ The gate requires:
 - no first-party package identifier appears in authored project source.
 - the four-file authored-tree ratchet is exact. New initial files require an
   intentional architecture decision and checker update.
+- a project may add a standard root `vite.config.ts` only when it needs custom
+  Vite plugins or options. Both `voyant develop` and `voyant build` must merge
+  that file without requiring custom scripts or a fork of generated metadata.
 
 The product BOM still expands into an explicit `.voyant/` graph during build.
 The checked-in development operator follows the same ownership rule for build

@@ -43,6 +43,11 @@ the SSR dashboard, the `/api/*` routes, and Better Auth with hot-reload — the
 same `src/server.ts` handler runs under Vite's dev server. The first `/api/*`
 request compiles the API module graph on demand (a few seconds), then it's warm.
 
+When the project needs additional Vite plugins or ordinary Vite options, add an
+optional root `vite.config.ts`. `voyant develop` and `voyant build` discover and
+merge it automatically; do not copy or replace Voyant's generated configuration
+under `.voyant/`.
+
 ## Production (Node)
 
 ```bash

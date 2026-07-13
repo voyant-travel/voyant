@@ -108,7 +108,8 @@ export async function buildVoyantProjectWithDependencies(
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const config = await prepareProjectViteConfig(projectRoot, dependencies)
 
-  await dependencies.buildVite({ ...config, root: projectRoot, configFile: false })
+  // Undefined configFile lets Vite merge an optional project-root vite.config.*.
+  await dependencies.buildVite({ ...config, root: projectRoot })
   await Promise.all([
     dependencies.replaceDirectory(
       path.join(projectRoot, ".voyant"),
@@ -128,10 +129,10 @@ export async function developVoyantProjectWithDependencies(
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const config = await prepareProjectViteConfig(projectRoot, dependencies)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
+  // Keep native config discovery aligned with the production build.
   const server = await dependencies.createViteServer({
     ...config,
     root: projectRoot,
-    configFile: false,
     server: {
       ...config.server,
       ...(options.host === undefined ? {} : { host: options.host }),
