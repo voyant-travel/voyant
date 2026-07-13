@@ -1,5 +1,11 @@
 # @voyant-travel/runtime
 
+## 0.7.3
+
+### Patch Changes
+
+- a5d25ea: Keep project Vite configuration from redirecting the lifecycle-owned Node distribution output.
+
 ## 0.7.2
 
 ### Patch Changes
