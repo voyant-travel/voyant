@@ -21,11 +21,16 @@ const mocks = vi.hoisted(() => {
   }
 
   return {
+    createNodeServer: vi.fn((_options: unknown) => ({ close: vi.fn(), port: 8080 })),
     enqueuePostgresWebhookEvent: vi.fn(async () => ["queued"]),
     loadVoyantNodeRuntime: vi.fn(async (_options: unknown) => nodeRuntime),
     loadVoyantNodeWorkflowRuntime: vi.fn(async (_options: unknown) => ({ workflows: [] })),
     nodeRuntime,
     resolveNodeDatabase: vi.fn(() => ({ kind: "database" })),
+    runScheduledWorkflow: vi.fn(
+      async (_job: unknown, _event: unknown, runtime: { load(): Promise<unknown> }) =>
+        runtime.load(),
+    ),
     runtimePorts,
     workflowGraphRuntime,
   }
@@ -75,7 +80,7 @@ vi.mock("@voyant-travel/hono/observability/reporter", () => ({
 }))
 
 vi.mock("@voyant-travel/runtime", () => ({
-  createNodeServer: vi.fn(),
+  createNodeServer: mocks.createNodeServer,
 }))
 
 vi.mock("@voyant-travel/webhook-delivery/postgres", () => ({
@@ -85,6 +90,11 @@ vi.mock("@voyant-travel/webhook-delivery/postgres", () => ({
 vi.mock("@voyant-travel/workflow-runs", () => ({
   mountWorkflowRunsAdminRoutes: vi.fn(),
   WorkflowRunnerRegistry: class {},
+}))
+
+vi.mock("@voyant-travel/workflow-runs/scheduled-workflow", () => ({
+  isGraphWorkflowScheduledJob: () => true,
+  runScheduledWorkflow: mocks.runScheduledWorkflow,
 }))
 
 vi.mock("tsx/esm/api", () => ({
@@ -169,9 +179,48 @@ describe("Operator runtime composition", () => {
     })
     expect(mocks.nodeRuntime.app.ready).toHaveBeenCalledWith(mocks.nodeRuntime.env)
   })
+
+  it("passes resident graph ports from the Node schedule into workflow composition", async () => {
+    const projectRoot = await createGeneratedProject([
+      {
+        id: "catalog-reap-expired-booking-drafts",
+        cron: "0 * * * *",
+        workflowId: "catalog.reap-expired-booking-drafts",
+      },
+    ])
+    const project = await loadOperatorProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    project.start()
+    const serverOptions = mocks.createNodeServer.mock.calls[0]?.[0] as {
+      scheduled(
+        event: { scheduleId: string; scheduledTime: number },
+        bindings: Record<string, string>,
+        ctx: { waitUntil(promise: Promise<unknown>): void },
+      ): Promise<void>
+    }
+    await serverOptions.scheduled(
+      {
+        scheduleId: "catalog-reap-expired-booking-drafts",
+        scheduledTime: 1_783_661_445_000,
+      },
+      { DATABASE_URL: "postgres://example.invalid/voyant" },
+      { waitUntil: vi.fn() },
+    )
+
+    expect(mocks.runScheduledWorkflow).toHaveBeenCalledOnce()
+    expect(mocks.loadVoyantNodeWorkflowRuntime).toHaveBeenCalledWith(
+      expect.objectContaining({ runtimePorts: mocks.runtimePorts }),
+    )
+  })
 })
 
-async function createGeneratedProject(): Promise<string> {
+async function createGeneratedProject(
+  scheduledJobs: readonly Readonly<Record<string, unknown>>[] = [],
+): Promise<string> {
   const projectRoot = await mkdtemp(path.join(tmpdir(), "voyant-operator-runtime-"))
   temporaryRoots.push(projectRoot)
   const runtimeDir = path.join(projectRoot, ".voyant", "runtime")
@@ -182,7 +231,7 @@ async function createGeneratedProject(): Promise<string> {
     JSON.stringify({
       contentHash: "graph-hash",
       requirements: { resources: [] },
-      provisioning: { scheduledJobs: [] },
+      provisioning: { scheduledJobs },
     }),
   )
   return projectRoot
