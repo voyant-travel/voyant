@@ -11,3 +11,34 @@ should not depend on that package directly.
 
 Command parsing and executable entry points belong to
 [`voyant-travel/cli`](https://github.com/voyant-travel/cli), not this package.
+
+## Project tooling
+
+The versioned `@voyant-travel/runtime/tooling` subpath owns the standard
+operator application's Vite and TanStack Start lifecycle. CLI packages provide
+command parsing, prepare the project graph under `.voyant`, and call this API.
+
+```ts
+import {
+  buildVoyantProject,
+  developVoyantProject,
+} from "@voyant-travel/runtime/tooling"
+
+await buildVoyantProject({ projectRoot: process.cwd() })
+
+const development = await developVoyantProject({
+  projectRoot: process.cwd(),
+  host: "127.0.0.1",
+  port: 3300,
+})
+
+console.log(development.url)
+await development.close()
+```
+
+`buildVoyantProject()` reads the selected product distribution from
+`.voyant/product-bom.generated.json`, generates its package-owned routes from
+the project-installed `./standard-route-files` export, runs the complete Node
+SSR build, and copies `.voyant` to both `dist/.voyant` and
+`dist/server/.voyant`. `developVoyantProject()` starts Vite's SSR development
+server and defaults to port `3300`.

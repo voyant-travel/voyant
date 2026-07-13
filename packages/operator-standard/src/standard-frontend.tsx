@@ -55,6 +55,13 @@ import { createAuthClient } from "better-auth/react"
 import type { ComponentType, ReactNode } from "react"
 import { createApiDocsRouteOptions, type OpenApiSpecLoaders } from "./standard-api-docs.js"
 
+export {
+  AdminRootErrorBoundary,
+  AdminRootShell,
+  adminRootHead,
+} from "@voyant-travel/admin/app/root"
+export { Toaster } from "@voyant-travel/ui/components"
+
 export interface StandardOperatorCurrentUser {
   id: string
   email: string

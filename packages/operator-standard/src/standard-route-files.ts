@@ -61,10 +61,14 @@ export const operatorFrontend = createStandardOperatorFrontend({
   {
     path: "__root.tsx",
     source: `
+import {
+  AdminRootErrorBoundary,
+  AdminRootShell,
+  adminRootHead,
+  Toaster,
+} from ${JSON.stringify(standardFrontendImport)}
 import type { QueryClient } from "@tanstack/react-query"
 import { createRootRouteWithContext, Outlet, useRouteContext } from "@tanstack/react-router"
-import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyant-travel/admin/app/root"
-import { Toaster } from "@voyant-travel/ui/components"
 import { operatorFrontend } from "./_lib/operator-frontend.js"
 import "@/styles.css"
 

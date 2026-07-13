@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./deployment-resources": "./src/deployment-resources.ts",
     "./workflow-entry": "./src/workflow-entry.ts",
-    "./openapi": "./src/openapi.ts"
+    "./openapi": "./src/openapi.ts",
+    "./tooling": "./src/tooling.ts"
   },
   "scripts": {
     "build": "pnpm run clean && NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.build.json",
@@ -19,6 +20,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "@tanstack/devtools-vite": "^0.8.1",
+    "@tanstack/react-start": "^1.168.27",
+    "@tanstack/router-generator": "1.167.18",
+    "@vitejs/plugin-react": "^6.0.3",
     "@voyant-travel/admin-host": "workspace:^",
     "@voyant-travel/auth": "workspace:^",
     "@voyant-travel/cloud-sdk": "^0.11.0",
@@ -27,10 +33,12 @@
     "@voyant-travel/framework": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/runtime-core": "workspace:^",
+    "@voyant-travel/vite-config": "workspace:^",
     "@voyant-travel/webhook-delivery": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
     "hono": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "vite": "catalog:"
   },
   "devDependencies": {
     "@hono/zod-openapi": "catalog:",
@@ -69,6 +77,11 @@
         "types": "./dist/openapi.d.ts",
         "import": "./dist/openapi.js",
         "default": "./dist/openapi.js"
+      },
+      "./tooling": {
+        "types": "./dist/tooling.d.ts",
+        "import": "./dist/tooling.js",
+        "default": "./dist/tooling.js"
       }
     },
     "main": "./dist/index.js",
