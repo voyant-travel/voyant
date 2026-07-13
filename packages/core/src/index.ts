@@ -108,6 +108,12 @@ export type {
   VoyantGraphUnitManifest,
   VoyantGraphWorkflow,
   VoyantGraphWorkflowSchedule,
+  VoyantWorkflowServiceContribution,
+  VoyantWorkflowServiceContributionContext,
+} from "./project.js"
+export {
+  VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
+  voyantWorkflowServiceContributionsPort,
 } from "./project.js"
 export type {
   EntityFetcher,

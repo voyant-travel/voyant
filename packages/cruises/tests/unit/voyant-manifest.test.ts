@@ -43,7 +43,10 @@ describe("cruises deployment manifest", () => {
           runtime: { export: "createCruisesVoyantRuntime" },
         },
       ],
-      runtimePorts: [{ id: "cruises.routes-runtime" }],
+      runtimePorts: [
+        { id: "cruises.routes-runtime" },
+        { id: "voyant.workflow-services", optional: true, cardinality: "many" },
+      ],
       schema: [{ id: "@voyant-travel/cruises#schema", source: "@voyant-travel/cruises/schema" }],
       migrations: [{ id: "@voyant-travel/cruises#migrations", source: "./migrations" }],
       links: [

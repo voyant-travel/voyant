@@ -19,6 +19,7 @@ describe("notifications deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/notifications",
       packageName: "@voyant-travel/notifications",
+      runtimePorts: [{ id: "notifications.runtime" }],
       api: [
         {
           id: "@voyant-travel/notifications#api.admin",

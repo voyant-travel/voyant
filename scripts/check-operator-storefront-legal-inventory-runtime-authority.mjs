@@ -16,7 +16,6 @@ const [
   tripsContributor,
   legalContributor,
   inventoryContributor,
-  inventoryWorkflowServices,
 ] = await Promise.all([
   read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   read("packages/storefront/src/runtime-contributor.ts"),
@@ -25,7 +24,6 @@ const [
   read("packages/trips/src/runtime-contributor.ts"),
   read("packages/legal/src/runtime-contributor.ts"),
   read("packages/inventory/src/runtime-contributor.ts"),
-  read("starters/operator/src/api/runtime/operator-workflow-services.ts"),
 ])
 
 const packagePorts = {
@@ -74,7 +72,7 @@ for (const token of [
   "createOperatorInventoryRuntime",
   "registerInventoryWorkflowService",
 ]) {
-  if (deploymentResources.includes(token) || inventoryWorkflowServices.includes(token)) {
+  if (deploymentResources.includes(token)) {
     violations.push(`Operator runtime code must not retain Inventory capability ${token}`)
   }
 }

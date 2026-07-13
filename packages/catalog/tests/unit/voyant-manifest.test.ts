@@ -78,6 +78,7 @@ describe("catalog deployment manifest", () => {
       { id: "catalog.search-runtime" },
       { id: "catalog.projection-runtime" },
       { id: "catalog.booking-snapshot-runtime" },
+      { id: "voyant.workflow-services", optional: true, cardinality: "many" },
     ])
     expect(catalogVoyantModule.workflows).toEqual([
       {

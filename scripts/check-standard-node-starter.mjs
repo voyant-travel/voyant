@@ -216,6 +216,7 @@ function inspectRepositoryAuthority(repoRoot) {
     "starters/operator/src/api/runtime/payment-config.ts",
     "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
     "starters/operator/src/api/runtime/media-runtime.ts",
+    "starters/operator/src/api/runtime/operator-workflow-services.ts",
     "starters/operator/src/api/lib/db.ts",
     "starters/operator/src/api/lib/db.test.ts",
     "starters/operator/src/api/auth/cookie-domain.ts",

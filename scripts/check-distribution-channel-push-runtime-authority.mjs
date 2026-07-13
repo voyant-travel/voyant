@@ -36,9 +36,10 @@ const normalizedContributor = contributor.replace(
 )
 const runtime = readRequired(join(distributionRoot, "src/runtime.ts"))
 const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
-const workflowServices = readRequired(
-  join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
-)
+const workflowServicesPath = join(operatorRoot, "src/api/runtime/operator-workflow-services.ts")
+const workflowServices = existsSync(workflowServicesPath)
+  ? readFileSync(workflowServicesPath, "utf8")
+  : ""
 const deploymentGraphChecker = readRequired(deploymentGraphCheckerPath)
 
 if (

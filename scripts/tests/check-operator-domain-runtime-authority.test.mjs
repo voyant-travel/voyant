@@ -16,7 +16,6 @@ const checker = path.resolve(
 async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-domain-runtime-"))
   const files = {
-    "starters/operator/src/api/runtime/operator-workflow-services.ts": "host adapters",
     "packages/trips/src/route-runtime.ts": "runtime",
     "packages/trips/src/runtime.ts":
       "createTripsRouteRuntime createCatalogComponentAdapter VoyantRuntimeHostPrimitives",
@@ -56,6 +55,14 @@ describe("operator domain runtime authority", () => {
   it("rejects a restored starter payment-policy facade", async () => {
     const facade = "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts"
     const root = await fixture({ [facade]: "package composition" })
+    await assert.rejects(execFileAsync(process.execPath, [checker, "--root", root]), (error) =>
+      error.stderr.includes(`${facade} must stay deleted`),
+    )
+  })
+
+  it("rejects a restored starter workflow-service catalog", async () => {
+    const facade = "starters/operator/src/api/runtime/operator-workflow-services.ts"
+    const root = await fixture({ [facade]: "package workflow services" })
     await assert.rejects(execFileAsync(process.execPath, [checker, "--root", root]), (error) =>
       error.stderr.includes(`${facade} must stay deleted`),
     )

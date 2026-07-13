@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
 import test from "node:test"
 
-test("workflow services reuse package-bootstrapped app services", () => {
+test("workflow services are graph-selected package contributors", () => {
   const result = spawnSync(
     process.execPath,
     ["scripts/check-operator-workflow-service-authority.mjs"],

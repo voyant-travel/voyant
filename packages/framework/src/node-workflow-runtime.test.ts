@@ -1,4 +1,9 @@
-import type { EventFilterDescriptor } from "@voyant-travel/core"
+import {
+  createContainer,
+  createEventBus,
+  type EventFilterDescriptor,
+  VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
+} from "@voyant-travel/core"
 import type { WorkflowDefinition } from "@voyant-travel/workflows"
 import type { ServiceResolver } from "@voyant-travel/workflows/driver"
 import { describe, expect, it, vi } from "vitest"
@@ -34,17 +39,38 @@ describe("loadVoyantNodeWorkflowRuntime", () => {
       new Set(["notifications"]),
     )
   })
+
+  it("registers only graph-selected package workflow service contributions", async () => {
+    const services = createContainer()
+    const contribution = {
+      serviceId: "example.workflow.runtime",
+      create: vi.fn(({ environment }) => ({ environment })),
+    }
+    const runtime = await loadVoyantNodeWorkflowRuntime({
+      graphRuntime: graphWithUnit(unitWithRuntime({ id: "example" } as never)),
+      environment: { TOKEN: "selected" },
+      runtimePorts: {
+        [VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID]: [contribution],
+      },
+      createServices: async () => ({ services, eventBus: createEventBus() }),
+    })
+
+    expect(runtime.services.resolve("example.workflow.runtime")).toEqual({
+      environment: { TOKEN: "selected" },
+    })
+    expect(contribution.create).toHaveBeenCalledOnce()
+  })
 })
 
 function unitWithRuntime(
   workflow: WorkflowDefinition,
-  filter: EventFilterDescriptor,
+  filter?: EventFilterDescriptor,
 ): VoyantGraphRuntimeUnitLoader {
   return {
     id: "notifications",
     workflows: [{ load: async () => workflow }],
     references: [
-      { facet: "subscribers.runtime", load: async () => filter },
+      ...(filter ? [{ facet: "subscribers.runtime", load: async () => filter }] : []),
       { facet: "routes.runtime", load: async () => ({}) },
     ],
   } as unknown as VoyantGraphRuntimeUnitLoader

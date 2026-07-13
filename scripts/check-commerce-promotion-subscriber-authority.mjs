@@ -22,7 +22,8 @@ const sources = Object.fromEntries(
     Object.entries(paths).map(async ([name, relativePath]) => [
       name,
       await readFile(path.join(repoRoot, relativePath), "utf8").catch((error) => {
-        if (name === "catalogBridge" && error?.code === "ENOENT") return ""
+        if ((name === "catalogBridge" || name === "workflowServices") && error?.code === "ENOENT")
+          return ""
         throw error
       }),
     ]),

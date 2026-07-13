@@ -16,8 +16,6 @@ const read = (path) => {
   }
   return readFileSync(absolute, "utf8")
 }
-const lines = (source) => (source.length === 0 ? 0 : source.trimEnd().split("\n").length)
-
 for (const path of [
   "starters/operator/src/api/runtime/trips-catalog-runtime.ts",
   "starters/operator/src/api/runtime/trips-checkout-runtime.ts",
@@ -44,11 +42,9 @@ if (existsSync(join(root, paymentPolicyFacadePath))) {
   violations.push(`${paymentPolicyFacadePath} must stay deleted`)
 }
 
-const workflowAdapter = read("starters/operator/src/api/runtime/operator-workflow-services.ts")
-if (lines(workflowAdapter) > 260) violations.push("Workflow deployment adapter exceeds 260 lines")
-for (const token of ["paymentSessions", "createLazyWorkflowDb", "renderProductBrochureTemplate"]) {
-  if (workflowAdapter.includes(token))
-    violations.push(`Workflow deployment adapter retains ${token}`)
+const workflowAdapterPath = "starters/operator/src/api/runtime/operator-workflow-services.ts"
+if (existsSync(join(root, workflowAdapterPath))) {
+  violations.push(`${workflowAdapterPath} must stay deleted`)
 }
 
 for (const path of [
@@ -72,5 +68,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-domain-runtime-authority: OK (${lines(workflowAdapter)} starter adapter lines; Trips and payment policy package-owned)`,
+  "check-operator-domain-runtime-authority: OK (workflow, Trips, and payment policy services package-owned)",
 )

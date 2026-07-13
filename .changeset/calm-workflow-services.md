@@ -1,9 +1,9 @@
 ---
 "@voyant-travel/catalog": patch
+"@voyant-travel/core": patch
 "@voyant-travel/cruises": patch
 "@voyant-travel/db": patch
-"@voyant-travel/hono": patch
-"@voyant-travel/notifications": patch
+"@voyant-travel/framework": patch
 ---
 
-Reuse graph-bootstrapped package services in the Node workflow runtime and expose package-owned workflow runtime constructors.
+Select package-owned Node workflow services through additive graph runtime contributors instead of composing Catalog, Cruises, and DB services in the Operator starter. Notifications keeps its existing package graph bootstrap.

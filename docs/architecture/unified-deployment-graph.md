@@ -1010,6 +1010,15 @@ but no API, admin, module, provider, or tool runtime imports. Node workflow
 bundles consume this narrow artifact so build-time bundling cannot pull the
 application server graph into the workflow executor.
 
+Package-owned workflow dependencies use the additive
+`voyant.workflow-services` runtime port. Each selected package runtime
+contributor returns its own stable service id and factory; the generic Node
+workflow loader registers those contributions into the graph-bootstrapped app
+container. The deployment starter supplies only host primitives, environment,
+the app service container, event bus, and failure reporting. It must not import
+package workflow runtime keys or maintain a first-party workflow-service
+catalog.
+
 Implementation note: application convention compilation validates
 `src/workflows` and `src/jobs` without evaluating source. Workflow files
 directly default-export the pure `defineWorkflow(...)` result; job files export

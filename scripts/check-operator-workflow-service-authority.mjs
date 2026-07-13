@@ -1,47 +1,24 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 
 const workflowServicesPath = "starters/operator/src/api/runtime/operator-workflow-services.ts"
-const appPath = "packages/hono/src/app.ts"
-const workflowServices = await readFile(workflowServicesPath, "utf8")
-const app = await readFile(appPath, "utf8")
+const workflowRuntimePath = "starters/operator/src/workflow-runtime.ts"
+const workflowRuntime = await readFile(workflowRuntimePath, "utf8")
 const packageBootstrapAssertions = [
-  ["packages/bookings/src/index.ts", "provider.registerWorkflowService?.(context)"],
-  ["packages/inventory/src/graph-runtime.ts", "bootstrap: runtime.bootstrap"],
-  ["packages/distribution/src/runtime.ts", "createChannelPushWorkflowRuntimeEntries"],
-  [
-    "packages/notifications/src/index.ts",
-    "provider.resolveReminderWorkflowRuntime(context.bindings",
-  ],
+  ["packages/catalog/src/runtime-contributor.ts", "CATALOG_DRAFT_REAPER_RUNTIME_KEY"],
+  ["packages/cruises/src/runtime-contributor.ts", "CRUISES_EXTERNAL_REFRESH_RUNTIME_KEY"],
+  ["packages/db/src/runtime-contributor.ts", "EVENT_OUTBOX_WORKFLOW_RUNTIME_KEY"],
+  ["packages/notifications/src/index.ts", "NOTIFICATION_REMINDER_WORKFLOW_RUNTIME_KEY"],
 ]
-const lineCount = workflowServices.split("\n").length
-
-if (lineCount > 184) {
-  throw new Error(`${workflowServicesPath} has ${lineCount} lines; expected at most 184.`)
+if (existsSync(workflowServicesPath)) {
+  throw new Error(`${workflowServicesPath} must stay deleted.`)
 }
-
-for (const forbidden of [
-  "createChannelPushWorkflowRuntimeEntries",
-  "createContainer",
-  "OPERATOR_WORKFLOW_RUNTIME_UNIT_IDS",
-  "registerDistributionWorkflowService",
-]) {
-  if (workflowServices.includes(forbidden)) {
-    throw new Error(`${workflowServicesPath} must not contain ${JSON.stringify(forbidden)}.`)
-  }
+if (/^import\s+\{\s*createGeneratedProjectRuntime/m.test(workflowRuntime)) {
+  throw new Error(`${workflowRuntimePath} must keep the application graph behind a lazy import.`)
 }
-
-for (const required of ["await app.ready(appBindings)", "return app.services"]) {
-  if (!workflowServices.includes(required)) {
-    throw new Error(`${workflowServicesPath} must contain ${JSON.stringify(required)}.`)
-  }
-}
-
-for (const required of [
-  'services: import("@voyant-travel/core").ModuleContainer',
-  "augmented.services = container",
-]) {
-  if (!app.includes(required)) {
-    throw new Error(`${appPath} must contain ${JSON.stringify(required)}.`)
+for (const required of ["createRuntimePorts({ primitives })", "services: app.services"]) {
+  if (!workflowRuntime.includes(required)) {
+    throw new Error(`${workflowRuntimePath} must contain ${JSON.stringify(required)}.`)
   }
 }
 
@@ -52,4 +29,4 @@ for (const [path, required] of packageBootstrapAssertions) {
   }
 }
 
-console.info(`Operator workflow service authority: ${lineCount}/184 starter lines.`)
+console.info("Operator workflow service authority: graph-selected package contributors.")
