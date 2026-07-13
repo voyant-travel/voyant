@@ -21,6 +21,7 @@ const starters = ["operator"]
 const standardNodeStarter = readJson(
   join(repoRoot, "packages", "framework", "src", "standard-node-starter.json"),
 )
+const operatorStarterPackage = readJson(join(repoRoot, "starters", "operator", "package.json"))
 const catalogVersions = readCatalogVersions()
 const workspaceVersions = readWorkspaceVersions()
 
@@ -49,8 +50,12 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     mkdirSync(join(stagingTemplate, directory), { recursive: true })
   }
 
-  const dependency = (name) =>
-    localLinks ? `link:${workspacePackageDirectory(name)}` : `^${requiredWorkspaceVersion(name)}`
+  const dependency = (name) => {
+    if (!name.startsWith("@voyant-travel/")) return requiredStarterRuntimeVersion(name)
+    return localLinks
+      ? `link:${workspacePackageDirectory(name)}`
+      : `^${requiredWorkspaceVersion(name)}`
+  }
   const localCliPackage = resolve(repoRoot, "..", "cli", "packages", "cli")
   const cliDependency =
     localLinks && existsSync(join(localCliPackage, "package.json"))
@@ -110,11 +115,16 @@ function requiredCatalogVersion(name) {
   return value
 }
 
+function requiredStarterRuntimeVersion(name) {
+  const value = operatorStarterPackage.dependencies?.[name]
+  if (typeof value !== "string" || /^(?:catalog|workspace|file|link):/.test(value)) {
+    throw new Error(`Missing concrete operator starter dependency version: ${name}`)
+  }
+  return value.replace(/^[~^]/, "")
+}
+
 function supportedCliRange() {
-  const packageJson = JSON.parse(
-    readFileSync(join(repoRoot, "starters", "operator", "package.json"), "utf8"),
-  )
-  const value = packageJson.devDependencies?.["@voyant-travel/cli"]
+  const value = operatorStarterPackage.devDependencies?.["@voyant-travel/cli"]
   if (typeof value !== "string" || /^(?:workspace|file|link):/.test(value)) {
     throw new Error("starters/operator must declare a released @voyant-travel/cli range")
   }

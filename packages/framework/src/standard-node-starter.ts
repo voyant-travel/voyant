@@ -30,6 +30,7 @@ type StandardNodeStarterContract = {
     "@voyant-travel/framework",
     "@voyant-travel/runtime",
     "@voyant-travel/operator-standard",
+    "pg",
   ]
   readonly developmentDependencies: readonly ["@voyant-travel/cli", "tsx", "typescript"]
   readonly gitignoreEntries: readonly [

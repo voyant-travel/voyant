@@ -49,6 +49,7 @@ describe("Voyant project tooling", () => {
         generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
       },
       bootstrap: {
+        serverEntry: "/workspace/operator/src/server.ts",
         aliases: { "@tanstack/react-router": "/product/react-router/index.cjs" },
       },
     })
@@ -71,7 +72,7 @@ describe("Voyant project tooling", () => {
         routesDirectory: "/workspace/operator/.voyant/routes",
         generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
       },
-      bootstrap: {},
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
     })
 
     expect(config.build?.outDir).toBe("dist")
@@ -103,7 +104,7 @@ describe("Voyant project tooling", () => {
         routesDirectory: "/workspace/operator/.voyant/routes",
         generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
       },
-      bootstrap: {},
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
     })
     expect(dependencies.buildVite).toHaveBeenCalledWith({
       marker: "voyant-vite-config",
@@ -226,9 +227,13 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
     const bootstrap = await prepareProjectBootstrap(projectRoot)
 
     expect(bootstrap).toEqual({
+      serverEntry: path.join(projectRoot, ".voyant/app/server.ts"),
       routerEntry: path.join(projectRoot, ".voyant/app/router.tsx"),
       stylesEntry: path.join(projectRoot, ".voyant/app/styles.css"),
     })
+    await expect(readText(bootstrap.serverEntry)).resolves.toContain(
+      "createVoyantProjectServerEntry(projectOptions).start",
+    )
     await expect(readText(bootstrap.routerEntry!)).resolves.toContain(
       'from "@acme/operator/standard-frontend"',
     )
@@ -240,14 +245,17 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
     )
   })
 
-  it("preserves project-authored router and style overrides", async () => {
+  it("preserves project-authored server, router, and style overrides", async () => {
     const projectRoot = await createTemporaryDirectory()
     await writeProductBom(projectRoot, "@acme/operator")
     await mkdir(path.join(projectRoot, "src"), { recursive: true })
+    await writeFile(path.join(projectRoot, "src/server.ts"), "export default { fetch() {} }\n")
     await writeFile(path.join(projectRoot, "src/router.tsx"), "export const projectRouter = true\n")
     await writeFile(path.join(projectRoot, "src/styles.css"), "/* project */\n")
 
-    await expect(prepareProjectBootstrap(projectRoot)).resolves.toEqual({})
+    await expect(prepareProjectBootstrap(projectRoot)).resolves.toEqual({
+      serverEntry: path.join(projectRoot, "src/server.ts"),
+    })
   })
 
   it("fails when the generated product BOM artifact is missing", async () => {
@@ -296,7 +304,9 @@ function createDependencies(calls: string[]): VoyantProjectToolingDependencies {
     loadStandardRouteFiles: vi.fn(async () => [
       { path: "__root.tsx", source: "export const Route = {}" },
     ]),
-    prepareProjectBootstrap: vi.fn(async () => ({})),
+    prepareProjectBootstrap: vi.fn(async () => ({
+      serverEntry: "/workspace/operator/src/server.ts",
+    })),
     materializeRoutes: vi.fn(() => ({
       plugin: { name: "generated-routes" },
       routesDirectory: "/workspace/operator/.voyant/routes",

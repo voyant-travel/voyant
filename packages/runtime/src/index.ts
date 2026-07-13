@@ -35,6 +35,7 @@ import { tsImport } from "tsx/esm/api"
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
 import { createVoyantDeploymentResources } from "./deployment-resources.js"
+import { loadBuiltProjectStart, startVoyantProjectWithDependencies } from "./project-start.js"
 
 export {
   type CreateVoyantDeploymentResourcesOptions,
@@ -286,8 +287,10 @@ export function createVoyantProjectServerEntry(options: LoadVoyantProjectOptions
 export async function startVoyantProject(
   options: LoadVoyantProjectOptions & { port?: number } = {},
 ): Promise<NodeServerHandle> {
-  const host = await loadVoyantProject(options)
-  return host.start({ port: options.port })
+  return startVoyantProjectWithDependencies(options, {
+    loadBuiltStart: loadBuiltProjectStart,
+    loadProject: loadVoyantProject,
+  })
 }
 
 async function resolveGeneratedArtifactRoot(projectRoot: string): Promise<string> {

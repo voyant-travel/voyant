@@ -48,6 +48,7 @@ interface ProjectViteConfigOptions {
 }
 
 interface ProjectBootstrap {
+  serverEntry: string
   routerEntry?: string
   stylesEntry?: string
   aliases?: Readonly<Record<string, string>>
@@ -185,10 +186,13 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
       devtools(),
       tailwindcss(),
       tanstackStart({
+        server: {
+          entry: relativeEntry(options.appRootUrl, options.bootstrap.serverEntry),
+        },
         router: {
           ...(options.bootstrap.routerEntry
             ? {
-                entry: `../${path.relative(path.dirname(fileURLToPath(options.appRootUrl)), options.bootstrap.routerEntry).replaceAll("\\", "/")}`,
+                entry: relativeEntry(options.appRootUrl, options.bootstrap.routerEntry),
               }
             : {}),
           routesDirectory: options.generatedRoutes.routesDirectory,
@@ -232,10 +236,19 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
+function relativeEntry(appRootUrl: string, entry: string): string {
+  return `../${path.relative(path.dirname(fileURLToPath(appRootUrl)), entry).replaceAll("\\", "/")}`
+}
+
 export async function prepareProjectBootstrap(projectRoot: string): Promise<ProjectBootstrap> {
   const productBomId = await loadProductBomId(projectRoot)
   const generatedRoot = path.join(projectRoot, ".voyant/app")
-  const bootstrap: ProjectBootstrap = {}
+  const authoredServerEntry = path.join(projectRoot, "src/server.ts")
+  const bootstrap: ProjectBootstrap = {
+    serverEntry: (await pathExists(authoredServerEntry))
+      ? authoredServerEntry
+      : path.join(generatedRoot, "server.ts"),
+  }
   const aliases = resolveProductDependencies(projectRoot, productBomId, [
     "react/jsx-runtime",
     "react/jsx-dev-runtime",
@@ -247,6 +260,27 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
     "react",
   ])
   if (Object.keys(aliases).length > 0) bootstrap.aliases = aliases
+
+  if (!(await pathExists(authoredServerEntry))) {
+    await writeGeneratedFile(
+      bootstrap.serverEntry,
+      `import {
+  createVoyantProjectServerEntry,
+  type LoadVoyantProjectOptions,
+} from "@voyant-travel/runtime"
+
+const server = createVoyantProjectServerEntry()
+
+export default {
+  fetch: server.fetch,
+  start: (options: LoadVoyantProjectOptions & { port?: number } = {}) => {
+    const { port, ...projectOptions } = options
+    return createVoyantProjectServerEntry(projectOptions).start({ port })
+  },
+}
+`,
+    )
+  }
 
   if (!(await pathExists(path.join(projectRoot, "src/router.tsx")))) {
     bootstrap.routerEntry = path.join(generatedRoot, "router.tsx")
