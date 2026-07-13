@@ -22,6 +22,8 @@ import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 
+import { packedFileExportsName } from "./lib/packed-exports.mjs"
+
 const execFileAsync = promisify(execFile)
 const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
 const REUSE_DIST =
@@ -349,36 +351,6 @@ function collectPackedLegacyVoyantSpecifiers(extractRoot, packInfo) {
   }
 
   return problems
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-}
-
-function packedFileExportsName(extractRoot, filePath, exportName, visited = new Set()) {
-  if (visited.has(filePath)) return false
-  visited.add(filePath)
-
-  const absolutePath = path.join(extractRoot, filePath)
-  if (!fs.existsSync(absolutePath)) return false
-
-  const source = fs.readFileSync(absolutePath, "utf8")
-  const exportPattern = new RegExp(`\\b${escapeRegExp(exportName)}\\b`)
-  if (exportPattern.test(source)) return true
-
-  for (const match of source.matchAll(/\bexport\s+\*\s+from\s+['"]([^'"]+)['"]/g)) {
-    const specifier = match[1]
-    if (!specifier?.startsWith(".")) continue
-
-    let reexportPath = path.normalize(path.join(path.dirname(filePath), specifier))
-    if (filePath.endsWith(".d.ts") && reexportPath.endsWith(".js")) {
-      reexportPath = `${reexportPath.slice(0, -3)}.d.ts`
-    }
-
-    if (packedFileExportsName(extractRoot, reexportPath, exportName, visited)) return true
-  }
-
-  return false
 }
 
 function collectPackedExportProblems(extractRoot, packageName) {
