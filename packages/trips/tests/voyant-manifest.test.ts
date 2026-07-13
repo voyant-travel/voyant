@@ -103,7 +103,12 @@ describe("trips deployment manifest", () => {
       api: tripsVoyantModule.api!.filter(({ surface }) =>
         selection === "both" ? true : surface === selection,
       ),
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async (port) =>

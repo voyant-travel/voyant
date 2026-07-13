@@ -163,7 +163,12 @@ describe("bookings deployment manifest", () => {
       unitId: "@voyant-travel/bookings",
       projectConfig: {},
       api: [{ id: "bookings.public", surface: "public" as const }],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: async <TProvider>(port: { id: string }) => {

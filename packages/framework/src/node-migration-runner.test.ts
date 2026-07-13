@@ -1,7 +1,6 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -148,15 +147,8 @@ describe("Node migration runner", () => {
     expect(source.migrations.length).toBeGreaterThan(0)
   })
 
-  it("loads the self-hosted workflow tables from the package-owned migration source", async () => {
+  it("loads built-in workflow migrations without a deployment-root dependency", async () => {
     const root = mkdtempSync(path.join(tmpdir(), "voyant-workflow-migrations-"))
-    const packageLink = path.join(root, "node_modules", "@voyant-travel", "workflows-orchestrator")
-    mkdirSync(path.dirname(packageLink), { recursive: true })
-    symlinkSync(
-      fileURLToPath(new URL("../../workflows-orchestrator", import.meta.url)),
-      packageLink,
-      "dir",
-    )
     const resolveFrom = path.join(root, "migration-runner.mjs")
     writeFileSync(resolveFrom, "export {}\n")
 

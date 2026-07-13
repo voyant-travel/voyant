@@ -160,6 +160,16 @@ describe("mountApp with plugins", () => {
     expect(res.status).toBe(401)
   })
 
+  it("does not bootstrap package runtimes for rejected requests", async () => {
+    const bootstrap = vi.fn()
+    const app = buildUnauthenticated([defineHonoBundle({ name: "private-runtime", bootstrap })])
+
+    const res = await app.request("/v1/admin/private-runtime/ping", {}, TEST_ENV, TEST_CTX)
+
+    expect(res.status).toBe(401)
+    expect(bootstrap).not.toHaveBeenCalled()
+  })
+
   it("combines top-level modules with plugin modules", async () => {
     const top = makeModule("top", "admin")
     const viaPlugin = makeModule("viaPlugin", "admin")

@@ -132,7 +132,12 @@ describe("distribution deployment manifests", () => {
       unitId: distributionChannelPushVoyantPlugin.id,
       projectConfig: {},
       api: distributionChannelPushVoyantPlugin.api ?? [],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,

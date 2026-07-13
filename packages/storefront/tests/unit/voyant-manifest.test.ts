@@ -91,7 +91,12 @@ describe("storefront deployment manifest", () => {
       unitId: "@voyant-travel/storefront",
       projectConfig: {},
       api: [{ id: "storefront.public", surface: "public" }],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: async <TProvider>() => ({}) as TProvider,
