@@ -1,5 +1,79 @@
 # @voyant-travel/distribution
 
+## 0.143.0
+
+### Minor Changes
+
+- 490d132: Move charter/cruise route activation and travel/infrastructure scheduled work
+  to graph-selected package manifests. Distribution, Cruises, and DB now publish
+  their scheduled workflow implementations, while Workflow Runs owns generic
+  schedule dispatch and the Operator supplies only Node runtime dependencies.
+- 490d132: Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, consolidate Distribution channel-push composition into its domain package, and make Workflow Runs own runner registration authority.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- c65b05c: Move the complete graph-native Node application host into runtime,
+  including generated graph admission, local and managed auth, API/admin serving,
+  workflow services and schedules, outbound delivery, links, and runtime ports.
+  Move the generic Postgres webhook enqueue boundary out of Distribution and into
+  the neutral webhook-delivery package.
+- 490d132: Move Trips lifecycle composition, checkout FX handling, payment-policy readers, and workflow effects from the Operator starter into package-owned runtime surfaces.
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Replace temporary nested owner exports with intentional validation, linkable, scheduling, and workflow public surfaces.
+- 490d132: Declare Action Ledger, Distribution, MICE, and Relationships OpenAPI documents in their package-owned deployment manifests and ship their committed admin contracts from the owning packages.
+- 490d132: Derive the final package runtime bindings from generic deployment capabilities and primitives, with no product-specific generated runtime host resources.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Move runtime construction into BOM-selected domain contributors and replace the Finance target package with typed graph ports while keeping package dependencies acyclic.
+- 490d132: Move platform and operations OpenAPI authority into the owning package manifests and publish their committed documents from package-local exports.
+- 490d132: Provide validated subscription mutations, durable projected webhook enqueue, restart-safe payload storage, and one claim-driven signed, retrying, audited delivery worker.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/webhook-delivery@0.2.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/identity@0.153.0
+  - @voyant-travel/workflows@0.117.0
+
 ## 0.142.0
 
 ### Patch Changes

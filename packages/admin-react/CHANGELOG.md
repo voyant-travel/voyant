@@ -1,5 +1,16 @@
 # @voyant-travel/admin-react
 
+## 0.122.0
+
+### Minor Changes
+
+- 490d132: Package reusable admin host destinations, dashboard and extension composition,
+  current-user bindings, and realtime invalidation presentation.
+
+### Patch Changes
+
+- @voyant-travel/admin-client@0.122.0
+
 ## 0.121.0
 
 ### Patch Changes

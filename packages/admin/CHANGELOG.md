@@ -1,5 +1,19 @@
 # @voyant-travel/admin
 
+## 0.122.0
+
+### Minor Changes
+
+- 490d132: Remove the final snapshot-era managed-profile aliases from the admin and migration package surfaces. Admin hosts now consume `AdminAuthRuntime`, `getAdminApiUrl`, and `adminFetcher`; deployment migration collection is exposed as `collectDeploymentMigrationSources`.
+
+### Patch Changes
+
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Move Operator Settings and Relationships admin presentation authority into selected package graph factories.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [490d132]
+  - @voyant-travel/types@0.108.1
+
 ## 0.121.0
 
 ### Minor Changes

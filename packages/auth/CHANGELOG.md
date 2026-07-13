@@ -1,5 +1,39 @@
 # @voyant-travel/auth
 
+## 0.126.0
+
+### Minor Changes
+
+- 490d132: Move credential invitations and cloud team management into auth-owned graph
+  units, with deployment configuration and email delivery supplied through a
+  typed runtime port.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Move capability-derived Node runtime binding assembly into package-owned contributors.
+- 490d132: Own the reusable Node Better Auth and Voyant Cloud broker runtime behind a typed deployment adapter.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- c65b05c: Own the standard Node database lifecycle and cross-subdomain cookie policy in the auth runtime.
+- 490d132: Compose package runtimes from generic Node primitives and typed graph ports instead of Operator capability wiring.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+
 ## 0.125.0
 
 ### Minor Changes

@@ -1,5 +1,35 @@
 # @voyant-travel/cruises-react
 
+## 0.152.0
+
+### Minor Changes
+
+- 490d132: Expose package-owned storefront browse, content resolution, slot selection, and
+  product, accommodation, and cruise detail components.
+
+### Patch Changes
+
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/cruises@0.152.0
+  - @voyant-travel/storefront-react@0.155.0
+  - @voyant-travel/catalog-react@0.151.0
+
 ## 0.151.0
 
 ### Patch Changes

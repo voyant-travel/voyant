@@ -1,5 +1,27 @@
 # @voyant-travel/worker-runtime
 
+## 0.6.0
+
+### Minor Changes
+
+- 282892e: Make `@voyant-travel/runtime` the single public Node project host, move low-level
+  host primitives to `@voyant-travel/runtime-core`, and remove the package-owned
+  runtime CLI. Rename remaining first-party operator-specific subpaths to generic
+  runtime or runtime-support surfaces.
+
+### Patch Changes
+
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/storage@0.109.0
+
 ## 0.5.2
 
 ### Patch Changes

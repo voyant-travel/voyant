@@ -1,5 +1,30 @@
 # @voyant-travel/auth-react
 
+## 0.126.0
+
+### Minor Changes
+
+- 490d132: Own the local admin auth route contribution, page orchestration, and bootstrap policy in the package so generic generated route hosts only bind the selected contribution.
+
+### Patch Changes
+
+- 490d132: Own invitation redemption presentation and local authentication bootstrap policy in the auth React package.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/auth@0.126.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/types@0.108.1
+
 ## 0.125.0
 
 ### Minor Changes

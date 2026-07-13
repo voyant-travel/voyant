@@ -1,5 +1,19 @@
 # @voyant-travel/openapi
 
+## 0.5.0
+
+### Minor Changes
+
+- 047c3f9: Release the generic Node operator host and minimal project authoring surface, with standard product
+  BOM expansion, convention-driven project runtime adapters, and an independently bootable starter.
+
+### Patch Changes
+
+- c65b05c: Resolve graph-relative runtime entries from their generated runtime directory
+  when composing an admitted project in memory, and refresh Finance OpenAPI
+  artifacts with their package-owned API identifiers.
+- 490d132: Delete the framework-owned compatibility composition catalog. Standard modules and extensions now compose exclusively from admitted package manifests and the generated graph runtime, including local `src/extensions/*/index.ts` conventions. Keep `createVoyantApp` as generic explicit Hono composition machinery, remove the Operator bindings registry, and generate framework OpenAPI from graph-owned factories. This cutover preserves the SmartBill `^0.140.0` package runtime and typed host-port integration from the governance rollup.
+
 ## 0.4.3
 
 ### Patch Changes

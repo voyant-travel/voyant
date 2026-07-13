@@ -1,5 +1,90 @@
 # @voyant-travel/legal
 
+## 0.153.0
+
+### Minor Changes
+
+- 490d132: Move standard Node contract document variables, generation, and subscriber provider composition into the Legal domain package.
+
+### Patch Changes
+
+- 047c3f9: Move booking and payment runtime configuration behind package-owned graph factories and typed deployment ports.
+- 490d132: Move standard cross-package links from the operator starter to package-owned
+  manifests and explicit standard-product selections, and generate executable
+  links from the selected deployment graph.
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Move Commerce runtime composition from the Operator starter into statically selected package contributors and typed domain ports.
+- 490d132: Expose package-owned runtime contributor maps for Storefront, Legal, and Inventory deployment adapters.
+- 490d132: Declare the remaining package-owned OpenAPI documents backed by committed operations and preserve exact graph API ownership at shared route mounts.
+- 490d132: Derive the final package runtime bindings from generic deployment capabilities and primitives, with no product-specific generated runtime host resources.
+- 490d132: Move the Finance, Legal, and Trips admin and public API surfaces onto package-owned selected-graph OpenAPI authority.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- c65b05c: Move standard cross-package link tables and the person directory view into
+  upgrade-safe package migration histories, use stable package ledger identities,
+  and remove aggregate Drizzle and migration authority from the Operator starter.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [cda53b6]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/commerce@0.35.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/action-ledger@0.108.0
+  - @voyant-travel/distribution@0.143.0
+  - @voyant-travel/relationships@0.124.1
+  - @voyant-travel/storage@0.109.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/inventory@0.9.0
+  - @voyant-travel/operator-settings@0.3.6
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+
 ## 0.152.0
 
 ### Patch Changes

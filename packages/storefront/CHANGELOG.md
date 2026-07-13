@@ -1,5 +1,71 @@
 # @voyant-travel/storefront
 
+## 0.155.0
+
+### Minor Changes
+
+- 490d132: Move Storefront intake persistence, customer presentation routes, route policy,
+  and locale provider composition into package-owned selected graph contributions.
+
+### Patch Changes
+
+- 047c3f9: Move booking and payment runtime configuration behind package-owned graph factories and typed deployment ports.
+- 490d132: Expose package-owned runtime contributor maps for Storefront, Legal, and Inventory deployment adapters.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Derive host-service runtime port bindings from deployment capabilities.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- 490d132: Compose Storefront runtime behavior through static package-owned graph ports and remove the Operator runtime loader.
+- 490d132: Move Storefront OpenAPI authority into the package and require exact operation ownership for root-mounted graph bundles.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [cda53b6]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/commerce@0.35.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/legal@0.153.0
+  - @voyant-travel/relationships@0.124.1
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/identity@0.153.0
+
 ## 0.154.0
 
 ### Minor Changes

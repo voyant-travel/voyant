@@ -1,5 +1,26 @@
 # @voyant-travel/catalog-react
 
+## 0.151.0
+
+### Minor Changes
+
+- 490d132: Expose package-owned storefront browse, content resolution, slot selection, and
+  product, accommodation, and cruise detail components.
+
+### Patch Changes
+
+- 490d132: Remove the final Operator admin factory compatibility registry by composing cross-domain behavior through package-owned selected graph slots and contributions.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/commerce-react@0.35.0
+  - @voyant-travel/distribution-react@0.143.0
+  - @voyant-travel/inventory-react@0.35.0
+
 ## 0.150.0
 
 ### Patch Changes

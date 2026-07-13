@@ -1,5 +1,81 @@
 # @voyant-travel/mice
 
+## 0.9.0
+
+### Minor Changes
+
+- 047c3f9: Move Quotes, proposal, quote-version snapshot, and MICE graph runtime assembly behind package-owned typed ports and factories.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Move capability-derived Node runtime binding assembly into package-owned contributors.
+- 490d132: Move standard cross-package links from the operator starter to package-owned
+  manifests and explicit standard-product selections, and generate executable
+  links from the selected deployment graph.
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Declare Action Ledger, Distribution, MICE, and Relationships OpenAPI documents in their package-owned deployment manifests and ship their committed admin contracts from the owning packages.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- c65b05c: Move standard cross-package link tables and the person directory view into
+  upgrade-safe package migration histories, use stable package ledger identities,
+  and remove aggregate Drizzle and migration authority from the Operator starter.
+- 490d132: Compose package runtimes from generic Node primitives and typed graph ports instead of Operator capability wiring.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [cda53b6]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/distribution@0.143.0
+  - @voyant-travel/relationships@0.124.1
+  - @voyant-travel/quotes@0.128.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/accommodations@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/operations@0.6.6
+  - @voyant-travel/hono@0.125.1
+
 ## 0.8.0
 
 ### Minor Changes

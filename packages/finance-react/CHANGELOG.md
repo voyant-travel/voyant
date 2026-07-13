@@ -1,5 +1,45 @@
 # @voyant-travel/finance-react
 
+## 0.153.0
+
+### Minor Changes
+
+- c65b05c: Generate standard Operator route registrations under `.voyant`, move public
+  Finance and Quotes route behavior into package-owned contributions, and move
+  standard route composition into the product distribution so application source
+  contains only deployment adapters and local customization.
+
+### Patch Changes
+
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Remove the final Operator admin factory compatibility registry by composing cross-domain behavior through package-owned selected graph slots and contributions.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/bookings-react@0.153.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/distribution-react@0.143.0
+  - @voyant-travel/operations-react@0.34.0
+  - @voyant-travel/inventory-react@0.35.0
+
 ## 0.152.0
 
 ### Patch Changes

@@ -1,5 +1,79 @@
 # @voyant-travel/bookings-react
 
+## 0.153.0
+
+### Minor Changes
+
+- 490d132: Add a package-owned storefront booking journey with public checkout, contract
+  preview, payment-policy resolution, route callbacks, localized messages, and
+  market scope inputs.
+
+### Patch Changes
+
+- 490d132: Move the customer booking page and vertical summary orchestration into the package-owned storefront surface.
+- 490d132: Remove the final Operator admin factory compatibility registry by composing cross-domain behavior through package-owned selected graph slots and contributions.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/cruises@0.152.0
+  - @voyant-travel/accommodations@0.113.0
+  - @voyant-travel/inventory@0.9.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/commerce-react@0.35.0
+  - @voyant-travel/distribution-react@0.143.0
+  - @voyant-travel/finance-react@0.153.0
+  - @voyant-travel/legal-react@0.153.0
+  - @voyant-travel/operations-react@0.34.0
+  - @voyant-travel/relationships-react@0.153.0
+  - @voyant-travel/storefront-react@0.155.0
+  - @voyant-travel/catalog-react@0.151.0
+  - @voyant-travel/inventory-react@0.35.0
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/identity-react@0.153.0
+
 ## 0.152.0
 
 ### Patch Changes

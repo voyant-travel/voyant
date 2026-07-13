@@ -1,5 +1,154 @@
 # @voyant-travel/framework
 
+## 0.40.0
+
+### Minor Changes
+
+- 490d132: Move credential invitations and cloud team management into auth-owned graph
+  units, with deployment configuration and email delivery supplied through a
+  typed runtime port.
+- 490d132: Expose deterministic facet-level upgrade and uninstall consequences, including retained durable data, explicitly released resources, and enforced package `upgradeFrom` compatibility ranges.
+- 490d132: Resolve runtime contributors directly from admitted package metadata and remove generated runtime discovery catalogs.
+- 490d132: Move selected-graph workflow loading, scheduled-job planning, and lazy API/auth dispatch into the generic Node host surface.
+- 047c3f9: Retire migrated package factories from the central lazy composition registry and route their Node host behavior through package-declared runtime ports.
+- 490d132: Expose the selected graph and runtime-port providers to package runtime factories, then make MCP compose its graph and tool context without Operator-specific wiring.
+- 490d132: Move generated deployment artifact validation and Node provider planning into the reusable framework Node host surface.
+- c65b05c: Add the explicit standard Operator product distribution package, move standard
+  selection and exact-pinned dependency ownership into it, and resolve selected
+  package manifests relative to the distribution under strict pnpm installs.
+- 490d132: Add explicit many-valued graph runtime ports and move invoice settlement poller composition into Finance so selected invoicing adapters aggregate deterministically without starter-owned bridges.
+- 490d132: Add the graph-native generic Node runtime API and boot generated project and
+  deployment artifacts without constructing or reading a managed-profile
+  compatibility snapshot.
+- 490d132: Add graph-lowered upgrade and uninstall execution contracts with retry-safe rollback state, explicit resource cleanup, and versioned emitted-event payload schema compatibility validation.
+- 047c3f9: Release the generic Node operator host and minimal project authoring surface, with standard product
+  BOM expansion, convention-driven project runtime adapters, and an independently bootable starter.
+- 490d132: Move Commerce, Catalog, Finance, Legal, and Storage runtime authority out of the
+  resident Node compatibility provider container. Compose selected routes through
+  package graph factories and typed runtime ports, and resolve Catalog and Finance
+  MCP services through package-owned tool-context contributions.
+- 490d132: Boot packaged Operator projects with the statically selected package runtime contributors and reusable generic Node host primitives instead of fail-on-use runtime port stubs.
+- 490d132: Delete the framework-owned compatibility composition catalog. Standard modules and extensions now compose exclusively from admitted package manifests and the generated graph runtime, including local `src/extensions/*/index.ts` conventions. Keep `createVoyantApp` as generic explicit Hono composition machinery, remove the Operator bindings registry, and generate framework OpenAPI from graph-owned factories. This cutover preserves the SmartBill `^0.140.0` package runtime and typed host-port integration from the governance rollup.
+- 490d132: Remove the framework's snapshot-era profile, managed runtime, managed jobs, profile-to-graph conversion, and dynamic profile composition exports. Graph projects and the generic Node runtime are now the only framework deployment authority; generic deployment mode and provider validation remain supported.
+- 490d132: Govern tool, action, MCP, and outbound webhook eligibility from selected graph declarations and emit inspectable project manifests.
+- 047c3f9: Add versioned standard product BOM provenance, inspectable expansion artifacts, and the minimal Node starter contract. Replace the final SmartBill package-ID bridge with its typed Node host port and package-owned runtime, subscribers, and settlement pollers.
+- 282892e: Make `@voyant-travel/runtime` the single public Node project host, move low-level
+  host primitives to `@voyant-travel/runtime-core`, and remove the package-owned
+  runtime CLI. Rename remaining first-party operator-specific subpaths to generic
+  runtime or runtime-support surfaces.
+
+### Patch Changes
+
+- 490d132: Allow disjoint selected API bundles to contribute to one package-owned OpenAPI document and move the Bookings admin and public surfaces onto that authority.
+- c65b05c: Bound generated composition types by using one runtime-contributor host contract and pairing the selected-admin ESM artifact with a declaration facade.
+- c65b05c: Move the process-owned Node database lifecycle API into the generic database runtime so deployment hosts do not need local facades.
+- 490d132: Move standard Node runtime construction for Flights, Notifications, and Quotes proposal wiring into their domain packages.
+- c65b05c: Expose graph-derived Google Cloud Scheduler provisioning as a framework API so
+  Node projects and the external CLI do not need project-owned scheduler scripts.
+- 490d132: Move standard cross-package links from the operator starter to package-owned
+  manifests and explicit standard-product selections, and generate executable
+  links from the selected deployment graph.
+- 490d132: Select package-owned Node workflow services through additive graph runtime contributors instead of composing Catalog, Cruises, and DB services in the Operator starter. Notifications keeps its existing package graph bootstrap.
+- c65b05c: Move the complete graph-native Node application host into runtime,
+  including generated graph admission, local and managed auth, API/admin serving,
+  workflow services and schedules, outbound delivery, links, and runtime ports.
+  Move the generic Postgres webhook enqueue boundary out of Distribution and into
+  the neutral webhook-delivery package.
+- c65b05c: Discover application public API routes from the generated starter's
+  `src/api/public` convention and validate that a new starter can build and run a
+  route authored there.
+- 490d132: Remove the retired framework runtime-manifest, extension-ownership, capability,
+  and synthetic manifest projections. Standard product selection remains owned by
+  the graph-native Operator distribution and package `./voyant` manifests.
+- c65b05c: Resolve graph-relative runtime entries from their generated runtime directory
+  when composing an admitted project in memory, and refresh Finance OpenAPI
+  artifacts with their package-owned API identifiers.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Allow generated Node boot probes to validate arbitrary package-owned runtime ports through generic fail-on-use stubs.
+- 490d132: Compose MCP tools and their service context from graph-selected package runtime exports instead of an Operator-owned product catalog.
+- c65b05c: Generate standard Operator TypeScript, environment, Vite, and Vitest metadata beneath `.voyant` instead of shipping copied starter configuration.
+- 490d132: Move standard Node contract document variables, generation, and subscriber provider composition into the Legal domain package.
+- 490d132: Move runtime construction into BOM-selected domain contributors and replace the Finance target package with typed graph ports while keeping package dependencies acyclic.
+- 490d132: Move Operator Settings and Relationships admin presentation authority into selected package graph factories.
+- 490d132: Publish package-owned OpenAPI registries and graph document declarations for storage, realtime, and public document delivery APIs, with exact operation ownership for overlapping route mounts.
+- 490d132: Move charter/cruise route activation and travel/infrastructure scheduled work
+  to graph-selected package manifests. Distribution, Cruises, and DB now publish
+  their scheduled workflow implementations, while Workflow Runs owns generic
+  schedule dispatch and the Operator supplies only Node runtime dependencies.
+- c65b05c: Move standard cross-package link tables and the person directory view into
+  upgrade-safe package migration histories, use stable package ledger identities,
+  and remove aggregate Drizzle and migration authority from the Operator starter.
+- 490d132: Declare that the standard Node starter has no default plugins so external integrations such as SmartBill are admitted only when a project selects them explicitly.
+- cda53b6: Preserve legacy migration and route behavior in the unified Node host, align generated admin assets with their graph artifacts, restore auth email and media compatibility, and publish the selected-graph OpenAPI entry.
+- 490d132: Move the Catalog, Commerce, and Inventory OpenAPI surfaces to exact selected-graph API ownership, including overlapping package extensions.
+- 490d132: Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, consolidate Distribution channel-push composition into its domain package, and make Workflow Runs own runner registration authority.
+- 490d132: Provide validated subscription mutations, durable projected webhook enqueue, restart-safe payload storage, and one claim-driven signed, retrying, audited delivery worker.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- 490d132: Make selected package API facets the exclusive OpenAPI document authority and reject unclaimed or duplicate operations.
+- 490d132: Move Storefront OpenAPI authority into the package and require exact operation ownership for root-mounted graph bundles.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [1f6effe]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [cda53b6]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [c65b05c]
+  - @voyant-travel/auth@0.126.0
+  - @voyant-travel/action-ledger@0.108.0
+  - @voyant-travel/cruises@0.152.0
+  - @voyant-travel/storage@0.109.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/mcp@0.2.0
+  - @voyant-travel/operator-standard@0.2.0
+  - @voyant-travel/tools@0.2.0
+  - @voyant-travel/framework-migrations@0.8.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/runtime-core@0.6.0
+  - @voyant-travel/workflows@0.117.0
+  - @voyant-travel/workflows-orchestrator@0.117.0
+
 ## 0.39.0
 
 ### Minor Changes

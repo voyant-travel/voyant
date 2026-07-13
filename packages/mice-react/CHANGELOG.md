@@ -1,5 +1,26 @@
 # @voyant-travel/mice-react
 
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/mice@0.9.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/relationships-react@0.153.0
+  - @voyant-travel/types@0.108.1
+
 ## 0.20.0
 
 ### Minor Changes

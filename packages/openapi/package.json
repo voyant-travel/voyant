@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/openapi",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "license": "Apache-2.0",
   "description": "Generated OpenAPI 3.1 specification for the Voyant framework's standard API surface (admin + storefront).",
   "repository": {

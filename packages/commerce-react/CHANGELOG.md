@@ -1,5 +1,30 @@
 # @voyant-travel/commerce-react
 
+## 0.35.0
+
+### Patch Changes
+
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/commerce@0.35.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/distribution-react@0.143.0
+  - @voyant-travel/inventory-react@0.35.0
+  - @voyant-travel/types@0.108.1
+
 ## 0.34.0
 
 ### Patch Changes
