@@ -1851,6 +1851,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/public-document-delivery':
+        specifier: workspace:^
+        version: link:../public-document-delivery
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../storage
@@ -2233,9 +2236,6 @@ importers:
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../db
-      '@voyant-travel/public-document-delivery':
-        specifier: workspace:^
-        version: link:../public-document-delivery
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -2641,6 +2641,9 @@ importers:
       '@voyant-travel/operator-settings':
         specifier: workspace:^
         version: link:../operator-settings
+      '@voyant-travel/public-document-delivery':
+        specifier: workspace:^
+        version: link:../public-document-delivery
       '@voyant-travel/relationships':
         specifier: workspace:^
         version: link:../relationships

@@ -57,7 +57,7 @@ export interface Subscriber<
  * - {@link LinkDefinition} values (cross-module associations)
  *
  * Transport adapters can intersect this shape with their own fields (see
- * `HonoPlugin` in `@voyant-travel/hono` for the Hono variant).
+ * `HonoBundle` in `@voyant-travel/hono` for the Hono variant).
  */
 export interface Plugin {
   /** Unique plugin identifier (e.g. "payload-cms", "bokun"). */

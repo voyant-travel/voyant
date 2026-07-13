@@ -22,17 +22,19 @@ import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-led
 import { type BookingPiiService, shouldRevealBookingPii } from "@voyant-travel/bookings"
 import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import {
-  createDrizzlePublicDocumentDeliveryGrantStore,
-  createPublicDocumentDeliveryGrant,
   idempotencyKey,
   isStaffRbacEnforced,
   openApiValidationHook,
   parseJsonBody,
   parseOptionalJsonBody,
-  resolvePublicDocumentDeliveryGrant,
   resolveStoredDocumentDownload,
 } from "@voyant-travel/hono"
 import { legalTargetKindSchema } from "@voyant-travel/legal-contracts/targets/validation"
+import {
+  createDrizzlePublicDocumentDeliveryGrantStore,
+  createPublicDocumentDeliveryGrant,
+  resolvePublicDocumentDeliveryGrant,
+} from "@voyant-travel/public-document-delivery"
 import type { StorageProvider } from "@voyant-travel/storage"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"

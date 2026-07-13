@@ -23,12 +23,11 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus, ModuleContainer } from "@voyant-travel/core"
+import { openApiValidationHook, parseOptionalJsonBody } from "@voyant-travel/hono"
 import {
   createDrizzlePublicDocumentDeliveryGrantStore,
   createPublicDocumentDeliveryGrant,
-  openApiValidationHook,
-  parseOptionalJsonBody,
-} from "@voyant-travel/hono"
+} from "@voyant-travel/public-document-delivery"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 

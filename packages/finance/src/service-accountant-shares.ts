@@ -4,7 +4,7 @@ import {
   createPublicDocumentDeliveryGrant,
   resolvePublicDocumentDeliveryGrant,
   revokePublicDocumentDeliveryGrant,
-} from "@voyant-travel/hono"
+} from "@voyant-travel/public-document-delivery"
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 

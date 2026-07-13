@@ -9,9 +9,8 @@
     "./openapi": "./src/openapi.ts",
     "./module": "./src/module.ts",
     "./composition": "./src/composition.ts",
-    "./plugin": "./src/plugin.ts",
+    "./bundle": "./src/bundle.ts",
     "./document-download": "./src/document-download.ts",
-    "./public-document-delivery": "./src/public-document-delivery.ts",
     "./types": "./src/types.ts",
     "./observability": "./src/observability/index.ts",
     "./observability/reporter": "./src/observability/reporter.ts",
@@ -42,7 +41,6 @@
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
-    "@voyant-travel/public-document-delivery": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
@@ -103,20 +101,15 @@
         "import": "./dist/composition.js",
         "default": "./dist/composition.js"
       },
-      "./plugin": {
-        "types": "./dist/plugin.d.ts",
-        "import": "./dist/plugin.js",
-        "default": "./dist/plugin.js"
+      "./bundle": {
+        "types": "./dist/bundle.d.ts",
+        "import": "./dist/bundle.js",
+        "default": "./dist/bundle.js"
       },
       "./document-download": {
         "types": "./dist/document-download.d.ts",
         "import": "./dist/document-download.js",
         "default": "./dist/document-download.js"
-      },
-      "./public-document-delivery": {
-        "types": "./dist/public-document-delivery.d.ts",
-        "import": "./dist/public-document-delivery.js",
-        "default": "./dist/public-document-delivery.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",

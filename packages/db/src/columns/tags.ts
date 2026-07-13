@@ -5,18 +5,6 @@ import { text, timestamp } from "drizzle-orm/pg-core"
  */
 
 /**
- * Core columns for shared tags table (legacy)
- * @deprecated Use entityTagColumns() for entity-specific tags
- */
-export function tagsCoreColumns() {
-  return {
-    name: text("name").notNull(),
-    slug: text("slug").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  }
-}
-
-/**
  * Columns for entity-specific tag tables (Shopify model)
  *
  * Each entity type (people, organizations, products, collections)

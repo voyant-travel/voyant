@@ -114,7 +114,7 @@ export {
 } from "./room.js"
 export { shipCoreColumns } from "./ship.js"
 // Tags tables
-export { entityTagColumns, tagsCoreColumns } from "./tags.js"
+export { entityTagColumns } from "./tags.js"
 // Transport tables
 export {
   transportAddonsCoreColumns,

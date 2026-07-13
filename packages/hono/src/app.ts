@@ -18,6 +18,13 @@ import {
   makeFrameworkLogger,
   wireWorkflowRuntime,
 } from "./app-workflows.js"
+import {
+  type ExpandedHonoBundles,
+  expandHonoBundles,
+  type HonoBundle,
+  isLazyHonoBundle,
+  type LazyHonoBundle,
+} from "./bundle.js"
 import { type LazyRoutesLoader, mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
 import { mountAuthForwarding } from "./lib/auth-forward.js"
 import { createPathDbSelector } from "./lib/db-selector.js"
@@ -48,13 +55,6 @@ import { securityHeaders } from "./middleware/security-headers.js"
 import { resolveSurfaceMountPath } from "./mount-paths.js"
 import { noopReporter, safeCaptureException } from "./observability/reporter.js"
 import { getRequestId } from "./observability/request-context.js"
-import {
-  type ExpandedHonoBundles,
-  expandHonoBundles,
-  type HonoBundle,
-  isLazyHonoBundle,
-  type LazyHonoBundle,
-} from "./plugin.js"
 import type { VoyantAppConfig, VoyantBindings, VoyantDb, VoyantVariables } from "./types.js"
 
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])

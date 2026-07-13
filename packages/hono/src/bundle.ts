@@ -12,9 +12,8 @@ import type { HonoExtension, HonoModule } from "./module.js"
  * Hono-flavoured bundle contribution surface.
  *
  * `@voyant-travel/hono` is the default HTTP transport adapter for Voyant. The
- * preferred `HonoBundle` term describes reusable packages that contribute
- * {@link HonoModule} / {@link HonoExtension} wrappers that can carry HTTP
- * routes. `HonoPlugin` remains as a compatibility alias for the same shape.
+ * `HonoBundle` describes reusable packages that contribute {@link HonoModule}
+ * / {@link HonoExtension} wrappers that can carry HTTP routes.
  *
  * Registered via `createApp({ plugins: [...] })` — the app factory expands
  * each bundle into the underlying modules, extensions, subscribers, and link
@@ -58,9 +57,6 @@ export interface HonoBundle {
    */
   eventFilters?: readonly EventFilterDescriptor[]
 }
-
-/** @deprecated Prefer {@link HonoBundle}. */
-export type HonoPlugin = HonoBundle
 
 const LAZY_HONO_BUNDLE = Symbol.for("voyant.hono.lazyBundle")
 
@@ -130,9 +126,6 @@ export function isLazyHonoBundle(bundle: HonoBundleInput): bundle is LazyHonoBun
   return (bundle as LazyHonoBundle)[LAZY_HONO_BUNDLE] === true
 }
 
-/** @deprecated Prefer {@link defineHonoBundle}. */
-export const defineHonoPlugin = defineHonoBundle
-
 export interface ExpandedHonoBundles {
   modules: HonoModule[]
   extensions: HonoExtension[]
@@ -141,9 +134,6 @@ export interface ExpandedHonoBundles {
   /** Absolute anonymous-access paths declared by bundles (ADR-0008). */
   anonymousPaths: string[]
 }
-
-/** @deprecated Prefer {@link ExpandedHonoBundles}. */
-export type ExpandedHonoPlugins = ExpandedHonoBundles
 
 /**
  * Flatten a list of {@link HonoBundle} values into their constituent pieces.
@@ -173,6 +163,3 @@ export function expandHonoBundles(bundles: ReadonlyArray<HonoBundle>): ExpandedH
 
   return { modules, extensions, subscribers, links, anonymousPaths }
 }
-
-/** @deprecated Prefer {@link expandHonoBundles}. */
-export const expandHonoPlugins = expandHonoBundles
