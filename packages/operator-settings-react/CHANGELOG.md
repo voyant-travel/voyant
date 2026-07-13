@@ -1,5 +1,34 @@
 # @voyant-travel/operator-settings-react
 
+## 0.6.0
+
+### Patch Changes
+
+- 490d132: Move Operator Settings and Relationships admin presentation authority into selected package graph factories.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/finance-react@0.153.0
+  - @voyant-travel/admin-app@0.45.0
+
 ## 0.5.0
 
 ### Patch Changes

@@ -1,5 +1,44 @@
 # @voyant-travel/storefront-react
 
+## 0.155.0
+
+### Minor Changes
+
+- 490d132: Move Storefront intake persistence, customer presentation routes, route policy,
+  and locale provider composition into package-owned selected graph contributions.
+- 490d132: Expose package-owned storefront browse, content resolution, slot selection, and
+  product, accommodation, and cruise detail components.
+
+### Patch Changes
+
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/storefront@0.155.0
+  - @voyant-travel/auth-react@0.126.0
+  - @voyant-travel/accommodations@0.113.0
+  - @voyant-travel/catalog-react@0.151.0
+
 ## 0.154.0
 
 ### Patch Changes

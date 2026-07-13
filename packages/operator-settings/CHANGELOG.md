@@ -1,5 +1,48 @@
 # @voyant-travel/operator-settings
 
+## 0.3.6
+
+### Patch Changes
+
+- 490d132: Move Commerce runtime composition from the Operator starter into statically selected package contributors and typed domain ports.
+- 490d132: Move runtime construction into BOM-selected domain contributors and replace the Finance target package with typed graph ports while keeping package dependencies acyclic.
+- 490d132: Move Operator Settings and Relationships admin presentation authority into selected package graph factories.
+- 490d132: Move platform and operations OpenAPI authority into the owning package manifests and publish their committed documents from package-local exports.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+  - @voyant-travel/commerce@0.35.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/hono@0.125.1
+
 ## 0.3.5
 
 ### Patch Changes

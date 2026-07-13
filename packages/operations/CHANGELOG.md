@@ -1,5 +1,47 @@
 # @voyant-travel/operations
 
+## 0.6.6
+
+### Patch Changes
+
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Replace temporary nested owner exports with intentional validation, linkable, scheduling, and workflow public surfaces.
+- 490d132: Move platform and operations OpenAPI authority into the owning package manifests and publish their committed documents from package-local exports.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- 490d132: Remove the final Operator admin factory compatibility registry by composing cross-domain behavior through package-owned selected graph slots and contributions.
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/availability@0.2.6
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/identity@0.153.0
+
 ## 0.6.5
 
 ### Patch Changes

@@ -1,5 +1,35 @@
 # @voyant-travel/action-ledger
 
+## 0.108.0
+
+### Minor Changes
+
+- 047c3f9: Add package-owned graph runtime factories and typed deployment ports for Catalog search, booking, and offers; Inventory core, content, and brochures; Accommodations and Cruises content; and Action Ledger health.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Declare Action Ledger, Distribution, MICE, and Relationships OpenAPI documents in their package-owned deployment manifests and ship their committed admin contracts from the owning packages.
+- 490d132: Derive the final package runtime bindings from generic deployment capabilities and primitives, with no product-specific generated runtime host resources.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, consolidate Distribution channel-push composition into its domain package, and make Workflow Runs own runner registration authority.
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/hono@0.125.1
+
 ## 0.107.0
 
 ### Minor Changes

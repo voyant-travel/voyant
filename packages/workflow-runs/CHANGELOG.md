@@ -1,5 +1,40 @@
 # @voyant-travel/workflow-runs
 
+## 0.117.0
+
+### Minor Changes
+
+- 490d132: Move charter/cruise route activation and travel/infrastructure scheduled work
+  to graph-selected package manifests. Distribution, Cruises, and DB now publish
+  their scheduled workflow implementations, while Workflow Runs owns generic
+  schedule dispatch and the Operator supplies only Node runtime dependencies.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Derive the final package runtime bindings from generic deployment capabilities and primitives, with no product-specific generated runtime host resources.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Move platform and operations OpenAPI authority into the owning package manifests and publish their committed documents from package-local exports.
+- 490d132: Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, consolidate Distribution channel-push composition into its domain package, and make Workflow Runs own runner registration authority.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/workflows@0.117.0
+
 ## 0.116.0
 
 ### Minor Changes

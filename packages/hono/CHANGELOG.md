@@ -1,5 +1,29 @@
 # @voyant-travel/hono
 
+## 0.125.1
+
+### Patch Changes
+
+- 490d132: Move the Catalog, Commerce, and Inventory OpenAPI surfaces to exact selected-graph API ownership, including overlapping package extensions.
+- 490d132: Delete the framework-owned compatibility composition catalog. Standard modules and extensions now compose exclusively from admitted package manifests and the generated graph runtime, including local `src/extensions/*/index.ts` conventions. Keep `createVoyantApp` as generic explicit Hono composition machinery, remove the Operator bindings registry, and generate framework OpenAPI from graph-owned factories. This cutover preserves the SmartBill `^0.140.0` package runtime and typed host-port integration from the governance rollup.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/public-document-delivery@0.3.0
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/workflows@0.117.0
+
 ## 0.125.0
 
 ### Minor Changes

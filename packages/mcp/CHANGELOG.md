@@ -1,5 +1,34 @@
 # @voyant-travel/mcp
 
+## 0.2.0
+
+### Minor Changes
+
+- 490d132: Expose the selected graph and runtime-port providers to package runtime factories, then make MCP compose its graph and tool context without Operator-specific wiring.
+- 490d132: Compose MCP tools and their service context from graph-selected package runtime exports instead of an Operator-owned product catalog.
+- 490d132: Move Commerce, Catalog, Finance, Legal, and Storage runtime authority out of the
+  resident Node compatibility provider container. Compose selected routes through
+  package graph factories and typed runtime ports, and resolve Catalog and Finance
+  MCP services through package-owned tool-context contributions.
+
+### Patch Changes
+
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/tools@0.2.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+
 ## 0.1.1
 
 ### Patch Changes

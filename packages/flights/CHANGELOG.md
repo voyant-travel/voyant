@@ -1,5 +1,57 @@
 # @voyant-travel/flights
 
+## 0.153.0
+
+### Minor Changes
+
+- 490d132: Move standard Node runtime construction for Flights, Notifications, and Quotes proposal wiring into their domain packages.
+- c65b05c: Own the curated airline, airport, and aircraft reference fixture behind the supported `@voyant-travel/flights/reference/fixtures` API.
+- 490d132: Publish package-owned OpenAPI registries and selected-graph documents for accommodation content, Flights, and public quote proposal APIs.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Derive travel runtime port bindings from deployment host capabilities.
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/hono@0.125.1
+
 ## 0.152.0
 
 ### Minor Changes

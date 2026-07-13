@@ -1,5 +1,16 @@
 # @voyant-travel/types
 
+## 0.108.1
+
+### Patch Changes
+
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/db@0.113.0
+
 ## 0.108.0
 
 ### Minor Changes

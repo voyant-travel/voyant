@@ -1,5 +1,85 @@
 # @voyant-travel/trips
 
+## 0.144.0
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Derive travel runtime port bindings from deployment host capabilities.
+- 490d132: Expose the selected graph and runtime-port providers to package runtime factories, then make MCP compose its graph and tool context without Operator-specific wiring.
+- 490d132: Move Trips lifecycle composition, checkout FX handling, payment-policy readers, and workflow effects from the Operator starter into package-owned runtime surfaces.
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Move Commerce runtime composition from the Operator starter into statically selected package contributors and typed domain ports.
+- 490d132: Move the Finance, Legal, and Trips admin and public API surfaces onto package-owned selected-graph OpenAPI authority.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Compose MCP tools and their service context from graph-selected package runtime exports instead of an Operator-owned product catalog.
+- 490d132: Compose package runtimes from generic Node primitives and typed graph ports instead of Operator capability wiring.
+- 490d132: Compose Storefront runtime behavior through static package-owned graph ports and remove the Operator runtime loader.
+- 490d132: Remove the final Operator admin factory compatibility registry by composing cross-domain behavior through package-owned selected graph slots and contributions.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/commerce@0.35.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/storefront@0.155.0
+  - @voyant-travel/flights@0.153.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/inventory@0.9.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/operator-settings@0.3.6
+  - @voyant-travel/tools@0.2.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+
 ## 0.143.0
 
 ### Patch Changes

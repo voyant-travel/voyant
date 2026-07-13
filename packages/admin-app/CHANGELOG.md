@@ -1,5 +1,32 @@
 # @voyant-travel/admin-app
 
+## 0.45.0
+
+### Minor Changes
+
+- 490d132: Remove the final snapshot-era managed-profile aliases from the admin and migration package surfaces. Admin hosts now consume `AdminAuthRuntime`, `getAdminApiUrl`, and `adminFetcher`; deployment migration collection is exposed as `collectDeploymentMigrationSources`.
+
+### Patch Changes
+
+- 490d132: Move built-in admin route message providers into route-owned contribution metadata and remove first-party package fallback knowledge from the generic admin host.
+- 490d132: Move Operator Settings and Relationships admin presentation authority into selected package graph factories.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/auth-react@0.126.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/commerce-react@0.35.0
+  - @voyant-travel/distribution-react@0.143.0
+  - @voyant-travel/finance-react@0.153.0
+  - @voyant-travel/inventory-react@0.35.0
+  - @voyant-travel/types@0.108.1
+
 ## 0.44.0
 
 ### Minor Changes

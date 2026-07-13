@@ -1,5 +1,14 @@
 # @voyant-travel/vite-config
 
+## 0.3.0
+
+### Minor Changes
+
+- c65b05c: Generate standard Operator route registrations under `.voyant`, move public
+  Finance and Quotes route behavior into package-owned contributions, and move
+  standard route composition into the product distribution so application source
+  contains only deployment adapters and local customization.
+
 ## 0.2.0
 
 ### Minor Changes

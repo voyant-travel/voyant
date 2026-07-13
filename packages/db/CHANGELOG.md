@@ -1,5 +1,29 @@
 # @voyant-travel/db
 
+## 0.113.0
+
+### Minor Changes
+
+- 490d132: Move charter/cruise route activation and travel/infrastructure scheduled work
+  to graph-selected package manifests. Distribution, Cruises, and DB now publish
+  their scheduled workflow implementations, while Workflow Runs owns generic
+  schedule dispatch and the Operator supplies only Node runtime dependencies.
+
+### Patch Changes
+
+- c65b05c: Move the process-owned Node database lifecycle API into the generic database runtime so deployment hosts do not need local facades.
+- 490d132: Select package-owned Node workflow services through additive graph runtime contributors instead of composing Catalog, Cruises, and DB services in the Operator starter. Notifications keeps its existing package graph bootstrap.
+- 490d132: Provide validated subscription mutations, durable projected webhook enqueue, restart-safe payload storage, and one claim-driven signed, retrying, audited delivery worker.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/workflows@0.117.0
+
 ## 0.112.2
 
 ### Patch Changes

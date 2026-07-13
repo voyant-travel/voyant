@@ -1,5 +1,103 @@
 # @voyant-travel/inventory
 
+## 0.9.0
+
+### Minor Changes
+
+- 047c3f9: Add package-owned graph runtime factories and typed deployment ports for Catalog search, booking, and offers; Inventory core, content, and brochures; Accommodations and Cruises content; and Action Ledger health.
+- 490d132: Move owned product, accommodation, and cruise booking runtime behavior out of the Operator starter and into package-owned runtime surfaces.
+- 490d132: Move standard Node media storage, video upload, document delivery, and brochure printing authority into package-owned runtime contributors.
+- 282892e: Make `@voyant-travel/runtime` the single public Node project host, move low-level
+  host primitives to `@voyant-travel/runtime-core`, and remove the package-owned
+  runtime CLI. Rename remaining first-party operator-specific subpaths to generic
+  runtime or runtime-support surfaces.
+
+### Patch Changes
+
+- 490d132: Move standard cross-package links from the operator starter to package-owned
+  manifests and explicit standard-product selections, and generate executable
+  links from the selected deployment graph.
+- 490d132: Move Trips lifecycle composition, checkout FX handling, payment-policy readers, and workflow effects from the Operator starter into package-owned runtime surfaces.
+- 490d132: Move Commerce runtime composition from the Operator starter into statically selected package contributors and typed domain ports.
+- 490d132: Expose package-owned runtime contributor maps for Storefront, Legal, and Inventory deployment adapters.
+- 490d132: Derive the final package runtime bindings from generic deployment capabilities and primitives, with no product-specific generated runtime host resources.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Compose MCP tools and their service context from graph-selected package runtime exports instead of an Operator-owned product catalog.
+- 490d132: Move runtime construction into BOM-selected domain contributors and replace the Finance target package with typed graph ports while keeping package dependencies acyclic.
+- 490d132: Move catalog content configuration, booking financial lifecycle behavior, and catalog/commerce scheduled work behind package-owned graph factories and workflows.
+- c65b05c: Move standard cross-package link tables and the person directory view into
+  upgrade-safe package migration histories, use stable package ledger identities,
+  and remove aggregate Drizzle and migration authority from the Operator starter.
+- 490d132: Move Inventory workflow and brochure runtime composition behind package-owned typed ports and remove the Operator runtime capability.
+- 490d132: Move the Catalog, Commerce, and Inventory OpenAPI surfaces to exact selected-graph API ownership, including overlapping package extensions.
+- 490d132: Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, consolidate Distribution channel-push composition into its domain package, and make Workflow Runs own runner registration authority.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- 490d132: Remove the final Operator admin factory compatibility registry by composing cross-domain behavior through package-owned selected graph slots and contributions.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [cda53b6]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/commerce@0.35.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/action-ledger@0.108.0
+  - @voyant-travel/relationships@0.124.1
+  - @voyant-travel/storage@0.109.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/operations@0.6.6
+  - @voyant-travel/operator-settings@0.3.6
+  - @voyant-travel/tools@0.2.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/workflows@0.117.0
+
 ## 0.8.6
 
 ### Patch Changes

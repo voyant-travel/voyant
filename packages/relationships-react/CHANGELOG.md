@@ -1,5 +1,31 @@
 # @voyant-travel/crm-react
 
+## 0.153.0
+
+### Patch Changes
+
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- 490d132: Move Operator Settings and Relationships admin presentation authority into selected package graph factories.
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [cda53b6]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/relationships@0.124.1
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/identity-react@0.153.0
+
 ## 0.152.0
 
 ### Patch Changes

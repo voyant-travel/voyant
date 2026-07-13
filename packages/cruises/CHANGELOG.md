@@ -1,5 +1,74 @@
 # @voyant-travel/cruises
 
+## 0.152.0
+
+### Minor Changes
+
+- 047c3f9: Add package-owned graph runtime factories and typed deployment ports for Catalog search, booking, and offers; Inventory core, content, and brochures; Accommodations and Cruises content; and Action Ledger health.
+- 490d132: Move owned product, accommodation, and cruise booking runtime behavior out of the Operator starter and into package-owned runtime surfaces.
+- 490d132: Move charter/cruise route activation and travel/infrastructure scheduled work
+  to graph-selected package manifests. Distribution, Cruises, and DB now publish
+  their scheduled workflow implementations, while Workflow Runs owns generic
+  schedule dispatch and the Operator supplies only Node runtime dependencies.
+- 282892e: Make `@voyant-travel/runtime` the single public Node project host, move low-level
+  host primitives to `@voyant-travel/runtime-core`, and remove the package-owned
+  runtime CLI. Rename remaining first-party operator-specific subpaths to generic
+  runtime or runtime-support surfaces.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Derive travel runtime port bindings from deployment host capabilities.
+- 490d132: Select package-owned Node workflow services through additive graph runtime contributors instead of composing Catalog, Cruises, and DB services in the Operator starter. Notifications keeps its existing package graph bootstrap.
+- 490d132: Move Trips lifecycle composition, checkout FX handling, payment-policy readers, and workflow effects from the Operator starter into package-owned runtime surfaces.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Move runtime construction into BOM-selected domain contributors and replace the Finance target package with typed graph ports while keeping package dependencies acyclic.
+- 490d132: Move catalog content configuration, booking financial lifecycle behavior, and catalog/commerce scheduled work behind package-owned graph factories and workflows.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+- 490d132: Make selected package API facets the exclusive OpenAPI document authority and reject unclaimed or duplicate operations.
+- 490d132: Move travel-product OpenAPI ownership into selected graph manifests and package route registries.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/finance@0.153.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+  - @voyant-travel/workflows@0.117.0
+
 ## 0.151.0
 
 ### Patch Changes

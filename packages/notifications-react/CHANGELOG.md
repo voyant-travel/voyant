@@ -1,5 +1,28 @@
 # @voyant-travel/notifications-react
 
+## 0.125.0
+
+### Patch Changes
+
+- 490d132: Move standard first-party admin factories, package copy, slots, contributions, and icons into selected deployment graph composition.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/notifications@0.125.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/types@0.108.1
+
 ## 0.124.0
 
 ### Patch Changes

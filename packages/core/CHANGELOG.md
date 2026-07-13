@@ -1,5 +1,22 @@
 # @voyant-travel/core
 
+## 0.119.0
+
+### Minor Changes
+
+- 490d132: Expose the selected graph and runtime-port providers to package runtime factories, then make MCP compose its graph and tool context without Operator-specific wiring.
+- 490d132: Add explicit many-valued graph runtime ports and move invoice settlement poller composition into Finance so selected invoicing adapters aggregate deterministically without starter-owned bridges.
+- 490d132: Add graph-lowered upgrade and uninstall execution contracts with retry-safe rollback state, explicit resource cleanup, and versioned emitted-event payload schema compatibility validation.
+- 047c3f9: Add versioned standard product BOM provenance, inspectable expansion artifacts, and the minimal Node starter contract. Replace the final SmartBill package-ID bridge with its typed Node host port and package-owned runtime, subscribers, and settlement pollers.
+
+### Patch Changes
+
+- 490d132: Move standard cross-package links from the operator starter to package-owned
+  manifests and explicit standard-product selections, and generate executable
+  links from the selected deployment graph.
+- 490d132: Select package-owned Node workflow services through additive graph runtime contributors instead of composing Catalog, Cruises, and DB services in the Operator starter. Notifications keeps its existing package graph bootstrap.
+- 490d132: Make package and project declarations the sole selected access authority, removing legacy catalog overlays and runtime synthesis.
+
 ## 0.118.0
 
 ### Minor Changes

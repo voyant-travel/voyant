@@ -1,5 +1,54 @@
 # @voyant-travel/charters
 
+## 0.151.0
+
+### Minor Changes
+
+- 490d132: Move charter/cruise route activation and travel/infrastructure scheduled work
+  to graph-selected package manifests. Distribution, Cruises, and DB now publish
+  their scheduled workflow implementations, while Workflow Runs owns generic
+  schedule dispatch and the Operator supplies only Node runtime dependencies.
+
+### Patch Changes
+
+- 490d132: Move travel-product OpenAPI ownership into selected graph manifests and package route registries.
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [c65b05c]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [282892e]
+- Updated dependencies [490d132]
+  - @voyant-travel/bookings@0.153.0
+  - @voyant-travel/db@0.113.0
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/catalog@0.151.0
+  - @voyant-travel/hono@0.125.1
+  - @voyant-travel/types@0.108.1
+
 ## 0.150.0
 
 ### Patch Changes

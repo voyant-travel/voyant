@@ -1,5 +1,16 @@
 # @voyant-travel/charters-react
 
+## 0.151.0
+
+### Patch Changes
+
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/catalog-react@0.151.0
+  - @voyant-travel/charters@0.151.0
+
 ## 0.150.0
 
 ### Patch Changes

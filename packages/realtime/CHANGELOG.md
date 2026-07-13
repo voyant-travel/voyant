@@ -1,5 +1,31 @@
 # @voyant-travel/realtime
 
+## 0.4.0
+
+### Minor Changes
+
+- 490d132: Own the standard Node provider policy and selected admin invalidation subscribers in the Realtime package.
+- 490d132: Publish package-owned OpenAPI registries and graph document declarations for storage, realtime, and public document delivery APIs, with exact operation ownership for overlapping route mounts.
+
+### Patch Changes
+
+- 490d132: Move the final Operator runtime-port registrations into package-owned contributor surfaces.
+- 490d132: Declare package-owned runtime contributors in `voyant.package.v1` metadata and statically lower selected contributors into generated Node graph source. Node hosts now compose one generated contributor set from opaque host resources without enumerating first-party factories or package IDs.
+- 490d132: Replace target-labelled standard Node runtime entries with neutral package-owned runtime exports and static contributors.
+- 490d132: Derive host-service runtime port bindings from deployment capabilities.
+- 490d132: Compose selected-graph and project-local admin extensions through the generic admin host, and declare Realtime's admin integration directly in its package manifest.
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+  - @voyant-travel/core@0.119.0
+  - @voyant-travel/hono@0.125.1
+
 ## 0.3.1
 
 ### Patch Changes

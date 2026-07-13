@@ -1,5 +1,38 @@
 # @voyant-travel/crm-react
 
+## 0.151.0
+
+### Minor Changes
+
+- c65b05c: Generate standard Operator route registrations under `.voyant`, move public
+  Finance and Quotes route behavior into package-owned contributions, and move
+  standard route composition into the product distribution so application source
+  contains only deployment adapters and local customization.
+
+### Patch Changes
+
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+- Updated dependencies [047c3f9]
+- Updated dependencies [490d132]
+- Updated dependencies [490d132]
+  - @voyant-travel/auth-react@0.126.0
+  - @voyant-travel/quotes@0.128.0
+  - @voyant-travel/admin@0.122.0
+  - @voyant-travel/relationships-react@0.153.0
+  - @voyant-travel/types@0.108.1
+
 ## 0.150.0
 
 ### Minor Changes
