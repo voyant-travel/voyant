@@ -21,7 +21,7 @@ for (const retiredPath of [
   if (existsSync(path.join(root, retiredPath))) violations.push(`${retiredPath} must stay deleted`)
 }
 
-const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
+const deploymentResources = read("packages/operator-runtime/src/deployment-resources.ts")
 const operatorAdapter = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
 const legalManifest = JSON.parse(read("packages/legal/package.json") || "{}")
 const contributor = read("packages/legal/src/runtime-contributor.ts")

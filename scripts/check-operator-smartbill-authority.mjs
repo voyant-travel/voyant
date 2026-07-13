@@ -22,7 +22,7 @@ function readRequired(path) {
 const operatorPackage = JSON.parse(readRequired(join(operatorRoot, "package.json")))
 const config = readRequired(join(operatorRoot, "voyant.config.ts"))
 const app = readRequired(join(operatorRoot, "src/api/app.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 const financeManifest = readRequired(join(root, "packages/finance/src/voyant.ts"))
 const financeRuntime = readRequired(join(root, "packages/finance/src/runtime.ts"))

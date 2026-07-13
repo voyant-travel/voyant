@@ -16,7 +16,7 @@ const checker = path.resolve(
 async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-legal-document-runtime-"))
   const files = {
-    "starters/operator/src/api/runtime/deployment-resources.ts": "generic primitives",
+    "packages/operator-runtime/src/deployment-resources.ts": "generic primitives",
     "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
       'import("@voyant-travel/legal/runtime")',
     "packages/legal/package.json": JSON.stringify({
@@ -58,7 +58,7 @@ it("accepts package-owned Legal document composition", async () => {
 
 it("rejects a restored deployment Legal loader", async () => {
   const root = await fixture({
-    "starters/operator/src/api/runtime/deployment-resources.ts": "loadLegalRuntime",
+    "packages/operator-runtime/src/deployment-resources.ts": "loadLegalRuntime",
   })
   await assert.rejects(execFileAsync(process.execPath, [checker, "--root", root]), (error) =>
     error.stderr.includes("loadLegalRuntime"),

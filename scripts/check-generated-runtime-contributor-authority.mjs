@@ -44,7 +44,7 @@ const [
   bomGenerator,
   ...packageJsonSources
 ] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   read("packages/framework/src/deployment-artifacts.ts"),
   read("packages/framework/src/project-resolver.ts"),
@@ -66,13 +66,13 @@ for (const retiredPath of [
     violations.push(`${retiredPath} is a retired generated resolver input`)
   }
 }
-if (/from\s+["'][^"']+\/runtime-contributor["']/.test(deploymentResources)) {
+if (/from\s+["'][^"']+\/runtime-contributor["']/.test(`${deploymentResources}\n${adapter}`)) {
   violations.push("Operator deployment resources must not import package runtime contributors")
 }
-if (/create[A-Za-z0-9]+RuntimePortContribution/.test(deploymentResources)) {
+if (/create[A-Za-z0-9]+RuntimePortContribution/.test(`${deploymentResources}\n${adapter}`)) {
   violations.push("Operator deployment resources must not call package runtime contributors")
 }
-if (!deploymentResources.includes("return createGeneratedGraphRuntimePorts({")) {
+if (!adapter.includes("return createGeneratedGraphRuntimePorts({")) {
   violations.push("Operator must compose one generated contributor set from opaque host resources")
 }
 if (/Smart[Bb]ill|smartbill|invoiceSettlementPollers/.test(`${deploymentResources}\n${adapter}`)) {

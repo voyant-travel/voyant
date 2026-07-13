@@ -35,7 +35,7 @@ const normalizedContributor = contributor.replace(
   "host.getRuntimePort",
 )
 const runtime = readRequired(join(distributionRoot, "src/runtime.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 const workflowServices = readRequired(
   join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
 )

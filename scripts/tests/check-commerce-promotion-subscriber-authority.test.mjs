@@ -58,7 +58,7 @@ promotionsBulkReindex: {
   },
 },
 `,
-    "starters/operator/src/api/runtime/deployment-resources.ts": "",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "",
     "starters/operator/src/api/runtime/operator-workflow-services.ts": "",
     ...overrides,
   }

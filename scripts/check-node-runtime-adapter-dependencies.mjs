@@ -58,7 +58,7 @@ const standardDistribution = read("packages/framework/src/operator-distribution.
 const framework = byName.get("@voyant-travel/framework")
 const starterAuthority = [
   read("starters/operator/voyant.config.ts"),
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   read("packages/framework/src/node-runtime.ts"),
 ].join("\n")
 const graphGenerator = read("packages/framework/src/deployment-artifacts.ts")

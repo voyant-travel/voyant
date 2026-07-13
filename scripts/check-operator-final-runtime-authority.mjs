@@ -36,7 +36,7 @@ const contributorFactories = [
 ]
 
 const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   ...Object.keys(packagePorts).map((packageName) =>
     read(

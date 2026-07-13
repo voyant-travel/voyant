@@ -6,7 +6,10 @@ import {
 import { mountApp } from "@voyant-travel/hono"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
-import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
+import {
+  createGeneratedGraphRuntime,
+  createGeneratedGraphRuntimePorts,
+} from "../../.voyant/runtime/graph-runtime.generated"
 import { projectLinks } from "../../.voyant/runtime/project-links.generated"
 import { OPERATOR_APP_NAME, operatorReporter } from "../lib/observability"
 import authHandler, {
@@ -14,8 +17,10 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
-import { createOperatorWorkflowDriver } from "./runtime/operator-runtime-adapter"
+import {
+  createOperatorRuntimeDeploymentResources,
+  createOperatorWorkflowDriver,
+} from "./runtime/operator-runtime-adapter"
 
 /**
  * Process-wide registry of workflow runners. Selected package runtimes register
@@ -32,7 +37,9 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 const graphRuntime = createGeneratedGraphRuntime()
 export const operatorActionLedgerCapabilityRegistry =
   lowerVoyantGraphActionsToActionLedgerRegistry(graphRuntime)
-const deploymentResources = createOperatorDeploymentResources()
+const deploymentResources = createOperatorRuntimeDeploymentResources(
+  createGeneratedGraphRuntimePorts,
+)
 const graphComposition = await composeVoyantGraphRuntime({
   runtime: graphRuntime,
   ...deploymentResources,

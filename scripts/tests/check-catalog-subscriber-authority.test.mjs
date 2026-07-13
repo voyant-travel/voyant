@@ -50,7 +50,7 @@ const factory = defineGraphRuntimeFactory(async ({ getPort }) => {
 })
 `,
     "starters/operator/src/api/app.ts": "mountApp({ modules })\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts": "const ports = {}\n",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "const ports = {}\n",
     ...overrides,
   }
   for (const [relativePath, source] of Object.entries(files)) {

@@ -16,7 +16,7 @@ const packageRequirements = {
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   ...Object.keys(packageRequirements).map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),

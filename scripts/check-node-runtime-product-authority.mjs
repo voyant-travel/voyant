@@ -4,8 +4,9 @@ import path from "node:path"
 
 const root = process.cwd()
 const nodeRuntime = await read("packages/framework/src/node-runtime.ts")
-const operatorResourcesPath = "starters/operator/src/api/runtime/deployment-resources.ts"
+const operatorResourcesPath = "packages/operator-runtime/src/deployment-resources.ts"
 const operatorResources = await read(operatorResourcesPath)
+const operatorAdapter = await read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
 const violations = []
 
 const migratedRuntimeLoaders = [
@@ -54,7 +55,7 @@ for (const forbidden of ["GraphSelectedNodeRuntimeAdapters", "runtimeAdapters", 
   }
 }
 for (const required of ['key === "customFields"', 'key === "notificationProviders"']) {
-  if (!operatorResources.includes(required)) {
+  if (!operatorAdapter.includes(required)) {
     violations.push(`operator generic config primitive is missing behavior adapter ${required}`)
   }
 }
@@ -63,15 +64,15 @@ for (const removedBridge of [
   "createOperatorInvoiceSettlementPollers",
   "operatorSmartbillRuntimeHost",
 ]) {
-  if (operatorResources.includes(removedBridge)) {
+  if (`${operatorResources}\n${operatorAdapter}`.includes(removedBridge)) {
     violations.push(`operator generic config primitive retains SmartBill bridge ${removedBridge}`)
   }
 }
-if (operatorResources.includes("loadMcpAdminRoutes")) {
+if (`${operatorResources}\n${operatorAdapter}`.includes("loadMcpAdminRoutes")) {
   violations.push("operator deployment resources must not retain dormant loadMcpAdminRoutes")
 }
 for (const primitive of ["env:", "database:", "storage:", "events:", "config:"]) {
-  if (!operatorResources.includes(primitive)) {
+  if (!operatorAdapter.includes(primitive)) {
     violations.push(`operator generic Node primitive contract is missing ${primitive}`)
   }
 }

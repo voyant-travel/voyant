@@ -156,7 +156,7 @@ for (const [directory, factory, port] of ownerContributors) {
   }
 }
 
-const operatorResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
+const operatorResources = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
 const runtimeHost = read("packages/core/src/runtime-host.ts")
 if (
   /\bmodules\s*:|modules\.import|primitives\.modules/.test(`${runtimeHost}\n${operatorResources}`)

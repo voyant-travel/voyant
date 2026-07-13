@@ -18,7 +18,7 @@ const [
   inventoryContributor,
   inventoryWorkflowServices,
 ] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   read("packages/storefront/src/runtime-contributor.ts"),
   read("packages/relationships/src/runtime-contributor.ts"),
   read("packages/notifications/src/runtime-contributor.ts"),

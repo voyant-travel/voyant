@@ -612,11 +612,12 @@ their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract. The Operator application does
 not expose or assemble that bridge: it passes the generated runtime one opaque
-deployment-resource object from `src/api/runtime/deployment-resources.ts`. That
-boundary may adapt Node-only database, storage, notification, workflow-registry,
-and outbound-webhook resources, but package selection and route ordering remain
-graph-derived. `src/api/composition.ts` is deleted and the runtime-port checker
-rejects its return.
+deployment-resource object created by `@voyant-travel/operator-runtime`. The
+project injects only its concrete Node database, storage, configuration, event,
+and generated runtime-port adapters; the stable resource shape remains
+package-owned. Package selection and route ordering remain graph-derived.
+`src/api/composition.ts` and `src/api/runtime/deployment-resources.ts` are
+deleted, and the runtime-port checker rejects their return.
 
 Progress: the Distribution channel-push extension now declares its route and
 workflow-service runtime dependency as a typed port and adapts that port through

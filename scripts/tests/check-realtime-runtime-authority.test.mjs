@@ -40,7 +40,7 @@ subscribers: [
 async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-realtime-authority-"))
   const files = {
-    "starters/operator/src/api/runtime/deployment-resources.ts": "const primitives = {}\n",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "const primitives = {}\n",
     "packages/realtime/src/runtime-contributor.ts": `
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 type Host = { primitives: VoyantRuntimeHostPrimitives }
@@ -75,7 +75,7 @@ describe("Realtime runtime authority checker", () => {
 
   it("rejects an Operator package-specific loader", async () => {
     const root = await fixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts": "loadRealtimeRuntime()\n",
+      "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "loadRealtimeRuntime()\n",
     })
     await assert.rejects(runChecker(root), /must not load package-specific Realtime runtime/)
   })

@@ -23,7 +23,7 @@ async function createFixture(overrides = {}) {
     "trips/src/runtime-contributor.ts":
       "host.getRuntimePort(catalogRuntimeServicesPort)\nhost.getRuntimePort(catalogCheckoutApiRuntimePort)\nhost.getRuntimePort(flightsRuntimePort)\nhost.primitives.database.transaction\n",
     "trips/src/runtime.ts": "createTripsRouteRuntime\n",
-    "operator/src/api/runtime/deployment-resources.ts":
+    "operator/src/api/runtime/operator-runtime-adapter.ts":
       "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport function createOperatorDeploymentResources() {}\n",
     ...overrides,
   }
@@ -59,7 +59,7 @@ describe("check-trips-runtime-authority", () => {
   it("rejects package-id binding and the compatibility module export", async () => {
     const root = await createFixture({
       "trips/src/index.ts": "export const tripsHonoModule = {}\n",
-      "operator/src/api/runtime/deployment-resources.ts":
+      "operator/src/api/runtime/operator-runtime-adapter.ts":
         'function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport function createOperatorDeploymentResources() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\n',
     })
 

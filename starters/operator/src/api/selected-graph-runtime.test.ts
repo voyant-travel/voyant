@@ -79,15 +79,18 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   createGeneratedGraphRuntime,
+  createGeneratedGraphRuntimePorts,
   GENERATED_GRAPH_RUNTIME_EXTENSION_IDS,
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "../../.voyant/runtime/graph-runtime.generated"
-import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+import { createOperatorRuntimeDeploymentResources } from "./runtime/operator-runtime-adapter"
 
-const buildOperatorProviders = () => createOperatorDeploymentResources().capabilities
+const createDeploymentResources = () =>
+  createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts)
+const buildOperatorProviders = () => createDeploymentResources().capabilities
 const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
-  createOperatorDeploymentResources().ports
+  createDeploymentResources().ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   const workflowRunnerRegistry = new WorkflowRunnerRegistry()
@@ -98,7 +101,7 @@ async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   })
 }
 
-describe("operator graph runtime composition", () => {
+describe("selected Operator graph runtime composition", () => {
   it("supplies request-scoped checkout options through the declared runtime port", async () => {
     expect(
       await buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[

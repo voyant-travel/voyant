@@ -1,7 +1,12 @@
 import type { EventBus, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
+import { resolveNodeDatabase, withNodeDatabase } from "@voyant-travel/db/runtime"
+import { enqueueGraphWebhookEvent } from "@voyant-travel/distribution"
 import type { ResolveInvoiceExchangeRate } from "@voyant-travel/finance"
 import type { VoyantDb } from "@voyant-travel/hono"
+import {
+  createOperatorDeploymentResources,
+  type OperatorDeploymentResources,
+} from "@voyant-travel/operator-runtime/deployment-resources"
 import {
   createDocumentStorage,
   readDocumentContentBase64,
@@ -13,6 +18,8 @@ import {
 } from "@voyant-travel/workflows/client"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { resolveOperatorCustomFields } from "../../lib/custom-fields"
+import { resolveNotificationProviders } from "../../lib/notifications"
 import { resolveVoyantDataApiKey } from "../../lib/voyant-cloud"
 
 export function operatorBindings(bindings: unknown): AppBindings & Record<string, unknown> {
@@ -43,6 +50,54 @@ export function resolveOperatorDocumentDownloadUrl(
 
 export function createOperatorDocumentStorage(bindings: unknown) {
   return createDocumentStorage(operatorBindings(bindings))
+}
+
+/** Concrete Node resources injected into the generic Operator deployment host. */
+export function createOperatorRuntimeHostPrimitives(): VoyantRuntimeHostPrimitives {
+  return {
+    env: (bindings) => operatorBindings(bindings),
+    database: {
+      resolve: <TDatabase>(bindings: unknown) =>
+        resolveOperatorDb(bindings) as unknown as TDatabase,
+      fromContext: <TDatabase>(context: unknown) =>
+        operatorPostgresDb(
+          (context as { get(key: string): Parameters<typeof operatorPostgresDb>[0] }).get("db"),
+        ) as unknown as TDatabase,
+      transaction: (bindings, operation) =>
+        withNodeDatabase(operatorBindings(bindings), (database) => operation(database)),
+    },
+    storage: {
+      resolve: createOperatorDocumentStorage,
+      read: readOperatorDocumentContentBase64,
+      downloadUrl: resolveOperatorDocumentDownloadUrl,
+    },
+    events: {
+      deliver: (event, bindings) =>
+        enqueueGraphWebhookEvent(
+          resolveOperatorDb(bindings),
+          event as Parameters<typeof enqueueGraphWebhookEvent>[1],
+        ),
+    },
+    config: {
+      read: (bindings, key) => {
+        if (key === "customFields") return resolveOperatorCustomFields
+        if (key === "notificationProviders") return resolveNotificationProviders
+        return operatorBindings(bindings)?.[key]
+      },
+    },
+  }
+}
+
+export function createOperatorRuntimeDeploymentResources(
+  createGeneratedGraphRuntimePorts: (host: {
+    primitives: VoyantRuntimeHostPrimitives
+  }) => OperatorDeploymentResources["ports"],
+): OperatorDeploymentResources {
+  const primitives = createOperatorRuntimeHostPrimitives()
+  const createRuntimePorts = ({ primitives }: { primitives: VoyantRuntimeHostPrimitives }) => {
+    return createGeneratedGraphRuntimePorts({ primitives })
+  }
+  return createOperatorDeploymentResources({ primitives, createRuntimePorts })
 }
 
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {

@@ -9,7 +9,7 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, auth, mice, quotes, relationships, trips] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   read("packages/auth/src/runtime-contributor.ts"),
   read("packages/mice/src/runtime-contributor.ts"),
   read("packages/quotes/src/runtime-contributor.ts"),

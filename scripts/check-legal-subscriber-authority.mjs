@@ -11,7 +11,7 @@ const paths = {
   legalModule: "packages/legal/src/index.ts",
   contributor: "packages/legal/src/runtime-contributor.ts",
   distribution: "packages/framework/src/operator-distribution.ts",
-  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
+  composition: "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   config: "starters/operator/voyant.config.ts",
 }
 

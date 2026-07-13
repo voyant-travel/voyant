@@ -10,7 +10,7 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, catalogContributor, commerceContributor, tripsContributor] =
   await Promise.all([
-    read("starters/operator/src/api/runtime/deployment-resources.ts"),
+    read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
     read("packages/catalog/src/runtime-contributor.ts"),
     read("packages/commerce/src/runtime-contributor.ts"),
     read("packages/trips/src/runtime-contributor.ts"),

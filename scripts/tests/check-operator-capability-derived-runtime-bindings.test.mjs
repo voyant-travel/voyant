@@ -24,7 +24,7 @@ async function fixture(deploymentResources) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-capability-runtime-bindings-"))
   await write(
     root,
-    "starters/operator/src/api/runtime/deployment-resources.ts",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
     deploymentResources,
   )
   await write(

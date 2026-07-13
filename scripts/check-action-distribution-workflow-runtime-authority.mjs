@@ -10,7 +10,7 @@ const read = (relativePath) => {
 }
 
 const sources = {
-  deploymentResources: read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  deploymentResources: read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
   actionPackage: read("packages/action-ledger/package.json"),
   actionGraphRuntime: read("packages/action-ledger/src/graph-runtime.ts"),
   actionRuntimePorts: read("packages/action-ledger/src/runtime-port.ts"),

@@ -28,7 +28,7 @@ const normalizedRuntimeContributor = runtimeContributor.replace(
   "host.getRuntimePort",
 )
 const runtime = readRequired(join(tripsRoot, "src/runtime.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 
 if (
   !manifest.includes("requirePort(tripsRoutesRuntimePort)") ||

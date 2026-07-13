@@ -20,7 +20,7 @@ const requirements = {
 async function fixture(deploymentResources) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-runtime-binding-cut-2-"))
   const files = {
-    "starters/operator/src/api/runtime/deployment-resources.ts": deploymentResources,
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": deploymentResources,
     ...Object.fromEntries(
       Object.entries(requirements).map(([name, source]) => [
         `packages/${name}/src/runtime-contributor.ts`,

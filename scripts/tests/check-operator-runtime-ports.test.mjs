@@ -15,20 +15,30 @@ async function createFixture({
   composition = false,
   framework = false,
   assignedResources = false,
+  retiredResources = false,
 } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-package-authority-"))
   const app = path.join(root, "operator/src/api/app.ts")
-  const resources = path.join(root, "operator/src/api/runtime/deployment-resources.ts")
+  const adapter = path.join(root, "operator/src/api/runtime/operator-runtime-adapter.ts")
+  const resources = path.join(root, "operator-runtime/src/deployment-resources.ts")
   const frameworkFile = path.join(root, "framework/src/composition-lazy.ts")
+  await mkdir(path.dirname(adapter), { recursive: true })
   await mkdir(path.dirname(resources), { recursive: true })
   await mkdir(path.dirname(frameworkFile), { recursive: true })
   await writeFile(
     app,
     assignedResources
-      ? `const deploymentResources = createOperatorDeploymentResources(workflowRunnerRegistry)\nconst graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...deploymentResources })\n${appExtra}\n`
-      : `const graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...createOperatorDeploymentResources(workflowRunnerRegistry) })\n${appExtra}\n`,
+      ? `const deploymentResources = createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts)\nconst graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...deploymentResources })\n${appExtra}\n`
+      : `const graphComposition = composeVoyantGraphRuntime({ runtime: graphRuntime, ...createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts) })\n${appExtra}\n`,
   )
   await writeFile(resources, "export function createOperatorDeploymentResources() { return {} }\n")
+  await writeFile(adapter, "export function createOperatorRuntimeDeploymentResources() {}\n")
+  if (retiredResources) {
+    await writeFile(
+      path.join(root, "operator/src/api/runtime/deployment-resources.ts"),
+      "export {}\n",
+    )
+  }
   if (composition)
     await writeFile(path.join(root, "operator/src/api/composition.ts"), "export {}\n")
   if (framework) await writeFile(frameworkFile, "export const registry = {}\n")
@@ -44,6 +54,8 @@ function runChecker(root) {
       path.join(root, "operator"),
       "--framework-root",
       path.join(root, "framework"),
+      "--runtime-root",
+      path.join(root, "operator-runtime"),
     ],
     { cwd: root },
   )
@@ -65,9 +77,11 @@ describe("check-operator-runtime-ports", () => {
       appExtra: "const buildOperatorRuntimePorts = () => ({})",
       composition: true,
       framework: true,
+      retiredResources: true,
     })
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /composition\.ts must stay deleted/)
+      assert.match(error.stderr, /deployment-resources\.ts must stay deleted/)
       assert.match(error.stderr, /buildOperatorRuntimePorts must stay out/)
       assert.match(error.stderr, /composition-lazy\.ts must stay deleted/)
       return true

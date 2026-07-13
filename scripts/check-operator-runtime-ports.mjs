@@ -9,10 +9,11 @@ function argument(name, fallback) {
 
 const operatorRoot = argument("--operator-root", "starters/operator")
 const frameworkRoot = argument("--framework-root", "packages/framework")
+const runtimeRoot = argument("--runtime-root", "packages/operator-runtime")
 const compositionPath = path.join(operatorRoot, "src/api/composition.ts")
-const resourcesPath = path.join(operatorRoot, "src/api/runtime/deployment-resources.ts")
+const retiredResourcesPath = path.join(operatorRoot, "src/api/runtime/deployment-resources.ts")
 const app = await readFile(path.join(operatorRoot, "src/api/app.ts"), "utf8")
-const resources = await readFile(resourcesPath, "utf8")
+const resources = await readFile(path.join(runtimeRoot, "src/deployment-resources.ts"), "utf8")
 
 const migratedPorts = [
   "actionLedgerBookingDriftRuntimePort",
@@ -48,8 +49,11 @@ const violations = []
 if (existsSync(compositionPath)) {
   violations.push("starters/operator/src/api/composition.ts must stay deleted")
 }
+if (existsSync(retiredResourcesPath)) {
+  violations.push("starters/operator/src/api/runtime/deployment-resources.ts must stay deleted")
+}
 if (!resources.includes("export function createOperatorDeploymentResources")) {
-  violations.push("deployment-resources.ts must expose one graph deployment resource factory")
+  violations.push("operator-runtime must expose one graph deployment resource factory")
 }
 for (const legacyExport of [
   "export function buildOperatorProviders",
@@ -60,14 +64,19 @@ for (const legacyExport of [
 for (const legacyBuilder of ["buildOperatorProviders", "buildOperatorRuntimePorts"]) {
   if (resources.includes(legacyBuilder)) violations.push(`${legacyBuilder} must stay deleted`)
 }
-const directResourceComposition = /\.\.\.createOperatorDeploymentResources\([^)]*\)/.test(app)
+const directResourceComposition = /\.\.\.createOperatorRuntimeDeploymentResources\([^)]*\)/.test(
+  app,
+)
 const resourceAssignment = app.match(
-  /const\s+([A-Za-z_$][\w$]*)\s*=\s*createOperatorDeploymentResources\([^)]*\)/,
+  /const\s+([A-Za-z_$][\w$]*)\s*=\s*createOperatorRuntimeDeploymentResources\([^)]*\)/,
 )
 const assignedResourceComposition =
   resourceAssignment !== null && app.includes(`...${resourceAssignment[1]}`)
 if (!directResourceComposition && !assignedResourceComposition) {
   violations.push("Operator app must compose the generated graph from deployment resources")
+}
+if (!app.includes("createGeneratedGraphRuntimePorts")) {
+  violations.push("Operator app must inject its statically generated runtime ports")
 }
 for (const port of migratedPorts) {
   if (app.includes(port)) violations.push(`Operator app must not own ${port}`)

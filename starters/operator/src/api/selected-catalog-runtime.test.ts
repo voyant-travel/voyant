@@ -11,12 +11,17 @@ import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
-import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
-import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+import {
+  createGeneratedGraphRuntime,
+  createGeneratedGraphRuntimePorts,
+} from "../../.voyant/runtime/graph-runtime.generated"
+import { createOperatorRuntimeDeploymentResources } from "./runtime/operator-runtime-adapter"
 
-const buildOperatorProviders = () => createOperatorDeploymentResources().capabilities
+const createDeploymentResources = () =>
+  createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts)
+const buildOperatorProviders = () => createDeploymentResources().capabilities
 const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
-  createOperatorDeploymentResources().ports
+  createDeploymentResources().ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({
@@ -26,7 +31,7 @@ async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   })
 }
 
-describe("Operator Catalog subscriber composition", () => {
+describe("selected Operator Catalog subscriber composition", () => {
   it("activates selected Catalog subscribers once before stacked Commerce redemption", async () => {
     const runtime = createGeneratedGraphRuntime()
     const catalog = runtime.modules.find((unit) => unit.id === "@voyant-travel/catalog")

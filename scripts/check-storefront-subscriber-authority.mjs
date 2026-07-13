@@ -10,7 +10,7 @@ const paths = {
   manifest: "packages/storefront/src/voyant.ts",
   descriptor: "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts",
   storefrontModule: "packages/storefront/src/index.ts",
-  operatorComposition: "starters/operator/src/api/runtime/deployment-resources.ts",
+  operatorComposition: "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   operatorApp: "starters/operator/src/api/app.ts",
   storefrontContributor: "packages/storefront/src/runtime-contributor.ts",
   relationshipsContributor: "packages/relationships/src/runtime-contributor.ts",

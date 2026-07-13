@@ -46,7 +46,7 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
   const runtimeSource = files.get("packages/bookings/src/runtime.ts") ?? ""
   const portSource = files.get("packages/bookings/src/runtime-port.ts") ?? ""
   const manifestSource = files.get("packages/bookings/src/voyant.ts") ?? ""
-  const starter = files.get("starters/operator/src/api/runtime/deployment-resources.ts") ?? ""
+  const starter = files.get("starters/operator/src/api/runtime/operator-runtime-adapter.ts") ?? ""
   const coreHost = files.get("packages/core/src/runtime-host.ts") ?? ""
 
   for (const required of [

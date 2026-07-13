@@ -21,7 +21,7 @@ container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
 `,
     "starters/operator/src/api/app.ts": "export const app = {}\n",
     "packages/trips/src/runtime.ts": "VoyantRuntimeHostPrimitives\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts": `
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": `
 createGeneratedGraphRuntimePorts({ primitives })
 `,
     ...overrides,
@@ -65,7 +65,7 @@ export const restored = true
 
   it("rejects manual descriptor registration in composition", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts": `
+      "starters/operator/src/api/runtime/operator-runtime-adapter.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
     withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>

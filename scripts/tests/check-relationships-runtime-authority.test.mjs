@@ -22,7 +22,7 @@ async function createFixture(overrides = {}) {
       'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\ndefinePort<RelationshipsMiceRuntime>({ id: "relationships.mice.runtime" })\n',
     "relationships/src/runtime-contributor.ts":
       'host.primitives.config.read(db, "customFields")\n[relationshipsMiceRuntimePort.id]\n',
-    "operator/src/api/runtime/deployment-resources.ts":
+    "operator/src/api/runtime/operator-runtime-adapter.ts":
       "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
     ...overrides,
   }
@@ -59,7 +59,7 @@ describe("check-relationships-runtime-authority", () => {
     const root = await createFixture({
       "relationships/src/index.ts":
         "export const relationshipsHonoModule = createRelationshipsHonoModule()\n",
-      "operator/src/api/runtime/deployment-resources.ts":
+      "operator/src/api/runtime/operator-runtime-adapter.ts":
         'function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\n',
     })
 

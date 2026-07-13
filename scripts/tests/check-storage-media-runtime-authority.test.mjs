@@ -16,8 +16,8 @@ const fixturePaths = [
   "packages/inventory/src/graph-runtime.ts",
   "packages/inventory/src/voyant.ts",
   "packages/inventory/package.json",
+  "packages/operator-runtime/src/deployment-resources.ts",
   "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
-  "starters/operator/src/api/runtime/deployment-resources.ts",
   "scripts/fixtures/storage-media-runtime-policy.json",
 ]
 

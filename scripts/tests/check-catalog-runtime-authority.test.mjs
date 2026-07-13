@@ -32,7 +32,7 @@ async function fixture() {
     "packages/core/src/runtime-host.ts",
     "packages/framework/src/deployment-artifacts.ts",
     "packages/typescript-config/dep-paths.json",
-    "starters/operator/src/api/runtime/deployment-resources.ts",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
     "pnpm-lock.yaml",
   ]
   for (const entry of entries) {
@@ -65,7 +65,7 @@ test("rejects a direct Catalog-to-Inventory dependency cycle", async () => {
 
 test("rejects starter-owned Catalog capability authority", async () => {
   const root = await fixture()
-  const file = path.join(root, "starters/operator/src/api/runtime/deployment-resources.ts")
+  const file = path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts")
   await writeFile(file, `${await readFile(file, "utf8")}\nconst loadCatalogRuntime = true\n`)
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),

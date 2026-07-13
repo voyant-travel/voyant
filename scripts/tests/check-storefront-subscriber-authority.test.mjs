@@ -34,7 +34,8 @@ export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor =
 `,
     "packages/storefront/src/index.ts":
       "registerStorefrontBookingBootstrapRuntime(container, runtime)\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts": "export const resources = {}\n",
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
+      "export const resources = {}\n",
     "packages/storefront/src/runtime-contributor.ts": `
 host.primitives.database.transaction
 [storefrontOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers()

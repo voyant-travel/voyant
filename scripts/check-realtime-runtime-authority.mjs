@@ -8,7 +8,7 @@ const failures = []
 
 const starterRuntimePath = "starters/operator/src/lib/realtime.ts"
 const starterTestPath = "starters/operator/src/lib/realtime.test.ts"
-const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
+const deploymentResources = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
 const contributor = read("packages/realtime/src/runtime-contributor.ts")
 const runtime = read("packages/realtime/src/runtime.ts")
 const manifest = read("packages/realtime/src/voyant.ts")

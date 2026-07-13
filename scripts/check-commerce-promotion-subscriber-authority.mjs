@@ -13,7 +13,7 @@ const paths = {
   catalogBridge: "starters/operator/src/api/subscribers/catalog-bridge.ts",
   contributor: "packages/commerce/src/runtime-contributor.ts",
   runtime: "packages/commerce/src/runtime.ts",
-  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
+  composition: "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   workflowServices: "starters/operator/src/api/runtime/operator-workflow-services.ts",
 }
 

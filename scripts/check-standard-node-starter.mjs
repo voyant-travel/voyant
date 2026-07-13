@@ -260,9 +260,19 @@ function inspectRepositoryAuthority(repoRoot) {
   if (existsSync(join(repoRoot, "packages/framework/src/composition-lazy.ts"))) {
     violations.push("framework composition-lazy.ts compatibility catalog must stay deleted")
   }
-  const resourcesPath = join(repoRoot, "starters/operator/src/api/runtime/deployment-resources.ts")
-  if (existsSync(resourcesPath)) {
-    const resources = readFileSync(resourcesPath, "utf8")
+  const retiredResourcesPath = join(
+    repoRoot,
+    "starters/operator/src/api/runtime/deployment-resources.ts",
+  )
+  if (existsSync(retiredResourcesPath)) {
+    violations.push("starter-owned deployment-resources.ts must stay deleted")
+  }
+  const adapterPath = join(
+    repoRoot,
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  )
+  if (existsSync(adapterPath)) {
+    const resources = readFileSync(adapterPath, "utf8")
     for (const symbol of [
       "operatorGraphRuntimeBindings",
       "deploymentLocalExtensions",

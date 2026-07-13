@@ -15,6 +15,12 @@ import {
 import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime"
 import { tsImport } from "tsx/esm/api"
 
+export {
+  type CreateOperatorDeploymentResourcesOptions,
+  createOperatorDeploymentResources,
+  type OperatorDeploymentResources,
+} from "./deployment-resources.js"
+
 const PROJECT_RUNTIME_ENTRY = ".voyant/runtime/project-runtime.generated.ts"
 const PROJECT_GRAPH_ENTRY = ".voyant/deployment-graph.generated.json"
 

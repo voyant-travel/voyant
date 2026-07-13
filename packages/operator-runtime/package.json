@@ -8,7 +8,8 @@
     "voyant-operator": "./dist/cli.js"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./deployment-resources": "./src/deployment-resources.ts"
   },
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.build.json",
@@ -48,6 +49,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./deployment-resources": {
+        "types": "./dist/deployment-resources.d.ts",
+        "import": "./dist/deployment-resources.js",
+        "default": "./dist/deployment-resources.js"
       }
     },
     "bin": {

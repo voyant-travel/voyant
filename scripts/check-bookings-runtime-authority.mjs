@@ -15,7 +15,7 @@ const filePaths = [
   "packages/finance/src/runtime-contributor.ts",
   "packages/inventory/src/runtime-contributor.ts",
   "packages/relationships/src/runtime-contributor.ts",
-  "starters/operator/src/api/runtime/deployment-resources.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   "packages/core/src/runtime-host.ts",
 ]
 const files = new Map(

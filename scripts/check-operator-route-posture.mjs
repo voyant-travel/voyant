@@ -6,7 +6,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const APP = optionPath("--app", join(ROOT, "starters/operator/src/api/app.ts"))
 const COMPOSITION = optionPath(
   "--composition",
-  join(ROOT, "starters/operator/src/api/runtime/deployment-resources.ts"),
+  join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
 )
 const LEGACY_PUBLIC_PATHS = optionPath(
   "--legacy-public-paths",

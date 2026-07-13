@@ -20,9 +20,8 @@ async function createFixture(overrides = {}) {
     "starters/operator/voyant.config.ts":
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-netopia" }] }\n',
     "starters/operator/src/api/app.ts": "export const app = mountApp({})\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts":
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
       "return createGeneratedGraphRuntimePorts({ primitives })\n",
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "export const adapter = {}\n",
     "packages/finance/src/voyant.ts":
       'runtimePorts: [requirePort(financeInvoiceSettlementPollerRuntimePort, { optional: true, cardinality: "many" })]\n',
     "packages/finance/src/runtime-port.ts":
@@ -70,10 +69,8 @@ describe("check-operator-smartbill-authority", () => {
 
   it("rejects starter-owned SmartBill bridges and config injection", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts":
-        "createGeneratedGraphRuntimePorts({ capabilities, primitives, host: operatorSmartbillRuntimeHost })\ninvoiceSettlementPollers\n",
       "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
-        'import "@voyant-travel/plugin-smartbill"\nresolveOperatorSmartbillConfig\n',
+        'createGeneratedGraphRuntimePorts({ capabilities, primitives, host: operatorSmartbillRuntimeHost })\ninvoiceSettlementPollers\nimport "@voyant-travel/plugin-smartbill"\nresolveOperatorSmartbillConfig\n',
     })
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must not retain SmartBill bridge token/)

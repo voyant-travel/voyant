@@ -23,7 +23,7 @@ const manifest = readRequired(join(relationshipsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(relationshipsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(relationshipsRoot, "src/runtime-port.ts"))
 const runtimeContributor = readRequired(join(relationshipsRoot, "src/runtime-contributor.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 
 if (
   !manifest.includes("runtimePorts: [requirePort(relationshipsRouteRuntimePort)]") ||

@@ -29,7 +29,7 @@ async function createFixture(overrides = {}) {
       "Promise.resolve()\nhost.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
     "distribution/src/runtime.ts":
       "catalogRuntime.getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
-    "operator/src/api/runtime/deployment-resources.ts":
+    "operator/src/api/runtime/operator-runtime-adapter.ts":
       "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
     "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
     "scripts/check-deployment-graph.ts":
@@ -81,7 +81,7 @@ describe("check-distribution-channel-push-runtime-authority", () => {
 
   it("rejects a package-id binding and restored compatibility route", async () => {
     const root = await createFixture({
-      "operator/src/api/runtime/deployment-resources.ts":
+      "operator/src/api/runtime/operator-runtime-adapter.ts":
         'const binding = { "@voyant-travel/distribution#channel-push-extension": createChannelPushExtension }\n',
       "operator/src/api/routes/channel-push.ts": "export const compatibilityRoute = true\n",
     })

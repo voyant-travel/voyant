@@ -27,7 +27,7 @@ const packageJson = JSON.parse(readRequired(join(flightsRoot, "package.json")))
 const manifest = readRequired(join(flightsRoot, "src/voyant.ts"))
 const hono = readRequired(join(flightsRoot, "src/hono.ts"))
 const runtimePort = readRequired(join(flightsRoot, "src/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
+const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
 const nodeContributor = readRequired(join(flightsRoot, "src/runtime-contributor.ts"))
 const runtime = readRequired(join(flightsRoot, "src/runtime.ts"))
 
