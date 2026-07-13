@@ -5,7 +5,7 @@ import { createVoyantApp } from "./create-app.js"
 describe("createVoyantApp", () => {
   it("composes only explicitly supplied local factories", () => {
     const app = createVoyantApp({
-      providers: { value: "local" },
+      resources: { value: "local" },
       db: {} as never,
       modules: {
         local: ({ capabilities }) => ({
@@ -22,7 +22,7 @@ describe("createVoyantApp", () => {
   })
 
   it("does not mount a framework-owned standard set", () => {
-    const app = createVoyantApp({ providers: {}, db: {} as never })
+    const app = createVoyantApp({ resources: {}, db: {} as never })
     expect(app.moduleMounts).toEqual([])
   })
 })

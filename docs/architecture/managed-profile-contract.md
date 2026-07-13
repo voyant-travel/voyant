@@ -116,7 +116,7 @@ import { toCreateVoyantAppProfileConfig } from "@voyant-travel/framework/profile
 const profileConfig = toCreateVoyantAppProfileConfig(snapshot)
 
 createVoyantApp({
-  providers,
+  resources,
   ...profileConfig,
   modules: customModules,
   extensions: customExtensions,
