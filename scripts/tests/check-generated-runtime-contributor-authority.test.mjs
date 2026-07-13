@@ -56,7 +56,6 @@ async function fixture(operatorRuntime) {
     "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.entry\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\nmanyPortIds.has(id) ? [value] : value\n",
   )
   await write(root, "packages/framework/src/project-resolver.ts", "local project overrides only\n")
-  await write(root, "scripts/emit-deployment-graph.ts", "local project overrides only\n")
   await write(
     root,
     "scripts/generate-standard-product-distribution.mjs",

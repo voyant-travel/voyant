@@ -6,7 +6,6 @@
 "@voyant-travel/distribution": minor
 "@voyant-travel/workflow-runs": patch
 "@voyant-travel/framework": patch
-"operator": patch
 ---
 
 Compose Action Ledger health from typed Bookings, Finance, and Inventory graph ports, consolidate Distribution channel-push composition into its domain package, and make Workflow Runs own runner registration authority.

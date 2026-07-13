@@ -40,7 +40,6 @@ const [
   operatorRuntime,
   generator,
   resolver,
-  emitter,
   bomGenerator,
   ...packageJsonSources
 ] = await Promise.all([
@@ -48,7 +47,6 @@ const [
   read("packages/operator-runtime/src/index.ts"),
   read("packages/framework/src/deployment-artifacts.ts"),
   read("packages/framework/src/project-resolver.ts"),
-  read("scripts/emit-deployment-graph.ts"),
   read("scripts/generate-standard-product-distribution.mjs"),
   ...Object.keys(packageFactories).map((packageName) => {
     const packageJsonPath = `packages/${packageName}/package.json`
@@ -127,7 +125,6 @@ if (!generator.includes("record.metadata?.runtime") || !generator.includes("cont
 }
 for (const [name, source] of [
   ["project resolver", resolver],
-  ["graph emitter", emitter],
   ["product distribution generator", bomGenerator],
 ]) {
   if (

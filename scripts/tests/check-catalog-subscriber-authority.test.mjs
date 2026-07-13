@@ -72,7 +72,10 @@ describe("Catalog subscriber authority checker", () => {
     const root = await createFixture({
       "starters/operator/src/api/app.ts": "plugins: [catalogBridgeBundle]\n",
     })
-    await assert.rejects(runChecker(root), /starters\/operator\/src\/api\/app\.ts must stay deleted/)
+    await assert.rejects(
+      runChecker(root),
+      /starters\/operator\/src\/api\/app\.ts must stay deleted/,
+    )
   })
 
   it("rejects a retained legacy bridge file", async () => {

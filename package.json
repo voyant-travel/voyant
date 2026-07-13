@@ -91,7 +91,7 @@
     "verify:deployment-graph-openapi-coverage": "pnpm --filter operator graph:emit && node --test scripts/tests/check-deployment-graph-openapi-coverage.test.mjs && node scripts/check-deployment-graph-openapi-coverage.mjs",
     "verify:retail-openapi-authority": "node scripts/check-retail-openapi-authority.mjs",
     "verify:operator-openapi-authority": "node --test scripts/tests/check-operator-openapi-authority.test.mjs && node scripts/check-operator-openapi-authority.mjs",
-    "verify:deployment-graph": "node --test scripts/tests/deployment-graph-provenance.test.mjs && node --import tsx --test scripts/tests/deployment-graph-doctor.test.ts scripts/tests/load-voyant-package-manifests.test.ts && node --test scripts/tests/check-deployment-graph-import-cheap.test.mjs && node scripts/check-deployment-graph-import-cheap.mjs && pnpm verify:deployment-graph-openapi-coverage && tsx scripts/check-deployment-graph.ts && tsx scripts/emit-deployment-graph.ts",
+    "verify:deployment-graph": "node --test scripts/tests/deployment-graph-provenance.test.mjs && node --import tsx --test scripts/tests/load-voyant-package-manifests.test.ts && node --test scripts/tests/check-deployment-graph-import-cheap.test.mjs && node scripts/check-deployment-graph-import-cheap.mjs && pnpm verify:deployment-graph-openapi-coverage && tsx scripts/check-deployment-graph.ts && pnpm --filter operator graph:check",
     "verify:product-distribution": "node scripts/generate-standard-product-distribution.mjs",
     "verify:standard-link-authority": "node scripts/check-standard-link-authority.mjs",
     "verify:migration-replay-parity": "node scripts/verify-migration-replay-parity.mjs",

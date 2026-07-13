@@ -32,7 +32,8 @@ for (const retiredPath of [
   "starters/operator/src/api/app.ts",
   "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
 ]) {
-  if (existsSync(path.join(repoRoot, retiredPath))) failures.push(`${retiredPath} must stay deleted`)
+  if (existsSync(path.join(repoRoot, retiredPath)))
+    failures.push(`${retiredPath} must stay deleted`)
 }
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)

@@ -32,16 +32,27 @@ test("emits disposable operator config with rebased declaration paths", () => {
     assert.deepEqual(client.compilerOptions.paths["@voyant-travel/example"], [
       "../../../packages/example/dist/index.d.ts",
     ])
+    const server = JSON.parse(
+      readFileSync(join(root, "starters/operator/.voyant/tsconfig.server.json"), "utf8"),
+    )
+    assert.ok(server.include.includes("../tests/**/*.ts"))
+    const vitest = readFileSync(join(root, "starters/operator/.voyant/vitest.config.ts"), "utf8")
+    assert.match(vitest, /include: \["tests\/\*\*\/\*\.test\.ts", "tests\/\*\*\/\*\.test\.tsx"\]/)
     assert.match(
       readFileSync(join(root, "starters/operator/.voyant/env.d.ts"), "utf8"),
       /VoyantNodeRuntimeEnv/,
     )
 
     write(root, "starters/operator/.voyant/tsconfig.legacy.json", "{}\n")
+    write(root, "starters/operator/.voyant/runtime/graph-runtime.generated.ts", "export {}\n")
     assert.deepEqual(writeOperatorStarterMetadata(root, { check: true }), [
+      "unexpected:runtime/graph-runtime.generated.ts",
       "unexpected:tsconfig.legacy.json",
     ])
-    assert.deepEqual(writeOperatorStarterMetadata(root), ["unexpected:tsconfig.legacy.json"])
+    assert.deepEqual(writeOperatorStarterMetadata(root), [
+      "unexpected:runtime/graph-runtime.generated.ts",
+      "unexpected:tsconfig.legacy.json",
+    ])
     assert.deepEqual(writeOperatorStarterMetadata(root, { check: true }), [])
   } finally {
     rmSync(root, { recursive: true, force: true })

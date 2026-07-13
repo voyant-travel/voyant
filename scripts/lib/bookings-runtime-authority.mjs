@@ -62,7 +62,9 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
       violations.push(`Bookings runtime authority is missing ${required}`)
     }
   }
-  if (/modules\s*:\s*\{|modules\.import/.test(coreHost + operatorHost + contributor + runtimeSource)) {
+  if (
+    /modules\s*:\s*\{|modules\.import/.test(coreHost + operatorHost + contributor + runtimeSource)
+  ) {
     violations.push("Runtime composition must not use a host module loader")
   }
   if (/new Map\s*\(|packageIds|packageIdRegistry/.test(contributor + runtimeSource + portSource)) {

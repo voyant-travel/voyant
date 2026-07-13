@@ -7,16 +7,18 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 
 describe("operator action ledger schema mounting", () => {
   it("keeps the action ledger schema in the migration schema set", () => {
-    const artifacts = JSON.parse(
+    const migrationPlan = JSON.parse(
       readFileSync(
-        resolve(repoRoot, "starters/operator/.voyant/deployment-artifacts.generated.json"),
+        resolve(repoRoot, "starters/operator/.voyant/migration-plan.generated.json"),
         "utf8",
       ),
-    ) as { migrationSources: Array<{ packageName: string; schema: string }> }
-    expect(artifacts.migrationSources).toContainEqual({
-      packageName: "@voyant-travel/action-ledger",
-      schema: "@voyant-travel/action-ledger/schema",
-    })
+    ) as { migrations: Array<{ packageName?: string; source?: { path?: string } }> }
+    expect(migrationPlan.migrations).toContainEqual(
+      expect.objectContaining({
+        packageName: "@voyant-travel/action-ledger",
+        source: expect.objectContaining({ path: "./migrations" }),
+      }),
+    )
   })
 
   it("keeps the action ledger migration in the framework bundle", () => {

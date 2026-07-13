@@ -16,7 +16,7 @@
  *        registry exists at all.
  */
 import { existsSync, readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -35,7 +35,7 @@ const BUNDLE = optionPath(
 )
 const PRESENTATION = optionPath(
   "--presentation",
-  join(ROOT, "packages/admin-host/src/standard-route-files.ts"),
+  join(ROOT, "packages/operator-standard/src/standard-route-files.ts"),
 )
 const COMPATIBILITY = optionPath(
   "--compatibility",
@@ -140,6 +140,72 @@ function firstPartyImportsIn(file) {
   return set
 }
 
+function importSpecifiersIn(file) {
+  if (!existsSync(file)) return []
+  const source = readFileSync(file, "utf-8")
+  const specifiers = []
+  const importPattern = /(?:from\s+|import\s*)["']([^"']+)["']/g
+  let match = importPattern.exec(source)
+  while (match) {
+    specifiers.push(match[1])
+    match = importPattern.exec(source)
+  }
+  return specifiers
+}
+
+function firstPartyPackageNamesIn(file) {
+  const packages = new Set()
+  for (const specifier of importSpecifiersIn(file)) {
+    const packageMatch = [
+      ...specifier.matchAll(/(?:^|\/node_modules\/)(@voyant-travel\/[^/"']+)/g),
+    ].at(-1)
+    if (packageMatch) packages.add(packageMatch[1])
+  }
+  return packages
+}
+
+function packageNameFromEntry(entry) {
+  return entry.split("/").slice(0, 2).join("/")
+}
+
+function firstExportTarget(value) {
+  if (typeof value === "string") return value
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const target = firstExportTarget(entry)
+      if (target) return target
+    }
+  } else if (value && typeof value === "object") {
+    for (const entry of Object.values(value)) {
+      const target = firstExportTarget(entry)
+      if (target) return target
+    }
+  }
+  return undefined
+}
+
+function bundleContainsRuntimeEntry(file, runtimeEntry) {
+  const specifiers = importSpecifiersIn(file)
+  if (specifiers.includes(runtimeEntry)) return true
+
+  const packageName = packageNameFromEntry(runtimeEntry)
+  const exportKey =
+    runtimeEntry === packageName ? "." : `.${runtimeEntry.slice(packageName.length)}`
+  const marker = `/node_modules/${packageName}/`
+  for (const specifier of specifiers) {
+    const absoluteImport = resolve(dirname(file), specifier)
+    const markerIndex = absoluteImport.lastIndexOf(marker)
+    if (markerIndex < 0) continue
+    const packageRoot = absoluteImport.slice(0, markerIndex + marker.length - 1)
+    const packageJsonPath = join(packageRoot, "package.json")
+    if (!existsSync(packageJsonPath)) continue
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+    const exportTarget = firstExportTarget(packageJson.exports?.[exportKey])
+    if (exportTarget && resolve(packageRoot, exportTarget) === absoluteImport) return true
+  }
+  return false
+}
+
 function selectedFactoryReferencesIn(file) {
   if (!existsSync(file)) return new Set()
   const src = readFileSync(file, "utf-8")
@@ -229,7 +295,7 @@ const {
 } = readGraphSelectedAdminPackages()
 const expected = selected.filter(hasAdminSurface)
 const bundled = new Set(bundledPackages)
-const actualBundleEntries = firstPartyImportsIn(BUNDLE)
+const actualBundlePackages = firstPartyPackageNamesIn(BUNDLE)
 const presentationImports = firstPartyImportsIn(PRESENTATION)
 const presentationSelectedFactories = selectedFactoryReferencesIn(PRESENTATION)
 
@@ -244,7 +310,7 @@ for (const name of expected) {
 
 for (const name of bundled) {
   const runtimeEntry = bundledRuntimeEntries.get(name)
-  if (!runtimeEntry || !actualBundleEntries.has(runtimeEntry)) {
+  if (!runtimeEntry || !bundleContainsRuntimeEntry(BUNDLE, runtimeEntry)) {
     violations.push(
       `${name} declares admin.runtime entry ${runtimeEntry ?? "<missing>"} but it is missing from selected-graph-admin.generated.ts — refresh the selected graph artifacts`,
     )
@@ -258,9 +324,13 @@ for (const name of bundled) {
 
 for (const name of presentationImports) {
   if (
-    name === "@voyant-travel/admin-host/presentation" ||
-    name === "@voyant-travel/admin-host/standard-frontend" ||
-    name === "@voyant-travel/vite-config"
+    [
+      "@voyant-travel/admin/app/root",
+      "@voyant-travel/admin-host/presentation",
+      "@voyant-travel/operator-standard/standard-frontend",
+      "@voyant-travel/ui/components",
+      "@voyant-travel/vite-config",
+    ].includes(name)
   )
     continue
   violations.push(
@@ -268,11 +338,15 @@ for (const name of presentationImports) {
   )
 }
 
-for (const entry of actualBundleEntries) {
-  if (entry === "@voyant-travel/admin") continue
-  if (![...bundledRuntimeEntries.values()].includes(entry)) {
+for (const packageName of actualBundlePackages) {
+  if (packageName === "@voyant-travel/admin") continue
+  if (
+    ![...bundledRuntimeEntries.values()].some(
+      (entry) => packageNameFromEntry(entry) === packageName,
+    )
+  ) {
     violations.push(
-      `selected-graph-admin.generated.ts wires ${entry} without a selected admin.runtime declaration`,
+      `selected-graph-admin.generated.ts wires ${packageName} without a selected admin.runtime declaration`,
     )
   }
 }

@@ -21,8 +21,7 @@ const sources = Object.fromEntries(
     Object.entries(paths).map(async ([name, relativePath]) => [
       name,
       await readFile(path.join(repoRoot, relativePath), "utf8").catch((error) => {
-        if (name === "catalogBridge" && error?.code === "ENOENT")
-          return ""
+        if (name === "catalogBridge" && error?.code === "ENOENT") return ""
         throw error
       }),
     ]),
@@ -35,7 +34,8 @@ for (const retiredPath of [
   "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   "starters/operator/src/api/runtime/operator-workflow-services.ts",
 ]) {
-  if (existsSync(path.join(repoRoot, retiredPath))) failures.push(`${retiredPath} must stay deleted`)
+  if (existsSync(path.join(repoRoot, retiredPath)))
+    failures.push(`${retiredPath} must stay deleted`)
 }
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)

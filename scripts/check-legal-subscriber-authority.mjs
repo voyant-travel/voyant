@@ -26,7 +26,9 @@ const sources = Object.fromEntries(
 )
 
 const failures = []
-if (existsSync(path.join(repoRoot, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+if (
+  existsSync(path.join(repoRoot, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))
+) {
   failures.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
 }
 const requireMatch = (source, pattern, message) => {

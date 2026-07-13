@@ -19,7 +19,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   createGeneratedGraphRuntime,
   createGeneratedGraphRuntimePorts,
-} from "../../.voyant/runtime/graph-runtime.generated"
+} from "../../.voyant/runtime/project-runtime.generated"
 
 const createDeploymentResources = () => {
   const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })

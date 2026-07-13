@@ -8,7 +8,7 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const routeRegistry = readFileSync(
-  join(root, "packages/admin-host/src/standard-route-files.ts"),
+  join(root, "packages/operator-standard/src/standard-route-files.ts"),
   "utf8",
 )
 const routeHosts = Object.fromEntries(
@@ -21,7 +21,7 @@ const routeHosts = Object.fromEntries(
 )
 const result = checkOperatorAuthPresentationAuthority({
   routeHosts,
-  adapter: readFileSync(join(root, "packages/admin-host/src/standard-frontend.tsx"), "utf8"),
+  adapter: readFileSync(join(root, "packages/operator-standard/src/standard-frontend.tsx"), "utf8"),
   packageRoutes: readFileSync(join(root, "packages/auth-react/src/local-auth-routes.tsx"), "utf8"),
 })
 

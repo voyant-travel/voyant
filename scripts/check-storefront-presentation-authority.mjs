@@ -8,7 +8,7 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const read = (path) => readFileSync(join(root, path), "utf8")
-const routeRegistry = read("packages/admin-host/src/standard-route-files.ts")
+const routeRegistry = read("packages/operator-standard/src/standard-route-files.ts")
 const result = checkStorefrontPresentationAuthority({
   routeHosts: Object.fromEntries(
     Object.keys(STOREFRONT_ROUTE_HOSTS).map((file) => [
@@ -18,8 +18,8 @@ const result = checkStorefrontPresentationAuthority({
         : undefined,
     ]),
   ),
-  hostAdapter: read("packages/admin-host/src/standard-frontend.tsx"),
-  messageAdapter: read("packages/admin-host/src/standard-frontend.tsx"),
+  hostAdapter: read("packages/operator-standard/src/standard-frontend.tsx"),
+  messageAdapter: read("packages/operator-standard/src/standard-frontend.tsx"),
   intakeAdapter: "",
   packagePresentation: read("packages/storefront-react/src/storefront/presentation-routes.tsx"),
   packageIntake: read("packages/relationships/src/storefront-intake-runtime.ts"),

@@ -8,5 +8,5 @@ test("standard frontend authority remains package-owned", () => {
     ["scripts/check-operator-frontend-shell-authority.mjs"],
     { encoding: "utf8" },
   )
-  assert.match(output, /Operator frontend shell authority: OK \(17 starter src files\)/)
+  assert.match(output, /Operator frontend shell authority: OK \(8 starter src files\)/)
 })

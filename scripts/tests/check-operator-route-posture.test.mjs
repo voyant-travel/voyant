@@ -26,10 +26,12 @@ async function runChecker(root) {
     process.execPath,
     [
       checkerPath,
-      "--app",
-      path.join(root, "app.ts"),
-      "--composition",
-      path.join(root, "composition.ts"),
+      "--host",
+      path.join(root, "host.ts"),
+      "--retired-app",
+      path.join(root, "retired-app.ts"),
+      "--retired-adapter",
+      path.join(root, "retired-adapter.ts"),
       "--legacy-public-paths",
       path.join(root, "public-paths.ts"),
     ],
@@ -46,25 +48,26 @@ mountApp({
 
 describe("check-operator-route-posture", () => {
   it("accepts graph-derived posture with only the reviewed adapters", async () => {
-    const root = await createFixture({ "app.ts": validApp, "composition.ts": "export {}\n" })
+    const root = await createFixture({ "host.ts": validApp })
 
     const result = await runChecker(root)
 
     assert.match(result.stdout, /check-operator-route-posture: OK/)
   })
 
-  it("rejects legacy lists and package-specific composition overrides", async () => {
+  it("rejects retired hosts, legacy lists, and package-specific route overrides", async () => {
     const root = await createFixture({
-      "app.ts": `${validApp}\nconst extra = "/v1/public/products"\ndefineLazyHonoBundle({ load: netopiaHonoBundle })\n`,
-      "composition.ts": 'export const finance = { anonymous: true, transactionalPaths: ["/"] }\n',
+      "host.ts": `${validApp}\nconst extra = "/v1/public/products"\ndefineLazyHonoBundle({ load: netopiaHonoBundle })\n`,
+      "retired-app.ts": "export {}\n",
+      "retired-adapter.ts": "export {}\n",
       "public-paths.ts": "export const OPERATOR_PUBLIC_PATHS = []\n",
     })
 
     await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /api\/app\.ts must stay deleted/)
+      assert.match(error.stderr, /operator-runtime-adapter\.ts must stay deleted/)
       assert.match(error.stderr, /public-paths\.ts must stay deleted/)
       assert.match(error.stderr, /must not contain starter public-path adapters/)
-      assert.match(error.stderr, /package-specific anonymous posture/)
-      assert.match(error.stderr, /package-specific transactionalPaths posture/)
       assert.match(error.stderr, /graph-owned Netopia route adapter/)
       return true
     })

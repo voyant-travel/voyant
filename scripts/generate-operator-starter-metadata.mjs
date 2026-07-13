@@ -15,6 +15,10 @@ export const OPERATOR_GENERATED_METADATA_FILES = [
   "vite.config.ts",
   "vitest.config.ts",
 ]
+const RETIRED_OPERATOR_GENERATED_FILES = [
+  "runtime-entry.generated.ts",
+  "runtime/graph-runtime.generated.ts",
+]
 
 export function buildOperatorStarterMetadata(root = repoRoot) {
   const appRoot = join(root, "starters/operator")
@@ -79,6 +83,7 @@ type AppBindings = import("@voyant-travel/framework/node-runtime").VoyantNodeRun
         compilerOptions: { ...baseCompilerOptions, paths },
         include: [
           ...serverFiles.map((file) => `../src/${file}`),
+          "../tests/**/*.ts",
           "../src/api/**/*.ts",
           "../src/modules/**/*.ts",
           "../src/links/**/*.ts",
@@ -128,13 +133,17 @@ export function writeOperatorStarterMetadata(root = repoRoot, { check = false } 
 function unexpectedMetadataFiles(generatedRoot) {
   if (!existsSync(generatedRoot)) return []
   const expected = new Set(OPERATOR_GENERATED_METADATA_FILES)
-  return readdirSync(generatedRoot).filter(
+  const unexpected = readdirSync(generatedRoot).filter(
     (path) =>
       !expected.has(path) &&
       /^(?:env\.d\.ts|tsconfig(?:\.[^.]+)?\.json|turbo\.json|vite\.config\.ts|vitest\.config\.ts)$/.test(
         path,
       ),
   )
+  return [
+    ...unexpected,
+    ...RETIRED_OPERATOR_GENERATED_FILES.filter((path) => existsSync(join(generatedRoot, path))),
+  ].sort()
 }
 
 function declarationPaths(root, generatedRoot) {
@@ -156,7 +165,7 @@ function viteConfigSource() {
 import { devtools } from "@tanstack/devtools-vite"
 import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
-import { standardOperatorRouteFiles } from "@voyant-travel/admin-host/standard-route-files"
+import { standardOperatorRouteFiles } from "@voyant-travel/operator-standard/standard-route-files"
 import {
   createAnalyzePlugin,
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
@@ -205,6 +214,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     passWithNoTests: true,
     testTimeout: 30_000,
     server: {

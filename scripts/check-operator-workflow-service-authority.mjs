@@ -2,7 +2,7 @@ import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 
 const workflowServicesPath = "starters/operator/src/api/runtime/operator-workflow-services.ts"
-const workflowRuntimePath = "starters/operator/src/workflow-runtime.ts"
+const workflowRuntimePath = "packages/operator-runtime/src/index.ts"
 const workflowRuntime = await readFile(workflowRuntimePath, "utf8")
 const packageBootstrapAssertions = [
   ["packages/catalog/src/runtime-contributor.ts", "CATALOG_DRAFT_REAPER_RUNTIME_KEY"],
@@ -13,10 +13,14 @@ const packageBootstrapAssertions = [
 if (existsSync(workflowServicesPath)) {
   throw new Error(`${workflowServicesPath} must stay deleted.`)
 }
-if (/^import\s+\{\s*createGeneratedProjectRuntime/m.test(workflowRuntime)) {
+if (/^import\s+.*createGeneratedWorkflowRuntime/m.test(workflowRuntime)) {
   throw new Error(`${workflowRuntimePath} must keep the application graph behind a lazy import.`)
 }
-for (const required of ["createRuntimePorts({ primitives })", "services: app.services"]) {
+for (const required of [
+  "generated.createGeneratedWorkflowRuntime()",
+  "runtimePorts,",
+  "services: runtime.app.services",
+]) {
   if (!workflowRuntime.includes(required)) {
     throw new Error(`${workflowRuntimePath} must contain ${JSON.stringify(required)}.`)
   }

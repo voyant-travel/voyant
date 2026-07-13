@@ -33,14 +33,14 @@ for (const relativePath of forbidden) {
 
 const requiredTokens = new Map([
   [
-    "packages/admin-host/src/standard-route-files.ts",
+    "packages/operator-standard/src/standard-route-files.ts",
     [
       "../../admin/selected-graph-admin.generated",
       'import.meta.glob("../../../src/admin/*/index.tsx"',
       "createStandardOperatorFrontend",
     ],
   ],
-  ["packages/admin-host/src/standard-frontend.tsx", ["createAdminHostWorkspace"]],
+  ["packages/operator-standard/src/standard-frontend.tsx", ["createAdminHostWorkspace"]],
   [
     "packages/admin-host/src/admin-presentation.ts",
     ["loadAdminDashboard", "discoverAdminHostExtensions", "createAdminHostPresentation"],
@@ -89,7 +89,7 @@ for (const [relativePath, tokens] of requiredTokens) {
   }
 }
 
-const workspaceRoute = join(root, "packages/admin-host/src/standard-route-files.ts")
+const workspaceRoute = join(root, "packages/operator-standard/src/standard-route-files.ts")
 const workspaceRouteSource = existsSync(workspaceRoute) ? readFileSync(workspaceRoute, "utf8") : ""
 for (const token of [
   "AdminWorkspaceShell",

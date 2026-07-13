@@ -22,11 +22,7 @@ async function write(root, relativePath, contents) {
 
 async function fixture(deploymentResources) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-capability-runtime-bindings-"))
-  await write(
-    root,
-    "packages/operator-runtime/src/deployment-resources.ts",
-    deploymentResources,
-  )
+  await write(root, "packages/operator-runtime/src/deployment-resources.ts", deploymentResources)
   await write(
     root,
     "packages/auth/src/runtime-contributor.ts",

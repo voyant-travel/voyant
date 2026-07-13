@@ -23,9 +23,7 @@ const graphNativeFiles = [
   "packages/admin/src/app/workspace.tsx",
   "packages/framework-migrations/src/index.ts",
   "packages/framework-migrations/src/module-source.ts",
-  "scripts/emit-deployment-graph.ts",
-  "starters/operator/src/deployment-graph-artifacts.ts",
-  "packages/admin-host/src/standard-frontend.tsx",
+  "packages/operator-standard/src/standard-frontend.tsx",
   "starters/operator/src/server.ts",
   "starters/operator/src/ssr-handler.ts",
   "starters/federated-operator/src/lib/admin-auth-runtime.ts",
@@ -56,10 +54,6 @@ for (const file of graphNativeFiles) {
 const deploymentArtifacts = read("packages/framework/src/deployment-artifacts.ts")
 requireText(deploymentArtifacts, 'VoyantDeploymentRuntimeEntryKind = "node"', "node entry kind")
 requireAbsent(deploymentArtifacts, "profileSnapshot", "deployment artifact snapshot field")
-
-const emitter = read("scripts/emit-deployment-graph.ts")
-requireAbsent(emitter, "profileOutput", "default profile output")
-requireAbsent(emitter, "compatibilityManagedProfile", "default profile conversion")
 
 const retiredFiles = [
   "packages/framework/src/profile.ts",
@@ -122,7 +116,7 @@ requireAbsent(
   "managed migration collector options alias",
 )
 
-const standardFrontend = read("packages/admin-host/src/standard-frontend.tsx")
+const standardFrontend = read("packages/operator-standard/src/standard-frontend.tsx")
 requireText(standardFrontend, "adminFetcher", "generic admin fetcher")
 requireAbsent(standardFrontend, "operatorFetcher", "Operator starter fetcher alias")
 

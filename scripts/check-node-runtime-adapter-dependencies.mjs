@@ -64,7 +64,6 @@ const starterAuthority = [
 ].join("\n")
 const graphGenerator = read("packages/framework/src/deployment-artifacts.ts")
 const graphResolver = read("scripts/lib/operator-deployment-graph-package-records.ts")
-const graphEmitter = read("scripts/emit-deployment-graph.ts")
 const violations = adapterBoundaryViolations(manifests, adapters)
 if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
   violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
@@ -159,11 +158,6 @@ if (!graphResolver.includes('"packages/operator-standard"')) {
 }
 if (!graphGenerator.includes("const runtime = record.metadata?.runtime")) {
   violations.push("Graph runtime generation must lower contributors from admitted package records")
-}
-if (graphEmitter.includes("@voyant-travel/framework/runtime-contributors")) {
-  violations.push(
-    "standard runtime contributors must import their admitted package entries directly",
-  )
 }
 if (graphGenerator.includes("selectedPackageNames.has(record.packageName)")) {
   violations.push("Graph runtime generation must not require an adapter to own a product unit")

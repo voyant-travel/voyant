@@ -34,9 +34,7 @@ const violations = []
 if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
   violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
 }
-const generatedCall = deploymentResources.match(
-  /options\.createRuntimePorts\(\{([^}]*)\}\)/,
-)?.[1]
+const generatedCall = deploymentResources.match(/options\.createRuntimePorts\(\{([^}]*)\}\)/)?.[1]
 if (!generatedCall) {
   violations.push("deployment resources must call options.createRuntimePorts with an object")
 } else {

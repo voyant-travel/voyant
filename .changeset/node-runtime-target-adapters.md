@@ -10,7 +10,6 @@
 "@voyant-travel/distribution": patch
 "@voyant-travel/relationships": patch
 "@voyant-travel/framework": patch
-"operator": patch
 ---
 
 Move runtime construction into BOM-selected domain contributors and replace the Finance target package with typed graph ports while keeping package dependencies acyclic.

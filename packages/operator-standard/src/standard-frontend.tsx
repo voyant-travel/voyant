@@ -16,6 +16,14 @@ import {
   OperatorAdminShellProvider,
 } from "@voyant-travel/admin/providers/operator-admin-shell"
 import { adminFetcher, getAdminApiUrl } from "@voyant-travel/admin-app/runtime"
+import {
+  type AdminHostPresentation,
+  createAdminHostPresentation,
+} from "@voyant-travel/admin-host/presentation"
+import {
+  type AdminHostWorkspace,
+  createAdminHostWorkspace,
+} from "@voyant-travel/admin-host/workspace"
 import { createLocalAuthRouteContribution } from "@voyant-travel/auth-react/local-auth-routes"
 import type { RedeemInvitationStatus } from "@voyant-travel/auth-react/ui"
 import {
@@ -24,6 +32,7 @@ import {
   storefrontBookingSearchSchema,
 } from "@voyant-travel/bookings-react/storefront"
 import { RealtimeChannel } from "@voyant-travel/cloud-sdk"
+import type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
 import { CruiseDetailPage } from "@voyant-travel/cruises-react/storefront"
 import { createFinancePublicRouteContribution } from "@voyant-travel/finance-react/public-routes"
 import { ProductDetailPageProducts } from "@voyant-travel/inventory-react/storefront"
@@ -43,11 +52,8 @@ import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { TooltipProvider } from "@voyant-travel/ui/components/tooltip"
 import { emailOTPClient, organizationClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
-import type { ReactNode } from "react"
-
-import { type AdminHostPresentation, createAdminHostPresentation } from "./admin-presentation.js"
+import type { ComponentType, ReactNode } from "react"
 import { createApiDocsRouteOptions, type OpenApiSpecLoaders } from "./standard-api-docs.js"
-import { createAdminHostWorkspace } from "./workspace.js"
 
 export interface StandardOperatorCurrentUser {
   id: string
@@ -56,7 +62,7 @@ export interface StandardOperatorCurrentUser {
   lastName: string | null
   locale: string
   timezone: string | null
-  uiPrefs: Record<string, unknown> | null
+  uiPrefs: Record<string, VoyantGraphJsonValue> | null
   isSuperAdmin: boolean
   isSupportUser: boolean
   createdAt: string
@@ -68,6 +74,23 @@ export interface CreateStandardOperatorFrontendOptions {
   selected: Parameters<typeof createAdminHostPresentation>[0]["selected"]
   project?: Record<string, unknown>
   openApiSpecs?: OpenApiSpecLoaders
+}
+
+export interface StandardOperatorFrontend {
+  Providers: ComponentType<{ children: ReactNode; queryClient: QueryClient }>
+  presentation: AdminHostPresentation
+  workspace: AdminHostWorkspace<StandardOperatorCurrentUser>
+  routes: {
+    docs: ReturnType<typeof createApiDocsRouteOptions>
+    finance: ReturnType<typeof createFinancePublicRouteContribution>["routes"]
+    localAuth: ReturnType<typeof createLocalAuthRouteContribution>["routes"]
+    quotes: ReturnType<typeof createQuotesPublicRouteContribution>["routes"]
+    storefront: ReturnType<typeof createStorefrontPresentationContribution>["routes"]
+  }
+  createRouter<TRouteTree extends AnyRoute>(options: {
+    routeTree: TRouteTree
+    workspaceRoute: AnyRoute
+  }): ReturnType<typeof createAdminRouter<TRouteTree>>
 }
 
 class ApiError extends Error {
@@ -229,7 +252,9 @@ function createPresentationRuntime(presentation: AdminHostPresentation) {
   return { finance, localAuth, quotes, storefront, workspace }
 }
 
-export function createStandardOperatorFrontend(options: CreateStandardOperatorFrontendOptions) {
+export function createStandardOperatorFrontend(
+  options: CreateStandardOperatorFrontendOptions,
+): StandardOperatorFrontend {
   const presentation = createAdminHostPresentation(options)
   const runtime = createPresentationRuntime(presentation)
   const AvailabilityProvider: AdminChildProvider = ({ children }) => (

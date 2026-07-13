@@ -1370,10 +1370,12 @@ event-filter subscriber that targets that workflow. This is intentionally a
 small facet slice: it proves the graph shape for declarative workflow/event
 routing without pulling runtime workflow bodies into graph discovery.
 
-SmartBill is a package-owned plugin example of states 2 and 3. The Operator
-selects `@voyant-travel/plugin-smartbill` directly, admission reads the
-installed package's `package.json#voyant.manifest` and public `./voyant`
-export, and the generated graph loads its admin API plus the three
+SmartBill is an optional package-owned plugin example of states 2 and 3. The
+standard Operator neither installs nor selects it. A project opts in by
+installing `@voyant-travel/plugin-smartbill` and selecting it in
+`voyant.config.ts`; admission then reads the installed package's
+`package.json#voyant.manifest` and public `./voyant` export, and the generated
+graph loads its admin API plus the three
 `./subscriber-runtime` descriptors. Generic selected-graph subscriber
 composition registers those descriptors exactly once. The deployment binding
 supplies only the environment, database, storage, and event-handler service
@@ -1382,11 +1384,10 @@ remains API compatibility until plugin API factories compose without that
 adapter; it is not subscriber authority. The Operator app must not maintain a
 parallel SmartBill bundle, event-name list, or compatibility mount.
 
-Product-side tooling exposes the same graph diagnostics in human and JSON form
-through `scripts/emit-deployment-graph.ts --json`, using the checked-in
-diagnostic-code registry. The public `voyant doctor --json` command remains the
-CLI follow-up; it should consume this report contract rather than inventing a
-separate diagnostic model.
+The external CLI exposes graph diagnostics in human and JSON form through
+`voyant doctor --json`, using the framework's checked-in diagnostic-code
+registry. The product repository does not maintain a second artifact emitter
+or diagnostic command.
 
 The reference operator owns one checked-in `voyant.config.ts`. It is a reference
 consumer and compatibility host, not the canonical package catalog. Its

@@ -1,4 +1,4 @@
-import type { StandardOperatorRouterContext } from "@voyant-travel/admin-host/standard-frontend"
+import type { StandardOperatorRouterContext } from "@voyant-travel/operator-standard/standard-frontend"
 import { operatorFrontend } from "../.voyant/routes/_lib/operator-frontend"
 import { Route as workspaceRoute } from "../.voyant/routes/_workspace/route"
 import { routeTree } from "../.voyant/routeTree.gen"

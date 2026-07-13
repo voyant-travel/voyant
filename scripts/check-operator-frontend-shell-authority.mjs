@@ -11,19 +11,10 @@ const files = readdirSync(starterRoot, { recursive: true, withFileTypes: true })
 
 const expected = [
   "admin/README.md",
-  "api/action-ledger-schema-mount.test.ts",
-  "api/operator-route-mounting.test.ts",
-  "api/selected-catalog-runtime.test.ts",
-  "api/selected-graph-runtime.test.ts",
   "custom-fields/README.md",
-  "deployment-graph-artifacts.test.ts",
-  "deployment-graph-artifacts.ts",
   "extensions/README.md",
   "modules/README.md",
   "router.tsx",
-  "selected-graph-action-ledger-admin.test.ts",
-  "selected-graph-mice-admin.test.ts",
-  "selected-graph-quotes-admin.test.ts",
   "server.ts",
   "start.ts",
   "styles.css",
@@ -42,7 +33,7 @@ assert(!composition.includes("@voyant-travel/bookings"), "starter must not selec
 assert(!composition.includes("@voyant-travel/finance"), "starter must not select product packages")
 
 const routeRegistry = readFileSync(
-  join(root, "packages/admin-host/src/standard-route-files.ts"),
+  join(root, "packages/operator-standard/src/standard-route-files.ts"),
   "utf8",
 )
 for (const token of [

@@ -78,6 +78,19 @@ test("requires migrated UI-only admin factories only in the selected-graph bundl
       runChecker({ graph, extensions, bundle, presentation, compatibility }),
     )
 
+    writeFileSync(
+      bundle,
+      'import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/wrong-entry"\n',
+    )
+    assert.throws(
+      () => runChecker({ graph, extensions, bundle, presentation, compatibility }),
+      /missing from selected-graph-admin\.generated\.ts/,
+    )
+    writeFileSync(
+      bundle,
+      'import { createActionLedgerAdminExtension } from "@voyant-travel/action-ledger-react/admin"\n',
+    )
+
     writeFileSync(compatibility, "export const adminExtensions = []\n")
     assert.throws(
       () => runChecker({ graph, extensions, bundle, presentation, compatibility }),

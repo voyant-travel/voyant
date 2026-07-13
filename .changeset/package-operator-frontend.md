@@ -1,6 +1,8 @@
 ---
 "@voyant-travel/admin-host": minor
+"@voyant-travel/operator-standard": minor
 ---
 
-Own the standard operator frontend runtime, route adapters, API documentation,
-Start policy, provider stack, and stylesheet bootstrap in the package.
+Move the standard Operator frontend runtime, route adapters, API documentation,
+provider stack, and stylesheet bootstrap from the generic admin host into the
+standard product distribution.

@@ -21,6 +21,20 @@ describe("external webhook delivery convergence authority", () => {
     assert.deepEqual(inspectExternalWebhookDeliveryConvergence(valid), [])
   })
 
+  it("accepts delegation through the canonical Postgres queue", () => {
+    assert.deepEqual(
+      inspectExternalWebhookDeliveryConvergence({
+        ...valid,
+        distributionQueue: "enqueuePostgresWebhookEvent(db, event, options)",
+        store: `enqueuePostgresWebhookEvent
+          createSelectedExternalWebhookQueue
+          requestPayload: input.requestPayload
+          deliveryContract: input.deliveryContract`,
+      }),
+      [],
+    )
+  })
+
   it("rejects inline HTTP and retry behavior from enqueue paths", () => {
     const failures = inspectExternalWebhookDeliveryConvergence({
       ...valid,

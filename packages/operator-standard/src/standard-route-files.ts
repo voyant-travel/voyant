@@ -2,6 +2,7 @@ import type { VoyantGeneratedRouteFile } from "@voyant-travel/vite-config"
 
 const runtimeImport = (path: string) =>
   path.includes("/") ? "../_lib/operator-frontend" : "./_lib/operator-frontend"
+const standardFrontendImport = "@voyant-travel/operator-standard/standard-frontend"
 
 const contributionRoute = (
   path: string,
@@ -38,7 +39,7 @@ export const standardOperatorRouteFiles: readonly VoyantGeneratedRouteFile[] = [
   {
     path: "_lib/operator-frontend.tsx",
     source: `
-import { createStandardOperatorFrontend } from "@voyant-travel/admin-host/standard-frontend"
+import { createStandardOperatorFrontend } from ${JSON.stringify(standardFrontendImport)}
 import { accessCatalog } from "../../access/selected-access-catalog.generated"
 import { createSelectedGraphAdminExtensions } from "../../admin/selected-graph-admin.generated"
 

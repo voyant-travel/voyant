@@ -11,12 +11,19 @@
 
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import {
+  createVoyantNodeEnv,
+  createVoyantNodeRuntimeHostPrimitives,
+} from "@voyant-travel/framework/node-runtime"
 import { mountApp } from "@voyant-travel/hono"
+import { createOperatorDeploymentResources } from "@voyant-travel/operator-runtime/deployment-resources"
 import { describe, expect, it, vi } from "vitest"
 
 import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
-import { createGeneratedGraphRuntime } from "../../.voyant/runtime/graph-runtime.generated"
-import { createOperatorDeploymentResources } from "./runtime/deployment-resources"
+import {
+  createGeneratedGraphRuntime,
+  createGeneratedGraphRuntimePorts,
+} from "../../.voyant/runtime/project-runtime.generated"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
 const TEST_CTX = { waitUntil: () => {}, passThroughOnException: () => {} } as never
@@ -58,7 +65,7 @@ async function buildWithSessionActor(actor: Actor) {
 
 async function buildWithLiveFrontDoor(
   actor: Actor = "staff",
-  // biome-ignore lint/suspicious/noExplicitAny: configurable smoke-test DB boundary.
+  // biome-ignore lint/suspicious/noExplicitAny: owner: Operator route smoke test; configurable DB boundary.
   db: () => any = () => ({}),
 ) {
   const composition = await buildGraphComposition()
@@ -95,9 +102,17 @@ async function responseWithSessionActor(
 }
 
 function buildGraphComposition() {
+  const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })
+  const primitives = createVoyantNodeRuntimeHostPrimitives({
+    env,
+    deliverEvent: async () => undefined,
+  })
   return composeVoyantGraphRuntime({
     runtime: createGeneratedGraphRuntime(),
-    ...createOperatorDeploymentResources(),
+    ...createOperatorDeploymentResources({
+      primitives,
+      createRuntimePorts: createGeneratedGraphRuntimePorts,
+    }),
   })
 }
 
@@ -259,40 +274,6 @@ describe("operator composed route mounting (smoke)", () => {
       expect(response.status).not.toBe(404)
     }
     expect(resolve).not.toHaveBeenCalled()
-  })
-
-  it("mounts the graph-selected Netopia callback with anonymous transactional posture", async () => {
-    const composition = await buildGraphComposition()
-    const defaultDb = vi.fn(() => ({}))
-    const transactionalDb = vi.fn(() => ({}))
-    const resolve = vi.fn(() => ({ userId: "u1", actor: "staff" as const }))
-    const netopiaApp = mountApp({
-      modules: composition.modules,
-      extensions: composition.extensions,
-      ...mountRoutePosture(composition),
-      // biome-ignore lint/suspicious/noExplicitAny: stub db factories for graph-owned plugin posture regression -- owner: operator API tests.
-      db: defaultDb as any,
-      // biome-ignore lint/suspicious/noExplicitAny: stub db factories for graph-owned plugin posture regression -- owner: operator API tests.
-      dbTransactional: transactionalDb as any,
-      auth: { resolve },
-    })
-
-    const response = await netopiaApp.request(
-      "/v1/finance/providers/netopia/callback",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: "{}",
-      },
-      TEST_ENV,
-      TEST_CTX,
-    )
-
-    expect(response.status).not.toBe(401)
-    expect(response.status).not.toBe(404)
-    expect(resolve).not.toHaveBeenCalled()
-    expect(transactionalDb).toHaveBeenCalled()
-    expect(defaultDb).not.toHaveBeenCalled()
   })
 
   it("routes graph-declared transactional prefixes to the transactional db", async () => {

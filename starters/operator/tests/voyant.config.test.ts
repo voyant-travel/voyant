@@ -2,7 +2,7 @@ import path from "node:path"
 
 import { resolveProject } from "@voyant-travel/framework/project"
 import { describe, expect, it } from "vitest"
-import config from "./voyant.config.js"
+import config from "../voyant.config.js"
 
 const operatorRoot = process.cwd()
 

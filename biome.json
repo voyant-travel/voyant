@@ -57,7 +57,7 @@
       "!packages/openapi/spec",
       "!starters/operator/openapi",
       "!packages/admin/src/styles.css",
-      "!packages/admin-host/src/standard-styles.css",
+      "!packages/operator-standard/src/standard-styles.css",
       "!packages/ui/src/styles.css",
       "!packages/ui/src/styles/globals.css",
       "!packages/*-ui/src/styles.css",

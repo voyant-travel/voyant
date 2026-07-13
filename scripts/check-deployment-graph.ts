@@ -17,7 +17,6 @@ import {
   graphIdFromSpecifier,
   VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY,
 } from "../packages/framework/src/deployment-graph.ts"
-import { defineConfig } from "../packages/framework/src/project.ts"
 import { runtimeReferencePackageNames } from "../packages/framework/src/project-resolver.ts"
 import { STANDARD_OPERATOR_SCHEDULED_JOBS } from "../packages/framework/src/scheduled-jobs.ts"
 import operatorProject from "../starters/operator/voyant.config.ts"
@@ -49,8 +48,6 @@ const OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS = new Map<string, string>([
   ["@voyant-travel/framework", "framework"],
   ["@voyant-travel/framework-migrations", "library"],
   ["@voyant-travel/hono", "library"],
-  ["@voyant-travel/plugin-netopia", "plugin"],
-  ["@voyant-travel/plugin-smartbill", "plugin"],
 ])
 
 async function main(): Promise<void> {
@@ -67,19 +64,6 @@ async function main(): Promise<void> {
   })
   const repeatedOperator = await resolveOperatorDeploymentGraph({
     project: authoredOperatorProject,
-    projectRoot: operatorRoot,
-    repoRoot,
-    frameworkVersion: frameworkPackage.version,
-    scheduledJobs: STANDARD_OPERATOR_SCHEDULED_JOBS,
-  })
-  const smartbillOptIn = await resolveOperatorDeploymentGraph({
-    project: defineConfig({
-      plugins: [
-        { resolve: "@voyant-travel/plugin-netopia" },
-        { resolve: "@voyant-travel/plugin-smartbill" },
-      ],
-      deployment: authoredOperatorProject.deployment,
-    }) as OperatorAuthoredProject,
     projectRoot: operatorRoot,
     repoRoot,
     frameworkVersion: frameworkPackage.version,
@@ -190,10 +174,6 @@ async function main(): Promise<void> {
     if (!moduleIds.has(id)) failures.push(`expected selected graph to include ${id}`)
   }
 
-  if (!first.plugins.some((unit) => unit.id === "@voyant-travel/plugin-netopia")) {
-    failures.push("expected selected graph to include plugin @voyant-travel/plugin-netopia")
-  }
-
   const operatorGraph = resolvedOperator.graph
   const operatorModuleIds = new Set(operatorGraph.modules.map((unit) => unit.id))
   const operatorExtensionIds = new Set(operatorGraph.extensions.map((unit) => unit.id))
@@ -263,16 +243,14 @@ async function main(): Promise<void> {
       OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS.get(record.packageName) ??
       (runtimeOnlyPackageNames.has(record.packageName) ? "library" : "module")
     const metadata = record.metadata
-    const requiresFullCompatibility = record.packageName !== "@voyant-travel/plugin-smartbill"
     if (
       metadata?.schemaVersion !== "voyant.package.v1" ||
       metadata.kind !== expectedKind ||
       JSON.stringify(metadata.compatibleWith.targets) !== JSON.stringify(["node"]) ||
-      (requiresFullCompatibility &&
-        (typeof metadata.compatibleWith?.framework !== "string" ||
-          !metadata.compatibleWith.modes?.includes("local") ||
-          !metadata.compatibleWith.modes?.includes("managed-cloud") ||
-          !metadata.compatibleWith.modes?.includes("self-hosted")))
+      typeof metadata.compatibleWith?.framework !== "string" ||
+      !metadata.compatibleWith.modes?.includes("local") ||
+      !metadata.compatibleWith.modes?.includes("managed-cloud") ||
+      !metadata.compatibleWith.modes?.includes("self-hosted")
     ) {
       failures.push(
         `expected operator graph package record ${record.packageName} to include voyant.package.v1 ${expectedKind} compatibility metadata`,
@@ -284,11 +262,6 @@ async function main(): Promise<void> {
       "expected public document delivery graph unit provenance to resolve to its owning package",
     )
   }
-  if (!operatorPackageNames.has("@voyant-travel/plugin-netopia")) {
-    failures.push(
-      "expected operator graph package records to include @voyant-travel/plugin-netopia",
-    )
-  }
   if (
     operatorPackageNames.has("@voyant-travel/plugin-smartbill") ||
     operatorPluginIds.has("@voyant-travel/plugin-smartbill")
@@ -296,37 +269,6 @@ async function main(): Promise<void> {
     failures.push("expected the standard Operator graph not to admit optional SmartBill")
   }
 
-  const smartbillRecord = smartbillOptIn.graph.packageRecords.find(
-    (record) => record.packageName === "@voyant-travel/plugin-smartbill",
-  )
-  if (
-    smartbillRecord?.version !== "0.140.2" ||
-    smartbillRecord.source?.kind !== "registry" ||
-    smartbillRecord.metadata?.kind !== "plugin" ||
-    smartbillRecord.metadata.manifest !== "./voyant"
-  ) {
-    failures.push(
-      "expected explicitly selected SmartBill 0.140.2 to be admitted through its ./voyant manifest",
-    )
-  }
-  const smartbillUnit = smartbillOptIn.graph.plugins.find(
-    (unit) => unit.id === "@voyant-travel/plugin-smartbill",
-  )
-  const smartbillSubscriberIds = smartbillUnit?.subscribers
-    .map((subscriber) => subscriber.id)
-    .sort()
-  if (
-    JSON.stringify(smartbillSubscriberIds) !==
-    JSON.stringify([
-      "@voyant-travel/plugin-smartbill#subscriber.invoice-issued",
-      "@voyant-travel/plugin-smartbill#subscriber.payment-recorded",
-      "@voyant-travel/plugin-smartbill#subscriber.proforma-issued",
-    ])
-  ) {
-    failures.push(
-      "expected explicitly selected SmartBill subscribers to come from the admitted package manifest",
-    )
-  }
   const bookingsRecord = operatorPackageRecords.get("@voyant-travel/bookings")
   if (bookingsRecord?.metadata?.manifest !== "./voyant") {
     failures.push(
@@ -449,14 +391,17 @@ async function main(): Promise<void> {
       failures.push(`expected ${id} to retain its package-owned subscriber runtime reference`)
     }
   }
-  const operatorAppSource = await readFile(join(operatorRoot, "src/api/app.ts"), "utf8")
+  const operatorRuntimeSource = await readFile(
+    join(repoRoot, "packages/operator-runtime/src/index.ts"),
+    "utf8",
+  )
   const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")
   if (existsSync(operatorChannelPushRoutePath)) {
     failures.push(
       "expected the package-owned Distribution channel-push runtime to replace the Operator compatibility route",
     )
   }
-  if (operatorAppSource.includes("channelPushBundle")) {
+  if (operatorRuntimeSource.includes("channelPushBundle")) {
     failures.push(
       "expected package-owned distribution subscribers to stay absent from Operator hand lists",
     )
@@ -476,7 +421,7 @@ async function main(): Promise<void> {
       "expected Finance booking-schedule subscriber to retain its package-owned runtime reference",
     )
   }
-  if (operatorAppSource.includes("bookingScheduleBundle")) {
+  if (operatorRuntimeSource.includes("bookingScheduleBundle")) {
     failures.push(
       "expected package-owned Finance booking-schedule subscriber to stay absent from Operator hand lists and route wiring",
     )
@@ -507,7 +452,7 @@ async function main(): Promise<void> {
   }
   if (
     existsSync(join(operatorRoot, "src/api/subscribers/catalog-checkout-finalize-runtime.ts")) ||
-    operatorAppSource.includes("createCatalogCheckoutBundle")
+    operatorRuntimeSource.includes("createCatalogCheckoutBundle")
   ) {
     failures.push(
       "expected package-owned Commerce checkout subscribers to stay absent from Operator app and subscriber authority",
@@ -518,9 +463,6 @@ async function main(): Promise<void> {
     if (!operatorModuleIds.has(id)) {
       failures.push(`expected operator graph to include schema-only module ${id}`)
     }
-  }
-  if (!operatorPluginIds.has("@voyant-travel/plugin-netopia")) {
-    failures.push("expected operator graph to include @voyant-travel/plugin-netopia")
   }
   for (const packageName of new Set(
     buildDeploymentMigrationSources(operatorGraph).map((source) => source.packageName),
@@ -538,13 +480,9 @@ async function main(): Promise<void> {
   if (!operatorPackage.scripts?.["db:migrate"]?.includes("voyant migrate")) {
     failures.push("expected operator db:migrate to delegate to the graph-native external CLI")
   }
-  const deploymentGraphEmitterSource = await readFile(
-    new URL("./emit-deployment-graph.ts", import.meta.url),
-    "utf8",
-  )
-  if (deploymentGraphEmitterSource.includes("drizzle.schemas.generated")) {
+  if (!operatorPackage.scripts?.["graph:check"]?.includes("voyant db doctor")) {
     failures.push(
-      "expected deployment artifact emission to derive migration sources from selected manifests",
+      "expected operator graph drift checks to delegate to the graph-native external CLI",
     )
   }
 
@@ -554,19 +492,6 @@ async function main(): Promise<void> {
   if (frameworkRecord?.source.kind !== "workspace" || !frameworkRecord.version) {
     failures.push(
       "expected @voyant-travel/framework package record to include workspace provenance",
-    )
-  }
-
-  const netopiaRecord = first.packageRecords.find(
-    (record) => record.packageName === "@voyant-travel/plugin-netopia",
-  )
-  if (
-    netopiaRecord?.source.kind !== "registry" ||
-    !netopiaRecord.version ||
-    !netopiaRecord.source.integrity
-  ) {
-    failures.push(
-      "expected @voyant-travel/plugin-netopia package record to include lockfile registry provenance",
     )
   }
 

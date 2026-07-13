@@ -144,7 +144,7 @@ const requiredTokens = new Map([
   ],
   ["packages/trips-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
-    "packages/admin-host/src/standard-route-files.ts",
+    "packages/operator-standard/src/standard-route-files.ts",
     [
       '"(storefront)/shop_.book.$entityModule.$entityId.tsx"',
       '"(storefront)/shop.tsx"',
@@ -161,7 +161,7 @@ const requiredTokens = new Map([
     ],
   ],
   [
-    "packages/admin-host/src/standard-frontend.tsx",
+    "packages/operator-standard/src/standard-frontend.tsx",
     [
       'from "@voyant-travel/bookings-react/storefront"',
       'from "@voyant-travel/cruises-react/storefront"',
@@ -189,7 +189,7 @@ const requiredTokens = new Map([
     ["createQuotesPublicRouteContribution", "PublicProposalPage"],
   ],
   [
-    "packages/admin-host/src/standard-route-files.ts",
+    "packages/operator-standard/src/standard-route-files.ts",
     [
       "../../admin/selected-graph-admin.generated",
       'import.meta.glob("../../../src/admin/*/index.tsx"',
@@ -206,6 +206,58 @@ for (const [relativePath, tokens] of requiredTokens) {
   const source = readFileSync(path, "utf8")
   for (const token of tokens) {
     if (!source.includes(token)) failures.push(`${relativePath} must contain ${token}`)
+  }
+}
+
+const adminHostPackage = JSON.parse(
+  readFileSync(join(root, "packages/admin-host/package.json"), "utf8"),
+)
+const productReactPackages = [
+  "@voyant-travel/auth-react",
+  "@voyant-travel/bookings-react",
+  "@voyant-travel/catalog-react",
+  "@voyant-travel/commerce-react",
+  "@voyant-travel/cruises-react",
+  "@voyant-travel/distribution-react",
+  "@voyant-travel/finance-react",
+  "@voyant-travel/flights-react",
+  "@voyant-travel/inventory-react",
+  "@voyant-travel/legal-react",
+  "@voyant-travel/mice-react",
+  "@voyant-travel/operations-react",
+  "@voyant-travel/quotes-react",
+  "@voyant-travel/realtime-react",
+  "@voyant-travel/relationships-react",
+  "@voyant-travel/storefront-react",
+  "@voyant-travel/trips-react",
+]
+for (const packageName of productReactPackages) {
+  for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+    if (adminHostPackage[field]?.[packageName]) {
+      failures.push(`packages/admin-host/package.json retains ${field} entry ${packageName}`)
+    }
+  }
+}
+for (const exportPath of [
+  "./standard-frontend",
+  "./standard-route-files",
+  "./standard-styles.css",
+]) {
+  if (
+    adminHostPackage.exports?.[exportPath] ||
+    adminHostPackage.publishConfig?.exports?.[exportPath]
+  ) {
+    failures.push(`packages/admin-host/package.json retains product export ${exportPath}`)
+  }
+}
+for (const retiredPath of [
+  "packages/admin-host/src/standard-api-docs.tsx",
+  "packages/admin-host/src/standard-frontend.tsx",
+  "packages/admin-host/src/standard-route-files.ts",
+  "packages/admin-host/src/standard-styles.css",
+]) {
+  if (existsSync(join(root, retiredPath))) {
+    failures.push(`standard product frontend must not remain in generic admin host: ${retiredPath}`)
   }
 }
 
