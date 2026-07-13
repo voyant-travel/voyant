@@ -1,4 +1,4 @@
-import type { OperatorAuthEmailSender } from "@voyant-travel/auth/operator-node-runtime"
+import type { OperatorAuthEmailSender } from "@voyant-travel/auth/node-runtime"
 import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 
 type CloudAuthEmailEnv = object

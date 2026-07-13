@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const starterPath = "starters/operator/src/api/auth/handler.ts"
 const retiredCookiePolicyPath = "starters/operator/src/api/auth/cookie-domain.ts"
-const runtimePath = "packages/auth/src/operator-node-runtime.ts"
+const runtimePath = "packages/auth/src/node-runtime.ts"
 const starter = existsSync(join(root, starterPath))
   ? readFileSync(join(root, starterPath), "utf8")
   : ""

@@ -52,7 +52,7 @@ vi.mock("@voyant-travel/admin-host/serve", () => ({
   },
 }))
 
-vi.mock("@voyant-travel/auth/operator-node-runtime", () => ({
+vi.mock("@voyant-travel/auth/node-runtime", () => ({
   createOperatorAuthNodeRuntime: (options: Record<string, unknown>) => {
     mocks.authRuntimeOptions.push(options)
     return {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { buildBetterAuthCookieAdvancedOptions } from "../../src/operator-node-runtime.js"
+import { buildBetterAuthCookieAdvancedOptions } from "../../src/node-runtime.js"
 
 describe("buildBetterAuthCookieAdvancedOptions", () => {
   it("leaves Better Auth cookie defaults untouched when the domain is unset", () => {

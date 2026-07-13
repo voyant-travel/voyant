@@ -3,7 +3,7 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
-import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/operator-node-runtime"
+import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/node-runtime"
 import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"

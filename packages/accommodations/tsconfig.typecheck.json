@@ -145,7 +145,7 @@
       "@voyant-travel/auth/identity-access-runtime-port": [
         "../auth/dist/identity-access-runtime-port.d.ts"
       ],
-      "@voyant-travel/auth/operator-node-runtime": ["../auth/dist/operator-node-runtime.d.ts"],
+      "@voyant-travel/auth/node-runtime": ["../auth/dist/node-runtime.d.ts"],
       "@voyant-travel/auth/permissions": ["../auth/dist/permissions.d.ts"],
       "@voyant-travel/auth/runtime-contributor": ["../auth/dist/runtime-contributor.d.ts"],
       "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],

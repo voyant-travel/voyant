@@ -28,9 +28,9 @@
       "types": "./src/backend.ts",
       "default": "./src/backend.ts"
     },
-    "./operator-node-runtime": {
-      "types": "./src/operator-node-runtime.ts",
-      "default": "./src/operator-node-runtime.ts"
+    "./node-runtime": {
+      "types": "./src/node-runtime.ts",
+      "default": "./src/node-runtime.ts"
     },
     "./cloud-broker": {
       "types": "./src/cloud-broker.ts",
@@ -93,10 +93,10 @@
         "import": "./dist/backend.js",
         "default": "./dist/backend.js"
       },
-      "./operator-node-runtime": {
-        "types": "./dist/operator-node-runtime.d.ts",
-        "import": "./dist/operator-node-runtime.js",
-        "default": "./dist/operator-node-runtime.js"
+      "./node-runtime": {
+        "types": "./dist/node-runtime.d.ts",
+        "import": "./dist/node-runtime.js",
+        "default": "./dist/node-runtime.js"
       },
       "./cloud-broker": {
         "types": "./dist/cloud-broker.d.ts",
