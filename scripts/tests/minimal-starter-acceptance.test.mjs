@@ -224,6 +224,9 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  packageJson.dependencies.pg = `link:${realpathSync(
+    join(repoRoot, "starters/operator/node_modules/pg"),
+  )}`
   for (const dependency of ["@voyant-travel/cli", "tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
       join(repoRoot, "starters/operator/node_modules", dependency),
