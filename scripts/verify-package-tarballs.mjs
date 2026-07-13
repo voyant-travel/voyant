@@ -40,6 +40,21 @@ const financeContractsPaymentBodyExports = [
 ]
 const packedExportChecks = [
   {
+    packageName: "@voyant-travel/workflows",
+    entries: [
+      {
+        path: "dist/index.js",
+        label: "root runtime",
+        requiredExports: ["defineWorkflow"],
+      },
+      {
+        path: "dist/index.d.ts",
+        label: "root declaration",
+        requiredExports: ["defineWorkflow"],
+      },
+    ],
+  },
+  {
     packageName: "@voyant-travel/finance-contracts",
     entries: [
       {
@@ -340,6 +355,32 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
+function packedFileExportsName(extractRoot, filePath, exportName, visited = new Set()) {
+  if (visited.has(filePath)) return false
+  visited.add(filePath)
+
+  const absolutePath = path.join(extractRoot, filePath)
+  if (!fs.existsSync(absolutePath)) return false
+
+  const source = fs.readFileSync(absolutePath, "utf8")
+  const exportPattern = new RegExp(`\\b${escapeRegExp(exportName)}\\b`)
+  if (exportPattern.test(source)) return true
+
+  for (const match of source.matchAll(/\bexport\s+\*\s+from\s+['"]([^'"]+)['"]/g)) {
+    const specifier = match[1]
+    if (!specifier?.startsWith(".")) continue
+
+    let reexportPath = path.normalize(path.join(path.dirname(filePath), specifier))
+    if (filePath.endsWith(".d.ts") && reexportPath.endsWith(".js")) {
+      reexportPath = `${reexportPath.slice(0, -3)}.d.ts`
+    }
+
+    if (packedFileExportsName(extractRoot, reexportPath, exportName, visited)) return true
+  }
+
+  return false
+}
+
 function collectPackedExportProblems(extractRoot, packageName) {
   const check = packedExportChecks.find((candidate) => candidate.packageName === packageName)
   if (!check) return []
@@ -352,11 +393,9 @@ function collectPackedExportProblems(extractRoot, packageName) {
       continue
     }
 
-    const source = fs.readFileSync(entryPath, "utf8")
-    const missingExports = entry.requiredExports.filter((name) => {
-      const pattern = new RegExp(`\\b${escapeRegExp(name)}\\b`)
-      return !pattern.test(source)
-    })
+    const missingExports = entry.requiredExports.filter(
+      (name) => !packedFileExportsName(extractRoot, entry.path, name),
+    )
 
     if (missingExports.length > 0) {
       problems.push(
