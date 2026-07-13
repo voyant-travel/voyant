@@ -85,7 +85,10 @@ pnpm -F operator db:migrate
 ```
 
 Project-local modules keep schema and migrations together under
-`src/modules/<name>/`; the starter does not maintain an aggregate Drizzle schema
+`src/modules/<name>/`; generate those migrations with the module's ORM tooling
+and admit that module-scoped folder through `voyant.config.ts`. Reusable plugins
+ship their own migration history. `voyant migrate` applies the resolved plan but
+never generates SQL. The starter does not maintain an aggregate Drizzle schema
 or copy framework migrations.
 
 ## Deploy

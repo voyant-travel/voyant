@@ -185,7 +185,7 @@ test("minimal starter installs, builds, and boots the Node host", {
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  for (const dependency of ["tsx", "typescript"]) {
+  for (const dependency of ["@voyant-travel/cli", "tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
       join(repoRoot, "starters/operator/node_modules", dependency),
     )}`

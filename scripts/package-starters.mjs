@@ -58,9 +58,11 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
 
   const dependency = (name) =>
     localLinks ? `link:${workspacePackageDirectory(name)}` : `^${requiredWorkspaceVersion(name)}`
-  const cliDependency = localLinks
-    ? `link:${resolve(repoRoot, "..", "cli", "packages", "cli")}`
-    : supportedCliRange()
+  const localCliPackage = resolve(repoRoot, "..", "cli", "packages", "cli")
+  const cliDependency =
+    localLinks && existsSync(join(localCliPackage, "package.json"))
+      ? `link:${localCliPackage}`
+      : supportedCliRange()
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
     private: true,
