@@ -79,7 +79,10 @@ import {
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
-import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
+import {
+  WorkflowRunnerRegistry,
+  workflowRunnerRegistryRuntimePort,
+} from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -509,11 +512,16 @@ describe("selected Operator graph runtime composition", () => {
     const checkout = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
     )
-    const registry = new WorkflowRunnerRegistry()
+    const ports = buildOperatorRuntimePorts()
+    const registry = await ports[workflowRunnerRegistryRuntimePort.id]
+    expect(registry).toBeInstanceOf(WorkflowRunnerRegistry)
+    if (!(registry instanceof WorkflowRunnerRegistry)) {
+      throw new TypeError("The selected graph did not contribute a workflow runner registry.")
+    }
     const composed = await composeVoyantGraphRuntime({
       runtime,
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(registry),
+      ports,
     })
     const runtimeModule = composed.modules.find(
       (module) => module.module.name === "commerce.catalog-checkout-extension.graph-runtime",
