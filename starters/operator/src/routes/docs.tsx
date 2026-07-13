@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router"
 import { lazy, Suspense, useEffect, useMemo, useState } from "react"
 import { getApiUrl } from "../lib/env"
 
@@ -71,9 +70,9 @@ function buildEntries(): SpecEntry[] {
   return entries.sort((a, b) => a.key.localeCompare(b.key))
 }
 
-export const Route = createFileRoute("/docs")({
+export const routeOptions = {
   component: ApiDocsPage,
-})
+}
 
 function ApiDocsPage(): React.ReactElement {
   const entries = useMemo(buildEntries, [])

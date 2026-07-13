@@ -96,7 +96,10 @@ export function checkStorefrontPresentationAuthority({
   if (intakeAdapter.includes("StorefrontIntake") || intakeAdapter.includes("storefrontIntake")) {
     failures.push("Storefront intake authority must stay out of the starter")
   }
-  if (!relationshipsContributor.includes("[storefrontIntakeRuntimePort.id]")) {
+  if (
+    !relationshipsContributor.includes("[storefrontIntakeRuntimePort.id]") &&
+    !relationshipsContributor.includes("[storefrontIntakeRuntimePortReference.id]")
+  ) {
     failures.push("Relationships contributor must provide the Storefront intake port")
   }
   for (const token of [

@@ -12,6 +12,7 @@ import {
   createStorefrontPresentationContribution,
   type StorefrontBookingRouteProps,
   type StorefrontComposerRouteProps,
+  useStorefrontMessages,
 } from "@voyant-travel/storefront-react/storefront"
 import { StorefrontComposerPage } from "@voyant-travel/trips-react/storefront"
 import { useAdminMessages } from "./admin-i18n"
@@ -23,6 +24,8 @@ const useStorefrontLocale = () => useLocale().resolvedLocale
 
 export const OperatorStorefrontMessagesProvider =
   createStorefrontMessagesProvider(useStorefrontLocale)
+
+export const useOperatorStorefrontMessages = useStorefrontMessages
 
 export const storefrontPresentationContribution = createStorefrontPresentationContribution({
   BookingPage: OperatorStorefrontBookingPage,

@@ -7,7 +7,7 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
-const starterFileRatchet = 141
+const starterFileRatchet = 64
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
@@ -44,31 +44,12 @@ for (const relativePath of [
   "starters/operator/src/lib/storefront-i18n.tsx",
   "starters/operator/src/lib/storefront-scope.tsx",
   "starters/operator/src/routes/(storefront)/storefront-market-selector.tsx",
+  "starters/operator/src/routeTree.gen.ts",
+  "starters/operator/src/routes/__root.tsx",
+  "starters/operator/src/routes/_workspace/route.tsx",
 ]) {
   if (existsSync(join(root, relativePath))) {
     failures.push(`package-owned product UI must stay deleted from the starter: ${relativePath}`)
-  }
-}
-
-for (const [relativePath, maxLines] of new Map([
-  ["starters/operator/src/routes/proposal.$quoteVersionId.tsx", 40],
-  ["starters/operator/src/routes/pay.tsx", 40],
-  ["starters/operator/src/routes/pay_.$sessionId.tsx", 40],
-  ["starters/operator/src/routes/accountant.$token.tsx", 30],
-  ["starters/operator/src/routes/(storefront)/route.tsx", 50],
-  ["starters/operator/src/routes/(storefront)/shop_.account.tsx", 35],
-  ["starters/operator/src/routes/(storefront)/shop_.account.sign-in.tsx", 40],
-  ["starters/operator/src/routes/(storefront)/shop_.account.sign-up.tsx", 45],
-  ["starters/operator/src/routes/(storefront)/shop_.account.verify-email.tsx", 45],
-  ["starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx", 35],
-  ["starters/operator/src/routes/(storefront)/shop_.composer.tsx", 40],
-  ["starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx", 60],
-])) {
-  const path = join(root, relativePath)
-  if (!existsSync(path)) continue
-  const lineCount = readFileSync(path, "utf8").split("\n").length
-  if (lineCount > maxLines) {
-    failures.push(`${relativePath} grew to ${lineCount} lines; route adapter limit is ${maxLines}`)
   }
 }
 
@@ -163,28 +144,21 @@ const requiredTokens = new Map([
   ],
   ["packages/trips-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
-    "starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
-    ["storefrontPresentationContribution.routes.booking"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop.tsx",
-    ["storefrontPresentationContribution.routes.shop"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
-    ["storefrontPresentationContribution.routes.productDetail"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.account.tsx",
-    ["storefrontPresentationContribution.routes.account"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx",
-    ["storefrontPresentationContribution.routes.confirmation"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.composer.tsx",
-    ["storefrontPresentationContribution.routes.composer"],
+    "packages/admin-host/src/standard-route-files.ts",
+    [
+      '"(storefront)/shop_.book.$entityModule.$entityId.tsx"',
+      '"(storefront)/shop.tsx"',
+      '"(storefront)/shop_.products.$entityModule.$entityId.tsx"',
+      '"(storefront)/shop_.account.tsx"',
+      '"(storefront)/shop_.confirmation.$bookingId.tsx"',
+      '"(storefront)/shop_.composer.tsx"',
+      '"booking"',
+      '"shop"',
+      '"productDetail"',
+      '"account"',
+      '"confirmation"',
+      '"composer"',
+    ],
   ],
   [
     "starters/operator/src/lib/storefront-messages.tsx",
@@ -198,17 +172,21 @@ const requiredTokens = new Map([
     ],
   ],
   [
-    "starters/operator/src/routes/proposal.$quoteVersionId.tsx",
-    ['from "@voyant-travel/quotes-react/storefront"'],
+    "packages/finance-react/src/public-routes.tsx",
+    [
+      "createFinancePublicRouteContribution",
+      "PaymentLinkResolverPage",
+      "PublicPaymentLinkPage",
+      "AccountantPortal",
+    ],
   ],
-  ["starters/operator/src/routes/pay.tsx", ['from "@voyant-travel/finance-react/storefront"']],
   [
-    "starters/operator/src/routes/pay_.$sessionId.tsx",
-    ['from "@voyant-travel/finance-react/storefront"'],
+    "packages/quotes-react/src/public-routes.tsx",
+    ["createQuotesPublicRouteContribution", "PublicProposalPage"],
   ],
   [
-    "starters/operator/src/routes/accountant.$token.tsx",
-    ['from "@voyant-travel/finance-react/ui"'],
+    "starters/operator/src/lib/public-route-contributions.tsx",
+    ["createFinancePublicRouteContribution", "createQuotesPublicRouteContribution"],
   ],
   [
     "starters/operator/src/lib/admin-presentation.tsx",

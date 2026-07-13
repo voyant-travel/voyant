@@ -4,12 +4,11 @@ import {
   buildAdminExtensionRoutes,
   createAdminRouter,
 } from "@voyant-travel/admin/app"
-
+import { Route as workspaceRoute } from "../.voyant/routes/_workspace/route"
+import { routeTree } from "../.voyant/routeTree.gen"
 import { operatorAdminPresentation } from "./lib/admin-presentation"
 import { getApiUrl } from "./lib/env"
 import { projectFetcher } from "./lib/voyant-fetcher"
-import { Route as workspaceRoute } from "./routes/_workspace/route"
-import { routeTree } from "./routeTree.gen"
 
 export type RouterContext = AdminRouterContext
 

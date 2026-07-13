@@ -45,7 +45,7 @@ const requiredTokens = new Map([
       "createAdminHostPresentation",
     ],
   ],
-  ["starters/operator/src/routes/_workspace/route.tsx", ["createAdminHostWorkspace"]],
+  ["packages/admin-host/src/standard-route-files.ts", ["createAdminHostWorkspace"]],
   [
     "packages/admin-host/src/admin-presentation.ts",
     ["loadAdminDashboard", "discoverAdminHostExtensions", "createAdminHostPresentation"],
@@ -94,7 +94,7 @@ for (const [relativePath, tokens] of requiredTokens) {
   }
 }
 
-const workspaceRoute = join(root, "starters/operator/src/routes/_workspace/route.tsx")
+const workspaceRoute = join(root, "packages/admin-host/src/standard-route-files.ts")
 const workspaceRouteSource = existsSync(workspaceRoute) ? readFileSync(workspaceRoute, "utf8") : ""
 for (const token of [
   "AdminWorkspaceShell",

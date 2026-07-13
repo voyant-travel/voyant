@@ -133,6 +133,11 @@ exempt). Crons don't run in-process — wire Cloud Scheduler with
 
 ## Routes
 
+Standard frontend routes are emitted from package-owned contributions into the
+gitignored `.voyant/routes` directory. TanStack's generated route tree also
+lives under `.voyant`; neither is application-authored source. Project-specific
+admin and public API routes belong in `src/api/admin` and `src/api/public`.
+
 - `/v1/admin/*` — staff-facing API (requires `staff` actor)
 - `/v1/public/*` — customer/partner/supplier API
 - `/api/auth/*` — Better Auth handler
