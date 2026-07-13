@@ -1,4 +1,3 @@
-import type { Editor } from "@tiptap/core"
 import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
@@ -19,15 +18,11 @@ import {
   Textarea,
 } from "@voyant-travel/ui/components"
 import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
-import {
-  insertPlainText,
-  insertVariableToken,
-} from "@voyant-travel/ui/components/rich-text-variable-extension"
 import { Switch } from "@voyant-travel/ui/components/switch"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { languages } from "@voyant-travel/utils"
 import { Loader2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import {
@@ -88,7 +83,6 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
   const resolveValidation = (code: string | undefined) =>
     (code && validationByCode[code]) || code || ""
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const variableGroups = useMemo(
     () =>
       variableCatalog.map((group) => ({
@@ -243,7 +237,6 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                 }
                 placeholder={t.bodyPlaceholder}
                 enableVariables
-                onEditorReady={setEditorInstance}
               />
               {form.formState.errors.body ? (
                 <p className="text-xs text-destructive">
@@ -257,14 +250,6 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
             <ContractTemplateAuthoringHelp
               variableGroups={variableGroups}
               snippets={liquidSnippets}
-              onInsertVariable={(variable) => {
-                if (!editorInstance) return
-                insertVariableToken(editorInstance, variable.key)
-              }}
-              onInsertSnippet={(snippet) => {
-                if (!editorInstance) return
-                insertPlainText(editorInstance, snippet.code)
-              }}
             />
 
             <div className="flex items-center gap-2">

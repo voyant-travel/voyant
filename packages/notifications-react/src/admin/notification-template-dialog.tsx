@@ -1,6 +1,5 @@
 "use client"
 
-import type { Editor } from "@tiptap/core"
 import { formatMessage } from "@voyant-travel/i18n"
 import {
   Button,
@@ -20,10 +19,6 @@ import {
   Textarea,
 } from "@voyant-travel/ui/components"
 import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
-import {
-  insertPlainText,
-  insertVariableToken,
-} from "@voyant-travel/ui/components/rich-text-variable-extension"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -39,14 +34,12 @@ import {
 import { NotificationTemplateAttachmentsField } from "./notification-template-attachments-field.js"
 import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
 import {
-  appendTemplateValue,
   buildSamplePayload,
   buildTemplateMetadata,
   CHANNEL_VALUES,
   channelItemLabel,
   type FormOutput,
   type FormValues,
-  type InsertionTarget,
   nativeSelectClassName,
   readTemplateAttachments,
   resolveTemplateMutationStatus,
@@ -54,7 +47,6 @@ import {
   statusItemLabel,
   type TemplateAttachment,
   templateFormSchema,
-  variableReference,
 } from "./notification-template-dialog-utils.js"
 import { NotificationTemplateRenderedPreview } from "./notification-template-rendered-preview.js"
 
@@ -90,8 +82,6 @@ function NotificationTemplateDialogInner({
   const previewResetRef = useRef(preview.reset)
   const testSendResetRef = useRef(testSend.reset)
   const { variableCatalog, liquidSnippets } = useNotificationTemplateAuthoring()
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
-  const [insertionTarget, setInsertionTarget] = useState<InsertionTarget>("body")
   const [previewDataInput, setPreviewDataInput] = useState("{}")
   const [testRecipient, setTestRecipient] = useState("")
   const variableGroups = useMemo(
@@ -154,14 +144,6 @@ function NotificationTemplateDialogInner({
   }, [open, template, form])
 
   useEffect(() => {
-    if (!open) return
-    setInsertionTarget((current) => {
-      const next = channel === "sms" ? "text" : current === "text" ? "body" : current
-      return next === current ? current : next
-    })
-  }, [channel, open])
-
-  useEffect(() => {
     if (!open || channel === "email" || (form.getValues("attachments") ?? []).length === 0) return
     form.setValue("attachments", [], {
       shouldDirty: true,
@@ -217,30 +199,6 @@ function NotificationTemplateDialogInner({
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : common.previewInvalidJson)
     }
-  }
-
-  const insertIntoTarget = (content: string, kind: "variable" | "snippet") => {
-    if (insertionTarget === "body" && channel === "email" && editorInstance) {
-      if (kind === "variable") {
-        insertVariableToken(editorInstance, content)
-      } else {
-        insertPlainText(editorInstance, content)
-      }
-      return
-    }
-
-    const fieldName = insertionTarget === "subject" ? "subjectTemplate" : "textTemplate"
-    const current = form.getValues(fieldName) ?? ""
-    const nextValue =
-      kind === "variable"
-        ? // i18n-literal-ok single-space joiner between Liquid tokens, not user-facing copy.
-          `${current}${current ? " " : ""}${variableReference(content)}`
-        : appendTemplateValue(current, content)
-    form.setValue(fieldName, nextValue, {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    })
   }
 
   const handlePreview = async () => {
@@ -409,7 +367,6 @@ function NotificationTemplateDialogInner({
                       }
                       placeholder={t.htmlBodyPlaceholder}
                       enableVariables
-                      onEditorReady={setEditorInstance}
                     />
                   </div>
                 </>
@@ -434,37 +391,9 @@ function NotificationTemplateDialogInner({
                 </TabsList>
 
                 <TabsContent value="authoring" className="mt-4 space-y-4">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:items-center">
-                    <div className="flex flex-col gap-1.5">
-                      <Label>{t.insertIntoLabel}</Label>
-                      <select
-                        className={nativeSelectClassName}
-                        value={insertionTarget}
-                        onChange={(event) => {
-                          const nextTarget = event.target.value as InsertionTarget
-                          if (nextTarget === insertionTarget) return
-                          setInsertionTarget(nextTarget)
-                        }}
-                      >
-                        {channel === "email" ? (
-                          <option value="subject">{t.insertTargetSubject}</option>
-                        ) : null}
-                        {channel === "email" ? (
-                          <option value="body">{t.insertTargetHtmlBody}</option>
-                        ) : null}
-                        {channel === "sms" ? (
-                          <option value="text">{t.insertTargetSmsBody}</option>
-                        ) : null}
-                      </select>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t.insertHint}</p>
-                  </div>
-
                   <NotificationTemplateAuthoringHelp
                     variableGroups={variableGroups}
                     snippets={liquidSnippets}
-                    onInsertVariable={(variable) => insertIntoTarget(variable.key, "variable")}
-                    onInsertSnippet={(snippet) => insertIntoTarget(snippet.code, "snippet")}
                   />
                 </TabsContent>
 

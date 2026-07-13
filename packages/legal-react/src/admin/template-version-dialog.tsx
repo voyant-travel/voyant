@@ -1,4 +1,3 @@
-import type { Editor } from "@tiptap/core"
 import { useOperatorAdminMessages } from "@voyant-travel/admin"
 import {
   Button,
@@ -13,13 +12,9 @@ import {
   Label,
 } from "@voyant-travel/ui/components"
 import { RichTextEditor } from "@voyant-travel/ui/components/rich-text-editor"
-import {
-  insertPlainText,
-  insertVariableToken,
-} from "@voyant-travel/ui/components/rich-text-variable-extension"
 import { zodResolver } from "@voyant-travel/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import {
@@ -52,7 +47,6 @@ export function TemplateVersionDialog({
   const t = useOperatorAdminMessages().legal.templateVersionDialog
   const { create } = useLegalContractTemplateVersionMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
 
   const resolveValidation = (code: string | undefined) =>
     code === "bodyRequired" ? t.validation.bodyRequired : code || ""
@@ -119,7 +113,6 @@ export function TemplateVersionDialog({
                 }
                 placeholder={t.bodyPlaceholder}
                 enableVariables
-                onEditorReady={setEditorInstance}
               />
               {form.formState.errors.body ? (
                 <p className="text-xs text-destructive">
@@ -131,14 +124,6 @@ export function TemplateVersionDialog({
             <ContractTemplateAuthoringHelp
               variableGroups={variableGroups}
               snippets={liquidSnippets}
-              onInsertVariable={(variable) => {
-                if (!editorInstance) return
-                insertVariableToken(editorInstance, variable.key)
-              }}
-              onInsertSnippet={(snippet) => {
-                if (!editorInstance) return
-                insertPlainText(editorInstance, snippet.code)
-              }}
             />
 
             <div className="grid grid-cols-2 gap-4">

@@ -49,7 +49,6 @@ export const templateFormSchema = z.object({
 export type FormValues = z.input<typeof templateFormSchema>
 export type FormOutput = z.output<typeof templateFormSchema>
 export type TemplateAttachment = z.infer<typeof templateAttachmentSchema>
-export type InsertionTarget = "subject" | "body" | "text"
 
 export function resolveTemplateMutationStatus({
   active,
@@ -156,15 +155,6 @@ export function buildSamplePayload(
 
 export function resolvePreviewDataInput(input: string, fallback: string) {
   return input.trim() ? input : fallback
-}
-
-export function appendTemplateValue(current: string | undefined, addition: string) {
-  if (!current?.trim()) return addition
-  return `${current}${current.endsWith("\n") ? "" : "\n"}${addition}`
-}
-
-export function variableReference(key: string) {
-  return `{{ ${key} }}`
 }
 
 function getMetadataRecord(value: unknown): Record<string, unknown> | null {

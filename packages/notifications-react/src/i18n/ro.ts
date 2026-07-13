@@ -221,12 +221,6 @@ export const notificationsUiRo: NotificationsUiMessages = {
         'Salut {{ traveler.firstName | default: "călător" }}, rezervarea ta este confirmată.',
       tabAuthoring: "Editare",
       tabPreview: "Previzualizare și test",
-      insertIntoLabel: "Inserează în",
-      insertTargetSubject: "Subiect",
-      insertTargetHtmlBody: "Corp HTML",
-      insertTargetSmsBody: "Corp SMS",
-      insertHint:
-        "Variabilele se inserează ca taguri Liquid în câmpurile text și ca etichete inline în corpul HTML.",
       previewDataLabel: "Date de previzualizare (JSON)",
       previewDataPlaceholder: '{"booking":{"reference":"BKG-2026-00125"}}',
       previewDataHint:
