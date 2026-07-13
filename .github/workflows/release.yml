@@ -161,8 +161,9 @@ jobs:
               echo "::endgroup::"
               echo "published=true" >> "$GITHUB_OUTPUT"
               exit 0
+            else
+              status=$?
             fi
-            status=$?
             echo "::endgroup::"
             if [ "${status}" -eq 124 ]; then
               echo "::warning::publish attempt ${attempt} timed out after ${per_attempt_timeout}s (likely a stalled npm/OIDC publish)"
