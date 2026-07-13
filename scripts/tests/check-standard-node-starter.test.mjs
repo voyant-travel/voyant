@@ -18,7 +18,7 @@ test("accepts the strict generated standard Node starter shape", () => {
   const root = fixture()
   assert.match(
     run(root),
-    /packaged: 4 authored files; checked-in: no database authority; generic Node bootstrap/,
+    /packaged: 4 authored files; checked-in: no copied metadata or database authority; generic Node bootstrap/,
   )
 })
 
@@ -197,6 +197,32 @@ test("rejects restored Catalog operational authority in the checked-in starter",
       (error) =>
         String(error.stderr).includes(
           `Catalog operational authority must stay package-owned: ${relativePath}`,
+        ),
+    )
+  }
+})
+
+test("rejects copied checked-in starter metadata", () => {
+  for (const relativePath of [
+    "starters/operator/env.d.ts",
+    "starters/operator/tsconfig.json",
+    "starters/operator/tsconfig.client.json",
+    "starters/operator/tsconfig.server.json",
+    "starters/operator/turbo.json",
+    "starters/operator/vite.config.ts",
+    "starters/operator/vitest.config.ts",
+  ]) {
+    const starter = fixture()
+    const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+    roots.push(root)
+    const metadata = join(root, relativePath)
+    mkdirSync(dirname(metadata), { recursive: true })
+    writeFileSync(metadata, "{}\n")
+    assert.throws(
+      () => run(starter, root),
+      (error) =>
+        String(error.stderr).includes(
+          `checked-in starter metadata must stay generated under .voyant: ${relativePath}`,
         ),
     )
   }

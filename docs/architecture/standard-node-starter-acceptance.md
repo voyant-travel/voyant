@@ -32,6 +32,18 @@ The gate requires:
   intentional architecture decision and checker update.
 
 The product BOM still expands into an explicit `.voyant/` graph during build.
+The checked-in development operator follows the same ownership rule for build
+metadata: `graph:emit` deterministically writes its ambient bindings, bounded
+client/server TypeScript programs, and Vite/Vitest entries beneath `.voyant/`.
+The declaration path maps are rebased from the shared TypeScript config and are
+not consumer-authored files. A starter-local `turbo.json` is unnecessary because
+the workspace root already owns task orchestration.
+
+`check-standard-node-starter.mjs` rejects restored root copies of those files
+and requires `.voyant/` to remain ignored. `measure-standard-node-starter.mjs`
+reports checked-in metadata count and bytes, generated metadata count and bytes,
+and declaration-path entry count alongside bundle and boot measurements.
+
 The source-level gate does not replace runtime acceptance or performance
 evidence. Release confidence additionally requires the packaged starter to
 install, emit its graph, boot the Node host, exercise local convention files,

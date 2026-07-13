@@ -32,7 +32,7 @@ try {
     process.exitCode = 1
   } else {
     console.log(
-      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no database authority; generic Node bootstrap)",
+      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no copied metadata or database authority; generic Node bootstrap)",
     )
   }
 } finally {
@@ -218,6 +218,13 @@ function inspectRepositoryAuthority(repoRoot) {
     "starters/operator/scripts/seed-flights-reference-airports-europe.ts",
     "starters/operator/scripts/seed-flights-reference-airports-global.ts",
     "starters/operator/scripts/seed-flights-reference-types.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`Flights reference fixture must remain package-owned: ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
     "apps/scripts/package.json",
     "starters/operator/scripts/seed.ts",
     "starters/operator/scripts/seed-catalog-verticals.ts",
@@ -227,7 +234,6 @@ function inspectRepositoryAuthority(repoRoot) {
     "starters/operator/scripts/check-deployment-graph-env.ts",
     "starters/operator/scripts/emit-cloud-scheduler.ts",
     "starters/operator/scripts/env-preload.cjs",
-    "starters/operator/scripts/backfill-custom-fields.ts",
   ]) {
     if (existsSync(join(repoRoot, relativePath))) {
       violations.push(`standard starter operational authority must stay deleted: ${relativePath}`)
@@ -235,6 +241,7 @@ function inspectRepositoryAuthority(repoRoot) {
   }
 
   for (const relativePath of [
+    "starters/operator/scripts/backfill-custom-fields.ts",
     "starters/operator/src/api/lib/catalog-context.ts",
     "starters/operator/src/api/lib/storage.ts",
     "starters/operator/src/api/runtime/payment-config.ts",
@@ -249,6 +256,32 @@ function inspectRepositoryAuthority(repoRoot) {
     if (existsSync(join(repoRoot, relativePath))) {
       violations.push(`checked-in starter authority must stay deleted: ${relativePath}`)
     }
+  }
+
+  for (const relativePath of [
+    "starters/operator/env.d.ts",
+    "starters/operator/tsconfig.json",
+    "starters/operator/tsconfig.client.json",
+    "starters/operator/tsconfig.server.json",
+    "starters/operator/turbo.json",
+    "starters/operator/vite.config.ts",
+    "starters/operator/vitest.config.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(
+        `checked-in starter metadata must stay generated under .voyant: ${relativePath}`,
+      )
+    }
+  }
+
+  const operatorGitignore = join(repoRoot, "starters/operator/.gitignore")
+  if (
+    !existsSync(operatorGitignore) ||
+    !readFileSync(operatorGitignore, "utf8")
+      .split(/\r?\n/)
+      .some((line) => line === ".voyant" || line === ".voyant/")
+  ) {
+    violations.push("checked-in starter must ignore disposable .voyant metadata")
   }
 
   for (const relativePath of [
