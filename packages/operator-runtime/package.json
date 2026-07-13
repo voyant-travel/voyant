@@ -24,6 +24,7 @@
   "dependencies": {
     "@voyant-travel/admin-host": "workspace:^",
     "@voyant-travel/auth": "workspace:^",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/framework": "workspace:^",

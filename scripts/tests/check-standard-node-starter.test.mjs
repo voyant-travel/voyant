@@ -284,6 +284,66 @@ test("rejects undeclared first-party imports in checked-in starter tests", () =>
   )
 })
 
+test("rejects checked-in starter commands that do not load optional .env on Node 20", () => {
+  const starter = fixture()
+  const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+  roots.push(root)
+  const packageJsonPath = join(root, "starters/operator/package.json")
+  mkdirSync(dirname(packageJsonPath), { recursive: true })
+  writeFileSync(
+    packageJsonPath,
+    `${JSON.stringify({
+      scripts: {
+        start: "node --env-file-if-exists=.env dist/server/server.js",
+        "db:migrate": "pnpm run graph:emit && voyant migrate",
+      },
+      dependencies: {},
+      devDependencies: { dotenv: "1.0.0" },
+    })}\n`,
+  )
+
+  assert.throws(
+    () => run(starter, root),
+    (error) => {
+      const stderr = String(error.stderr)
+      return (
+        stderr.includes("start must load optional .env through the Node 20 bootstrap") &&
+        stderr.includes(
+          "db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
+        ) &&
+        stderr.includes("dotenv as a production bootstrap dependency")
+      )
+    },
+  )
+})
+
+test("rejects db:migrate commands that replace existing NODE_OPTIONS", () => {
+  const starter = fixture()
+  const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+  roots.push(root)
+  const packageJsonPath = join(root, "starters/operator/package.json")
+  mkdirSync(dirname(packageJsonPath), { recursive: true })
+  writeFileSync(
+    packageJsonPath,
+    `${JSON.stringify({
+      scripts: {
+        start: "NODE_ENV=production node --require=dotenv/config dist/server/server.js",
+        "db:migrate": "pnpm run graph:emit && NODE_OPTIONS=--require=dotenv/config voyant migrate",
+      },
+      dependencies: { dotenv: "1.0.0" },
+      devDependencies: {},
+    })}\n`,
+  )
+
+  assert.throws(
+    () => run(starter, root),
+    (error) =>
+      String(error.stderr).includes(
+        "db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
+      ),
+  )
+})
+
 function run(starterDir, root = repoRoot) {
   if (root !== repoRoot) {
     const gitignore = join(root, "starters/operator/.gitignore")

@@ -417,7 +417,9 @@ function anonymousForPublicMount(
 function applyModuleRoutePosture(output: HonoModule, posture: UnitRoutePosture): HonoModule {
   return {
     ...output,
-    ...(posture.publicMount ? { publicPath: publicPathFromMount(posture.publicMount) } : {}),
+    ...(output.publicPath === undefined && posture.publicMount
+      ? { publicPath: publicPathFromMount(posture.publicMount) }
+      : {}),
     ...(posture.anonymous !== undefined ? { anonymous: posture.anonymous } : {}),
     ...(posture.transactionalPaths.length > 0
       ? {
@@ -436,7 +438,9 @@ function applyExtensionRoutePosture(
 ): HonoExtension {
   return {
     ...output,
-    ...(posture.publicMount ? { publicPath: publicPathFromMount(posture.publicMount) } : {}),
+    ...(output.publicPath === undefined && posture.publicMount
+      ? { publicPath: publicPathFromMount(posture.publicMount) }
+      : {}),
     ...(posture.anonymous !== undefined ? { anonymous: posture.anonymous } : {}),
     ...(posture.transactionalPaths.length > 0
       ? {

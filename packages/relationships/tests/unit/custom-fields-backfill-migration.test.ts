@@ -21,7 +21,12 @@ describe("legacy custom-field value migration", () => {
     expect(migration).toContain("sub.backfilled || COALESCE(t.custom_fields, ''{}''::jsonb)")
     expect(migration).toContain("unsupported entity types")
     expect(migration).toContain("reference missing definitions")
+    expect(migration).toContain("definition entity type that does not match")
+    expect(migration).toContain("d.entity_type::text = v.entity_type::text")
     expect(migration).toContain("reference missing %.id values")
+    expect(migration.indexOf("definition entity type that does not match")).toBeLessThan(
+      migration.indexOf("UPDATE %I t"),
+    )
     expect(migration.indexOf("reference missing %.id values")).toBeLessThan(
       migration.indexOf("DROP TABLE custom_field_values;"),
     )

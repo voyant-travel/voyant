@@ -54,6 +54,12 @@ export async function detectExisting(client: MigrationClient): Promise<boolean> 
     `"source" = 'framework'`,
   )
   if (frameworkRows > 0) return true
+  const graphSchemaRows = await ledgerRowCount(
+    client,
+    `"drizzle"."_voyant_migrations"`,
+    `"source" LIKE 'schema:%#migrations'`,
+  )
+  if (graphSchemaRows > 0) return true
   const legacyRows = await ledgerRowCount(client, `"drizzle"."__drizzle_migrations"`)
   return legacyRows > 0
 }

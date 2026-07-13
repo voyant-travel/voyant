@@ -23,6 +23,7 @@ import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-tr
 import { tsImport } from "tsx/esm/api"
 
 import { requireOperatorAuthEnv } from "./auth-env.js"
+import { resolveOperatorCloudAuthEmailSender } from "./cloud-auth-email.js"
 import { createOperatorDeploymentResources } from "./deployment-resources.js"
 
 export {
@@ -41,6 +42,7 @@ export interface LoadOperatorProjectOptions {
   projectRoot?: string
   env?: Record<string, string | undefined>
   adminAssetsDir?: string
+  preferBuiltAdminAssets?: boolean
   host?: {
     config?: Readonly<Record<string, unknown>>
     deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
@@ -111,6 +113,7 @@ export async function loadOperatorProject(
     accessCatalog: generated.graphRuntime.accessCatalog,
     appName: path.basename(projectRoot),
     reporter: consoleReporter(),
+    resolveEmailSender: resolveOperatorCloudAuthEmailSender,
   })
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
@@ -153,12 +156,18 @@ export async function loadOperatorProject(
       },
     },
   })
-  const clientAssetsDir = await resolveAdminAssetsDir(projectRoot, options.adminAssetsDir)
+  const clientAssetsDir = await resolveAdminAssetsDir(
+    projectRoot,
+    artifactRoot,
+    options.adminAssetsDir,
+    options.preferBuiltAdminAssets ??
+      (options.env?.NODE_ENV ?? process.env.NODE_ENV) === "production",
+  )
   const web = serveAdminHost<VoyantNodeRuntimeEnv>({
     clientAssetsDir,
     app: async (request, bindings, ctx) => {
       if (new URL(request.url).pathname.startsWith("/api")) {
-        return runtime.app.fetch(request, bindings, ctx)
+        return runtime.app.fetch(rewriteLegacyMediaRequest(request), bindings, ctx)
       }
       const { createAdminSsrHandler } = await import("@voyant-travel/admin-host/ssr")
       return createAdminSsrHandler<VoyantNodeRuntimeEnv>()(request, bindings, ctx)
@@ -347,21 +356,55 @@ async function loadGeneratedProjectLinks(artifactRoot: string) {
   }
 }
 
-async function resolveAdminAssetsDir(projectRoot: string, explicit?: string): Promise<string> {
+async function resolveAdminAssetsDir(
+  projectRoot: string,
+  artifactRoot: string,
+  explicit?: string,
+  preferBuiltAssets = false,
+): Promise<string> {
   if (explicit) return path.resolve(explicit)
-  const candidates = [
-    path.join(projectRoot, "dist/client"),
-    path.join(projectRoot, ".voyant/admin/client"),
-  ]
-  for (const candidate of candidates) {
-    try {
-      await access(candidate)
-      return candidate
-    } catch {}
+  const sourceArtifactRoot = path.join(projectRoot, ".voyant")
+  const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
+  const builtClientDir = path.join(projectRoot, "dist/client")
+  if (artifactRoot === builtArtifactRoot) return builtClientDir
+  if (
+    preferBuiltAssets &&
+    artifactRoot === sourceArtifactRoot &&
+    (await pathExists(builtClientDir)) &&
+    (await generatedArtifactGraphsMatch(sourceArtifactRoot, builtArtifactRoot))
+  ) {
+    return builtClientDir
   }
-  // Vite serves assets itself in development; the static middleware may point
-  // at the future build directory without creating project-owned artifacts.
-  return candidates[0]!
+  return path.join(artifactRoot, "admin/client")
+}
+
+async function generatedArtifactGraphsMatch(
+  sourceArtifactRoot: string,
+  builtArtifactRoot: string,
+): Promise<boolean> {
+  const [sourceHash, builtHash] = await Promise.all([
+    readGeneratedArtifactGraphHash(sourceArtifactRoot),
+    readGeneratedArtifactGraphHash(builtArtifactRoot),
+  ])
+  return sourceHash !== undefined && sourceHash === builtHash
+}
+
+async function readGeneratedArtifactGraphHash(artifactRoot: string): Promise<string | undefined> {
+  try {
+    const graph = JSON.parse(
+      await readFile(path.join(artifactRoot, PROJECT_GRAPH_ENTRY), "utf8"),
+    ) as { contentHash?: unknown }
+    return typeof graph.contentHash === "string" ? graph.contentHash : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function rewriteLegacyMediaRequest(request: Request): Request {
+  const url = new URL(request.url)
+  if (!url.pathname.startsWith("/api/v1/media/")) return request
+  url.pathname = url.pathname.replace("/api/v1/media/", "/api/v1/admin/media/")
+  return new Request(url, request)
 }
 
 async function pathExists(candidate: string): Promise<boolean> {

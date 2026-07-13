@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
-
+import { tsImport } from "tsx/esm/api"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => {
@@ -15,18 +15,25 @@ const mocks = vi.hoisted(() => {
   const runtimePorts = { "voyant.workflow-services": [{ serviceId: "package.service" }] }
   const services = { has: vi.fn(() => false), register: vi.fn(), resolve: vi.fn() }
   const eventBus = { emit: vi.fn(), subscribe: vi.fn() }
+  const runtimeFetch = vi.fn(async (request: Request) => new Response(request.url))
   const nodeRuntime = {
     env: { DATABASE_URL: "postgres://example.invalid/voyant" },
-    app: { ready: vi.fn(), services, eventBus },
+    app: { ready: vi.fn(), fetch: runtimeFetch, services, eventBus },
   }
 
   return {
+    adminHostOptions: [] as Array<{
+      clientAssetsDir: string
+      app(request: Request, env: unknown, ctx: unknown): Promise<Response>
+    }>,
+    authRuntimeOptions: [] as Array<Record<string, unknown>>,
     createNodeServer: vi.fn((_options: unknown) => ({ close: vi.fn(), port: 8080 })),
     enqueuePostgresWebhookEvent: vi.fn(async () => ["queued"]),
     loadVoyantNodeRuntime: vi.fn(async (_options: unknown) => nodeRuntime),
     loadVoyantNodeWorkflowRuntime: vi.fn(async (_options: unknown) => ({ workflows: [] })),
     nodeRuntime,
     resolveNodeDatabase: vi.fn(() => ({ kind: "database" })),
+    runtimeFetch,
     runScheduledWorkflow: vi.fn(
       async (_job: unknown, _event: unknown, runtime: { load(): Promise<unknown> }) =>
         runtime.load(),
@@ -37,18 +44,30 @@ const mocks = vi.hoisted(() => {
 })
 
 vi.mock("@voyant-travel/admin-host/serve", () => ({
-  serveAdminHost: () => ({ fetch: vi.fn(async () => new Response("ok")) }),
+  serveAdminHost: (options: (typeof mocks.adminHostOptions)[number]) => {
+    mocks.adminHostOptions.push(options)
+    return {
+      fetch: (request: Request, env: unknown, ctx: unknown) => options.app(request, env, ctx),
+    }
+  },
 }))
 
 vi.mock("@voyant-travel/auth/operator-node-runtime", () => ({
-  createOperatorAuthNodeRuntime: () => ({
-    handler: vi.fn(),
-    getBootstrapStatusForRequest: vi.fn(),
-    getCurrentUserForRequest: vi.fn(),
-    hasAuthPermission: vi.fn(),
-    resolveAuthRequest: vi.fn(),
-    validateApiTokenAccess: vi.fn(),
-  }),
+  createOperatorAuthNodeRuntime: (options: Record<string, unknown>) => {
+    mocks.authRuntimeOptions.push(options)
+    return {
+      handler: vi.fn(),
+      getBootstrapStatusForRequest: vi.fn(),
+      getCurrentUserForRequest: vi.fn(),
+      hasAuthPermission: vi.fn(),
+      resolveAuthRequest: vi.fn(),
+      validateApiTokenAccess: vi.fn(),
+    }
+  },
+}))
+
+vi.mock("@voyant-travel/cloud-sdk", () => ({
+  getVoyantCloudClient: vi.fn(),
 }))
 
 vi.mock("@voyant-travel/db/runtime", () => ({
@@ -124,6 +143,8 @@ const temporaryRoots: string[] = []
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.adminHostOptions.length = 0
+  mocks.authRuntimeOptions.length = 0
 })
 
 afterEach(async () => {
@@ -131,6 +152,108 @@ afterEach(async () => {
 })
 
 describe("Operator runtime composition", () => {
+  it("selects admin assets from the same generated artifact layout", async () => {
+    const developmentRoot = await createGeneratedProject()
+    await mkdir(path.join(developmentRoot, ".voyant/admin/client"), { recursive: true })
+    await mkdir(path.join(developmentRoot, "dist/client"), { recursive: true })
+    await loadOperatorProject({
+      projectRoot: developmentRoot,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+    expect(mocks.adminHostOptions[0]?.clientAssetsDir).toBe(
+      path.join(developmentRoot, ".voyant/admin/client"),
+    )
+
+    const distributionRoot = await createGeneratedProject([], "dist/.voyant")
+    await mkdir(path.join(distributionRoot, ".voyant/admin/client"), { recursive: true })
+    await mkdir(path.join(distributionRoot, "dist/client"), { recursive: true })
+    await loadOperatorProject({
+      projectRoot: distributionRoot,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+    expect(mocks.adminHostOptions[1]?.clientAssetsDir).toBe(
+      path.join(distributionRoot, "dist/client"),
+    )
+  })
+
+  it("uses current source runtime artifacts with matching built admin assets in production", async () => {
+    const projectRoot = await createGeneratedProject()
+    const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
+    await mkdir(builtArtifactRoot, { recursive: true })
+    await writeFile(
+      path.join(builtArtifactRoot, "deployment-graph.generated.json"),
+      JSON.stringify({
+        contentHash: "graph-hash",
+        requirements: { resources: [] },
+        provisioning: { scheduledJobs: [] },
+      }),
+    )
+    await mkdir(path.join(projectRoot, "dist/client"), { recursive: true })
+
+    const project = await loadOperatorProject({
+      projectRoot,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant", NODE_ENV: "production" },
+    })
+
+    expect(project.graphHash).toBe("graph-hash")
+    expect(mocks.adminHostOptions[0]?.clientAssetsDir).toBe(path.join(projectRoot, "dist/client"))
+    expect(vi.mocked(tsImport).mock.calls[0]?.[0]).toContain(
+      path.join(projectRoot, ".voyant/runtime/project-runtime.generated.ts"),
+    )
+  })
+
+  it("does not serve built admin assets from a stale deployment graph", async () => {
+    const projectRoot = await createGeneratedProject()
+    const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
+    await mkdir(builtArtifactRoot, { recursive: true })
+    await writeFile(
+      path.join(builtArtifactRoot, "deployment-graph.generated.json"),
+      JSON.stringify({ contentHash: "stale-graph-hash" }),
+    )
+    await mkdir(path.join(projectRoot, "dist/client"), { recursive: true })
+
+    await loadOperatorProject({
+      projectRoot,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant", NODE_ENV: "production" },
+    })
+
+    expect(mocks.adminHostOptions[0]?.clientAssetsDir).toBe(
+      path.join(projectRoot, ".voyant/admin/client"),
+    )
+  })
+
+  it("rewrites persisted legacy media URLs before API dispatch", async () => {
+    const projectRoot = await createGeneratedProject()
+    const project = await loadOperatorProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    await project.fetch(
+      new Request("http://localhost:3300/api/v1/media/uploads/example.pdf?download=1"),
+    )
+
+    const dispatched = mocks.runtimeFetch.mock.calls[0]?.[0] as Request
+    expect(new URL(dispatched.url)).toMatchObject({
+      pathname: "/api/v1/admin/media/uploads/example.pdf",
+      search: "?download=1",
+    })
+  })
+
+  it("provides the standard cloud email resolver to the auth runtime", async () => {
+    const projectRoot = await createGeneratedProject()
+    await loadOperatorProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    expect(mocks.authRuntimeOptions[0]).toMatchObject({
+      resolveEmailSender: expect.any(Function),
+    })
+  })
+
   it("wires graph outbound webhooks through the neutral Node delivery helper", async () => {
     const projectRoot = await createGeneratedProject()
     await loadOperatorProject({
@@ -220,14 +343,16 @@ describe("Operator runtime composition", () => {
 
 async function createGeneratedProject(
   scheduledJobs: readonly Readonly<Record<string, unknown>>[] = [],
+  layout = ".voyant",
 ): Promise<string> {
   const projectRoot = await mkdtemp(path.join(tmpdir(), "voyant-operator-runtime-"))
   temporaryRoots.push(projectRoot)
-  const runtimeDir = path.join(projectRoot, ".voyant", "runtime")
+  const artifactRoot = path.join(projectRoot, layout)
+  const runtimeDir = path.join(artifactRoot, "runtime")
   await mkdir(runtimeDir, { recursive: true })
   await writeFile(path.join(runtimeDir, "project-runtime.generated.ts"), "export {}\n")
   await writeFile(
-    path.join(projectRoot, ".voyant", "deployment-graph.generated.json"),
+    path.join(artifactRoot, "deployment-graph.generated.json"),
     JSON.stringify({
       contentHash: "graph-hash",
       requirements: { resources: [] },

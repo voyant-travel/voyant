@@ -105,6 +105,10 @@
         "types": "./dist/graph-lifecycle.d.ts",
         "import": "./dist/graph-lifecycle.js"
       },
+      "./selected-graph-openapi": {
+        "types": "./dist/selected-graph-openapi.d.ts",
+        "import": "./dist/selected-graph-openapi.js"
+      },
       "./operator-distribution": {
         "types": "./dist/operator-distribution.d.ts",
         "import": "./dist/operator-distribution.js"

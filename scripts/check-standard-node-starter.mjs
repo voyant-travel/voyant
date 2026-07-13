@@ -384,6 +384,26 @@ function inspectCheckedInStarterDependencies(repoRoot) {
   if (!existsSync(packageJsonPath)) return
 
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  if (
+    packageJson.scripts?.start !==
+    "NODE_ENV=production node --require=dotenv/config dist/server/server.js"
+  ) {
+    violations.push(
+      "checked-in starter start must load optional .env through the Node 20 bootstrap",
+    )
+  }
+  if (
+    packageJson.scripts?.["db:migrate"] !==
+    'pnpm run graph:emit && NODE_OPTIONS="$' +
+      '{NODE_OPTIONS:+$NODE_OPTIONS }--require=dotenv/config" voyant migrate'
+  ) {
+    violations.push(
+      "checked-in starter db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
+    )
+  }
+  if (!packageJson.dependencies?.dotenv || packageJson.devDependencies?.dotenv) {
+    violations.push("checked-in starter must provide dotenv as a production bootstrap dependency")
+  }
   const declared = new Set([
     ...Object.keys(packageJson.dependencies ?? {}),
     ...Object.keys(packageJson.devDependencies ?? {}),

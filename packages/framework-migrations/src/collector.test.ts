@@ -142,6 +142,81 @@ describe("migration hash compatibility", () => {
   })
 })
 
+describe("migration source aliases", () => {
+  it("adopts a matching legacy ledger row under the stable source without replaying SQL", async () => {
+    const migrationSource: MigrationSource = {
+      name: "finance",
+      legacyNames: ["schema:@voyant-travel/finance#migrations"],
+      priority: 0,
+      migrations: [{ tag: "0000_finance", sql: "CREATE TABLE finance_records (id text);" }],
+    }
+    const [migration] = planMigrations([migrationSource])
+    const ledger = new Map([
+      ["schema:@voyant-travel/finance#migrations/0000_finance", migration?.contentHash ?? ""],
+    ])
+    const queries: string[] = []
+    const client: MigrationClient = {
+      async query(sql, params = []) {
+        queries.push(sql)
+        if (sql.includes('SELECT "content_hash", "source"')) {
+          const sources = params[0] as string[]
+          const tag = String(params[1])
+          return {
+            rows: sources.flatMap((source) => {
+              const hash = ledger.get(`${source}/${tag}`)
+              return hash ? [{ source, content_hash: hash }] : []
+            }),
+          }
+        }
+        if (sql.startsWith("INSERT INTO") && sql.includes("ON CONFLICT")) {
+          ledger.set(`${String(params[0])}/${String(params[1])}`, String(params[2]))
+        }
+        return { rows: [] }
+      },
+    }
+
+    const result = await applyMigrations(client, [migrationSource], ledgerOpts)
+
+    expect(result).toEqual({ executed: [], baselined: [] })
+    expect(ledger.get("finance/0000_finance")).toBe(migration?.contentHash)
+    expect(ledger.has("schema:@voyant-travel/finance#migrations/0000_finance")).toBe(true)
+    expect(queries).not.toContain("BEGIN")
+  })
+
+  it("rejects changed SQL recorded under a legacy source name", async () => {
+    const client: MigrationClient = {
+      async query(sql) {
+        if (sql.includes('SELECT "content_hash", "source"')) {
+          return {
+            rows: [
+              {
+                source: "schema:@voyant-travel/finance#migrations",
+                content_hash: "stale-hash",
+              },
+            ],
+          }
+        }
+        return { rows: [] }
+      },
+    }
+
+    await expect(
+      applyMigrations(
+        client,
+        [
+          {
+            name: "finance",
+            legacyNames: ["schema:@voyant-travel/finance#migrations"],
+            priority: 0,
+            migrations: [{ tag: "0000_finance", sql: "SELECT 1" }],
+          },
+        ],
+        ledgerOpts,
+      ),
+    ).rejects.toBeInstanceOf(MigrationImmutabilityError)
+  })
+})
+
 // ---- applyMigrations: execute path (integration) ----------------------------
 
 function sources(): { db: MigrationSource; deployment: MigrationSource } {
