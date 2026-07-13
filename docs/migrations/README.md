@@ -7,6 +7,7 @@ The full history (including patch-level changes and dependency updates) lives in
 ## Available
 
 - [Migrating Framework to 0.42](./migrating-to-0.42.md) - require explicit selected IDs and admitted API runtime reference IDs in hand-authored graph runtime inputs.
+- [Migrating Auth to 0.128](./migrating-to-0.128.md) - move the removed top-level `useSecureCookies` option under Better Auth's `advanced` configuration.
 - [Migrating to 0.11](./migrating-to-0.11.md) — privatize Booking state machine; replace `PATCH /:id/status` with named verbs; `useBookingStatusMutation` requires `currentStatus`; activity-type enum gains three values.
 - [Migrating to 0.10](./migrating-to-0.10.md) — encrypt `accessibility_needs` at rest; explicit Booking state machine + `transitionBooking` guards; drop `redeemed` status; add `bookings.fx_rate_set_id`; `requireActor` fail-closed; `Idempotency-Key` middleware on booking-creation endpoints; mandatory PII redaction + audit on admin booking reads.
 

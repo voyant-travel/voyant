@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { CreateBetterAuthOptions } from "../../src/server.js"
 
@@ -74,6 +74,10 @@ describe("createBetterAuth", () => {
     vi.clearAllMocks()
   })
 
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   function latestBetterAuthConfig(): BetterAuthConfig {
     return betterAuthMock.mock.calls.at(-1)?.[0] as BetterAuthConfig
   }
@@ -100,6 +104,19 @@ describe("createBetterAuth", () => {
     expect(latestBetterAuthConfig().advanced.useSecureCookies).toBe(true)
   })
 
+  it("defaults secure cookies off in explicit local development", async () => {
+    vi.stubEnv("NODE_ENV", "development")
+    const { createBetterAuth } = await import("../../src/server.js")
+
+    createBetterAuth({
+      db: { id: "db" } as never,
+      secret: "x".repeat(32),
+      baseURL: "http://localhost:3000",
+    })
+
+    expect(latestBetterAuthConfig().advanced.useSecureCookies).toBe(false)
+  })
+
   it("lets consumers override secure cookie handling for local HTTP", async () => {
     const { createBetterAuth } = await import("../../src/server.js")
 
@@ -107,7 +124,9 @@ describe("createBetterAuth", () => {
       db: { id: "db" } as never,
       secret: "x".repeat(32),
       baseURL: "https://auth.example.com",
-      useSecureCookies: false,
+      advanced: {
+        useSecureCookies: false,
+      },
     })
 
     expect(latestBetterAuthConfig().advanced.useSecureCookies).toBe(false)
