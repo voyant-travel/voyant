@@ -20,6 +20,7 @@ import type { EmbeddingProvider } from "./embeddings/contract.js"
 import { createGeminiEmbeddingProvider } from "./embeddings/gemini.js"
 import type { IndexerAdapter, IndexerDocument, IndexerSlice } from "./indexer/contract.js"
 import {
+  collectionName,
   createTypesenseIndexer,
   type TypesenseClient,
   type TypesenseCollectionSchema,
@@ -162,6 +163,13 @@ export interface CatalogOffersTypesenseEnv {
   TYPESENSE_API_KEY?: string
 }
 
+export interface CatalogOffersTypesenseScope {
+  locale: string
+  audience: IndexerSlice["audience"]
+  market: string
+  channel?: string
+}
+
 export interface CatalogRuntimeEnv extends CatalogOffersTypesenseEnv {
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
@@ -296,18 +304,20 @@ function typesenseConfig(env: CatalogOffersTypesenseEnv) {
 
 export function createCatalogOffersTypesenseResolvers(
   resolveEnv: (context: unknown) => CatalogOffersTypesenseEnv,
+  resolveScope: (context: unknown) => CatalogOffersTypesenseScope,
 ) {
   return {
     async fetchIndexFields(context: unknown, ids: string[]) {
       const config = typesenseConfig(resolveEnv(context))
       const output = new Map<string, CatalogOffersIndexFields>()
       if (!config || ids.length === 0) return output
+      const collection = collectionName({ vertical: "products", ...resolveScope(context) })
       const distinct = [...new Set(ids)]
       for (let index = 0; index < distinct.length; index += 80) {
         const batch = distinct.slice(index, index + 80)
         const filter = `id:=[${batch.map((id) => `\`${id}\``).join(",")}]`
         const url =
-          `${config.base}/collections/products__en-GB__staff__default/documents/search` +
+          `${config.base}/collections/${encodeURIComponent(collection)}/documents/search` +
           `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}&per_page=${batch.length}` +
           "&include_fields=id,name,thumbnailUrl,stars,destinations,countryCodes"
         try {
@@ -332,11 +342,12 @@ export function createCatalogOffersTypesenseResolvers(
     ) {
       const config = typesenseConfig(resolveEnv(context))
       if (!config) return []
+      const collection = collectionName({ vertical: "products", ...resolveScope(context) })
       const filters = ["supplyModel:=dynamic"]
       if (destination.countryCode) filters.push(`countryCodes:=[\`${destination.countryCode}\`]`)
       if (destination.city) filters.push(`destinations:=[\`${destination.city}\`]`)
       const url =
-        `${config.base}/collections/products__en-GB__staff__default/documents/search` +
+        `${config.base}/collections/${encodeURIComponent(collection)}/documents/search` +
         `?q=*&query_by=name&filter_by=${encodeURIComponent(filters.join(" && "))}` +
         `&per_page=${Math.min(limit, 250)}&include_fields=id`
       try {

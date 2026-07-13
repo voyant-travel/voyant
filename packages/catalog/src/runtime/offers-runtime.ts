@@ -3,7 +3,10 @@ import type {
   CatalogOffersConnectClient,
   CatalogOffersRouteModuleOptions,
 } from "@voyant-travel/catalog/offers"
-import { createCatalogOffersTypesenseResolvers } from "@voyant-travel/catalog/runtime-support"
+import {
+  type CatalogOffersTypesenseScope,
+  createCatalogOffersTypesenseResolvers,
+} from "@voyant-travel/catalog/runtime-support"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
@@ -35,10 +38,6 @@ function resolveConnectClient(c: Context): CatalogOffersConnectClient | null {
   }) as CatalogOffersConnectClient
 }
 
-const typesenseResolvers = createCatalogOffersTypesenseResolvers(
-  (context) => (context as Context).env as PackageOffersEnv,
-)
-
 async function resolveAirportLabels(
   c: Context,
   codes: string[],
@@ -66,7 +65,13 @@ async function resolveAirportLabels(
   )
 }
 
-export function createOperatorCatalogOffersRouteModuleOptions(): CatalogOffersRouteModuleOptions {
+export function createOperatorCatalogOffersRouteModuleOptions(
+  resolveScope: (context: Context) => CatalogOffersTypesenseScope,
+): CatalogOffersRouteModuleOptions {
+  const typesenseResolvers = createCatalogOffersTypesenseResolvers(
+    (context) => (context as Context).env as PackageOffersEnv,
+    (context) => resolveScope(context as Context),
+  )
   return {
     resolveConnectClient,
     fetchIndexFields: typesenseResolvers.fetchIndexFields,
