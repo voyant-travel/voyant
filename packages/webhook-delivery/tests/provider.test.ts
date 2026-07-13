@@ -28,16 +28,15 @@ describe("outbound webhook enqueue providers", () => {
     expect(createPostgres).toHaveBeenCalledOnce()
   })
 
-  it("preserves pre-provider graphs without hiding invalid explicit configuration", () => {
+  it("requires an explicit supported provider", () => {
     const postgres: OutboundWebhookDeliveryEnqueuer = { enqueue: vi.fn() }
-    const host: OutboundWebhookDeliveryEnqueuer = { enqueue: vi.fn() }
 
-    expect(resolveOutboundWebhookDeliveryEnqueuer({ createPostgres: () => postgres, host })).toBe(
-      host,
-    )
-    expect(resolveOutboundWebhookDeliveryEnqueuer({ createPostgres: () => postgres })).toBe(
-      postgres,
-    )
+    expect(() =>
+      resolveOutboundWebhookDeliveryEnqueuer({
+        provider: "",
+        createPostgres: () => postgres,
+      }),
+    ).toThrow(/must be explicitly selected/)
     expect(() => resolveOutboundWebhookDeliveryEnqueuer({ provider: "host" })).toThrow(
       /requires host\.deliverEvent/,
     )

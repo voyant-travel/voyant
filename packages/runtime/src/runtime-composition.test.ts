@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => {
     createNodeServer: vi.fn((_options: unknown) => ({ close: vi.fn(), port: 8080 })),
     postgresEnqueue: vi.fn(async () => ["queued"]),
     createPostgresWebhookDeliveryEnqueuer: vi.fn(),
-    deploymentProviders: {} as Record<string, string>,
+    deploymentProviders: { outboundWebhooks: "postgres" } as Record<string, string>,
     loadVoyantNodeRuntime: vi.fn(async (_options: unknown) => nodeRuntime),
     loadVoyantNodeWorkflowRuntime: vi.fn(async (_options: unknown) => ({ workflows: [] })),
     nodeRuntime,
@@ -272,7 +272,7 @@ describe("Voyant project runtime composition", () => {
     })
   })
 
-  it("uses Postgres for explicit and pre-provider deployment graphs", async () => {
+  it("uses the explicitly selected Postgres provider", async () => {
     const projectRoot = await createGeneratedProject()
     await loadVoyantProject({
       projectRoot,
@@ -317,8 +317,8 @@ describe("Voyant project runtime composition", () => {
     expect(mocks.createPostgresWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
   })
 
-  it("keeps host.deliverEvent as compatibility for pre-provider graphs", async () => {
-    const deliverEvent = vi.fn(async () => ["legacy-hosted"])
+  it("does not let a host callback override the explicitly selected Postgres provider", async () => {
+    const deliverEvent = vi.fn(async () => ["hosted"])
     const projectRoot = await createGeneratedProject()
     await loadVoyantProject({
       projectRoot,
@@ -331,12 +331,13 @@ describe("Voyant project runtime composition", () => {
       outboundWebhooks: { enqueue(event: unknown, bindings: unknown): Promise<unknown> }
     }
     await expect(options.outboundWebhooks.enqueue({ name: "event" }, {})).resolves.toEqual([
-      "legacy-hosted",
+      "queued",
     ])
-    expect(mocks.createPostgresWebhookDeliveryEnqueuer).not.toHaveBeenCalled()
+    expect(mocks.createPostgresWebhookDeliveryEnqueuer).toHaveBeenCalledOnce()
+    expect(deliverEvent).not.toHaveBeenCalled()
   })
 
-  it("omits graph outbound webhook composition when the provider is none", async () => {
+  it("does not let Postgres credentials select outbound webhooks when the provider is none", async () => {
     mocks.deploymentProviders = { outboundWebhooks: "none" }
     const projectRoot = await createGeneratedProject()
     await loadVoyantProject({
@@ -363,6 +364,20 @@ describe("Voyant project runtime composition", () => {
         env: { DATABASE_URL: "postgres://example.invalid/voyant" },
       }),
     ).rejects.toThrow(/outboundWebhooks=.*is not supported/)
+    expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
+  })
+
+  it("rejects a missing outbound webhook provider before server start", async () => {
+    mocks.deploymentProviders = {}
+    const projectRoot = await createGeneratedProject()
+
+    await expect(
+      loadVoyantProject({
+        projectRoot,
+        adminAssetsDir: path.join(projectRoot, "admin"),
+        env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      }),
+    ).rejects.toThrow(/outboundWebhooks must be explicitly selected/)
     expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
   })
 

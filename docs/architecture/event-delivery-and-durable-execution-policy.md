@@ -181,7 +181,8 @@ queue message at once.
 Node deployments register outbound webhook subscribers from the selected graph
 webhook plan. The deployment's `outboundWebhooks` provider selects Postgres, an
 injected host enqueuer, or no outbound composition; it does not maintain a
-second event catalog. For each selected event, the Postgres intake
+second event catalog. Credentials configure the selected provider and never
+select one implicitly. For each selected event, the Postgres intake
 loads active `webhook_subscriptions` rows containing that event name and writes
 one `webhook_deliveries` row per subscription through the distribution
 redaction boundary.

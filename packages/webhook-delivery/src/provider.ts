@@ -7,20 +7,20 @@ export interface OutboundWebhookDeliveryEnqueuer {
 }
 
 export interface ResolveOutboundWebhookDeliveryEnqueuerOptions {
-  provider?: string
+  provider: string
   createPostgres?: () => OutboundWebhookDeliveryEnqueuer
   host?: OutboundWebhookDeliveryEnqueuer
 }
 
-/**
- * Resolve the deployment-owned enqueue implementation. An absent provider is
- * temporary compatibility for graphs generated before this provider role was
- * introduced: an injected host callback wins, then Postgres is the fallback.
- */
+/** Resolve the graph-selected deployment enqueue implementation. */
 export function resolveOutboundWebhookDeliveryEnqueuer(
   options: ResolveOutboundWebhookDeliveryEnqueuerOptions,
 ): OutboundWebhookDeliveryEnqueuer | undefined {
-  const provider = options.provider ?? (options.host ? "host" : "postgres")
+  const { provider } = options
+
+  if (!provider) {
+    throw new Error("deployment provider outboundWebhooks must be explicitly selected")
+  }
 
   if (provider === "none") return undefined
   if (provider === "host") {
