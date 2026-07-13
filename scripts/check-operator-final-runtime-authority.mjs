@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -36,8 +37,8 @@ const contributorFactories = [
 ]
 
 const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.all([
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
+  read("packages/operator-runtime/src/index.ts"),
   ...Object.keys(packagePorts).map((packageName) =>
     read(
       packageName === "cruises"
@@ -48,6 +49,9 @@ const [deploymentResources, smartbillAdapter, ...contributors] = await Promise.a
 ])
 
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 const directRegistrations = deploymentResources.match(/\[[A-Za-z][A-Za-z0-9]*Port\.id\]/g) ?? []
 if (directRegistrations.length > 0) {
   violations.push(
@@ -79,7 +83,7 @@ for (const factory of contributorFactories) {
   }
 }
 
-if (!deploymentResources.includes("createGeneratedGraphRuntimePorts({")) {
+if (!deploymentResources.includes("options.createRuntimePorts({")) {
   violations.push(
     "deployment-resources.ts must compose selected contributors through generated graph source",
   )

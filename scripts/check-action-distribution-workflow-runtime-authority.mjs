@@ -10,7 +10,7 @@ const read = (relativePath) => {
 }
 
 const sources = {
-  deploymentResources: read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  deploymentResources: read("packages/operator-runtime/src/deployment-resources.ts"),
   actionPackage: read("packages/action-ledger/package.json"),
   actionGraphRuntime: read("packages/action-ledger/src/graph-runtime.ts"),
   actionRuntimePorts: read("packages/action-ledger/src/runtime-port.ts"),
@@ -26,6 +26,9 @@ const sources = {
 }
 
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 for (const [name, source] of Object.entries(sources)) {
   for (const capability of [
     "loadActionLedgerHealthRuntime",

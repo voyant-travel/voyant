@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -16,13 +17,13 @@ const packageRequirements = {
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   ...Object.keys(packageRequirements).map((name) =>
     read(`packages/${name}/src/runtime-contributor.ts`),
   ),
 ])
 const generatedCall = deploymentResources.slice(
-  deploymentResources.indexOf("return createGeneratedGraphRuntimePorts({"),
+  deploymentResources.indexOf("options.createRuntimePorts({"),
 )
 const explicitBindings = [
   "proposal",
@@ -36,13 +37,16 @@ const explicitBindings = [
   "realtime",
 ]
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 
 for (const binding of explicitBindings) {
   if (new RegExp(`\\n    ${binding}:`).test(generatedCall)) {
     violations.push(`deployment-resources.ts must not assemble the ${binding} binding`)
   }
 }
-if (!/createGeneratedGraphRuntimePorts\(\{\s*primitives\s*\}\)/s.test(generatedCall)) {
+if (!/options\.createRuntimePorts\(\{\s*primitives\s*\}\)/s.test(generatedCall)) {
   violations.push("deployment-resources.ts must expose only primitives to generated contributors")
 }
 for (const [index, [packageName, requirements]] of Object.entries(packageRequirements).entries()) {

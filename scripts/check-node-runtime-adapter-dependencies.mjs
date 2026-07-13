@@ -58,13 +58,17 @@ const standardDistribution = read("packages/operator-standard/src/index.ts")
 const productDistribution = byName.get("@voyant-travel/operator-standard")
 const starterAuthority = [
   read("starters/operator/voyant.config.ts"),
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  read("packages/operator-runtime/src/index.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   read("packages/framework/src/node-runtime.ts"),
 ].join("\n")
 const graphGenerator = read("packages/framework/src/deployment-artifacts.ts")
 const graphResolver = read("scripts/lib/operator-deployment-graph-package-records.ts")
 const graphEmitter = read("scripts/emit-deployment-graph.ts")
 const violations = adapterBoundaryViolations(manifests, adapters)
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 violations.push(...findDomainRuntimeNamingViolations(root))
 
 for (const cycle of findProductionDependencyCycles(manifests)) {

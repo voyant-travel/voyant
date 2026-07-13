@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -17,7 +18,7 @@ const [
   legalContributor,
   inventoryContributor,
 ] = await Promise.all([
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   read("packages/storefront/src/runtime-contributor.ts"),
   read("packages/relationships/src/runtime-contributor.ts"),
   read("packages/notifications/src/runtime-contributor.ts"),
@@ -52,6 +53,9 @@ const contributors = {
 }
 
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 for (const [packageName, ports] of Object.entries(packagePorts)) {
   for (const port of ports) {
     if (deploymentResources.includes(port)) {

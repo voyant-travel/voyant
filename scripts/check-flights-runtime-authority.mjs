@@ -15,7 +15,14 @@ const retiredFlightsNodeRoot = pathOption(
   "--retired-flights-node-root",
   join(ROOT, "packages/flights-node"),
 )
-const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
+const compositionPath = pathOption(
+  "--composition",
+  join(ROOT, "packages/operator-runtime/src/deployment-resources.ts"),
+)
+const retiredAdapterPath = pathOption(
+  "--retired-adapter",
+  join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+)
 const violations = []
 
 function readRequired(path) {
@@ -27,7 +34,7 @@ const packageJson = JSON.parse(readRequired(join(flightsRoot, "package.json")))
 const manifest = readRequired(join(flightsRoot, "src/voyant.ts"))
 const hono = readRequired(join(flightsRoot, "src/hono.ts"))
 const runtimePort = readRequired(join(flightsRoot, "src/runtime-port.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
+const composition = readRequired(compositionPath)
 const nodeContributor = readRequired(join(flightsRoot, "src/runtime-contributor.ts"))
 const runtime = readRequired(join(flightsRoot, "src/runtime.ts"))
 
@@ -67,6 +74,9 @@ if (
 }
 if (existsSync(retiredFlightsNodeRoot)) {
   violations.push("the retired Flights Node suffix package must stay deleted")
+}
+if (existsSync(retiredAdapterPath)) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
 }
 if (composition.includes("operatorGraphRuntimeBindings")) {
   violations.push("Operator compatibility runtime bindings must stay deleted")

@@ -16,17 +16,17 @@ const read = (relativePath) => {
 for (const retiredPath of [
   "starters/operator/src/api/runtime/contract-document-runtime.ts",
   "starters/operator/src/api/runtime/contract-document-variables.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
   "packages/legal-node",
 ]) {
   if (existsSync(path.join(root, retiredPath))) violations.push(`${retiredPath} must stay deleted`)
 }
 
 const deploymentResources = read("packages/operator-runtime/src/deployment-resources.ts")
-const operatorAdapter = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
 const legalManifest = JSON.parse(read("packages/legal/package.json") || "{}")
 const contributor = read("packages/legal/src/runtime-contributor.ts")
 const runtime = read("packages/legal/src/runtime.ts")
-const frameworkManifest = JSON.parse(read("packages/framework/package.json") || "{}")
+const productDistribution = JSON.parse(read("packages/operator-standard/package.json") || "{}")
 const standardDistribution = read("packages/operator-standard/src/index.ts")
 
 for (const token of [
@@ -40,9 +40,6 @@ for (const token of [
 }
 if (deploymentResources.includes("@voyant-travel/legal/runtime")) {
   violations.push("deployment host must not load the Legal runtime")
-}
-if (!operatorAdapter.includes('import("@voyant-travel/legal/runtime")')) {
-  violations.push("Commerce bridge must forward to the package-owned Legal runtime")
 }
 if (
   legalManifest.voyant?.runtime?.export !== "createLegalRuntimePortContribution" ||
@@ -74,7 +71,7 @@ for (const token of [
 ]) {
   if (!runtime.includes(token)) violations.push(`Legal runtime is missing ${token}`)
 }
-if (!frameworkManifest.dependencies?.["@voyant-travel/legal"]) {
+if (!productDistribution.dependencies?.["@voyant-travel/legal"]) {
   violations.push("product distribution must supply @voyant-travel/legal")
 }
 if (!standardDistribution.includes('resolve: "@voyant-travel/legal"')) {

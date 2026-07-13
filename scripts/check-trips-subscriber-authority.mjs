@@ -10,9 +10,8 @@ const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaul
 const paths = {
   manifest: "packages/trips/src/voyant.ts",
   packageRuntime: "packages/trips/src/index.ts",
-  app: "starters/operator/src/api/app.ts",
   tripsRuntime: "packages/trips/src/runtime.ts",
-  composition: "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  composition: "packages/operator-runtime/src/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(
@@ -25,6 +24,12 @@ const sources = Object.fromEntries(
 )
 
 const failures = []
+for (const retiredPath of [
+  "starters/operator/src/api/app.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+]) {
+  if (existsSync(path.join(repoRoot, retiredPath))) failures.push(`${retiredPath} must stay deleted`)
+}
 if (existsSync(path.join(repoRoot, "starters/operator/src/api/runtime/trips-runtime.ts"))) {
   failures.push("Operator Trips runtime must stay deleted")
 }
@@ -40,14 +45,9 @@ requireMatch(
   /entry:\s*["']\.\/payment-subscribers["'][\s\S]*export:\s*["']tripsPaymentCompletedSubscriber["']/,
   "Trips manifest must own the payment subscriber runtime reference",
 )
-rejectMatch(
-  sources.app,
-  /tripsPaymentBundle|trips-payment-completion/,
-  "Operator app must not list a central Trips payment subscriber bundle",
-)
 requireMatch(
   sources.composition,
-  /createGeneratedGraphRuntimePorts\(\{\s*primitives\s*\}\)/,
+  /options\.createRuntimePorts\(\{\s*primitives\s*\}\)/,
   "Operator must pass only generic primitives to selected contributors",
 )
 requireMatch(

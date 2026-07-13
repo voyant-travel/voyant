@@ -156,8 +156,14 @@ for (const [directory, factory, port] of ownerContributors) {
   }
 }
 
-const operatorResources = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
+const operatorResources = [
+  read("packages/operator-runtime/src/index.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
+].join("\n")
 const runtimeHost = read("packages/core/src/runtime-host.ts")
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 if (
   /\bmodules\s*:|modules\.import|primitives\.modules/.test(`${runtimeHost}\n${operatorResources}`)
 ) {

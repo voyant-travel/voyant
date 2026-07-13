@@ -33,8 +33,8 @@ async function createFixture(overrides = {}) {
       "primitives: VoyantRuntimeHostPrimitives\ncreateFlightsRuntime(host.primitives)\n",
     "flights/src/runtime.ts":
       'resolveAdapter() {}\nstartCardPayment() {}\nthrow new Error("Flight connector is not configured")\n',
-    "operator/src/api/runtime/operator-runtime-adapter.ts":
-      "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
+    "operator-runtime/src/deployment-resources.ts":
+      "function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\n",
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -54,8 +54,10 @@ async function runChecker(root) {
       path.join(root, "flights"),
       "--retired-flights-node-root",
       path.join(root, "flights-node"),
-      "--operator-root",
-      path.join(root, "operator"),
+      "--composition",
+      path.join(root, "operator-runtime/src/deployment-resources.ts"),
+      "--retired-adapter",
+      path.join(root, "operator/src/api/runtime/operator-runtime-adapter.ts"),
     ],
     { cwd: root },
   )
@@ -69,7 +71,7 @@ describe("check-flights-runtime-authority", () => {
 
   it("rejects package-id bindings and compatibility route loaders", async () => {
     const root = await createFixture({
-      "operator/src/api/runtime/operator-runtime-adapter.ts":
+      "operator-runtime/src/deployment-resources.ts":
         'function createDeploymentPortResources() { return {} }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/flights": legacy }\nconst loadFlightAdminRoutes = legacy\nconst loadFlightsRuntime = () => import("./flights-runtime")\n',
     })
 

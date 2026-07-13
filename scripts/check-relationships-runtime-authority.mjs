@@ -10,7 +10,14 @@ const pathOption = (name, fallback) => {
   if (!value) throw new Error(`${name} requires a path`)
   return value
 }
-const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
+const compositionPath = pathOption(
+  "--composition",
+  join(ROOT, "packages/operator-runtime/src/deployment-resources.ts"),
+)
+const retiredAdapterPath = pathOption(
+  "--retired-adapter",
+  join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+)
 const relationshipsRoot = pathOption("--relationships-root", join(ROOT, "packages/relationships"))
 const violations = []
 
@@ -23,7 +30,11 @@ const manifest = readRequired(join(relationshipsRoot, "src/voyant.ts"))
 const packageIndex = readRequired(join(relationshipsRoot, "src/index.ts"))
 const runtimePort = readRequired(join(relationshipsRoot, "src/runtime-port.ts"))
 const runtimeContributor = readRequired(join(relationshipsRoot, "src/runtime-contributor.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
+const composition = readRequired(compositionPath)
+
+if (existsSync(retiredAdapterPath)) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 
 if (
   !manifest.includes("runtimePorts: [requirePort(relationshipsRouteRuntimePort)]") ||
@@ -58,7 +69,7 @@ if (
 if (
   composition.includes("relationshipsRouteRuntimePort") ||
   composition.includes("createDeploymentCapabilities") ||
-  !composition.includes("createGeneratedGraphRuntimePorts({ primitives })")
+  !composition.includes("options.createRuntimePorts({ primitives })")
 ) {
   violations.push("Operator must not bind Relationships-specific runtime behavior")
 }

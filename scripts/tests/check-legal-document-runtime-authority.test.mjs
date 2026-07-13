@@ -17,8 +17,6 @@ async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-legal-document-runtime-"))
   const files = {
     "packages/operator-runtime/src/deployment-resources.ts": "generic primitives",
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
-      'import("@voyant-travel/legal/runtime")',
     "packages/legal/package.json": JSON.stringify({
       exports: {
         "./runtime-contributor": "./src/runtime-contributor.ts",
@@ -36,7 +34,7 @@ async function fixture(overrides = {}) {
       "createLegalRuntime legalRuntimePort.id legalContractDocumentRuntimePort.id legalBookingContractSubscriberRuntimePort.id",
     "packages/legal/src/runtime.ts":
       "buildContractVariableBindings createContractDocumentService resolveContractDocumentGenerator resolveBookingPiiService createBookingContractSubscriberHost",
-    "packages/framework/package.json": JSON.stringify({
+    "packages/operator-standard/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/legal": "workspace:*" },
     }),
     "packages/operator-standard/src/index.ts": 'modules: [{ resolve: "@voyant-travel/legal" }]',

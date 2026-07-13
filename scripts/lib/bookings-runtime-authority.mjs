@@ -46,7 +46,7 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
   const runtimeSource = files.get("packages/bookings/src/runtime.ts") ?? ""
   const portSource = files.get("packages/bookings/src/runtime-port.ts") ?? ""
   const manifestSource = files.get("packages/bookings/src/voyant.ts") ?? ""
-  const starter = files.get("starters/operator/src/api/runtime/operator-runtime-adapter.ts") ?? ""
+  const operatorHost = files.get("packages/operator-runtime/src/deployment-resources.ts") ?? ""
   const coreHost = files.get("packages/core/src/runtime-host.ts") ?? ""
 
   for (const required of [
@@ -62,7 +62,7 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
       violations.push(`Bookings runtime authority is missing ${required}`)
     }
   }
-  if (/modules\s*:\s*\{|modules\.import/.test(coreHost + starter + contributor + runtimeSource)) {
+  if (/modules\s*:\s*\{|modules\.import/.test(coreHost + operatorHost + contributor + runtimeSource)) {
     violations.push("Runtime composition must not use a host module loader")
   }
   if (/new Map\s*\(|packageIds|packageIdRegistry/.test(contributor + runtimeSource + portSource)) {
@@ -87,8 +87,8 @@ export function inspectBookingsRuntimeAuthority({ files, manifests, policy }) {
     if (!provider.includes(`[${port}.id]`)) {
       violations.push(`${file} must statically provide ${port}`)
     }
-    if (starter.includes(port)) {
-      violations.push(`Operator starter must not bind ${port}`)
+    if (operatorHost.includes(port)) {
+      violations.push(`Operator host must not bind ${port}`)
     }
   }
   return violations

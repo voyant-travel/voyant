@@ -23,8 +23,8 @@ async function createFixture(overrides = {}) {
     "trips/src/runtime-contributor.ts":
       "host.getRuntimePort(catalogRuntimeServicesPort)\nhost.getRuntimePort(catalogCheckoutApiRuntimePort)\nhost.getRuntimePort(flightsRuntimePort)\nhost.primitives.database.transaction\n",
     "trips/src/runtime.ts": "createTripsRouteRuntime\n",
-    "operator/src/api/runtime/operator-runtime-adapter.ts":
-      "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport function createOperatorDeploymentResources() {}\n",
+    "operator-runtime/src/deployment-resources.ts":
+      "function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\nexport function createOperatorDeploymentResources() {}\n",
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -40,8 +40,10 @@ async function runChecker(root) {
     process.execPath,
     [
       checkerPath,
-      "--operator-root",
-      path.join(root, "operator"),
+      "--composition",
+      path.join(root, "operator-runtime/src/deployment-resources.ts"),
+      "--retired-adapter",
+      path.join(root, "operator/src/api/runtime/operator-runtime-adapter.ts"),
       "--trips-root",
       path.join(root, "trips"),
     ],
@@ -59,8 +61,8 @@ describe("check-trips-runtime-authority", () => {
   it("rejects package-id binding and the compatibility module export", async () => {
     const root = await createFixture({
       "trips/src/index.ts": "export const tripsHonoModule = {}\n",
-      "operator/src/api/runtime/operator-runtime-adapter.ts":
-        'function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport function createOperatorDeploymentResources() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\n',
+      "operator-runtime/src/deployment-resources.ts":
+        'function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\nexport function createOperatorDeploymentResources() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {

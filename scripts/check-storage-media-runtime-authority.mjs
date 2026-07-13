@@ -12,11 +12,15 @@ const inventoryContributor = read("packages/inventory/src/runtime-contributor.ts
 const brochureRuntime = read("packages/inventory/src/brochure-runtime.ts")
 const inventoryGraphRuntime = read("packages/inventory/src/graph-runtime.ts")
 const inventoryManifest = read("packages/inventory/src/voyant.ts")
-const operatorRuntimeAdapter = read("starters/operator/src/api/runtime/operator-runtime-adapter.ts")
+const nodeRuntime = read("packages/framework/src/node-runtime.ts")
 const deploymentResources = read("packages/operator-runtime/src/deployment-resources.ts")
 const storagePackage = JSON.parse(read("packages/storage/package.json"))
 const inventoryPackage = JSON.parse(read("packages/inventory/package.json"))
 const policy = JSON.parse(read("scripts/fixtures/storage-media-runtime-policy.json"))
+
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  failures.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 
 for (const relativePath of policy.forbiddenStarterPaths) {
   if (existsSync(path.join(root, relativePath))) {
@@ -49,8 +53,8 @@ for (const token of policy.brochureRuntimeTokens) {
   if (!brochureRuntime.includes(token)) failures.push(`Brochure runtime must preserve ${token}`)
 }
 
-if (!operatorRuntimeAdapter.includes('from "@voyant-travel/storage/runtime"')) {
-  failures.push("Operator runtime adapter must consume Storage through its supported runtime API")
+if (!nodeRuntime.includes('from "@voyant-travel/storage/runtime"')) {
+  failures.push("Framework Node runtime must consume Storage through its supported runtime API")
 }
 if (
   storagePackage.exports["./runtime"] !== "./src/runtime.ts" ||

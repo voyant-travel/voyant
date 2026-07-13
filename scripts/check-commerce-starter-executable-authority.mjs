@@ -14,6 +14,7 @@ const deletedStarterFiles = [
   "starters/operator/src/api/subscribers/booking-payment-cleanup.ts",
   "starters/operator/src/api/jobs/draft-reaper-scheduled.ts",
   "starters/operator/src/api/jobs/promotion-scheduled.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
 ]
 
 const failures = []
@@ -36,7 +37,7 @@ const [
     "packages/catalog/src/voyant.ts",
     "packages/catalog/src/runtime-contributor.ts",
     "packages/commerce/src/voyant.ts",
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+    "packages/operator-runtime/src/deployment-resources.ts",
     "packages/finance/src/index.ts",
     "packages/notifications/src/subscriber-runtime.ts",
   ].map((relativePath) => readFile(path.join(root, relativePath), "utf8")),

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -11,7 +12,7 @@ const paths = {
   legalModule: "packages/legal/src/index.ts",
   contributor: "packages/legal/src/runtime-contributor.ts",
   distribution: "packages/operator-standard/src/index.ts",
-  composition: "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  composition: "packages/operator-runtime/src/deployment-resources.ts",
   config: "starters/operator/voyant.config.ts",
 }
 
@@ -25,6 +26,9 @@ const sources = Object.fromEntries(
 )
 
 const failures = []
+if (existsSync(path.join(repoRoot, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  failures.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)
 }

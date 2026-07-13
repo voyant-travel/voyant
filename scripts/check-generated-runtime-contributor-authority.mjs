@@ -37,7 +37,7 @@ const packageFactories = {
 
 const [
   deploymentResources,
-  adapter,
+  operatorRuntime,
   generator,
   resolver,
   emitter,
@@ -45,7 +45,7 @@ const [
   ...packageJsonSources
 ] = await Promise.all([
   read("packages/operator-runtime/src/deployment-resources.ts"),
-  read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  read("packages/operator-runtime/src/index.ts"),
   read("packages/framework/src/deployment-artifacts.ts"),
   read("packages/framework/src/project-resolver.ts"),
   read("scripts/emit-deployment-graph.ts"),
@@ -57,6 +57,9 @@ const [
 ])
 
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 for (const retiredPath of [
   "release.runtime-packages.generated.json",
   "packages/framework/src/runtime-packages.generated.ts",
@@ -66,16 +69,16 @@ for (const retiredPath of [
     violations.push(`${retiredPath} is a retired generated resolver input`)
   }
 }
-if (/from\s+["'][^"']+\/runtime-contributor["']/.test(`${deploymentResources}\n${adapter}`)) {
+if (/from\s+["'][^"']+\/runtime-contributor["']/.test(`${deploymentResources}\n${operatorRuntime}`)) {
   violations.push("Operator deployment resources must not import package runtime contributors")
 }
-if (/create[A-Za-z0-9]+RuntimePortContribution/.test(`${deploymentResources}\n${adapter}`)) {
+if (/create[A-Za-z0-9]+RuntimePortContribution/.test(`${deploymentResources}\n${operatorRuntime}`)) {
   violations.push("Operator deployment resources must not call package runtime contributors")
 }
-if (!adapter.includes("return createGeneratedGraphRuntimePorts({")) {
+if (!operatorRuntime.includes("generated.createRuntimePorts({ primitives })")) {
   violations.push("Operator must compose one generated contributor set from opaque host resources")
 }
-if (/Smart[Bb]ill|smartbill|invoiceSettlementPollers/.test(`${deploymentResources}\n${adapter}`)) {
+if (/Smart[Bb]ill|smartbill|invoiceSettlementPollers/.test(`${deploymentResources}\n${operatorRuntime}`)) {
   violations.push("Operator runtime must not retain SmartBill-specific contributor host authority")
 }
 for (const required of [

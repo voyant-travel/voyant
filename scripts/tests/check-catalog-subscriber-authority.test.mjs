@@ -49,8 +49,7 @@ const factory = defineGraphRuntimeFactory(async ({ getPort }) => {
   }}
 })
 `,
-    "starters/operator/src/api/app.ts": "mountApp({ modules })\n",
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "const ports = {}\n",
+    "packages/operator-runtime/src/deployment-resources.ts": "const ports = {}\n",
     ...overrides,
   }
   for (const [relativePath, source] of Object.entries(files)) {
@@ -69,11 +68,11 @@ describe("Catalog subscriber authority checker", () => {
     assert.match(result.stdout, /Catalog subscriber authority: OK/)
   })
 
-  it("rejects app-level Catalog bridge bootstrap", async () => {
+  it("rejects a restored starter app", async () => {
     const root = await createFixture({
       "starters/operator/src/api/app.ts": "plugins: [catalogBridgeBundle]\n",
     })
-    await assert.rejects(runChecker(root), /must not bootstrap a Catalog bridge bundle/)
+    await assert.rejects(runChecker(root), /starters\/operator\/src\/api\/app\.ts must stay deleted/)
   })
 
   it("rejects a retained legacy bridge file", async () => {

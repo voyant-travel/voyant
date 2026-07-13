@@ -3,9 +3,10 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
-const APP = optionPath("--app", join(ROOT, "starters/operator/src/api/app.ts"))
-const COMPOSITION = optionPath(
-  "--composition",
+const HOST = optionPath("--host", join(ROOT, "packages/framework/src/node-runtime.ts"))
+const RETIRED_APP = optionPath("--retired-app", join(ROOT, "starters/operator/src/api/app.ts"))
+const RETIRED_ADAPTER = optionPath(
+  "--retired-adapter",
   join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
 )
 const LEGACY_PUBLIC_PATHS = optionPath(
@@ -26,15 +27,20 @@ function readRequired(path) {
   return readFileSync(path, "utf8")
 }
 
-const app = readRequired(APP)
-const composition = readRequired(COMPOSITION)
+const host = readRequired(HOST)
 const violations = []
 
+if (existsSync(RETIRED_APP)) {
+  violations.push("starters/operator/src/api/app.ts must stay deleted")
+}
+if (existsSync(RETIRED_ADAPTER)) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 if (existsSync(LEGACY_PUBLIC_PATHS)) {
   violations.push("starters/operator/src/api/public-paths.ts must stay deleted")
 }
 
-if (app.includes("OPERATOR_PUBLIC_PATHS") || app.includes('from "./public-paths"')) {
+if (host.includes("OPERATOR_PUBLIC_PATHS") || host.includes('from "./public-paths"')) {
   violations.push("Operator must not restore the OPERATOR_PUBLIC_PATHS hand-list")
 }
 
@@ -42,12 +48,12 @@ for (const [option, graphField] of [
   ["publicPaths", "publicPaths"],
   ["dbTransactionalPaths", "transactionalPaths"],
 ]) {
-  if (!app.includes(`...graphComposition.routePosture.${graphField}`)) {
+  if (!host.includes(`...graphComposition.routePosture.${graphField}`)) {
     violations.push(`${option} must consume graphComposition.routePosture.${graphField}`)
   }
 }
 
-const publicPathLiterals = [...app.matchAll(/["'](\/v1\/public\/[^"']+)["']/g)]
+const publicPathLiterals = [...host.matchAll(/["'](\/v1\/public\/[^"']+)["']/g)]
   .map((match) => match[1])
   .sort()
 if (publicPathLiterals.length > 0) {
@@ -56,23 +62,12 @@ if (publicPathLiterals.length > 0) {
   )
 }
 
-for (const [pattern, label] of [
-  [/\banonymous\s*:/, "anonymous"],
-  [/\brequiresTransactionalDb\s*:/, "requiresTransactionalDb"],
-  [/\btransactionalPaths\s*:/, "transactionalPaths"],
-  [/\btransactionalModules\s*:/, "transactionalModules"],
-]) {
-  if (pattern.test(composition)) {
-    violations.push(`Operator graph bindings must not restore package-specific ${label} posture`)
-  }
-}
-
 for (const legacyNetopiaAuthority of [
   "GENERATED_GRAPH_RUNTIME_PLUGIN_IDS",
   "defineLazyHonoBundle",
   "netopiaHonoBundle",
 ]) {
-  if (app.includes(legacyNetopiaAuthority)) {
+  if (host.includes(legacyNetopiaAuthority)) {
     violations.push(
       `Operator must not restore the graph-owned Netopia route adapter (${legacyNetopiaAuthority})`,
     )

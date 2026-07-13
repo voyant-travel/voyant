@@ -10,7 +10,14 @@ const pathOption = (name, fallback) => {
   if (!value) throw new Error(`${name} requires a path`)
   return value
 }
-const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
+const compositionPath = pathOption(
+  "--composition",
+  join(ROOT, "packages/operator-runtime/src/deployment-resources.ts"),
+)
+const retiredAdapterPath = pathOption(
+  "--retired-adapter",
+  join(ROOT, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+)
 const tripsRoot = pathOption("--trips-root", join(ROOT, "packages/trips"))
 const violations = []
 
@@ -28,7 +35,11 @@ const normalizedRuntimeContributor = runtimeContributor.replace(
   "host.getRuntimePort",
 )
 const runtime = readRequired(join(tripsRoot, "src/runtime.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
+const composition = readRequired(compositionPath)
+
+if (existsSync(retiredAdapterPath)) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 
 if (
   !manifest.includes("requirePort(tripsRoutesRuntimePort)") ||
@@ -73,7 +84,7 @@ if (
   composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
   composition.includes("createOperatorTripsRoutesOptions") ||
   composition.includes("createDeploymentCapabilities") ||
-  !composition.includes("createGeneratedGraphRuntimePorts({ primitives })")
+  !composition.includes("options.createRuntimePorts({ primitives })")
 ) {
   violations.push("Operator must expose only generic primitives to the generated Trips contributor")
 }

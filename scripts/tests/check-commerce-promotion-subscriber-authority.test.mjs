@@ -38,7 +38,6 @@ register: async (context) => {
   await descriptor.register(context)
 }
 `,
-    "starters/operator/src/api/app.ts": "plugins: [catalogBridgeBundle]\n",
     "starters/operator/src/api/subscribers/catalog-bridge.ts":
       'eventBus.subscribe<BookingConfirmedEventPayload>("booking.confirmed", captureSnapshot)\n',
     "packages/commerce/src/runtime-contributor.ts": `
@@ -58,8 +57,7 @@ promotionsBulkReindex: {
   },
 },
 `,
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "",
-    "starters/operator/src/api/runtime/operator-workflow-services.ts": "",
+    "packages/operator-runtime/src/deployment-resources.ts": "",
     ...overrides,
   }
 
@@ -88,11 +86,11 @@ describe("Commerce promotion subscriber authority checker", () => {
     await assert.rejects(runChecker(root), /manifest must own the promotion-redemption subscriber/)
   })
 
-  it("rejects app-level promotions runtime wiring", async () => {
+  it("rejects a restored starter app", async () => {
     const root = await createFixture({
       "starters/operator/src/api/app.ts": 'plugins: [{ name: "operator-promotions-runtime" }]\n',
     })
-    await assert.rejects(runChecker(root), /must not register package-specific promotions/)
+    await assert.rejects(runChecker(root), /starters\/operator\/src\/api\/app\.ts must stay deleted/)
   })
 
   it("rejects catalog-bridge redemption authority", async () => {

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -10,8 +11,7 @@ const paths = {
   manifest: "packages/storefront/src/voyant.ts",
   descriptor: "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts",
   storefrontModule: "packages/storefront/src/index.ts",
-  operatorComposition: "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
-  operatorApp: "starters/operator/src/api/app.ts",
+  operatorComposition: "packages/operator-runtime/src/deployment-resources.ts",
   storefrontContributor: "packages/storefront/src/runtime-contributor.ts",
   relationshipsContributor: "packages/relationships/src/runtime-contributor.ts",
   notificationsContributor: "packages/notifications/src/runtime-contributor.ts",
@@ -28,6 +28,12 @@ const sources = Object.fromEntries(
 )
 
 const failures = []
+for (const retiredPath of [
+  "starters/operator/src/api/app.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+]) {
+  if (existsSync(path.join(repoRoot, retiredPath))) failures.push(`${retiredPath} must stay deleted`)
+}
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)
 }
@@ -106,11 +112,6 @@ rejectMatch(
   sources.operatorComposition,
   /storefrontBookingBootstrapSubscriber\.register|eventBus\.subscribe\([^\n]*storefront\.booking\.bootstrap/,
   "Operator composition must leave Storefront subscriber registration to graph lowering",
-)
-rejectMatch(
-  sources.operatorApp,
-  /storefrontBookingBootstrapSubscriber|storefrontBookingBootstrapBundle/,
-  "Operator app must not list a Storefront booking-bootstrap subscriber",
 )
 
 if (failures.length > 0) {

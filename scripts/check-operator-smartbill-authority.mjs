@@ -12,6 +12,10 @@ const pathOption = (name, fallback) => {
 }
 const root = pathOption("--root", ROOT)
 const operatorRoot = pathOption("--operator-root", join(root, "starters/operator"))
+const operatorRuntimePath = pathOption(
+  "--operator-runtime",
+  join(root, "packages/operator-runtime/src/deployment-resources.ts"),
+)
 const violations = []
 
 function readRequired(path) {
@@ -21,9 +25,7 @@ function readRequired(path) {
 
 const operatorPackage = JSON.parse(readRequired(join(operatorRoot, "package.json")))
 const config = readRequired(join(operatorRoot, "voyant.config.ts"))
-const app = readRequired(join(operatorRoot, "src/api/app.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
-const nodeHost = readRequired(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))
+const operatorRuntime = readRequired(operatorRuntimePath)
 const financeManifest = readRequired(join(root, "packages/finance/src/voyant.ts"))
 const financeRuntime = readRequired(join(root, "packages/finance/src/runtime.ts"))
 const financeRuntimePort = readRequired(join(root, "packages/finance/src/runtime-port.ts"))
@@ -31,15 +33,14 @@ const financeIndex = readRequired(join(root, "packages/finance/src/index.ts"))
 const coreProject = readRequired(join(root, "packages/core/src/project.ts"))
 const graphGenerator = readRequired(join(root, "packages/framework/src/deployment-artifacts.ts"))
 
-// The bridge removal intentionally does not claim an unpublished adapter release.
-if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"] !== "^0.140.2") {
-  violations.push("operator SmartBill dependency must remain at the last published ^0.140.2")
+if (operatorPackage.dependencies?.["@voyant-travel/plugin-smartbill"]) {
+  violations.push("operator starter must not directly depend on the optional SmartBill plugin")
 }
 if (/resolve:\s*["']@voyant-travel\/plugin-smartbill["']/.test(config)) {
   violations.push("the default voyant.config.ts must not select @voyant-travel/plugin-smartbill")
 }
 
-const starterAuthority = `${composition}\n${nodeHost}`
+const starterAuthority = operatorRuntime
 for (const forbidden of [
   "operatorSmartbillRuntimeHost",
   "resolveOperatorSmartbillConfig",
@@ -51,16 +52,15 @@ for (const forbidden of [
     violations.push(`operator runtime must not retain SmartBill bridge token ${forbidden}`)
   }
 }
-if (!composition.includes("createGeneratedGraphRuntimePorts({ primitives })")) {
+if (!operatorRuntime.includes("options.createRuntimePorts({ primitives })")) {
   violations.push("generated runtime contributors must receive only generic primitives")
 }
-if (/eventBus\.subscribe|descriptor\.register/.test(`${app}\n${starterAuthority}`)) {
+if (/eventBus\.subscribe|descriptor\.register/.test(starterAuthority)) {
   violations.push("Operator code must not own or register SmartBill subscriber descriptors")
 }
-if (/smartbillOperatorBundle|subscribers\/smartbill/.test(app)) {
-  violations.push("operator app must not mount or import a SmartBill compatibility bundle")
-}
 for (const relativePath of [
+  "src/api/app.ts",
+  "src/api/runtime/operator-runtime-adapter.ts",
   "src/api/runtime/operator-runtime-adapter.smartbill.test.ts",
   "src/api/runtime/smartbill-subscriber-runtime.ts",
   "src/api/runtime/smartbill-subscriber-runtime.test.ts",

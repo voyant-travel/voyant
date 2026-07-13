@@ -42,7 +42,7 @@ async function write(root, relativePath, contents) {
   await writeFile(target, contents)
 }
 
-async function fixture(deploymentResources) {
+async function fixture(operatorRuntime) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-generated-contributors-"))
   await write(
     root,
@@ -51,8 +51,8 @@ async function fixture(deploymentResources) {
   )
   await write(
     root,
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
-    deploymentResources,
+    "packages/operator-runtime/src/index.ts",
+    operatorRuntime,
   )
   await write(
     root,
@@ -82,7 +82,7 @@ async function fixture(deploymentResources) {
 }
 
 it("accepts generated static contributor composition", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("generated.createRuntimePorts({ primitives })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(
     result.stdout,
@@ -91,7 +91,7 @@ it("accepts generated static contributor composition", async () => {
 })
 
 it("rejects a restored generated contributor barrel", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("generated.createRuntimePorts({ primitives })\n")
   await write(root, "packages/framework/src/runtime-contributors.generated.ts", "export {}\n")
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
@@ -100,7 +100,7 @@ it("rejects a restored generated contributor barrel", async () => {
 })
 
 it("reports a stale contributor package entry", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("generated.createRuntimePorts({ primitives })\n")
   await rm(path.join(root, "packages/trips"), { recursive: true })
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
@@ -109,7 +109,7 @@ it("reports a stale contributor package entry", async () => {
 })
 
 it("rejects generated runtime catalog consumption by the resolver", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("generated.createRuntimePorts({ primitives })\n")
   await write(
     root,
     "packages/framework/src/project-resolver.ts",
@@ -123,7 +123,7 @@ it("rejects generated runtime catalog consumption by the resolver", async () => 
 
 it("rejects starter contributor enumeration", async () => {
   const root = await fixture(
-    'import { createTripsRuntimePortContribution } from "@voyant-travel/trips/runtime-contributor"\nreturn createGeneratedGraphRuntimePorts({ host })\n',
+    'import { createTripsRuntimePortContribution } from "@voyant-travel/trips/runtime-contributor"\ngenerated.createRuntimePorts({ primitives })\n',
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
