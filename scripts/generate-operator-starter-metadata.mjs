@@ -10,6 +10,7 @@ const outputRoot = join(operatorRoot, ".voyant")
 
 export const OPERATOR_GENERATED_METADATA_FILES = [
   "env.d.ts",
+  "generate-routes.mjs",
   "tsconfig.client.json",
   "tsconfig.server.json",
   "tsconfig.tests-smoke.json",
@@ -52,6 +53,7 @@ export function buildOperatorStarterMetadata(root = repoRoot) {
 type AppBindings = import("@voyant-travel/framework/node-runtime").VoyantNodeRuntimeEnv
 `,
     ],
+    ["generate-routes.mjs", routeGeneratorSource()],
     [
       "tsconfig.client.json",
       json({
@@ -171,6 +173,35 @@ function declarationPaths(root, generatedRoot) {
     })
   }
   return paths
+}
+
+function routeGeneratorSource() {
+  return `import { Generator, getConfig } from "@tanstack/router-generator"
+import { standardOperatorRouteFiles } from "@voyant-travel/operator-standard/standard-route-files"
+import {
+  VOYANT_ROUTE_FILE_IGNORE_PATTERN,
+  voyantGeneratedRoutes,
+} from "@voyant-travel/vite-config"
+import { fileURLToPath } from "node:url"
+
+const appRoot = fileURLToPath(new URL("..", import.meta.url))
+const generatedRoutes = voyantGeneratedRoutes({
+  appRootUrl: new URL("../generated-config-anchor.ts", import.meta.url).href,
+  files: standardOperatorRouteFiles,
+})
+const config = getConfig(
+  {
+    target: "react",
+    routesDirectory: generatedRoutes.routesDirectory,
+    generatedRouteTree: generatedRoutes.generatedRouteTree,
+    routeFileIgnorePattern: VOYANT_ROUTE_FILE_IGNORE_PATTERN,
+    disableLogging: true,
+  },
+  appRoot,
+)
+
+await new Generator({ config, root: appRoot }).run()
+`
 }
 
 function viteConfigSource() {

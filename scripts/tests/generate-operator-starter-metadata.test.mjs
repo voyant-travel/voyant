@@ -53,6 +53,13 @@ test("emits disposable operator config with rebased declaration paths", () => {
       readFileSync(join(root, "starters/operator/.voyant/env.d.ts"), "utf8"),
       /VoyantNodeRuntimeEnv/,
     )
+    const routeGenerator = readFileSync(
+      join(root, "starters/operator/.voyant/generate-routes.mjs"),
+      "utf8",
+    )
+    assert.match(routeGenerator, /standardOperatorRouteFiles/)
+    assert.match(routeGenerator, /await new Generator/)
+    assert.match(routeGenerator, /VOYANT_ROUTE_FILE_IGNORE_PATTERN/)
 
     write(root, "starters/operator/.voyant/tsconfig.legacy.json", "{}\n")
     write(root, "starters/operator/.voyant/runtime/graph-runtime.generated.ts", "export {}\n")
