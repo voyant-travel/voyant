@@ -1,5 +1,12 @@
 # @voyant-travel/runtime
 
+## 0.7.1
+
+### Patch Changes
+
+- 0ddd848: Build every Vite application environment for clean projects so `voyant build`
+  emits both the client assets and the TanStack Start Node server.
+
 ## 0.7.0
 
 ### Minor Changes
