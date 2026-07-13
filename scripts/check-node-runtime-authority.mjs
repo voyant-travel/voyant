@@ -48,6 +48,8 @@ for (const required of [
   "createVoyantNodeRuntimeHostPrimitives",
   "createVoyantDeploymentResources",
   "loadVoyantNodeRuntime",
+  "resolveOutboundWebhookDeliveryEnqueuer",
+  "createPostgresWebhookDeliveryEnqueuer",
   "deploymentRequirements: graph.requirements",
   "runtimePorts: deploymentResources.ports",
   "outboundWebhooks: deploymentResources.outboundWebhooks",
@@ -58,6 +60,11 @@ for (const required of [
 }
 if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {
   violations.push("runtime must not boot selected package routes with runtime port stubs")
+}
+if (operatorRuntime.includes("enqueuePostgresWebhookEvent")) {
+  violations.push(
+    "runtime must resolve outbound webhook providers through the package-owned adapter",
+  )
 }
 
 for (const required of [

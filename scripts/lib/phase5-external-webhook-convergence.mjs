@@ -33,11 +33,16 @@ export function inspectExternalWebhookDeliveryConvergence(input) {
   for (const token of ["requestPayload:", "deliveryContract:", "enqueueAttempt("]) {
     if (!input.selectedQueue.includes(token)) failures.push(`durable enqueue must persist ${token}`)
   }
-  for (const token of [
-    "requestPayload: input.requestPayload",
-    "deliveryContract: input.deliveryContract",
+  for (const [field, source] of [
+    ["requestPayload", "input.requestPayload"],
+    ["deliveryContract", "input.deliveryContract"],
   ]) {
-    if (!input.store.includes(token)) failures.push(`Postgres pending rows must persist ${token}`)
+    const directOrMapped = new RegExp(
+      `${field}:\\s*(?:${source.replace(".", "\\.")}|objectRecord\\(${source.replace(".", "\\.")}\\))`,
+    )
+    if (!directOrMapped.test(input.store)) {
+      failures.push(`Postgres pending rows must persist ${field}: ${source}`)
+    }
   }
   for (const token of [
     "listReadyAttemptIds",

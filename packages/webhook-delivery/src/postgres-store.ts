@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: webhook-delivery; the existing Postgres queue, worker store, and subscription transaction boundary remain co-located until a dedicated persistence split preserves atomic behavior.
 import type { EventEnvelope } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
@@ -13,6 +14,7 @@ import {
 import { and, arrayContains, asc, eq, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
+import type { OutboundWebhookDeliveryEnqueuer } from "./provider.js"
 import {
   createSelectedExternalWebhookQueue,
   externalContractFromEventMetadata,
@@ -32,6 +34,23 @@ import type {
 
 export interface EnqueuePostgresWebhookEventOptions {
   queue?: SelectedExternalWebhookQueue
+}
+
+export interface CreatePostgresWebhookDeliveryEnqueuerOptions
+  extends EnqueuePostgresWebhookEventOptions {
+  resolveDatabase(bindings: unknown): AnyDrizzleDb
+}
+
+/** Create the package-owned Postgres enqueue adapter for a resident Node host. */
+export function createPostgresWebhookDeliveryEnqueuer(
+  options: CreatePostgresWebhookDeliveryEnqueuerOptions,
+): OutboundWebhookDeliveryEnqueuer {
+  return {
+    enqueue: (event, bindings) =>
+      enqueuePostgresWebhookEvent(options.resolveDatabase(bindings), event, {
+        ...(options.queue ? { queue: options.queue } : {}),
+      }),
+  }
 }
 
 /** Persist one graph-selected event through the neutral Postgres delivery queue. */
@@ -105,6 +124,7 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
     async enqueueAttempt(input): Promise<EnqueuedWebhookAttempt> {
       return db.transaction(async (tx) => {
         const lockKey = `webhook-delivery:${input.idempotencyKey}:${input.attemptNumber}`
+        // agent-quality: raw-sql reviewed -- owner: webhook-delivery; lockKey is parameter-bound and the SQL function/table identifiers are static.
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`)
         const existing = await tx
           .select()
@@ -223,6 +243,7 @@ export function createPostgresWebhookDeliveryStore(db: PostgresJsDatabase): Webh
         .update(infraWebhookSubscriptionsTable)
         .set({
           lastDeliveryAt: at,
+          // agent-quality: raw-sql reviewed -- owner: webhook-delivery; Drizzle supplies the typed column identifier and binds no caller-controlled SQL.
           failureCount: succeeded ? 0 : sql`${infraWebhookSubscriptionsTable.failureCount} + 1`,
           updatedAt: at,
         })
@@ -312,8 +333,8 @@ function pendingAttemptValues(input: EnqueueWebhookAttemptInput) {
     requestHeaders: input.requestHeaders,
     requestBodyHash: input.requestBodyHash,
     requestBodyExcerpt: input.requestBodyExcerpt,
-    requestPayload: input.requestPayload as unknown as Record<string, unknown>,
-    deliveryContract: input.deliveryContract as unknown as Record<string, unknown>,
+    requestPayload: objectRecord(input.requestPayload),
+    deliveryContract: objectRecord(input.deliveryContract),
     attemptNumber: input.attemptNumber,
     parentDeliveryId: input.parentDeliveryId,
     idempotencyKey: input.idempotencyKey,
@@ -321,4 +342,8 @@ function pendingAttemptValues(input: EnqueueWebhookAttemptInput) {
     scheduledFor: input.scheduledFor,
     startedAt: null,
   } as const
+}
+
+function objectRecord(value: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value))
 }

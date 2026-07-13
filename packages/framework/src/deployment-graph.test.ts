@@ -1251,6 +1251,7 @@ describe("deployment graph v1", () => {
         database: "postgres",
         cache: "redis",
         search: "none",
+        outboundWebhooks: "postgres",
       },
     })
 
@@ -1270,6 +1271,11 @@ describe("deployment graph v1", () => {
           resourceKey: "search:none",
           provider: "none",
           required: false,
+        }),
+        expect.objectContaining({
+          resourceKey: "outboundWebhooks:postgres",
+          provider: "postgres",
+          roles: ["outboundWebhooks"],
         }),
       ]),
     )

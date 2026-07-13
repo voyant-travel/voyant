@@ -7,6 +7,12 @@ export {
   assertWebhookSubscriptionUpdateEvents,
   prepareExternalWebhookEvent,
 } from "./contracts.js"
+export type {
+  OutboundWebhookDeliveryEnqueuer,
+  OutboundWebhookEnqueueProvider,
+  ResolveOutboundWebhookDeliveryEnqueuerOptions,
+} from "./provider.js"
+export { resolveOutboundWebhookDeliveryEnqueuer } from "./provider.js"
 export {
   hashWebhookPayload,
   redactWebhookHeaders,

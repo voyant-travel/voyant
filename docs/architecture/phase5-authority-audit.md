@@ -29,6 +29,8 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
   the same package.
 - Payload and contract columns are nullable for migration compatibility. New pending rows require
   both; legacy payload-less rows are claimed and abandoned fail-closed without an HTTP request.
+- Deployment provider authority explicitly selects Postgres, an injected host enqueuer, or no
+  outbound webhook composition. Generic Runtime does not select the concrete Postgres function.
 
 ## Existing Phase 5 Authority
 

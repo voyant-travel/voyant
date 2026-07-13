@@ -179,8 +179,10 @@ queue message at once.
 #### Graph outbound webhook intake
 
 Node deployments register outbound webhook subscribers from the selected graph
-webhook plan. A deployment supplies one database-backed enqueue callback; it
-does not maintain a second event catalog. For each selected event, the intake
+webhook plan. The deployment's `outboundWebhooks` provider selects Postgres, an
+injected host enqueuer, or no outbound composition; it does not maintain a
+second event catalog. Credentials configure the selected provider and never
+select one implicitly. For each selected event, the Postgres intake
 loads active `webhook_subscriptions` rows containing that event name and writes
 one `webhook_deliveries` row per subscription through the distribution
 redaction boundary.
@@ -198,13 +200,11 @@ registers those descriptors exactly once. The Operator retains only the local
 service adapter that resolves environment, database, and storage capabilities;
 it does not register descriptors or subscribe to those event names directly.
 
-This is a durable intake boundary, not HTTP delivery. The current delivery row
-stores a redacted, bounded request excerpt and body hash, not a complete queue
-payload. The remaining worker must define durable full-payload storage and
-retention, atomically claim pending rows, reload subscription secrets, sign and
-send requests, create retry attempts, and finalize delivery/subscription state.
-Until that worker exists, pending graph webhook rows are observable delivery
-intents and no external request is made.
+This provider selection is a durable intake boundary, not HTTP delivery. The
+package worker owns payload hydration, claiming, signing, retry attempts, and
+delivery/subscription outcomes, but standard Node boot does not yet schedule
+that worker. Until a deployment triggers it, pending graph webhook rows remain
+observable delivery intents and no external request is made.
 
 ### 9. Defer event priority until durable queued delivery exists
 

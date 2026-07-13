@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url"
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/node-runtime"
 import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
@@ -19,7 +20,8 @@ import {
 } from "@voyant-travel/framework/node-runtime"
 import { consoleReporter } from "@voyant-travel/hono/observability/reporter"
 import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime-core"
-import { enqueuePostgresWebhookEvent } from "@voyant-travel/webhook-delivery/postgres"
+import { resolveOutboundWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery"
+import { createPostgresWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery/postgres"
 import { tsImport } from "tsx/esm/api"
 
 import { requireVoyantAuthEnv } from "./auth-env.js"
@@ -90,22 +92,35 @@ export async function loadVoyantProject(
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
   const env = createVoyantNodeEnv(options.env ?? process.env)
+  const hostDeliverEvent = options.host?.deliverEvent
+  const outboundWebhooks = resolveOutboundWebhookDeliveryEnqueuer({
+    provider: generated.deployment.providers.outboundWebhooks,
+    createPostgres: () =>
+      createPostgresWebhookDeliveryEnqueuer({
+        resolveDatabase: (bindings) =>
+          resolveNodeDatabase(
+            bindings as Parameters<typeof resolveNodeDatabase>[0],
+          ) as AnyDrizzleDb,
+      }),
+    ...(hostDeliverEvent
+      ? {
+          host: {
+            enqueue: (event: EventEnvelope, bindings: unknown) => hostDeliverEvent(event, bindings),
+          },
+        }
+      : {}),
+  })
   const primitives = createVoyantNodeRuntimeHostPrimitives({
     env,
     ...options.host,
-    deliverEvent:
-      options.host?.deliverEvent ??
-      ((event, bindings) =>
-        enqueuePostgresWebhookEvent(
-          resolveNodeDatabase(bindings as Parameters<typeof resolveNodeDatabase>[0]) as Parameters<
-            typeof enqueuePostgresWebhookEvent
-          >[0],
-          event as EventEnvelope,
-        )),
+    deliverEvent: outboundWebhooks
+      ? (event, bindings) => outboundWebhooks.enqueue(event as EventEnvelope, bindings)
+      : undefined,
   })
   const deploymentResources = createVoyantDeploymentResources({
     primitives,
     createRuntimePorts: generated.createRuntimePorts,
+    outboundWebhooks,
   })
   const projectLinks = await loadGeneratedProjectLinks(artifactRoot)
   const authRuntime = createOperatorAuthNodeRuntime({

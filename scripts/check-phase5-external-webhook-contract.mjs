@@ -23,6 +23,10 @@ const [
   catalog,
   packageJson,
   lockfile,
+  provider,
+  runtime,
+  deploymentTypes,
+  operatorStandard,
 ] = await Promise.all([
   read("packages/webhook-delivery/src/contracts.ts"),
   read("packages/webhook-delivery/src/subscriptions.ts"),
@@ -39,6 +43,10 @@ const [
   read("packages/catalog/src/voyant.ts"),
   read("packages/distribution/package.json"),
   read("pnpm-lock.yaml"),
+  read("packages/webhook-delivery/src/provider.ts"),
+  read("packages/runtime/src/index.ts"),
+  read("packages/framework/src/deployment-types.ts"),
+  read("packages/operator-standard/src/index.ts"),
 ])
 
 const failures = []
@@ -129,6 +137,29 @@ requireSource(
   lockfile,
   /packages\/distribution:[\s\S]*?'@voyant-travel\/webhook-delivery':[\s\S]*?link:\.\.\/webhook-delivery/,
   "The lockfile must place webhook-delivery in the Distribution importer",
+)
+requireSource(
+  provider,
+  /resolveOutboundWebhookDeliveryEnqueuer[\s\S]*provider === "none"[\s\S]*provider === "host"[\s\S]*provider === "postgres"/,
+  "Webhook Delivery must own explicit none, host, and Postgres enqueue selection",
+)
+requireSource(
+  runtime,
+  /resolveOutboundWebhookDeliveryEnqueuer[\s\S]*createPostgresWebhookDeliveryEnqueuer/,
+  "Runtime must delegate concrete outbound webhook selection to Webhook Delivery",
+)
+if (/enqueuePostgresWebhookEvent/.test(runtime)) {
+  failures.push("Runtime must not import or invoke the concrete Postgres enqueue function")
+}
+requireSource(
+  deploymentTypes,
+  /outboundWebhooks: "postgres" \| "host" \| "none"/,
+  "Framework deployment providers must type the outbound webhook enqueue role",
+)
+requireSource(
+  operatorStandard,
+  /outboundWebhooks: "postgres"/,
+  "The standard Operator deployment must select durable Postgres webhook enqueueing explicitly",
 )
 
 if (failures.length > 0) {
