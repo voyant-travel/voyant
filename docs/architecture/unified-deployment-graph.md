@@ -1702,6 +1702,9 @@ tools, and audited action metadata without parallel operator catalogs.
   platform
 - delete each central generator input after direct package parity passes; keep
   only hosting-neutral generated outputs and Node host bootstraps
+- keep the standard Node bootstrap package-owned: the starter must not own API
+  composition, auth dispatch, runtime-port adapters, scheduling, workflow host
+  loading, SSR dispatch, or concrete provider helpers
 - run an issue-completion audit against every `#3080` matrix exit test
 
 Exit: `starters/operator` can be replaced by another Node host bootstrap without

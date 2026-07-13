@@ -27,13 +27,13 @@ workload class well. On Node none of it is necessary.
 
 ### How the operator runs on Node
 
-- **Entry:** `starters/operator/src/server.ts` boots a resident HTTP server via
-  `createNodeServer` from
-  [`@voyant-travel/runtime`](../../packages/runtime). It runs
-  the app's Worker-style `fetch`/`scheduled` handlers (`src/entry.ts`) unchanged,
-  adds a real per-request `waitUntil` (background work tracked + drained on
-  shutdown), an origin-trust gate, an HTTP `scheduled()` hook, graceful
-  SIGTERM/SIGINT drain, and serves the client build (`dist/client`).
+- **Entry:** `starters/operator/src/server.ts` is a generic bootstrap for
+  `@voyant-travel/operator-runtime`. The package loads the admitted generated
+  graph, links, access catalog, workflow graph, schedules, and provider plan;
+  owns API/auth dispatch, admin SSR/static hosting, `waitUntil`, scheduled
+  workflow execution, origin trust, and graceful shutdown; and serves the
+  client build from `dist/client`. Product composition and package-specific
+  services must not return to the starter entry.
 - **Managed Cloud entry:** `@voyant-travel/framework/node-runtime` boots the
   admitted generated graph with provisioned environment and secrets. Cloud does
   not synthesize or load a serialized product profile; the same graph-native
@@ -62,9 +62,10 @@ workload class well. On Node none of it is necessary.
   missing. Local `.env` loading is only a source for satisfying the same graph
   contract; it is not a parallel deployment shape.
 - **Reusable host contract:** `@voyant-travel/framework/node-host` owns graph
-  artifact admission and graph-selected provider planning. An application keeps
-  only a path adapter that anchors generated artifacts to its own source tree
-  and concrete provider construction for its deployment environment.
+  artifact admission and graph-selected provider planning, while
+  `@voyant-travel/operator-runtime` owns the complete resident application host.
+  An application keeps only the generic server bootstrap and explicit project
+  customization inputs.
 - **Database:** the pooled node-postgres lane (`DATABASE_URL_DIRECT`, `adapter:
   "node"`) is the production default — one resident pool per process. neon-http/WS
   remain the fallback adapters. See

@@ -275,6 +275,7 @@ export async function loadVoyantNodeRuntime(
     resources,
     app: {
       ...options.app,
+      accessCatalog: options.app?.accessCatalog ?? options.graphRuntime.accessCatalog,
       publicPaths: [
         ...(options.app?.publicPaths ?? []),
         ...graphComposition.routePosture.publicPaths,
@@ -1048,7 +1049,7 @@ function isR2Bucket(value: unknown): value is R2BucketShim {
   return typeof value === "object" && value !== null && "get" in value && "put" in value
 }
 
-function createVoyantNodeWorkflowDriver(env: VoyantNodeRuntimeEnv, defaultAppSlug: string) {
+export function createVoyantNodeWorkflowDriver(env: VoyantNodeRuntimeEnv, defaultAppSlug: string) {
   if (env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()) {
     return () =>
       createCloudWorkflowDriver({

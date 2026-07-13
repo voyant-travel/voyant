@@ -6,11 +6,13 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const starterPath = "starters/operator/src/api/auth/handler.ts"
 const retiredCookiePolicyPath = "starters/operator/src/api/auth/cookie-domain.ts"
 const runtimePath = "packages/auth/src/operator-node-runtime.ts"
-const starter = readFileSync(join(root, starterPath), "utf8")
+const starter = existsSync(join(root, starterPath))
+  ? readFileSync(join(root, starterPath), "utf8")
+  : ""
 const failures = []
 const starterLines = starter.split("\n").length
 
-if (starterLines > 65) {
+if (starter && starterLines > 65) {
   failures.push(`${starterPath} grew to ${starterLines} lines; ratchet is 65`)
 }
 

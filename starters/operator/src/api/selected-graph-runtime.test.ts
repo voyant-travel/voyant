@@ -42,6 +42,10 @@ import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import {
+  createVoyantNodeEnv,
+  createVoyantNodeRuntimeHostPrimitives,
+} from "@voyant-travel/framework/node-runtime"
+import {
   inventoryBrochureRuntimePort,
   inventoryRuntimePort,
 } from "@voyant-travel/inventory/graph-runtime"
@@ -55,6 +59,7 @@ import {
   NOTIFICATIONS_SUBSCRIBER_RUNTIME_KEY,
   notificationsRuntimePort,
 } from "@voyant-travel/notifications"
+import { createOperatorDeploymentResources } from "@voyant-travel/operator-runtime/deployment-resources"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
@@ -84,10 +89,18 @@ import {
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "../../.voyant/runtime/graph-runtime.generated"
-import { createOperatorRuntimeDeploymentResources } from "./runtime/operator-runtime-adapter"
 
-const createDeploymentResources = () =>
-  createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts)
+const createDeploymentResources = () => {
+  const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })
+  const primitives = createVoyantNodeRuntimeHostPrimitives({
+    env,
+    deliverEvent: async () => undefined,
+  })
+  return createOperatorDeploymentResources({
+    primitives,
+    createRuntimePorts: createGeneratedGraphRuntimePorts,
+  })
+}
 const buildOperatorProviders = () => createDeploymentResources().capabilities
 const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
   createDeploymentResources().ports
@@ -760,11 +773,5 @@ describe("selected Operator graph runtime composition", () => {
       modules: runtime.modules.filter((unit) => unit.id !== "@voyant-travel/flights"),
     })
     expect(deselected.modules.some((module) => module.module.name === "flights")).toBe(false)
-  })
-
-  it("initializes the real operator app from the generated graph runtime", async () => {
-    const { app } = await import("./app")
-
-    expect(app.fetch).toBeTypeOf("function")
   })
 })

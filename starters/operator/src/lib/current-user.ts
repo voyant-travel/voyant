@@ -38,8 +38,8 @@ export const getBootstrapStatus = createServerFn({ method: "GET" })
     }
 
     if (context.env) {
-      const { getBootstrapStatusForRequest } = await import("../api/auth/handler")
-      return getBootstrapStatusForRequest(context.request, context.env)
+      const { getOperatorProjectBootstrapStatus } = await import("@voyant-travel/operator-runtime")
+      return getOperatorProjectBootstrapStatus(context.request, context.env)
     }
 
     const response = await fetch(new URL("/api/auth/bootstrap-status", context.request.url), {
@@ -57,8 +57,11 @@ export const getCurrentUser = createServerFn({ method: "GET" })
     }
 
     if (context.env) {
-      const { getCurrentUserForRequest } = await import("../api/auth/handler")
-      return getCurrentUserForRequest(context.request, context.env)
+      const { getOperatorProjectCurrentUser } = await import("@voyant-travel/operator-runtime")
+      return getOperatorProjectCurrentUser(
+        context.request,
+        context.env,
+      ) as Promise<CurrentUser | null>
     }
 
     const headers = new Headers()

@@ -8,6 +8,11 @@ import {
 } from "@voyant-travel/catalog/projection-runtime"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
+import {
+  createVoyantNodeEnv,
+  createVoyantNodeRuntimeHostPrimitives,
+} from "@voyant-travel/framework/node-runtime"
+import { createOperatorDeploymentResources } from "@voyant-travel/operator-runtime/deployment-resources"
 import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
@@ -15,10 +20,18 @@ import {
   createGeneratedGraphRuntime,
   createGeneratedGraphRuntimePorts,
 } from "../../.voyant/runtime/graph-runtime.generated"
-import { createOperatorRuntimeDeploymentResources } from "./runtime/operator-runtime-adapter"
 
-const createDeploymentResources = () =>
-  createOperatorRuntimeDeploymentResources(createGeneratedGraphRuntimePorts)
+const createDeploymentResources = () => {
+  const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })
+  const primitives = createVoyantNodeRuntimeHostPrimitives({
+    env,
+    deliverEvent: async () => undefined,
+  })
+  return createOperatorDeploymentResources({
+    primitives,
+    createRuntimePorts: createGeneratedGraphRuntimePorts,
+  })
+}
 const buildOperatorProviders = () => createDeploymentResources().capabilities
 const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
   createDeploymentResources().ports

@@ -12,7 +12,10 @@ const frameworkRoot = argument("--framework-root", "packages/framework")
 const runtimeRoot = argument("--runtime-root", "packages/operator-runtime")
 const compositionPath = path.join(operatorRoot, "src/api/composition.ts")
 const retiredResourcesPath = path.join(operatorRoot, "src/api/runtime/deployment-resources.ts")
-const app = await readFile(path.join(operatorRoot, "src/api/app.ts"), "utf8")
+const appPath = path.join(operatorRoot, "src/api/app.ts")
+const app = existsSync(appPath) ? await readFile(appPath, "utf8") : ""
+const runtimePath = path.join(runtimeRoot, "src/index.ts")
+const runtime = existsSync(runtimePath) ? await readFile(runtimePath, "utf8") : ""
 const resources = await readFile(path.join(runtimeRoot, "src/deployment-resources.ts"), "utf8")
 
 const migratedPorts = [
@@ -72,11 +75,14 @@ const resourceAssignment = app.match(
 )
 const assignedResourceComposition =
   resourceAssignment !== null && app.includes(`...${resourceAssignment[1]}`)
-if (!directResourceComposition && !assignedResourceComposition) {
+if (app && !directResourceComposition && !assignedResourceComposition) {
   violations.push("Operator app must compose the generated graph from deployment resources")
 }
-if (!app.includes("createGeneratedGraphRuntimePorts")) {
+if (app && !app.includes("createGeneratedGraphRuntimePorts")) {
   violations.push("Operator app must inject its statically generated runtime ports")
+}
+if (!app && runtime && !runtime.includes("generated.createRuntimePorts({ primitives })")) {
+  violations.push("operator-runtime must inject statically generated runtime ports")
 }
 for (const port of migratedPorts) {
   if (app.includes(port)) violations.push(`Operator app must not own ${port}`)
