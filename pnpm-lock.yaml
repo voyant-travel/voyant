@@ -5391,12 +5391,18 @@ importers:
       '@voyant-travel/mice':
         specifier: workspace:^
         version: link:../../packages/mice
+      '@voyant-travel/notifications':
+        specifier: workspace:^
+        version: link:../../packages/notifications
       '@voyant-travel/quotes':
         specifier: workspace:^
         version: link:../../packages/quotes
       '@voyant-travel/realtime':
         specifier: workspace:^
         version: link:../../packages/realtime
+      '@voyant-travel/relationships':
+        specifier: workspace:^
+        version: link:../../packages/relationships
       '@voyant-travel/storage':
         specifier: workspace:^
         version: link:../../packages/storage

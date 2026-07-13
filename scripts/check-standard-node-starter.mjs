@@ -198,6 +198,7 @@ function inspectRepositoryAuthority(repoRoot) {
     )
   }
 
+  inspectCheckedInStarterDependencies(repoRoot)
   inspectCheckedInProductDistribution(repoRoot)
 
   for (const relativePath of [
@@ -374,6 +375,32 @@ function inspectRepositoryAuthority(repoRoot) {
     !readFileSync(artifactPaths, "utf8").includes("product-bom.generated.json")
   ) {
     violations.push("project resolver must emit an inspectable product BOM expansion")
+  }
+}
+
+function inspectCheckedInStarterDependencies(repoRoot) {
+  const starterRoot = join(repoRoot, "starters/operator")
+  const packageJsonPath = join(starterRoot, "package.json")
+  if (!existsSync(packageJsonPath)) return
+
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  const declared = new Set([
+    ...Object.keys(packageJson.dependencies ?? {}),
+    ...Object.keys(packageJson.devDependencies ?? {}),
+  ])
+  const importPattern =
+    /\b(?:from\s+|import\s*\(\s*|import\s+)["'](@voyant-travel\/[^/"']+)(?:\/[^"']*)?["']/g
+
+  for (const sourcePath of walkFiles(starterRoot).filter((path) => /\.[cm]?[jt]sx?$/.test(path))) {
+    const source = readFileSync(join(starterRoot, sourcePath), "utf8")
+    for (const match of source.matchAll(importPattern)) {
+      const packageName = match[1]
+      if (!declared.has(packageName)) {
+        violations.push(
+          `checked-in starter imports undeclared direct dependency ${packageName}: ${sourcePath}`,
+        )
+      }
+    }
   }
 }
 

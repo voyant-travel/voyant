@@ -258,6 +258,32 @@ test("rejects restored generic or demo operational scripts in the checked-in sta
   }
 })
 
+test("rejects undeclared first-party imports in checked-in starter tests", () => {
+  const starter = fixture()
+  const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+  roots.push(root)
+  const packageJsonPath = join(root, "starters/operator/package.json")
+  mkdirSync(dirname(packageJsonPath), { recursive: true })
+  writeFileSync(
+    packageJsonPath,
+    `${JSON.stringify({ devDependencies: { "@voyant-travel/framework": "workspace:^" } })}\n`,
+  )
+  const testPath = join(root, "starters/operator/tests/runtime.test.ts")
+  mkdirSync(dirname(testPath), { recursive: true })
+  writeFileSync(
+    testPath,
+    'import { notificationsRuntimePort } from "@voyant-travel/notifications/voyant"\n',
+  )
+
+  assert.throws(
+    () => run(starter, root),
+    (error) =>
+      String(error.stderr).includes(
+        "checked-in starter imports undeclared direct dependency @voyant-travel/notifications: tests/runtime.test.ts",
+      ),
+  )
+})
+
 function run(starterDir, root = repoRoot) {
   if (root !== repoRoot) {
     const gitignore = join(root, "starters/operator/.gitignore")
