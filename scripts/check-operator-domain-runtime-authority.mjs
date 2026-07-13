@@ -16,8 +16,6 @@ const read = (path) => {
   }
   return readFileSync(absolute, "utf8")
 }
-const lines = (source) => (source.length === 0 ? 0 : source.trimEnd().split("\n").length)
-
 for (const path of [
   "starters/operator/src/api/runtime/trips-catalog-runtime.ts",
   "starters/operator/src/api/runtime/trips-checkout-runtime.ts",
@@ -38,17 +36,15 @@ for (const token of [
   if (!tripsRuntime.includes(token)) violations.push(`Trips package runtime must own ${token}`)
 }
 
-const policyAdapter = read("starters/operator/src/api/runtime/booking-payment-policy-runtime.ts")
-if (lines(policyAdapter) > 60) violations.push("Payment-policy deployment adapter exceeds 60 lines")
-for (const token of ["drizzle-orm", "/schema", ".select(", ".innerJoin("]) {
-  if (policyAdapter.includes(token)) violations.push(`Payment-policy adapter retains ${token}`)
+const paymentPolicyFacadePath =
+  "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts"
+if (existsSync(join(root, paymentPolicyFacadePath))) {
+  violations.push(`${paymentPolicyFacadePath} must stay deleted`)
 }
 
-const workflowAdapter = read("starters/operator/src/api/runtime/operator-workflow-services.ts")
-if (lines(workflowAdapter) > 260) violations.push("Workflow deployment adapter exceeds 260 lines")
-for (const token of ["paymentSessions", "createLazyWorkflowDb", "renderProductBrochureTemplate"]) {
-  if (workflowAdapter.includes(token))
-    violations.push(`Workflow deployment adapter retains ${token}`)
+const workflowAdapterPath = "starters/operator/src/api/runtime/operator-workflow-services.ts"
+if (existsSync(join(root, workflowAdapterPath))) {
+  violations.push(`${workflowAdapterPath} must stay deleted`)
 }
 
 for (const path of [
@@ -72,5 +68,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `check-operator-domain-runtime-authority: OK (${lines(policyAdapter) + lines(workflowAdapter)} starter adapter lines; Trips package-owned)`,
+  "check-operator-domain-runtime-authority: OK (workflow, Trips, and payment policy services package-owned)",
 )

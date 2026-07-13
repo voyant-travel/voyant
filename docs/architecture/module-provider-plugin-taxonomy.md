@@ -287,6 +287,11 @@ Rule:
 Use a many-valued runtime port only when independently selected packages are
 genuinely additive. Keep replaceable single-provider seams one-valued.
 
+The standard `voyant.workflow-services` port follows this rule: every selected
+package contributes only the services required by its own workflow facets, and
+the generic Node workflow host aggregates them. Starters must not reconstruct
+that set by checking package ids or importing package runtime keys.
+
 ### 10. Prefer clear names that reveal the package role
 
 Prefer names that reveal whether the package is:

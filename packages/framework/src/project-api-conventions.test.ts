@@ -25,7 +25,7 @@ describe("project API conventions", () => {
         "export const POST: VoyantRouteHandler = (c) => c.json({ id: c.req.param('orderId') })",
         "export const GET: VoyantRouteHandler = (c) => c.json({ id: c.req.param('orderId') })",
       ].join("\n"),
-      "src/api/store/catalog/(sales)/[...slug]/route.ts":
+      "src/api/public/catalog/(sales)/[...slug]/route.ts":
         "export const OPTIONS = (c: any) => c.body(null, 204)\n",
     })
 
@@ -48,7 +48,7 @@ describe("project API conventions", () => {
       {
         methods: ["OPTIONS"],
         route: "/catalog/*slug",
-        sourcePath: "src/api/store/catalog/(sales)/[...slug]/route.ts",
+        sourcePath: "src/api/public/catalog/(sales)/[...slug]/route.ts",
         surface: "public",
       },
     ])
@@ -71,7 +71,7 @@ describe("project API conventions", () => {
       [
         'import { Hono, type HonoModule, type VoyantBindings, type VoyantVariables } from "@voyant-travel/framework/project-runtime"',
         'import * as route0 from "../../src/api/admin/orders/[orderId]/route.js"',
-        'import * as route1 from "../../src/api/store/catalog/(sales)/[...slug]/route.js"',
+        'import * as route1 from "../../src/api/public/catalog/(sales)/[...slug]/route.js"',
         "",
         "type ProjectApiEnv = { Bindings: VoyantBindings; Variables: VoyantVariables }",
         "const adminRoutes = new Hono<ProjectApiEnv>()",
@@ -98,7 +98,7 @@ describe("project API conventions", () => {
         "export const POST = () => new Response()\n",
       "src/api/admin/(duplicate)/orders/[slug]/route.ts":
         "export const GET = () => new Response()\n",
-      "src/api/store/orders/[id]/route.ts": "export const GET = () => new Response()\n",
+      "src/api/public/orders/[id]/route.ts": "export const GET = () => new Response()\n",
     })
 
     const analysis = await analyzeProjectApiConventions({ projectRoot: root })
@@ -125,7 +125,7 @@ describe("project API conventions", () => {
       "src/api/admin/empty/route.ts": "export type Empty = true\n",
       "src/api/admin/defaulted/route.ts":
         "const handler = () => new Response()\nexport default handler\nexport const GET = handler\n",
-      "src/api/store/unsupported/route.ts":
+      "src/api/public/unsupported/route.ts":
         "export const schema = {}\nexport const PATCH = () => new Response()\n",
     })
 
@@ -151,7 +151,7 @@ describe("project API conventions", () => {
       {
         code: "PROJECT_API_UNSUPPORTED_EXPORT",
         exportName: "schema",
-        sourcePath: "src/api/store/unsupported/route.ts",
+        sourcePath: "src/api/public/unsupported/route.ts",
       },
     ])
     await expect(compileProjectApiConventions({ projectRoot: root })).rejects.toBeInstanceOf(

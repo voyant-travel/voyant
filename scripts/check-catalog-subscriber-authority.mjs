@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { access, readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -7,12 +8,11 @@ const rootArg = process.argv.indexOf("--root")
 const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaultRoot
 
 const read = (relativePath) => readFile(path.join(repoRoot, relativePath), "utf8")
-const [manifest, contributor, indexRuntime, snapshotRuntime, app] = await Promise.all([
+const [manifest, contributor, indexRuntime, snapshotRuntime] = await Promise.all([
   read("packages/catalog/src/voyant.ts"),
   read("packages/catalog/src/runtime-contributor.ts"),
   read("packages/catalog/src/index-subscriber-runtime.ts"),
   read("packages/catalog/src/booking-snapshot-subscriber-runtime.ts"),
-  read("starters/operator/src/api/app.ts"),
 ])
 
 const failures = []
@@ -65,11 +65,9 @@ requireMatch(
   /bookingSnapshot:\s*RuntimePortValue<CatalogBookingSnapshotRuntimeProvider>/,
   "Catalog snapshot contribution must satisfy its package-owned type",
 )
-rejectMatch(
-  app,
-  /catalogBridgeBundle|catalog-bridge-bundle/,
-  "Operator app must not bootstrap a Catalog bridge bundle",
-)
+if (existsSync(path.join(repoRoot, "starters/operator/src/api/app.ts"))) {
+  failures.push("starters/operator/src/api/app.ts must stay deleted")
+}
 
 for (const legacyPath of [
   "starters/operator/src/api/subscribers/catalog-bridge.ts",

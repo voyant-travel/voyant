@@ -5,8 +5,11 @@ import "./check-node-host-dispatch-authority.mjs"
 
 const root = resolve(import.meta.dirname, "..")
 const violations = []
-const starterAdapterPath = "starters/operator/src/deployment-graph-artifacts.ts"
-const starterAdapter = read(starterAdapterPath)
+const retiredAdapters = [
+  "starters/operator/src/api/app.ts",
+  "starters/operator/src/api/auth/handler.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+]
 const frameworkFiles = [
   "packages/framework/src/node-deployment-artifacts.ts",
   "packages/framework/src/node-host.ts",
@@ -19,13 +22,9 @@ for (const retiredPath of ["starters/operator/src/operator-node-provider-plan.ts
   }
 }
 
-const adapterLines = starterAdapter.split("\n").length
-if (adapterLines > 24) {
-  violations.push(`${starterAdapterPath}: ${adapterLines} lines exceeds the 24-line adapter budget`)
-}
-requireText(starterAdapter, 'from "@voyant-travel/framework/node-host"', starterAdapterPath)
-for (const forbidden of ["node:crypto", "node:fs", "readFileSync", "createHash"]) {
-  requireAbsent(starterAdapter, forbidden, starterAdapterPath)
+for (const retired of retiredAdapters) {
+  if (existsSync(resolve(root, retired)))
+    violations.push(`${retired}: generic host adapter must stay deleted`)
 }
 
 for (const file of frameworkFiles) {
@@ -42,8 +41,18 @@ requireText(frameworkPackage, '"./node-host": "./src/node-host.ts"', "framework 
 requireText(frameworkPackage, '"./node-host"', "framework publish exports")
 
 const server = read("starters/operator/src/server.ts")
-requireText(server, 'from "@voyant-travel/framework/node-host"', "Operator Node server")
-requireText(server, "resolveVoyantNodeProviderPlan", "Operator Node server")
+requireText(server, 'from "@voyant-travel/operator-runtime"', "Operator Node server")
+requireText(server, "createOperatorProjectServerEntry", "Operator Node server")
+if (server.split("\n").length > 16)
+  violations.push("Operator Node server exceeds 16-line bootstrap budget")
+for (const forbidden of [
+  "@voyant-travel/framework/node-host",
+  "resolveVoyantNodeProviderPlan",
+  "@voyant-travel/db",
+  "@voyant-travel/distribution",
+]) {
+  requireAbsent(server, forbidden, "Operator Node server")
+}
 
 if (violations.length > 0) {
   console.error("Generic Node bootstrap authority check failed:")
@@ -51,7 +60,7 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log(`check-generic-node-bootstrap-authority: OK (${adapterLines}/24 adapter lines)`)
+console.log("check-generic-node-bootstrap-authority: OK (one generic Node bootstrap)")
 
 function read(file) {
   return readFileSync(resolve(root, file), "utf8")

@@ -8,14 +8,19 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const read = (path) => readFileSync(join(root, path), "utf8")
-const routeDirectory = "starters/operator/src/routes/(storefront)"
+const routeRegistry = read("packages/operator-standard/src/standard-route-files.ts")
 const result = checkStorefrontPresentationAuthority({
   routeHosts: Object.fromEntries(
-    Object.keys(STOREFRONT_ROUTE_HOSTS).map((file) => [file, read(`${routeDirectory}/${file}`)]),
+    Object.keys(STOREFRONT_ROUTE_HOSTS).map((file) => [
+      file,
+      routeRegistry.includes(`"(storefront)/${file}"`)
+        ? `createFileRoute operatorFrontend routes.storefront.${STOREFRONT_ROUTE_HOSTS[file]}`
+        : undefined,
+    ]),
   ),
-  hostAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
-  messageAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
-  intakeAdapter: read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  hostAdapter: read("packages/operator-standard/src/standard-frontend.tsx"),
+  messageAdapter: read("packages/operator-standard/src/standard-frontend.tsx"),
+  intakeAdapter: "",
   packagePresentation: read("packages/storefront-react/src/storefront/presentation-routes.tsx"),
   packageIntake: read("packages/relationships/src/storefront-intake-runtime.ts"),
   relationshipsContributor: read("packages/relationships/src/runtime-contributor.ts"),

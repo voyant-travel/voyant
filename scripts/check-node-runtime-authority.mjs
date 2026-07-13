@@ -22,9 +22,11 @@ for (const forbidden of [
 for (const required of [
   "@voyant-travel/framework/node-runtime",
   "createVoyantNodeRuntimeHostPrimitives",
+  "createOperatorDeploymentResources",
   "loadVoyantNodeRuntime",
   "deploymentRequirements: graph.requirements",
-  "runtimePorts: generated.createRuntimePorts({ primitives })",
+  "runtimePorts: deploymentResources.ports",
+  "outboundWebhooks: deploymentResources.outboundWebhooks",
 ]) {
   if (!operatorRuntime.includes(required)) {
     violations.push(

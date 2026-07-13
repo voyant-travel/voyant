@@ -4,12 +4,14 @@ import {
   buildDeploymentArtifactManifest,
   buildDeploymentGraphJson,
   buildDeploymentMigrationSources,
+  buildGraphAdminBundleDeclarationModule,
   buildGraphAdminBundleModule,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
   buildNodeRuntimeEntry,
   buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
+  createResolvedGraphRuntime,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
   VOYANT_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
@@ -78,6 +80,21 @@ async function graphWithSelectedUnits(
 }
 
 describe("deployment graph artifacts", () => {
+  it("loads in-memory relative entries from the generated runtime directory", async () => {
+    const graph = await sampleGraph()
+    const runtime = createResolvedGraphRuntime({
+      graph,
+      runtimeEntryOverrides: {
+        "@acme/voyant-loyalty/runtime-body-that-must-stay-lazy": "./runtime-lowering.js",
+      },
+      runtimeImportBaseUrl: new URL("./", import.meta.url).href,
+    })
+
+    await expect(runtime.modules[0]?.routes[0]?.load()).rejects.toMatchObject({
+      code: "VOYANT_GRAPH_RUNTIME_EXPORT_MISSING",
+    })
+  })
+
   it("builds deterministic resolved graph JSON containing the graph hash", async () => {
     const graph = await sampleGraph()
     const first = buildDeploymentGraphJson(graph)
@@ -152,7 +169,9 @@ describe("deployment graph artifacts", () => {
     )
     expect(source).toContain("export function createGeneratedGraphRuntimePorts(")
     expect(source).not.toContain("createRuntimePorts:")
-    expect(source).toContain("& Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>[0]")
+    expect(source).toContain("GENERATED_RUNTIME_CONTRIBUTOR_0,")
+    expect(source).not.toContain("Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>")
+    expect(source).not.toContain("asRuntimeContributor")
     expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
     expect(source).toContain("getRuntimePort(port: { id: string })")
     expect(source).toContain("contributor(contributorHost)")
@@ -234,9 +253,15 @@ describe("deployment graph artifacts", () => {
     expect(source).toContain('"@acme/voyant-loyalty": selectedAdminFactory0')
     expect(source).not.toContain("createReportsAdminExtension")
     expect(source).toContain("Page bodies stay lazy in package UI exports")
-    expect(source).toContain("satisfies Readonly<Record<string, SelectedAdminExtensionFactory>>")
+    expect(source).not.toContain("SelectedAdminExtensionFactory")
+    expect(source).not.toContain(" as const")
     expect(source).toContain("export function createSelectedGraphAdminExtensions(")
     expect(source).toContain("Object.values(selectedGraphAdminExtensionFactories)")
+
+    const declaration = buildGraphAdminBundleDeclarationModule({ graph })
+    expect(declaration).toContain("SelectedAdminExtensionFactoryContext")
+    expect(declaration).toContain("ReadonlyArray<AdminExtension>")
+    expect(declaration).not.toContain("selectedAdminFactory0")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {

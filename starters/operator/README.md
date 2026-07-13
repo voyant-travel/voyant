@@ -29,9 +29,9 @@ pnpm -F operator dev          # Vite dev server + SSR (port 3300)
 pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
-`.env` is loaded into the process by `pnpm dev` and `pnpm start` (via a Node
-`--require` preload — the Node convention; there is no wrangler `.dev.vars`
-anymore). `pnpm dev` serves
+Vite loads `.env` during development and the production command uses Node's
+native `--env-file-if-exists` support. Platform environment variables remain
+authoritative in deployed environments. `pnpm dev` serves
 the SSR dashboard, the `/api/*` routes, and Better Auth with hot-reload — the
 same `src/server.ts` handler runs under Vite's dev server. The first `/api/*`
 request compiles the API module graph on demand (a few seconds), then it's warm.
@@ -44,9 +44,9 @@ pnpm -F operator start        # node dist/server/server.js (PORT, default 8080)
 ```
 
 The server exposes `/healthz` (probe), `/__voyant/scheduled?schedule=<id>` (the
-Cloud Scheduler hook, origin-trust gated), and serves the client build. Generate
-Cloud Scheduler jobs for the jobs in `src/scheduled-crons.ts` with
-`pnpm -F operator emit:cloud-scheduler` (see the script header for env).
+Cloud Scheduler hook, origin-trust gated), and serves the client build. Scheduled
+jobs come from the admitted graph. Provision them through deployment tooling
+using `renderGoogleCloudSchedulerScript` from `@voyant-travel/framework/node-host`.
 
 ## Optional Cloud Services
 
@@ -70,14 +70,16 @@ a legacy fallback for both of those specialized keys.
 
 ## Database
 
-The starter owns its `drizzle.config.ts` and `migrations/`:
+Selected packages own and publish their migration histories. The project graph
+orders those package migrations and the Node runner applies them:
 
 ```bash
-pnpm -F operator db:generate   # generate new migration from schema changes
-pnpm -F operator db:migrate    # apply migrations
-pnpm -F operator db:push       # push schema directly (dev only)
-pnpm -F operator db:studio     # open Drizzle Studio
+pnpm -F operator db:migrate
 ```
+
+Project-local modules keep schema and migrations together under
+`src/modules/<name>/`; the starter does not maintain an aggregate Drizzle schema
+or copy framework migrations.
 
 ## Deploy
 
@@ -125,11 +127,19 @@ gcloud run deploy operator \
 
 `/healthz` is the container/liveness probe. Set `ORIGIN_TRUST_SECRET` when a
 dispatcher fronts the service (it stamps `x-voyant-origin-trust`; `/healthz` is
-exempt). Crons don't run in-process — wire Cloud Scheduler with
-`pnpm -F operator emit:cloud-scheduler` (POSTs `/__voyant/scheduled?schedule=…`). See
+exempt). Crons don't run in-process. Deployment tooling derives Cloud Scheduler
+jobs from the admitted graph and POSTs `/__voyant/scheduled?schedule=…`. See
 [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md).
 
 ## Routes
+
+Standard frontend routes are emitted from package-owned contributions into the
+gitignored `.voyant/routes` directory. TanStack's generated route tree also
+lives under `.voyant`; neither is application-authored source. Project-specific
+admin and public API routes belong in `src/api/admin` and `src/api/public`.
+`graph:emit` also writes disposable TypeScript, ambient binding, Vite, and
+Vitest metadata there; do not copy those generated files back to the project
+root.
 
 - `/v1/admin/*` — staff-facing API (requires `staff` actor)
 - `/v1/public/*` — customer/partner/supplier API
@@ -162,8 +172,9 @@ both the **vertical** registry (admin/public external cruise detail, refresh,
 detach, external booking — `cruiseAdminRoutes` / `cruisePublicRoutes`, mounted at
 `/v1/{admin,public}/cruises`) and the **catalog** `SourceAdapterRegistry` (content,
 discovery/sync, snapshot capture, booking-engine sourced inventory). The same seam
-runs in the live API (`booking-engine-runtime.ts`), the external-cruise-refresh
-cron, and the `sync:sources` CLI, so all paths stay consistent.
+runs in the live API and the external-cruise-refresh workflow. Bulk source sync is
+an operational command composed from the selected deployment graph; it is not
+implemented inside the standard project starter.
 
 Owned adapters are wrapped with a short-TTL read cache (`memoizeCruiseAdapter`,
 60s) automatically — push the **raw** adapter, don't pre-wrap. Repeated

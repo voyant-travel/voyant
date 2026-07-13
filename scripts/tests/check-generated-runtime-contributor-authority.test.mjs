@@ -42,26 +42,32 @@ async function write(root, relativePath, contents) {
   await writeFile(target, contents)
 }
 
-async function fixture(deploymentResources) {
+async function fixture(operatorRuntime) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-generated-contributors-"))
   await write(
     root,
-    "starters/operator/src/api/runtime/deployment-resources.ts",
-    deploymentResources,
+    "packages/operator-runtime/src/deployment-resources.ts",
+    "export function createOperatorDeploymentResources(options) { return { ports: options.createRuntimePorts({ primitives }) } }\n",
   )
-  await write(
-    root,
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
-    "export const operatorRuntimeAdapter = {}\n",
-  )
+  await write(root, "packages/operator-runtime/src/index.ts", operatorRuntime)
   await write(
     root,
     "packages/framework/src/deployment-artifacts.ts",
-    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nGeneratedGraphRuntimeContributorHost\nParameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_\ncreateGeneratedGraphRuntimePorts\ncontributor.entry\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\nmanyPortIds.has(id) ? [value] : value\n",
+    "record.metadata?.runtime\nGENERATED_GRAPH_RUNTIME_CONTRIBUTORS\nGENERATED_GRAPH_RUNTIME_CONTRIBUTOR_SPECIFIERS\nGENERATED_GRAPH_RUNTIME_MANY_PORT_IDS\nGeneratedGraphRuntimeContributorHost\nconst GENERATED_GRAPH_RUNTIME_CONTRIBUTORS: readonly VoyantGraphRuntimeContributor[]\nGENERATED_RUNTIME_CONTRIBUTOR_" +
+      "$" +
+      "{index},\ncreateGeneratedGraphRuntimePorts\ncontributor.entry\ncontributor.exportName\ncontributor.importEntry\ninput.runtimeEntryOverrides?.[entry]\nas GENERATED_RUNTIME_CONTRIBUTOR_\ngetRuntimePort\ncontributor(contributorHost)\nhas multiple static contributors\nmanyPortIds.has(id) ? [value] : value\n",
+  )
+  await write(
+    root,
+    "packages/framework/src/runtime-composition.ts",
+    "interface VoyantGraphRuntimeContributorHost extends VoyantGraphRuntimePortResolver {\n  primitives: VoyantRuntimeHostPrimitives\n}\n",
   )
   await write(root, "packages/framework/src/project-resolver.ts", "local project overrides only\n")
-  await write(root, "scripts/emit-deployment-graph.ts", "local project overrides only\n")
-  await write(root, "scripts/generate-framework-bom.mjs", "writeFileSync(PKG, nextPkg)\n")
+  await write(
+    root,
+    "scripts/generate-standard-product-distribution.mjs",
+    "writeFileSync(DISTRIBUTION_PKG, nextDistributionPkg)\n",
+  )
   for (const [packageName, factory] of Object.entries(packageFactories)) {
     await write(
       root,
@@ -78,7 +84,7 @@ async function fixture(deploymentResources) {
 }
 
 it("accepts generated static contributor composition", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("createRuntimePorts: generated.createRuntimePorts\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(
     result.stdout,
@@ -87,7 +93,7 @@ it("accepts generated static contributor composition", async () => {
 })
 
 it("rejects a restored generated contributor barrel", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("createRuntimePorts: generated.createRuntimePorts\n")
   await write(root, "packages/framework/src/runtime-contributors.generated.ts", "export {}\n")
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
@@ -96,7 +102,7 @@ it("rejects a restored generated contributor barrel", async () => {
 })
 
 it("reports a stale contributor package entry", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("createRuntimePorts: generated.createRuntimePorts\n")
   await rm(path.join(root, "packages/trips"), { recursive: true })
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
@@ -105,7 +111,7 @@ it("reports a stale contributor package entry", async () => {
 })
 
 it("rejects generated runtime catalog consumption by the resolver", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ host })\n")
+  const root = await fixture("createRuntimePorts: generated.createRuntimePorts\n")
   await write(
     root,
     "packages/framework/src/project-resolver.ts",
@@ -119,7 +125,7 @@ it("rejects generated runtime catalog consumption by the resolver", async () => 
 
 it("rejects starter contributor enumeration", async () => {
   const root = await fixture(
-    'import { createTripsRuntimePortContribution } from "@voyant-travel/trips/runtime-contributor"\nreturn createGeneratedGraphRuntimePorts({ host })\n',
+    'import { createTripsRuntimePortContribution } from "@voyant-travel/trips/runtime-contributor"\ncreateRuntimePorts: generated.createRuntimePorts\n',
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),

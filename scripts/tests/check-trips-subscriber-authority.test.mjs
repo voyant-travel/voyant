@@ -19,10 +19,9 @@ async function createFixture(overrides = {}) {
 const runtime = { withDb: (operation) => databaseRuntime.withDb(context.bindings, operation) }
 container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)
 `,
-    "starters/operator/src/api/app.ts": "export const app = {}\n",
     "packages/trips/src/runtime.ts": "VoyantRuntimeHostPrimitives\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts": `
-createGeneratedGraphRuntimePorts({ primitives })
+    "packages/operator-runtime/src/deployment-resources.ts": `
+options.createRuntimePorts({ primitives })
 `,
     ...overrides,
   }
@@ -44,13 +43,13 @@ describe("Trips subscriber authority checker", () => {
     assert.match(result.stdout, /Trips subscriber authority: OK/)
   })
 
-  it("rejects a central Operator bundle", async () => {
+  it("rejects a restored starter app", async () => {
     const root = await createFixture({
       "starters/operator/src/api/app.ts": "plugins: [tripsPaymentBundle]\n",
     })
     await assert.rejects(
       runChecker(root),
-      /must not list a central Trips payment subscriber bundle/,
+      /starters\/operator\/src\/api\/app\.ts must stay deleted/,
     )
   })
 
@@ -65,14 +64,14 @@ export const restored = true
 
   it("rejects manual descriptor registration in composition", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts": `
+      "packages/operator-runtime/src/deployment-resources.ts": `
 const ports = {
   [tripsDatabaseRuntimePort.id]: {
     withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
       withDbFromEnv(operatorBindings(bindings), (db) => operation(operatorPostgresDb(db))),
   } satisfies TripsDatabaseRuntime,
 }
-createGeneratedGraphRuntimePorts({ primitives })
+options.createRuntimePorts({ primitives })
 tripsPaymentCompletedSubscriber.register(context)
 `,
     })

@@ -17,7 +17,7 @@ describe("discoverProjectConventions", () => {
     const root = await projectFixture([
       "src/api/admin/route.ts",
       "src/api/admin/orders/[orderId]/route.ts",
-      "src/api/store/catalog/(sales)/[...slug]/route.ts",
+      "src/api/public/catalog/(sales)/[...slug]/route.ts",
       "src/workflows/booking/confirm.ts",
       "src/jobs/reconcile.ts",
       "src/subscribers/booking/created.ts",
@@ -53,7 +53,7 @@ describe("discoverProjectConventions", () => {
           id: "project.api.public.catalog.all-slug",
           kind: "api-route",
           route: "/catalog/*slug",
-          sourcePath: "src/api/store/catalog/(sales)/[...slug]/route.ts",
+          sourcePath: "src/api/public/catalog/(sales)/[...slug]/route.ts",
           surface: "public",
         },
         {
@@ -227,7 +227,7 @@ describe("discoverProjectConventions", () => {
       "src/api/admin/orders/[id]/route.ts",
       "src/api/admin/orders/[orderId]/route.ts",
       "src/api/admin/(internal)/orders/[slug]/route.ts",
-      "src/api/store/orders/[id]/route.ts",
+      "src/api/public/orders/[id]/route.ts",
     ])
 
     const result = await discoverProjectConventions(root)
@@ -322,7 +322,7 @@ describe("discoverProjectConventions", () => {
   })
 
   it("normalizes optional catch-all routes", async () => {
-    const root = await projectFixture(["src/api/store/docs/[[...parts]]/route.ts"])
+    const root = await projectFixture(["src/api/public/docs/[[...parts]]/route.ts"])
 
     const result = await discoverProjectConventions(root)
 
@@ -331,7 +331,7 @@ describe("discoverProjectConventions", () => {
         id: "project.api.public.docs.all-parts-optional",
         kind: "api-route",
         route: "/docs/*parts?",
-        sourcePath: "src/api/store/docs/[[...parts]]/route.ts",
+        sourcePath: "src/api/public/docs/[[...parts]]/route.ts",
         surface: "public",
       },
     ])

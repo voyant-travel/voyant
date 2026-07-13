@@ -7,7 +7,7 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
-const starterFileRatchet = 141
+const starterFileRatchet = 17
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
@@ -44,31 +44,12 @@ for (const relativePath of [
   "starters/operator/src/lib/storefront-i18n.tsx",
   "starters/operator/src/lib/storefront-scope.tsx",
   "starters/operator/src/routes/(storefront)/storefront-market-selector.tsx",
+  "starters/operator/src/routeTree.gen.ts",
+  "starters/operator/src/routes/__root.tsx",
+  "starters/operator/src/routes/_workspace/route.tsx",
 ]) {
   if (existsSync(join(root, relativePath))) {
     failures.push(`package-owned product UI must stay deleted from the starter: ${relativePath}`)
-  }
-}
-
-for (const [relativePath, maxLines] of new Map([
-  ["starters/operator/src/routes/proposal.$quoteVersionId.tsx", 40],
-  ["starters/operator/src/routes/pay.tsx", 40],
-  ["starters/operator/src/routes/pay_.$sessionId.tsx", 40],
-  ["starters/operator/src/routes/accountant.$token.tsx", 30],
-  ["starters/operator/src/routes/(storefront)/route.tsx", 50],
-  ["starters/operator/src/routes/(storefront)/shop_.account.tsx", 35],
-  ["starters/operator/src/routes/(storefront)/shop_.account.sign-in.tsx", 40],
-  ["starters/operator/src/routes/(storefront)/shop_.account.sign-up.tsx", 45],
-  ["starters/operator/src/routes/(storefront)/shop_.account.verify-email.tsx", 45],
-  ["starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx", 35],
-  ["starters/operator/src/routes/(storefront)/shop_.composer.tsx", 40],
-  ["starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx", 60],
-])) {
-  const path = join(root, relativePath)
-  if (!existsSync(path)) continue
-  const lineCount = readFileSync(path, "utf8").split("\n").length
-  if (lineCount > maxLines) {
-    failures.push(`${relativePath} grew to ${lineCount} lines; route adapter limit is ${maxLines}`)
   }
 }
 
@@ -163,31 +144,24 @@ const requiredTokens = new Map([
   ],
   ["packages/trips-react/package.json", ['"./storefront": "./src/storefront/index.ts"']],
   [
-    "starters/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
-    ["storefrontPresentationContribution.routes.booking"],
+    "packages/operator-standard/src/standard-route-files.ts",
+    [
+      '"(storefront)/shop_.book.$entityModule.$entityId.tsx"',
+      '"(storefront)/shop.tsx"',
+      '"(storefront)/shop_.products.$entityModule.$entityId.tsx"',
+      '"(storefront)/shop_.account.tsx"',
+      '"(storefront)/shop_.confirmation.$bookingId.tsx"',
+      '"(storefront)/shop_.composer.tsx"',
+      '"booking"',
+      '"shop"',
+      '"productDetail"',
+      '"account"',
+      '"confirmation"',
+      '"composer"',
+    ],
   ],
   [
-    "starters/operator/src/routes/(storefront)/shop.tsx",
-    ["storefrontPresentationContribution.routes.shop"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
-    ["storefrontPresentationContribution.routes.productDetail"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.account.tsx",
-    ["storefrontPresentationContribution.routes.account"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.confirmation.$bookingId.tsx",
-    ["storefrontPresentationContribution.routes.confirmation"],
-  ],
-  [
-    "starters/operator/src/routes/(storefront)/shop_.composer.tsx",
-    ["storefrontPresentationContribution.routes.composer"],
-  ],
-  [
-    "starters/operator/src/lib/storefront-messages.tsx",
+    "packages/operator-standard/src/standard-frontend.tsx",
     [
       'from "@voyant-travel/bookings-react/storefront"',
       'from "@voyant-travel/cruises-react/storefront"',
@@ -195,31 +169,31 @@ const requiredTokens = new Map([
       'from "@voyant-travel/storefront-react/storefront"',
       'from "@voyant-travel/trips-react/storefront"',
       "createStorefrontPresentationContribution",
+      "createFinancePublicRouteContribution",
+      "createQuotesPublicRouteContribution",
+      "createAdminHostPresentation",
+      "buildAdminExtensionRoutes",
     ],
   ],
   [
-    "starters/operator/src/routes/proposal.$quoteVersionId.tsx",
-    ['from "@voyant-travel/quotes-react/storefront"'],
-  ],
-  ["starters/operator/src/routes/pay.tsx", ['from "@voyant-travel/finance-react/storefront"']],
-  [
-    "starters/operator/src/routes/pay_.$sessionId.tsx",
-    ['from "@voyant-travel/finance-react/storefront"'],
-  ],
-  [
-    "starters/operator/src/routes/accountant.$token.tsx",
-    ['from "@voyant-travel/finance-react/ui"'],
-  ],
-  [
-    "starters/operator/src/lib/admin-presentation.tsx",
+    "packages/finance-react/src/public-routes.tsx",
     [
-      "../../.voyant/admin/selected-graph-admin.generated",
-      'import.meta.glob("../admin/*/index.tsx"',
+      "createFinancePublicRouteContribution",
+      "PaymentLinkResolverPage",
+      "PublicPaymentLinkPage",
+      "AccountantPortal",
     ],
   ],
   [
-    "starters/operator/src/router.tsx",
-    ['from "./lib/admin-presentation"', "buildAdminExtensionRoutes"],
+    "packages/quotes-react/src/public-routes.tsx",
+    ["createQuotesPublicRouteContribution", "PublicProposalPage"],
+  ],
+  [
+    "packages/operator-standard/src/standard-route-files.ts",
+    [
+      "../../admin/selected-graph-admin.generated",
+      'import.meta.glob("../../../src/admin/*/index.tsx"',
+    ],
   ],
 ])
 
@@ -232,6 +206,58 @@ for (const [relativePath, tokens] of requiredTokens) {
   const source = readFileSync(path, "utf8")
   for (const token of tokens) {
     if (!source.includes(token)) failures.push(`${relativePath} must contain ${token}`)
+  }
+}
+
+const adminHostPackage = JSON.parse(
+  readFileSync(join(root, "packages/admin-host/package.json"), "utf8"),
+)
+const productReactPackages = [
+  "@voyant-travel/auth-react",
+  "@voyant-travel/bookings-react",
+  "@voyant-travel/catalog-react",
+  "@voyant-travel/commerce-react",
+  "@voyant-travel/cruises-react",
+  "@voyant-travel/distribution-react",
+  "@voyant-travel/finance-react",
+  "@voyant-travel/flights-react",
+  "@voyant-travel/inventory-react",
+  "@voyant-travel/legal-react",
+  "@voyant-travel/mice-react",
+  "@voyant-travel/operations-react",
+  "@voyant-travel/quotes-react",
+  "@voyant-travel/realtime-react",
+  "@voyant-travel/relationships-react",
+  "@voyant-travel/storefront-react",
+  "@voyant-travel/trips-react",
+]
+for (const packageName of productReactPackages) {
+  for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+    if (adminHostPackage[field]?.[packageName]) {
+      failures.push(`packages/admin-host/package.json retains ${field} entry ${packageName}`)
+    }
+  }
+}
+for (const exportPath of [
+  "./standard-frontend",
+  "./standard-route-files",
+  "./standard-styles.css",
+]) {
+  if (
+    adminHostPackage.exports?.[exportPath] ||
+    adminHostPackage.publishConfig?.exports?.[exportPath]
+  ) {
+    failures.push(`packages/admin-host/package.json retains product export ${exportPath}`)
+  }
+}
+for (const retiredPath of [
+  "packages/admin-host/src/standard-api-docs.tsx",
+  "packages/admin-host/src/standard-frontend.tsx",
+  "packages/admin-host/src/standard-route-files.ts",
+  "packages/admin-host/src/standard-styles.css",
+]) {
+  if (existsSync(join(root, retiredPath))) {
+    failures.push(`standard product frontend must not remain in generic admin host: ${retiredPath}`)
   }
 }
 

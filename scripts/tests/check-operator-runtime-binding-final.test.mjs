@@ -27,8 +27,8 @@ const contributors = {
 async function fixture(generatedArguments) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-runtime-binding-final-"))
   const files = {
-    "starters/operator/src/api/runtime/deployment-resources.ts": `
-return createGeneratedGraphRuntimePorts({
+    "packages/operator-runtime/src/deployment-resources.ts": `
+return options.createRuntimePorts({
 ${generatedArguments}
 })
 `,

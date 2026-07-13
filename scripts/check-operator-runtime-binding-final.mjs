@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -23,18 +24,19 @@ const contributorRequirements = {
 }
 
 const [deploymentResources, ...contributors] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   ...Object.keys(contributorRequirements).map((packageName) =>
     read(`packages/${packageName}/src/runtime-contributor.ts`),
   ),
 ])
 
 const violations = []
-const generatedCall = deploymentResources.match(
-  /createGeneratedGraphRuntimePorts\(\{([^}]*)\}\)/,
-)?.[1]
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
+const generatedCall = deploymentResources.match(/options\.createRuntimePorts\(\{([^}]*)\}\)/)?.[1]
 if (!generatedCall) {
-  violations.push("deployment resources must call createGeneratedGraphRuntimePorts with an object")
+  violations.push("deployment resources must call options.createRuntimePorts with an object")
 } else {
   const keys = generatedCall
     .split(",")

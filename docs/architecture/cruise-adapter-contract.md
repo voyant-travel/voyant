@@ -132,8 +132,9 @@ Manual operator refresh paths:
 
 - `POST /v1/admin/cruises/search-index/rebuild` refreshes the cruise vertical
   browse index from registered cruise adapters.
-- `pnpm sync:sources` in `starters/operator` refreshes catalog sourced entries
-  and search slices from registered catalog source adapters.
+- Deployment tooling may compose `syncSources(...)` from selected catalog source
+  adapters to refresh sourced entries and search slices. That command belongs to
+  the external CLI, not the standard project starter.
 
 Scheduled refresh in `starters/operator` runs daily at `30 3 * * *` via
 the `external-cruise-catalog-refresh` package workflow schedule. Deployments can

@@ -14,15 +14,11 @@ const checkerPath = path.join(repoRoot, "scripts/check-operator-smartbill-author
 async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-smartbill-authority-"))
   const files = {
-    "starters/operator/package.json": JSON.stringify({
-      dependencies: { "@voyant-travel/plugin-smartbill": "^0.140.2" },
-    }),
+    "starters/operator/package.json": JSON.stringify({ dependencies: {} }),
     "starters/operator/voyant.config.ts":
       'export default { plugins: [{ resolve: "@voyant-travel/plugin-netopia" }] }\n',
-    "starters/operator/src/api/app.ts": "export const app = mountApp({})\n",
-    "starters/operator/src/api/runtime/deployment-resources.ts":
-      "return createGeneratedGraphRuntimePorts({ primitives })\n",
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "export const adapter = {}\n",
+    "packages/operator-runtime/src/deployment-resources.ts":
+      "return options.createRuntimePorts({ primitives })\n",
     "packages/finance/src/voyant.ts":
       'runtimePorts: [requirePort(financeInvoiceSettlementPollerRuntimePort, { optional: true, cardinality: "many" })]\n',
     "packages/finance/src/runtime-port.ts":
@@ -70,10 +66,8 @@ describe("check-operator-smartbill-authority", () => {
 
   it("rejects starter-owned SmartBill bridges and config injection", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts":
-        "createGeneratedGraphRuntimePorts({ capabilities, primitives, host: operatorSmartbillRuntimeHost })\ninvoiceSettlementPollers\n",
-      "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
-        'import "@voyant-travel/plugin-smartbill"\nresolveOperatorSmartbillConfig\n',
+      "packages/operator-runtime/src/deployment-resources.ts":
+        'createGeneratedGraphRuntimePorts({ capabilities, primitives, host: operatorSmartbillRuntimeHost })\ninvoiceSettlementPollers\nimport "@voyant-travel/plugin-smartbill"\nresolveOperatorSmartbillConfig\n',
     })
     await assert.rejects(runChecker(root), (error) => {
       assert.match(error.stderr, /must not retain SmartBill bridge token/)

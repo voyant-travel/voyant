@@ -58,7 +58,11 @@ const OPERATOR_GRAPH_COMPATIBILITY = {
   modes: ["local", "managed-cloud", "self-hosted"],
 } as const
 
-const OPERATOR_PACKAGE_RECORD_IMPORTERS = ["starters/operator", "packages/framework"] as const
+const OPERATOR_PACKAGE_RECORD_IMPORTERS = [
+  "starters/operator",
+  "packages/operator-standard",
+  "packages/framework",
+] as const
 
 const OPERATOR_LOCAL_PACKAGE_RECORDS = [
   {

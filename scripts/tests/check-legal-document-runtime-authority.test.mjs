@@ -16,9 +16,7 @@ const checker = path.resolve(
 async function fixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-legal-document-runtime-"))
   const files = {
-    "starters/operator/src/api/runtime/deployment-resources.ts": "generic primitives",
-    "starters/operator/src/api/runtime/operator-runtime-adapter.ts":
-      'import("@voyant-travel/legal/runtime")',
+    "packages/operator-runtime/src/deployment-resources.ts": "generic primitives",
     "packages/legal/package.json": JSON.stringify({
       exports: {
         "./runtime-contributor": "./src/runtime-contributor.ts",
@@ -36,11 +34,10 @@ async function fixture(overrides = {}) {
       "createLegalRuntime legalRuntimePort.id legalContractDocumentRuntimePort.id legalBookingContractSubscriberRuntimePort.id",
     "packages/legal/src/runtime.ts":
       "buildContractVariableBindings createContractDocumentService resolveContractDocumentGenerator resolveBookingPiiService createBookingContractSubscriberHost",
-    "packages/framework/package.json": JSON.stringify({
+    "packages/operator-standard/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/legal": "workspace:*" },
     }),
-    "packages/framework/src/operator-distribution.ts":
-      'modules: [{ resolve: "@voyant-travel/legal" }]',
+    "packages/operator-standard/src/index.ts": 'modules: [{ resolve: "@voyant-travel/legal" }]',
     ...overrides,
   }
   for (const [relativePath, contents] of Object.entries(files)) {
@@ -58,7 +55,7 @@ it("accepts package-owned Legal document composition", async () => {
 
 it("rejects a restored deployment Legal loader", async () => {
   const root = await fixture({
-    "starters/operator/src/api/runtime/deployment-resources.ts": "loadLegalRuntime",
+    "packages/operator-runtime/src/deployment-resources.ts": "loadLegalRuntime",
   })
   await assert.rejects(execFileAsync(process.execPath, [checker, "--root", root]), (error) =>
     error.stderr.includes("loadLegalRuntime"),

@@ -8,8 +8,8 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
-const DISTRIBUTION = join(ROOT, "packages/framework/src/operator-distribution.ts")
-const FRAMEWORK_PACKAGE = join(ROOT, "packages/framework/package.json")
+const DISTRIBUTION = join(ROOT, "packages/operator-standard/src/index.ts")
+const PRODUCT_DISTRIBUTION_PACKAGE = join(ROOT, "packages/operator-standard/package.json")
 const RETIRED_INPUTS = [
   "release.runtime-packages.generated.json",
   "packages/framework/src/runtime-packages.generated.ts",
@@ -35,7 +35,7 @@ const standardPackages = [
   ),
 ].sort()
 const workspacePackages = readWorkspacePackages()
-const framework = JSON.parse(readFileSync(FRAMEWORK_PACKAGE, "utf8"))
+const productDistribution = JSON.parse(readFileSync(PRODUCT_DISTRIBUTION_PACKAGE, "utf8"))
 const violations = []
 
 if (standardPackages.length === 0) {
@@ -50,8 +50,8 @@ for (const packageName of standardPackages) {
   if (manifest.voyant?.schemaVersion !== "voyant.package.v1") {
     violations.push(`${packageName} must own voyant.package.v1 metadata`)
   }
-  if (!framework.dependencies?.[packageName]) {
-    violations.push(`framework publish BOM is missing ${packageName}`)
+  if (!productDistribution.dependencies?.[packageName]) {
+    violations.push(`product distribution is missing ${packageName}`)
   }
 }
 
@@ -61,10 +61,10 @@ for (const relativePath of RETIRED_INPUTS) {
   }
 }
 
-for (const [packageName, version] of Object.entries(framework.dependencies ?? {})) {
+for (const [packageName, version] of Object.entries(productDistribution.dependencies ?? {})) {
   if (workspacePackages.has(packageName) && version !== "workspace:*") {
     violations.push(
-      `framework publish BOM must pin workspace package ${packageName} with workspace:*`,
+      `product distribution must pin workspace package ${packageName} with workspace:*`,
     )
   }
 }

@@ -65,13 +65,6 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     ? `tsx ${join(workspacePackageDirectory("@voyant-travel/operator-runtime"), "src/cli.ts")}`
     : "voyant-operator start"
   const buildCommand = localLinks ? "NODE_OPTIONS=--import=tsx voyant build" : "voyant build"
-  const localBomDependencies = localLinks
-    ? Object.fromEntries(
-        Object.keys(readJson(join(repoRoot, "packages/framework/package.json")).dependencies)
-          .filter((name) => workspaceVersions.has(name))
-          .map((name) => [name, `link:${workspacePackageDirectory(name)}`]),
-      )
-    : {}
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
     private: true,
@@ -85,9 +78,9 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
       seed: "tsx src/scripts/seed.ts",
     },
     dependencies: {
-      ...localBomDependencies,
       "@voyant-travel/framework": dependency("@voyant-travel/framework"),
       "@voyant-travel/operator-runtime": dependency("@voyant-travel/operator-runtime"),
+      "@voyant-travel/operator-standard": dependency("@voyant-travel/operator-standard"),
     },
     devDependencies: {
       "@voyant-travel/cli": cliDependency,
@@ -109,7 +102,7 @@ export default defineConfig({
   )
   writeFileSync(
     join(stagingTemplate, ".env.example"),
-    `${["postgresql", "://postgres:postgres@localhost:5432/voyant"].join("")}\nPORT=8080\n`,
+    `DATABASE_URL=${["postgresql", "://postgres:postgres@localhost:5432/voyant"].join("")}\nPORT=8080\n`,
   )
   writeFileSync(
     join(stagingTemplate, "src/scripts/seed.ts"),

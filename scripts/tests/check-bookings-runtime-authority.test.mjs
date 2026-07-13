@@ -57,13 +57,10 @@ test("simulates every direct-merge cycle and rejects the dependency edges", () =
 test("rejects a host module loader or starter-owned provider", () => {
   const files = validFiles()
   files.set("packages/core/src/runtime-host.ts", "modules: { import(specifier) {} }")
-  files.set(
-    "starters/operator/src/api/runtime/deployment-resources.ts",
-    "bookingsFinanceRuntimePort",
-  )
+  files.set("packages/operator-runtime/src/deployment-resources.ts", "bookingsFinanceRuntimePort")
   const violations = inspectBookingsRuntimeAuthority({ files, manifests: validManifests(), policy })
   assert(violations.includes("Runtime composition must not use a host module loader"))
-  assert(violations.includes("Operator starter must not bind bookingsFinanceRuntimePort"))
+  assert(violations.includes("Operator host must not bind bookingsFinanceRuntimePort"))
 })
 
 function validManifests() {
@@ -104,7 +101,7 @@ function validFiles() {
       "packages/bookings/src/voyant.ts",
       policy.providers.map(({ port }) => `requirePort(${port})`).join("\n"),
     ],
-    ["starters/operator/src/api/runtime/deployment-resources.ts", "generic primitives"],
+    ["packages/operator-runtime/src/deployment-resources.ts", "generic primitives"],
     ["packages/core/src/runtime-host.ts", "database env storage events config"],
   ])
   for (const { port, file } of policy.providers) files.set(file, `[${port}.id]`)

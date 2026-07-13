@@ -20,7 +20,7 @@ const requirements = {
 async function fixture(deploymentResources) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-runtime-binding-cut-2-"))
   const files = {
-    "starters/operator/src/api/runtime/deployment-resources.ts": deploymentResources,
+    "packages/operator-runtime/src/deployment-resources.ts": deploymentResources,
     ...Object.fromEntries(
       Object.entries(requirements).map(([name, source]) => [
         `packages/${name}/src/runtime-contributor.ts`,
@@ -39,14 +39,14 @@ async function fixture(deploymentResources) {
 }
 
 it("accepts package-owned bindings from generic primitives and static ports", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ primitives })\n")
+  const root = await fixture("return options.createRuntimePorts({ primitives })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(result.stdout, /4 package-owned families from generic host resources/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {
   const root = await fixture(
-    "return createGeneratedGraphRuntimePorts({\n    primitives,\n    flights: runtime,\n  })\n",
+    "return options.createRuntimePorts({\n    primitives,\n    flights: runtime,\n  })\n",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),

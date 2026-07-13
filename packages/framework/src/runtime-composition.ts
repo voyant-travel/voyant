@@ -1,7 +1,9 @@
+// agent-quality: file-size exception -- owner: framework; graph runtime bindings, contributors, ports, and activation share one public composition contract.
 import type {
   EventEnvelope,
   EventFilterDescriptor,
   SubscriberRuntimeDescriptor,
+  VoyantRuntimeHostPrimitives,
   WorkflowDescriptor,
 } from "@voyant-travel/core"
 import {
@@ -42,8 +44,10 @@ export interface VoyantGraphRuntimePortResolver {
   getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
-/** Statically composed runtime-port resolution added to generated contributor hosts. */
-export type VoyantGraphRuntimeContributorHost = VoyantGraphRuntimePortResolver
+/** Stable host surface available to every statically selected runtime contributor. */
+export interface VoyantGraphRuntimeContributorHost extends VoyantGraphRuntimePortResolver {
+  primitives: VoyantRuntimeHostPrimitives
+}
 
 /** Build-time selected package hook that maps host resources to graph runtime ports. */
 export type VoyantGraphRuntimeContributor = (

@@ -1,5 +1,10 @@
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  requirePort,
+  voyantWorkflowServiceContributionsPort,
+} from "@voyant-travel/core/project"
 import { cruisesRoutesRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the cruises package. */
@@ -7,7 +12,13 @@ export const cruisesVoyantModule = defineModule({
   id: "@voyant-travel/cruises",
   packageName: "@voyant-travel/cruises",
   localId: "cruises",
-  runtimePorts: [requirePort(cruisesRoutesRuntimePort)],
+  runtimePorts: [
+    requirePort(cruisesRoutesRuntimePort),
+    requirePort(voyantWorkflowServiceContributionsPort, {
+      optional: true,
+      cardinality: "many",
+    }),
+  ],
   api: [
     {
       id: "@voyant-travel/cruises#api.admin",

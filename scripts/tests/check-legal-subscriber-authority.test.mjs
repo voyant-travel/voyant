@@ -27,10 +27,10 @@ const ports = {
   [legalBookingContractSubscriberRuntimePort.id]: {},
 }
 `,
-    "packages/framework/src/operator-distribution.ts": `
+    "packages/operator-standard/src/index.ts": `
 const extensions = [{ resolve: "@voyant-travel/legal/booking-contract-extension" }]
 `,
-    "starters/operator/src/api/runtime/deployment-resources.ts": "const ports = {}\n",
+    "packages/operator-runtime/src/deployment-resources.ts": "const ports = {}\n",
     "starters/operator/voyant.config.ts": "export default defineConfig({})\n",
     ...overrides,
   }
@@ -54,7 +54,7 @@ describe("Legal subscriber authority checker", () => {
 
   it("rejects an unselected Legal booking-contract extension", async () => {
     const root = await createFixture({
-      "packages/framework/src/operator-distribution.ts": "const extensions = []\n",
+      "packages/operator-standard/src/index.ts": "const extensions = []\n",
     })
     await assert.rejects(runChecker(root), /distribution must select the Legal booking-contract/)
   })
@@ -81,7 +81,7 @@ legalBookingContractConfirmedSubscriber.register(context)
 
   it("rejects a package-id-specific Operator Legal binding", async () => {
     const root = await createFixture({
-      "starters/operator/src/api/runtime/deployment-resources.ts": `
+      "packages/operator-runtime/src/deployment-resources.ts": `
 const ports = {}
 const bindings = { "@voyant-travel/legal": createLegalHonoModule }
 `,

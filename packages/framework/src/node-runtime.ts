@@ -13,11 +13,11 @@ import {
   createCloudAdminAuthStart,
 } from "@voyant-travel/auth/cloud-broker"
 import { createBetterAuth } from "@voyant-travel/auth/server"
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
-  createDbClient,
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
+  resolveNodeDatabase,
 } from "@voyant-travel/db/runtime"
 import { authUser, cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import {
@@ -180,6 +180,10 @@ export interface VoyantNodeRuntimeOptions {
   deployment: VoyantNodeRuntimeDeployment
   deploymentRequirements: VoyantGraphDeploymentRequirements
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
+  /** Node-owned durable boundary for graph-selected outbound webhook events. */
+  outboundWebhooks?: {
+    enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
+  }
   /** Generic resources available to deployment-local factories. */
   resources?: VoyantNodeRuntimeResources
   applicationId?: string
@@ -209,7 +213,6 @@ export interface VoyantNodeRuntime {
   start: (options?: Partial<CreateNodeServerOptions<VoyantNodeRuntimeEnv>>) => NodeServerHandle
 }
 
-let pooledDb: { url: string; db: VoyantDb } | undefined
 const MANAGED_CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
   "/auth/get-session",
   "/auth/jwks",
@@ -257,6 +260,7 @@ export async function loadVoyantNodeRuntime(
     runtime: options.graphRuntime,
     capabilities: resources,
     ports: options.runtimePorts,
+    outboundWebhooks: options.outboundWebhooks,
   })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
     options.graphRuntime,
@@ -276,6 +280,7 @@ export async function loadVoyantNodeRuntime(
     resources,
     app: {
       ...options.app,
+      accessCatalog: options.app?.accessCatalog ?? options.graphRuntime.accessCatalog,
       publicPaths: [
         ...(options.app?.publicPaths ?? []),
         ...graphComposition.routePosture.publicPaths,
@@ -369,8 +374,8 @@ export function createVoyantNodeApp(options: {
     activeModules: options.activeModules,
   })
   return createVoyantApp<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>({
-    db: dbFromEnvForApp,
-    dbTransactional: dbFromEnvForApp,
+    db: resolveDb,
+    dbTransactional: resolveDb,
     outbox: true,
     workflows: {
       driver: (bindings) =>
@@ -1016,38 +1021,8 @@ function formatDescription(format: NonNullable<VoyantDeploymentEnvRequirement["f
   return "an HTTP(S) URL"
 }
 
-function dbUrl(env: VoyantNodeRuntimeEnv): string {
-  const url = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
-  if (!url) throw new Error("Voyant Node runtime requires DATABASE_URL.")
-  return url
-}
-
 function resolveDb(env: unknown): VoyantDb {
-  const bindings = env as VoyantNodeRuntimeEnv
-  const url = dbUrl(bindings)
-  if (pooledDb?.url !== url) {
-    const replicas = parseReplicaUrls(bindings.DATABASE_URL_REPLICAS, url)
-    pooledDb = {
-      url,
-      db: createDbClient(url, {
-        adapter: "node",
-        ...(replicas.length > 0 ? { replicas } : {}),
-      }) as VoyantDb,
-    }
-  }
-  return pooledDb.db
-}
-
-function dbFromEnvForApp(env: VoyantNodeRuntimeEnv): VoyantDb {
-  return resolveDb(env)
-}
-
-function parseReplicaUrls(raw: string | undefined, primaryUrl: string): string[] {
-  if (!raw) return []
-  return raw
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0 && entry !== primaryUrl)
+  return resolveNodeDatabase(env as VoyantNodeRuntimeEnv) as VoyantDb
 }
 
 function objectStore(
@@ -1079,7 +1054,7 @@ function isR2Bucket(value: unknown): value is R2BucketShim {
   return typeof value === "object" && value !== null && "get" in value && "put" in value
 }
 
-function createVoyantNodeWorkflowDriver(env: VoyantNodeRuntimeEnv, defaultAppSlug: string) {
+export function createVoyantNodeWorkflowDriver(env: VoyantNodeRuntimeEnv, defaultAppSlug: string) {
   if (env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()) {
     return () =>
       createCloudWorkflowDriver({

@@ -1,3 +1,5 @@
+import type { EventEnvelope } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import {
   type InfraWebhookSubscription,
@@ -12,6 +14,10 @@ import { and, arrayContains, asc, eq, isNull, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { ExternalWebhookEventContract } from "./contracts.js"
 import {
+  createSelectedExternalWebhookQueue,
+  externalContractFromEventMetadata,
+} from "./selected-queue.js"
+import {
   createWebhookSubscriptionService,
   type WebhookSubscriptionService,
 } from "./subscriptions.js"
@@ -19,8 +25,29 @@ import type {
   CompleteWebhookAttemptInput,
   EnqueuedWebhookAttempt,
   EnqueueWebhookAttemptInput,
+  SelectedExternalWebhookQueue,
   WebhookDeliveryStore,
+  WebhookEnqueueOutcome,
 } from "./types.js"
+
+export interface EnqueuePostgresWebhookEventOptions {
+  queue?: SelectedExternalWebhookQueue
+}
+
+/** Persist one graph-selected event through the neutral Postgres delivery queue. */
+export async function enqueuePostgresWebhookEvent(
+  db: AnyDrizzleDb,
+  event: EventEnvelope,
+  options: EnqueuePostgresWebhookEventOptions = {},
+): Promise<WebhookEnqueueOutcome[]> {
+  const queue =
+    options.queue ??
+    createSelectedExternalWebhookQueue({
+      contracts: [externalContractFromEventMetadata(event)],
+      store: createPostgresWebhookDeliveryStore(db as PostgresJsDatabase),
+    })
+  return queue.enqueue(event)
+}
 
 /**
  * Postgres implementation for the Node delivery host. Transaction-scoped

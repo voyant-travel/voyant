@@ -10,7 +10,13 @@ const ENQUEUE_EXECUTION_TOKENS = [
 
 export function inspectExternalWebhookDeliveryConvergence(input) {
   const failures = []
-  if (!/createSelectedExternalWebhookQueue/.test(input.distributionQueue)) {
+  const bindsSelectedQueueDirectly = /createSelectedExternalWebhookQueue/.test(
+    input.distributionQueue,
+  )
+  const delegatesCanonicalPostgresQueue =
+    /enqueuePostgresWebhookEvent/.test(input.distributionQueue) &&
+    /enqueuePostgresWebhookEvent[\s\S]*createSelectedExternalWebhookQueue/.test(input.store)
+  if (!bindsSelectedQueueDirectly && !delegatesCanonicalPostgresQueue) {
     failures.push("Distribution enqueue must bind the selected durable webhook queue")
   }
   for (const [token, capability] of ENQUEUE_EXECUTION_TOKENS) {

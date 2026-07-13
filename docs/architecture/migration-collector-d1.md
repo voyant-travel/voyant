@@ -1,6 +1,7 @@
 # ADR: D.1 — framework-owned aggregate migration bundle + multi-source collector
 
-- **Status:** Accepted — all four slices landed (collector, bundle, push-grounded oracle, runner cutover)
+- **Status:** Superseded by D.2. The starter runner described below is historical;
+  current projects execute the admitted graph plan through `voyant migrate`.
 - **Date:** 2026-06-17
 - **Amends:** `migration-resilience-rfc.md` (voyant#1608) "Migration generation & ordering" — *light amendment*, the single combined history is preserved; only **ownership** moves deployment → framework.
 - **Implements:** `consolidated-deployments-rfc.md` Workstream **D.1**.
@@ -26,7 +27,8 @@ Move migration-history **ownership** from the fork to the framework, while keepi
 
 ## Transition (do not strand existing forks)
 
-The legacy single-folder runner (`starters/operator/scripts/migrate.ts`, reading drizzle's `__drizzle_migrations` by `created_at`) and the new collector **coexist** during cutover:
+During the completed cutover, the legacy single-folder runner and the new collector
+coexisted temporarily:
 
 - **Baseline/import.** An existing deployment marks the framework migrations "through version X" as already represented in the new `_voyant_migrations` ledger (so the collector does not try to re-apply history the DB already has via the legacy ledger).
 - **`voyant doctor` proves parity *before* switching runners** — replay/aggregate-schema parity must pass before a deployment flips from the legacy runner to the collector.
@@ -41,7 +43,9 @@ D.1 is clean for the **standard profile** (a deployment mounting exactly the sta
 1. **Foundation (this ADR + the collector). ✓ landed.** `@voyant-travel/framework-migrations` exports the productionized multi-source collector — `planMigrations`, `applyMigrations` (the `(source, tag, content_hash)` ledger, per-migration transactions, statement-breakpoint splitting, content-hash immutability), `importBaseline`, + `loadMigrationFolder`. Integration tests reproduce the spike's scenarios + baseline against Postgres.
 2. **Bundle generation. ✓ landed.** Generate the standard-profile aggregate bundle into the package from `drizzle.schemas.generated.ts`; a `verify:` gate keeps it in sync.
 3. **Replay-parity oracle. ✓ landed.** `bundle + links` fresh-applied == `drizzle-kit push` of the live aggregate schema (the canonical current schema — see the Cutover section for why this replaced the legacy-replay target).
-4. **Cutover. ✓ landed.** `migrate.ts` drives the collector (framework bundle → deployment links) with auto-detected FRESH / BASELINE / INCREMENTAL modes; baseline is gated by a schema-parity guard. Legacy folder retired as a runtime source.
+4. **Cutover. ✓ landed.** The retired project runner drove the collector
+   (framework bundle → deployment links) with auto-detected FRESH / BASELINE /
+   INCREMENTAL modes; baseline was gated by a schema-parity guard.
 
 The risky core (multi-source apply, idempotency, ordering, immutability, baseline) is **validated** against the operator docker Postgres.
 
@@ -71,7 +75,9 @@ Measured equal on 2026-06-17: **339 tables / 4371 columns / 1295 enum labels / 1
 
 ### The runner: three auto-detected modes + a baseline guard
 
-`starters/operator/scripts/migrate.ts` now drives the collector (`@voyant-travel/framework-migrations`), sources `[framework bundle (priority 0), deployment links (priority 1)]`, ledger `drizzle._voyant_migrations`:
+The now-retired D.1 project runner drove the collector
+(`@voyant-travel/framework-migrations`), sources `[framework bundle (priority 0),
+deployment links (priority 1)]`, ledger `drizzle._voyant_migrations`:
 
 - **FRESH** (no ledgers) → execute bundle + links.
 - **BASELINE** (legacy `drizzle.__drizzle_migrations` present, no collector ledger) → `importBaseline()` records the bundle + links in the ledger **without re-executing** — because the schema is already materialised. **Gated by a schema-parity check**: every table the bundle/links expect must already exist; otherwise the runner *refuses* (a stuck-at-60 DB reports the missing tables and aborts rather than recording a false baseline).

@@ -122,6 +122,29 @@ describe("Node migration runner", () => {
       rmSync(root, { recursive: true, force: true })
     }
   })
+
+  it("uses the stable package ledger source name for package migrations", async () => {
+    const source = await loadNodeSchemaMigrationSource(
+      {
+        id: "@voyant-travel/finance#migrations",
+        migrationKind: "schema",
+        order: 9,
+        idempotencyKey: "schema:@voyant-travel/finance#migrations",
+        owner: "@voyant-travel/finance",
+        packageName: "@voyant-travel/finance",
+        source: {
+          kind: "package",
+          packageName: "@voyant-travel/finance",
+          path: "./migrations",
+        },
+      },
+      import.meta.url,
+    )
+
+    expect(source.name).toBe("finance")
+    expect(source.priority).toBe(9)
+    expect(source.migrations.length).toBeGreaterThan(0)
+  })
 })
 
 function plan(includeLater = false): VoyantProjectMigrationPlan {

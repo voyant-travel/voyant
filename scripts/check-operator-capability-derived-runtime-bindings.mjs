@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -9,7 +10,7 @@ function argument(name, fallback) {
 const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, auth, mice, quotes, relationships, trips] = await Promise.all([
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   read("packages/auth/src/runtime-contributor.ts"),
   read("packages/mice/src/runtime-contributor.ts"),
   read("packages/quotes/src/runtime-contributor.ts"),
@@ -18,6 +19,9 @@ const [deploymentResources, auth, mice, quotes, relationships, trips] = await Pr
 ])
 
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 const explicitBindings = ["identityAccess", "mice", "quotes", "relationshipsRoutes"]
 
 for (const binding of explicitBindings) {
@@ -26,7 +30,7 @@ for (const binding of explicitBindings) {
   }
 }
 
-if (!/createGeneratedGraphRuntimePorts\(\{\s*primitives\s*\}\)/s.test(deploymentResources)) {
+if (!/options\.createRuntimePorts\(\{\s*primitives\s*\}\)/s.test(deploymentResources)) {
   violations.push("deployment-resources.ts must expose only generic primitives to contributors")
 }
 if (deploymentResources.includes("createOperatorIdentityAccessRuntime")) {

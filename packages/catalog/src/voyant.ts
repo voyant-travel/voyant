@@ -1,4 +1,9 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  requirePort,
+  voyantWorkflowServiceContributionsPort,
+} from "@voyant-travel/core/project"
 import {
   catalogBookingRuntimePort,
   catalogOffersRuntimePort,
@@ -58,6 +63,10 @@ export const catalogVoyantModule = defineModule({
     requirePort(catalogSearchRuntimePort),
     requirePort(catalogProjectionRuntimePort),
     requirePort(catalogBookingSnapshotRuntimePort),
+    requirePort(voyantWorkflowServiceContributionsPort, {
+      optional: true,
+      cardinality: "many",
+    }),
   ],
   api: [
     {

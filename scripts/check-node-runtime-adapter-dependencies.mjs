@@ -54,17 +54,20 @@ const consolidatedPackages = [
 ]
 const manifests = readWorkspaceManifests()
 const byName = new Map(manifests.map((manifest) => [manifest.name, manifest]))
-const standardDistribution = read("packages/framework/src/operator-distribution.ts")
-const framework = byName.get("@voyant-travel/framework")
+const standardDistribution = read("packages/operator-standard/src/index.ts")
+const productDistribution = byName.get("@voyant-travel/operator-standard")
 const starterAuthority = [
   read("starters/operator/voyant.config.ts"),
-  read("starters/operator/src/api/runtime/deployment-resources.ts"),
+  read("packages/operator-runtime/src/index.ts"),
+  read("packages/operator-runtime/src/deployment-resources.ts"),
   read("packages/framework/src/node-runtime.ts"),
 ].join("\n")
 const graphGenerator = read("packages/framework/src/deployment-artifacts.ts")
 const graphResolver = read("scripts/lib/operator-deployment-graph-package-records.ts")
-const graphEmitter = read("scripts/emit-deployment-graph.ts")
 const violations = adapterBoundaryViolations(manifests, adapters)
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 violations.push(...findDomainRuntimeNamingViolations(root))
 
 for (const cycle of findProductionDependencyCycles(manifests)) {
@@ -88,8 +91,8 @@ for (const adapter of adapters) {
   if (!standardDistribution.includes(`resolve: "${adapter.packageName}`)) {
     violations.push(`${adapter.packageName} must be selected by the authored standard product BOM`)
   }
-  if (!framework?.dependencies?.[adapter.packageName]) {
-    violations.push(`${adapter.packageName} must be supplied by the framework BOM dependency set`)
+  if (!productDistribution?.dependencies?.[adapter.packageName]) {
+    violations.push(`${adapter.packageName} must be supplied by the product distribution`)
   }
   if (starterAuthority.includes(adapter.packageName)) {
     violations.push(`starter/framework resident composition must not name ${adapter.packageName}`)
@@ -118,13 +121,11 @@ for (const consolidated of consolidatedPackages) {
       `${consolidated.packageName} must be selected by the authored standard product BOM`,
     )
   }
-  if (!framework?.dependencies?.[consolidated.packageName]) {
-    violations.push(
-      `${consolidated.packageName} must be supplied by the framework BOM dependency set`,
-    )
+  if (!productDistribution?.dependencies?.[consolidated.packageName]) {
+    violations.push(`${consolidated.packageName} must be supplied by the product distribution`)
   }
-  if (framework?.dependencies?.[consolidated.retiredPackageName]) {
-    violations.push(`framework BOM must not retain ${consolidated.retiredPackageName}`)
+  if (productDistribution?.dependencies?.[consolidated.retiredPackageName]) {
+    violations.push(`product distribution must not retain ${consolidated.retiredPackageName}`)
   }
 }
 for (const domainPackageName of ["@voyant-travel/action-ledger"]) {
@@ -135,8 +136,8 @@ for (const domainPackageName of ["@voyant-travel/action-ledger"]) {
   if (standardDistribution.includes(`resolve: "${domainPackageName}-node`)) {
     violations.push(`${domainPackageName}-node must not remain in the standard product BOM`)
   }
-  if (framework?.dependencies?.[`${domainPackageName}-node`]) {
-    violations.push(`${domainPackageName}-node must not remain in the framework BOM`)
+  if (productDistribution?.dependencies?.[`${domainPackageName}-node`]) {
+    violations.push(`${domainPackageName}-node must not remain in the product distribution`)
   }
   if (domain?.voyant?.runtime) {
     violations.push(`${domainPackageName} must not need a deployment-target contributor`)
@@ -152,20 +153,11 @@ if (
 ) {
   violations.push("Operator graph resolution must not consume a generated runtime package catalog")
 }
-if (
-  !graphResolver.includes(
-    'OPERATOR_PACKAGE_RECORD_IMPORTERS = ["starters/operator", "packages/framework"]',
-  )
-) {
-  violations.push("Operator graph resolution must derive adapter provenance from the framework BOM")
+if (!graphResolver.includes('"packages/operator-standard"')) {
+  violations.push("Operator graph resolution must derive provenance from the product distribution")
 }
 if (!graphGenerator.includes("const runtime = record.metadata?.runtime")) {
   violations.push("Graph runtime generation must lower contributors from admitted package records")
-}
-if (graphEmitter.includes("@voyant-travel/framework/runtime-contributors")) {
-  violations.push(
-    "standard runtime contributors must import their admitted package entries directly",
-  )
 }
 if (graphGenerator.includes("selectedPackageNames.has(record.packageName)")) {
   violations.push("Graph runtime generation must not require an adapter to own a product unit")

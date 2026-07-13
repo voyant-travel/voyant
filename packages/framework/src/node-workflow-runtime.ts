@@ -1,4 +1,12 @@
-import type { EventFilterDescriptor, EventFilterManifestDescriptor } from "@voyant-travel/core"
+import {
+  type EventBus,
+  type EventFilterDescriptor,
+  type EventFilterManifestDescriptor,
+  type ModuleContainer,
+  VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
+  type VoyantWorkflowServiceContribution,
+  voyantWorkflowServiceContributionsPort,
+} from "@voyant-travel/core"
 import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { WorkflowDefinition } from "@voyant-travel/workflows"
 import type { ServiceResolver } from "@voyant-travel/workflows/driver"
@@ -23,7 +31,17 @@ export interface LoadVoyantNodeWorkflowRuntimeOptions<TEnvironment> {
   createServices: (
     environment: TEnvironment,
     selectedWorkflowUnitIds: ReadonlySet<string>,
-  ) => ServiceResolver | Promise<ServiceResolver>
+  ) =>
+    | ServiceResolver
+    | VoyantNodeWorkflowServiceHost
+    | Promise<ServiceResolver | VoyantNodeWorkflowServiceHost>
+  runtimePorts?: Readonly<Record<string, unknown>>
+}
+
+export interface VoyantNodeWorkflowServiceHost {
+  services: ModuleContainer
+  eventBus: EventBus
+  reportFailure?(error: unknown, context: Readonly<Record<string, unknown>>): void
 }
 
 /** Load workflow behavior exclusively from units selected by the generated graph. */
@@ -54,12 +72,65 @@ export async function loadVoyantNodeWorkflowRuntime<TEnvironment>(
     units.filter((unit) => unit.workflows.length > 0).map((unit) => unit.id),
   )
 
+  const serviceHost = await options.createServices(options.environment, selectedWorkflowUnitIds)
+  const services = await registerWorkflowServiceContributions(
+    serviceHost,
+    options.runtimePorts,
+    options.environment,
+  )
+
   return {
     workflows,
     eventFilters,
     workflowResolver: { resolve: (workflowId) => byId.get(workflowId) },
-    services: await options.createServices(options.environment, selectedWorkflowUnitIds),
+    services,
   }
+}
+
+async function registerWorkflowServiceContributions<TEnvironment>(
+  value: ServiceResolver | VoyantNodeWorkflowServiceHost,
+  runtimePorts: Readonly<Record<string, unknown>> | undefined,
+  environment: TEnvironment,
+): Promise<ServiceResolver> {
+  const contributions = runtimePorts?.[VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID]
+  if (contributions === undefined) return isWorkflowServiceHost(value) ? value.services : value
+  if (!isWorkflowServiceHost(value)) {
+    throw new Error("Graph workflow service contributions require a mutable service host.")
+  }
+  if (!Array.isArray(contributions)) {
+    throw new Error("Graph workflow service contributions must use many cardinality.")
+  }
+  const seen = new Set<string>()
+  for (const contribution of contributions as VoyantWorkflowServiceContribution[]) {
+    await voyantWorkflowServiceContributionsPort.test(contribution)
+    if (seen.has(contribution.serviceId) || value.services.has(contribution.serviceId)) {
+      throw new Error(`Workflow service "${contribution.serviceId}" is registered more than once.`)
+    }
+    seen.add(contribution.serviceId)
+    value.services.register(
+      contribution.serviceId,
+      await contribution.create({
+        environment: environment as Readonly<Record<string, unknown>>,
+        services: value.services,
+        eventBus: value.eventBus,
+        reportFailure: value.reportFailure ?? defaultWorkflowFailureReporter,
+      }),
+    )
+  }
+  return value.services
+}
+
+function isWorkflowServiceHost(
+  value: ServiceResolver | VoyantNodeWorkflowServiceHost,
+): value is VoyantNodeWorkflowServiceHost {
+  return "services" in value && "eventBus" in value
+}
+
+function defaultWorkflowFailureReporter(
+  error: unknown,
+  context: Readonly<Record<string, unknown>>,
+): void {
+  console.error("[workflow-service] background operation failed", { error, ...context })
 }
 
 function isOrdinarySubscriberRuntime(descriptor: EventFilterDescriptor): boolean {

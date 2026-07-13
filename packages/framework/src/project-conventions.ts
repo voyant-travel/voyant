@@ -110,7 +110,7 @@ export async function discoverProjectConventions(
 
   await Promise.all([
     discoverApiRoutes(projectRoot, "admin", "src/api/admin", contributions),
-    discoverApiRoutes(projectRoot, "public", "src/api/store", contributions),
+    discoverApiRoutes(projectRoot, "public", "src/api/public", contributions),
     ...RECURSIVE_CONVENTIONS.map((convention) =>
       discoverRecursiveConvention(projectRoot, convention, contributions),
     ),

@@ -223,7 +223,7 @@ and examples.
 | [`packages/plugins/*`](./packages/plugins) | First-party plugin bundles (payments, invoicing, CMS sync) |
 | [`starters/*`](./starters) | First-party starter apps |
 | [`apps/*`](./apps) | Reference/demo apps, the shadcn registry host, and agent workers |
-| [`apps/scripts`](./apps/scripts/README.md) | Workspace scripts (e.g. seed operator data) |
+| [`examples/operator-demo`](./examples/operator-demo/README.md) | Destructive and generated Operator demo fixtures |
 
 ### Monorepo commands
 

@@ -19,8 +19,8 @@ const browserRoots = [
 ]
 
 const browserFiles = [
+  "packages/admin-host/src/workspace.tsx",
   "starters/operator/src/entry.ts",
-  "starters/operator/src/lib/admin-destinations.ts",
   "starters/operator/src/lib/admin-presentation.tsx",
   "starters/operator/src/lib/custom-fields.ts",
   "starters/operator/src/lib/observability.ts",

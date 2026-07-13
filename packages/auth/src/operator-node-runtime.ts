@@ -9,6 +9,7 @@
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
  */
 
+import { type NodeDatabaseEnv, openNodeDatabase } from "@voyant-travel/db/runtime"
 import {
   authUser,
   cloudAuthUserLinks,
@@ -45,9 +46,10 @@ import { ensureCurrentUserProfile } from "./workspace.js"
 // this, the sub-app sees `unknown` for context vars.
 type OperatorAuthMode = "local" | "voyant-cloud"
 
-export interface OperatorAuthNodeEnv {
+export interface OperatorAuthNodeEnv extends NodeDatabaseEnv {
   API_BASE_URL?: string
   APP_URL?: string
+  AUTH_COOKIE_DOMAIN?: string
   BETTER_AUTH_SECRET: string
   CORS_ALLOWLIST?: string
   DASH_BASE_URL?: string
@@ -88,6 +90,21 @@ export type OperatorAuthBootstrapStatus = {
 
 type BetterAuthAdvancedOptions = NonNullable<CreateBetterAuthOptions["advanced"]>
 
+/** Resolve Better Auth's standard cross-subdomain cookie policy for Node hosts. */
+export function buildBetterAuthCookieAdvancedOptions(
+  env: Pick<OperatorAuthNodeEnv, "AUTH_COOKIE_DOMAIN">,
+):
+  | Pick<BetterAuthAdvancedOptions, "crossSubDomainCookies" | "defaultCookieAttributes">
+  | undefined {
+  const domain = env.AUTH_COOKIE_DOMAIN?.trim()
+  if (!domain) return undefined
+
+  return {
+    crossSubDomainCookies: { enabled: true, domain },
+    defaultCookieAttributes: { domain },
+  }
+}
+
 export interface OperatorAuthEmailSender {
   sendResetPassword: (input: {
     user: { email: string; name: string }
@@ -100,7 +117,7 @@ export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNo
   accessCatalog: AccessCatalog
   appName: string
   reporter: Reporter
-  openDatabase: (env: Env) => { db: VoyantDb; dispose: () => Promise<void> }
+  openDatabase?: (env: Env) => { db: VoyantDb; dispose: () => Promise<void> }
   cookieAdvanced?: (
     env: Env,
   ) =>
@@ -113,6 +130,13 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   runtimeOptions: CreateOperatorAuthNodeRuntimeOptions<Env>,
 ) {
   type AuthHonoEnv = { Bindings: Env; Variables: { db: VoyantDb } }
+
+  const openDatabase =
+    runtimeOptions.openDatabase ??
+    ((env: Env) => {
+      const resource = openNodeDatabase(env)
+      return { db: resource.db as VoyantDb, dispose: resource.dispose }
+    })
 
   const auth = new Hono<AuthHonoEnv>()
   // This lean auth app is dispatched around `createVoyantApp` (see
@@ -332,7 +356,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       baseURL: getAuthBaseUrl(env),
       basePath: "/auth",
       trustedOrigins: getTrustedOrigins(env),
-      advanced: runtimeOptions.cookieAdvanced?.(env),
+      advanced: (runtimeOptions.cookieAdvanced ?? buildBetterAuthCookieAdvancedOptions)(env),
       customerSignupSurfaces: options.customerSignup ? ["customer"] : undefined,
       plugins: cloudAuthExchange
         ? [
@@ -430,7 +454,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     request: Request,
     env: Env,
   ): Promise<VoyantRequestAuthContext | null> {
-    const { db, dispose } = runtimeOptions.openDatabase(env)
+    const { db, dispose } = openDatabase(env)
     try {
       const auth = buildBetterAuth(env, db)
       const session = await auth.api.getSession({ headers: request.headers })
@@ -508,7 +532,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       return null
     }
 
-    const { db, dispose } = runtimeOptions.openDatabase(env)
+    const { db, dispose } = openDatabase(env)
     try {
       const betterAuth = buildBetterAuth(env, db)
       const session = await betterAuth.api.getSession({ headers: request.headers })
@@ -569,7 +593,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       return { hasUsers: true, authMode: "voyant-cloud" }
     }
 
-    const { db, dispose } = runtimeOptions.openDatabase(env)
+    const { db, dispose } = openDatabase(env)
     try {
       const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
       return { hasUsers: (row?.count ?? 0) > 0, authMode: "local" }
@@ -630,7 +654,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   auth.get("/auth/status", async (c) => {
     // See `/auth/me` above — auth sub-app runs before the request `db`
     // middleware, so own the Pool here.
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db)
       const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
@@ -665,7 +689,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   })
 
   async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db)
       const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
@@ -712,7 +736,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   }
 
   async function handleOrganizationMembersFacade(c: Context<AuthHonoEnv>) {
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db)
       const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
@@ -805,7 +829,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       })
     }
 
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db)
       return await betterAuth.handler(c.req.raw)
@@ -823,7 +847,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
   auth.get("/auth/organization/list-members", handleOrganizationMembersFacade)
 
   auth.get("/auth/customer/status", async (c) => {
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db, { customerSignup: true })
       const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
@@ -841,7 +865,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       return localAuthDisabledResponse(c)
     }
 
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db, { customerSignup: true })
       return await betterAuth.handler(rewriteCustomerAuthRequest(c.req.raw))
@@ -862,7 +886,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
       return localAuthDisabledResponse(c)
     }
 
-    const { db, dispose } = runtimeOptions.openDatabase(c.env)
+    const { db, dispose } = openDatabase(c.env)
     try {
       const betterAuth = buildBetterAuth(c.env, db)
       return await betterAuth.handler(c.req.raw)

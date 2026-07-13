@@ -8,7 +8,10 @@
     "voyant-operator": "./dist/cli.js"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./deployment-resources": "./src/deployment-resources.ts",
+    "./workflow-entry": "./src/workflow-entry.ts",
+    "./openapi": "./src/openapi.ts"
   },
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=14336 tsc -p tsconfig.build.json",
@@ -20,18 +23,23 @@
   },
   "dependencies": {
     "@voyant-travel/admin-host": "workspace:^",
+    "@voyant-travel/auth": "workspace:^",
     "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/db": "workspace:^",
     "@voyant-travel/framework": "workspace:^",
+    "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/runtime": "workspace:^",
+    "@voyant-travel/webhook-delivery": "workspace:^",
+    "@voyant-travel/workflow-runs": "workspace:^",
     "hono": "catalog:",
     "tsx": "catalog:"
   },
   "devDependencies": {
+    "@hono/zod-openapi": "catalog:",
     "@types/node": "catalog:",
     "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/cruises": "workspace:^",
-    "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -48,6 +56,21 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./deployment-resources": {
+        "types": "./dist/deployment-resources.d.ts",
+        "import": "./dist/deployment-resources.js",
+        "default": "./dist/deployment-resources.js"
+      },
+      "./workflow-entry": {
+        "types": "./dist/workflow-entry.d.ts",
+        "import": "./dist/workflow-entry.js",
+        "default": "./dist/workflow-entry.js"
+      },
+      "./openapi": {
+        "types": "./dist/openapi.d.ts",
+        "import": "./dist/openapi.js",
+        "default": "./dist/openapi.js"
       }
     },
     "bin": {

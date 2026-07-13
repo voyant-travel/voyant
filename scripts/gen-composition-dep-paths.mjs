@@ -172,22 +172,17 @@ function injectPaths(configRelPath, extraAliases) {
 const packages = collectPackages()
 
 // The composition-point typecheck programs that would otherwise re-infer module
-// source. operator's server + client programs keep their own `@/*` alias (the
-// client dashboard imports the *-react UI packages, which must resolve to dist
-// declarations or they blow the heap); framework + openapi use a dedicated
-// tsconfig.typecheck.json so their build/editor config stays on source.
+// source. The operator programs are disposable `.voyant` metadata generated
+// from packages/typescript-config/dep-paths.json. Framework + openapi retain
+// dedicated checked-in configs because they are package-owned build inputs.
 const CONFIGS = [
-  "starters/operator/tsconfig.server.json",
-  "starters/operator/tsconfig.client.json",
   "packages/framework/tsconfig.typecheck.json",
   "packages/framework/tsconfig.build.json",
   "packages/openapi/tsconfig.typecheck.json",
 ]
-injectPaths(CONFIGS[0], { "@/*": ["./src/*"] })
-injectPaths(CONFIGS[1], { "@/*": ["./src/*"] })
+injectPaths(CONFIGS[0], {})
+injectPaths(CONFIGS[1], {})
 injectPaths(CONFIGS[2], {})
-injectPaths(CONFIGS[3], {})
-injectPaths(CONFIGS[4], {})
 
 // Normalize formatting so this generator's output is byte-stable (the
 // freshness check re-runs it and asserts no diff). Biome owns JSON formatting.

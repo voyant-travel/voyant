@@ -23,11 +23,7 @@ const graphNativeFiles = [
   "packages/admin/src/app/workspace.tsx",
   "packages/framework-migrations/src/index.ts",
   "packages/framework-migrations/src/module-source.ts",
-  "scripts/emit-deployment-graph.ts",
-  "starters/operator/src/deployment-graph-artifacts.ts",
-  "starters/operator/src/lib/admin-auth-runtime.ts",
-  "starters/operator/src/lib/env.ts",
-  "starters/operator/src/lib/voyant-fetcher.ts",
+  "packages/operator-standard/src/standard-frontend.tsx",
   "starters/operator/src/server.ts",
   "starters/operator/src/ssr-handler.ts",
   "starters/federated-operator/src/lib/admin-auth-runtime.ts",
@@ -48,6 +44,7 @@ const retiredTokens = [
 ]
 
 for (const file of graphNativeFiles) {
+  if (!existsSync(resolve(root, file))) continue
   const source = readFileSync(resolve(root, file), "utf8")
   for (const token of retiredTokens) {
     if (source.includes(token)) violations.push(`${file}: contains retired token ${token}`)
@@ -57,10 +54,6 @@ for (const file of graphNativeFiles) {
 const deploymentArtifacts = read("packages/framework/src/deployment-artifacts.ts")
 requireText(deploymentArtifacts, 'VoyantDeploymentRuntimeEntryKind = "node"', "node entry kind")
 requireAbsent(deploymentArtifacts, "profileSnapshot", "deployment artifact snapshot field")
-
-const emitter = read("scripts/emit-deployment-graph.ts")
-requireAbsent(emitter, "profileOutput", "default profile output")
-requireAbsent(emitter, "compatibilityManagedProfile", "default profile conversion")
 
 const retiredFiles = [
   "packages/framework/src/profile.ts",
@@ -123,9 +116,9 @@ requireAbsent(
   "managed migration collector options alias",
 )
 
-const projectFetcher = read("starters/operator/src/lib/voyant-fetcher.ts")
-requireText(projectFetcher, "projectFetcher", "generic project fetcher")
-requireAbsent(projectFetcher, "operatorFetcher", "Operator starter fetcher alias")
+const standardFrontend = read("packages/operator-standard/src/standard-frontend.tsx")
+requireText(standardFrontend, "adminFetcher", "generic admin fetcher")
+requireAbsent(standardFrontend, "operatorFetcher", "Operator starter fetcher alias")
 
 const nodeRuntime = read("packages/framework/src/node-runtime.ts")
 for (const token of [

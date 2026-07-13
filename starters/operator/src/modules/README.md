@@ -10,7 +10,6 @@ added to the graph, and loaded by the generated runtime. The module survives
 ```
 src/modules/loyalty/
   index.ts     # default-exports the runtime module; activates the convention
-  schema.ts    # optional: Drizzle tables (migrated automatically)
   routes.ts    # your Hono routes
   service.ts   # your business logic
 ```
@@ -36,21 +35,9 @@ export default defineDeploymentModule({
 The resolver creates the graph unit from the project package name and directory
 name, then emits a project-relative static import under `.voyant/runtime`.
 
-## schema.ts — migrations
-
-Define Drizzle tables as usual. They are a **deployment** migration source
-(applied by the D.1 collector *after* the framework bundle), so a custom module
-table can carry plain text id columns that reference framework tables — pair them
-with `defineLink` in `src/links` rather than hard cross-module FKs.
-
-Generate the migration into the deployment source (`migrations/`):
-
-```sh
-pnpm db:generate:deployment   # drizzle-kit generate for the deployment config
-pnpm db:migrate               # collector applies bundle → deployment (incl. this)
-```
-
-See `docs/architecture/custom-modules.md` for the full guide.
+Schema-bearing reusable modules own their schema and migration history in their
+package, exactly like first-party modules. Select that package from
+`voyant.config.ts`; do not add an aggregate deployment migration folder.
 
 ## Operator-owned units
 

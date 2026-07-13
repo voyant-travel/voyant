@@ -16,12 +16,20 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import {
+  type VoyantRuntimeHostPrimitives,
+  type VoyantWorkflowServiceContribution,
+  voyantWorkflowServiceContributionsPort,
+} from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
   type FinanceOperatorSettingsRuntime,
   financeOperatorSettingsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import {
+  CATALOG_DRAFT_REAPER_RUNTIME_KEY,
+  createCatalogDraftReaperRuntime,
+} from "./draft-reaper-workflow.js"
 import { createCatalogRuntime } from "./runtime.js"
 import {
   type CatalogAccommodationsRuntimeExtension,
@@ -122,6 +130,19 @@ export function createCatalogRuntimePortContribution(
     [catalogProjectionRuntimePort.id]: contribution.then((runtime) => runtime.projection),
     [catalogBookingSnapshotRuntimePort.id]: contribution.then((runtime) => runtime.bookingSnapshot),
     [catalogRuntimeServicesPort.id]: contribution.then((runtime) => runtime.services),
+    [voyantWorkflowServiceContributionsPort.id]: {
+      serviceId: CATALOG_DRAFT_REAPER_RUNTIME_KEY,
+      async create(context) {
+        const runtime = await contribution
+        const services = await runtime.services
+        return createCatalogDraftReaperRuntime({
+          withDb: (operation) => operation(host.primitives.database.resolve(context.environment)),
+          resolveSourceRegistry: () => services.ensureSourceRegistry(context.environment),
+          resolveOwnedHandlers: () => services.getOwnedHandlers(context.environment),
+          reportFailure: (error, details) => context.reportFailure(error, details),
+        })
+      },
+    } satisfies VoyantWorkflowServiceContribution,
     [CRUISES_ROUTES_RUNTIME_PORT_ID]: cruisesRoutes,
   }
 }

@@ -181,7 +181,6 @@ export async function loadNodeSchemaMigrationSource(
     )
   }
   const source = await loadModuleBundleSource(migration.source.packageName, {
-    name: migration.idempotencyKey,
     priority: migration.order,
     resolveFrom,
   })

@@ -32,7 +32,7 @@ try {
     process.exitCode = 1
   } else {
     console.log(
-      "check-standard-node-starter: OK (4 authored files, generic Node bootstrap, no product authority)",
+      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no copied metadata or database authority; generic Node bootstrap)",
     )
   }
 } finally {
@@ -114,6 +114,14 @@ function inspectGeneratedStarter(starterRoot) {
     inspectPackageJson(packageJsonPath)
   }
 
+  const envExamplePath = join(starterRoot, ".env.example")
+  if (
+    existsSync(envExamplePath) &&
+    !/^DATABASE_URL=postgresql:\/\//m.test(readFileSync(envExamplePath, "utf8"))
+  ) {
+    violations.push("generated .env.example must declare DATABASE_URL")
+  }
+
   const authoredSources = actualFiles
     .filter((path) => !["package.json", "voyant.config.ts"].includes(path))
     .map((path) => [path, readFileSync(join(starterRoot, path), "utf8")])
@@ -171,10 +179,11 @@ function inspectPackageJson(packageJsonPath) {
     "@voyant-travel/cli",
     "@voyant-travel/framework",
     "@voyant-travel/operator-runtime",
+    "@voyant-travel/operator-standard",
   ]
   if (firstPartyDependencies.join("\n") !== expectedDependencies.join("\n")) {
     violations.push(
-      `generated starter dependencies must expose only CLI, framework, and generic Node runtime; found ${firstPartyDependencies.join(", ")}`,
+      `generated starter dependencies must expose only CLI, framework, standard product distribution, and generic Node runtime; found ${firstPartyDependencies.join(", ")}`,
     )
   }
   if (packageJson.dependencies?.["@voyant-travel/plugin-smartbill"]) {
@@ -189,12 +198,126 @@ function inspectRepositoryAuthority(repoRoot) {
     )
   }
 
+  inspectCheckedInStarterDependencies(repoRoot)
+  inspectCheckedInProductDistribution(repoRoot)
+
+  for (const relativePath of [
+    "starters/operator/drizzle.config.ts",
+    "starters/operator/drizzle.deployment-migrations.config.ts",
+    "starters/operator/drizzle.framework-bundle.config.ts",
+    "starters/operator/drizzle.links.generated.ts",
+    "starters/operator/drizzle.schemas.generated.ts",
+    "starters/operator/migrations",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`checked-in starter must not own database artifact ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
+    "starters/operator/scripts/seed-flights-reference.ts",
+    "starters/operator/scripts/seed-flights-reference-aircraft.ts",
+    "starters/operator/scripts/seed-flights-reference-airlines.ts",
+    "starters/operator/scripts/seed-flights-reference-airports.ts",
+    "starters/operator/scripts/seed-flights-reference-airports-europe.ts",
+    "starters/operator/scripts/seed-flights-reference-airports-global.ts",
+    "starters/operator/scripts/seed-flights-reference-types.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`Flights reference fixture must remain package-owned: ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
+    "apps/scripts/package.json",
+    "starters/operator/scripts/seed.ts",
+    "starters/operator/scripts/seed-catalog-verticals.ts",
+    "starters/operator/scripts/seed-catalog-verticals.test.ts",
+    "starters/operator/scripts/migrate.ts",
+    "starters/operator/scripts/migrate.test.ts",
+    "starters/operator/scripts/check-deployment-graph-env.ts",
+    "starters/operator/scripts/emit-cloud-scheduler.ts",
+    "starters/operator/scripts/env-preload.cjs",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`standard starter operational authority must stay deleted: ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
+    "starters/operator/scripts/backfill-custom-fields.ts",
+    "starters/operator/src/api/lib/catalog-context.ts",
+    "starters/operator/src/api/lib/storage.ts",
+    "starters/operator/src/api/runtime/payment-config.ts",
+    "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",
+    "starters/operator/src/api/runtime/media-runtime.ts",
+    "starters/operator/src/api/runtime/operator-workflow-services.ts",
+    "starters/operator/src/api/lib/db.ts",
+    "starters/operator/src/api/lib/db.test.ts",
+    "starters/operator/src/api/auth/cookie-domain.ts",
+    "starters/operator/src/api/auth/cookie-domain.test.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`checked-in starter authority must stay deleted: ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
+    "starters/operator/env.d.ts",
+    "starters/operator/tsconfig.json",
+    "starters/operator/tsconfig.client.json",
+    "starters/operator/tsconfig.server.json",
+    "starters/operator/turbo.json",
+    "starters/operator/vite.config.ts",
+    "starters/operator/vitest.config.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(
+        `checked-in starter metadata must stay generated under .voyant: ${relativePath}`,
+      )
+    }
+  }
+
+  const operatorGitignore = join(repoRoot, "starters/operator/.gitignore")
+  if (
+    !existsSync(operatorGitignore) ||
+    !readFileSync(operatorGitignore, "utf8")
+      .split(/\r?\n/)
+      .some((line) => line === ".voyant" || line === ".voyant/")
+  ) {
+    violations.push("checked-in starter must ignore disposable .voyant metadata")
+  }
+
+  for (const relativePath of [
+    "starters/operator/scripts/reindex.ts",
+    "starters/operator/scripts/sync-sources.ts",
+    "starters/operator/scripts/lib/reindex-stale-documents.ts",
+    "starters/operator/scripts/lib/typesense-sdk-client.ts",
+    "starters/operator/scripts/lib/build-sync-source-registry.ts",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`Catalog operational authority must stay package-owned: ${relativePath}`)
+    }
+  }
+
   const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
+  const deploymentResourcesPath = join(
+    repoRoot,
+    "packages/operator-runtime/src/deployment-resources.ts",
+  )
   const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
-  if (existsSync(operatorRuntimePath) && existsSync(deploymentArtifactsPath)) {
+  if (
+    existsSync(operatorRuntimePath) &&
+    existsSync(deploymentResourcesPath) &&
+    existsSync(deploymentArtifactsPath)
+  ) {
     const operatorRuntime = readFileSync(operatorRuntimePath, "utf8")
+    const deploymentResources = readFileSync(deploymentResourcesPath, "utf8")
     const deploymentArtifacts = readFileSync(deploymentArtifactsPath, "utf8")
-    if (!operatorRuntime.includes("runtimePorts: generated.createRuntimePorts({ primitives })")) {
+    if (
+      !operatorRuntime.includes("createRuntimePorts: generated.createRuntimePorts") ||
+      !deploymentResources.includes("ports: options.createRuntimePorts({ primitives })")
+    ) {
       violations.push("packaged starter must boot real statically selected runtime ports")
     }
     if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {
@@ -205,7 +328,7 @@ function inspectRepositoryAuthority(repoRoot) {
     }
   }
 
-  const distributionPath = join(repoRoot, "packages/framework/src/operator-distribution.ts")
+  const distributionPath = join(repoRoot, "packages/operator-standard/src/index.ts")
   const configPath = join(repoRoot, "starters/operator/voyant.config.ts")
   if (existsSync(distributionPath) && existsSync(configPath)) {
     const distributionSource = readFileSync(distributionPath, "utf8")
@@ -223,9 +346,19 @@ function inspectRepositoryAuthority(repoRoot) {
   if (existsSync(join(repoRoot, "packages/framework/src/composition-lazy.ts"))) {
     violations.push("framework composition-lazy.ts compatibility catalog must stay deleted")
   }
-  const resourcesPath = join(repoRoot, "starters/operator/src/api/runtime/deployment-resources.ts")
-  if (existsSync(resourcesPath)) {
-    const resources = readFileSync(resourcesPath, "utf8")
+  const retiredResourcesPath = join(
+    repoRoot,
+    "starters/operator/src/api/runtime/deployment-resources.ts",
+  )
+  if (existsSync(retiredResourcesPath)) {
+    violations.push("starter-owned deployment-resources.ts must stay deleted")
+  }
+  const adapterPath = join(
+    repoRoot,
+    "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  )
+  if (existsSync(adapterPath)) {
+    const resources = readFileSync(adapterPath, "utf8")
     for (const symbol of [
       "operatorGraphRuntimeBindings",
       "deploymentLocalExtensions",
@@ -245,11 +378,87 @@ function inspectRepositoryAuthority(repoRoot) {
   }
 }
 
+function inspectCheckedInStarterDependencies(repoRoot) {
+  const starterRoot = join(repoRoot, "starters/operator")
+  const packageJsonPath = join(starterRoot, "package.json")
+  if (!existsSync(packageJsonPath)) return
+
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  const declared = new Set([
+    ...Object.keys(packageJson.dependencies ?? {}),
+    ...Object.keys(packageJson.devDependencies ?? {}),
+  ])
+  const importPattern =
+    /\b(?:from\s+|import\s*\(\s*|import\s+)["'](@voyant-travel\/[^/"']+)(?:\/[^"']*)?["']/g
+
+  for (const sourcePath of walkFiles(starterRoot).filter((path) => /\.[cm]?[jt]sx?$/.test(path))) {
+    const source = readFileSync(join(starterRoot, sourcePath), "utf8")
+    for (const match of source.matchAll(importPattern)) {
+      const packageName = match[1]
+      if (!declared.has(packageName)) {
+        violations.push(
+          `checked-in starter imports undeclared direct dependency ${packageName}: ${sourcePath}`,
+        )
+      }
+    }
+  }
+}
+
+function inspectCheckedInProductDistribution(repoRoot) {
+  const distributionSourcePath = join(repoRoot, "packages/operator-standard/src/index.ts")
+  const distributionPackagePath = join(repoRoot, "packages/operator-standard/package.json")
+  const starterPackagePath = join(repoRoot, "starters/operator/package.json")
+  if (
+    !existsSync(distributionSourcePath) ||
+    !existsSync(distributionPackagePath) ||
+    !existsSync(starterPackagePath)
+  ) {
+    return
+  }
+
+  const distributionSource = readFileSync(distributionSourcePath, "utf8")
+  const distributionPackage = JSON.parse(readFileSync(distributionPackagePath, "utf8"))
+  const starterPackage = JSON.parse(readFileSync(starterPackagePath, "utf8"))
+  const standardOwners = new Set(
+    [...distributionSource.matchAll(/resolve:\s*"(@voyant-travel\/[^"/]+)/g)].map(
+      (match) => match[1],
+    ),
+  )
+
+  for (const packageName of standardOwners) {
+    if (!distributionPackage.dependencies?.[packageName]) {
+      violations.push(`standard product distribution must depend on ${packageName}`)
+    }
+  }
+  if (!starterPackage.dependencies?.["@voyant-travel/operator-standard"]) {
+    violations.push("checked-in starter must depend on @voyant-travel/operator-standard")
+  }
+
+  const starterRoot = join(repoRoot, "starters/operator")
+  const productionSource = walkFiles(starterRoot)
+    .filter(
+      (sourcePath) =>
+        /\.(?:css|ts|tsx)$/.test(sourcePath) &&
+        !/\.test\.[^.]+$/.test(sourcePath) &&
+        !sourcePath.startsWith(".voyant/"),
+    )
+    .map((sourcePath) => readFileSync(join(starterRoot, sourcePath), "utf8"))
+    .join("\n")
+  for (const packageName of standardOwners) {
+    if (starterPackage.dependencies?.[packageName] && !productionSource.includes(packageName)) {
+      violations.push(
+        `checked-in starter must obtain manifest-only standard package ${packageName} from @voyant-travel/operator-standard`,
+      )
+    }
+  }
+}
+
 function walkFiles(root) {
   if (!existsSync(root)) return []
   const files = []
   const visit = (directory) => {
     for (const entry of readdirSync(directory).sort()) {
+      if ([".voyant", "dist", "node_modules"].includes(entry)) continue
       const path = join(directory, entry)
       if (statSync(path).isDirectory()) visit(path)
       else files.push(relative(root, path))

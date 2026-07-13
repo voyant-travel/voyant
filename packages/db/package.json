@@ -30,6 +30,7 @@
     "./write-intents": "./src/write-intents.ts",
     "./queries": "./src/queries/index.ts",
     "./runtime": "./src/runtime/index.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts",
     "./schema": "./src/schema/index.ts",
     "./schema/00_ensure_schemas": "./src/schema/00_ensure_schemas.ts",
     "./schema/aggregate-snapshots": "./src/schema/aggregate-snapshots.ts",
@@ -177,6 +178,11 @@
         "types": "./dist/runtime/index.d.ts",
         "import": "./dist/runtime/index.js",
         "default": "./dist/runtime/index.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
       },
       "./schema": {
         "types": "./dist/schema/index.d.ts",
@@ -386,6 +392,10 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createDbRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
       "targets": [

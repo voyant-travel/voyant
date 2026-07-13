@@ -172,10 +172,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      # `--conditions=development` makes drizzle-kit load the workspace TS-source
-      # schema (this job does NOT build dist, so the default condition resolves
-      # to absent dist and push would materialise an EMPTY schema). Mirrors the
-      # `checks` job's migration-drift step.
       NODE_OPTIONS: --conditions=development --max-old-space-size=8192
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
@@ -211,10 +207,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Replay-parity oracle (bundle + links == live aggregate schema)
-        # Proves the framework bundle + deployment links reconstitute EXACTLY the
-        # drizzle-kit-push of the live aggregate schema (the baseline cutover's
-        # safety oracle). Creates/drops its own throwaway DBs.
+      - name: Replay parity (legacy upgrade == package-owned replay)
+        # Proves the frozen cutline + retired deployment history and a fresh
+        # replay of selected package migrations produce the same schema.
         run: node scripts/verify-migration-replay-parity.mjs
 
       - name: D.2 fresh-union (all package migration sources apply together)
@@ -224,12 +219,12 @@ jobs:
         # ownerless tables before they ship. Creates/drops its own throwaway DBs.
         run: node scripts/migrations/verify-package-baseline.mjs --union
 
-      - name: Materialize the aggregate schema (drizzle-kit push)
-        # The custom-field integration route tests run against a real schema.
-        # Trigram indexes need pg_trgm/unaccent seeded before push.
-        run: |
-          psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS "pg_trgm"; CREATE EXTENSION IF NOT EXISTS "unaccent";'
-          pnpm --filter operator exec drizzle-kit push --force
+      - name: Materialize the selected package schema
+        # Exercise the same graph-derived package migration runner used by Node
+        # deployments before running integration tests against the real schema.
+        env:
+          NODE_OPTIONS: --conditions=development --import=tsx --max-old-space-size=8192
+        run: pnpm --filter operator db:migrate
 
       - name: Custom-field integration tests
         run: >-
@@ -246,7 +241,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=12288
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:

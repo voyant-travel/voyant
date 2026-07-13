@@ -5,6 +5,8 @@
  * package export, never imported from this module.
  */
 
+import type { ModuleContainer } from "./container.js"
+import type { EventBus } from "./events.js"
 import type {
   VoyantGraphAccessDeclaration,
   VoyantGraphActionDeclaration,
@@ -96,6 +98,35 @@ export async function assertPortConforms<TProvider>(
 ): Promise<void> {
   await port.test(provider)
 }
+
+export const VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID = "voyant.workflow-services" as const
+
+export interface VoyantWorkflowServiceContributionContext {
+  environment: Readonly<Record<string, unknown>>
+  services: ModuleContainer
+  eventBus: EventBus
+  reportFailure(error: unknown, context: Readonly<Record<string, unknown>>): void
+}
+
+export interface VoyantWorkflowServiceContribution {
+  serviceId: string
+  create(context: VoyantWorkflowServiceContributionContext): unknown | Promise<unknown>
+}
+
+/** Additive package-owned workflow services selected through the deployment graph. */
+export const voyantWorkflowServiceContributionsPort = definePort<VoyantWorkflowServiceContribution>(
+  {
+    id: VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
+    test(contribution) {
+      if (!contribution || typeof contribution !== "object") {
+        throw new Error("Workflow service contribution must be an object.")
+      }
+      if (!contribution.serviceId || typeof contribution.create !== "function") {
+        throw new Error("Workflow service contribution must define serviceId and create().")
+      }
+    },
+  },
+)
 
 export interface VoyantGraphRuntimeFactoryGraph {
   readonly accessCatalog: {

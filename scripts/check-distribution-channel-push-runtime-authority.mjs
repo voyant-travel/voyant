@@ -12,6 +12,10 @@ const pathOption = (name, fallback) => {
 }
 const distributionRoot = pathOption("--distribution-root", join(ROOT, "packages/distribution"))
 const operatorRoot = pathOption("--operator-root", join(ROOT, "starters/operator"))
+const compositionPath = pathOption(
+  "--composition",
+  join(ROOT, "packages/operator-runtime/src/deployment-resources.ts"),
+)
 const deploymentGraphCheckerPath = pathOption(
   "--deployment-graph-checker",
   join(ROOT, "scripts/check-deployment-graph.ts"),
@@ -35,11 +39,16 @@ const normalizedContributor = contributor.replace(
   "host.getRuntimePort",
 )
 const runtime = readRequired(join(distributionRoot, "src/runtime.ts"))
-const composition = readRequired(join(operatorRoot, "src/api/runtime/deployment-resources.ts"))
-const workflowServices = readRequired(
-  join(operatorRoot, "src/api/runtime/operator-workflow-services.ts"),
-)
+const composition = readRequired(compositionPath)
+const workflowServicesPath = join(operatorRoot, "src/api/runtime/operator-workflow-services.ts")
+const workflowServices = existsSync(workflowServicesPath)
+  ? readFileSync(workflowServicesPath, "utf8")
+  : ""
 const deploymentGraphChecker = readRequired(deploymentGraphCheckerPath)
+
+if (existsSync(join(operatorRoot, "src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 
 if (
   !manifest.includes("runtimePorts: [requirePort(channelPushRuntimePort)]") ||
@@ -97,7 +106,7 @@ if (
 if (
   composition.includes('from "@voyant-travel/distribution/runtime-contributor"') ||
   composition.includes("createDistributionRuntimePortContribution") ||
-  !composition.includes("createGeneratedGraphRuntimePorts")
+  !composition.includes("options.createRuntimePorts")
 ) {
   violations.push("Operator must bind Distribution through generated contributor composition")
 }

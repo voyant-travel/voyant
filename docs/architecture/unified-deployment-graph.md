@@ -101,6 +101,16 @@ as decided by [ADR-0012](../adr/0012-application-authoring-and-product-defaults.
 Standard product closure belongs to a framework-owned distribution rather than
 being copied into every project.
 
+The standard Node product distribution is the explicit
+`@voyant-travel/operator-standard` package. A standard project depends on that
+one package alongside its genuine project and bootstrap dependencies. The
+distribution owns exact-pinned publish dependencies for every selected package
+and recursive manifest/runtime reference in its tested closure. During
+resolution, its package directory is a dependency-resolution root, so selected
+`./voyant` manifests resolve under strict pnpm without starter duplication or
+hoisting. `@voyant-travel/framework` owns resolver/runtime implementation only;
+it is not the standard product BOM.
+
 ```sh
 voyant new --preset pms-standard
 ```
@@ -200,6 +210,11 @@ It may still be described as an adapter package in taxonomy and docs.
 The end-state source of truth for a module or plugin is an import-cheap manifest
 exported by the package that owns the behavior. This rule applies equally to
 first-party, third-party, workspace, and deployment-local units.
+
+Distribution packages own selection policy and dependency closure, not copies
+of selected graph manifests. The resolver loads those manifests from the
+selected owner packages relative to the distribution package that supplied the
+product BOM.
 
 ```json
 {
@@ -499,6 +514,12 @@ are reproducible outputs and are never application-authored source-of-truth
 files. A contributor adding a package-owned facet should be able to test it from
 the package and select it from a project without changing `starters/operator`.
 
+The standard Operator frontend follows the same rule. Auth, storefront,
+workspace, payment, accountant, and proposal behavior is package-owned; its
+TanStack file-route registrations and `routeTree.gen.ts` are generated under
+`.voyant/`. The checked-in starter must not copy those standard routes into
+`src/routes`.
+
 ## Foundational V1 Substrate
 
 The first implementation intentionally includes only facets that map to current
@@ -612,11 +633,12 @@ their generated lazy import and no port binding is resolved for them. Legacy
 package-keyed runtime bindings remain a migration bridge only for units whose
 public factories have not adopted this contract. The Operator application does
 not expose or assemble that bridge: it passes the generated runtime one opaque
-deployment-resource object from `src/api/runtime/deployment-resources.ts`. That
-boundary may adapt Node-only database, storage, notification, workflow-registry,
-and outbound-webhook resources, but package selection and route ordering remain
-graph-derived. `src/api/composition.ts` is deleted and the runtime-port checker
-rejects its return.
+deployment-resource object created by `@voyant-travel/operator-runtime`. The
+project injects only its concrete Node database, storage, configuration, event,
+and generated runtime-port adapters; the stable resource shape remains
+package-owned. Package selection and route ordering remain graph-derived.
+`src/api/composition.ts` and `src/api/runtime/deployment-resources.ts` are
+deleted, and the runtime-port checker rejects their return.
 
 Progress: the Distribution channel-push extension now declares its route and
 workflow-service runtime dependency as a typed port and adapts that port through
@@ -790,8 +812,8 @@ Richer cross-module link behavior is deferred:
 - cross-module hydration policy
 - link-aware permission policy
 
-Until those ship, link tables and deployment-local link migrations should keep
-using the existing link machinery.
+Until those ship, link tables keep using the existing link machinery, with DDL
+owned by the package that declares each link facet.
 
 ## Lifecycle
 
@@ -852,7 +874,7 @@ including Bookings, Catalog, and Inventory:
 
 - the package manifest opts its import-cheap admin extension factory into
   `admin.runtime` and retains its stable route declarations
-- project resolution emits `.voyant/admin/selected-graph-admin.generated.ts`
+- project resolution emits `.voyant/admin/selected-graph-admin.generated.js` with a bounded adjacent declaration facade
   from only selected units with `admin.runtime`; package page modules remain
   behind the lazy imports owned by the UI export
 - each selected package adapter owns its Operator nav-copy keys and icons and
@@ -1008,6 +1030,15 @@ This workflow-only artifact contains selected workflow and event-filter imports,
 but no API, admin, module, provider, or tool runtime imports. Node workflow
 bundles consume this narrow artifact so build-time bundling cannot pull the
 application server graph into the workflow executor.
+
+Package-owned workflow dependencies use the additive
+`voyant.workflow-services` runtime port. Each selected package runtime
+contributor returns its own stable service id and factory; the generic Node
+workflow loader registers those contributions into the graph-bootstrapped app
+container. The deployment starter supplies only host primitives, environment,
+the app service container, event bus, and failure reporting. It must not import
+package workflow runtime keys or maintain a first-party workflow-service
+catalog.
 
 Implementation note: application convention compilation validates
 `src/workflows` and `src/jobs` without evaluating source. Workflow files
@@ -1325,12 +1356,12 @@ every package-backed migration source selected into the graph.
 The deployment artifact manifest records package-backed migration sources
 directly from selected package manifests. Runtime migration execution derives
 the dependency-ordered plan from those same selected graph units, resolves each
-package's migration folder through the D.2 collector, and applies explicit
-deployment-local migrations last. Deselecting a package therefore removes its
-schema migration from both the artifact and executable plan. The committed
-`drizzle.schemas.generated.ts` remains a Drizzle generation and replay-parity
-input; it is not migration selection authority. Graph artifact validation
-rejects sources that are not represented in graph package records.
+package's migration folder through the D.2 collector. Deselecting a package
+therefore removes its schema migration from both the artifact and executable
+plan. The generated plan under `.voyant/` is the only project-level migration
+synthesis; the starter commits no aggregate Drizzle schema, generated link
+schema, or deployment migration folder. Graph artifact validation rejects
+sources that are not represented in graph package records.
 
 The operator graph now also lowers the first declarative workflow/event-filter
 pair from first-party metadata: commerce contributes
@@ -1339,10 +1370,12 @@ event-filter subscriber that targets that workflow. This is intentionally a
 small facet slice: it proves the graph shape for declarative workflow/event
 routing without pulling runtime workflow bodies into graph discovery.
 
-SmartBill is a package-owned plugin example of states 2 and 3. The Operator
-selects `@voyant-travel/plugin-smartbill` directly, admission reads the
-installed package's `package.json#voyant.manifest` and public `./voyant`
-export, and the generated graph loads its admin API plus the three
+SmartBill is an optional package-owned plugin example of states 2 and 3. The
+standard Operator neither installs nor selects it. A project opts in by
+installing `@voyant-travel/plugin-smartbill` and selecting it in
+`voyant.config.ts`; admission then reads the installed package's
+`package.json#voyant.manifest` and public `./voyant` export, and the generated
+graph loads its admin API plus the three
 `./subscriber-runtime` descriptors. Generic selected-graph subscriber
 composition registers those descriptors exactly once. The deployment binding
 supplies only the environment, database, storage, and event-handler service
@@ -1351,11 +1384,10 @@ remains API compatibility until plugin API factories compose without that
 adapter; it is not subscriber authority. The Operator app must not maintain a
 parallel SmartBill bundle, event-name list, or compatibility mount.
 
-Product-side tooling exposes the same graph diagnostics in human and JSON form
-through `scripts/emit-deployment-graph.ts --json`, using the checked-in
-diagnostic-code registry. The public `voyant doctor --json` command remains the
-CLI follow-up; it should consume this report contract rather than inventing a
-separate diagnostic model.
+The external CLI exposes graph diagnostics in human and JSON form through
+`voyant doctor --json`, using the framework's checked-in diagnostic-code
+registry. The product repository does not maintain a second artifact emitter
+or diagnostic command.
 
 The reference operator owns one checked-in `voyant.config.ts`. It is a reference
 consumer and compatibility host, not the canonical package catalog. Its
@@ -1401,7 +1433,14 @@ a resolver-private relative import. The operator resolver adapter requires
 `resolveProject({ project, projectRoot, configPath })` and then adds target
 admission, lockfile provenance, and runtime-maintenance schedules.
 
-The same resolver compiles `src/api/{admin,store}/**/route.ts` into individual
+Statically selected runtime contributors share one bounded framework host
+contract: runtime host primitives plus runtime-port resolution. Generated source
+checks every contributor against that contract directly; it must not infer a
+product-wide intersection from package function parameters. Package-specific
+host capabilities belong behind declared runtime ports rather than in the
+application bootstrap type.
+
+The same resolver compiles `src/api/{admin,public}/**/route.ts` into individual
 graph API facets backed by one generated static Hono adapter, and compiles
 `src/admin/<name>/index.tsx` entries into a deterministic client module. Both
 artifacts use paths relative to `.voyant/`; no runtime filesystem scan or
@@ -1459,9 +1498,9 @@ part of the issue's package-owned end state. `Hardening` rows may remain later.
 | Identity, selection, package metadata, admission | Deterministic v1 graph, package records, generated operator units, managed-profile compatibility | Package exports `voyant.package.v1` plus import-cheap `./voyant`; project explicitly selects normalized module/plugin package or path references | Phase 0 | Direct package resolution matches the bridge graph; no operator package catalog is consulted | #3080 |
 | Capabilities | Package manifests and resolved graph `provides`/`requires` | Package manifest owns coarse capability tokens; project graph closes them | Identity | No central capability projection exists; package removal still produces stable resolution diagnostics | #3080 |
 | Typed ports, providers, adapters | First public-port slice plus broad `FrameworkProviders` container and starter factories | Port-owning package exports contract and conformance kit; module declares requirements; plugin-distributed providers declare provisions; deployment selects routing/defaults only where needed | Capabilities, runtime contract, test harness | Selected providers satisfy facets and kits; no package-specific starter provider entry is required | #3080, demand-driven replacement |
-| Schema and migrations | D.2 collector, generated schema manifest, operator migration-source artifact, ADR-0007 monolithic bundle | Schema-owning package declares schema and ships namespaced migrations; project owns only cross-package link/deployment-local migrations | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
+| Schema and migrations | D.2 collector, graph migration plan, frozen transition bundle | Schema-owning packages ship append-only migrations, including the cross-package links they declare; the starter owns no aggregate schema or migration history | Identity, admission | `dev`, `doctor`, `migrate`, Cloud, and Docker derive the same dependency-ordered plan directly from selected packages | #3080 |
 | Setup/data migrations | Ad hoc seed/setup behavior and ordinary migrations | Package owns versioned, idempotent setup/data migrations with applied-work ids; project owns optional explicit seed scripts | Schema/migrations, lifecycle ledger | Install/upgrade replay is idempotent and no lifecycle hook is needed | #3080 |
-| Linkables and links | Selected graph link facets with symbolic named exports and deployment-local link migrations | Reference-owning package declares neutral pair links; the product BOM explicitly selects genuinely ownerless pairs; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and generated DDL resolve without starter link lists | #3080 |
+| Linkables and links | Selected graph link facets with symbolic named exports and package-owned link migrations | Reference-owning package declares neutral pair links; the product BOM explicitly selects genuinely ownerless pairs; rich associations remain module-owned records | Identity, schema/migrations | Both link ends and DDL resolve without starter link lists or generated starter schemas | #3080 |
 | Runtime config | Managed profile settings and deployment config bridges | Package declares typed config contract; project supplies portable non-secret values | Package manifests | Defaults/values validate before build and package code no longer reads profile settings directly | #3080 |
 | Secrets and resource/service bindings | Managed requirements, env aliases, provider bindings, boot validation | Package declares logical secret/binding needs; deployment binds provider-specific sources; runtime receives typed redacted handles | Runtime config, Node host adapter contract | Cloud/self-host plans and runtime boot agree; package public API contains no provider env names | #3080 |
 | API routes and route posture | Existing Hono modules/extensions, generated entries, starter `publicPaths` and transactional fallbacks | Package `api.admin`, `api.public`, `api.webhooks`, and `api.internal` own lazy factories, stable ids, anonymous posture, transaction need, mounts, and operation metadata | Package manifests, runtime bindings | Standard `publicPaths`, transactional paths, and route-family lists are derived and starter fallbacks are empty | #3080 |
@@ -1692,6 +1731,9 @@ tools, and audited action metadata without parallel operator catalogs.
   platform
 - delete each central generator input after direct package parity passes; keep
   only hosting-neutral generated outputs and Node host bootstraps
+- keep the standard Node bootstrap package-owned: the starter must not own API
+  composition, auth dispatch, runtime-port adapters, scheduling, workflow host
+  loading, SSR dispatch, or concrete provider helpers
 - run an issue-completion audit against every `#3080` matrix exit test
 
 Exit: `starters/operator` can be replaced by another Node host bootstrap without
@@ -1709,6 +1751,13 @@ one deployable Node path work together. Generated first-party manifests are
 valid evidence for this milestone.
 
 ### `voyant#3080` completion
+
+The standard project does not own migration, environment-validation,
+scheduler-provisioning, or product-demo scripts. Migrations execute through the
+external CLI from the admitted graph. Runtime boot validates graph-selected
+resources, scheduler provisioning consumes framework graph APIs, and destructive
+product fixtures live in `examples/operator-demo`. Generated projects retain an
+empty `src/scripts/seed.ts` only for project-owned data.
 
 The issue is complete only when:
 

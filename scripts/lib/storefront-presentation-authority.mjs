@@ -31,13 +31,13 @@ export function checkStorefrontPresentationAuthority({
       continue
     }
     hostLines += source.split("\n").length
-    for (const token of [
-      "createFileRoute",
-      "storefrontPresentationContribution",
-      `routes.${routeKey}`,
-    ]) {
-      if (!source.includes(token)) failures.push(`${file} must contain ${token}`)
-    }
+    if (!source.includes("createFileRoute")) failures.push(`${file} must contain createFileRoute`)
+    const oldRuntime =
+      source.includes("storefrontPresentationContribution") && source.includes(`routes.${routeKey}`)
+    const packagedRuntime =
+      source.includes("operatorFrontend") && source.includes(`routes.storefront.${routeKey}`)
+    if (!oldRuntime && !packagedRuntime)
+      failures.push(`${file} must bind Storefront route ${routeKey}`)
     for (const token of [
       "function ",
       "useNavigate",
@@ -96,7 +96,10 @@ export function checkStorefrontPresentationAuthority({
   if (intakeAdapter.includes("StorefrontIntake") || intakeAdapter.includes("storefrontIntake")) {
     failures.push("Storefront intake authority must stay out of the starter")
   }
-  if (!relationshipsContributor.includes("[storefrontIntakeRuntimePort.id]")) {
+  if (
+    !relationshipsContributor.includes("[storefrontIntakeRuntimePort.id]") &&
+    !relationshipsContributor.includes("[storefrontIntakeRuntimePortReference.id]")
+  ) {
     failures.push("Relationships contributor must provide the Storefront intake port")
   }
   for (const token of [

@@ -31,13 +31,42 @@ const clientFiles = existsSync(clientRoot)
   : []
 const adminChunks = clientFiles.filter((file) => /(?:admin|route|page|chunk)/i.test(file))
 const configSource = readFileSync(join(operatorRoot, "voyant.config.ts"), "utf8")
+const checkedInMetadataNames = [
+  "env.d.ts",
+  "tsconfig.json",
+  "tsconfig.client.json",
+  "tsconfig.server.json",
+  "turbo.json",
+  "vite.config.ts",
+  "vitest.config.ts",
+]
+const generatedMetadataNames = [
+  "env.d.ts",
+  "tsconfig.client.json",
+  "tsconfig.server.json",
+  "vite.config.ts",
+  "vitest.config.ts",
+]
+const checkedInMetadata = checkedInMetadataNames
+  .map((file) => join(operatorRoot, file))
+  .filter(existsSync)
+const generatedMetadata = generatedMetadataNames
+  .map((file) => join(operatorRoot, ".voyant", file))
+  .filter(existsSync)
 
 const report = {
-  schemaVersion: "voyant.starter-performance.v1",
+  schemaVersion: "voyant.starter-performance.v2",
   authoredConfig: {
     lines: configSource.trim().split(/\r?\n/).length,
     repeatsStandardModules: /\bmodules\s*:/.test(configSource),
     repeatsStandardExtensions: /\bextensions\s*:/.test(configSource),
+  },
+  metadata: {
+    checkedIn: summarizeMetadata(checkedInMetadata),
+    generated: {
+      ...summarizeMetadata(generatedMetadata),
+      declarationPathEntries: generatedDeclarationPathEntries(operatorRoot),
+    },
   },
   server: summarize(serverFiles),
   admin: summarize(adminChunks),
@@ -53,6 +82,10 @@ if (check) {
   if (report.authoredConfig.repeatsStandardModules) failures.push("config repeats standard modules")
   if (report.authoredConfig.repeatsStandardExtensions)
     failures.push("config repeats standard extensions")
+  if (report.metadata.checkedIn.files > 0) failures.push("starter copies checked-in metadata")
+  if (report.metadata.generated.files !== generatedMetadataNames.length) {
+    failures.push("generated .voyant metadata is incomplete")
+  }
   if (report.server.gzipBytes > 25 * 1024 * 1024)
     failures.push("server gzip closure exceeds 25 MiB")
   if (report.admin.gzipBytes > 15 * 1024 * 1024) failures.push("admin gzip chunks exceed 15 MiB")
@@ -66,6 +99,21 @@ if (check) {
     for (const failure of failures) console.error(`- ${failure}`)
     process.exit(1)
   }
+}
+
+function summarizeMetadata(files) {
+  return {
+    files: files.length,
+    bytes: files.reduce((total, file) => total + statSync(file).size, 0),
+    paths: files.map((file) => relative(operatorRoot, file)).sort(),
+  }
+}
+
+function generatedDeclarationPathEntries(root) {
+  const config = join(root, ".voyant/tsconfig.client.json")
+  if (!existsSync(config)) return 0
+  const parsed = JSON.parse(readFileSync(config, "utf8"))
+  return Object.keys(parsed.compilerOptions?.paths ?? {}).length
 }
 
 function walk(directory) {

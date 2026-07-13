@@ -41,8 +41,22 @@ const graph = JSON.parse(
 const artifactManifest = JSON.parse(
   await readFile(path.join(operatorRoot, ".voyant", "deployment-artifacts.generated.json"), "utf8"),
 )
+const accessCatalogSource = await readFile(
+  path.join(operatorRoot, ".voyant", "access", "selected-access-catalog.generated.ts"),
+  "utf8",
+)
 
-assert.deepEqual(artifactManifest.accessCatalog, graph.accessCatalog)
+assert.ok(
+  artifactManifest.files.includes("access/selected-access-catalog.generated.ts"),
+  "the deployment artifact manifest must include the selected access catalog",
+)
+assert.match(
+  accessCatalogSource,
+  new RegExp(
+    `GENERATED_SELECTED_ACCESS_CATALOG_HASH = ${JSON.stringify(artifactManifest.graphHash)}`,
+  ),
+  "the selected access catalog must match the emitted deployment graph",
+)
 
 const byResource = new Map(
   graph.accessCatalog.resources.map((resource) => [resource.resource, resource]),
@@ -105,17 +119,15 @@ assert.deepEqual(presets.get("agent-staff")?.grants, [
 ])
 assert.deepEqual(presets.get("editor")?.grants, ["bookings:read", "bookings:write"])
 
-for (const relativePath of [
-  "src/api/app.ts",
-  "src/api/auth/handler.ts",
-  "src/lib/admin-presentation.tsx",
+for (const [relativePath, pattern] of [
+  ["packages/operator-runtime/src/index.ts", /graphRuntime\.accessCatalog/],
+  [
+    "packages/operator-standard/src/standard-route-files.ts",
+    /access\/selected-access-catalog\.generated/,
+  ],
 ]) {
-  const source = await readFile(path.join(operatorRoot, relativePath), "utf8")
-  assert.match(
-    source,
-    /\.voyant\/access\/selected-access-catalog\.generated/,
-    `${relativePath} must consume the generated access catalog`,
-  )
+  const source = await readFile(path.join(repoRoot, relativePath), "utf8")
+  assert.match(source, pattern, `${relativePath} must consume the generated access catalog`)
 }
 
 console.log("access catalog authority: OK")

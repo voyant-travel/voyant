@@ -33,6 +33,9 @@ search services, or catalog runtime services.
 - **`./snapshot/schema`** — `booking_catalog_snapshot` table for immutable booking-time Catalog Item projection views.
 - **`./indexer/contract`** — engine-agnostic `IndexerAdapter` contract.
 - **`./indexer/typesense`** — native Typesense implementation, the v1 default.
+- **`./operations/typesense`** — provider maintenance primitives for collection cleanup,
+  stale-document discovery, and adapting the official Node SDK. Deployment tooling
+  composes these APIs outside consumer projects.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.
 - **`./drift/events`** — drift event types for upstream change detection.
 - **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyant-travel/core/events` and consumed by the existing webhook pipeline.

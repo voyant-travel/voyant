@@ -3,18 +3,17 @@ import { resolve } from "node:path"
 
 const root = resolve(import.meta.dirname, "..")
 const violations = []
-const adapters = new Map([
-  ["starters/operator/src/workflow-runtime.ts", 45],
-  ["starters/operator/src/scheduled-crons.ts", 35],
-  ["starters/operator/src/hono-api-dispatch.ts", 35],
-])
+const retiredAdapters = [
+  "starters/operator/src/workflow-runtime.ts",
+  "starters/operator/src/scheduled-crons.ts",
+  "starters/operator/src/hono-api-dispatch.ts",
+  "starters/operator/src/entry.ts",
+  "starters/operator/src/ssr-handler.ts",
+]
 
-for (const [file, budget] of adapters) {
-  const source = read(file)
-  const lines = source.split("\n").length
-  if (lines > budget)
-    violations.push(`${file}: ${lines} lines exceeds ${budget}-line adapter budget`)
-  requireText(source, 'from "@voyant-travel/framework/node-host"', file)
+for (const file of retiredAdapters) {
+  if (existsSync(resolve(root, file)))
+    violations.push(`${file}: generic host behavior must stay package-owned`)
 }
 
 for (const file of [
@@ -26,16 +25,14 @@ for (const file of [
     violations.push(`${file}: generic tests must be framework-owned`)
 }
 
-const forbiddenStarterAuthority = [
-  "isGraphRuntimeFactory",
-  "createApiDispatch",
-  "requestBodyLimit",
-  "resolveCronJobFromJobs",
-  "requireEventFilterManifest",
-]
-for (const file of adapters.keys()) {
-  const source = read(file)
-  for (const token of forbiddenStarterAuthority) requireAbsent(source, token, file)
+const runtime = read("packages/operator-runtime/src/index.ts")
+for (const token of [
+  "loadOperatorProject",
+  "dispatchScheduledProjectJob",
+  "loadOperatorProjectWorkflowRuntime",
+  "createOperatorProjectServerEntry",
+]) {
+  requireText(runtime, token, "packages/operator-runtime/src/index.ts")
 }
 
 for (const file of [
@@ -54,7 +51,7 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("check-node-host-dispatch-authority: OK (three deployment-only adapters)")
+console.log("check-node-host-dispatch-authority: OK (starter dispatch adapters deleted)")
 
 function read(file) {
   return readFileSync(resolve(root, file), "utf8")

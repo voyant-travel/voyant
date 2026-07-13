@@ -29,8 +29,7 @@ async function createFixture(overrides = {}) {
       "Promise.resolve()\nhost.getRuntimePort(catalogRuntimeServicesPort)\ncreateDistributionRuntime(host.primitives, services)\n[channelPushRuntimePort.id]: channelPushRuntime\n[catalogDistributionRuntimeExtensionPort.id]\n[financeDistributionPaymentPolicyRuntimePort.id]\n",
     "distribution/src/runtime.ts":
       "catalogRuntime.getSourceRegistryFromContext\ncreateChannelPushWorkflowRuntimeEntries\nprimitives.database.resolve\nprimitives.database.transaction\n",
-    "operator/src/api/runtime/deployment-resources.ts":
-      "createGeneratedGraphRuntimePorts({ channelPush: operatorChannelPushRuntime })\n",
+    "operator-runtime/src/deployment-resources.ts": "options.createRuntimePorts({ primitives })\n",
     "operator/src/api/runtime/operator-workflow-services.ts": "export const unrelated = true\n",
     "scripts/check-deployment-graph.ts":
       'const operatorChannelPushRoutePath = join(operatorRoot, "src/api/routes/channel-push.ts")\nif (existsSync(operatorChannelPushRoutePath)) failures.push("deleted")\n',
@@ -53,6 +52,8 @@ async function runChecker(root) {
       path.join(root, "distribution"),
       "--operator-root",
       path.join(root, "operator"),
+      "--composition",
+      path.join(root, "operator-runtime/src/deployment-resources.ts"),
       "--deployment-graph-checker",
       path.join(root, "scripts/check-deployment-graph.ts"),
     ],
@@ -81,7 +82,7 @@ describe("check-distribution-channel-push-runtime-authority", () => {
 
   it("rejects a package-id binding and restored compatibility route", async () => {
     const root = await createFixture({
-      "operator/src/api/runtime/deployment-resources.ts":
+      "operator-runtime/src/deployment-resources.ts":
         'const binding = { "@voyant-travel/distribution#channel-push-extension": createChannelPushExtension }\n',
       "operator/src/api/routes/channel-push.ts": "export const compatibilityRoute = true\n",
     })

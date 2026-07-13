@@ -1,10 +1,20 @@
-import { defineModule } from "@voyant-travel/core/project"
+import {
+  defineModule,
+  requirePort,
+  voyantWorkflowServiceContributionsPort,
+} from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the database package. */
 export const dbVoyantModule = defineModule({
   id: "@voyant-travel/db",
   packageName: "@voyant-travel/db",
   localId: "db",
+  runtimePorts: [
+    requirePort(voyantWorkflowServiceContributionsPort, {
+      optional: true,
+      cardinality: "many",
+    }),
+  ],
   provides: {
     ports: [{ id: "database.client" }],
   },

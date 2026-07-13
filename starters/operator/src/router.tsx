@@ -1,31 +1,12 @@
-import {
-  type AdminRouterContext,
-  attachAdminExtensionRoutes,
-  buildAdminExtensionRoutes,
-  createAdminRouter,
-} from "@voyant-travel/admin/app"
+import type { StandardOperatorRouterContext } from "@voyant-travel/operator-standard/standard-frontend"
+import { operatorFrontend } from "../.voyant/routes/_lib/operator-frontend"
+import { Route as workspaceRoute } from "../.voyant/routes/_workspace/route"
+import { routeTree } from "../.voyant/routeTree.gen"
 
-import { operatorAdminPresentation } from "./lib/admin-presentation"
-import { getApiUrl } from "./lib/env"
-import { projectFetcher } from "./lib/voyant-fetcher"
-import { Route as workspaceRoute } from "./routes/_workspace/route"
-import { routeTree } from "./routeTree.gen"
-
-export type RouterContext = AdminRouterContext
-
-// The graph-generated extension bundle and project-local `src/admin/*`
-// conventions share one runtime route path. No committed route registry is
-// required in the deployment source tree.
-const adminRoutes = buildAdminExtensionRoutes(
-  operatorAdminPresentation.extensions,
-  () => workspaceRoute,
-  () => ({ baseUrl: getApiUrl(), fetcher: projectFetcher }),
-)
-
-const operatorRouteTree = attachAdminExtensionRoutes(routeTree, workspaceRoute, adminRoutes)
+export type RouterContext = StandardOperatorRouterContext
 
 export function getRouter() {
-  return createAdminRouter({ routeTree: operatorRouteTree })
+  return operatorFrontend.createRouter({ routeTree, workspaceRoute })
 }
 
 declare module "@tanstack/react-router" {

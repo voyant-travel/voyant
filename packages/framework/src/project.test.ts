@@ -20,6 +20,75 @@ afterEach(() => {
 })
 
 describe("framework project resolver", () => {
+  it("resolves selected manifests from the product distribution dependency root", async () => {
+    const root = projectRoot()
+    const distributionRoot = path.join(root, "node_modules", "@acme", "operator-standard")
+    mkdirSync(distributionRoot, { recursive: true })
+    writeFileSync(
+      path.join(distributionRoot, "package.json"),
+      `${JSON.stringify({
+        name: "@acme/operator-standard",
+        version: "1.0.0",
+        type: "module",
+        dependencies: { "@acme/loyalty": "1.2.3" },
+      })}\n`,
+    )
+    writePackageAt(path.join(distributionRoot, "node_modules", "@acme", "loyalty"), {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(
+        moduleManifest("@acme/loyalty", { runtimeEntry: "./runtime" }),
+      )}\n`,
+      voyant: {
+        schemaVersion: "voyant.package.v1",
+        kind: "module",
+        manifest: "./voyant",
+        runtime: {
+          entry: "./runtime-contributor",
+          export: "createLoyaltyRuntimeContribution",
+        },
+      },
+      extraExports: {
+        "./runtime": "./runtime.mjs",
+        "./runtime-contributor": "./runtime-contributor.mjs",
+      },
+    })
+    writeFileSync(
+      path.join(distributionRoot, "node_modules", "@acme", "loyalty", "runtime.mjs"),
+      "export const routes = {}\n",
+    )
+    writeFileSync(
+      path.join(distributionRoot, "node_modules", "@acme", "loyalty", "runtime-contributor.mjs"),
+      "export const createLoyaltyRuntimeContribution = () => ({})\n",
+    )
+
+    const resolution = await resolve(
+      root,
+      defineProject({
+        productBom: {
+          schemaVersion: "voyant.product-bom-reference.v1",
+          id: "@acme/operator-standard",
+          version: "1",
+        },
+        modules: ["@acme/loyalty"],
+      }),
+    )
+
+    expect(resolution.graph.modules.map(({ id }) => id)).toEqual(["@acme/loyalty"])
+    expect(resolution.graph.packageRecords).toContainEqual(
+      expect.objectContaining({ packageName: "@acme/loyalty" }),
+    )
+    const runtimeSource = resolution.artifacts.files.find(
+      (file) => file.path === resolution.artifacts.runtimeEntry,
+    )?.contents
+    expect(runtimeSource).toContain(
+      "../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/runtime.mjs",
+    )
+    expect(runtimeSource).toContain(
+      'from "../../node_modules/@acme/operator-standard/node_modules/@acme/loyalty/runtime-contributor.mjs"',
+    )
+    expect(runtimeSource).not.toContain('from "@acme/loyalty/runtime"')
+  })
+
   it("matches the CLI contract with one deterministic target-neutral graph hash", async () => {
     const root = projectRoot()
     writePackage(root, {
@@ -62,7 +131,8 @@ describe("framework project resolver", () => {
     expect(first.artifacts.files.map((file) => file.path)).toEqual([
       "access/selected-access-catalog.generated.ts",
       "admin/project-admin.generated.ts",
-      "admin/selected-graph-admin.generated.ts",
+      "admin/selected-graph-admin.generated.d.ts",
+      "admin/selected-graph-admin.generated.js",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
@@ -73,7 +143,7 @@ describe("framework project resolver", () => {
       "runtime/project-workflows.generated.ts",
     ])
     expect(
-      first.artifacts.files.find((file) => file.path === "admin/selected-graph-admin.generated.ts")
+      first.artifacts.files.find((file) => file.path === "admin/selected-graph-admin.generated.js")
         ?.contents,
     ).toContain("selectedGraphAdminExtensionFactories")
     const runtimeSource = first.artifacts.files.find(
@@ -164,7 +234,7 @@ describe("framework project resolver", () => {
       (file) => file.path === resolution.artifacts.migrationRunner,
     )
     expect(runner?.contents).toContain('"@acme/loyalty#setup.z-backfill.v1": async () => {')
-    expect(runner?.contents).toContain('import("@acme/loyalty/setup")')
+    expect(runner?.contents).toContain('import("../../node_modules/@acme/loyalty/setup.mjs")')
   })
 
   it("includes deployment-owned migration folders after package schema migrations", async () => {
@@ -410,7 +480,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       (file) => file.path === resolution.artifacts.runtimeEntry,
     )?.contents
     expect(runtimeSource).toContain(
-      '"@acme/loyalty-react/admin": () => import("@acme/loyalty-react/admin")',
+      '"../../node_modules/@acme/loyalty-react/admin.mjs": () => import("../../node_modules/@acme/loyalty-react/admin.mjs")',
     )
   })
 
@@ -479,7 +549,9 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
     expect(
       resolution.artifacts.files.find((file) => file.path === resolution.artifacts.runtimeEntry)
         ?.contents,
-    ).toContain('"@acme/loyalty-runtime/factory": () => import("@acme/loyalty-runtime/factory")')
+    ).toContain(
+      '"../../node_modules/@acme/loyalty-runtime/factory.mjs": () => import("../../node_modules/@acme/loyalty-runtime/factory.mjs")',
+    )
   })
 
   it("rejects runtime subpaths that are absent from the referenced package exports", async () => {

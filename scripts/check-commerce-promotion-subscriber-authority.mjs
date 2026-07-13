@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -9,12 +10,10 @@ const repoRoot = rootArg >= 0 ? path.resolve(process.argv[rootArg + 1]) : defaul
 const paths = {
   manifest: "packages/commerce/src/voyant.ts",
   descriptor: "packages/commerce/src/promotions/subscriber-runtime.ts",
-  app: "starters/operator/src/api/app.ts",
   catalogBridge: "starters/operator/src/api/subscribers/catalog-bridge.ts",
   contributor: "packages/commerce/src/runtime-contributor.ts",
   runtime: "packages/commerce/src/runtime.ts",
-  composition: "starters/operator/src/api/runtime/deployment-resources.ts",
-  workflowServices: "starters/operator/src/api/runtime/operator-workflow-services.ts",
+  composition: "packages/operator-runtime/src/deployment-resources.ts",
 }
 
 const sources = Object.fromEntries(
@@ -30,6 +29,14 @@ const sources = Object.fromEntries(
 )
 
 const failures = []
+for (const retiredPath of [
+  "starters/operator/src/api/app.ts",
+  "starters/operator/src/api/runtime/operator-runtime-adapter.ts",
+  "starters/operator/src/api/runtime/operator-workflow-services.ts",
+]) {
+  if (existsSync(path.join(repoRoot, retiredPath)))
+    failures.push(`${retiredPath} must stay deleted`)
+}
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) failures.push(message)
 }
@@ -96,16 +103,6 @@ rejectMatch(
   sources.composition,
   /loadCommerceRuntime|createOperatorCommerceRuntime|createBulkReindexProductsService/,
   "Operator deployment resources must not retain Commerce runtime assembly",
-)
-rejectMatch(
-  sources.workflowServices,
-  /BULK_REINDEX_SERVICE_KEY|PROMOTION_BOUNDARY_SCHEDULER_RUNTIME_KEY|PromotionBoundarySchedulerRuntime/,
-  "Operator workflow services must not retain Commerce runtime registration",
-)
-rejectMatch(
-  sources.app,
-  /operator-promotions-runtime|BULK_REINDEX_SERVICE_KEY|createBulkReindexProductsService/,
-  "Operator app must not register package-specific promotions runtime wiring",
 )
 rejectMatch(
   sources.catalogBridge,

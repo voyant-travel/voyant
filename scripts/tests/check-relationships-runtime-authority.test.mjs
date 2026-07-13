@@ -22,8 +22,8 @@ async function createFixture(overrides = {}) {
       'definePort<RelationshipsRouteRuntimeOptions>({ id: "relationships.route-runtime" })\ndefinePort<RelationshipsMiceRuntime>({ id: "relationships.mice.runtime" })\n',
     "relationships/src/runtime-contributor.ts":
       'host.primitives.config.read(db, "customFields")\n[relationshipsMiceRuntimePort.id]\n',
-    "operator/src/api/runtime/deployment-resources.ts":
-      "function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\n",
+    "operator-runtime/src/deployment-resources.ts":
+      "function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\n",
     ...overrides,
   }
   for (const [relativePath, content] of Object.entries(files)) {
@@ -39,8 +39,10 @@ async function runChecker(root) {
     process.execPath,
     [
       checkerPath,
-      "--operator-root",
-      path.join(root, "operator"),
+      "--composition",
+      path.join(root, "operator-runtime/src/deployment-resources.ts"),
+      "--retired-adapter",
+      path.join(root, "operator/src/api/runtime/operator-runtime-adapter.ts"),
       "--relationships-root",
       path.join(root, "relationships"),
     ],
@@ -59,8 +61,8 @@ describe("check-relationships-runtime-authority", () => {
     const root = await createFixture({
       "relationships/src/index.ts":
         "export const relationshipsHonoModule = createRelationshipsHonoModule()\n",
-      "operator/src/api/runtime/deployment-resources.ts":
-        'function createDeploymentPortResources() { return createGeneratedGraphRuntimePorts({ primitives }) }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\n',
+      "operator-runtime/src/deployment-resources.ts":
+        'function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\n',
     })
 
     await assert.rejects(runChecker(root), (error) => {

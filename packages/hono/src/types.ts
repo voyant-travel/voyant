@@ -83,12 +83,11 @@ export type VoyantRouteHandler<TBindings extends VoyantBindings = VoyantBindings
 
 /**
  * Per-request handle returned by a {@link DbFactory} that owns its own
- * Pool / connection: a drizzle client plus a `dispose()` the db
- * middleware schedules via `c.executionCtx.waitUntil` after the
- * response is sent. Used by templates that build a Neon WebSocket
- * Pool per request (see e.g. `dbFromEnvForApp` in template
- * `src/api/lib/db.ts`) — without `dispose()`, the Pool stays open
- * until the Workers isolate is reclaimed.
+ * Pool / connection: a drizzle client plus a `dispose()` the db middleware
+ * schedules via `c.executionCtx.waitUntil` after the response is sent. Node
+ * deployments can adapt their process-owned pool with `openNodeDatabase` from
+ * `@voyant-travel/db/runtime`; request-scoped runtimes must close their client
+ * in `dispose()`.
  */
 export interface DisposableDb {
   db: VoyantDb

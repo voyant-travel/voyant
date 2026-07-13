@@ -1,40 +1,15 @@
 /**
- * D.1 replay-parity oracle (Workstream D.1, slice 3 — the safety gate for the
- * runner cutover). Proves that the NEW migration sources reconstitute EXACTLY
- * the canonical CURRENT schema:
+ * Replay-parity oracle for retiring the Operator deployment migration source.
+ * Proves that the legacy upgrade path reconstitutes exactly the same schema as
+ * a fresh replay of the selected packages:
  *
- *   frozen framework bundle      (packages/framework-migrations/migrations)
+ *   frozen framework bundle + retired deployment migrations
  *   + package post-cutline increments
- *   + deployment source          (starters/operator/migrations — link tables + custom)
- *   ===  drizzle-kit push of the live aggregate schema (drizzle.config.ts)
+ *   === all current package-owned migrations
  *
- * The D.2 cutline is frozen. The framework bundle remains the squashed cutline
- * seed for the replay oracle, while package migrations after the cutline execute
- * normally. This mirrors the transitioned deployment path: import-baseline the
- * cutline, then execute post-cutline increments.
- *
- * WHY push, not a legacy replay. The pre-collector legacy single-folder aggregate
- * history (since REMOVED in the folder collapse) was BOTH incomplete and stale,
- * so it was never a valid canonical-schema source (measured 2026-06-17 — see
- * docs/architecture/migration-collector-d1.md):
- *   • INCOMPLETE — 16 tables in the live schema have no CREATE migration at all
- *     (the whole operations/ground module: ground_dispatches/_drivers/_vehicles/
- *     transfer_preferences/…; plus quote versioning: quote_versions/_lines/
- *     _participants/_products). On real deployments they exist only via
- *     `drizzle-kit push`. A dangling `ALTER TABLE "ground_transfer_preferences"`
- *     in 20260613120000 then fails on any migration-only replay.
- *   • STALE — ~40 CREATEs for retired tables (orders/offers/opportunities/
- *     transaction_* per 0068; crm_*_products links replaced by relationships_*).
- *   • NON-FRESH-REPLAYABLE — 0068 `DROP TABLE "orders"` lacks CASCADE while
- *     payment_sessions/payment_authorizations still FK in; it only ever applied
- *     out of journal order, which is why every dev DB is stuck at migration 60.
- *
- * `drizzle-kit push` of the SAME aggregate schema the bundle is generated from
- * IS the canonical current schema (it is exactly how production materialised the
- * un-migrated drift tables). If `bundle + links` fingerprint-matches it, then
- * baselining an existing current deployment onto the new ledger (slice 4) is
- * safe. Measured equality on 2026-06-17: 339 tables / 4371 columns / 1295 enum
- * labels / 1816 indexes / 3089 constraints, zero diffs.
+ * The D.2 cutline and framework bundle remain frozen transition fixtures. The
+ * retired deployment history is retained only under scripts/fixtures so this
+ * check can prove upgrades without keeping database authority in the starter.
  *
  * Run: TEST_DATABASE_URL=<postgres url, user with CREATEDB> node scripts/verify-migration-replay-parity.mjs
  *   (skips cleanly when no DB is configured).
@@ -58,14 +33,20 @@ if (!DB_URL) {
 }
 
 const FRAMEWORK_BUNDLE = join(ROOT, "packages/framework-migrations/migrations")
-const DEPLOYMENT_LINKS = join(ROOT, "starters/operator/migrations")
-const OPERATOR_SCHEMA_LIST = join(ROOT, "starters/operator/drizzle.schemas.generated.ts")
+const LEGACY_DEPLOYMENT_MIGRATIONS = join(
+  ROOT,
+  "scripts/fixtures/legacy-operator-deployment-migrations",
+)
 const OPERATOR_DIR = join(ROOT, "starters/operator")
+const OPERATOR_ARTIFACTS = join(OPERATOR_DIR, ".voyant")
 
-// Extensions the live schema's trigram indexes need. The bundle ships these as a
-// preamble; `drizzle-kit push` does NOT emit CREATE EXTENSION, so the push DB
-// gets them seeded first (postgis is intentionally omitted — the schema creates
-// cleanly without it, and plain Postgres images don't ship it).
+execFileSync("pnpm", ["exec", "voyant", "build", "--json"], {
+  cwd: OPERATOR_DIR,
+  stdio: "pipe",
+  encoding: "utf8",
+})
+
+// Extensions required by package-owned indexes on a fresh package replay.
 const SEED_EXTENSIONS = [
   'CREATE EXTENSION IF NOT EXISTS "pg_trgm"',
   'CREATE EXTENSION IF NOT EXISTS "unaccent"',
@@ -99,79 +80,25 @@ function loadFolderAfterCutline(folder, sourceName, cutline) {
     .flatMap((e) => splitStatements(readFileSync(join(folder, `${e.tag}.sql`), "utf8")))
 }
 
-/** Load a single migration file's statements by tag (no journal needed). */
-function loadFolderTag(folder, tag) {
-  return splitStatements(readFileSync(join(folder, `${tag}.sql`), "utf8"))
-}
-
-function operatorSchemaPaths() {
-  const source = readFileSync(OPERATOR_SCHEMA_LIST, "utf8")
-  return [...source.matchAll(/["']([^"']+)["']/g)].map((m) => m[1])
-}
-
-function packageRootOfSchemaPath(schemaPath) {
-  const npm = schemaPath.match(/^(.*\/node_modules\/@voyant-travel\/([^/]+))\//)
-  if (npm) return { rootRel: npm[1], name: npm[2] }
-  const mono = schemaPath.match(/^(.*packages\/([^/]+))\//)
-  if (mono) return { rootRel: mono[1], name: mono[2] }
-  return null
-}
-
-function readPkgMeta(name, packageRoot) {
-  const pjPath = join(packageRoot, "package.json")
-  let pkgName = `@voyant-travel/${name}`
-  let requires = []
-  if (existsSync(pjPath)) {
-    const pj = JSON.parse(readFileSync(pjPath, "utf8"))
-    pkgName = pj.name ?? pkgName
-    requires = pj.voyant?.requiresSchemas ?? []
-  }
-  const migrationsDir = join(packageRoot, "migrations")
-  return {
-    name,
-    pkgName,
-    requires,
-    migrationsDir,
-    hasMigrations: existsSync(join(migrationsDir, "meta", "_journal.json")),
-  }
-}
-
 function discoverPackageSources() {
-  const order = []
-  const roots = new Map()
-  for (const p of operatorSchemaPaths()) {
-    const info = packageRootOfSchemaPath(p)
-    if (!info || roots.has(info.name)) continue
-    order.push(info.name)
-    roots.set(info.name, join(OPERATOR_DIR, info.rootRel))
-  }
-
-  const metas = new Map()
-  for (const name of order) metas.set(name, readPkgMeta(name, roots.get(name)))
-
-  const nameByPkg = new Map()
-  for (const m of metas.values()) nameByPkg.set(m.pkgName, m.name)
-
-  const sorted = []
+  const plan = JSON.parse(
+    readFileSync(join(OPERATOR_ARTIFACTS, "migration-plan.generated.json"), "utf8"),
+  )
+  const sources = []
   const seen = new Set()
-  const visit = (name, stack = new Set()) => {
-    if (seen.has(name)) return
-    if (stack.has(name)) throw new Error(`schema migration source cycle at ${name}`)
-    stack.add(name)
-    const meta = metas.get(name)
-    if (meta) {
-      for (const dep of meta.requires) {
-        const depName = nameByPkg.get(dep)
-        if (depName) visit(depName, stack)
-      }
-    }
-    stack.delete(name)
+  for (const migration of plan.migrations) {
+    if (migration.migrationKind !== "schema" || migration.source.kind !== "package") continue
+    const name = migration.source.packageName.replace(/^@[^/]+\//, "")
+    if (seen.has(name)) continue
     seen.add(name)
-    sorted.push(name)
+    const migrationsDir = join(ROOT, "packages", name, "migrations")
+    sources.push({
+      name,
+      migrationsDir,
+      hasMigrations: existsSync(join(migrationsDir, "meta", "_journal.json")),
+    })
   }
-  for (const name of order) visit(name)
-
-  return sorted.map((name) => metas.get(name)).filter(Boolean)
+  return sources
 }
 
 async function applyFolders(client, folders) {
@@ -239,38 +166,30 @@ async function main() {
   const admin = new Client({ connectionString: urlFor("postgres") })
   await admin.connect()
   try {
-    // Canonical current schema: drizzle-kit push of the live aggregate schema.
-    const pushFp = await withFreshDb(admin, "voyant_replay_push", async () => {
-      await onDb("voyant_replay_push", async (c) => {
-        for (const ext of SEED_EXTENSIONS) await c.query(ext)
-      })
-      execFileSync("pnpm", ["exec", "drizzle-kit", "push", "--force"], {
-        cwd: OPERATOR_DIR,
-        stdio: "pipe",
-        encoding: "utf8",
-        env: { ...process.env, DATABASE_URL: urlFor("voyant_replay_push") },
-      })
-      // `drizzle-kit push` does NOT materialise `.existing()` views — person_directory
-      // is a `pgView(...).existing()` (packages/relationships), so push leaves it out.
-      // The deployment migration source DOES create it (0002_person_directory_view), so
-      // the bundle+links path has it; seed the same DDL here for parity, otherwise the
-      // view's columns show up in information_schema.columns for the bundle+links path
-      // but not the push reference. See issue #1971.
-      await onDb("voyant_replay_push", async (c) => {
-        for (const stmt of loadFolderTag(DEPLOYMENT_LINKS, "0002_person_directory_view"))
-          await c.query(stmt)
-      })
-      return onDb("voyant_replay_push", fingerprint)
-    })
+    const packageSources = discoverPackageSources()
 
-    // New path: framework bundle + deployment links applied fresh.
+    // Canonical current schema: every selected package migration from an empty DB.
+    const packageFp = await withFreshDb(admin, "voyant_replay_packages", async () =>
+      onDb("voyant_replay_packages", async (c) => {
+        for (const ext of SEED_EXTENSIONS) await c.query(ext)
+        for (const source of packageSources) {
+          if (!source.hasMigrations) {
+            throw new Error(`schema source ${source.name} has no migrations folder`)
+          }
+          await applyFolders(c, [source.migrationsDir])
+        }
+        return fingerprint(c)
+      }),
+    )
+
+    // Upgrade path: frozen cutline + retired deployment history + package increments.
     const newFp = await withFreshDb(admin, "voyant_replay_new", async () => {
       const cutline = loadCutline()
-      const packageSources = discoverPackageSources()
       const sourceNames = packageSources.map((s) => s.name).join(", ")
-      console.log(`  sources: framework, ${sourceNames}, deployment`)
+      console.log(`  sources: framework, legacy-deployment, ${sourceNames}`)
       return onDb("voyant_replay_new", async (c) => {
         await applyFolders(c, [FRAMEWORK_BUNDLE])
+        await applyFolders(c, [LEGACY_DEPLOYMENT_MIGRATIONS])
         for (const source of packageSources) {
           if (!source.hasMigrations) {
             throw new Error(`schema source ${source.name} has no migrations folder`)
@@ -279,7 +198,6 @@ async function main() {
             await c.query(stmt)
           }
         }
-        await applyFolders(c, [DEPLOYMENT_LINKS])
         return fingerprint(c)
       })
     })
@@ -288,16 +206,16 @@ async function main() {
     let ok = true
     for (const s of sections) {
       const a = hashOf(newFp[s])
-      const b = hashOf(pushFp[s])
+      const b = hashOf(packageFp[s])
       if (a !== b) {
         ok = false
-        console.error(`  MISMATCH  ${s}: new=${a.slice(0, 12)} push=${b.slice(0, 12)}`)
+        console.error(`  MISMATCH  ${s}: upgrade=${a.slice(0, 12)} packages=${b.slice(0, 12)}`)
         const aSet = new Set(newFp[s].map((r) => JSON.stringify(r)))
-        const bSet = new Set(pushFp[s].map((r) => JSON.stringify(r)))
+        const bSet = new Set(packageFp[s].map((r) => JSON.stringify(r)))
         const onlyNew = [...aSet].filter((r) => !bSet.has(r)).slice(0, 5)
         const onlyPush = [...bSet].filter((r) => !aSet.has(r)).slice(0, 5)
-        for (const r of onlyNew) console.error(`    only in bundle+links: ${r}`)
-        for (const r of onlyPush) console.error(`    only in push (live):  ${r}`)
+        for (const r of onlyNew) console.error(`    only in upgrade path: ${r}`)
+        for (const r of onlyPush) console.error(`    only in package replay: ${r}`)
       } else {
         console.log(`  OK  ${s} (${newFp[s].length} rows)`)
       }
@@ -305,13 +223,11 @@ async function main() {
 
     if (!ok) {
       console.error(
-        "\nreplay-parity FAIL — the framework bundle + deployment links do NOT reconstitute the live schema.",
+        "\nreplay-parity FAIL — the legacy upgrade path and package-owned replay differ.",
       )
       process.exit(1)
     }
-    console.log(
-      "\nverify-migration-replay-parity: OK — bundle + links == live aggregate schema (cutover-safe)",
-    )
+    console.log("\nverify-migration-replay-parity: OK — legacy upgrade == package-owned replay")
   } finally {
     await admin.end()
   }

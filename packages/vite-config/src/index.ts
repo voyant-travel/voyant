@@ -1,6 +1,8 @@
+import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { createRequire } from "node:module"
+import { dirname, resolve } from "node:path"
 import { fileURLToPath, URL } from "node:url"
-import type { PluginOption, UserConfig } from "vite"
+import type { Plugin, PluginOption, UserConfig } from "vite"
 
 /**
  * Force heavy vendor libs into their own chunks so they're only downloaded
@@ -55,9 +57,6 @@ export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
   "react/jsx-dev-runtime",
   "@tanstack/react-query",
   "@tanstack/react-router",
-  "zustand",
-  "zustand/react/shallow",
-  "immer",
   "sonner",
   "lucide-react",
   "date-fns",
@@ -73,6 +72,51 @@ export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
  */
 export const VOYANT_ROUTE_FILE_IGNORE_PATTERN =
   "^(_components|_hooks|_stores|_sections|_contexts|_lib|_tabs|utils|types\\.ts|shop-product-detail-(?:content|accommodations|cruises|products)\\.(?:ts|tsx)|.*(?:^|[-])(shared|page(?:-[a-z0-9-]+)?|dialogs?(?:-[a-z0-9-]+)?|sections|service-row|day-row|version-row|contact-tab|questions-row|questions-tab|section-header|kanban|queries)\\.(?:ts|tsx))$"
+
+export interface VoyantGeneratedRouteFile {
+  readonly path: string
+  readonly source: string
+}
+
+/**
+ * Materialize package-owned route registrations into the ignored project graph.
+ * TanStack's file router still receives physical files, while applications do
+ * not copy standard product routes into their authored source tree.
+ */
+export function voyantGeneratedRoutes(options: {
+  appRootUrl: string
+  files: readonly VoyantGeneratedRouteFile[]
+}): { plugin: Plugin; routesDirectory: string; generatedRouteTree: string } {
+  const appRoot = fileURLToPath(new URL(".", options.appRootUrl))
+  const routesDirectory = resolve(appRoot, ".voyant/routes")
+  const generatedRouteTree = resolve(appRoot, ".voyant/routeTree.gen.ts")
+
+  const generate = () => {
+    rmSync(routesDirectory, { recursive: true, force: true })
+    for (const file of options.files) {
+      if (file.path.startsWith("/") || file.path.includes("..")) {
+        throw new Error(`Invalid generated route path: ${file.path}`)
+      }
+      const target = resolve(routesDirectory, file.path)
+      mkdirSync(dirname(target), { recursive: true })
+      writeFileSync(target, `${file.source.trim()}\n`)
+    }
+  }
+
+  generate()
+  return {
+    routesDirectory,
+    generatedRouteTree,
+    plugin: {
+      name: "voyant-generated-routes",
+      enforce: "pre",
+      buildStart: generate,
+      configureServer(server) {
+        server.watcher.add(options.files.map((file) => resolve(routesDirectory, file.path)))
+      },
+    },
+  }
+}
 
 type VisualizerModule = {
   visualizer: (options: {

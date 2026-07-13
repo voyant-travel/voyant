@@ -4,16 +4,9 @@ import { fileURLToPath } from "node:url"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const failures = []
-const starterFiles = [
-  "src/components/providers.tsx",
-  "src/components/providers/user-provider.tsx",
-  "src/lib/admin-destinations.ts",
-  "src/lib/admin-presentation.tsx",
-  "src/lib/admin-i18n.ts",
-  "src/lib/admin-i18n.tsx",
-]
+const starterFiles = []
 const starterRoot = join(root, "starters/operator")
-const lineRatchet = 147
+const lineRatchet = 100
 
 const lines = starterFiles.reduce((total, relativePath) => {
   const path = join(starterRoot, relativePath)
@@ -29,6 +22,8 @@ if (lines > lineRatchet) {
 const forbidden = [
   "starters/operator/src/lib/dashboard-ssr-query-options.ts",
   "starters/operator/src/components/realtime-live.tsx",
+  "starters/operator/src/components/providers/user-provider.tsx",
+  "starters/operator/src/lib/admin-destinations.ts",
 ]
 for (const relativePath of forbidden) {
   if (existsSync(join(root, relativePath))) {
@@ -38,17 +33,14 @@ for (const relativePath of forbidden) {
 
 const requiredTokens = new Map([
   [
-    "starters/operator/src/lib/admin-presentation.tsx",
+    "packages/operator-standard/src/standard-route-files.ts",
     [
-      "../../.voyant/admin/selected-graph-admin.generated",
-      'import.meta.glob("../admin/*/index.tsx"',
-      "createAdminHostPresentation",
+      "../../admin/selected-graph-admin.generated",
+      'import.meta.glob("../../../src/admin/*/index.tsx"',
+      "createStandardOperatorFrontend",
     ],
   ],
-  [
-    "starters/operator/src/lib/admin-destinations.ts",
-    ["operatorAdminPresentation.extensions", "createAdminHostDestinations"],
-  ],
+  ["packages/operator-standard/src/standard-frontend.tsx", ["createAdminHostWorkspace"]],
   [
     "packages/admin-host/src/admin-presentation.ts",
     ["loadAdminDashboard", "discoverAdminHostExtensions", "createAdminHostPresentation"],
@@ -74,6 +66,15 @@ const requiredTokens = new Map([
     ["AdminWorkspaceRealtimeProvider", "createRealtimeChannelConnector", "useSession"],
   ],
   ["packages/admin-react/src/user-bindings.tsx", ["createAdminUserBindings"]],
+  [
+    "packages/admin-host/src/workspace.tsx",
+    [
+      "createAdminUserBindings",
+      "createAdminHostDestinations(presentation.extensions)",
+      "AdminWorkspaceShell",
+      "auth.signOut()",
+    ],
+  ],
 ])
 
 for (const [relativePath, tokens] of requiredTokens) {
@@ -85,6 +86,19 @@ for (const [relativePath, tokens] of requiredTokens) {
   const source = readFileSync(path, "utf8")
   for (const token of tokens) {
     if (!source.includes(token)) failures.push(`${relativePath} must contain ${token}`)
+  }
+}
+
+const workspaceRoute = join(root, "packages/operator-standard/src/standard-route-files.ts")
+const workspaceRouteSource = existsSync(workspaceRoute) ? readFileSync(workspaceRoute, "utf8") : ""
+for (const token of [
+  "AdminWorkspaceShell",
+  "createAdminUserBindings",
+  "createAdminHostDestinations",
+  "useSignOut",
+]) {
+  if (workspaceRouteSource.includes(token)) {
+    failures.push(`Operator workspace route retains package-owned authority token ${token}`)
   }
 }
 

@@ -31,7 +31,7 @@ the generated graph expresses the complete deployment.**
    plugins.
 3. Application-local contributions are discovered at build time from
    conventional directories:
-   `src/api/{admin,store}`, `src/admin`, `src/workflows`, `src/jobs`,
+   `src/api/{admin,public}`, `src/admin`, `src/workflows`, `src/jobs`,
    `src/subscribers`, `src/links`, and `src/modules`.
 4. Discovery is deterministic and Node-only. It produces normalized stable IDs,
    validates collisions and requirements, and writes the complete result under

@@ -10,16 +10,14 @@ package discovery:
 1. **Graph activation** — `src/modules/<name>/index.ts` is discovered at build time.
 2. **Declaration and runtime** — the resolver synthesizes the project-owned graph
    unit and `index.ts` exports its runtime factory.
-3. **Migrations** — `src/modules/<name>/schema.ts` is migrated as a *deployment*
-   source, applied by the D.1 collector after the framework bundle.
+3. **Persistence** — schema-bearing modules use the reusable package shape and
+   publish their own migrations; direct `src/modules` entries are runtime-only.
 
 ## TL;DR
 
 ```sh
-voyant generate module loyalty --dir src/modules   # scaffold
-# edit src/modules/loyalty/{index,schema,routes,service}.ts
-pnpm db:generate:deployment                         # emit the migration → migrations/
-pnpm db:migrate                                     # collector applies it
+voyant generate module loyalty --dir src/modules
+# edit src/modules/loyalty/{index,routes,service}.ts
 ```
 
 No edits to `app.ts`, the framework, or any generated file.
@@ -131,16 +129,15 @@ one project-root source using the root package name, and emits a static relative
 import from `.voyant/runtime`. No nested `package.json`, package export, local
 `voyant.ts`, config selection, or deployment binding is required.
 
-## Migrations (`schema.ts`)
+## Persistent modules
 
-Define Drizzle tables normally. They are a **deployment** migration source, not
-part of the framework's standard bundle, so:
+Direct `src/modules` entries are runtime-only. A module that owns tables uses
+the reusable package shape, keeping its Drizzle schema and append-only migration
+history together. In either shape:
 
 - **Don't hard-FK across modules.** Reference a framework entity with a plain
   `text("person_id")` column and pair it with `defineLink` in `src/links` — the
-  same decoupling the standard modules use. (The deployment source is applied
-  *after* the framework bundle, so a hard FK would also work, but plain-text +
-  `defineLink` keeps the module relocatable and matches house style.)
+  same decoupling the standard modules use.
 
 ```ts
 import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
@@ -153,18 +150,9 @@ export const loyalty_accounts = pgTable("loyalty_accounts", {
 })
 ```
 
-Generate + apply:
-
-```sh
-pnpm db:generate:deployment   # drizzle-kit generate against the deployment config
-                              # → migrations/NNNN_*.sql (custom tables + link tables)
-pnpm db:migrate               # collector: framework bundle → deployment (incl. custom)
-```
-
-`db:generate:deployment` uses `drizzle.deployment-migrations.config.ts`, whose
-schema glob (`./src/modules/*/schema.ts`) picks up every custom module. The full
-`drizzle.config.ts` globs them too, so `db:push`, `db:studio`, and the
-migration-replay oracle all see custom tables.
+For persistence, promote the module to a workspace or published package with a
+`voyant` manifest, schema export, and package-owned `migrations/` history. The
+selected graph then orders and applies it without adding files to the starter.
 
 ## Project subscribers and links
 

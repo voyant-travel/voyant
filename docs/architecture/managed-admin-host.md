@@ -301,12 +301,13 @@ Produce the admin client + SSR bundle from packages with no copied build config.
 - **Shipped (#3057):** `@voyant-travel/vite-config`'s `voyantStartViteConfig`
   gained `nodeSsr: true`, which folds in the Node `ssr`
   target/`noExternal`/resolve-conditions the app previously hand-merged. The
-  operator `vite.config.ts` is now a single `voyantStartViteConfig(...)` call and
-  copies no build config. (Route source is the code-based router, not a
+  operator's disposable `.voyant/vite.config.ts` is generated as a single
+  `voyantStartViteConfig(...)` call, so the checked-in starter copies no build
+  config. (Route source is the code-based router, not a
   "packaged shell" — see the status section; the earlier
   `voyantManagedProfileAdminViteConfig` idea was unnecessary.)
-- **Remaining:** a thin, profile-agnostic build entry (`vite.config.ts` +
-  `index.html` + `__root.tsx` + `src/{router,server,entry,start}.ts`) that Cloud
+- **Remaining:** a thin, profile-agnostic build entry (`index.html` +
+  `__root.tsx` + `src/{router,server,entry,start}.ts`) that Cloud
   copies **verbatim** (or a generator emits) — carrying no app logic, only the
   packaged-config instantiation. That template must be derived from the unified
   operator graph contract, not kept as a second workspace starter.

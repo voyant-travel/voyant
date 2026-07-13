@@ -4,13 +4,20 @@ import { fileURLToPath } from "node:url"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const starterPath = "starters/operator/src/api/auth/handler.ts"
+const retiredCookiePolicyPath = "starters/operator/src/api/auth/cookie-domain.ts"
 const runtimePath = "packages/auth/src/operator-node-runtime.ts"
-const starter = readFileSync(join(root, starterPath), "utf8")
+const starter = existsSync(join(root, starterPath))
+  ? readFileSync(join(root, starterPath), "utf8")
+  : ""
 const failures = []
 const starterLines = starter.split("\n").length
 
-if (starterLines > 75) {
-  failures.push(`${starterPath} grew to ${starterLines} lines; ratchet is 75`)
+if (starter && starterLines > 65) {
+  failures.push(`${starterPath} grew to ${starterLines} lines; ratchet is 65`)
+}
+
+if (existsSync(join(root, retiredCookiePolicyPath))) {
+  failures.push(`${retiredCookiePolicyPath} must stay deleted; cookie policy belongs to auth`)
 }
 
 for (const token of [
@@ -32,6 +39,7 @@ if (!existsSync(join(root, runtimePath))) {
   const runtime = readFileSync(join(root, runtimePath), "utf8")
   for (const token of [
     "createOperatorAuthNodeRuntime",
+    "buildBetterAuthCookieAdvancedOptions",
     "createBetterAuth(",
     "createCloudAdminAuthStart(",
     "revalidateVoyantCloudAdminAuthSession(",
@@ -51,4 +59,4 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
-console.log(`Operator auth backend authority: OK (${starterLines}/75 starter lines)`)
+console.log(`Operator auth backend authority: OK (${starterLines}/65 starter lines)`)

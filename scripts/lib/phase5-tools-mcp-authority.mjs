@@ -39,7 +39,7 @@ const REQUIRED_TOKENS = new Map([
     "packages/framework/src/runtime-composition.ts",
     ["graph: runtime", "runtimePorts: ports ?? {}"],
   ],
-  ["packages/framework/src/operator-distribution.ts", ['resolve: "@voyant-travel/mcp"']],
+  ["packages/operator-standard/src/index.ts", ['resolve: "@voyant-travel/mcp"']],
   ["starters/operator/src/api/app.ts", ["composeVoyantGraphRuntime", "...deploymentResources"]],
 ])
 

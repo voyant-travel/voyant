@@ -7,16 +7,21 @@ import {
 } from "./lib/operator-auth-presentation-authority.mjs"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
-const routeDirectory = join(root, "starters/operator/src/routes/(auth)")
+const routeRegistry = readFileSync(
+  join(root, "packages/operator-standard/src/standard-route-files.ts"),
+  "utf8",
+)
 const routeHosts = Object.fromEntries(
   Object.keys(AUTH_ROUTE_HOSTS).map((file) => [
     file,
-    readFileSync(join(routeDirectory, file), "utf8"),
+    routeRegistry.includes(`"(auth)/${file}"`)
+      ? `createFileRoute operatorFrontend routes.localAuth.${AUTH_ROUTE_HOSTS[file]}`
+      : undefined,
   ]),
 )
 const result = checkOperatorAuthPresentationAuthority({
   routeHosts,
-  adapter: readFileSync(join(root, "starters/operator/src/lib/local-auth-bootstrap.ts"), "utf8"),
+  adapter: readFileSync(join(root, "packages/operator-standard/src/standard-frontend.tsx"), "utf8"),
   packageRoutes: readFileSync(join(root, "packages/auth-react/src/local-auth-routes.tsx"), "utf8"),
 })
 

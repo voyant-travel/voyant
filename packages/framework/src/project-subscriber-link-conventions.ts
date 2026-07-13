@@ -234,6 +234,7 @@ export function generateProjectLinksSource(links: readonly ProjectLinkConvention
 export function generateSelectedLinksSource(
   projectLinks: readonly ProjectLinkConvention[],
   selectedLinks: readonly Required<Pick<VoyantGraphFacetEntity, "id" | "source" | "export">>[],
+  sourceOverrides: Readonly<Record<string, string>> = {},
 ): string {
   const orderedProjectLinks = [...projectLinks].sort(compareConventions)
   const orderedSelectedLinks = [...selectedLinks].sort((left, right) =>
@@ -250,7 +251,7 @@ export function generateSelectedLinksSource(
     ),
     ...orderedSelectedLinks.map(
       (link, index) =>
-        `import { ${link.export} as link${orderedProjectLinks.length + index} } from ${JSON.stringify(link.source)}`,
+        `import { ${link.export} as link${orderedProjectLinks.length + index} } from ${JSON.stringify(sourceOverrides[link.source] ?? link.source)}`,
     ),
     "",
     ...Array.from(

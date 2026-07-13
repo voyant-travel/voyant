@@ -8,11 +8,15 @@ const failures = []
 
 const starterRuntimePath = "starters/operator/src/lib/realtime.ts"
 const starterTestPath = "starters/operator/src/lib/realtime.test.ts"
-const deploymentResources = read("starters/operator/src/api/runtime/deployment-resources.ts")
+const deploymentResources = read("packages/operator-runtime/src/deployment-resources.ts")
 const contributor = read("packages/realtime/src/runtime-contributor.ts")
 const runtime = read("packages/realtime/src/runtime.ts")
 const manifest = read("packages/realtime/src/voyant.ts")
 const packageJson = JSON.parse(read("packages/realtime/package.json"))
+const retiredAdapterPath = "starters/operator/src/api/runtime/operator-runtime-adapter.ts"
+if (existsSync(path.join(root, retiredAdapterPath))) {
+  failures.push(`${retiredAdapterPath} must stay deleted`)
+}
 const expectedRoutePolicy = JSON.parse(read("scripts/fixtures/realtime-route-policy.json"))
 
 if (

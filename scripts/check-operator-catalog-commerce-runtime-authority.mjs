@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { access, readFile } from "node:fs/promises"
 import path from "node:path"
 
@@ -10,7 +11,7 @@ const root = argument("--root", ".")
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8")
 const [deploymentResources, catalogContributor, commerceContributor, tripsContributor] =
   await Promise.all([
-    read("starters/operator/src/api/runtime/deployment-resources.ts"),
+    read("packages/operator-runtime/src/deployment-resources.ts"),
     read("packages/catalog/src/runtime-contributor.ts"),
     read("packages/commerce/src/runtime-contributor.ts"),
     read("packages/trips/src/runtime-contributor.ts"),
@@ -40,6 +41,9 @@ const commercePorts = [
 ]
 
 const violations = []
+if (existsSync(path.join(root, "starters/operator/src/api/runtime/operator-runtime-adapter.ts"))) {
+  violations.push("starters/operator/src/api/runtime/operator-runtime-adapter.ts must stay deleted")
+}
 for (const port of [...catalogPorts, ...commercePorts]) {
   if (deploymentResources.includes(port)) {
     violations.push(`deployment-resources.ts must not register or import ${port}`)

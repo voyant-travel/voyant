@@ -8,6 +8,20 @@
       "when": 1781947483733,
       "tag": "0000_relationships_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783900800000,
+      "tag": "20260713000500_person_directory_view",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783900860000,
+      "tag": "20260713000600_backfill_custom_field_values",
+      "breakpoints": true
     }
   ]
 }

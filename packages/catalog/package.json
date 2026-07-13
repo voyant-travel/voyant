@@ -15,6 +15,7 @@
     "./snapshot/schema": "./src/snapshot/schema.ts",
     "./indexer/contract": "./src/indexer/contract.ts",
     "./indexer/typesense": "./src/indexer/typesense.ts",
+    "./operations/typesense": "./src/indexer/typesense-operations.ts",
     "./search/routes": "./src/search/routes.ts",
     "./search/rerank": "./src/search/rerank.ts",
     "./search/semantic": "./src/search/semantic.ts",
@@ -153,6 +154,11 @@
         "types": "./dist/indexer/typesense.d.ts",
         "import": "./dist/indexer/typesense.js",
         "default": "./dist/indexer/typesense.js"
+      },
+      "./operations/typesense": {
+        "types": "./dist/indexer/typesense-operations.d.ts",
+        "import": "./dist/indexer/typesense-operations.js",
+        "default": "./dist/indexer/typesense-operations.js"
       },
       "./search/routes": {
         "types": "./dist/search/routes.d.ts",

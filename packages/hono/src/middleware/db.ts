@@ -41,12 +41,10 @@ function buildIncapableDbError(modules: readonly string[]): Error {
 /**
  * Resolves the per-request db client and stores it on Hono context.
  *
- * If the factory returns a {@link DisposableDb} (e.g. a
- * `dbFromEnvForApp` that owns a per-request Neon WebSocket Pool), the
- * middleware schedules `dispose()` via `c.executionCtx.waitUntil` so
- * the Pool closes cleanly after the response is sent. Without the
- * scheduled dispose every request would leak its Pool until isolate
- * teardown, which at scale exhausts Neon's connection budget.
+ * If the factory returns a {@link DisposableDb}, the middleware schedules
+ * `dispose()` via `c.executionCtx.waitUntil` so request-owned resources close
+ * cleanly after the response is sent. Process-owned Node pools may return a
+ * no-op disposer through `openNodeDatabase` from `@voyant-travel/db/runtime`.
  *
  * Factories that return a plain {@link VoyantDb} (e.g. a long-lived
  * postgres-js client cached at the module level) are wired up as

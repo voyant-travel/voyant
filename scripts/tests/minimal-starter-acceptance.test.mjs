@@ -1,6 +1,14 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { test } from "node:test"
@@ -47,6 +55,11 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       app,
     )
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
+    write(
+      app,
+      "src/api/public/starter-proof/route.ts",
+      'export const GET = (c) => c.json({ route: "public" })\n',
+    )
     write(app, "src/admin/dashboard/index.tsx", 'export default { id: "project.dashboard" }\n')
     write(
       app,
@@ -79,7 +92,17 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
     const bom = JSON.parse(readFileSync(join(app, ".voyant/product-bom.generated.json"), "utf8"))
     assert.equal(graph.schemaVersion, "voyant.resolved-graph.v1")
     assert.ok(graph.modules.length > 30)
-    assert.ok(graph.modules.some((unit) => unit.localId === "project-api"))
+    const projectApi = graph.modules.find((unit) => unit.localId === "project-api")
+    assert.ok(projectApi)
+    assert.ok(
+      projectApi.api?.some(
+        (api) =>
+          api.id === "project.api.public.starter-proof" &&
+          api.surface === "public" &&
+          api.mount === "/starter-proof" &&
+          api.methods?.includes("GET"),
+      ),
+    )
     assert.ok(graph.modules.some((unit) => unit.localId === "project-workflows"))
     assert.ok(graph.modules.some((unit) => unit.localId === "project-subscribers-links"))
     assert.ok(graph.modules.some((unit) => unit.localId === "concierge"))
@@ -95,14 +118,50 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       readFileSync(join(app, ".voyant/admin/project-admin.generated.ts"), "utf8"),
       /src\/admin\/dashboard\/index/,
     )
+    assert.ok(existsSync(join(app, ".voyant/admin/selected-graph-admin.generated.js")))
+    assert.ok(existsSync(join(app, ".voyant/admin/selected-graph-admin.generated.d.ts")))
+    assert.ok(!existsSync(join(app, ".voyant/admin/selected-graph-admin.generated.ts")))
     const projectRuntime = readFileSync(
       join(app, ".voyant/runtime/project-runtime.generated.ts"),
       "utf8",
     )
     assert.match(projectRuntime, /createRuntimePorts: createGeneratedGraphRuntimePorts/)
     assert.match(projectRuntime, /GENERATED_GRAPH_RUNTIME_CONTRIBUTORS/)
-    assert.match(projectRuntime, /@voyant-travel\/storefront\/runtime-contributor/)
+    assert.match(
+      projectRuntime,
+      /operator-standard\/node_modules\/@voyant-travel\/storefront\/src\/runtime-contributor/,
+    )
+    assert.doesNotMatch(
+      projectRuntime,
+      /^import .* from "@voyant-travel\/accommodations\/runtime-contributor"/m,
+    )
     assert.doesNotMatch(projectRuntime, /createVoyantGraphRuntimePortStubs/)
+    assert.match(
+      readFileSync(join(app, ".voyant/runtime/project-api.generated.ts"), "utf8"),
+      /src\/api\/public\/starter-proof\/route/,
+    )
+    assert.doesNotMatch(
+      readFileSync(join(app, ".voyant/runtime/project-links.generated.ts"), "utf8"),
+      /from "@voyant-travel\/accommodations\/standard-links"/,
+    )
+    exec(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "--input-type=module",
+        "--eval",
+        [
+          'import { projectApiHonoModule } from "./.voyant/runtime/project-api.generated.ts"',
+          'const response = await projectApiHonoModule.publicRoutes.request("http://local/starter-proof")',
+          "if (response.status !== 200) throw new Error('Unexpected status: ' + response.status)",
+          "const body = await response.json()",
+          "if (body.route !== 'public') throw new Error('Unexpected body: ' + JSON.stringify(body))",
+        ].join("; "),
+      ],
+      app,
+      { NODE_OPTIONS: "--conditions=development" },
+    )
 
     exec(
       "pnpm",
@@ -122,13 +181,16 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  const siblingCli = resolve(repoRoot, "..", "cli", "packages", "cli")
   const installedCli = realpathSync(
     join(repoRoot, "starters/operator/node_modules/@voyant-travel/cli"),
   )
-  packageJson.devDependencies["@voyant-travel/cli"] = `link:${installedCli}`
+  packageJson.devDependencies["@voyant-travel/cli"] = `link:${
+    existsSync(siblingCli) ? siblingCli : installedCli
+  }`
   for (const dependency of ["tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
-      join(repoRoot, "node_modules", dependency),
+      join(repoRoot, "starters/operator/node_modules", dependency),
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)

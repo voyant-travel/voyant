@@ -201,44 +201,12 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
           )
         `)
       await db.execute(sql`
-          INSERT INTO custom_field_definitions (
-            id,
-            entity_type,
-            key,
-            label,
-            field_type
-          )
-          VALUES (
-            'cfdef_merge_org_tier_000000000001',
-            'organization',
-            'merge_org_tier',
-            'Merge organization tier',
-            'text'
-          )
-        `)
-      await db.execute(sql`
-          INSERT INTO custom_field_values (
-            id,
-            definition_id,
-            entity_type,
-            entity_id,
-            text_value
-          )
-          VALUES
-            (
-              'cfval_merge_org_keep_000000000001',
-              'cfdef_merge_org_tier_000000000001',
-              'organization',
-              ${keep.id},
-              'gold'
-            ),
-            (
-              'cfval_merge_org_dup_000000000001',
-              'cfdef_merge_org_tier_000000000001',
-              'organization',
-              ${merge.id},
-              'silver'
-            )
+          UPDATE organizations
+          SET custom_fields = CASE id
+            WHEN ${keep.id} THEN '{"merge_org_tier":"gold"}'::jsonb
+            WHEN ${merge.id} THEN '{"merge_org_tier":"silver","merge_org_region":"emea"}'::jsonb
+          END
+          WHERE id IN (${keep.id}, ${merge.id})
         `)
 
       const res = await getApp().request(`/organizations/${keep.id}/merge`, {
@@ -269,12 +237,20 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
         `)
       expect(bookingRows[0]?.organization_id).toBe(keep.id)
 
-      const customFieldRows = await db.execute<{ entity_id: string; text_value: string }>(sql`
-          SELECT entity_id, text_value
-          FROM custom_field_values
-          WHERE definition_id = 'cfdef_merge_org_tier_000000000001'
+      const customFieldRows = await db.execute<{
+        id: string
+        custom_fields: Record<string, unknown>
+      }>(sql`
+          SELECT id, custom_fields
+          FROM organizations
+          WHERE id = ${keep.id}
         `)
-      expect(customFieldRows).toEqual([{ entity_id: keep.id, text_value: "gold" }])
+      expect(customFieldRows).toEqual([
+        {
+          id: keep.id,
+          custom_fields: { merge_org_region: "emea", merge_org_tier: "gold" },
+        },
+      ])
     })
 
     it("deletes an organization", async () => {

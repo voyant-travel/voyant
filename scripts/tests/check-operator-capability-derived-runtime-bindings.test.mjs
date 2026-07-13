@@ -22,11 +22,7 @@ async function write(root, relativePath, contents) {
 
 async function fixture(deploymentResources) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-capability-runtime-bindings-"))
-  await write(
-    root,
-    "starters/operator/src/api/runtime/deployment-resources.ts",
-    deploymentResources,
-  )
+  await write(root, "packages/operator-runtime/src/deployment-resources.ts", deploymentResources)
   await write(
     root,
     "packages/auth/src/runtime-contributor.ts",
@@ -56,14 +52,14 @@ async function fixture(deploymentResources) {
 }
 
 it("accepts package bindings derived from primitives and static ports", async () => {
-  const root = await fixture("return createGeneratedGraphRuntimePorts({ primitives })\n")
+  const root = await fixture("return options.createRuntimePorts({ primitives })\n")
   const result = await execFileAsync(process.execPath, [checker, "--root", root])
   assert.match(result.stdout, /5 package bindings derived from primitives and static ports/)
 })
 
 it("rejects starter-side assembly of a migrated binding", async () => {
   const root = await fixture(
-    "return createGeneratedGraphRuntimePorts({ primitives, mice: { resolveDelegatePersonById } })\n",
+    "return options.createRuntimePorts({ primitives, mice: { resolveDelegatePersonById } })\n",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),

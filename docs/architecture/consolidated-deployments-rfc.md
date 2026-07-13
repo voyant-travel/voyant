@@ -47,7 +47,7 @@ This RFC supersedes part of the "no central assembly package" decision: that dec
 | Admin extension factories | **Generated** | `src/admin.extensions.generated.ts` |
 | Admin chrome (remaining) | **Hand-wired**: nav icon map + label keys (`route.tsx`) + route message providers (`admin-extensions.tsx:190`) | `src/routes/_workspace/route.tsx`, `src/lib/admin-extensions.tsx` |
 | Schemas | **Derived** from `voyant.config` → `drizzle.schemas.generated.ts` (drift-checked) | `starters/operator/drizzle.config.ts` |
-| Migrations | **Deployment-generated** into one combined folder + journal; one derived schema set + one migration history; cross-module link tables folded in (`drizzle.links.generated.ts`); not package-owned | `starters/operator/migrations/`, `scripts/migrate.ts`, `migration-resilience-rfc.md` (#1608) |
+| Migrations | **Package-owned** and selected by the admitted graph; the external CLI executes the generated migration plan | package manifests, `.voyant/migration-plan.generated.json`, `voyant migrate` |
 | Versioning | changesets with **per-domain `fixed` groups** (`[module, module-react]`); domains version independently | `.changeset/config.json` |
 | Drift guard | `voyant db doctor --fail-on-drift` gates CI (manifest resolvability, schema parity, generated-manifest freshness, duplicate prefixes, link-table snapshot) | CLI, `schema-discipline.md` |
 
@@ -72,7 +72,7 @@ export default createOperatorApp({
 
 Five workstreams, ordered later by risk and dependency.
 
-### A. A framework BOM/meta-package (NOT global lockstep) — *cheap, decision-led*
+### A. A standard product distribution package (NOT global lockstep) — *cheap, decision-led*
 
 **Goal:** a deployment tracks one **framework version** and upgrades atomically, with no per-package compatibility matrix.
 
@@ -88,7 +88,7 @@ Five workstreams, ordered later by risk and dependency.
   ```
 - A deployment depends on the **meta version only**; `voyant upgrade` bumps it, transitively pinning the whole known-good set. The compatibility matrix is resolved *inside* the BOM — the deployment never sees it.
 
-**The membership set is mechanically defined** from the canonical authored standard Operator distribution and each selected workspace package's `voyant.package.v1` metadata. It is not emitted as a checked-in resolver input. The `check-lockstep-membership` gate verifies authored selections against workspace metadata and prevents generated discovery catalogs from returning, while `generate-framework-bom.mjs` derives publish dependencies from the standard product declaration and its recursive manifest-reference closure.
+**The membership set is mechanically defined** from the canonical authored standard Operator distribution and each selected workspace package's `voyant.package.v1` metadata. It is not emitted as a checked-in resolver input. The `check-lockstep-membership` gate verifies authored selections against workspace metadata and prevents generated discovery catalogs from returning, while `generate-standard-product-distribution.mjs` derives `@voyant-travel/operator-standard` publish dependencies from the standard product declaration and its recursive manifest-reference closure.
 
 **Release tooling:** at release time the BOM's `dependencies` are regenerated from the authored distribution and workspace manifests at each package's just-published version, and the BOM version bumps. This generated package metadata is output-only and is never consulted by graph resolution. Only the BOM + actually-changed packages publish — no per-package republish, no spam.
 
@@ -197,12 +197,12 @@ A single preflight that closes the two cheapest risks and makes upgrades safe to
 
 ## Upgrade path (the actual ask)
 
-- **Standard (80%):** `voyant upgrade && voyant db migrate && voyant doctor`. `voyant upgrade` bumps **the framework BOM** (`@voyant-travel/framework`) to one version, which transitively pins the runtime-package set (`release.runtime-packages.generated.json`) — *not* a `@voyant-travel/*` glob, which would also drag in plugins, SDKs, React/UI, and CLI tooling that deployments pin on their own cadence. No code merge — config + provider wiring are stable contracts; framework changes arrive as package updates (workstream A makes the version bump atomic; D makes migrations arrive with the packages).
+- **Standard (80%):** `voyant upgrade && voyant db migrate && voyant doctor`. `voyant upgrade` bumps the **standard product distribution** (`@voyant-travel/operator-standard`) to one version, which transitively pins the tested product closure. It is not a `@voyant-travel/*` glob: project/bootstrap packages and opt-in integrations remain direct dependencies on their own cadence. No code merge is required; config and provider wiring remain stable contracts.
 - **Custom (20%):** identical, then reconcile only *their own* `src/` extensions if a seam contract changed — and semver (A) signals when. They never merge framework internals because they hold none.
 
 ## Phased plan
 
-1. **Phase 0 — `voyant doctor` + framework BOM (A + the doctor).** Cheap, independent, immediately de-risks Acme-class engagements. Introduce the `@voyant-travel/framework` meta-package + BOM-generation in the release pipeline (NOT collapsed `fixed` groups — those re-introduce npm-publish spam).
+1. **Phase 0 — `voyant doctor` + standard product distribution (A + the doctor).** Cheap, independent, immediately de-risks Acme-class engagements. Introduce `@voyant-travel/operator-standard` plus dependency generation in the release pipeline (NOT collapsed `fixed` groups, which re-introduce npm-publish spam).
 2. **Phase 1 — chrome derivation + `src/admin` discovery (C).** Removes the biggest silent-drift source; modules ship nav metadata; the hand-wired maps leave the deployment.
 3. **Phase 2 — `createOperatorApp` (B).** Relocate the config-driven composition into the framework; deployment collapses to config + providers + extensions.
 4. **Phase 3 — app-owned aggregate migration bundle (D.1).** The recommended migration step: move the existing single aggregate history into the framework package for the standard profile; deployments apply framework-bundle-first, then `src/migrations`. Preserves the single-history discipline, removes the fork upgrade tax, and needs only a *light* amendment to #1608 — no heavy ADR. This is what makes "bump + migrate" true for the 80% standard profile.
