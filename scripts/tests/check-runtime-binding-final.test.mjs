@@ -21,7 +21,7 @@ const contributors = {
   legal: "createLegalRuntime",
   notifications: "createNotificationsRuntime",
   quotes: "createQuotesRuntime",
-  "workflow-runs": "workflowRunnerRegistryService",
+  "workflow-runs": "new WorkflowRunnerRegistry()",
 }
 
 async function fixture(generatedArguments) {

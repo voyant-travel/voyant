@@ -38,7 +38,7 @@ import { handleApiError, openApiValidationHook, parseJsonBody } from "@voyant-tr
 import { listResponseSchema } from "@voyant-travel/types"
 import type { Context, Hono } from "hono"
 
-import type { WorkflowRunnerRegistry } from "./runner.js"
+import type { WorkflowRunnerRegistryRuntime } from "./runtime-port.js"
 import { workflowRunsService } from "./service.js"
 
 /**
@@ -122,7 +122,7 @@ export interface MountWorkflowRunsAdminRoutesOptions {
    * for the rerun/resume endpoints; bundles register their runners
    * on bootstrap.
    */
-  runners?: WorkflowRunnerRegistry
+  runners?: WorkflowRunnerRegistryRuntime
   /**
    * Resolves the acting user id from the request context — used to
    * stamp `triggered_by_user_id` on rerun runs. When omitted, runs

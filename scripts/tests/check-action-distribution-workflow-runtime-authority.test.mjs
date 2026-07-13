@@ -25,7 +25,10 @@ const fixturePaths = [
   "packages/distribution/package.json",
   "packages/distribution/src/runtime-contributor.ts",
   "packages/distribution/src/runtime.ts",
+  "packages/runtime/src/index.ts",
   "packages/workflow-runs/src/runtime-contributor.ts",
+  "packages/workflow-runs/src/hono-module.ts",
+  "packages/workflow-runs/src/voyant.ts",
   "packages/workflow-runs/src/runner.ts",
 ]
 
@@ -69,5 +72,15 @@ test("rejects a restored host capability", async () => {
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
     /workflowContributor retains resolveWorkflowRunnerRegistry/,
+  )
+})
+
+test("rejects restored generic runtime Workflow Runs route authority", async () => {
+  const root = await fixture()
+  const target = path.join(root, "packages/runtime/src/index.ts")
+  await writeFile(target, `${await readFile(target, "utf8")}\nmountWorkflowRunsAdminRoutes\n`)
+  await assert.rejects(
+    execFileAsync(process.execPath, [checker, "--root", root]),
+    /generic runtime must not retain Workflow Runs route authority/,
   )
 })

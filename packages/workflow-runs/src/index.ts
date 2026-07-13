@@ -20,6 +20,7 @@
 
 export {
   createWorkflowRunsHonoModule,
+  createWorkflowRunsVoyantRuntime,
   WORKFLOW_RUNS_ADMIN_ROUTE_PATHS,
 } from "./hono-module.js"
 export {

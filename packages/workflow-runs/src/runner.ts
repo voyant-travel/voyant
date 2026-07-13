@@ -104,8 +104,8 @@ export interface WorkflowRunner {
 let activeWorkflowRunnerRegistry: WorkflowRunnerRegistry | undefined
 
 /**
- * Package-owned registration service used by graph-selected workflow runtimes.
- * The app-level registry remains the read authority for admin dispatch.
+ * Compatibility registration service for direct/manual composition. The
+ * graph-selected runtime reads the concrete registry through its runtime port.
  */
 export const workflowRunnerRegistryService = {
   register(runner: WorkflowRunner): void {
@@ -117,9 +117,8 @@ export const workflowRunnerRegistryService = {
 }
 
 /**
- * Process-wide registry. Templates instantiate one and pass it to
- * `mountWorkflowRunsAdminRoutes(hono, { runners })`. Bundles register
- * their runners on bootstrap.
+ * Process-wide registry. Graph composition creates one through the package
+ * contributor; direct applications may still instantiate and mount one.
  */
 export class WorkflowRunnerRegistry {
   private readonly runners = new Map<string, WorkflowRunner>()

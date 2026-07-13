@@ -409,7 +409,7 @@ for in-process workflows. The catalog-checkout subscriber wraps the
 booking id, payment session id, and payment intent. The
 `WorkflowRunsPage` UI from `@voyant-travel/workflows-react/ui` reads
 the admin routes (`/v1/admin/workflow-runs[/:id]`) the operator
-starter mounts via `additionalRoutes`, and can be embedded in any
+runtime mounts from the selected Workflow Runs graph module, and can be embedded in any
 host or pointed at a separate-origin API via its `apiBase` option.
 
 This observability sits beside the durable `@voyant-travel/workflows`

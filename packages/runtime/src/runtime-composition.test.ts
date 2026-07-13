@@ -106,11 +106,6 @@ vi.mock("@voyant-travel/webhook-delivery/postgres", () => ({
   enqueuePostgresWebhookEvent: mocks.enqueuePostgresWebhookEvent,
 }))
 
-vi.mock("@voyant-travel/workflow-runs", () => ({
-  mountWorkflowRunsAdminRoutes: vi.fn(),
-  WorkflowRunnerRegistry: class {},
-}))
-
 vi.mock("@voyant-travel/workflow-runs/scheduled-workflow", () => ({
   isGraphWorkflowScheduledJob: () => true,
   runScheduledWorkflow: mocks.runScheduledWorkflow,
@@ -276,6 +271,20 @@ describe("Voyant project runtime composition", () => {
     await expect(options?.outboundWebhooks.enqueue(event, bindings)).resolves.toEqual(["queued"])
     expect(mocks.resolveNodeDatabase).toHaveBeenCalledWith(bindings)
     expect(mocks.enqueuePostgresWebhookEvent).toHaveBeenCalledWith({ kind: "database" }, event)
+  })
+
+  it("leaves Workflow Runs route composition to the selected graph", async () => {
+    const projectRoot = await createGeneratedProject()
+    await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    const options = mocks.loadVoyantNodeRuntime.mock.calls[0]?.[0] as {
+      app?: { additionalRoutes?: unknown }
+    }
+    expect(options.app?.additionalRoutes).toBeUndefined()
   })
 
   it("passes graph runtime ports into scheduled package workflow composition", async () => {

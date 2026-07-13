@@ -19,7 +19,6 @@ import {
 import { consoleReporter } from "@voyant-travel/hono/observability/reporter"
 import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime-core"
 import { enqueuePostgresWebhookEvent } from "@voyant-travel/webhook-delivery/postgres"
-import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { tsImport } from "tsx/esm/api"
 
 import { requireVoyantAuthEnv } from "./auth-env.js"
@@ -90,7 +89,6 @@ export async function loadVoyantProject(
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
   const env = createVoyantNodeEnv(options.env ?? process.env)
-  const workflowRunnerRegistry = new WorkflowRunnerRegistry()
   const primitives = createVoyantNodeRuntimeHostPrimitives({
     env,
     ...options.host,
@@ -144,15 +142,6 @@ export async function loadVoyantProject(
           authRuntime.hasAuthPermission(request, requireVoyantAuthEnv(requestEnv)),
         validateApiKey: ({ env: requestEnv, db, apiKey }) =>
           authRuntime.validateApiTokenAccess(requireVoyantAuthEnv(requestEnv), db, apiKey),
-      },
-      additionalRoutes: (app) => {
-        mountWorkflowRunsAdminRoutes(app, {
-          runners: workflowRunnerRegistry,
-          resolveUserId: (context) => {
-            const userId = (context as { get(key: string): unknown }).get("userId")
-            return typeof userId === "string" ? userId : null
-          },
-        })
       },
     },
   })
