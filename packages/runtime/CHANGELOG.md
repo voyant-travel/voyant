@@ -1,5 +1,11 @@
 # @voyant-travel/runtime
 
+## 0.7.2
+
+### Patch Changes
+
+- a7d14cd: Load an optional project-root Vite configuration during both development and production builds.
+
 ## 0.7.1
 
 ### Patch Changes
