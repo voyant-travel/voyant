@@ -29,7 +29,7 @@ describe("createStorageBackedInvoiceDocumentGenerator", () => {
     expect(result.format).toBe("html")
     expect(result.storageKey).toBe("invoices/inv_123/rendition.html")
     expect(result.metadata).toMatchObject({
-      storageProvider: "local",
+      storageProvider: "memory",
       url: "https://files.example/invoices/inv_123/rendition.html",
     })
 

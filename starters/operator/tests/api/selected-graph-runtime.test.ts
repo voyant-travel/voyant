@@ -79,7 +79,10 @@ import {
 import { STOREFRONT_BOOKING_BOOTSTRAP_RUNTIME_KEY } from "@voyant-travel/storefront/booking-bootstrap-subscriber"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
-import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
+import {
+  WorkflowRunnerRegistry,
+  workflowRunnerRegistryRuntimePort,
+} from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -102,25 +105,21 @@ const createDeploymentResources = () => {
   })
 }
 const buildOperatorProviders = () => createDeploymentResources().capabilities
-const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
-  createDeploymentResources().ports
+const buildOperatorRuntimePorts = () => createDeploymentResources().ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
-  const workflowRunnerRegistry = new WorkflowRunnerRegistry()
   return composeVoyantGraphRuntime({
     runtime,
     capabilities: buildOperatorProviders(),
-    ports: buildOperatorRuntimePorts(workflowRunnerRegistry),
+    ports: buildOperatorRuntimePorts(),
   })
 }
 
 describe("selected Operator graph runtime composition", () => {
   it("supplies request-scoped checkout options through the declared runtime port", async () => {
-    expect(
-      await buildOperatorRuntimePorts(new WorkflowRunnerRegistry())[
-        catalogCheckoutApiRuntimePort.id
-      ],
-    ).toEqual(expect.any(Function))
+    expect(await buildOperatorRuntimePorts()[catalogCheckoutApiRuntimePort.id]).toEqual(
+      expect.any(Function),
+    )
   })
 
   it("mounts selected package exports once in graph order", async () => {
@@ -181,9 +180,7 @@ describe("selected Operator graph runtime composition", () => {
         (module) => module.module.name === "distribution.channel-push-extension.graph-runtime",
       ),
     ).toHaveLength(1)
-    expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
-      channelPushRuntimePort.id,
-    )
+    expect(buildOperatorRuntimePorts()).toHaveProperty(channelPushRuntimePort.id)
 
     const eventBus = createEventBus()
     const subscribe = vi.spyOn(eventBus, "subscribe")
@@ -214,7 +211,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+      ports: buildOperatorRuntimePorts(),
     })
 
     expect(
@@ -261,7 +258,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+      ports: buildOperatorRuntimePorts(),
     })
 
     expect(
@@ -344,7 +341,7 @@ describe("selected Operator graph runtime composition", () => {
       runtime,
       capabilities: buildOperatorProviders(),
       ports: {
-        ...buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+        ...buildOperatorRuntimePorts(),
         [legalBookingContractSubscriberRuntimePort.id]: {
           createRuntime: () => ({
             options: { enabled: true, templateSlug: "customer-sales-agreement" },
@@ -392,7 +389,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+      ports: buildOperatorRuntimePorts(),
     })
 
     expect(
@@ -406,9 +403,7 @@ describe("selected Operator graph runtime composition", () => {
   })
 
   it("binds Legal runtime services by declared ports instead of package id", () => {
-    expect(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).toHaveProperty(
-      legalBookingContractSubscriberRuntimePort.id,
-    )
+    expect(buildOperatorRuntimePorts()).toHaveProperty(legalBookingContractSubscriberRuntimePort.id)
   })
 
   it("graph-gates the Trips payment subscriber and its runtime service", async () => {
@@ -509,11 +504,16 @@ describe("selected Operator graph runtime composition", () => {
     const checkout = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
     )
-    const registry = new WorkflowRunnerRegistry()
+    const ports = buildOperatorRuntimePorts()
+    const registry = await ports[workflowRunnerRegistryRuntimePort.id]
+    expect(registry).toBeInstanceOf(WorkflowRunnerRegistry)
+    if (!(registry instanceof WorkflowRunnerRegistry)) {
+      throw new TypeError("The selected graph did not contribute a workflow runner registry.")
+    }
     const composed = await composeVoyantGraphRuntime({
       runtime,
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(registry),
+      ports,
     })
     const runtimeModule = composed.modules.find(
       (module) => module.module.name === "commerce.catalog-checkout-extension.graph-runtime",
@@ -596,7 +596,7 @@ describe("selected Operator graph runtime composition", () => {
   })
 
   it("fails composition when selected Commerce promotions omit a required host port", async () => {
-    const ports = buildOperatorRuntimePorts(new WorkflowRunnerRegistry())
+    const ports = buildOperatorRuntimePorts()
     const missingDatabase = Object.fromEntries(
       Object.entries(ports).filter(([id]) => id !== promotionRedemptionDatabaseRuntimePort.id),
     )
@@ -620,7 +620,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+      ports: buildOperatorRuntimePorts(),
     })
 
     expect(
@@ -689,7 +689,7 @@ describe("selected Operator graph runtime composition", () => {
   })
 
   it("binds host runtimes by package-declared ports instead of package ids", async () => {
-    const ports = buildOperatorRuntimePorts(new WorkflowRunnerRegistry())
+    const ports = buildOperatorRuntimePorts()
 
     expect(Object.keys(ports)).toEqual(
       expect.arrayContaining([

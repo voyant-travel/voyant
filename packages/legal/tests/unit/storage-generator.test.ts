@@ -25,7 +25,7 @@ describe("createStorageBackedContractDocumentGenerator", () => {
     expect(result.mimeType).toBe("text/html; charset=utf-8")
     expect(result.storageKey).toBe("contracts/cont_123/contract-cont_123.html")
     expect(result.metadata).toMatchObject({
-      storageProvider: "local",
+      storageProvider: "memory",
       url: "https://files.example/contracts/cont_123/contract-cont_123.html",
     })
 
