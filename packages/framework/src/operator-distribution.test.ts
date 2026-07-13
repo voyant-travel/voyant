@@ -48,7 +48,6 @@ describe("standard Operator distribution", () => {
     ])
     expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.modules).size).toBe(38)
     expect(new Set(STANDARD_OPERATOR_DISTRIBUTION.extensions).size).toBe(24)
-    expect(STANDARD_OPERATOR_DISTRIBUTION).not.toHaveProperty("presetLineage")
   })
 
   it("defaults authored differences without treating extensions as plugins", () => {

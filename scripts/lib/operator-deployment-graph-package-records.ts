@@ -258,17 +258,14 @@ function requireResolvedProjectArtifacts(value: unknown): ResolvedProjectArtifac
 
 function projectFromResolvedGraph(
   graph: {
-    project: { presetLineage?: string }
     modules: readonly ResolvedVoyantGraphUnit[]
     extensions: readonly ResolvedVoyantGraphUnit[]
     plugins: readonly ResolvedVoyantGraphUnit[]
   },
   authored: OperatorAuthoredProject,
 ): VoyantGraphProject {
-  const presetLineage = graph.project.presetLineage ?? authored.presetLineage
   return {
     schemaVersion: "voyant.project.v1",
-    ...(presetLineage ? { presetLineage } : {}),
     modules: graph.modules.map((unit) => manifestFromResolvedUnit(unit, "voyant.module.v1")),
     extensions: graph.extensions.map((unit) =>
       manifestFromResolvedUnit(unit, "voyant.extension.v1"),
@@ -342,7 +339,6 @@ function isGraphProject(value: unknown): value is VoyantGraphProject {
 }
 
 function isResolvedGraph(value: unknown): value is {
-  project: { presetLineage?: string }
   modules: readonly ResolvedVoyantGraphUnit[]
   extensions: readonly ResolvedVoyantGraphUnit[]
   plugins: readonly ResolvedVoyantGraphUnit[]
