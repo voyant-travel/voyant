@@ -45,6 +45,23 @@ function runtimeWithApiFactory(
         ...(options.requiredRuntimePorts
           ? { requiredRuntimePorts: options.requiredRuntimePorts }
           : {}),
+        references: [
+          {
+            id: `${unitId}#api.admin:runtime`,
+            unitId,
+            facet: "api",
+            entityId: `${unitId}#api.admin`,
+            runtime: { entry, export: "factory" },
+            importEntry: entry,
+          },
+        ],
+        selectedIds: {
+          routes: [`${unitId}#api.admin`],
+          tools: [],
+          workflows: [],
+          events: [],
+          webhooks: [],
+        },
         routes: [
           {
             route: {
@@ -53,6 +70,7 @@ function runtimeWithApiFactory(
               runtime: { entry, export: "factory" },
             },
             importEntry: entry,
+            referenceId: `${unitId}#api.admin:runtime`,
           },
         ],
       },
@@ -108,6 +126,14 @@ describe("graph runtime factory context", () => {
           runtimePorts: [runtimePort.id],
           references: [
             {
+              id: "alerts-api",
+              unitId: "@acme/alerts",
+              facet: "api",
+              entityId: "@acme/alerts#api.admin",
+              runtime: { entry: "./api", export: "apiFactory" },
+              importEntry: "@acme/alerts/api",
+            },
+            {
               id: "alerts-subscriber",
               unitId: "@acme/alerts",
               facet: "subscribers.runtime",
@@ -116,6 +142,13 @@ describe("graph runtime factory context", () => {
               importEntry: "@acme/alerts/subscriber",
             },
           ],
+          selectedIds: {
+            routes: ["@acme/alerts#api.admin"],
+            tools: [],
+            workflows: [],
+            events: [],
+            webhooks: [],
+          },
           routes: [
             {
               route: {
@@ -124,6 +157,7 @@ describe("graph runtime factory context", () => {
                 runtime: { entry: "./api", export: "apiFactory" },
               },
               importEntry: "@acme/alerts/api",
+              referenceId: "alerts-api",
             },
           ],
         },
@@ -257,6 +291,23 @@ describe("graph runtime factory context", () => {
         packageName: unitId,
         order,
         projectConfig: { owner: name, privateValue: `${name}-only` },
+        references: [
+          {
+            id: `${unitId}#api.admin:runtime`,
+            unitId,
+            facet: "api" as const,
+            entityId: `${unitId}#api.admin`,
+            runtime: { entry, export: "factory" },
+            importEntry: entry,
+          },
+        ],
+        selectedIds: {
+          routes: [`${unitId}#api.admin`],
+          tools: [],
+          workflows: [],
+          events: [],
+          webhooks: [],
+        },
         routes: [
           {
             route: {
@@ -265,6 +316,7 @@ describe("graph runtime factory context", () => {
               runtime: { entry, export: "factory" },
             },
             importEntry: entry,
+            referenceId: `${unitId}#api.admin:runtime`,
           },
         ],
       }

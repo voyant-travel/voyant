@@ -92,7 +92,7 @@ export interface VoyantGraphRuntimeRouteDefinition {
   route: VoyantGraphRouteBundle
   /** Package import specifier after owner-relative references have been lowered. */
   importEntry: string
-  referenceId?: string
+  referenceId: string
 }
 
 export interface VoyantGraphRuntimeToolDefinition {
@@ -170,7 +170,7 @@ export interface VoyantGraphRuntimeUnitDefinition {
   tools?: readonly VoyantGraphRuntimeToolDefinition[]
   workflows?: readonly VoyantGraphRuntimeWorkflowDefinition[]
   actions?: readonly VoyantGraphRuntimeActionDefinition[]
-  selectedIds?: VoyantGraphRuntimeSelectedIds
+  selectedIds: VoyantGraphRuntimeSelectedIds
   routes: readonly VoyantGraphRuntimeRouteDefinition[]
 }
 
@@ -381,7 +381,7 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
   workflows: readonly VoyantGraphRuntimeWorkflowDefinition[]
   actions: readonly VoyantGraphRuntimeActionDefinition[]
   selectedIds: VoyantGraphRuntimeSelectedIds
-  routes: readonly (VoyantGraphRuntimeRouteDefinition & { referenceId: string })[]
+  routes: readonly VoyantGraphRuntimeRouteDefinition[]
 }
 
 interface NormalizedVoyantGraphRuntimeInput
@@ -401,7 +401,7 @@ function normalizeRuntimeDefinition(
 ): NormalizedVoyantGraphRuntimeInput {
   const webhookPlan = normalizeWebhookPlan(input.webhookPlan)
   const normalizeUnit = (unit: VoyantGraphRuntimeUnitDefinition) =>
-    normalizeRuntimeUnitDefinition(unit, webhookPlan)
+    normalizeRuntimeUnitDefinition(unit)
   return {
     ...input,
     accessCatalog: normalizeAccessCatalog(input.accessCatalog, [
@@ -449,34 +449,18 @@ function normalizeAccessCatalog(
 
 function normalizeRuntimeUnitDefinition(
   unit: VoyantGraphRuntimeUnitDefinition,
-  webhookPlan: VoyantGraphWebhookPlan,
 ): NormalizedVoyantGraphRuntimeUnitDefinition {
   const references = [...(unit.references ?? [])]
   const referenceIds = new Set(references.map((reference) => reference.id))
   const runtimePorts = sortedUnique(unit.runtimePorts ?? [])
 
   const routes = unit.routes.map((definition) => {
-    const runtime = definition.route.runtime
-    if (!runtime) return { ...definition, referenceId: definition.referenceId ?? "" }
-    if (definition.referenceId) {
-      if (!referenceIds.has(definition.referenceId)) {
-        throw new Error(
-          `createVoyantGraphRuntime: route "${definition.route.id}" selects unknown runtime reference "${definition.referenceId}".`,
-        )
-      }
-      return { ...definition, referenceId: definition.referenceId }
+    if (!referenceIds.has(definition.referenceId)) {
+      throw new Error(
+        `createVoyantGraphRuntime: route "${definition.route.id}" selects unknown runtime reference "${definition.referenceId}".`,
+      )
     }
-    const referenceId = legacyRouteReferenceId(unit.id, definition.route.id)
-    references.push({
-      id: referenceId,
-      unitId: unit.id,
-      facet: "api",
-      entityId: definition.route.id,
-      runtime,
-      importEntry: definition.importEntry,
-    })
-    referenceIds.add(referenceId)
-    return { ...definition, referenceId }
+    return { ...definition }
   })
 
   return {
@@ -498,31 +482,8 @@ function normalizeRuntimeUnitDefinition(
     tools: [...(unit.tools ?? [])],
     workflows: [...(unit.workflows ?? [])],
     actions: [...(unit.actions ?? [])],
-    selectedIds: normalizeSelectedIds(
-      unit.selectedIds ?? inferLegacySelectedIds(unit, webhookPlan),
-    ),
+    selectedIds: normalizeSelectedIds(unit.selectedIds),
     routes,
-  }
-}
-
-function inferLegacySelectedIds(
-  unit: VoyantGraphRuntimeUnitDefinition,
-  webhookPlan: VoyantGraphWebhookPlan,
-): VoyantGraphRuntimeSelectedIds {
-  const ownedOutboundWebhooks = webhookPlan.outbound.filter((entry) => entry.unitId === unit.id)
-  return {
-    routes: unit.routes.map(({ route }) => route.id),
-    tools: (unit.tools ?? []).map(({ id }) => id),
-    workflows: (unit.workflows ?? []).map(({ declaration }) => declaration.id),
-    events: sortedUnique([
-      ...(unit.actions ?? []).flatMap(({ from }) => from.events),
-      ...ownedOutboundWebhooks
-        .filter((entry) => entry.eventUnitId === unit.id)
-        .map((entry) => entry.eventId),
-    ]),
-    webhooks: [...webhookPlan.inbound, ...webhookPlan.outbound]
-      .filter((entry) => entry.unitId === unit.id)
-      .map((entry) => entry.id),
   }
 }
 
@@ -1112,14 +1073,14 @@ function sortedUnique(values: readonly string[]): string[] {
 }
 
 function normalizeSelectedIds(
-  selectedIds: VoyantGraphRuntimeSelectedIds | undefined,
+  selectedIds: VoyantGraphRuntimeSelectedIds,
 ): VoyantGraphRuntimeSelectedIds {
   return {
-    routes: sortedUnique(selectedIds?.routes ?? []),
-    tools: sortedUnique(selectedIds?.tools ?? []),
-    workflows: sortedUnique(selectedIds?.workflows ?? []),
-    events: sortedUnique(selectedIds?.events ?? []),
-    webhooks: sortedUnique(selectedIds?.webhooks ?? []),
+    routes: sortedUnique(selectedIds.routes),
+    tools: sortedUnique(selectedIds.tools),
+    workflows: sortedUnique(selectedIds.workflows),
+    events: sortedUnique(selectedIds.events),
+    webhooks: sortedUnique(selectedIds.webhooks),
   }
 }
 
@@ -1133,10 +1094,6 @@ function mergeSelectedIds(
     events: selectedIds.flatMap((ids) => ids.events),
     webhooks: selectedIds.flatMap((ids) => ids.webhooks),
   })
-}
-
-function legacyRouteReferenceId(unitId: string, routeId: string): string {
-  return `legacy:${encodeURIComponent(unitId)}:${encodeURIComponent(routeId)}`
 }
 
 function memoizePromise<T>(load: () => Promise<T>): () => Promise<T> {

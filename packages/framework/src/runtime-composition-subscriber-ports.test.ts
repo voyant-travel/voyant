@@ -43,6 +43,7 @@ describe("subscriber runtime port composition", () => {
               importEntry: "@acme/alerts/subscribers",
             },
           ],
+          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
           routes: [],
         },
       ],
