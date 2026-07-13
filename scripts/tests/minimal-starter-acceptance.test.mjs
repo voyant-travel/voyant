@@ -84,11 +84,25 @@ test("minimal starter installs, builds, and boots the Node host", {
       "src/subscribers/booking-created.ts",
       'export default { id: "booking.created.health-sync", eventType: "booking.created", manifest: { id: "booking.created.health-sync", eventType: "booking.created", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
     )
+    write(
+      app,
+      "vite.config.ts",
+      [
+        'import { writeFileSync } from "node:fs"',
+        "export default {",
+        "  plugins: [{",
+        '    name: "project-vite-config-acceptance",',
+        '    configResolved() { writeFileSync(".voyant/project-vite-plugin.loaded", "ok\\n") },',
+        "  }],",
+        "}",
+      ].join("\n"),
+    )
     exec("pnpm", ["build"], app)
     assert.ok(existsSync(join(app, "dist/client")))
     assert.ok(existsSync(join(app, "dist/server/server.js")))
     assert.ok(existsSync(join(app, "dist/.voyant/deployment-graph.generated.json")))
     assert.ok(existsSync(join(app, "dist/server/.voyant/deployment-graph.generated.json")))
+    assert.equal(readFileSync(join(app, ".voyant/project-vite-plugin.loaded"), "utf8"), "ok\n")
 
     const graph = JSON.parse(
       readFileSync(join(app, ".voyant/deployment-graph.generated.json"), "utf8"),

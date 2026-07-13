@@ -94,9 +94,9 @@ describe("Voyant project tooling", () => {
     expect(dependencies.buildVite).toHaveBeenCalledWith({
       marker: "voyant-vite-config",
       root: projectRoot,
-      configFile: false,
       server: { allowedHosts: true },
     })
+    expect(vi.mocked(dependencies.buildVite).mock.calls[0]?.[0]).not.toHaveProperty("configFile")
     expect(dependencies.replaceDirectory).toHaveBeenCalledTimes(2)
     expect(dependencies.replaceDirectory).toHaveBeenCalledWith(
       "/workspace/operator/.voyant",
@@ -122,9 +122,11 @@ describe("Voyant project tooling", () => {
     expect(dependencies.createViteServer).toHaveBeenCalledWith({
       marker: "voyant-vite-config",
       root: "/workspace/operator",
-      configFile: false,
       server: { allowedHosts: true, port: 3300 },
     })
+    expect(vi.mocked(dependencies.createViteServer).mock.calls[0]?.[0]).not.toHaveProperty(
+      "configFile",
+    )
     expect(development.url).toBe("http://localhost:3300/")
     expect(calls).toContain("vite-listen")
 

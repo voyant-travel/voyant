@@ -42,3 +42,22 @@ the project-installed `./standard-route-files` export, runs the complete Node
 SSR build, and copies `.voyant` to both `dist/.voyant` and
 `dist/server/.voyant`. `developVoyantProject()` starts Vite's SSR development
 server and defaults to port `3300`.
+
+Projects may add an optional root `vite.config.ts`. Vite loads and merges it for
+both development and production builds, so project-specific plugins and normal
+Vite options require no lifecycle-script changes. Voyant's inline configuration
+remains authoritative for the generated routes, TanStack Start application,
+React integration, and Node SSR target.
+
+```bash
+pnpm add -D vite vite-plugin-inspect
+```
+
+```ts
+import { defineConfig } from "vite"
+import inspect from "vite-plugin-inspect"
+
+export default defineConfig({
+  plugins: [inspect()],
+})
+```
