@@ -217,6 +217,7 @@ const allowedInfrastructureImports = new Map([
   ["@voyant-travel/hono/composition", "types deployment-local graph factories"],
   ["@voyant-travel/runtime-core", "provides the resident Node server and storage shims"],
   ["@voyant-travel/storage/runtime", "adapts the generic Node document object store"],
+  ["@voyant-travel/storage/types", "types the provider-neutral object storage contract"],
   ["@voyant-travel/types/member-roles", "maps authenticated infrastructure roles to scopes"],
   ["@voyant-travel/utils/cache", "types the generic cache resource"],
   ["@voyant-travel/utils/redis-kv", "adapts Redis to the generic cache resource"],
