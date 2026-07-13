@@ -22,8 +22,6 @@
     "scripts/load/storefront-firehose.js",
     "scripts/load/payday-spike.js",
     "scripts/load/mixed.js",
-    // One-off migration ownership helper kept as an operator-run script.
-    "scripts/migrations/scaffold-package-migrations.mjs",
     // Migration collector validation harnesses are documented architecture
     // evidence and run directly against throwaway databases.
     "spikes/d1-migration-collector/run.mjs",
