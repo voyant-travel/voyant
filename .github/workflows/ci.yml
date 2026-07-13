@@ -172,9 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
-      # This job does not build package dist. Resolve development exports and
-      # let the graph-native migration runner load workspace TypeScript source.
-      NODE_OPTIONS: --conditions=development --import=tsx --max-old-space-size=8192
+      NODE_OPTIONS: --conditions=development --max-old-space-size=8192
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       # The user is a superuser (CREATEDB) — the replay oracle creates and drops
@@ -224,6 +222,8 @@ jobs:
       - name: Materialize the selected package schema
         # Exercise the same graph-derived package migration runner used by Node
         # deployments before running integration tests against the real schema.
+        env:
+          NODE_OPTIONS: --conditions=development --import=tsx --max-old-space-size=8192
         run: pnpm --filter operator db:migrate
 
       - name: Custom-field integration tests
