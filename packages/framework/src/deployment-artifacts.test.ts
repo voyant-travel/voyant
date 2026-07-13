@@ -10,6 +10,7 @@ import {
   buildNodeRuntimeEntry,
   buildNodeRuntimeEntryArtifact,
   buildProjectRuntimeModule,
+  createResolvedGraphRuntime,
   VOYANT_DEPLOYMENT_ARTIFACTS_SCHEMA_VERSION,
   VOYANT_NODE_RUNTIME_ENTRY_ID,
 } from "./deployment-artifacts.js"
@@ -78,6 +79,21 @@ async function graphWithSelectedUnits(
 }
 
 describe("deployment graph artifacts", () => {
+  it("loads in-memory relative entries from the generated runtime directory", async () => {
+    const graph = await sampleGraph()
+    const runtime = createResolvedGraphRuntime({
+      graph,
+      runtimeEntryOverrides: {
+        "@acme/voyant-loyalty/runtime-body-that-must-stay-lazy": "./runtime-lowering.js",
+      },
+      runtimeImportBaseUrl: new URL("./", import.meta.url).href,
+    })
+
+    await expect(runtime.modules[0]?.routes[0]?.load()).rejects.toMatchObject({
+      code: "VOYANT_GRAPH_RUNTIME_EXPORT_MISSING",
+    })
+  })
+
   it("builds deterministic resolved graph JSON containing the graph hash", async () => {
     const graph = await sampleGraph()
     const first = buildDeploymentGraphJson(graph)

@@ -113,6 +113,8 @@ export interface BuildGraphRuntimeModuleInput {
   command?: string
   /** Build-time import lowering for admitted project-relative packages. */
   runtimeEntryOverrides?: Readonly<Record<string, string>>
+  /** Base URL used only when materializing relative runtime entries in memory. */
+  runtimeImportBaseUrl?: string
 }
 
 /** Materialize an admitted graph for Node-side tooling without generated source evaluation. */
@@ -151,7 +153,15 @@ export function createResolvedGraphRuntime(
       ),
     ),
     entries: Object.fromEntries(
-      entrySpecifiers.map((specifier) => [specifier, () => import(specifier)]),
+      entrySpecifiers.map((specifier) => [
+        specifier,
+        () =>
+          import(
+            input.runtimeImportBaseUrl && specifier.startsWith(".")
+              ? new URL(specifier, input.runtimeImportBaseUrl).href
+              : specifier
+          ),
+      ]),
     ),
     modules,
     extensions,
@@ -321,10 +331,7 @@ export function buildGraphRuntimeModule(input: BuildGraphRuntimeModuleInput): st
     )
     .join("\n")
   const contributorFactories = contributors
-    .map(
-      (_contributor, index) =>
-        `  GENERATED_RUNTIME_CONTRIBUTOR_${index} as unknown as VoyantGraphRuntimeContributor,`,
-    )
+    .map((_contributor, index) => `  asRuntimeContributor(GENERATED_RUNTIME_CONTRIBUTOR_${index}),`)
     .join("\n")
   const contributorHostType = contributors
     .map(
@@ -368,6 +375,13 @@ export const GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN = ${formatGeneratedValue(
 
 const GENERATED_GRAPH_RUNTIME_IMPORTERS = ${formatRuntimeImporters(entries)}
 
+function asRuntimeContributor(value: unknown): VoyantGraphRuntimeContributor {
+  if (typeof value !== "function") {
+    throw new TypeError("A generated runtime contributor must be a function.")
+  }
+  return value as VoyantGraphRuntimeContributor
+}
+
 const GENERATED_GRAPH_RUNTIME_CONTRIBUTORS: readonly VoyantGraphRuntimeContributor[] = [
 ${contributorFactories}
 ]
@@ -379,6 +393,14 @@ export type GeneratedGraphRuntimeContributorHost = Omit<
   GeneratedGraphRuntimeResolvedContributorHost,
   "getRuntimePort"
 >
+
+function assertResolvedContributorHost(
+  value: GeneratedGraphRuntimeContributorHost & VoyantGraphRuntimeContributorHost,
+): asserts value is GeneratedGraphRuntimeResolvedContributorHost {
+  if (typeof value.getRuntimePort !== "function") {
+    throw new TypeError("A generated runtime contributor host must resolve runtime ports.")
+  }
+}
 
 export function createGeneratedGraphRuntimePorts(
   host: GeneratedGraphRuntimeContributorHost,
@@ -395,7 +417,8 @@ export function createGeneratedGraphRuntimePorts(
       }
       return ports[port.id]
     },
-  } as unknown as GeneratedGraphRuntimeResolvedContributorHost
+  }
+  assertResolvedContributorHost(contributorHost)
 
   for (const contributor of GENERATED_GRAPH_RUNTIME_CONTRIBUTORS) {
     const contribution = contributor(contributorHost)

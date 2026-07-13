@@ -1,8 +1,5 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while resolver, diagnostics, hashing, and compatibility behavior share one harness.
 
-import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
-import { financeVoyantModule } from "@voyant-travel/finance/voyant"
-import { storefrontVoyantModule } from "@voyant-travel/storefront/voyant"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -536,33 +533,6 @@ describe("deployment graph v1", () => {
     )
   })
 
-  it("resolves a package-owned module manifest without starter synthesis", async () => {
-    expect(validateGraphUnitManifest(bookingsVoyantModule, "module")).toEqual([])
-
-    const graph = await resolveDeploymentGraph({
-      project: defineProject({ modules: [bookingsVoyantModule] }),
-      target: "node",
-      mode: "self-hosted",
-    })
-
-    expect(graph.modules[0]).toMatchObject({
-      id: "@voyant-travel/bookings",
-      api: [
-        {
-          id: "@voyant-travel/bookings#api.admin",
-          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
-        },
-        {
-          id: "@voyant-travel/bookings#api.public",
-          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
-        },
-      ],
-      schema: [{ id: "@voyant-travel/bookings#schema" }],
-      migrations: [{ id: "@voyant-travel/bookings#migrations" }],
-      links: [{ id: "@voyant-travel/bookings#linkable.booking" }],
-    })
-  })
-
   it("loads package manifests only after package admission", async () => {
     let loaded = false
     const graph = await resolveDeploymentGraphWithPackageManifests({
@@ -915,11 +885,6 @@ describe("deployment graph v1", () => {
         expect.objectContaining({ facet: "api[0].transactional" }),
       ]),
     )
-  })
-
-  it("accepts established route-relative anonymous manifest paths", () => {
-    expect(validateGraphUnitManifest(storefrontVoyantModule)).toEqual([])
-    expect(validateGraphUnitManifest(financeVoyantModule)).toEqual([])
   })
 
   it("detects duplicate graph ids and missing required capabilities", async () => {

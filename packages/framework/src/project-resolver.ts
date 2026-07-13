@@ -298,7 +298,12 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     },
   ]
 
-  const runtime = createResolvedGraphRuntime({ graph: targetNeutralGraph, runtimeEntryOverrides })
+  const runtimeDirectory = path.dirname(path.join(projectRoot, ".voyant", runtimeEntry))
+  const runtime = createResolvedGraphRuntime({
+    graph: targetNeutralGraph,
+    runtimeEntryOverrides,
+    runtimeImportBaseUrl: pathToFileURL(`${runtimeDirectory}${path.sep}`).href,
+  })
   const resolved: ResolvedVoyantProject = {
     graph: targetNeutralGraph,
     runtime,
