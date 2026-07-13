@@ -1,7 +1,11 @@
 ---
-"@voyant-travel/ui": patch
+"@voyant-travel/ui": minor
 "@voyant-travel/notifications-react": patch
 "@voyant-travel/legal-react": patch
 ---
 
-Breaking beta cleanup: remove the deprecated template-authoring insertion callbacks that were ignored by the copy-only helper, along with the inert Legal and Notifications caller wiring.
+Breaking beta cleanup: remove the deprecated `onInsertVariable` and
+`onInsertSnippet` props from `ContractTemplateAuthoringHelp`. The helper only
+supports copying template values and snippets to the clipboard; consumers
+should remove these ignored callbacks. Also remove the inert Legal and
+Notifications caller wiring.
