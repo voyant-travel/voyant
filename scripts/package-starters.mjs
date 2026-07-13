@@ -58,22 +58,22 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
 
   const dependency = (name) =>
     localLinks ? `link:${workspacePackageDirectory(name)}` : `^${requiredWorkspaceVersion(name)}`
-  const cliDependency = localLinks
-    ? `link:${resolve(repoRoot, "..", "cli", "packages", "cli")}`
-    : `^${version}`
-  const startCommand = "voyant start"
-  const buildCommand = localLinks ? "NODE_OPTIONS=--import=tsx voyant build" : "voyant build"
+  const localCliPackage = resolve(repoRoot, "..", "cli", "packages", "cli")
+  const cliDependency =
+    localLinks && existsSync(join(localCliPackage, "package.json"))
+      ? `link:${localCliPackage}`
+      : supportedCliRange()
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
     private: true,
     license: "Apache-2.0",
     type: "module",
     scripts: {
-      dev: `${buildCommand} && ${startCommand}`,
-      build: buildCommand,
-      start: startCommand,
-      "graph:emit": buildCommand,
-      seed: "tsx src/scripts/seed.ts",
+      dev: "voyant develop",
+      build: "voyant build",
+      start: "voyant start",
+      seed: "voyant exec ./src/scripts/seed.ts",
+      "db:migrate": "voyant migrate",
     },
     dependencies: {
       "@voyant-travel/framework": dependency("@voyant-travel/framework"),
@@ -111,6 +111,17 @@ export default defineConfig({
 function requiredWorkspaceVersion(name) {
   const value = workspaceVersions.get(name)
   if (!value) throw new Error(`Missing workspace package for starter dependency: ${name}`)
+  return value
+}
+
+function supportedCliRange() {
+  const packageJson = JSON.parse(
+    readFileSync(join(repoRoot, "starters", "operator", "package.json"), "utf8"),
+  )
+  const value = packageJson.devDependencies?.["@voyant-travel/cli"]
+  if (typeof value !== "string" || /^(?:workspace|file|link):/.test(value)) {
+    throw new Error("starters/operator must declare a released @voyant-travel/cli range")
+  }
   return value
 }
 

@@ -32,7 +32,7 @@ try {
     process.exitCode = 1
   } else {
     console.log(
-      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no copied metadata or database authority; generic Node bootstrap)",
+      "check-standard-node-starter: OK (packaged: 4 authored files; checked-in: no copied metadata or database authority; CLI-owned lifecycle)",
     )
   }
 } finally {
@@ -166,8 +166,20 @@ export default defineConfig({
 
 function inspectPackageJson(packageJsonPath) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  if (packageJson.scripts?.start !== "voyant start") {
-    violations.push('generated starter must use the generic "voyant start" Node bootstrap')
+  const expectedScripts = {
+    dev: "voyant develop",
+    build: "voyant build",
+    start: "voyant start",
+    seed: "voyant exec ./src/scripts/seed.ts",
+    "db:migrate": "voyant migrate",
+  }
+  for (const [name, command] of Object.entries(expectedScripts)) {
+    if (packageJson.scripts?.[name] !== command) {
+      violations.push(`generated starter script ${name} must be exactly ${JSON.stringify(command)}`)
+    }
+  }
+  if (packageJson.scripts?.["graph:emit"] !== undefined) {
+    violations.push("generated starter must not expose graph emission as a package script")
   }
   const firstPartyDependencies = Object.keys({
     ...packageJson.dependencies,
@@ -378,25 +390,18 @@ function inspectCheckedInStarterDependencies(repoRoot) {
   if (!existsSync(packageJsonPath)) return
 
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  if (
-    packageJson.scripts?.start !==
-    "NODE_ENV=production node --require=dotenv/config dist/server/server.js"
-  ) {
-    violations.push(
-      "checked-in starter start must load optional .env through the Node 20 bootstrap",
-    )
+  const expectedLifecycleScripts = {
+    dev: "voyant develop",
+    build: "voyant build",
+    start: "voyant start",
+    "db:migrate": "voyant migrate",
   }
-  if (
-    packageJson.scripts?.["db:migrate"] !==
-    'pnpm run graph:emit && NODE_OPTIONS="$' +
-      '{NODE_OPTIONS:+$NODE_OPTIONS }--require=dotenv/config" voyant migrate'
-  ) {
-    violations.push(
-      "checked-in starter db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
-    )
-  }
-  if (!packageJson.dependencies?.dotenv || packageJson.devDependencies?.dotenv) {
-    violations.push("checked-in starter must provide dotenv as a production bootstrap dependency")
+  for (const [name, command] of Object.entries(expectedLifecycleScripts)) {
+    if (packageJson.scripts?.[name] !== command) {
+      violations.push(
+        `checked-in starter script ${name} must be exactly ${JSON.stringify(command)}`,
+      )
+    }
   }
   const declared = new Set([
     ...Object.keys(packageJson.dependencies ?? {}),

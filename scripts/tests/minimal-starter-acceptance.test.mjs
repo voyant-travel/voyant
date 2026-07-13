@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
-test("minimal starter installs, emits its selected graph, and boots the Node host", {
+test("minimal starter installs, builds, and boots the Node host", {
   timeout: 180_000,
 }, () => {
   const root = mkdtempSync(join(tmpdir(), "voyant-minimal-starter-acceptance-"))
@@ -85,6 +85,10 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
       'export default { id: "booking.created.health-sync", eventType: "booking.created", manifest: { id: "booking.created.health-sync", eventType: "booking.created", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
     )
     exec("pnpm", ["build"], app)
+    assert.ok(existsSync(join(app, "dist/client")))
+    assert.ok(existsSync(join(app, "dist/server/server.js")))
+    assert.ok(existsSync(join(app, "dist/.voyant/deployment-graph.generated.json")))
+    assert.ok(existsSync(join(app, "dist/server/.voyant/deployment-graph.generated.json")))
 
     const graph = JSON.parse(
       readFileSync(join(app, ".voyant/deployment-graph.generated.json"), "utf8"),
@@ -181,11 +185,7 @@ test("minimal starter installs, emits its selected graph, and boots the Node hos
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  const installedCli = realpathSync(
-    join(repoRoot, "starters/operator/node_modules/@voyant-travel/cli"),
-  )
-  packageJson.devDependencies["@voyant-travel/cli"] = `link:${installedCli}`
-  for (const dependency of ["tsx", "typescript"]) {
+  for (const dependency of ["@voyant-travel/cli", "tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
       join(repoRoot, "starters/operator/node_modules", dependency),
     )}`

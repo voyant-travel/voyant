@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { afterEach, test } from "node:test"
@@ -18,7 +18,7 @@ test("accepts the strict generated standard Node starter shape", () => {
   const root = fixture()
   assert.match(
     run(root),
-    /packaged: 4 authored files; checked-in: no copied metadata or database authority; generic Node bootstrap/,
+    /packaged: 4 authored files; checked-in: no copied metadata or database authority; CLI-owned lifecycle/,
   )
 })
 
@@ -82,7 +82,7 @@ test("rejects package-specific bootstrap dependencies and commands", () => {
   assert.throws(
     () => run(root),
     (error) =>
-      String(error.stderr).includes('generic "voyant start" Node bootstrap') &&
+      String(error.stderr).includes('script start must be exactly "voyant start"') &&
       String(error.stderr).includes("generic Node runtime"),
   )
 })
@@ -284,7 +284,7 @@ test("rejects undeclared first-party imports in checked-in starter tests", () =>
   )
 })
 
-test("rejects checked-in starter commands that do not load optional .env on Node 20", () => {
+test("rejects checked-in starter lifecycle scripts that bypass the CLI", () => {
   const starter = fixture()
   const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
   roots.push(root)
@@ -294,11 +294,13 @@ test("rejects checked-in starter commands that do not load optional .env on Node
     packageJsonPath,
     `${JSON.stringify({
       scripts: {
+        dev: "vite dev",
+        build: "vite build",
         start: "node --env-file-if-exists=.env dist/server/server.js",
         "db:migrate": "pnpm run graph:emit && voyant migrate",
       },
       dependencies: {},
-      devDependencies: { dotenv: "1.0.0" },
+      devDependencies: {},
     })}\n`,
   )
 
@@ -307,41 +309,35 @@ test("rejects checked-in starter commands that do not load optional .env on Node
     (error) => {
       const stderr = String(error.stderr)
       return (
-        stderr.includes("start must load optional .env through the Node 20 bootstrap") &&
-        stderr.includes(
-          "db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
-        ) &&
-        stderr.includes("dotenv as a production bootstrap dependency")
+        stderr.includes('script dev must be exactly "voyant develop"') &&
+        stderr.includes('script build must be exactly "voyant build"') &&
+        stderr.includes('script start must be exactly "voyant start"') &&
+        stderr.includes('script db:migrate must be exactly "voyant migrate"')
       )
     },
   )
 })
 
-test("rejects db:migrate commands that replace existing NODE_OPTIONS", () => {
-  const starter = fixture()
-  const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
-  roots.push(root)
-  const packageJsonPath = join(root, "starters/operator/package.json")
-  mkdirSync(dirname(packageJsonPath), { recursive: true })
-  writeFileSync(
-    packageJsonPath,
-    `${JSON.stringify({
-      scripts: {
-        start: "NODE_ENV=production node --require=dotenv/config dist/server/server.js",
-        "db:migrate": "pnpm run graph:emit && NODE_OPTIONS=--require=dotenv/config voyant migrate",
-      },
-      dependencies: { dotenv: "1.0.0" },
-      devDependencies: {},
-    })}\n`,
-  )
+test("rejects generated starter graph lifecycle aliases", () => {
+  const root = fixture()
+  const packageJsonPath = join(root, "package.json")
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  packageJson.scripts["graph:emit"] = "voyant build --artifacts-only"
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson)}\n`)
 
   assert.throws(
-    () => run(starter, root),
-    (error) =>
-      String(error.stderr).includes(
-        "db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
-      ),
+    () => run(root),
+    (error) => String(error.stderr).includes("must not expose graph emission"),
   )
+})
+
+test("accepts CLI-owned lifecycle scripts without a dotenv bootstrap dependency", () => {
+  const starter = fixture()
+  const checkedIn = JSON.parse(
+    readFileSync(join(repoRoot, "starters/operator/package.json"), "utf8"),
+  )
+  assert.equal(checkedIn.dependencies?.dotenv, undefined)
+  assert.doesNotThrow(() => run(starter))
 })
 
 function run(starterDir, root = repoRoot) {
@@ -361,7 +357,13 @@ function fixture(overrides = {}) {
   const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-starter-"))
   roots.push(root)
   const packageJson = overrides.packageJson ?? {
-    scripts: { start: "voyant start" },
+    scripts: {
+      dev: "voyant develop",
+      build: "voyant build",
+      start: "voyant start",
+      seed: "voyant exec ./src/scripts/seed.ts",
+      "db:migrate": "voyant migrate",
+    },
     dependencies: {
       "@voyant-travel/framework": "1.0.0",
       "@voyant-travel/runtime": "1.0.0",

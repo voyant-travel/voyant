@@ -112,9 +112,21 @@ Rules:
 - **Never copy package schemas or migrations into a starter.** Select the owning
   module/plugin in `voyant.config.ts`; the graph migration plan consumes its
   published migration history.
-- **New migrations use timestamp prefixes.** `voyant db generate` defaults to
-  `--prefix timestamp`, so concurrently-authored migrations never collide on a
-  sequential index. The pre-existing sequential migrations stay as-is.
+- **Local modules own their migration history beside their schema.** Keep
+  `src/modules/<name>/schema.ts`, its Drizzle config, and
+  `src/modules/<name>/migrations/` together. Generate SQL with Drizzle Kit
+  directly and declare that module-scoped folder as a deployment migration
+  source. Do not collapse local module histories into a root aggregate folder.
+- **Reusable modules and plugins ship migrations.** Their package manifest
+  declares the package-owned migration facet, and the published tarball contains
+  the SQL and journal. A consuming application neither regenerates nor copies it.
+- **Generation and application are separate.** ORM tooling such as Drizzle Kit
+  generates committed migrations. `voyant migrate` only applies the admitted,
+  immutable graph plan; it never generates SQL during deployment.
+- **New Drizzle migrations use timestamp prefixes.** Pass `--prefix timestamp`
+  when invoking Drizzle Kit directly, so concurrently-authored migrations never
+  collide on a sequential index. The pre-existing sequential migrations stay
+  as-is.
 - **Pre-existing duplicate prefixes are baselined**, not rewritten, in
   `migrations/duplicate-prefixes.baseline.json`. `voyant db doctor` fails only
   on *new* (un-baselined) collisions.

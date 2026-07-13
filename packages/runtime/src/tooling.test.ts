@@ -6,7 +6,9 @@ import { pathToFileURL } from "node:url"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  buildViteApplication,
   buildVoyantProjectWithDependencies,
+  createProjectViteConfig,
   developVoyantProjectWithDependencies,
   loadStandardRouteFiles,
   prepareProjectBootstrap,
@@ -27,6 +29,40 @@ afterEach(async () => {
 })
 
 describe("Voyant project tooling", () => {
+  it("builds the complete Vite application instead of only the client environment", async () => {
+    const buildApp = vi.fn(async () => {})
+    const createBuilder = vi.fn(async () => ({ buildApp }))
+    const config = { root: "/workspace/operator", configFile: false as const }
+
+    await buildViteApplication(config, createBuilder)
+
+    expect(createBuilder).toHaveBeenCalledWith(config)
+    expect(buildApp).toHaveBeenCalledOnce()
+  })
+
+  it("aliases product dependencies exactly without capturing package subpaths", () => {
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: {
+        aliases: { "@tanstack/react-router": "/product/react-router/index.cjs" },
+      },
+    })
+    const aliases = config.resolve?.alias
+    expect(Array.isArray(aliases)).toBe(true)
+    const dependencyAlias = (aliases as Array<{ find: string | RegExp; replacement: string }>).find(
+      ({ replacement }) => replacement === "/product/react-router/index.cjs",
+    )
+
+    expect(dependencyAlias?.find).toBeInstanceOf(RegExp)
+    expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router")).toBe(true)
+    expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router/ssr/server")).toBe(false)
+  })
+
   it("generates, builds, and copies both deployment artifact layouts", async () => {
     const projectRoot = "/workspace/operator"
     const calls: string[] = []

@@ -9,9 +9,12 @@ added to the graph, and loaded by the generated runtime. The module survives
 
 ```
 src/modules/loyalty/
-  index.ts     # default-exports the runtime module; activates the convention
-  routes.ts    # your Hono routes
-  service.ts   # your business logic
+  index.ts                  # activates the runtime convention
+  routes.ts                 # Hono routes
+  service.ts                # business logic
+  schema.ts                 # optional module-owned Drizzle schema
+  drizzle.config.ts         # optional generation config
+  migrations/               # optional committed module-owned history
 ```
 
 `voyant generate module loyalty --dir src/modules` scaffolds this for you.
@@ -35,9 +38,40 @@ export default defineDeploymentModule({
 The resolver creates the graph unit from the project package name and directory
 name, then emits a project-relative static import under `.voyant/runtime`.
 
-Schema-bearing reusable modules own their schema and migration history in their
-package, exactly like first-party modules. Select that package from
-`voyant.config.ts`; do not add an aggregate deployment migration folder.
+## Database migrations
+
+Generate an app-local module's migrations with Drizzle Kit directly; migration
+generation is not part of `voyant migrate`:
+
+```bash
+pnpm exec drizzle-kit generate \
+  --config src/modules/loyalty/drizzle.config.ts \
+  --prefix timestamp \
+  --name add-loyalty-points
+```
+
+The module config points `schema` at `./src/modules/loyalty/schema.ts` and `out`
+at `./src/modules/loyalty/migrations`. Declare that same module-scoped folder in
+`voyant.config.ts` so it is admitted after selected package migrations:
+
+```ts
+export default defineConfig({
+  deployment: {
+    migrations: [
+      { id: "project.module.loyalty", source: "./src/modules/loyalty/migrations" },
+    ],
+  },
+})
+```
+
+`voyant migrate` applies the resulting committed SQL; it never generates or
+rewrites it. Keep each local module's history in its own directory. A root
+aggregate `migrations/` folder is only an explicit escape hatch for genuinely
+application-wide DDL.
+
+Schema-bearing reusable modules and plugins own and publish their schema and
+migration history inside their package, exactly like first-party modules. A
+consumer selects that package and does not regenerate or copy its migrations.
 
 ## Operator-owned units
 

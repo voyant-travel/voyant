@@ -17,11 +17,12 @@ import {
 } from "@voyant-travel/vite-config"
 import { register } from "tsx/esm/api"
 import {
+  type Alias,
+  createBuilder as createViteBuilder,
   createServer as createViteServer,
   type InlineConfig,
   type PluginOption,
   type ViteDevServer,
-  build as viteBuild,
 } from "vite"
 
 import type {
@@ -84,9 +85,20 @@ const defaultDependencies: VoyantProjectToolingDependencies = {
   materializeRoutes: voyantGeneratedRoutes,
   createViteConfig: createProjectViteConfig,
   generateRouteTree,
-  buildVite: viteBuild,
+  buildVite: buildViteApplication,
   createViteServer,
   replaceDirectory,
+}
+
+type CreateViteBuilder = (config: InlineConfig) => Promise<{ buildApp(): Promise<void> }>
+
+/** Build every Vite application environment, including TanStack Start SSR. */
+export async function buildViteApplication(
+  config: InlineConfig,
+  createBuilder: CreateViteBuilder = createViteBuilder,
+): Promise<void> {
+  const builder = await createBuilder(config)
+  await builder.buildApp()
 }
 
 export async function buildVoyantProjectWithDependencies(
@@ -191,14 +203,27 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     const alias = config.resolve?.alias
     config.resolve = {
       ...config.resolve,
-      alias: {
-        ...options.bootstrap.aliases,
-        ...(options.bootstrap.stylesEntry ? { "@/styles.css": options.bootstrap.stylesEntry } : {}),
-        ...(alias && !Array.isArray(alias) ? alias : {}),
-      },
+      alias: [
+        ...Object.entries(options.bootstrap.aliases ?? {}).map(
+          ([specifier, replacement]): Alias => ({
+            find: new RegExp(`^${escapeRegExp(specifier)}$`),
+            replacement,
+          }),
+        ),
+        ...(options.bootstrap.stylesEntry
+          ? [{ find: /^@\/styles\.css$/, replacement: options.bootstrap.stylesEntry }]
+          : []),
+        ...(Array.isArray(alias)
+          ? alias
+          : Object.entries(alias ?? {}).map(([find, replacement]) => ({ find, replacement }))),
+      ],
     }
   }
   return config
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 export async function prepareProjectBootstrap(projectRoot: string): Promise<ProjectBootstrap> {
