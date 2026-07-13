@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { STANDARD_OPERATOR_DISTRIBUTION } from "../packages/framework/src/operator-distribution.ts"
+import { STANDARD_OPERATOR_DISTRIBUTION } from "../packages/operator-standard/src/index.ts"
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const retiredProjectionFiles = [
@@ -22,7 +22,7 @@ for (const relativePath of retiredProjectionFiles) {
 }
 
 const distributionSource = await readFile(
-  path.join(repoRoot, "packages/framework/src/operator-distribution.ts"),
+  path.join(repoRoot, "packages/operator-standard/src/index.ts"),
   "utf8",
 )
 for (const retiredToken of [
@@ -33,7 +33,7 @@ for (const retiredToken of [
   assert.doesNotMatch(
     distributionSource,
     new RegExp(retiredToken),
-    `operator-distribution.ts must not restore legacy runtime projection ${retiredToken}`,
+    `operator-standard must not restore legacy runtime projection ${retiredToken}`,
   )
 }
 

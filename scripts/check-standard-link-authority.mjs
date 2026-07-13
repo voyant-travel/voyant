@@ -49,7 +49,7 @@ for (const [owner, links] of Object.entries(expected)) {
   }
 }
 
-const bom = readFileSync(path.join(root, "packages/framework/src/operator-distribution.ts"), "utf8")
+const bom = readFileSync(path.join(root, "packages/operator-standard/src/index.ts"), "utf8")
 const neutral = [
   ["legal", "contract-invoice"],
   ["mice", "quote-program"],

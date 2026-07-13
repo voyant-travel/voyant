@@ -61,7 +61,11 @@ async function fixture(deploymentResources) {
   )
   await write(root, "packages/framework/src/project-resolver.ts", "local project overrides only\n")
   await write(root, "scripts/emit-deployment-graph.ts", "local project overrides only\n")
-  await write(root, "scripts/generate-framework-bom.mjs", "writeFileSync(PKG, nextPkg)\n")
+  await write(
+    root,
+    "scripts/generate-standard-product-distribution.mjs",
+    "writeFileSync(DISTRIBUTION_PKG, nextDistributionPkg)\n",
+  )
   for (const [packageName, factory] of Object.entries(packageFactories)) {
     await write(
       root,

@@ -96,7 +96,7 @@ function checkKvCacheBindings() {
   // are concrete Node providers in `src/server.ts`, while consumers still type
   // against the KVStore-compatible CACHE/RATE_LIMIT env members.
   requireContains(
-    "packages/framework/src/operator-distribution.ts",
+    "packages/operator-standard/src/index.ts",
     'cache: "postgres"',
     "standard Node product cache backend",
   )

@@ -20,6 +20,42 @@ afterEach(() => {
 })
 
 describe("framework project resolver", () => {
+  it("resolves selected manifests from the product distribution dependency root", async () => {
+    const root = projectRoot()
+    const distributionRoot = path.join(root, "node_modules", "@acme", "operator-standard")
+    mkdirSync(distributionRoot, { recursive: true })
+    writeFileSync(
+      path.join(distributionRoot, "package.json"),
+      `${JSON.stringify({
+        name: "@acme/operator-standard",
+        version: "1.0.0",
+        type: "module",
+        dependencies: { "@acme/loyalty": "1.2.3" },
+      })}\n`,
+    )
+    writePackageAt(path.join(distributionRoot, "node_modules", "@acme", "loyalty"), {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
+    })
+
+    const resolution = await resolve(
+      root,
+      defineProject({
+        productBom: {
+          schemaVersion: "voyant.product-bom-reference.v1",
+          id: "@acme/operator-standard",
+          version: "1",
+        },
+        modules: ["@acme/loyalty"],
+      }),
+    )
+
+    expect(resolution.graph.modules.map(({ id }) => id)).toEqual(["@acme/loyalty"])
+    expect(resolution.graph.packageRecords).toContainEqual(
+      expect.objectContaining({ packageName: "@acme/loyalty" }),
+    )
+  })
+
   it("matches the CLI contract with one deterministic target-neutral graph hash", async () => {
     const root = projectRoot()
     writePackage(root, {

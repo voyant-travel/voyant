@@ -27,7 +27,7 @@ const ports = {
   [legalBookingContractSubscriberRuntimePort.id]: {},
 }
 `,
-    "packages/framework/src/operator-distribution.ts": `
+    "packages/operator-standard/src/index.ts": `
 const extensions = [{ resolve: "@voyant-travel/legal/booking-contract-extension" }]
 `,
     "starters/operator/src/api/runtime/operator-runtime-adapter.ts": "const ports = {}\n",
@@ -54,7 +54,7 @@ describe("Legal subscriber authority checker", () => {
 
   it("rejects an unselected Legal booking-contract extension", async () => {
     const root = await createFixture({
-      "packages/framework/src/operator-distribution.ts": "const extensions = []\n",
+      "packages/operator-standard/src/index.ts": "const extensions = []\n",
     })
     await assert.rejects(runChecker(root), /distribution must select the Legal booking-contract/)
   })

@@ -179,10 +179,11 @@ function inspectPackageJson(packageJsonPath) {
     "@voyant-travel/cli",
     "@voyant-travel/framework",
     "@voyant-travel/operator-runtime",
+    "@voyant-travel/operator-standard",
   ]
   if (firstPartyDependencies.join("\n") !== expectedDependencies.join("\n")) {
     violations.push(
-      `generated starter dependencies must expose only CLI, framework, and generic Node runtime; found ${firstPartyDependencies.join(", ")}`,
+      `generated starter dependencies must expose only CLI, framework, standard product distribution, and generic Node runtime; found ${firstPartyDependencies.join(", ")}`,
     )
   }
   if (packageJson.dependencies?.["@voyant-travel/plugin-smartbill"]) {
@@ -196,6 +197,8 @@ function inspectRepositoryAuthority(repoRoot) {
       "packages/cli must not exist; CLI implementation belongs to the separate voyant-travel/cli repository",
     )
   }
+
+  inspectCheckedInProductDistribution(repoRoot)
 
   for (const relativePath of [
     "starters/operator/drizzle.config.ts",
@@ -312,7 +315,7 @@ function inspectRepositoryAuthority(repoRoot) {
     }
   }
 
-  const distributionPath = join(repoRoot, "packages/framework/src/operator-distribution.ts")
+  const distributionPath = join(repoRoot, "packages/operator-standard/src/index.ts")
   const configPath = join(repoRoot, "starters/operator/voyant.config.ts")
   if (existsSync(distributionPath) && existsSync(configPath)) {
     const distributionSource = readFileSync(distributionPath, "utf8")
@@ -362,11 +365,61 @@ function inspectRepositoryAuthority(repoRoot) {
   }
 }
 
+function inspectCheckedInProductDistribution(repoRoot) {
+  const distributionSourcePath = join(repoRoot, "packages/operator-standard/src/index.ts")
+  const distributionPackagePath = join(repoRoot, "packages/operator-standard/package.json")
+  const starterPackagePath = join(repoRoot, "starters/operator/package.json")
+  if (
+    !existsSync(distributionSourcePath) ||
+    !existsSync(distributionPackagePath) ||
+    !existsSync(starterPackagePath)
+  ) {
+    return
+  }
+
+  const distributionSource = readFileSync(distributionSourcePath, "utf8")
+  const distributionPackage = JSON.parse(readFileSync(distributionPackagePath, "utf8"))
+  const starterPackage = JSON.parse(readFileSync(starterPackagePath, "utf8"))
+  const standardOwners = new Set(
+    [...distributionSource.matchAll(/resolve:\s*"(@voyant-travel\/[^"/]+)/g)].map(
+      (match) => match[1],
+    ),
+  )
+
+  for (const packageName of standardOwners) {
+    if (!distributionPackage.dependencies?.[packageName]) {
+      violations.push(`standard product distribution must depend on ${packageName}`)
+    }
+  }
+  if (!starterPackage.dependencies?.["@voyant-travel/operator-standard"]) {
+    violations.push("checked-in starter must depend on @voyant-travel/operator-standard")
+  }
+
+  const starterRoot = join(repoRoot, "starters/operator")
+  const productionSource = walkFiles(starterRoot)
+    .filter(
+      (sourcePath) =>
+        /\.(?:css|ts|tsx)$/.test(sourcePath) &&
+        !/\.test\.[^.]+$/.test(sourcePath) &&
+        !sourcePath.startsWith(".voyant/"),
+    )
+    .map((sourcePath) => readFileSync(join(starterRoot, sourcePath), "utf8"))
+    .join("\n")
+  for (const packageName of standardOwners) {
+    if (starterPackage.dependencies?.[packageName] && !productionSource.includes(packageName)) {
+      violations.push(
+        `checked-in starter must obtain manifest-only standard package ${packageName} from @voyant-travel/operator-standard`,
+      )
+    }
+  }
+}
+
 function walkFiles(root) {
   if (!existsSync(root)) return []
   const files = []
   const visit = (directory) => {
     for (const entry of readdirSync(directory).sort()) {
+      if ([".voyant", "dist", "node_modules"].includes(entry)) continue
       const path = join(directory, entry)
       if (statSync(path).isDirectory()) visit(path)
       else files.push(relative(root, path))

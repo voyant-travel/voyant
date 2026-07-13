@@ -49,7 +49,7 @@ const [
   read("packages/framework/src/deployment-artifacts.ts"),
   read("packages/framework/src/project-resolver.ts"),
   read("scripts/emit-deployment-graph.ts"),
-  read("scripts/generate-framework-bom.mjs"),
+  read("scripts/generate-standard-product-distribution.mjs"),
   ...Object.keys(packageFactories).map((packageName) => {
     const packageJsonPath = `packages/${packageName}/package.json`
     return existsSync(path.join(root, packageJsonPath)) ? read(packageJsonPath) : null
@@ -112,7 +112,7 @@ if (!generator.includes("record.metadata?.runtime") || !generator.includes("cont
 for (const [name, source] of [
   ["project resolver", resolver],
   ["graph emitter", emitter],
-  ["BOM generator", bomGenerator],
+  ["product distribution generator", bomGenerator],
 ]) {
   if (
     /runtime-packages\.generated|runtime-contributors\.generated|framework\/runtime-contributors/.test(
@@ -122,11 +122,11 @@ for (const [name, source] of [
     violations.push(`${name} must not consume a generated runtime discovery catalog`)
   }
 }
-if (!bomGenerator.includes("writeFileSync(PKG, nextPkg)")) {
-  violations.push("BOM generation must retain output-only framework publish dependencies")
+if (!bomGenerator.includes("writeFileSync(DISTRIBUTION_PKG, nextDistributionPkg)")) {
+  violations.push("distribution generation must retain output-only publish dependencies")
 }
 if (/writeFileSync\((?:SRC|CONTRIBUTORS|MANIFEST)/.test(bomGenerator)) {
-  violations.push("BOM generation must not emit resolver discovery inputs")
+  violations.push("distribution generation must not emit resolver discovery inputs")
 }
 
 for (const [index, [packageName, factory]] of Object.entries(packageFactories).entries()) {

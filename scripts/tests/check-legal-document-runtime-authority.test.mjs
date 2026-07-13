@@ -39,8 +39,7 @@ async function fixture(overrides = {}) {
     "packages/framework/package.json": JSON.stringify({
       dependencies: { "@voyant-travel/legal": "workspace:*" },
     }),
-    "packages/framework/src/operator-distribution.ts":
-      'modules: [{ resolve: "@voyant-travel/legal" }]',
+    "packages/operator-standard/src/index.ts": 'modules: [{ resolve: "@voyant-travel/legal" }]',
     ...overrides,
   }
   for (const [relativePath, contents] of Object.entries(files)) {

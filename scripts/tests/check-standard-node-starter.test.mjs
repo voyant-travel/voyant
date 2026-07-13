@@ -155,7 +155,9 @@ test("rejects restored checked-in starter compatibility authority", () => {
       () => run(starter, root),
       (error) =>
         String(error.stderr).includes(
-          `checked-in starter authority must stay deleted: ${relativePath}`,
+          relativePath === "starters/operator/scripts/backfill-custom-fields.ts"
+            ? `standard starter operational authority must stay deleted: ${relativePath}`
+            : `checked-in starter authority must stay deleted: ${relativePath}`,
         ),
     )
   }
@@ -173,7 +175,7 @@ test("rejects restored starter-owned Flights reference fixtures", () => {
     () => run(starter, root),
     (error) =>
       String(error.stderr).includes(
-        "Flights reference fixture must remain package-owned: starters/operator/scripts/seed-flights-reference-airlines.ts",
+        "standard starter operational authority must stay deleted: starters/operator/scripts/seed-flights-reference-airlines.ts",
       ),
   )
 })
@@ -272,6 +274,7 @@ function fixture(overrides = {}) {
     dependencies: {
       "@voyant-travel/framework": "1.0.0",
       "@voyant-travel/operator-runtime": "1.0.0",
+      "@voyant-travel/operator-standard": "1.0.0",
     },
     devDependencies: { "@voyant-travel/cli": "1.0.0" },
   }

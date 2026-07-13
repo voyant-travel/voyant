@@ -140,6 +140,7 @@ interface InspectedPackage {
 interface MaterializedProject {
   project: VoyantGraphProject
   packages: Map<string, InspectedPackage>
+  resolutionRoots: readonly string[]
 }
 
 interface PackageJson {
@@ -203,7 +204,12 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
     })
   let graph = await resolveGraph()
   const packageCount = materialized.packages.size
-  await materializeRuntimeReferencePackages(graph, projectRoot, materialized.packages)
+  await materializeRuntimeReferencePackages(
+    graph,
+    projectRoot,
+    materialized.resolutionRoots,
+    materialized.packages,
+  )
   if (materialized.packages.size !== packageCount) graph = await resolveGraph()
   const targetNeutralGraph = requireTargetNeutralGraph(graph)
   const selectedLinks = [
@@ -515,6 +521,7 @@ export function inferredNodeRuntimePackageMetadata(): VoyantGraphPackageMetadata
 async function materializeRuntimeReferencePackages(
   graph: ResolvedVoyantDeploymentGraph,
   projectRoot: string,
+  resolutionRoots: readonly string[],
   packages: Map<string, InspectedPackage>,
 ): Promise<void> {
   for (const reference of runtimePackageReferences([
@@ -525,7 +532,7 @@ async function materializeRuntimeReferencePackages(
     const packageName = runtimeReferencePackageName(reference)
     let inspected = packages.get(packageName)
     if (!inspected) {
-      inspected = await inspectRuntimePackage(packageName, projectRoot)
+      inspected = await inspectRuntimePackage(packageName, resolutionRoots)
       packages.set(packageName, inspected)
     }
     if (isProjectSourceRuntimeReference(reference, inspected, projectRoot)) continue
@@ -573,11 +580,11 @@ function runtimeReferencePackageName(reference: RuntimePackageReference): string
 
 async function inspectRuntimePackage(
   packageName: string,
-  projectRoot: string,
+  resolutionRoots: readonly string[],
 ): Promise<InspectedPackage> {
   let directory: string
   try {
-    directory = resolveInstalledPackageDirectory(packageName, projectRoot)
+    directory = resolveInstalledPackageDirectory(packageName, resolutionRoots)
   } catch {
     throw new Error(
       `VOYANT_GRAPH_RUNTIME_PACKAGE_UNADMITTED: resolveProject: runtime package ${packageName} is not installed.`,
@@ -631,19 +638,45 @@ function requireTargetNeutralGraph(
   return { ...graph, deployment }
 }
 
+async function productDistributionResolutionRoots(
+  project: VoyantGraphProject,
+  projectRoot: string,
+): Promise<readonly string[]> {
+  if (!project.productBom) return [projectRoot]
+
+  let distributionRoot: string
+  try {
+    distributionRoot = resolveInstalledPackageDirectory(project.productBom.id, [projectRoot])
+  } catch {
+    throw new Error(
+      `resolveProject: product distribution ${project.productBom.id} is not installed.`,
+    )
+  }
+  const packageJson = await readPackageJson(distributionRoot)
+  const packageName = requirePackageName(packageJson, distributionRoot)
+  if (packageName !== project.productBom.id) {
+    throw new Error(
+      `resolveProject: product distribution ${project.productBom.id} resolved package ${packageName}.`,
+    )
+  }
+  return [distributionRoot, projectRoot]
+}
+
 async function materializeProjectSelections(
   project: VoyantGraphProject,
   projectRoot: string,
 ): Promise<MaterializedProject> {
   const packages = new Map<string, InspectedPackage>()
+  const resolutionRoots = await productDistributionResolutionRoots(project, projectRoot)
   const selections = project.selections
-  if (!selections) return { project, packages }
+  if (!selections) return { project, packages, resolutionRoots }
 
   const modules = await materializeUnits(
     project.modules,
     selections.modules,
     "module",
     projectRoot,
+    resolutionRoots,
     packages,
   )
   const extensions = await materializeUnits(
@@ -651,6 +684,7 @@ async function materializeProjectSelections(
     selections.extensions,
     "extension",
     projectRoot,
+    resolutionRoots,
     packages,
   )
   const plugins = await materializeUnits(
@@ -658,11 +692,13 @@ async function materializeProjectSelections(
     selections.plugins,
     "plugin",
     projectRoot,
+    resolutionRoots,
     packages,
   )
 
   return {
     packages,
+    resolutionRoots,
     project: {
       ...project,
       modules: modules.units,
@@ -682,6 +718,7 @@ async function materializeUnits(
   selections: readonly VoyantGraphProjectSelection[],
   kind: VoyantGraphUnitKind,
   projectRoot: string,
+  resolutionRoots: readonly string[],
   packages: Map<string, InspectedPackage>,
 ): Promise<{
   units: VoyantGraphUnitManifest[]
@@ -698,7 +735,7 @@ async function materializeUnits(
       continue
     }
 
-    const inspected = await inspectSelectedPackage(selection, kind, projectRoot)
+    const inspected = await inspectSelectedPackage(selection, kind, projectRoot, resolutionRoots)
     const selectedId = graphIdForSelection(inspected.record.packageName, selection.id)
     const materializedSelection: VoyantGraphProjectSelection = {
       ...selection,
@@ -732,11 +769,12 @@ async function inspectSelectedPackage(
   selection: VoyantGraphProjectSelection,
   kind: VoyantGraphUnitKind,
   projectRoot: string,
+  resolutionRoots: readonly string[],
 ): Promise<InspectedPackage> {
   const localPath = selection.provenance.kind === "path" ? selection.provenance.path : undefined
   const directory = localPath
     ? resolveLocalPackageDirectory(projectRoot, localPath)
-    : resolveInstalledPackageDirectory(selection.packageName, projectRoot)
+    : resolveInstalledPackageDirectory(selection.packageName, resolutionRoots)
   const packageJson = await readPackageJson(directory)
   const packageName = requirePackageName(packageJson, directory)
   if (!localPath && packageName !== selection.packageName) {
@@ -1038,14 +1076,20 @@ function resolveLocalPackageDirectory(projectRoot: string, relativePath: string)
   return directory
 }
 
-function resolveInstalledPackageDirectory(packageName: string, projectRoot: string): string {
-  const startPaths = [projectRoot, path.dirname(fileURLToPath(import.meta.url))]
+function resolveInstalledPackageDirectory(
+  packageName: string,
+  resolutionRoots: readonly string[],
+): string {
+  const startPaths = [...resolutionRoots, path.dirname(fileURLToPath(import.meta.url))]
   for (const start of startPaths) {
     const walked = findNodeModulesPackage(start, packageName)
     if (walked) return walked
   }
 
-  for (const from of [path.join(projectRoot, "package.json"), import.meta.url]) {
+  for (const from of [
+    ...resolutionRoots.map((root) => path.join(root, "package.json")),
+    import.meta.url,
+  ]) {
     try {
       const entry = createRequire(from).resolve(packageName)
       const root = findOwningPackageDirectory(path.dirname(entry), packageName)

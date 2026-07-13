@@ -27,7 +27,7 @@ const legalManifest = JSON.parse(read("packages/legal/package.json") || "{}")
 const contributor = read("packages/legal/src/runtime-contributor.ts")
 const runtime = read("packages/legal/src/runtime.ts")
 const frameworkManifest = JSON.parse(read("packages/framework/package.json") || "{}")
-const standardDistribution = read("packages/framework/src/operator-distribution.ts")
+const standardDistribution = read("packages/operator-standard/src/index.ts")
 
 for (const token of [
   "loadLegalRuntime",
@@ -75,7 +75,7 @@ for (const token of [
   if (!runtime.includes(token)) violations.push(`Legal runtime is missing ${token}`)
 }
 if (!frameworkManifest.dependencies?.["@voyant-travel/legal"]) {
-  violations.push("framework BOM must supply @voyant-travel/legal")
+  violations.push("product distribution must supply @voyant-travel/legal")
 }
 if (!standardDistribution.includes('resolve: "@voyant-travel/legal"')) {
   violations.push("authored standard product BOM must select @voyant-travel/legal")

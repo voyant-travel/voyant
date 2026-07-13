@@ -14,14 +14,15 @@ const DEPENDENCY_FIELDS = [
 ]
 const REQUIRED_WORKSPACE_RANGE = "workspace:^"
 
-// The framework BOM pins its runtime modules to the EXACT current version
+// The standard product distribution pins its runtime modules to the EXACT current version
 // (`workspace:*` → `X.Y.Z` on publish) so the published set is deterministic and
-// tested — see scripts/generate-framework-bom.mjs (and verify:framework-bom,
+// tested - see scripts/generate-standard-product-distribution.mjs (and
+// verify:product-distribution,
 // which enforces `workspace:*` there). That intent is the opposite of the caret
 // rule, so the BOM's runtime `dependencies` are exempt. Its dev/peer deps still
 // follow the caret convention (they aren't part of the pinned published set).
 const BOM_EXACT_PIN = "workspace:*"
-const BOM_EXACT_PIN_PACKAGES = new Set(["@voyant-travel/framework"])
+const BOM_EXACT_PIN_PACKAGES = new Set(["@voyant-travel/operator-standard"])
 
 function collectWorkspaceRangeProblems(packages) {
   const problems = []

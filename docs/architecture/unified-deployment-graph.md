@@ -101,6 +101,16 @@ as decided by [ADR-0012](../adr/0012-application-authoring-and-product-defaults.
 Standard product closure belongs to a framework-owned distribution rather than
 being copied into every project.
 
+The standard Node product distribution is the explicit
+`@voyant-travel/operator-standard` package. A standard project depends on that
+one package alongside its genuine project and bootstrap dependencies. The
+distribution owns exact-pinned publish dependencies for every selected package
+and recursive manifest/runtime reference in its tested closure. During
+resolution, its package directory is a dependency-resolution root, so selected
+`./voyant` manifests resolve under strict pnpm without starter duplication or
+hoisting. `@voyant-travel/framework` owns resolver/runtime implementation only;
+it is not the standard product BOM.
+
 ```sh
 voyant new --preset pms-standard
 ```
@@ -200,6 +210,11 @@ It may still be described as an adapter package in taxonomy and docs.
 The end-state source of truth for a module or plugin is an import-cheap manifest
 exported by the package that owns the behavior. This rule applies equally to
 first-party, third-party, workspace, and deployment-local units.
+
+Distribution packages own selection policy and dependency closure, not copies
+of selected graph manifests. The resolver loads those manifests from the
+selected owner packages relative to the distribution package that supplied the
+product BOM.
 
 ```json
 {

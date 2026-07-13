@@ -1,0 +1,108 @@
+{
+  "name": "@voyant-travel/operator-standard",
+  "version": "0.1.0",
+  "description": "Versioned standard Voyant Operator product distribution and dependency BOM.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@voyant-travel/accommodations": "workspace:*",
+    "@voyant-travel/action-ledger": "workspace:*",
+    "@voyant-travel/action-ledger-react": "workspace:*",
+    "@voyant-travel/auth": "workspace:*",
+    "@voyant-travel/availability": "workspace:*",
+    "@voyant-travel/bookings": "workspace:*",
+    "@voyant-travel/bookings-react": "workspace:*",
+    "@voyant-travel/catalog": "workspace:*",
+    "@voyant-travel/catalog-authoring": "workspace:*",
+    "@voyant-travel/catalog-react": "workspace:*",
+    "@voyant-travel/charters": "workspace:*",
+    "@voyant-travel/commerce": "workspace:*",
+    "@voyant-travel/commerce-react": "workspace:*",
+    "@voyant-travel/core": "workspace:*",
+    "@voyant-travel/cruises": "workspace:*",
+    "@voyant-travel/db": "workspace:*",
+    "@voyant-travel/distribution": "workspace:*",
+    "@voyant-travel/distribution-react": "workspace:*",
+    "@voyant-travel/finance": "workspace:*",
+    "@voyant-travel/finance-react": "workspace:*",
+    "@voyant-travel/flights": "workspace:*",
+    "@voyant-travel/flights-react": "workspace:*",
+    "@voyant-travel/identity": "workspace:*",
+    "@voyant-travel/inventory": "workspace:*",
+    "@voyant-travel/inventory-react": "workspace:*",
+    "@voyant-travel/legal": "workspace:*",
+    "@voyant-travel/legal-react": "workspace:*",
+    "@voyant-travel/mcp": "workspace:*",
+    "@voyant-travel/mice": "workspace:*",
+    "@voyant-travel/mice-react": "workspace:*",
+    "@voyant-travel/notifications": "workspace:*",
+    "@voyant-travel/notifications-react": "workspace:*",
+    "@voyant-travel/operations": "workspace:*",
+    "@voyant-travel/operations-react": "workspace:*",
+    "@voyant-travel/operator-settings": "workspace:*",
+    "@voyant-travel/operator-settings-react": "workspace:*",
+    "@voyant-travel/public-document-delivery": "workspace:*",
+    "@voyant-travel/quotes": "workspace:*",
+    "@voyant-travel/quotes-react": "workspace:*",
+    "@voyant-travel/realtime": "workspace:*",
+    "@voyant-travel/realtime-react": "workspace:*",
+    "@voyant-travel/relationships": "workspace:*",
+    "@voyant-travel/relationships-react": "workspace:*",
+    "@voyant-travel/storage": "workspace:*",
+    "@voyant-travel/storefront": "workspace:*",
+    "@voyant-travel/storefront-react": "workspace:*",
+    "@voyant-travel/trips": "workspace:*",
+    "@voyant-travel/trips-react": "workspace:*",
+    "@voyant-travel/workflow-runs": "workspace:*",
+    "@voyant-travel/cloud-sdk": "^0.11.0",
+    "@voyant-travel/connect-sdk": "0.9.1",
+    "@voyant-travel/framework-migrations": "workspace:*",
+    "@voyant-travel/plugin-voyant-connect": "^0.3.2",
+    "@voyant-travel/runtime": "workspace:*",
+    "@voyant-travel/tools": "workspace:*",
+    "@voyant-travel/types": "workspace:*",
+    "@voyant-travel/utils": "workspace:*",
+    "@voyant-travel/workflows": "workspace:*",
+    "@voyant-travel/workflows-orchestrator": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg": "^8.22.0",
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/operator-standard"
+  }
+}
