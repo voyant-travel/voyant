@@ -1,119 +1,162 @@
-# Custom fields — typed extension fields on core entities
+# Custom Fields
 
-The single most common client ask is "add a few fields to bookings / people /
-products." This is the seam that lets a deployment do that **without forking**,
-and have those fields be validated, and visible to exports / invoices / search.
+Custom fields add typed, visibility-aware fields to core entities without
+forking their owning packages. They are appropriate when a value must be
+validated or intentionally exposed to exports, invoices, or search.
 
-## Why not just `metadata`?
+## Why Not Metadata?
 
-Most core entities already carry a free-form `metadata` jsonb column — the
-unstructured escape hatch (this is also Medusa's model: a `metadata` field plus
-an `additional_data` payload validated by an ad-hoc zod schema at each API
-route). Free-form metadata is fine for opaque key/values, but it is **invisible
-to the rest of the system**: an export doesn't know which keys to include, an
-invoice can't decide what to render, search can't index it, and nothing
-validates a typo'd key.
+Free-form `metadata` remains the escape hatch for opaque application data. It
+cannot provide system-wide guarantees: readers do not know which keys are
+valid, which values are sensitive, or which channels may expose them.
 
-Voyant adds a thin **registry** on top so a *declared* subset of that space
-becomes real fields — the adaptation of Medusa's boundary-validation idea into
-something typed and visibility-aware.
+A custom-field declaration supplies that contract:
 
-## The registry (`@voyant-travel/core/custom-fields`)
+- `entity` and stable `key`
+- `type`, `required`, options, and optional custom validation
+- channel visibility for export, invoice, and search
+- a `pii` marker for storage and redaction policy
 
-Dependency-free (no zod/drizzle), so it lives in `core` and is importable
-anywhere:
+Values remain stored with the owning entity, normally in a `custom_fields`
+JSONB column. Custom fields do not introduce a cross-domain value table.
+
+## Registry Primitive
+
+`@voyant-travel/core/custom-fields` is dependency-free and owns declaration,
+merge, validation, and visibility helpers:
 
 ```ts
 import {
-  defineCustomField,
   createCustomFieldRegistry,
-  validateCustomFields,
   customFieldsVisibleIn,
+  defineCustomField,
+  validateCustomFields,
 } from "@voyant-travel/core/custom-fields"
 
 const registry = createCustomFieldRegistry([
-  defineCustomField({ entity: "booking", key: "group_size", type: "number", label: "Group size", required: true }),
-  defineCustomField({ entity: "booking", key: "meal_plan", type: "select", label: "Meal plan", options: ["none", "half-board", "full-board"], visibility: { invoice: true } }),
+  defineCustomField({
+    entity: "booking",
+    key: "group_size",
+    type: "number",
+    label: "Group size",
+    required: true,
+  }),
 ])
 
-// on write:
-const result = validateCustomFields(registry, "booking", input.custom_fields)
-if (!result.ok) throw badRequest(result.errors)   // unknown key / missing required / wrong type / bad option / custom rule
-persist({ custom_fields: result.value })
+const result = validateCustomFields(registry, "booking", input.customFields)
+if (!result.ok) throw badRequest(result.errors)
 
-// on export / invoice / search:
-const exported = customFieldsVisibleIn(registry, "booking", "export")  // fields with visibility.export (default true)
+const exported = customFieldsVisibleIn(registry, "booking", "export")
 ```
 
-A field declares `entity`, `key` (typo-proofed — unknown keys are rejected),
-`type` (`text|number|boolean|date|select` + `options`), `required`, an optional
-`validate(value)` rule, `visibility` (`export` default on; `invoice`/`search`
-default off), and `pii` (encrypt-at-rest / redact).
+Unknown keys, missing required fields, invalid types, unsupported options, and
+failed custom rules are rejected before persistence.
 
-## Declaring fields in a deployment (discovery)
+## Runtime Ownership
 
-The registry is **deployment config**. A deployment drops field files into
-`src/custom-fields/*.ts` and they're auto-discovered (same `import.meta.glob`
-mechanism as `src/modules` / `src/extensions` / `src/admin`):
+Custom-field injection follows the selected deployment graph. It does not use
+`FrameworkProviders.customFields` and the generic Operator host does not import
+Bookings or Relationships to wire their route options.
 
-```ts
-// src/lib/custom-fields.ts  (already wired in the operator starter)
-export const operatorCustomFields = createCustomFieldRegistry(
-  customFieldsFromGlob(import.meta.glob("../custom-fields/*.ts", { eager: true })),
-)
-```
+The current authority chain is:
+
+1. Selected package manifests declare their runtime and required typed ports.
+2. Generated graph composition loads only the selected package runtime
+   contributors.
+3. The Node host exposes domain-neutral configuration through
+   `VoyantRuntimeHostPrimitives.config.read`.
+4. The Bookings contributor exposes that input through
+   `bookings.configuration.runtime`; the Bookings package composes it into its
+   own route runtime.
+5. The Relationships contributor exposes a resolver through
+   `relationships.route-runtime`; the Relationships package consumes it in its
+   own routes.
+
+This keeps package behavior package-owned while allowing the application to
+supply deployment-specific field declarations.
+
+## Project Declarations
+
+`src/custom-fields/` is the recommended source layout, but it is not a runtime
+scan and it is not currently one of the graph's automatic project conventions.
+The project assembles declarations at build time and supplies one
+`CustomFieldRegistryResolver` through the generic host configuration.
+
+For example, a field file may default-export one declaration or an array:
 
 ```ts
 // src/custom-fields/booking.ts
 import { defineCustomField } from "@voyant-travel/core/custom-fields"
-export default defineCustomField({ entity: "booking", key: "tour_guide", type: "text", label: "Tour guide" })
+
+export default defineCustomField({
+  entity: "booking",
+  key: "tour_guide",
+  type: "text",
+  label: "Tour guide",
+})
 ```
 
-## How an entity adopts custom fields
+The project server can collect those files with Vite's eager, build-time glob
+and merge them with definitions managed through Relationships:
 
-The registry is injected into the services that own the entity (the standard
-Voyant provider-injection pattern — the deployment passes `operatorCustomFields`
-into the module's options; the leaf package never imports the deployment). The
-owning entity:
+```ts
+// src/server.ts
+import {
+  createCustomFieldRegistry,
+  customFieldsFromGlob,
+  mergeCustomFieldDefinitions,
+  type CustomFieldRegistryResolver,
+} from "@voyant-travel/core/custom-fields"
+import { loadCustomFieldDefinitions } from "@voyant-travel/relationships/custom-fields-registry"
+import { createVoyantProjectServerEntry } from "@voyant-travel/runtime"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-1. **Storage** — a `custom_fields jsonb default '{}'` column (or a namespaced
-   slice of the existing `metadata`). The value is whatever
-   `validateCustomFields(...).value` returns.
-2. **Write path** — `create`/`update` run `validateCustomFields(registry,
-   entity, input.custom_fields)` and persist `result.value`, rejecting on
-   `!result.ok`.
-3. **Read paths** — export / invoice / search consult
-   `customFieldsVisibleIn(registry, entity, channel)` to decide inclusion.
+const codeFields = customFieldsFromGlob(
+  import.meta.glob("./custom-fields/*.ts", { eager: true }),
+)
 
-Entity adoption is incremental (one entity at a time) and additive — the
-registry primitive + discovery shipped first; wiring the `custom_fields` column
-and validation into `booking` / `person` / `product` services follows per
-entity.
+const customFields: CustomFieldRegistryResolver = async (database) =>
+  createCustomFieldRegistry(
+    mergeCustomFieldDefinitions([
+      codeFields,
+      await loadCustomFieldDefinitions(database as PostgresJsDatabase),
+    ]),
+  )
 
-## Status
+const server = createVoyantProjectServerEntry({
+  host: { config: { customFields } },
+})
 
-- ✅ Registry primitive (`@voyant-travel/core/custom-fields`) + validation +
-  visibility + `customFieldsFromGlob` discovery.
-- ✅ Deployment discovery wired in the operator (`src/custom-fields/` →
-  `operatorCustomFields`).
-- ✅ **`booking` adopted** — `custom_fields` column + write-validation at the
-  create/update routes (registry injected via `FrameworkProviders.customFields`),
-  oracle-verified.
-- ⏳ `person` / `product` adoption + export/invoice/search consumption of
-  `customFieldsVisibleIn`.
+export default { fetch: server.fetch }
+```
 
-### Worked example — how `booking` adopted it
+Code declarations are passed first, so they win when a database-managed
+definition has the same `(entity, key)`. The eager glob is compiled by Vite; no
+filesystem scan occurs after the application starts.
 
-1. **Column** — `custom_fields jsonb default '{}'` on `bookings`
-   (`packages/bookings/src/schema-core.ts`); the framework bundle picked it up as
-   migration `0001` on regeneration.
-2. **Injection** — `BookingRouteRuntimeOptions.customFields?: CustomFieldRegistry`
-   → `createBookingsHonoModule` → an optional `FrameworkProviders.customFields`
-   the deployment supplies (operator: `customFields: operatorCustomFields`).
-3. **Write validation** — `validateBookingCustomFields(c, data)` runs in the
-   POST/PATCH handlers: `validateCustomFields(registry, "booking", data.customFields)`,
-   replacing the payload with the cleaned value or throwing a 400.
-4. **Read** — `custom_fields` rides along on the booking row.
+## Entity Adoption
 
-See also `custom-modules.md` (the sibling discovery seams) and the
-consolidated-deployments RFC seam catalog.
+An owning package adopts custom fields by implementing all of these boundaries:
+
+1. **Storage:** persist a validated object in the owning entity's
+   `custom_fields` column.
+2. **Write validation:** resolve the selected registry and run
+   `validateCustomFields` before create or update.
+3. **Read policy:** call `customFieldsVisibleIn` before including fields in
+   exports, invoices, or search indexes.
+4. **Runtime declaration:** request the narrow typed port in the package
+   manifest and adapt it in package-owned runtime composition.
+
+Bookings and Relationships use the graph-selected runtime path described above.
+Additional entities adopt the same contract incrementally; a generic host-level
+provider or package-specific starter branch must not be reintroduced.
+
+## Invariants
+
+- Packages never import project code.
+- The project supplies one resolver, not per-package route options.
+- Runtime packages request custom fields through declared ports only.
+- Code and database definitions merge deterministically.
+- Unknown fields fail closed on writes.
+- Visibility defaults remain conservative: export on, invoice and search off.
+- Adding custom fields must not require forking a standard package.
