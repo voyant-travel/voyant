@@ -14,13 +14,13 @@ const result = checkStorefrontPresentationAuthority({
     Object.keys(STOREFRONT_ROUTE_HOSTS).map((file) => [
       file,
       routeRegistry.includes(`"(storefront)/${file}"`)
-        ? `createFileRoute storefrontPresentationContribution routes.${STOREFRONT_ROUTE_HOSTS[file]}`
+        ? `createFileRoute operatorFrontend routes.storefront.${STOREFRONT_ROUTE_HOSTS[file]}`
         : undefined,
     ]),
   ),
-  hostAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
-  messageAdapter: read("starters/operator/src/lib/storefront-messages.tsx"),
-  intakeAdapter: read("starters/operator/src/api/runtime/operator-runtime-adapter.ts"),
+  hostAdapter: read("packages/admin-host/src/standard-frontend.tsx"),
+  messageAdapter: read("packages/admin-host/src/standard-frontend.tsx"),
+  intakeAdapter: "",
   packagePresentation: read("packages/storefront-react/src/storefront/presentation-routes.tsx"),
   packageIntake: read("packages/relationships/src/storefront-intake-runtime.ts"),
   relationshipsContributor: read("packages/relationships/src/runtime-contributor.ts"),

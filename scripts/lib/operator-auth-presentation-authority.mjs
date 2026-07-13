@@ -21,9 +21,12 @@ export function checkOperatorAuthPresentationAuthority({ routeHosts, adapter, pa
       continue
     }
     hostLines += source.split("\n").length
-    for (const token of ["localAuthRouteContribution", `routes.${routeKey}`, "createFileRoute"]) {
-      if (!source.includes(token)) failures.push(`${file} must contain ${token}`)
-    }
+    if (!source.includes("createFileRoute")) failures.push(`${file} must contain createFileRoute`)
+    const oldRuntime =
+      source.includes("localAuthRouteContribution") && source.includes(`routes.${routeKey}`)
+    const packagedRuntime =
+      source.includes("operatorFrontend") && source.includes(`routes.localAuth.${routeKey}`)
+    if (!oldRuntime && !packagedRuntime) failures.push(`${file} must bind auth route ${routeKey}`)
     for (const token of [
       "function ",
       "useNavigate",

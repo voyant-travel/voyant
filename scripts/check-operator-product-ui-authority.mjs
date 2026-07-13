@@ -7,7 +7,7 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
-const starterFileRatchet = 64
+const starterFileRatchet = 17
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
@@ -161,7 +161,7 @@ const requiredTokens = new Map([
     ],
   ],
   [
-    "starters/operator/src/lib/storefront-messages.tsx",
+    "packages/admin-host/src/standard-frontend.tsx",
     [
       'from "@voyant-travel/bookings-react/storefront"',
       'from "@voyant-travel/cruises-react/storefront"',
@@ -169,6 +169,10 @@ const requiredTokens = new Map([
       'from "@voyant-travel/storefront-react/storefront"',
       'from "@voyant-travel/trips-react/storefront"',
       "createStorefrontPresentationContribution",
+      "createFinancePublicRouteContribution",
+      "createQuotesPublicRouteContribution",
+      "createAdminHostPresentation",
+      "buildAdminExtensionRoutes",
     ],
   ],
   [
@@ -185,19 +189,11 @@ const requiredTokens = new Map([
     ["createQuotesPublicRouteContribution", "PublicProposalPage"],
   ],
   [
-    "starters/operator/src/lib/public-route-contributions.tsx",
-    ["createFinancePublicRouteContribution", "createQuotesPublicRouteContribution"],
-  ],
-  [
-    "starters/operator/src/lib/admin-presentation.tsx",
+    "packages/admin-host/src/standard-route-files.ts",
     [
-      "../../.voyant/admin/selected-graph-admin.generated",
-      'import.meta.glob("../admin/*/index.tsx"',
+      "../../admin/selected-graph-admin.generated",
+      'import.meta.glob("../../../src/admin/*/index.tsx"',
     ],
-  ],
-  [
-    "starters/operator/src/router.tsx",
-    ['from "./lib/admin-presentation"', "buildAdminExtensionRoutes"],
   ],
 ])
 

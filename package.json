@@ -51,6 +51,7 @@
     "verify:distribution-channel-push-runtime-authority": "node --test scripts/tests/check-distribution-channel-push-runtime-authority.test.mjs && node scripts/check-distribution-channel-push-runtime-authority.mjs",
     "verify:starter-executable-surface-authority": "node scripts/check-starter-executable-surface-authority.mjs",
     "verify:operator-product-ui-authority": "node scripts/check-operator-product-ui-authority.mjs",
+    "verify:operator-frontend-shell-authority": "node --test scripts/tests/check-operator-frontend-shell-authority.test.mjs && node scripts/check-operator-frontend-shell-authority.mjs",
     "verify:operator-admin-presentation-authority": "node scripts/check-operator-admin-presentation-authority.mjs",
     "verify:admin-presentation-fallback-authority": "node --test scripts/tests/check-admin-presentation-fallback-authority.test.mjs && node scripts/check-admin-presentation-fallback-authority.mjs",
     "verify:operator-auth-presentation-authority": "node --test scripts/tests/check-operator-auth-presentation-authority.test.mjs && node scripts/check-operator-auth-presentation-authority.mjs && node scripts/check-operator-auth-backend-authority.mjs",

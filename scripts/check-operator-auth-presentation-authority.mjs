@@ -15,13 +15,13 @@ const routeHosts = Object.fromEntries(
   Object.keys(AUTH_ROUTE_HOSTS).map((file) => [
     file,
     routeRegistry.includes(`"(auth)/${file}"`)
-      ? `createFileRoute localAuthRouteContribution routes.${AUTH_ROUTE_HOSTS[file]}`
+      ? `createFileRoute operatorFrontend routes.localAuth.${AUTH_ROUTE_HOSTS[file]}`
       : undefined,
   ]),
 )
 const result = checkOperatorAuthPresentationAuthority({
   routeHosts,
-  adapter: readFileSync(join(root, "starters/operator/src/lib/local-auth-bootstrap.ts"), "utf8"),
+  adapter: readFileSync(join(root, "packages/admin-host/src/standard-frontend.tsx"), "utf8"),
   packageRoutes: readFileSync(join(root, "packages/auth-react/src/local-auth-routes.tsx"), "utf8"),
 })
 

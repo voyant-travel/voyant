@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter-tight";
+
+@source "../../admin/dist/**/*.{js,mjs}";
+@source "../../auth-react/dist/**/*.{js,mjs}";
+@source "../../ui/dist/**/*.{js,mjs}";
+@source "../../{operations,bookings,catalog,commerce,relationships,finance,flights,legal,inventory,distribution,mice}-react/dist/**/*.{js,mjs}";
+@source "../../admin/src/**/*.{ts,tsx}";
+@source "../../auth-react/src/**/*.{ts,tsx}";
+@source "../../ui/src/**/*.{ts,tsx}";
+@source "../../{operations,bookings,catalog,commerce,relationships,finance,flights,legal,inventory,distribution,mice}-react/src/**/*.{ts,tsx}";
+
+@import "@voyant-travel/ui/styles.css";
+@import "@voyant-travel/admin/styles.css";
+@import "@voyant-travel/auth-react/styles.css";
+@import "@voyant-travel/operations-react/availability/styles.css";
+@import "@voyant-travel/bookings-react/styles.css";
+@import "@voyant-travel/commerce-react/styles.css";
+@import "@voyant-travel/relationships-react/styles.css";
+@import "@voyant-travel/finance-react/styles.css";
+@import "@voyant-travel/legal-react/styles.css";
+@import "@voyant-travel/inventory-react/styles.css";
+@import "@voyant-travel/distribution-react/suppliers/styles.css";
+@import "@voyant-travel/operations-react/resources/styles.css";
+@import "@voyant-travel/catalog-react/styles.css";
+@import "@voyant-travel/flights-react/styles.css";
+@import "@voyant-travel/mice-react/styles.css";

@@ -4,12 +4,7 @@ import { fileURLToPath } from "node:url"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const failures = []
-const starterFiles = [
-  "src/components/providers.tsx",
-  "src/lib/admin-presentation.tsx",
-  "src/lib/admin-i18n.ts",
-  "src/lib/admin-i18n.tsx",
-]
+const starterFiles = []
 const starterRoot = join(root, "starters/operator")
 const lineRatchet = 100
 
@@ -38,14 +33,14 @@ for (const relativePath of forbidden) {
 
 const requiredTokens = new Map([
   [
-    "starters/operator/src/lib/admin-presentation.tsx",
+    "packages/admin-host/src/standard-route-files.ts",
     [
-      "../../.voyant/admin/selected-graph-admin.generated",
-      'import.meta.glob("../admin/*/index.tsx"',
-      "createAdminHostPresentation",
+      "../../admin/selected-graph-admin.generated",
+      'import.meta.glob("../../../src/admin/*/index.tsx"',
+      "createStandardOperatorFrontend",
     ],
   ],
-  ["packages/admin-host/src/standard-route-files.ts", ["createAdminHostWorkspace"]],
+  ["packages/admin-host/src/standard-frontend.tsx", ["createAdminHostWorkspace"]],
   [
     "packages/admin-host/src/admin-presentation.ts",
     ["loadAdminDashboard", "discoverAdminHostExtensions", "createAdminHostPresentation"],

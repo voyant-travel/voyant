@@ -35,7 +35,7 @@ const BUNDLE = optionPath(
 )
 const PRESENTATION = optionPath(
   "--presentation",
-  join(ROOT, "starters/operator/src/lib/admin-presentation.tsx"),
+  join(ROOT, "packages/admin-host/src/standard-route-files.ts"),
 )
 const COMPATIBILITY = optionPath(
   "--compatibility",
@@ -180,10 +180,11 @@ for (const [label, file] of [
 }
 
 const routerSource = existsSync(ROUTER) ? readFileSync(ROUTER, "utf8") : ""
-if (
-  !routerSource.includes("buildAdminExtensionRoutes") ||
-  !routerSource.includes("operatorAdminPresentation.extensions")
-) {
+const ownsLegacyRouterComposition =
+  routerSource.includes("buildAdminExtensionRoutes") &&
+  routerSource.includes("operatorAdminPresentation.extensions")
+const delegatesPackagedRouterComposition = routerSource.includes("operatorFrontend.createRouter")
+if (!ownsLegacyRouterComposition && !delegatesPackagedRouterComposition) {
   violations.push(
     "Operator router must build routes from the selected-graph admin extension registry",
   )
@@ -256,7 +257,12 @@ for (const name of bundled) {
 }
 
 for (const name of presentationImports) {
-  if (name === "@voyant-travel/admin-host/presentation") continue
+  if (
+    name === "@voyant-travel/admin-host/presentation" ||
+    name === "@voyant-travel/admin-host/standard-frontend" ||
+    name === "@voyant-travel/vite-config"
+  )
+    continue
   violations.push(
     `${name} remains imported by the Operator admin presentation input; package admin authority must arrive through the selected graph`,
   )
@@ -272,13 +278,14 @@ for (const entry of actualBundleEntries) {
 }
 
 const presentationSource = existsSync(PRESENTATION) ? readFileSync(PRESENTATION, "utf8") : ""
-for (const token of [
-  "createAdminHostPresentation",
-  ".voyant/admin/selected-graph-admin.generated",
-  'import.meta.glob("../admin/*/index.tsx"',
-]) {
-  if (!presentationSource.includes(token)) {
-    violations.push(`Operator admin presentation input must contain ${token}`)
+const presentationContracts = [
+  ["createAdminHostPresentation", "createStandardOperatorFrontend"],
+  [".voyant/admin/selected-graph-admin.generated", "../../admin/selected-graph-admin.generated"],
+  ['import.meta.glob("../admin/*/index.tsx"', 'import.meta.glob("../../../src/admin/*/index.tsx"'],
+]
+for (const alternatives of presentationContracts) {
+  if (!alternatives.some((token) => presentationSource.includes(token))) {
+    violations.push(`Operator admin presentation input must contain ${alternatives.join(" or ")}`)
   }
 }
 

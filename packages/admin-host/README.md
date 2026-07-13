@@ -1,8 +1,8 @@
 # @voyant-travel/admin-host
 
-Deployment-agnostic admin **serving seam** for Voyant: the Node static-asset
-host and the TanStack Start SSR handler that admin hosts wrap around their
-composed app.
+Versioned host for Voyant's standard operator frontend and its Node serving
+seams. It owns the standard providers, presentation adapters, generated route
+runtime, TanStack Start policy, styles, static-asset host, and SSR handler.
 
 ## Install
 
@@ -15,6 +15,10 @@ pnpm add @voyant-travel/admin-host
 | Entry | Description |
 | --- | --- |
 | `./presentation` | `createAdminHostPresentation(...)` - composes the selected graph, core admin, and explicit project-local admin convention |
+| `./standard-frontend` | `createStandardOperatorFrontend(...)` - composes standard auth, providers, public/storefront routes, workspace, and router behavior |
+| `./standard-route-files` | Generated file-router hosts backed by the standard frontend runtime |
+| `./standard-styles.css` | Tailwind sources and standard package styles |
+| `./start` | Standard TanStack Start SSR and CSRF policy |
 | `./serve` | `serveAdminHost(...)` - Hono Node host that serves built client assets, then falls through to the combined API + SSR app |
 | `./ssr` | `createAdminSsrHandler(...)` - the TanStack Start SSR handler (`createStartHandler` + active-route manifest restriction) |
 | `.` | Barrel re-exporting both |
