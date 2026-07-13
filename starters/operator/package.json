@@ -104,7 +104,7 @@
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/charters": "workspace:^",
-    "@voyant-travel/cli": "^0.39.0",
+    "@voyant-travel/cli": "^0.40.0",
     "@voyant-travel/commerce": "workspace:^",
     "@voyant-travel/cruises": "workspace:^",
     "@voyant-travel/distribution": "workspace:^",

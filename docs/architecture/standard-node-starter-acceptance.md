@@ -28,6 +28,8 @@ The gate requires:
   Node bootstrap implementation details.
 - The project names only the CLI, framework, standard product distribution, and
   runtime as Voyant dependencies.
+- Packaged starters inherit the supported CLI semver range from the checked-in
+  starter; the starter archive version never doubles as the CLI version.
 - no package-owned OpenAPI documents, migrations, links, subscribers, jobs,
   workflows, admin entries, or API routes are copied into the project.
 - no first-party package identifier appears in authored project source.

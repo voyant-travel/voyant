@@ -60,7 +60,7 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     localLinks ? `link:${workspacePackageDirectory(name)}` : `^${requiredWorkspaceVersion(name)}`
   const cliDependency = localLinks
     ? `link:${resolve(repoRoot, "..", "cli", "packages", "cli")}`
-    : `^${version}`
+    : supportedCliRange()
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
     private: true,
@@ -109,6 +109,17 @@ export default defineConfig({
 function requiredWorkspaceVersion(name) {
   const value = workspaceVersions.get(name)
   if (!value) throw new Error(`Missing workspace package for starter dependency: ${name}`)
+  return value
+}
+
+function supportedCliRange() {
+  const packageJson = JSON.parse(
+    readFileSync(join(repoRoot, "starters", "operator", "package.json"), "utf8"),
+  )
+  const value = packageJson.devDependencies?.["@voyant-travel/cli"]
+  if (typeof value !== "string" || /^(?:workspace|file|link):/.test(value)) {
+    throw new Error("starters/operator must declare a released @voyant-travel/cli range")
+  }
   return value
 }
 
