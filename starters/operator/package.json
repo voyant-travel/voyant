@@ -17,7 +17,7 @@
     "dev:worker": "voyant dev --file ../../packages/operator-runtime/src/workflow-entry.ts --port 3310",
     "workflows:build": "voyant workflows build --file ../../packages/operator-runtime/src/workflow-entry.ts --out dist/workflows",
     "workflows:doctor": "voyant workflows doctor --target entry --file ../../packages/operator-runtime/src/workflow-entry.ts",
-    "db:migrate": "pnpm run graph:emit && NODE_OPTIONS=--require=dotenv/config voyant migrate",
+    "db:migrate": "pnpm run graph:emit && NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--require=dotenv/config\" voyant migrate",
     "lint": "biome check src/ tests/"
   },
   "dependencies": {

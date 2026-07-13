@@ -391,10 +391,11 @@ function inspectCheckedInStarterDependencies(repoRoot) {
   }
   if (
     packageJson.scripts?.["db:migrate"] !==
-    "pnpm run graph:emit && NODE_OPTIONS=--require=dotenv/config voyant migrate"
+    'pnpm run graph:emit && NODE_OPTIONS="$' +
+      '{NODE_OPTIONS:+$NODE_OPTIONS }--require=dotenv/config" voyant migrate'
   ) {
     violations.push(
-      "checked-in starter db:migrate must load optional .env before invoking the external CLI",
+      "checked-in starter db:migrate must preserve NODE_OPTIONS and load optional .env before invoking the external CLI",
     )
   }
   if (!packageJson.dependencies?.dotenv || packageJson.devDependencies?.dotenv) {
