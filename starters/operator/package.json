@@ -9,7 +9,7 @@
     "copy:deployment-artifacts": "rm -rf dist/.voyant dist/server/.voyant && mkdir -p dist/server && cp -R .voyant dist/.voyant && cp -R .voyant dist/server/.voyant",
     "preview": "pnpm run build && vite preview --config .voyant/vite.config.ts",
     "measure": "node ../../scripts/measure-standard-node-starter.mjs --require-build",
-    "start": "node --env-file-if-exists=.env dist/server/server.js",
+    "start": "node --require=dotenv/config dist/server/server.js",
     "typecheck": "pnpm run graph:emit && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.tests-smoke.json && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.client.json",
     "test": "pnpm run graph:emit && vitest run --config .voyant/vitest.config.ts --passWithNoTests",
     "graph:check": "node ../../scripts/generate-operator-starter-metadata.mjs --check && voyant db doctor --fail-on-drift",
@@ -17,7 +17,7 @@
     "dev:worker": "voyant dev --file ../../packages/operator-runtime/src/workflow-entry.ts --port 3310",
     "workflows:build": "voyant workflows build --file ../../packages/operator-runtime/src/workflow-entry.ts --out dist/workflows",
     "workflows:doctor": "voyant workflows doctor --target entry --file ../../packages/operator-runtime/src/workflow-entry.ts",
-    "db:migrate": "pnpm run graph:emit && voyant migrate",
+    "db:migrate": "pnpm run graph:emit && NODE_OPTIONS=--require=dotenv/config voyant migrate",
     "lint": "biome check src/ tests/"
   },
   "dependencies": {
@@ -71,6 +71,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "catalog:",
+    "dotenv": "^17.4.2",
     "embla-carousel-react": "^8.6.0",
     "hono": "catalog:",
     "input-otp": "^1.4.2",
@@ -127,7 +128,6 @@
     "@voyant-travel/trips": "workspace:^",
     "@voyant-travel/vite-config": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
-    "dotenv": "^17.4.2",
     "jsdom": "^29.1.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "tsx": "catalog:",

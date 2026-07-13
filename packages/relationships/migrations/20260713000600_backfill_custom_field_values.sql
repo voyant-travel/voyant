@@ -6,6 +6,7 @@ DECLARE
   entity record;
   legacy_count bigint;
   missing_count bigint;
+  mismatched_count bigint;
   unknown_types text;
 BEGIN
   IF to_regclass('public.custom_field_values') IS NULL THEN
@@ -33,6 +34,18 @@ BEGIN
     RAISE EXCEPTION
       'Cannot retire custom_field_values: % row(s) reference missing definitions',
       missing_count;
+  END IF;
+
+  SELECT count(*)
+    INTO mismatched_count
+    FROM custom_field_values v
+    JOIN custom_field_definitions d ON d.id = v.definition_id
+   WHERE d.entity_type::text IS DISTINCT FROM v.entity_type::text;
+
+  IF mismatched_count > 0 THEN
+    RAISE EXCEPTION
+      'Cannot retire custom_field_values: % row(s) have a definition entity type that does not match the value entity type',
+      mismatched_count;
   END IF;
 
   FOR entity IN
@@ -114,7 +127,9 @@ BEGIN
                     END
                   ) AS backfilled
              FROM custom_field_values v
-             JOIN custom_field_definitions d ON d.id = v.definition_id
+             JOIN custom_field_definitions d
+               ON d.id = v.definition_id
+              AND d.entity_type::text = v.entity_type::text
             WHERE v.entity_type::text = $1
             GROUP BY v.entity_id
          ) sub
