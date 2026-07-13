@@ -384,7 +384,10 @@ function inspectCheckedInStarterDependencies(repoRoot) {
   if (!existsSync(packageJsonPath)) return
 
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  if (packageJson.scripts?.start !== "node --require=dotenv/config dist/server/server.js") {
+  if (
+    packageJson.scripts?.start !==
+    "NODE_ENV=production node --require=dotenv/config dist/server/server.js"
+  ) {
     violations.push(
       "checked-in starter start must load optional .env through the Node 20 bootstrap",
     )

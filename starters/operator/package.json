@@ -9,7 +9,7 @@
     "copy:deployment-artifacts": "rm -rf dist/.voyant dist/server/.voyant && mkdir -p dist/server && cp -R .voyant dist/.voyant && cp -R .voyant dist/server/.voyant",
     "preview": "pnpm run build && vite preview --config .voyant/vite.config.ts",
     "measure": "node ../../scripts/measure-standard-node-starter.mjs --require-build",
-    "start": "node --require=dotenv/config dist/server/server.js",
+    "start": "NODE_ENV=production node --require=dotenv/config dist/server/server.js",
     "typecheck": "pnpm run graph:emit && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.server.json && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.tests-smoke.json && NODE_OPTIONS=--max-old-space-size=6144 tsc -p .voyant/tsconfig.client.json",
     "test": "pnpm run graph:emit && vitest run --config .voyant/vitest.config.ts --passWithNoTests",
     "graph:check": "node ../../scripts/generate-operator-starter-metadata.mjs --check && voyant db doctor --fail-on-drift",

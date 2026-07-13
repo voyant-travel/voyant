@@ -42,6 +42,7 @@ export interface LoadOperatorProjectOptions {
   projectRoot?: string
   env?: Record<string, string | undefined>
   adminAssetsDir?: string
+  preferBuiltArtifacts?: boolean
   host?: {
     config?: Readonly<Record<string, unknown>>
     deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
@@ -85,7 +86,9 @@ export async function loadOperatorProject(
   options: LoadOperatorProjectOptions = {},
 ): Promise<OperatorProjectHost> {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
-  const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
+  const preferBuiltArtifacts =
+    options.preferBuiltArtifacts ?? (options.env?.NODE_ENV ?? process.env.NODE_ENV) === "production"
+  const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot, preferBuiltArtifacts)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
   const env = createVoyantNodeEnv(options.env ?? process.env)
@@ -222,8 +225,14 @@ export async function startOperatorProject(
   return host.start({ port: options.port })
 }
 
-async function resolveGeneratedArtifactRoot(projectRoot: string): Promise<string> {
-  for (const layout of GENERATED_ARTIFACT_LAYOUTS) {
+async function resolveGeneratedArtifactRoot(
+  projectRoot: string,
+  preferBuiltArtifacts = false,
+): Promise<string> {
+  const layouts = preferBuiltArtifacts
+    ? (["dist/.voyant", ".voyant"] as const)
+    : GENERATED_ARTIFACT_LAYOUTS
+  for (const layout of layouts) {
     const artifactRoot = path.join(projectRoot, layout)
     if (
       (await pathExists(path.join(artifactRoot, PROJECT_GRAPH_ENTRY))) &&

@@ -327,7 +327,7 @@ test("rejects db:migrate commands that replace existing NODE_OPTIONS", () => {
     packageJsonPath,
     `${JSON.stringify({
       scripts: {
-        start: "node --require=dotenv/config dist/server/server.js",
+        start: "NODE_ENV=production node --require=dotenv/config dist/server/server.js",
         "db:migrate": "pnpm run graph:emit && NODE_OPTIONS=--require=dotenv/config voyant migrate",
       },
       dependencies: { dotenv: "1.0.0" },

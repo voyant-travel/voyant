@@ -176,6 +176,34 @@ describe("Operator runtime composition", () => {
     )
   })
 
+  it("prefers packaged artifacts and client assets for production start", async () => {
+    const projectRoot = await createGeneratedProject()
+    const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
+    await mkdir(path.join(builtArtifactRoot, "runtime"), { recursive: true })
+    await writeFile(
+      path.join(builtArtifactRoot, "runtime/project-runtime.generated.ts"),
+      "export {}\n",
+    )
+    await writeFile(
+      path.join(builtArtifactRoot, "deployment-graph.generated.json"),
+      JSON.stringify({
+        contentHash: "graph-hash",
+        requirements: { resources: [] },
+        provisioning: { scheduledJobs: [] },
+      }),
+    )
+    await mkdir(path.join(projectRoot, "dist/client"), { recursive: true })
+
+    const project = await loadOperatorProject({
+      projectRoot,
+      preferBuiltArtifacts: true,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    expect(project.graphHash).toBe("graph-hash")
+    expect(mocks.adminHostOptions[0]?.clientAssetsDir).toBe(path.join(projectRoot, "dist/client"))
+  })
+
   it("rewrites persisted legacy media URLs before API dispatch", async () => {
     const projectRoot = await createGeneratedProject()
     const project = await loadOperatorProject({
