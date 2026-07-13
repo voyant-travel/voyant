@@ -78,7 +78,7 @@ function optionPath(name, fallback) {
 function readGraphSelectedAdminPackages() {
   if (!existsSync(GRAPH)) {
     throw new Error(
-      "starters/operator/.voyant/deployment-graph.generated.json is missing — run `pnpm --filter operator graph:emit`",
+      "starters/operator/.voyant/deployment-graph.generated.json is missing - run `pnpm --filter operator prepare:verify`",
     )
   }
 

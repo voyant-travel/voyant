@@ -22,9 +22,12 @@ The gate requires:
 
 - `voyant.config.ts` contains only the Node deployment target and database
   provider choice; it contains no standard modules, extensions, or plugins.
-- `package.json` delegates startup to the generic `voyant start` bootstrap and
-  names only the CLI, framework, standard product distribution, and runtime as Voyant
-  dependencies.
+- `package.json` delegates development, build, startup, migrations, and script
+  execution to `voyant develop`, `voyant build`, `voyant start`, `voyant migrate`,
+  and `voyant exec`. It does not expose graph, Vite, artifact-copy, or direct
+  Node bootstrap implementation details.
+- The project names only the CLI, framework, standard product distribution, and
+  runtime as Voyant dependencies.
 - no package-owned OpenAPI documents, migrations, links, subscribers, jobs,
   workflows, admin entries, or API routes are copied into the project.
 - no first-party package identifier appears in authored project source.
@@ -33,7 +36,7 @@ The gate requires:
 
 The product BOM still expands into an explicit `.voyant/` graph during build.
 The checked-in development operator follows the same ownership rule for build
-metadata: `graph:emit` deterministically writes its ambient bindings, bounded
+metadata: the repository verification lane deterministically writes its ambient bindings, bounded
 client/server TypeScript programs, and Vite/Vitest entries beneath `.voyant/`.
 The declaration path maps are rebased from the shared TypeScript config and are
 not consumer-authored files. A starter-local `turbo.json` is unnecessary because

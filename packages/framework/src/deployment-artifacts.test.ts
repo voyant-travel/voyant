@@ -349,7 +349,7 @@ describe("deployment graph artifacts", () => {
     const source = buildNodeRuntimeEntry({
       graph,
       graphArtifactPath: "../deployment-graph.generated.json",
-      command: "pnpm --filter operator graph:emit",
+      command: "pnpm --filter operator prepare:verify",
     })
 
     expect(source).toContain(`GENERATED_DEPLOYMENT_GRAPH_HASH = "${graph.contentHash}"`)

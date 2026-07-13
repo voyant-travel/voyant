@@ -44,8 +44,12 @@ test("operator release archive contains only the minimal authored project", () =
     assert.match(config, /database:\s*"postgres"/)
 
     const packageJson = JSON.parse(readFileSync(join(fixture.extractDir, "package.json"), "utf8"))
+    assert.equal(packageJson.scripts.dev, "voyant develop")
     assert.equal(packageJson.scripts.build, "voyant build")
     assert.equal(packageJson.scripts.start, "voyant start")
+    assert.equal(packageJson.scripts.seed, "voyant exec ./src/scripts/seed.ts")
+    assert.equal(packageJson.scripts["db:migrate"], "voyant migrate")
+    assert.equal(packageJson.scripts["graph:emit"], undefined)
     assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
     assert.equal(typeof packageJson.dependencies["@voyant-travel/runtime"], "string")
     assert.equal(packageJson.dependencies["@voyant-travel/plugin-smartbill"], undefined)

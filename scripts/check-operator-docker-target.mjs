@@ -2,8 +2,8 @@
  * Validates the reference operator Docker/Node deploy target.
  *
  * The Docker image must be built through the operator package build lane so it
- * generates `.voyant/` and copies the generated graph artifacts into dist. The
- * runtime image must then boot the checked Node server from dist.
+ * delegates the complete build to the public Voyant CLI. The runtime image
+ * boots through the same generic CLI contract used by generated projects.
  */
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -17,15 +17,6 @@ const OPERATOR_PACKAGE_JSON = "starters/operator/package.json"
 
 const violations = []
 
-function includesAll(value, snippets) {
-  return snippets.every((snippet) => value.includes(snippet))
-}
-
-function commandIndex(value, snippet) {
-  const index = value.indexOf(snippet)
-  return index === -1 ? null : index
-}
-
 if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
   violations.push({
     file: OPERATOR_PACKAGE_JSON,
@@ -37,61 +28,18 @@ if (!existsSync(join(ROOT, OPERATOR_PACKAGE_JSON))) {
   const scripts =
     packageJson.scripts && typeof packageJson.scripts === "object" ? packageJson.scripts : {}
   const buildScript = typeof scripts.build === "string" ? scripts.build : ""
-  const copyScript =
-    typeof scripts["copy:deployment-artifacts"] === "string"
-      ? scripts["copy:deployment-artifacts"]
-      : ""
-  const graphCheckIndex = commandIndex(buildScript, "pnpm run graph:emit")
-  const viteBuildIndex = commandIndex(buildScript, "vite build")
-  const copyArtifactsIndex = commandIndex(buildScript, "pnpm run copy:deployment-artifacts")
-
-  if (graphCheckIndex === null) {
+  if (buildScript !== "voyant build") {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
-      check: "operator-build-graph-check-missing",
-      message: "The operator build script must generate .voyant artifacts before Vite.",
+      check: "operator-build-bypasses-cli",
+      message: 'The operator build script must be exactly "voyant build".',
     })
   }
-  if (viteBuildIndex === null) {
+  if (scripts["copy:deployment-artifacts"] !== undefined || scripts["graph:emit"] !== undefined) {
     violations.push({
       file: OPERATOR_PACKAGE_JSON,
-      check: "operator-build-vite-missing",
-      message: "The operator build script must run Vite before copying deployment artifacts.",
-    })
-  }
-  if (copyArtifactsIndex === null) {
-    violations.push({
-      file: OPERATOR_PACKAGE_JSON,
-      check: "operator-build-artifact-copy-missing",
-      message: "The operator build script must copy deployment graph artifacts into dist.",
-    })
-  }
-  if (graphCheckIndex !== null && viteBuildIndex !== null && graphCheckIndex > viteBuildIndex) {
-    violations.push({
-      file: OPERATOR_PACKAGE_JSON,
-      check: "operator-build-graph-check-after-vite",
-      message:
-        "The operator build script must generate .voyant artifacts before Vite creates dist.",
-    })
-  }
-  if (
-    viteBuildIndex !== null &&
-    copyArtifactsIndex !== null &&
-    copyArtifactsIndex < viteBuildIndex
-  ) {
-    violations.push({
-      file: OPERATOR_PACKAGE_JSON,
-      check: "operator-build-artifact-copy-before-vite",
-      message:
-        "The operator build script must copy deployment graph artifacts after Vite creates dist.",
-    })
-  }
-  if (!includesAll(copyScript, [".voyant", "dist/.voyant"])) {
-    violations.push({
-      file: OPERATOR_PACKAGE_JSON,
-      check: "operator-deployment-artifact-copy-incomplete",
-      message:
-        "copy:deployment-artifacts must copy the disposable .voyant artifact bundle into dist/.voyant.",
+      check: "operator-build-internals-exposed",
+      message: "The operator package must not expose graph emission or artifact-copy internals.",
     })
   }
 }
@@ -144,4 +92,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("check-operator-docker-target: OK (Docker/Node target consumes .voyant artifacts)")
+console.log("check-operator-docker-target: OK (Docker/Node target uses the CLI lifecycle)")

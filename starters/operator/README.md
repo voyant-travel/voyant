@@ -25,7 +25,7 @@ See [docs/architecture/deployment-targets.md](../../docs/architecture/deployment
 
 ```bash
 cp .env.example .env          # fill in DATABASE_URL, BETTER_AUTH_SECRET, …
-pnpm -F operator dev          # Vite dev server + SSR (port 3300)
+pnpm -F operator dev          # Voyant development server + SSR (port 3300)
 pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
@@ -37,9 +37,8 @@ contains the exact file convention and a minimal example. `voyant build`
 discovers these files and emits the corresponding static graph entries; no
 central registration file is required.
 
-Vite loads `.env` during development and the production command uses Node's
-native `--env-file-if-exists` support. Platform environment variables remain
-authoritative in deployed environments. `pnpm dev` serves
+The Voyant CLI loads `.env` for local lifecycle commands while preserving
+platform environment variables as authoritative in deployed environments. `pnpm dev` serves
 the SSR dashboard, the `/api/*` routes, and Better Auth with hot-reload — the
 same `src/server.ts` handler runs under Vite's dev server. The first `/api/*`
 request compiles the API module graph on demand (a few seconds), then it's warm.
@@ -47,8 +46,8 @@ request compiles the API module graph on demand (a few seconds), then it's warm.
 ## Production (Node)
 
 ```bash
-pnpm -F operator build        # emits dist/client + dist/server/server.js
-pnpm -F operator start        # node dist/server/server.js (PORT, default 8080)
+pnpm -F operator build        # complete graph, client, and Node server build
+pnpm -F operator start        # starts the built Node application (PORT defaults to 8080)
 ```
 
 The server exposes `/healthz` (probe), `/__voyant/scheduled?schedule=<id>` (the
@@ -145,9 +144,9 @@ Standard frontend routes are emitted from package-owned contributions into the
 gitignored `.voyant/routes` directory. TanStack's generated route tree also
 lives under `.voyant`; neither is application-authored source. Project-specific
 admin and public API routes belong in `src/api/admin` and `src/api/public`.
-`graph:emit` also writes disposable TypeScript, ambient binding, Vite, and
-Vitest metadata there; do not copy those generated files back to the project
-root.
+Repository verification also writes disposable TypeScript, ambient binding,
+Vite, and Vitest metadata there; do not copy those generated files back to the
+project root.
 
 - `/v1/admin/*` — staff-facing API (requires `staff` actor)
 - `/v1/public/*` — customer/partner/supplier API

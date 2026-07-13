@@ -61,19 +61,17 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
   const cliDependency = localLinks
     ? `link:${resolve(repoRoot, "..", "cli", "packages", "cli")}`
     : `^${version}`
-  const startCommand = "voyant start"
-  const buildCommand = localLinks ? "NODE_OPTIONS=--import=tsx voyant build" : "voyant build"
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
     private: true,
     license: "Apache-2.0",
     type: "module",
     scripts: {
-      dev: `${buildCommand} && ${startCommand}`,
-      build: buildCommand,
-      start: startCommand,
-      "graph:emit": buildCommand,
-      seed: "tsx src/scripts/seed.ts",
+      dev: "voyant develop",
+      build: "voyant build",
+      start: "voyant start",
+      seed: "voyant exec ./src/scripts/seed.ts",
+      "db:migrate": "voyant migrate",
     },
     dependencies: {
       "@voyant-travel/framework": dependency("@voyant-travel/framework"),
