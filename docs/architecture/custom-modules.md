@@ -204,6 +204,12 @@ reference; each link becomes a path-owned graph facet. This makes missing
 workflow targets and duplicate graph identities resolver errors instead of
 runtime surprises.
 
+`voyant migrate` then loads the generated project link registry and
+transactionally ensures every writable pivot table and index exists after the
+selected graph's schema migrations succeed. Read-only links are not
+materialized. `voyant db sync-links` remains available for explicit SQL
+inspection or emission, but is not a separate deployment prerequisite.
+
 ## Custom routes on an *existing* module (extensions)
 
 A `HonoExtension` adds routes to an **existing** module's surface (e.g. a
