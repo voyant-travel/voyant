@@ -9,6 +9,7 @@ import {
   type VoyantWorkflowServiceContribution,
   voyantWorkflowServiceContributionsPort,
 } from "@voyant-travel/core"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   type FinanceCruisesPaymentPolicyRuntime,
   financeCruisesPaymentPolicyRuntimePort,
@@ -46,7 +47,7 @@ export function createCruisesRuntimePortContribution(
       create(context) {
         return createCruisesExternalRefreshWorkflowRuntime({
           withOptions: async (operation) => {
-            const rawDb = host.primitives.database.resolve(context.environment)
+            const rawDb = host.primitives.database.resolve<AnyDrizzleDb>(context.environment)
             const catalogRuntime = await host.getRuntimePort<CatalogRuntimeServices>(
               catalogRuntimeServicesPort,
             )
