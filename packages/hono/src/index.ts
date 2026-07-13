@@ -27,8 +27,8 @@ export {
 } from "./bundle.js"
 export { type CreateAppConfig, createApp } from "./create-app.js"
 export type {
-  AuthenticatedR2DocumentDownloadResolver,
-  AuthenticatedR2DocumentDownloadResolverOptions,
+  AuthenticatedDocumentDownloadResolver,
+  AuthenticatedDocumentDownloadResolverOptions,
   DocumentDownloadEnvelope,
   DocumentDownloadResolution,
   DocumentDownloadResolver,
@@ -36,7 +36,7 @@ export type {
   StoredDocumentReference,
 } from "./document-download.js"
 export {
-  createAuthenticatedR2DocumentDownloadResolver,
+  createAuthenticatedDocumentDownloadResolver,
   encodeStorageKeyPath,
   resolveStoredDocumentDownload,
 } from "./document-download.js"

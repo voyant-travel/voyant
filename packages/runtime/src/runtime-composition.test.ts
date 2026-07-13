@@ -90,6 +90,7 @@ vi.mock("@voyant-travel/db/runtime", () => ({
 
 vi.mock("@voyant-travel/framework/node-runtime", () => ({
   createVoyantNodeEnv: (env: Record<string, string | undefined>) => env,
+  createVoyantNodeStorageResolver: () => ({ resolve: () => null }),
   createVoyantNodeRuntimeHostPrimitives: (options: {
     env: Record<string, string | undefined>
     deliverEvent(event: unknown, bindings: unknown): Promise<unknown>
@@ -102,10 +103,17 @@ vi.mock("@voyant-travel/framework/node-runtime", () => ({
   }),
   createVoyantNodeWorkflowDriver: mocks.createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime: mocks.loadVoyantNodeRuntime,
+  resolveVoyantNodeProviderPlan: () => ({
+    storage: "memory",
+    cache: "memory",
+    sharedState: "memory",
+    rateLimit: "memory",
+  }),
   resolveVoyantNodeWorkflowProvider: (value: unknown) => {
     if (value === "voyant-cloud" || value === "self-hosted" || value === "none") return value
     throw new Error("unsupported workflow provider")
   },
+  validateVoyantNodeProviderPlanEnv: () => [],
 }))
 
 vi.mock("@voyant-travel/framework/node-host", () => ({

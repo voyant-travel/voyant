@@ -121,13 +121,15 @@ export interface RateLimitRequestContext {
 
 /**
  * Derive the client dimension for rate-limit keys: `cf-connecting-ip`
- * (set by Cloudflare, not spoofable through the edge), else the first
- * hop of `x-forwarded-for`, else `"anon"`. Exported so route packages
+ * (set by Cloudflare, not spoofable through the edge), `x-real-ip`, then the
+ * first hop of `x-forwarded-for`, else `"anon"`. Exported so route packages
  * key their own limiters and idempotency scopes consistently.
  */
 export function clientIpKey(c: { req: { header(name: string): string | undefined } }): string {
   const cfIp = c.req.header("cf-connecting-ip")?.trim()
   if (cfIp) return cfIp
+  const realIp = c.req.header("x-real-ip")?.trim()
+  if (realIp) return realIp
   const firstHop = c.req.header("x-forwarded-for")?.split(",")[0]?.trim()
   if (firstHop) return firstHop
   return "anon"

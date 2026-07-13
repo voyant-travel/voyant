@@ -2,7 +2,7 @@
 /**
  * Native Typesense IndexerAdapter — the v1 default for catalog-plane search.
  *
- * Uses an injected `TypesenseClient` interface (mirroring the storage R2Bucket
+ * Uses an injected `TypesenseClient` interface (mirroring the storage provider
  * binding pattern) so the package doesn't take a hard dep on the Typesense
  * HTTP SDK. Templates wire in the actual client.
  *

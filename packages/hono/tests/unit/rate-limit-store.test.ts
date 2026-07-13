@@ -1,10 +1,18 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  clientIpKey,
   createRedisRateLimitStore,
   type RateLimitStore,
   resolveRateLimitStore,
 } from "../../src/middleware/rate-limit.js"
+
+describe("clientIpKey", () => {
+  it("supports standard Node reverse-proxy client IP headers", () => {
+    const headers: Record<string, string> = { "x-real-ip": "203.0.113.42" }
+    expect(clientIpKey({ req: { header: (name) => headers[name] } })).toBe("203.0.113.42")
+  })
+})
 
 describe("resolveRateLimitStore", () => {
   it("prefers an injected RateLimitStore ahead of KV and memory", async () => {

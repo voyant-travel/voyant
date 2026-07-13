@@ -8,13 +8,13 @@
  * already lives in this package; this factory only wires it to an HTTP surface.
  *
  * The deployment supplies the storage-backed specifics via `options`:
- *   - `resolveStorage(c)` — the R2-backed `StorageProvider` to upload into (or
+ *   - `resolveStorage(c)` — the selected `StorageProvider` to upload into (or
  *     `null` when storage isn't configured → 503),
  *   - `resolvePrinter(c)` — an optional PDF printer (e.g. a browser-rendering
  *     service); when omitted the default pdf-lib printer is used,
  *   - `template` / `keyPrefix` / `maxSizeBytes` overrides.
  *
- * Keeping these injected means inventory never imports the deployment's R2
+ * Keeping these injected means inventory never imports a deployment storage
  * binding or cloud client.
  */
 

@@ -15,7 +15,7 @@ export interface UploadOptions {
   key?: string
   /** MIME content type (e.g. `"image/png"`). */
   contentType?: string
-  /** Custom metadata; persisted by providers that support it (R2, S3). */
+  /** Custom metadata; persisted by providers that support it. */
   metadata?: Record<string, string>
 }
 
@@ -36,12 +36,11 @@ export interface StorageObject {
  * Pluggable object storage provider.
  *
  * Built-in implementations:
- * - `local` — in-memory, for dev and tests
- * - `r2`    — Cloudflare R2 via the workers binding
- * - `s3`    — Amazon S3 / S3-compatible via SigV4
+ * - `memory` — in-memory, for dev and tests
+ * - `s3-compatible` — AWS S3 and compatible object stores via AWS SDK v3
  */
 export interface StorageProvider {
-  /** Unique provider name (e.g. `"r2"`, `"s3"`, `"local"`). */
+  /** Diagnostic provider name (for example `"memory:media"`). */
   readonly name: string
   /** Upload an object. */
   upload(body: StorageUploadBody, options?: UploadOptions): Promise<StorageObject>
@@ -51,9 +50,17 @@ export interface StorageProvider {
    * Produce a time-limited URL that grants GET access to the object.
    * `expiresIn` is in seconds.
    */
-  signedUrl(key: string, expiresIn: number): Promise<string>
+  signedUrl?(key: string, expiresIn: number): Promise<string>
   /**
    * Fetch an object's bytes. Returns `null` when the object is absent.
    */
   get(key: string): Promise<ArrayBuffer | null>
+}
+
+/** Stable application-facing names for framework-owned object stores. */
+export type VoyantStorageName = "documents" | "media" | (string & {})
+
+/** Resolves a logical store without exposing vendor buckets or bindings. */
+export interface StorageProviderResolver {
+  resolve(name: VoyantStorageName): StorageProvider | null
 }

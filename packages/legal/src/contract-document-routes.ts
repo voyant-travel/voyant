@@ -6,7 +6,7 @@
  *
  * The first route generates (or previews) a booking's contract PDF; the second
  * streams private document bytes from the deployment's document storage — used
- * as the authenticated download fallback for environments where the R2 binding
+ * as the authenticated download fallback for environments where object storage
  * isn't backed by a real S3 SigV4 signer.
  *
  * These shapes (validation, status codes, headers, the scriptable-mime safety,
@@ -193,7 +193,7 @@ const generateBookingContractRoute = createRoute({
       content: { "application/json": { schema: errorResponseSchema } },
     },
     503: {
-      description: "Contract document storage not configured (missing DOCUMENTS_BUCKET)",
+      description: "Contract document storage is not configured",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
@@ -229,10 +229,7 @@ export function createContractDocumentRoutes(options: ContractDocumentRoutesOpti
           force: body.force === true,
         })
         if (!result) {
-          return c.json(
-            { error: "Contract document storage not configured (missing DOCUMENTS_BUCKET)" },
-            503,
-          )
+          return c.json({ error: "Contract document storage is not configured" }, 503)
         }
         return c.json({ data: result }, 200)
       } catch (err) {
@@ -243,7 +240,7 @@ export function createContractDocumentRoutes(options: ContractDocumentRoutesOpti
 
   // GET /v1/admin/documents/files/* — admin-only stream of private
   // documents bytes from the document storage. Used as the fallback
-  // download target for environments where the R2 binding isn't backed by a
+  // download target for environments where object storage isn't backed by a
   // real S3 SigV4 signer. Auth is the standard staff guard inherited from
   // `/v1/admin/*` middleware in createApp. Served via `new Response`; a
   // catch-all path isn't a publishable OpenAPI operation, so it stays a plain

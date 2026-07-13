@@ -209,7 +209,22 @@ factory.
 The host binds implementations by typed port ID, never by first-party package
 ID. The host must not choose Bookings, Finance, Catalog, or any other product
 implementation. Conversely, packages must not reach into a deployment container
-for undeclared services.
+for undeclared services. Infrastructure follows the same authority
+rule: `deployment.providers` selects storage, cache, shared state, rate limit,
+workflow, and delivery implementations; environment values only configure the
+selected implementation.
+
+Object storage is exposed as a vendor-neutral logical-store resolver. The Node
+host provides `memory`, an AWS SDK v3-backed `s3-compatible` adapter, or an
+adapter-package `custom` provider selected on the `storage.object` graph port.
+Modules request logical `media` or `documents` stores and never consume
+S3/R2/GCS bucket bindings directly. Signing is an optional provider capability,
+and custom adapters can run the published storage conformance suite. Direct host
+injection is reserved for embedded runtimes and tests.
+
+Provider declarations explicitly list the unit-owned config, secret, and
+resource IDs their factories consume. Resolving one provider port validates only
+those declarations; unrelated providers in the same plugin package remain lazy.
 
 Provider selection is explicit in the resolved deployment. Environment variables
 satisfy the selected provider; their presence must not silently change provider

@@ -12,7 +12,7 @@ describe("createStorageService", () => {
       contentType: "application/octet-stream",
     })
     expect(uploaded.key).toBe("k")
-    expect(service.name).toBe("local")
+    expect(service.name).toBe("memory")
 
     const bytes = await service.get("k")
     expect(bytes).not.toBeNull()

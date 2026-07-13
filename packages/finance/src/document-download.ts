@@ -1,6 +1,6 @@
 export type {
-  AuthenticatedR2DocumentDownloadResolver,
-  AuthenticatedR2DocumentDownloadResolverOptions,
+  AuthenticatedDocumentDownloadResolver,
+  AuthenticatedDocumentDownloadResolverOptions,
   DocumentDownloadEnvelope,
   DocumentDownloadResolution,
   DocumentDownloadResolver,
@@ -8,7 +8,7 @@ export type {
   StoredDocumentReference,
 } from "@voyant-travel/hono/document-download"
 export {
-  createAuthenticatedR2DocumentDownloadResolver,
+  createAuthenticatedDocumentDownloadResolver,
   encodeStorageKeyPath,
   resolveStoredDocumentDownload,
 } from "@voyant-travel/hono/document-download"

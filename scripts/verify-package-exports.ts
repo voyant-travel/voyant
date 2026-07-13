@@ -40,10 +40,8 @@ const checks: ExportCheck[] = [
       "createStorageService",
       "StorageError",
       "createLocalStorageProvider",
-      "createR2Provider",
-      "createS3Provider",
-      "presignUrl",
-      "signRequest",
+      "createS3CompatibleStorageProvider",
+      "assertStorageProviderConformance",
     ],
   },
   {

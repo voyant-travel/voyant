@@ -1,7 +1,6 @@
 import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 
-import { createR2Provider, type R2BucketLike } from "./providers/r2.js"
 import type { MediaRoutesOptions, VideoUploadTicketRequest } from "./routes.js"
 import type { StorageProvider } from "./types.js"
 
@@ -11,8 +10,6 @@ export type StorageRuntimeEnv = Readonly<
       | "API_BASE_URL"
       | "APP_URL"
       | "DOCUMENTS_BASE_URL"
-      | "DOCUMENTS_BUCKET"
-      | "MEDIA_BUCKET"
       | "VOYANT_API_KEY"
       | "VOYANT_CLOUD_API_KEY"
       | "VOYANT_CLOUD_API_URL"
@@ -22,7 +19,7 @@ export type StorageRuntimeEnv = Readonly<
   >
 >
 type RuntimeEnv = StorageRuntimeEnv
-type StorageRuntimePrimitives = Pick<VoyantRuntimeHostPrimitives, "env">
+type StorageRuntimePrimitives = Pick<VoyantRuntimeHostPrimitives, "env" | "storage">
 
 const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
 const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
@@ -83,38 +80,10 @@ function getCloudClient(env: RuntimeEnv): VoyantCloudClient {
   return client
 }
 
-function bucket(env: RuntimeEnv, key: "MEDIA_BUCKET" | "DOCUMENTS_BUCKET") {
-  return env[key] as R2BucketLike | undefined
-}
-
-function createR2BucketStorage(
-  storageBucket: R2BucketLike | undefined,
-  options: { publicBaseUrl?: string } = {},
-): StorageProvider | null {
-  if (!storageBucket) return null
-  return createR2Provider({
-    bucket: storageBucket,
-    ...(options.publicBaseUrl ? { publicBaseUrl: options.publicBaseUrl } : {}),
-  })
-}
-
 /** Best-effort MIME type guess shared by media and document serving routes. */
 export function guessMimeType(key: string): string {
   const ext = key.split(".").pop()?.toLowerCase() ?? ""
   return MIME_BY_EXT[ext] ?? "application/octet-stream"
-}
-
-/** Resolve standard media storage from the graph-selected environment. */
-export function createMediaStorage(env: RuntimeEnv): StorageProvider | null {
-  const appUrl = typeof env.APP_URL === "string" ? env.APP_URL.replace(/\/api$/, "") : ""
-  return createR2BucketStorage(bucket(env, "MEDIA_BUCKET"), {
-    publicBaseUrl: `${appUrl}/api/v1/admin/media/`,
-  })
-}
-
-/** Resolve private document storage from the graph-selected environment. */
-export function createDocumentStorage(env: RuntimeEnv): StorageProvider | null {
-  return createR2BucketStorage(bucket(env, "DOCUMENTS_BUCKET"))
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -128,11 +97,11 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 export async function readDocumentContentBase64(
-  env: RuntimeEnv,
+  storage: StorageProvider | null,
   storageKey: string,
 ): Promise<string | null> {
-  const object = await bucket(env, "DOCUMENTS_BUCKET")?.get(storageKey)
-  return object ? arrayBufferToBase64(await object.arrayBuffer()) : null
+  const object = await storage?.get(storageKey)
+  return object ? arrayBufferToBase64(object) : null
 }
 
 function normalizeUrl(value: string) {
@@ -166,10 +135,11 @@ function resolveDocumentDownloadApiBaseUrl(env: RuntimeEnv) {
 
 export async function resolveDocumentDownloadUrl(
   env: RuntimeEnv,
+  storage: StorageProvider | null,
   storageKey: string,
   _expiresIn?: number,
 ): Promise<string | null> {
-  if (!bucket(env, "DOCUMENTS_BUCKET")) return null
+  if (!storage) return null
   const apiBaseUrl = resolveDocumentDownloadApiBaseUrl(env)
   if (!apiBaseUrl) return null
   const keyPath = storageKey
@@ -190,7 +160,8 @@ export function createVideoUploadTicket(
 /** Build Storage's route runtime from generic host primitives. */
 export function createStorageRuntime(primitives: StorageRuntimePrimitives): MediaRoutesOptions {
   return {
-    resolveStorage: (context) => createMediaStorage(primitives.env(context.env)),
+    resolveStorage: (context) =>
+      (primitives.storage.resolve(context.env, "media") as StorageProvider | null) ?? null,
     guessServedMimeType: guessMimeType,
     signVideoUploadTicket: (context, input) =>
       createVideoUploadTicket(primitives.env(context.env), input),

@@ -5,11 +5,6 @@ import type {
   VoyantDeploymentResourceRequirement,
 } from "./deployment-types.js"
 
-const R2_ACCESS_KEY_ID_ENV = ["R2", "ACCESS", "KEY", "ID"].join("_")
-const R2_PRIVATE_CREDENTIAL_ENV = ["R2", "SECRET", "ACCESS", "KEY"].join("_")
-const R2_STORAGE_ID_COPY = "Object storage access identifier."
-const R2_STORAGE_PRIVATE_COPY = "Private value for object storage access."
-
 export function resourceRequirementsFor(
   role: VoyantDeploymentProviderRole,
   providers: VoyantDeploymentProviders,
@@ -73,18 +68,20 @@ function envForProvider(
       ),
     ]
   }
-  if (role === "storage" && (provider === "s3" || provider === "r2")) {
+  if (role === "storage" && provider === "s3-compatible") {
     return [
+      variable("S3_REGION", "S3 signing region."),
+      variable("STORAGE_MEDIA_BUCKET", "Object bucket for public media."),
+      variable("STORAGE_DOCUMENTS_BUCKET", "Object bucket for private/generated documents."),
       variable(
-        "R2_S3_ENDPOINT",
-        "S3-compatible endpoint for media and document buckets.",
-        true,
+        "S3_ENDPOINT",
+        "Optional endpoint for non-AWS S3-compatible object stores.",
+        false,
         "http-url",
       ),
-      variable("R2_BUCKET_MEDIA", "Object bucket for public media."),
-      variable("R2_BUCKET_DOCUMENTS", "Object bucket for private/generated documents."),
-      secret(R2_ACCESS_KEY_ID_ENV, R2_STORAGE_ID_COPY),
-      secret(R2_PRIVATE_CREDENTIAL_ENV, R2_STORAGE_PRIVATE_COPY),
+      secret("S3_ACCESS_KEY_ID", "Optional explicit S3-compatible access identifier.", false),
+      secret("S3_SECRET_ACCESS_KEY", "Optional explicit S3-compatible secret access key.", false),
+      secret("S3_SESSION_TOKEN", "Optional temporary S3 session token.", false),
     ]
   }
   if (
@@ -230,7 +227,7 @@ function resourceKeyFor(role: VoyantDeploymentProviderRole, provider: string): s
   ) {
     return "postgres-shared-state"
   }
-  if (role === "storage" && (provider === "s3" || provider === "r2")) return "object-storage"
+  if (role === "storage" && provider === "s3-compatible") return "object-storage"
   return `${role}:${provider}`
 }
 

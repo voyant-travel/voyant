@@ -96,27 +96,6 @@ describe("storage deployment manifest", () => {
       /resolveStorage/,
     )
   })
-
-  it("declares only Node-usable local and S3 provider factories", () => {
-    expect(storageVoyantModule.providers).toEqual([
-      {
-        id: "@voyant-travel/storage#provider.local",
-        port: "storage.object",
-        runtime: {
-          entry: "@voyant-travel/storage/providers/local",
-          export: "createLocalStorageProvider",
-        },
-      },
-      {
-        id: "@voyant-travel/storage#provider.s3",
-        port: "storage.object",
-        runtime: {
-          entry: "@voyant-travel/storage/providers/s3",
-          export: "createS3Provider",
-        },
-      },
-    ])
-  })
 })
 
 function readApiId(document: unknown, path: string, method: string) {

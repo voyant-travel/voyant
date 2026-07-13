@@ -36,6 +36,12 @@ export interface VoyantGraphProviderDeclaration extends VoyantGraphFacetEntity {
   }
   runtime: VoyantGraphRuntimeReference
   config?: VoyantGraphJsonObject
+  /** Unit-owned graph values this provider factory is allowed to consume. */
+  uses?: {
+    config?: readonly string[]
+    secrets?: readonly string[]
+    resources?: readonly string[]
+  }
 }
 
 export interface VoyantGraphAccessAction {

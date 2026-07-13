@@ -2,7 +2,7 @@
  * Media upload + serve HTTP routes, owned by `@voyant-travel/storage`.
  *
  * agent-quality: file-size exception -- the media surface (multipart upload,
- * video upload ticket, and hardened R2 serve) is one cohesive route family that
+ * video upload ticket, and hardened object serving) is one cohesive route family that
  * shares the same content-type safety + key-parsing helpers; splitting it would
  * scatter a single storage-backed contract.
  *
@@ -14,13 +14,13 @@
  * returned `Hono` at the app root rather than under a module prefix.
  *
  * The deployment supplies the storage-backed specifics via `options`:
- *   - `resolveStorage(c)` — the R2-backed `StorageProvider` for this request
+ *   - `resolveStorage(c)` — the selected `StorageProvider` for this request
  *     (or `null` when storage isn't configured → 503),
  *   - `signVideoUploadTicket(c, input)` — turn a validated video-upload request
  *     into a provider ticket (TUS / Cloudflare Stream / …),
  *   - `guessServedMimeType(key)` — best-effort MIME guess for the serve route.
  *
- * The package never imports the deployment's R2 binding or video provider.
+ * The package never imports a deployment vendor SDK or video provider.
  */
 
 import { OpenAPIHono } from "@hono/zod-openapi"
@@ -74,7 +74,7 @@ export type VideoUploadTicketRequest = z.infer<typeof videoUploadTicketBodySchem
 
 /**
  * Deployment-supplied options for the media route module. Structural only —
- * the injected functions encapsulate the deployment's R2 binding and video
+ * the injected functions encapsulate the deployment's object storage and video
  * provider so this package stays free of those static imports.
  */
 export interface MediaRoutesOptions {

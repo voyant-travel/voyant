@@ -16,7 +16,7 @@ export type VoyantDeploymentProviderRole =
 
 export interface VoyantDeploymentProviders {
   database: "postgres"
-  storage: "s3" | "r2" | "memory"
+  storage: "s3-compatible" | "memory" | "custom"
   cache: "redis" | "postgres" | "platform" | "memory"
   sharedState: "redis" | "postgres" | "platform" | "memory"
   rateLimit: "redis" | "postgres" | "platform" | "memory"
@@ -51,7 +51,7 @@ export interface VoyantDeploymentResourceRequirement {
 
 export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
   database: "postgres",
-  storage: "s3",
+  storage: "s3-compatible",
   cache: "redis",
   sharedState: "redis",
   rateLimit: "redis",
@@ -66,7 +66,7 @@ export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
 
 export const DEPLOYMENT_PROVIDER_CONTRACTS = {
   database: ["postgres"],
-  storage: ["s3", "r2", "memory"],
+  storage: ["s3-compatible", "memory", "custom"],
   cache: ["redis", "postgres", "platform", "memory"],
   sharedState: ["redis", "postgres", "platform", "memory"],
   rateLimit: ["redis", "postgres", "platform", "memory"],

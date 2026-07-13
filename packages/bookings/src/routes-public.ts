@@ -17,6 +17,7 @@ import {
   requireCheckoutCapability,
   requireGuestBookingAccess,
 } from "./checkout-capability.js"
+import { enforceGuestBookingLookupRateLimit } from "./guest-booking-rate-limit.js"
 import {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
   type BookingRouteRuntime,
@@ -39,11 +40,6 @@ import {
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
 } from "./validation-public.js"
-
-type RateLimitKv = {
-  get: (key: string) => Promise<string | null>
-  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
-}
 
 const errorResponseSchema = z.object({ error: z.string() })
 
@@ -143,72 +139,18 @@ function sessionResourceGuard(): MiddlewareHandler<Env> {
   }
 }
 
-function guestBookingLookupLimit(env: Record<string, string | undefined>) {
-  const raw =
-    env.VOYANT_GUEST_BOOKING_LOOKUP_LIMIT_PER_MINUTE ?? env.GUEST_BOOKING_LOOKUP_LIMIT_PER_MINUTE
-  const parsed = raw ? Number(raw) : 10
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return 10
-  }
-
-  return Math.min(Math.floor(parsed), 100)
-}
-
-function clientIp(c: Context) {
-  return (
-    c.req.header("CF-Connecting-IP") ??
-    c.req.header("X-Real-IP") ??
-    c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() ??
-    "unknown"
-  )
-}
-
-async function enforceGuestBookingLookupRateLimit(c: Context, bookingCode: string) {
-  const kv = (c.env as { RATE_LIMIT?: RateLimitKv } | undefined)?.RATE_LIMIT
-  if (!kv) return null
-
-  const now = new Date()
-  const pad = (value: number) => String(value).padStart(2, "0")
-  const windowKey = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}`
-  const key = [
-    "lim",
-    "guest-booking-lookup",
-    clientIp(c),
-    bookingCode.trim().toLowerCase(),
-    windowKey,
-  ].join(":")
-  const limit = guestBookingLookupLimit(getRuntimeEnv(c))
-  const raw = await kv.get(key)
-  let current = 0
-  if (raw) {
-    try {
-      current = Number((JSON.parse(raw) as { count: number }).count || 0)
-    } catch {
-      current = 0
-    }
-  }
-  const nextCount = current + 1
-  await kv.put(key, JSON.stringify({ count: nextCount }), { expirationTtl: 120 })
-
-  const resetIn = 60000 - (now.getUTCSeconds() * 1000 + now.getUTCMilliseconds())
-  c.header("X-RateLimit-Limit", String(limit))
-  c.header("X-RateLimit-Remaining", String(Math.max(0, limit - nextCount)))
-  c.header("X-RateLimit-Reset", String(Date.now() + resetIn))
-
-  if (nextCount <= limit) {
-    return null
-  }
-
-  c.header("Retry-After", "60")
-  return c.json({ error: "Too Many Requests" }, 429)
-}
-
 function bookingLookupRateLimitKey(input: {
   bookingId?: string
   bookingNumber?: string
   bookingCode?: string
 }) {
   return input.bookingCode ?? input.bookingNumber ?? input.bookingId ?? "unknown"
+}
+
+function guestBookingRateLimitResponse(c: Context, response: Response) {
+  const retryAfter = response.headers.get("retry-after")
+  if (retryAfter) c.header("Retry-After", retryAfter)
+  return c.json({ error: "Too Many Requests" }, 429)
 }
 
 function getRouteRuntime(c: Context): BookingRouteRuntime {
@@ -645,8 +587,9 @@ export const publicBookingRoutes = publicBookingApp
       const rateLimited = await enforceGuestBookingLookupRateLimit(
         c,
         bookingLookupRateLimitKey(query),
+        getRuntimeEnv(c),
       )
-      if (rateLimited) return rateLimited
+      if (rateLimited) return guestBookingRateLimitResponse(c, rateLimited)
     }
     const overviewEnrichers = getRouteRuntime(c).overviewItemEnrichers
     const overview = query.email
@@ -677,8 +620,12 @@ export const publicBookingRoutes = publicBookingApp
   })
   .openapi(guestLookupRoute, async (c) => {
     const input = c.req.valid("json")
-    const rateLimited = await enforceGuestBookingLookupRateLimit(c, input.bookingCode)
-    if (rateLimited) return rateLimited
+    const rateLimited = await enforceGuestBookingLookupRateLimit(
+      c,
+      input.bookingCode,
+      getRuntimeEnv(c),
+    )
+    if (rateLimited) return guestBookingRateLimitResponse(c, rateLimited)
 
     const overview = await publicBookingsService.getOverview(
       c.get("db"),

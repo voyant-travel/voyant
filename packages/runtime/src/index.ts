@@ -8,18 +8,26 @@ import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
+import {
+  resolveVoyantGraphRuntimeProviders,
+  type VoyantGraphRuntime,
+} from "@voyant-travel/framework/deployment-artifacts"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
   createVoyantNodeEnv,
   createVoyantNodeRuntimeHostPrimitives,
+  createVoyantNodeStorageResolver,
   createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime,
+  resolveVoyantNodeProviderPlan,
   resolveVoyantNodeWorkflowProvider,
   type VoyantNodeRuntime,
   type VoyantNodeRuntimeEnv,
+  validateVoyantNodeProviderPlanEnv,
 } from "@voyant-travel/framework/node-runtime"
 import { consoleReporter } from "@voyant-travel/hono/observability/reporter"
 import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime-core"
+import type { StorageProviderResolver } from "@voyant-travel/storage/types"
 import { resolveOutboundWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery"
 import { createPostgresWebhookDeliveryEnqueuer } from "@voyant-travel/webhook-delivery/postgres"
 import { tsImport } from "tsx/esm/api"
@@ -48,6 +56,7 @@ export interface LoadVoyantProjectOptions {
   host?: {
     config?: Readonly<Record<string, unknown>>
     deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
+    storage?: StorageProviderResolver
   }
 }
 
@@ -73,7 +82,7 @@ interface GeneratedProjectRuntime {
     mode?: "local" | "managed-cloud" | "self-hosted"
     providers: VoyantNodeRuntime["deployment"]["providers"]
   }
-  graphRuntime: import("@voyant-travel/framework").VoyantGraphRuntime
+  graphRuntime: VoyantGraphRuntime
   createRuntimePorts(host: {
     primitives: VoyantRuntimeHostPrimitives
   }): import("@voyant-travel/framework").VoyantGraphRuntimePorts
@@ -91,7 +100,28 @@ export async function loadVoyantProject(
   const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
-  const env = createVoyantNodeEnv(options.env ?? process.env)
+  const providerPlan = resolveVoyantNodeProviderPlan(generated.deployment.providers)
+  const rawEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
+  const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)
+  if (providerIssues.length > 0) {
+    throw new Error(
+      `Voyant Node provider plan is not ready:\n${providerIssues.map((issue) => `- ${issue}`).join("\n")}`,
+    )
+  }
+  const env = createVoyantNodeEnv(rawEnv, providerPlan)
+  const customStorage =
+    providerPlan.storage === "custom"
+      ? await resolveCustomStorageResolver({
+          graphRuntime: generated.graphRuntime,
+          deploymentValues: rawEnv,
+          explicit: options.host?.storage,
+        })
+      : undefined
+  const storage = createVoyantNodeStorageResolver({
+    plan: providerPlan,
+    env: rawEnv,
+    ...(customStorage ? { custom: customStorage } : {}),
+  })
   const hostDeliverEvent = options.host?.deliverEvent
   const outboundWebhooks = resolveOutboundWebhookDeliveryEnqueuer({
     provider: generated.deployment.providers.outboundWebhooks,
@@ -111,8 +141,9 @@ export async function loadVoyantProject(
       : {}),
   })
   const primitives = createVoyantNodeRuntimeHostPrimitives({
-    env,
     ...options.host,
+    env,
+    storage,
     deliverEvent: outboundWebhooks
       ? (event, bindings) => outboundWebhooks.enqueue(event as EventEnvelope, bindings)
       : undefined,
@@ -215,6 +246,31 @@ export async function loadVoyantProject(
           : {}),
       }),
   }
+}
+
+async function resolveCustomStorageResolver(options: {
+  graphRuntime: VoyantGraphRuntime
+  deploymentValues: Readonly<Record<string, unknown>>
+  explicit?: StorageProviderResolver
+}): Promise<StorageProviderResolver> {
+  if (options.explicit) return options.explicit
+  const providers = await resolveVoyantGraphRuntimeProviders(options.graphRuntime, {
+    ports: ["storage.object"],
+    deploymentValues: options.deploymentValues,
+  })
+  const resolver = await providers.getProvider<unknown>("storage.object")
+  if (!isStorageProviderResolver(resolver)) {
+    throw new TypeError(
+      'The selected "storage.object" provider must return a StorageProviderResolver.',
+    )
+  }
+  return resolver
+}
+
+function isStorageProviderResolver(value: unknown): value is StorageProviderResolver {
+  return Boolean(
+    value && typeof value === "object" && typeof Reflect.get(value, "resolve") === "function",
+  )
 }
 
 /** Generic TanStack Start server entry used by a project-owned one-line bootstrap. */

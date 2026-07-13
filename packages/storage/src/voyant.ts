@@ -58,24 +58,6 @@ export const storageVoyantModule = defineModule({
       },
     ],
   },
-  providers: [
-    {
-      id: "@voyant-travel/storage#provider.local",
-      port: "storage.object",
-      runtime: {
-        entry: "@voyant-travel/storage/providers/local",
-        export: "createLocalStorageProvider",
-      },
-    },
-    {
-      id: "@voyant-travel/storage#provider.s3",
-      port: "storage.object",
-      runtime: {
-        entry: "@voyant-travel/storage/providers/s3",
-        export: "createS3Provider",
-      },
-    },
-  ],
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

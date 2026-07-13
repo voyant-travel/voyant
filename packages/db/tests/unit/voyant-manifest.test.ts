@@ -27,6 +27,7 @@ describe("database deployment manifest", () => {
           id: "@voyant-travel/db#provider.postgres-node",
           port: "database.client",
           selection: { role: "database", value: "postgres" },
+          uses: { secrets: ["@voyant-travel/db#secret.database-url"] },
           runtime: { entry: "@voyant-travel/db/runtime", export: "createGraphDbProvider" },
           config: { adapter: "node" },
         },

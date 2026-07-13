@@ -29,7 +29,7 @@ export function createStorageService(provider: StorageProvider): StorageService 
     name: provider.name,
     upload: provider.upload.bind(provider),
     delete: provider.delete.bind(provider),
-    signedUrl: provider.signedUrl.bind(provider),
+    ...(provider.signedUrl ? { signedUrl: provider.signedUrl.bind(provider) } : {}),
     get: provider.get.bind(provider),
   }
 }

@@ -29,12 +29,10 @@ The resident-process server plus the real providers it wires. See
   real per-request `waitUntil` (background work tracked + drained on shutdown), an
   origin-trust gate, an HTTP `scheduled()` hook at `POST /__voyant/scheduled`, and
   graceful SIGTERM/SIGINT drain.
-- `composeNodeEnv(process.env, { kv, r2 })` — assemble the env bag app code reads
-  (`env.CACHE`, `env.MEDIA_BUCKET`, …) from string vars + real provider objects.
+- `composeNodeEnv(process.env, { kv })` — assemble the env bag app code reads
+  from string vars and concrete Node provider objects.
 - `createMemoryKvNamespace()` — in-process KV (`Map` + TTL + LRU) for
   `CACHE`/`RATE_LIMIT` in a single resident process.
-- `createR2BucketShim({ endpoint, bucket, … })` — S3-compatible object store for
-  production; `createMemoryR2Bucket()` — in-process store for dev/offline.
 - `originTrustMiddleware` / `verifyOriginTrust` / `constantTimeEqual` — the
   `x-voyant-origin-trust` gate the platform dispatcher stamps.
 - `createWaitUntilRegistry()` — the in-process `waitUntil` registry + drain.
@@ -43,9 +41,7 @@ The resident-process server plus the real providers it wires. See
 
 - **Cache API (`caches.default`)** — not shimmed; the public-cache middleware
   reads `env.CACHE` KV directly on Node.
-- **Distributed KV / object store** — the in-process providers are single-process;
-  a multi-instance deployment swaps them for a shared KV/S3 provider behind the
-  same interface (platform#940). The S3-backed `createR2BucketShim` covers durable
-  object storage.
+- **Object storage** — owned by `@voyant-travel/storage` and supplied to runtime
+  contributors through the generic host primitive.
 - **Durable Objects, Analytics Engine, `request.cf`** — no in-process equivalent;
   app code tolerates their absence on Node.
