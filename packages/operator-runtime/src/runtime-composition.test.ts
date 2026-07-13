@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
-
+import { tsImport } from "tsx/esm/api"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => {
@@ -176,14 +176,10 @@ describe("Operator runtime composition", () => {
     )
   })
 
-  it("prefers packaged artifacts and client assets for production start", async () => {
+  it("uses current source runtime artifacts with matching built admin assets in production", async () => {
     const projectRoot = await createGeneratedProject()
     const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
-    await mkdir(path.join(builtArtifactRoot, "runtime"), { recursive: true })
-    await writeFile(
-      path.join(builtArtifactRoot, "runtime/project-runtime.generated.ts"),
-      "export {}\n",
-    )
+    await mkdir(builtArtifactRoot, { recursive: true })
     await writeFile(
       path.join(builtArtifactRoot, "deployment-graph.generated.json"),
       JSON.stringify({
@@ -196,12 +192,34 @@ describe("Operator runtime composition", () => {
 
     const project = await loadOperatorProject({
       projectRoot,
-      preferBuiltArtifacts: true,
-      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      env: { DATABASE_URL: "postgres://example.invalid/voyant", NODE_ENV: "production" },
     })
 
     expect(project.graphHash).toBe("graph-hash")
     expect(mocks.adminHostOptions[0]?.clientAssetsDir).toBe(path.join(projectRoot, "dist/client"))
+    expect(vi.mocked(tsImport).mock.calls[0]?.[0]).toContain(
+      path.join(projectRoot, ".voyant/runtime/project-runtime.generated.ts"),
+    )
+  })
+
+  it("does not serve built admin assets from a stale deployment graph", async () => {
+    const projectRoot = await createGeneratedProject()
+    const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
+    await mkdir(builtArtifactRoot, { recursive: true })
+    await writeFile(
+      path.join(builtArtifactRoot, "deployment-graph.generated.json"),
+      JSON.stringify({ contentHash: "stale-graph-hash" }),
+    )
+    await mkdir(path.join(projectRoot, "dist/client"), { recursive: true })
+
+    await loadOperatorProject({
+      projectRoot,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant", NODE_ENV: "production" },
+    })
+
+    expect(mocks.adminHostOptions[0]?.clientAssetsDir).toBe(
+      path.join(projectRoot, ".voyant/admin/client"),
+    )
   })
 
   it("rewrites persisted legacy media URLs before API dispatch", async () => {

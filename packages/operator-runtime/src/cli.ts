@@ -10,7 +10,7 @@ if (command !== "start") {
   process.exit(2)
 }
 
-const handle = await startOperatorProject({ port, preferBuiltArtifacts: true })
+const handle = await startOperatorProject({ port, preferBuiltAdminAssets: true })
 console.info(`[operator-runtime] Node host listening on :${handle.port}`)
 
 if (probe) {

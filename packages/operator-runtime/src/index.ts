@@ -42,7 +42,7 @@ export interface LoadOperatorProjectOptions {
   projectRoot?: string
   env?: Record<string, string | undefined>
   adminAssetsDir?: string
-  preferBuiltArtifacts?: boolean
+  preferBuiltAdminAssets?: boolean
   host?: {
     config?: Readonly<Record<string, unknown>>
     deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
@@ -86,9 +86,7 @@ export async function loadOperatorProject(
   options: LoadOperatorProjectOptions = {},
 ): Promise<OperatorProjectHost> {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
-  const preferBuiltArtifacts =
-    options.preferBuiltArtifacts ?? (options.env?.NODE_ENV ?? process.env.NODE_ENV) === "production"
-  const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot, preferBuiltArtifacts)
+  const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
   const env = createVoyantNodeEnv(options.env ?? process.env)
@@ -158,7 +156,13 @@ export async function loadOperatorProject(
       },
     },
   })
-  const clientAssetsDir = resolveAdminAssetsDir(projectRoot, artifactRoot, options.adminAssetsDir)
+  const clientAssetsDir = await resolveAdminAssetsDir(
+    projectRoot,
+    artifactRoot,
+    options.adminAssetsDir,
+    options.preferBuiltAdminAssets ??
+      (options.env?.NODE_ENV ?? process.env.NODE_ENV) === "production",
+  )
   const web = serveAdminHost<VoyantNodeRuntimeEnv>({
     clientAssetsDir,
     app: async (request, bindings, ctx) => {
@@ -225,14 +229,8 @@ export async function startOperatorProject(
   return host.start({ port: options.port })
 }
 
-async function resolveGeneratedArtifactRoot(
-  projectRoot: string,
-  preferBuiltArtifacts = false,
-): Promise<string> {
-  const layouts = preferBuiltArtifacts
-    ? (["dist/.voyant", ".voyant"] as const)
-    : GENERATED_ARTIFACT_LAYOUTS
-  for (const layout of layouts) {
+async function resolveGeneratedArtifactRoot(projectRoot: string): Promise<string> {
+  for (const layout of GENERATED_ARTIFACT_LAYOUTS) {
     const artifactRoot = path.join(projectRoot, layout)
     if (
       (await pathExists(path.join(artifactRoot, PROJECT_GRAPH_ENTRY))) &&
@@ -358,15 +356,48 @@ async function loadGeneratedProjectLinks(artifactRoot: string) {
   }
 }
 
-function resolveAdminAssetsDir(
+async function resolveAdminAssetsDir(
   projectRoot: string,
   artifactRoot: string,
   explicit?: string,
-): string {
+  preferBuiltAssets = false,
+): Promise<string> {
   if (explicit) return path.resolve(explicit)
-  return artifactRoot === path.join(projectRoot, "dist/.voyant")
-    ? path.join(projectRoot, "dist/client")
-    : path.join(artifactRoot, "admin/client")
+  const sourceArtifactRoot = path.join(projectRoot, ".voyant")
+  const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
+  const builtClientDir = path.join(projectRoot, "dist/client")
+  if (artifactRoot === builtArtifactRoot) return builtClientDir
+  if (
+    preferBuiltAssets &&
+    artifactRoot === sourceArtifactRoot &&
+    (await pathExists(builtClientDir)) &&
+    (await generatedArtifactGraphsMatch(sourceArtifactRoot, builtArtifactRoot))
+  ) {
+    return builtClientDir
+  }
+  return path.join(artifactRoot, "admin/client")
+}
+
+async function generatedArtifactGraphsMatch(
+  sourceArtifactRoot: string,
+  builtArtifactRoot: string,
+): Promise<boolean> {
+  const [sourceHash, builtHash] = await Promise.all([
+    readGeneratedArtifactGraphHash(sourceArtifactRoot),
+    readGeneratedArtifactGraphHash(builtArtifactRoot),
+  ])
+  return sourceHash !== undefined && sourceHash === builtHash
+}
+
+async function readGeneratedArtifactGraphHash(artifactRoot: string): Promise<string | undefined> {
+  try {
+    const graph = JSON.parse(
+      await readFile(path.join(artifactRoot, PROJECT_GRAPH_ENTRY), "utf8"),
+    ) as { contentHash?: unknown }
+    return typeof graph.contentHash === "string" ? graph.contentHash : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function rewriteLegacyMediaRequest(request: Request): Request {

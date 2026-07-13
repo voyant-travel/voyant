@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   getVoyantCloudClient: vi.fn(),
-  sendMessage: vi.fn(async () => ({ id: "message-1" })),
+  sendMessage: vi.fn(async (_message: { html: string }) => ({ id: "message-1" })),
 }))
 
 vi.mock("@voyant-travel/cloud-sdk", () => ({
