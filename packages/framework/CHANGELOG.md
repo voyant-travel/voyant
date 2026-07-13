@@ -1,5 +1,32 @@
 # @voyant-travel/framework
 
+## 0.41.0
+
+### Minor Changes
+
+- abbb9cd: Remove the duplicate standard Operator scheduled-job catalog. Product schedules now come exclusively from their owning package manifests.
+- bef5b7c: Remove retired preset lineage metadata from project authoring and resolved deployment graphs.
+
+### Patch Changes
+
+- Updated dependencies [4d0eeed]
+- Updated dependencies [bef5b7c]
+- Updated dependencies [d4fa159]
+  - @voyant-travel/hono@0.126.0
+  - @voyant-travel/types@0.109.0
+  - @voyant-travel/utils@0.107.0
+  - @voyant-travel/db@0.114.0
+  - @voyant-travel/core@0.120.0
+  - @voyant-travel/auth@0.127.0
+  - @voyant-travel/action-ledger@0.108.1
+  - @voyant-travel/cruises@0.153.0
+  - @voyant-travel/mcp@0.2.1
+  - @voyant-travel/operator-standard@0.2.3
+  - @voyant-travel/runtime-core@0.6.1
+  - @voyant-travel/storage@0.109.1
+  - @voyant-travel/workflows@0.118.0
+  - @voyant-travel/workflows-orchestrator@0.118.0
+
 ## 0.40.0
 
 ### Minor Changes

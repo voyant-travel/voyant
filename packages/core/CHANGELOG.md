@@ -1,5 +1,11 @@
 # @voyant-travel/core
 
+## 0.120.0
+
+### Minor Changes
+
+- bef5b7c: Remove retired preset lineage metadata from project authoring and resolved deployment graphs.
+
 ## 0.119.0
 
 ### Minor Changes

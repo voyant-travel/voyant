@@ -1,5 +1,27 @@
 # @voyant-travel/legal-react
 
+## 0.154.0
+
+### Patch Changes
+
+- 8bd906f: Breaking beta cleanup: remove the deprecated `onInsertVariable` and
+  `onInsertSnippet` props from `ContractTemplateAuthoringHelp`. The helper only
+  supports copying template values and snippets to the clipboard; consumers
+  should remove these ignored callbacks. Also remove the inert Legal and
+  Notifications caller wiring.
+- Updated dependencies [4d0eeed]
+- Updated dependencies [8bd906f]
+  - @voyant-travel/types@0.109.0
+  - @voyant-travel/utils@0.107.0
+  - @voyant-travel/legal@0.154.0
+  - @voyant-travel/ui@0.109.0
+  - @voyant-travel/admin@0.123.0
+  - @voyant-travel/bookings-react@0.154.0
+  - @voyant-travel/commerce-react@0.36.0
+  - @voyant-travel/distribution-react@0.144.0
+  - @voyant-travel/inventory-react@0.36.0
+  - @voyant-travel/relationships-react@0.154.0
+
 ## 0.153.0
 
 ### Patch Changes

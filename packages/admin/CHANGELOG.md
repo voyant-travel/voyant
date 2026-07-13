@@ -1,5 +1,14 @@
 # @voyant-travel/admin
 
+## 0.123.0
+
+### Patch Changes
+
+- Updated dependencies [4d0eeed]
+- Updated dependencies [8bd906f]
+  - @voyant-travel/types@0.109.0
+  - @voyant-travel/ui@0.109.0
+
 ## 0.122.0
 
 ### Minor Changes

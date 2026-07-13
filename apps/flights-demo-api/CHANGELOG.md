@@ -1,5 +1,11 @@
 # flights-demo-api
 
+## 0.19.51
+
+### Patch Changes
+
+- @voyant-travel/flights@0.154.0
+
 ## 0.19.50
 
 ### Patch Changes

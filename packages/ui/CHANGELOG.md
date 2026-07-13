@@ -1,5 +1,20 @@
 # @voyant-travel/ui
 
+## 0.109.0
+
+### Minor Changes
+
+- 8bd906f: Breaking beta cleanup: remove the deprecated `onInsertVariable` and
+  `onInsertSnippet` props from `ContractTemplateAuthoringHelp`. The helper only
+  supports copying template values and snippets to the clipboard; consumers
+  should remove these ignored callbacks. Also remove the inert Legal and
+  Notifications caller wiring.
+
+### Patch Changes
+
+- Updated dependencies [4d0eeed]
+  - @voyant-travel/utils@0.107.0
+
 ## 0.108.11
 
 ### Patch Changes
