@@ -300,11 +300,23 @@ function inspectRepositoryAuthority(repoRoot) {
   }
 
   const operatorRuntimePath = join(repoRoot, "packages/operator-runtime/src/index.ts")
+  const deploymentResourcesPath = join(
+    repoRoot,
+    "packages/operator-runtime/src/deployment-resources.ts",
+  )
   const deploymentArtifactsPath = join(repoRoot, "packages/framework/src/deployment-artifacts.ts")
-  if (existsSync(operatorRuntimePath) && existsSync(deploymentArtifactsPath)) {
+  if (
+    existsSync(operatorRuntimePath) &&
+    existsSync(deploymentResourcesPath) &&
+    existsSync(deploymentArtifactsPath)
+  ) {
     const operatorRuntime = readFileSync(operatorRuntimePath, "utf8")
+    const deploymentResources = readFileSync(deploymentResourcesPath, "utf8")
     const deploymentArtifacts = readFileSync(deploymentArtifactsPath, "utf8")
-    if (!operatorRuntime.includes("runtimePorts: generated.createRuntimePorts({ primitives })")) {
+    if (
+      !operatorRuntime.includes("createRuntimePorts: generated.createRuntimePorts") ||
+      !deploymentResources.includes("ports: options.createRuntimePorts({ primitives })")
+    ) {
       violations.push("packaged starter must boot real statically selected runtime ports")
     }
     if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {
