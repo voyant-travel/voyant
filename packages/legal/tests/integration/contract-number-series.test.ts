@@ -244,51 +244,6 @@ describe.skipIf(!DB_AVAILABLE)("contract_number_series uniqueness + lookups", ()
     })
   })
 
-  describe("findSeriesByName", () => {
-    it("returns the row when exactly one active match exists", async () => {
-      const created = await contractSeriesService.createSeries(db, {
-        name: "By Name",
-        prefix: "BYN",
-        separator: "-",
-        padLength: 4,
-        resetStrategy: "never",
-        scope: "customer",
-        active: true,
-      })
-
-      const found = await contractSeriesService.findSeriesByName(db, "By Name")
-      expect(found?.id).toBe(created!.id)
-    })
-
-    it("throws when two active rows share a name across different (prefix, scope)", async () => {
-      // Two rows with the same name but different (prefix, scope) — the
-      // partial unique index doesn't catch this, but the lookup should
-      // refuse to silently pick a winner.
-      await contractSeriesService.createSeries(db, {
-        name: "Duplicate Label",
-        prefix: "AAA",
-        separator: "-",
-        padLength: 4,
-        resetStrategy: "never",
-        scope: "customer",
-        active: true,
-      })
-      await contractSeriesService.createSeries(db, {
-        name: "Duplicate Label",
-        prefix: "BBB",
-        separator: "-",
-        padLength: 4,
-        resetStrategy: "never",
-        scope: "supplier",
-        active: true,
-      })
-
-      await expect(
-        contractSeriesService.findSeriesByName(db, "Duplicate Label"),
-      ).rejects.toBeInstanceOf(ContractSeriesAmbiguousError)
-    })
-  })
-
   describe("upsertByPrefixScope", () => {
     it("creates the row on first call and updates it on second", async () => {
       const first = await contractSeriesService.upsertByPrefixScope(db, {

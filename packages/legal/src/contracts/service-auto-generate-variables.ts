@@ -34,7 +34,7 @@ export async function resolveContractGenerationVariables(
   event: BookingConfirmedLikeEvent,
   options: AutoGenerateContractOptions,
   runtime: AutoGenerateContractRuntime,
-  template: { id: string; language?: string | null },
+  template: { id: string; language?: string | null; seriesLabel?: string | null },
 ): Promise<Record<string, unknown>> {
   const travelers = await bookingsService.listTravelers(db, event.bookingId)
   const travelerTravelDetails = await resolveTravelerTravelDetails(
@@ -128,7 +128,7 @@ export async function resolveContractGenerationVariables(
       issuedAt: todayIsoDateTime,
       signedAt: "",
       isManual: false,
-      series: options.seriesName ?? "",
+      series: template.seriesLabel ?? "",
       channel: "",
       source: "",
       status: "draft",

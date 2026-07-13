@@ -13,11 +13,11 @@ vi.mock("../../src/contracts/service-auto-generate.js", () => ({
 
 // Mock the contracts service used by ensureDefaultContractSeries +
 // resetContractDocumentForBooking.
-const findSeriesByName = vi.fn()
+const findActiveByPrefixScope = vi.fn()
 const createSeries = vi.fn()
 vi.mock("../../src/contracts/service.js", () => ({
   contractsService: {
-    findSeriesByName: (...args: unknown[]) => findSeriesByName(...args),
+    findActiveByPrefixScope: (...args: unknown[]) => findActiveByPrefixScope(...args),
     createSeries: (...args: unknown[]) => createSeries(...args),
     listContracts: vi.fn(async () => ({ data: [] })),
     listAttachments: vi.fn(async () => []),
@@ -47,14 +47,18 @@ const AUTO_OPTIONS: AutoGenerateContractOptions = {
   enabled: true,
   templateSlug: "customer-sales-agreement",
   scope: "customer",
-  seriesName: "customer-contracts",
+  seriesPrefixScope: { prefix: "CTR-2026-", scope: "customer" },
 }
 
 function makeService(generator: unknown | null) {
   return createContractDocumentService({
     resolveGenerator: () => generator as never,
     autoGenerateOptions: AUTO_OPTIONS,
-    defaultSeriesName: "customer-contracts",
+    defaultSeries: {
+      name: "customer-contracts",
+      prefix: "CTR-2026-",
+      scope: "customer",
+    },
     resolveBindings: () => ({ DOCUMENTS_BASE_URL: "https://docs.example" }),
     resolveBookingPiiService: () => null,
   })
@@ -63,7 +67,7 @@ function makeService(generator: unknown | null) {
 describe("contract document service", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    findSeriesByName.mockResolvedValue({ id: "ser_1" })
+    findActiveByPrefixScope.mockResolvedValue({ id: "ser_1" })
   })
 
   it("generate -> seeds series, persists, returns ids", async () => {
@@ -85,14 +89,23 @@ describe("contract document service", () => {
   })
 
   it("generate -> seeds the default series when missing", async () => {
-    findSeriesByName.mockResolvedValue(null)
+    findActiveByPrefixScope.mockResolvedValue(null)
     autoGenerateContractForBooking.mockResolvedValue({
       status: "ok",
       contractId: "ctr_2",
       attachmentId: "att_2",
     })
     await makeService({}).generate(stubDb("BK-2"), undefined, "bkg_2")
+    expect(findActiveByPrefixScope).toHaveBeenCalledWith(expect.anything(), "CTR-2026-", "customer")
     expect(createSeries).toHaveBeenCalledTimes(1)
+    expect(createSeries).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        name: "customer-contracts",
+        prefix: "CTR-2026-",
+        scope: "customer",
+      }),
+    )
   })
 
   it("preview -> returns rendered html", async () => {

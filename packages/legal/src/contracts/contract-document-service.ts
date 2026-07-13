@@ -20,9 +20,10 @@
  *     (R2 / browser-rendering / pdf-lib). Returns `null` when storage isn't
  *     configured, which surfaces as a `null` generate result (→ 503).
  *   - `autoGenerateOptions` — the `AutoGenerateContractOptions` carrying the
- *     template slug / scope / series name and the operator-injected
+ *     template slug / scope / series identity and the operator-injected
  *     `resolveVariables` binding (see `buildContractVariableBindings`).
- *   - `defaultSeriesName` — the name seeded by `ensureDefaultContractSeries`.
+ *   - `defaultSeries` — the canonical series identity and display label seeded
+ *     by `ensureDefaultContractSeries`.
  *   - `resolveBindings()` — the runtime env bindings forwarded into
  *     `resolveVariables` (e.g. `DOCUMENTS_BASE_URL`).
  *   - `resolveBookingPiiService()` — the deployment's KMS-backed traveler
@@ -44,7 +45,12 @@ import {
   type AutoGenerateContractOptions,
   autoGenerateContractForBooking,
 } from "./service-auto-generate.js"
+import type { ContractSeriesIdentity } from "./service-auto-generate-types.js"
 import type { ContractDocumentGenerator } from "./service-documents.js"
+
+export interface DefaultContractSeries extends ContractSeriesIdentity {
+  name: string
+}
 
 /**
  * Deployment-supplied dependencies for the contract-document service. Keeps the
@@ -59,12 +65,12 @@ export interface ContractDocumentServiceOptions {
    */
   resolveGenerator(): ContractDocumentGenerator | null
   /**
-   * The auto-generate options (template slug, scope, series name, and the
+   * The auto-generate options (template slug, scope, series identity, and the
    * operator-injected `resolveVariables` binding).
    */
   autoGenerateOptions: AutoGenerateContractOptions
-  /** Name of the default contract number series to lazy-seed on first generate. */
-  defaultSeriesName: string
+  /** Canonical identity and display label of the series to lazy-seed. */
+  defaultSeries: DefaultContractSeries
   /**
    * Runtime env bindings forwarded into `resolveVariables` (e.g.
    * `DOCUMENTS_BASE_URL`, `APP_URL`). Optional.
@@ -104,7 +110,7 @@ export function createContractDocumentService(
   const {
     resolveGenerator,
     autoGenerateOptions,
-    defaultSeriesName,
+    defaultSeries,
     resolveBindings,
     resolveBookingPiiService,
   } = options
@@ -123,7 +129,7 @@ export function createContractDocumentService(
       if (!generator) return null
 
       // Lazy seed — creates the default series on the first contract generation.
-      await ensureDefaultContractSeries(db, defaultSeriesName)
+      await ensureDefaultContractSeries(db, defaultSeries)
 
       const [bookingRow] = await db
         .select({ bookingNumber: bookings.bookingNumber })
@@ -213,24 +219,24 @@ export function createContractDocumentService(
 }
 
 /**
- * Lazy-seed the default customer-contract number series. Idempotent: a no-op
- * when a series with `seriesName` already exists. Swallows insert races so a
- * concurrent first-generate doesn't fail the request.
+ * Lazy-seed the default contract number series by its canonical `(prefix,
+ * scope)` identity. Swallows insert races so concurrent first-generation
+ * requests do not fail.
  */
 export async function ensureDefaultContractSeries(
   db: PostgresJsDatabase,
-  seriesName: string,
+  series: DefaultContractSeries,
 ): Promise<void> {
-  const existing = await contractsService.findSeriesByName(db, seriesName)
+  const existing = await contractsService.findActiveByPrefixScope(db, series.prefix, series.scope)
   if (existing) return
   try {
     await contractsService.createSeries(db, {
-      name: seriesName,
-      prefix: `CTR-${new Date().getFullYear()}-`,
+      name: series.name,
+      prefix: series.prefix,
       separator: "",
       padLength: 5,
       resetStrategy: "never",
-      scope: "customer",
+      scope: series.scope,
       active: true,
     })
   } catch (err) {
