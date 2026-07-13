@@ -92,6 +92,7 @@ function unit(
       unitId: id,
       route,
       importEntry: route.runtime?.entry ?? id,
+      referenceId: `${route.id}:runtime`,
       load: async () => ({}),
     })),
     load: async () => [],

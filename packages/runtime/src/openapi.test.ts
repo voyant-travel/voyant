@@ -39,11 +39,14 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
     mount: string,
     document: string,
   ): VoyantGraphRuntimeUnitLoader => {
+    const referenceId = `${id}#api.${surface}:runtime`
+    const runtime = { entry: id, export: "fixtureModule" } as const
     const route = {
       id: `${id}#api.${surface}`,
       surface,
       mount,
       openapi: { document },
+      runtime,
     } as const
     return {
       id,
@@ -52,7 +55,19 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
       packageName: id.split("#")[0]!,
       order: 0,
       projectConfig: {},
-      references: [],
+      references: [
+        {
+          id: referenceId,
+          unitId: id,
+          facet: "api",
+          entityId: route.id,
+          runtime,
+          importEntry: id,
+          load: async <T = unknown>() => ({}) as T,
+          loadModule: async <T extends Record<string, unknown> = Record<string, unknown>>() =>
+            ({ fixtureModule: {} }) as T,
+        },
+      ],
       config: [],
       secrets: [],
       resources: [],
@@ -72,7 +87,7 @@ function selectedRuntime(): Pick<VoyantGraphRuntime, "modules" | "extensions" | 
         events: [],
         webhooks: [],
       },
-      routes: [{ route, importEntry: id, load: async () => ({}) }],
+      routes: [{ route, importEntry: id, referenceId, load: async () => ({}) }],
       load: async () => [],
     }
   }

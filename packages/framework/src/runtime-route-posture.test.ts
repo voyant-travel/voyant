@@ -19,6 +19,31 @@ function createRoutePostureRuntime(
           kind: "module",
           packageName: "@acme/catalog",
           order: 0,
+          references: [
+            {
+              id: "catalog-admin-route",
+              unitId: "@acme/catalog",
+              facet: "api",
+              entityId: "@acme/catalog#api.admin",
+              runtime: { entry: "@acme/catalog", export: "createCatalogModule" },
+              importEntry: "@acme/catalog",
+            },
+            {
+              id: "catalog-public-route",
+              unitId: "@acme/catalog",
+              facet: "api",
+              entityId: "@acme/catalog#api.public",
+              runtime: { entry: "@acme/catalog", export: "createCatalogModule" },
+              importEntry: "@acme/catalog",
+            },
+          ],
+          selectedIds: {
+            routes: ["@acme/catalog#api.admin", "@acme/catalog#api.public"],
+            tools: [],
+            workflows: [],
+            events: [],
+            webhooks: [],
+          },
           routes: [
             {
               route: {
@@ -29,6 +54,7 @@ function createRoutePostureRuntime(
                 runtime: { entry: "@acme/catalog", export: "createCatalogModule" },
               },
               importEntry: "@acme/catalog",
+              referenceId: "catalog-admin-route",
             },
             {
               route: {
@@ -40,6 +66,7 @@ function createRoutePostureRuntime(
                 runtime: { entry: "@acme/catalog", export: "createCatalogModule" },
               },
               importEntry: "@acme/catalog",
+              referenceId: "catalog-public-route",
             },
           ],
         },
@@ -103,6 +130,26 @@ describe("graph runtime route posture", () => {
           kind: "module",
           packageName: "@voyant-travel/storefront",
           order: 0,
+          references: [
+            {
+              id: "storefront-public-route",
+              unitId: "@voyant-travel/storefront",
+              facet: "api",
+              entityId: "@voyant-travel/storefront#api.public",
+              runtime: {
+                entry: "@voyant-travel/storefront",
+                export: "createStorefrontModule",
+              },
+              importEntry: "@voyant-travel/storefront",
+            },
+          ],
+          selectedIds: {
+            routes: ["@voyant-travel/storefront#api.public"],
+            tools: [],
+            workflows: [],
+            events: [],
+            webhooks: [],
+          },
           routes: [
             {
               route: {
@@ -116,6 +163,7 @@ describe("graph runtime route posture", () => {
                 },
               },
               importEntry: "@voyant-travel/storefront",
+              referenceId: "storefront-public-route",
             },
           ],
         },
@@ -124,6 +172,23 @@ describe("graph runtime route posture", () => {
           kind: "module",
           packageName: "@voyant-travel/finance",
           order: 1,
+          references: [
+            {
+              id: "finance-public-route",
+              unitId: "@voyant-travel/finance",
+              facet: "api",
+              entityId: "@voyant-travel/finance#api.public",
+              runtime: { entry: "@voyant-travel/finance", export: "createFinanceModule" },
+              importEntry: "@voyant-travel/finance",
+            },
+          ],
+          selectedIds: {
+            routes: ["@voyant-travel/finance#api.public"],
+            tools: [],
+            workflows: [],
+            events: [],
+            webhooks: [],
+          },
           routes: [
             {
               route: {
@@ -138,6 +203,7 @@ describe("graph runtime route posture", () => {
                 },
               },
               importEntry: "@voyant-travel/finance",
+              referenceId: "finance-public-route",
             },
           ],
         },
@@ -190,6 +256,26 @@ describe("graph runtime route posture", () => {
           kind: "module",
           packageName: "@voyant-travel/storefront",
           order: 0,
+          references: [
+            {
+              id: "payment-link-public-route",
+              unitId: "@voyant-travel/storefront#payment-link",
+              facet: "api",
+              entityId: "@voyant-travel/storefront#payment-link.api",
+              runtime: {
+                entry: "@voyant-travel/storefront/payment-link",
+                export: "createPaymentLinkModule",
+              },
+              importEntry: "@voyant-travel/storefront/payment-link",
+            },
+          ],
+          selectedIds: {
+            routes: ["@voyant-travel/storefront#payment-link.api"],
+            tools: [],
+            workflows: [],
+            events: [],
+            webhooks: [],
+          },
           routes: [
             {
               route: {
@@ -203,6 +289,7 @@ describe("graph runtime route posture", () => {
                 },
               },
               importEntry: "@voyant-travel/storefront/payment-link",
+              referenceId: "payment-link-public-route",
             },
           ],
         },

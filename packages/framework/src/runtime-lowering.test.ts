@@ -4,7 +4,21 @@ import {
   createVoyantGraphRuntime,
   registerVoyantGraphTools,
   VoyantGraphRuntimeLoadError,
+  type VoyantGraphRuntimeSelectedIds,
 } from "./runtime-lowering.js"
+
+function selectedIds(
+  overrides: Partial<VoyantGraphRuntimeSelectedIds> = {},
+): VoyantGraphRuntimeSelectedIds {
+  return {
+    routes: [],
+    tools: [],
+    workflows: [],
+    events: [],
+    webhooks: [],
+    ...overrides,
+  }
+}
 
 function runtimeInput(load: () => Promise<unknown>) {
   return {
@@ -18,6 +32,27 @@ function runtimeInput(load: () => Promise<unknown>) {
         kind: "module" as const,
         packageName: "@acme/voyant-loyalty",
         order: 0,
+        references: [
+          {
+            id: "loyalty-admin-route",
+            unitId: "@acme/voyant-loyalty",
+            facet: "api" as const,
+            entityId: "@acme/voyant-loyalty#api.admin",
+            runtime: { entry: "./runtime", export: "createLoyaltyModule" },
+            importEntry: "@acme/voyant-loyalty/runtime",
+          },
+          {
+            id: "loyalty-public-route",
+            unitId: "@acme/voyant-loyalty",
+            facet: "api" as const,
+            entityId: "@acme/voyant-loyalty#api.public",
+            runtime: { entry: "./runtime", export: "createLoyaltyModule" },
+            importEntry: "@acme/voyant-loyalty/runtime",
+          },
+        ],
+        selectedIds: selectedIds({
+          routes: ["@acme/voyant-loyalty#api.admin", "@acme/voyant-loyalty#api.public"],
+        }),
         routes: [
           {
             route: {
@@ -30,6 +65,7 @@ function runtimeInput(load: () => Promise<unknown>) {
               },
             },
             importEntry: "@acme/voyant-loyalty/runtime",
+            referenceId: "loyalty-admin-route",
           },
           {
             route: {
@@ -41,6 +77,7 @@ function runtimeInput(load: () => Promise<unknown>) {
               },
             },
             importEntry: "@acme/voyant-loyalty/runtime",
+            referenceId: "loyalty-public-route",
           },
         ],
       },
@@ -60,6 +97,21 @@ describe("graph runtime lowering", () => {
           kind: "module",
           packageName: "@acme/hooks",
           order: 0,
+          references: [
+            {
+              id: "hooks-inbound-route",
+              unitId: "@acme/hooks",
+              facet: "api",
+              entityId: "@acme/hooks#api.inbound",
+              runtime: { entry: "@acme/hooks", export: "createHooksModule" },
+              importEntry: "@acme/hooks",
+            },
+          ],
+          selectedIds: selectedIds({
+            routes: ["@acme/hooks#api.inbound"],
+            events: ["@acme/hooks#event.changed"],
+            webhooks: ["@acme/hooks#webhook.inbound", "@acme/hooks#webhook.changed"],
+          }),
           routes: [
             {
               route: {
@@ -68,6 +120,7 @@ describe("graph runtime lowering", () => {
                 runtime: { entry: "@acme/hooks", export: "createHooksModule" },
               },
               importEntry: "@acme/hooks",
+              referenceId: "hooks-inbound-route",
             },
           ],
         },
@@ -164,7 +217,16 @@ describe("graph runtime lowering", () => {
               runtime: { entry: "./runtime", export: "unitFactory" },
               importEntry: "@acme/loyalty/runtime",
             },
+            {
+              id: "loyalty-admin-route",
+              unitId: "@acme/loyalty",
+              facet: "api",
+              entityId: "@acme/loyalty#api.admin",
+              runtime: { entry: "./runtime", export: "routeFactory" },
+              importEntry: "@acme/loyalty/runtime",
+            },
           ],
+          selectedIds: selectedIds({ routes: ["@acme/loyalty#api.admin"] }),
           routes: [
             {
               route: {
@@ -173,6 +235,7 @@ describe("graph runtime lowering", () => {
                 runtime: { entry: "./runtime", export: "routeFactory" },
               },
               importEntry: "@acme/loyalty/runtime",
+              referenceId: "loyalty-admin-route",
             },
           ],
         },
@@ -228,6 +291,7 @@ describe("graph runtime lowering", () => {
               referenceId: "commerce-workflow",
             },
           ],
+          selectedIds: selectedIds({ workflows: [workflow.id] }),
           routes: [],
         },
       ],
@@ -275,6 +339,7 @@ describe("graph runtime lowering", () => {
               referenceId: "commerce-workflow",
             },
           ],
+          selectedIds: selectedIds({ workflows: ["commerce.reconcile"] }),
           routes: [],
         },
       ],
@@ -328,6 +393,7 @@ describe("graph runtime lowering", () => {
               importEntry: "@acme/loyalty/runtime",
             },
           ],
+          selectedIds: selectedIds(),
           routes: [],
         },
       ],
@@ -409,6 +475,7 @@ describe("graph runtime lowering", () => {
               risk: "medium",
             },
           ],
+          selectedIds: selectedIds({ tools: ["loyalty-tool"] }),
           routes: [],
         },
       ],
@@ -473,6 +540,7 @@ describe("graph runtime lowering", () => {
                 requiredScopes: ["loyalty:write"],
               },
             ],
+            selectedIds: selectedIds({ tools: ["loyalty-tool"] }),
             routes: [],
           },
         ],
@@ -494,6 +562,7 @@ describe("graph runtime lowering", () => {
             packageName: "@acme/loyalty",
             order: 0,
             accessScopes: ["loyalty:read"],
+            selectedIds: selectedIds(),
             routes: [],
           },
         ],
@@ -533,6 +602,7 @@ describe("graph runtime lowering", () => {
             packageName: "@acme/loyalty",
             order: 0,
             actions: [action],
+            selectedIds: selectedIds(),
             routes: [],
           },
         ],
@@ -555,70 +625,13 @@ describe("graph runtime lowering", () => {
               { ...action, from: { ...action.from, tools: [] } },
               { ...action, from: { ...action.from, tools: [] } },
             ],
+            selectedIds: selectedIds(),
             routes: [],
           },
         ],
         plugins: [],
       }),
     ).toThrow(/duplicate action id "loyalty.adjust"/)
-  })
-
-  it("infers declared action bindings when legacy inputs omit selectedIds", () => {
-    const runtime = createVoyantGraphRuntime({
-      graphHash: "sha256:legacy-actions",
-      entries: { "@acme/loyalty/tools": async () => ({ adjustLoyalty: {} }) },
-      modules: [
-        {
-          id: "@acme/loyalty",
-          kind: "module",
-          packageName: "@acme/loyalty",
-          order: 0,
-          references: [
-            {
-              id: "loyalty-tool-runtime",
-              unitId: "@acme/loyalty",
-              facet: "tools.runtime",
-              entityId: "loyalty-tool",
-              runtime: { entry: "./tools", export: "adjustLoyalty" },
-              importEntry: "@acme/loyalty/tools",
-            },
-          ],
-          tools: [
-            {
-              id: "loyalty-tool",
-              unitId: "@acme/loyalty",
-              name: "adjust_loyalty",
-              referenceId: "loyalty-tool-runtime",
-              requiredScopes: [],
-            },
-          ],
-          actions: [
-            {
-              id: "loyalty.adjust",
-              unitId: "@acme/loyalty",
-              version: "v1",
-              kind: "execute",
-              targetType: "loyalty-account",
-              requiredScopes: [],
-              risk: "medium",
-              ledger: "required",
-              from: {
-                routes: [],
-                tools: ["loyalty-tool"],
-                workflows: [],
-                events: [],
-                webhooks: [],
-              },
-            },
-          ],
-          routes: [],
-        },
-      ],
-      plugins: [],
-    })
-
-    expect(runtime.selectedIds.tools).toEqual(["loyalty-tool"])
-    expect(runtime.actions.map(({ id }) => id)).toEqual(["loyalty.adjust"])
   })
 
   it("rejects unknown reference ids before evaluating package imports", async () => {
@@ -634,10 +647,11 @@ describe("graph runtime lowering", () => {
 
   it("does not mutate reusable generated runtime definitions", () => {
     const input = runtimeInput(async () => ({ createLoyaltyModule: {} }))
+    const modules = structuredClone(input.modules)
 
     expect(() => createVoyantGraphRuntime(input)).not.toThrow()
     expect(() => createVoyantGraphRuntime(input)).not.toThrow()
-    expect(input.modules[0]?.routes[0]).not.toHaveProperty("referenceId")
+    expect(input.modules).toEqual(modules)
   })
 
   it("reports a missing package export with graph unit and route context", async () => {

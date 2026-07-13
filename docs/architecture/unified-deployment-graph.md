@@ -1041,6 +1041,12 @@ the app service container, event bus, and failure reporting. It must not import
 package workflow runtime keys or maintain a first-party workflow-service
 catalog.
 
+Generated runtime metadata is the only supported input to runtime lowering.
+Every runtime-backed API route carries its admitted `referenceId`, and every
+unit carries complete `selectedIds` for routes, tools, workflows, events, and
+webhooks. Runtime lowering validates and normalizes those fields; it does not
+reconstruct references or infer selections from partial, pre-generated input.
+
 Implementation note: application convention compilation validates
 `src/workflows` and `src/jobs` without evaluating source. Workflow files
 directly default-export the pure `defineWorkflow(...)` result; job files export

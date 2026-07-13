@@ -10,6 +10,25 @@ import {
 } from "./runtime-composition.js"
 import { createVoyantGraphRuntime } from "./runtime-lowering.js"
 
+const EMPTY_SELECTED_IDS = {
+  routes: [],
+  tools: [],
+  workflows: [],
+  events: [],
+  webhooks: [],
+} as const
+
+function apiReference(unitId: string, routeId: string, entry: string, exportName: string) {
+  return {
+    id: `${routeId}:runtime`,
+    unitId,
+    facet: "api" as const,
+    entityId: routeId,
+    runtime: { entry, export: exportName },
+    importEntry: entry,
+  }
+}
+
 function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
   return createVoyantGraphRuntime({
     graphHash: "sha256:test",
@@ -20,6 +39,18 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
         kind: "module",
         packageName: "@acme/loyalty",
         order: 0,
+        references: ["admin", "public"].map((surface) => ({
+          id: `@acme/loyalty#api.${surface}:runtime`,
+          unitId: "@acme/loyalty",
+          facet: "api" as const,
+          entityId: `@acme/loyalty#api.${surface}`,
+          runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
+          importEntry: "@acme/loyalty",
+        })),
+        selectedIds: {
+          ...EMPTY_SELECTED_IDS,
+          routes: ["@acme/loyalty#api.admin", "@acme/loyalty#api.public"],
+        },
         routes: ["admin", "public"].map((surface) => ({
           route: {
             id: `@acme/loyalty#api.${surface}`,
@@ -27,6 +58,7 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
             runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
           },
           importEntry: "@acme/loyalty",
+          referenceId: `@acme/loyalty#api.${surface}:runtime`,
         })),
       },
       {
@@ -34,6 +66,7 @@ function runtimeWithDuplicateFacets(load: () => Promise<unknown>) {
         kind: "module",
         packageName: "@acme/operator",
         order: 1,
+        selectedIds: EMPTY_SELECTED_IDS,
         routes: [],
       },
     ],
@@ -53,6 +86,7 @@ describe("graph runtime composition", () => {
           packageName: "@acme/identity",
           order: 0,
           requiredRuntimePorts: ["acme.identity-runtime"],
+          selectedIds: EMPTY_SELECTED_IDS,
           routes: [],
         },
       ],
@@ -96,6 +130,11 @@ describe("graph runtime composition", () => {
           kind: "module",
           packageName: "@acme/catalog",
           order: 0,
+          selectedIds: {
+            ...EMPTY_SELECTED_IDS,
+            events: ["@acme/catalog#event.updated"],
+            webhooks: ["@acme/catalog#webhook.updated"],
+          },
           routes: [],
         },
       ],
@@ -165,6 +204,21 @@ describe("graph runtime composition", () => {
             kind: "module",
             packageName: "@acme/hooks",
             order: 0,
+            references: [
+              {
+                id: "hooks-inbound-route",
+                unitId: "@acme/hooks",
+                facet: "api",
+                entityId: "@acme/hooks#api.inbound",
+                runtime: { entry: "@acme/hooks", export: "createHooksModule" },
+                importEntry: "@acme/hooks",
+              },
+            ],
+            selectedIds: {
+              ...EMPTY_SELECTED_IDS,
+              routes: ["@acme/hooks#api.inbound"],
+              webhooks: ["@acme/hooks#webhook.inbound"],
+            },
             routes: [
               {
                 route: {
@@ -173,6 +227,7 @@ describe("graph runtime composition", () => {
                   runtime: { entry: "@acme/hooks", export: "createHooksModule" },
                 },
                 importEntry: "@acme/hooks",
+                referenceId: "hooks-inbound-route",
               },
             ],
           },
@@ -269,6 +324,7 @@ describe("graph runtime composition", () => {
               referenceId: "commerce-workflow",
             },
           ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, workflows: [workflow.id] },
           routes: [],
         },
       ],
@@ -322,6 +378,7 @@ describe("graph runtime composition", () => {
               importEntry: "@acme/alerts/subscribers",
             },
           ],
+          selectedIds: EMPTY_SELECTED_IDS,
           routes: [],
         },
       ],
@@ -370,6 +427,7 @@ describe("graph runtime composition", () => {
               importEntry: "@acme/alerts/subscribers",
             },
           ],
+          selectedIds: EMPTY_SELECTED_IDS,
           routes: [],
         },
       ],
@@ -407,6 +465,7 @@ describe("graph runtime composition", () => {
               importEntry: "@voyant-travel/commerce/workflows",
             },
           ],
+          selectedIds: EMPTY_SELECTED_IDS,
           routes: [],
         },
       ],
@@ -471,6 +530,7 @@ describe("graph runtime composition", () => {
               referenceId: "commerce-workflow",
             },
           ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, workflows: [reconcileWorkflow.id] },
           routes: [],
         },
       ],
@@ -550,6 +610,15 @@ describe("graph runtime composition", () => {
           kind: "module",
           packageName: "project",
           order: 0,
+          references: [
+            apiReference(
+              "project/api",
+              "project.api.public.foo",
+              "./.voyant/runtime/project-api.generated.js",
+              "projectApiHonoModule",
+            ),
+          ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["project.api.public.foo"] },
           routes: [
             {
               route: {
@@ -562,6 +631,7 @@ describe("graph runtime composition", () => {
                 },
               },
               importEntry: "./.voyant/runtime/project-api.generated.js",
+              referenceId: "project.api.public.foo:runtime",
             },
           ],
         },
@@ -621,6 +691,15 @@ describe("graph runtime composition", () => {
           packageName: "@acme/loyalty",
           order: 0,
           runtimePorts: [loyaltyPort.id],
+          references: [
+            apiReference(
+              "@acme/loyalty",
+              "@acme/loyalty#api",
+              "@acme/loyalty",
+              "createLoyaltyModule",
+            ),
+          ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["@acme/loyalty#api"] },
           routes: [
             {
               route: {
@@ -629,6 +708,7 @@ describe("graph runtime composition", () => {
                 runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
               },
               importEntry: "@acme/loyalty",
+              referenceId: "@acme/loyalty#api:runtime",
             },
           ],
         },
@@ -667,6 +747,15 @@ describe("graph runtime composition", () => {
             packageName: "@acme/loyalty",
             order: 0,
             runtimePorts: [declaredPort.id],
+            references: [
+              apiReference(
+                "@acme/loyalty",
+                "@acme/loyalty#api",
+                "@acme/loyalty",
+                "createLoyaltyModule",
+              ),
+            ],
+            selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["@acme/loyalty#api"] },
             routes: [
               {
                 route: {
@@ -675,6 +764,7 @@ describe("graph runtime composition", () => {
                   runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
                 },
                 importEntry: "@acme/loyalty",
+                referenceId: "@acme/loyalty#api:runtime",
               },
             ],
           },
@@ -715,6 +805,15 @@ describe("graph runtime composition", () => {
           order: 0,
           runtimePorts: [optionalPort.id],
           requiredRuntimePorts: [],
+          references: [
+            apiReference(
+              "@acme/loyalty",
+              "@acme/loyalty#api",
+              "@acme/loyalty",
+              "createLoyaltyModule",
+            ),
+          ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["@acme/loyalty#api"] },
           routes: [
             {
               route: {
@@ -723,6 +822,7 @@ describe("graph runtime composition", () => {
                 runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
               },
               importEntry: "@acme/loyalty",
+              referenceId: "@acme/loyalty#api:runtime",
             },
           ],
         },
@@ -764,6 +864,15 @@ describe("graph runtime composition", () => {
           runtimePorts: [providerPort.id],
           manyRuntimePorts: [providerPort.id],
           requiredRuntimePorts: [],
+          references: [
+            apiReference(
+              "@acme/loyalty",
+              "@acme/loyalty#api",
+              "@acme/loyalty",
+              "createLoyaltyModule",
+            ),
+          ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["@acme/loyalty#api"] },
           routes: [
             {
               route: {
@@ -772,6 +881,7 @@ describe("graph runtime composition", () => {
                 runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
               },
               importEntry: "@acme/loyalty",
+              referenceId: "@acme/loyalty#api:runtime",
             },
           ],
         },
@@ -815,6 +925,15 @@ describe("graph runtime composition", () => {
           packageName: "@acme/loyalty",
           order: 0,
           runtimePorts: [runtimePort.id],
+          references: [
+            apiReference(
+              "@acme/loyalty",
+              "@acme/loyalty#api",
+              "@acme/loyalty",
+              "createLoyaltyModule",
+            ),
+          ],
+          selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["@acme/loyalty#api"] },
           routes: [
             {
               route: {
@@ -823,6 +942,7 @@ describe("graph runtime composition", () => {
                 runtime: { entry: "@acme/loyalty", export: "createLoyaltyModule" },
               },
               importEntry: "@acme/loyalty",
+              referenceId: "@acme/loyalty#api:runtime",
             },
           ],
         },
@@ -903,6 +1023,7 @@ describe("graph runtime composition", () => {
               importEntry: "@acme/billing",
             },
           ],
+          selectedIds: EMPTY_SELECTED_IDS,
           routes: [],
         },
       ],
@@ -921,6 +1042,8 @@ describe("graph runtime composition", () => {
           kind: "plugin",
           packageName: "@acme/audit",
           order: 0,
+          references: [apiReference("@acme/audit", "@acme/audit#api", "@acme/audit", "audit")],
+          selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["@acme/audit#api"] },
           routes: [
             {
               route: {
@@ -929,6 +1052,7 @@ describe("graph runtime composition", () => {
                 runtime: { entry: "@acme/audit", export: "audit" },
               },
               importEntry: "@acme/audit",
+              referenceId: "@acme/audit#api:runtime",
             },
           ],
         },
