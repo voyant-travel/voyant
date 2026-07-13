@@ -12,7 +12,8 @@ const routeHosts = Object.fromEntries(
   ]),
 )
 const hostAdapter = [
-  "createStorefrontPresentationContribution",
+  '"@voyant-travel/storefront#presentation.customer"',
+  "presentationFactories",
   "StorefrontBookingPage",
   "StorefrontComposerPage",
   "CruiseDetailPage",
@@ -37,6 +38,7 @@ const packageIntake = [
   "requireStorefrontDb",
 ].join("\n")
 const graphDeclaration = [
+  "presentations: [",
   'id: "@voyant-travel/storefront#presentation.customer"',
   'entry: "@voyant-travel/storefront-react/storefront"',
   'export: "createStorefrontPresentationContribution"',
@@ -73,4 +75,15 @@ test("rejects route policy and intake authority returning to the starter", () =>
   )
   assert(result.failures.some((failure) => failure.includes("shop.tsx must not own function")))
   assert(result.failures.includes("Storefront intake authority must stay out of the starter"))
+})
+
+test("rejects direct Storefront factory selection by the host", () => {
+  const result = checkStorefrontPresentationAuthority(
+    fixture({ hostAdapter: `${hostAdapter}\ncreateStorefrontPresentationContribution` }),
+  )
+  assert(
+    result.failures.includes(
+      "Storefront host adapter must not directly select the package factory",
+    ),
+  )
 })

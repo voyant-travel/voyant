@@ -35,7 +35,7 @@ adapter over the package-owned `AccountantPortal` finance UI.
 
 `node scripts/check-operator-product-ui-authority.mjs` enforces:
 
-- at most 160 files under `starters/operator/src`;
+- at most 17 files under `starters/operator/src`;
 - deleted booking-journey, storefront browse/detail, and payment-summary copies
   cannot return;
 - package storefront subpaths and thin route adapters remain connected;
@@ -61,10 +61,23 @@ state, supply API URL, selected storefront scope, localized messages, and
 navigation, then render package components. Package code does not import starter
 aliases, environment helpers, message contexts, or TanStack Router.
 
+## Selected customer presentation
+
+The Storefront module declares
+`@voyant-travel/storefront#presentation.customer` in its typed `presentations`
+graph facet. Project resolution emits only selected presentation factories into
+`.voyant/presentations/selected-graph-presentations.generated.js`.
+`@voyant-travel/operator-standard` consumes that generated factory map and emits
+the ten customer Storefront route hosts only when the presentation ID is in the
+resolved product graph. The product shell must not directly import or select
+`createStorefrontPresentationContribution`.
+
+The route paths and host adapters remain in the standard product distribution
+for this first cutover. A later presentation-route schema can move path
+ownership package-side without reintroducing direct package selection.
+
 ## Remaining product UI clusters
 
-- Storefront customer shell: market scope, customer messages, market selector,
-  account pages, confirmation, and trip composer.
 - Operator application composition: providers, realtime presentation, admin
   destinations, and project admin-extension discovery. Generated selected-graph
   package loading must remain the default authority while these are reduced.

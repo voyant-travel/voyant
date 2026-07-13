@@ -57,7 +57,8 @@ test("emits disposable operator config with rebased declaration paths", () => {
       join(root, "starters/operator/.voyant/generate-routes.mjs"),
       "utf8",
     )
-    assert.match(routeGenerator, /standardOperatorRouteFiles/)
+    assert.match(routeGenerator, /createStandardOperatorRouteFiles/)
+    assert.match(routeGenerator, /productBom\.graph\.presentations/)
     assert.match(routeGenerator, /await new Generator/)
     assert.match(routeGenerator, /VOYANT_ROUTE_FILE_IGNORE_PATTERN/)
 

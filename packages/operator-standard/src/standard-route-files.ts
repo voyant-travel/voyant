@@ -15,7 +15,7 @@ const contributionRoute = (
 import { createFileRoute } from "@tanstack/react-router"
 import { operatorFrontend } from ${JSON.stringify(runtimeImport(path))}
 
-export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFrontend.routes.${contribution}.${member})
+export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFrontend.routes.${contribution}${contribution === "storefront" ? "!" : ""}.${member})
 `,
 })
 
@@ -34,14 +34,20 @@ export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFronten
 `,
 })
 
-/** Standard package-owned route registrations emitted into `.voyant/routes`. */
-export const standardOperatorRouteFiles: readonly VoyantGeneratedRouteFile[] = [
+const STOREFRONT_PRESENTATION_ID = "@voyant-travel/storefront#presentation.customer"
+
+export interface CreateStandardOperatorRouteFilesOptions {
+  presentationIds: readonly string[]
+}
+
+const standardOperatorRouteFiles: readonly VoyantGeneratedRouteFile[] = [
   {
     path: "_lib/operator-frontend.tsx",
     source: `
 import { createStandardOperatorFrontend } from ${JSON.stringify(standardFrontendImport)}
 import { accessCatalog } from "../../access/selected-access-catalog.generated.js"
 import { createSelectedGraphAdminExtensions } from "../../admin/selected-graph-admin.generated.js"
+import { selectedGraphPresentationFactories } from "../../presentations/selected-graph-presentations.generated.js"
 
 const workspaceSpecs = import.meta.glob<{ default: Record<string, unknown> }>(
   "../../../../../packages/*/openapi/{admin,storefront}/*.json",
@@ -53,6 +59,7 @@ const installedSpecs = import.meta.glob<{ default: Record<string, unknown> }>(
 export const operatorFrontend = createStandardOperatorFrontend({
   accessCatalog,
   selected: createSelectedGraphAdminExtensions,
+  presentations: selectedGraphPresentationFactories,
   project: import.meta.glob("../../../src/admin/*/index.tsx", { eager: true }),
   openApiSpecs: { ...workspaceSpecs, ...installedSpecs },
 })
@@ -132,6 +139,34 @@ export const Route = createFileRoute("/docs")(operatorFrontend.routes.docs)
   contributionRoute("(auth)/sign-in.tsx", "/(auth)/sign-in", "localAuth", "signIn"),
   contributionRoute("(auth)/sign-up.tsx", "/(auth)/sign-up", "localAuth", "signUp"),
   contributionRoute("(auth)/verify-email.tsx", "/(auth)/verify-email", "localAuth", "verifyEmail"),
+]
+
+const workspaceRouteFiles: readonly VoyantGeneratedRouteFile[] = [
+  {
+    path: "_workspace/route.tsx",
+    source: `
+import { createFileRoute, Outlet } from "@tanstack/react-router"
+import { operatorFrontend } from "../_lib/operator-frontend.js"
+
+const workspace = operatorFrontend.workspace
+
+export const Route = createFileRoute("/_workspace")({
+  ssr: "data-only",
+  beforeLoad: ({ location }) => workspace.beforeLoad({ location }),
+  loader: ({ context }) => ({ user: context.user }),
+  pendingComponent: workspace.PendingComponent,
+  component: WorkspaceLayout,
+})
+
+function WorkspaceLayout() {
+  const { user } = Route.useLoaderData()
+  return <workspace.Workspace initialUser={user}><Outlet /></workspace.Workspace>
+}
+`,
+  },
+]
+
+const storefrontRouteFiles: readonly VoyantGeneratedRouteFile[] = [
   contributionRoute("(storefront)/route.tsx", "/(storefront)", "storefront", "layout"),
   contributionRoute("(storefront)/shop.tsx", "/(storefront)/shop", "storefront", "shop"),
   contributionRoute(
@@ -182,26 +217,13 @@ export const Route = createFileRoute("/docs")(operatorFrontend.routes.docs)
     "storefront",
     "productDetail",
   ),
-  {
-    path: "_workspace/route.tsx",
-    source: `
-import { createFileRoute, Outlet } from "@tanstack/react-router"
-import { operatorFrontend } from "../_lib/operator-frontend.js"
-
-const workspace = operatorFrontend.workspace
-
-export const Route = createFileRoute("/_workspace")({
-  ssr: "data-only",
-  beforeLoad: ({ location }) => workspace.beforeLoad({ location }),
-  loader: ({ context }) => ({ user: context.user }),
-  pendingComponent: workspace.PendingComponent,
-  component: WorkspaceLayout,
-})
-
-function WorkspaceLayout() {
-  const { user } = Route.useLoaderData()
-  return <workspace.Workspace initialUser={user}><Outlet /></workspace.Workspace>
-}
-`,
-  },
 ]
+
+/** Standard package-owned route registrations emitted into `.voyant/routes`. */
+export function createStandardOperatorRouteFiles(
+  options: CreateStandardOperatorRouteFilesOptions,
+): readonly VoyantGeneratedRouteFile[] {
+  return options.presentationIds.includes(STOREFRONT_PRESENTATION_ID)
+    ? [...standardOperatorRouteFiles, ...storefrontRouteFiles, ...workspaceRouteFiles]
+    : [...standardOperatorRouteFiles, ...workspaceRouteFiles]
+}

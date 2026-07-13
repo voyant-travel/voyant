@@ -6,6 +6,8 @@ import {
   buildDeploymentMigrationSources,
   buildGraphAdminBundleDeclarationModule,
   buildGraphAdminBundleModule,
+  buildGraphPresentationBundleDeclarationModule,
+  buildGraphPresentationBundleModule,
   buildGraphRuntimeModule,
   buildGraphWorkflowRuntimeModule,
   buildNodeRuntimeEntry,
@@ -262,6 +264,39 @@ describe("deployment graph artifacts", () => {
     expect(declaration).toContain("SelectedAdminExtensionFactoryContext")
     expect(declaration).toContain("ReadonlyArray<AdminExtension>")
     expect(declaration).not.toContain("selectedAdminFactory0")
+  })
+
+  it("lowers only selected presentation factories in deterministic id order", async () => {
+    const graph = await graphWithSelectedUnits([
+      defineModule({
+        id: "@acme/storefront",
+        presentations: [
+          {
+            id: "@acme/storefront#presentation.customer",
+            runtime: { entry: "./presentation", export: "createCustomerPresentation" },
+          },
+        ],
+      }),
+      defineModule({
+        id: "@acme/admin-only",
+        admin: { runtime: { entry: "./admin", export: "createAdminExtension" } },
+      }),
+    ])
+
+    const source = buildGraphPresentationBundleModule({ graph })
+    expect(source).toContain(
+      'import { createCustomerPresentation as selectedPresentationFactory0 } from "@acme/storefront/presentation"',
+    )
+    expect(source).toContain(
+      '"@acme/storefront#presentation.customer": selectedPresentationFactory0',
+    )
+    expect(source).not.toContain("createAdminExtension")
+    expect(source).toContain("GENERATED_SELECTED_GRAPH_PRESENTATION_IDS")
+
+    const declaration = buildGraphPresentationBundleDeclarationModule({ graph })
+    expect(declaration).toContain("SelectedGraphPresentationFactory")
+    expect(declaration).toContain("selectedGraphPresentationFactories")
+    expect(declaration).not.toContain("createCustomerPresentation")
   })
 
   it("builds a deployment artifact manifest with relative runtime entries", async () => {

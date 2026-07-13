@@ -187,9 +187,11 @@ describe("Voyant project tooling", () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
-  it("loads a linked TypeScript route export from the product BOM package", async () => {
+  it("loads selected presentation routes from the product BOM package", async () => {
     const projectRoot = await createTemporaryDirectory()
-    await writeProductBom(projectRoot, "@voyant-travel/operator-standard")
+    await writeProductBom(projectRoot, "@voyant-travel/operator-standard", [
+      "@voyant-travel/storefront#presentation.customer",
+    ])
     const packageRoot = path.join(projectRoot, "node_modules/@voyant-travel/operator-standard")
     await mkdir(packageRoot, { recursive: true })
     await writeFile(
@@ -203,14 +205,17 @@ describe("Voyant project tooling", () => {
     await writeFile(
       path.join(packageRoot, "standard-route-files.ts"),
       `interface RouteFile { readonly path: string; readonly source: string }
-export const standardOperatorRouteFiles: readonly RouteFile[] = [
-  { path: "project.tsx", source: "project-owned" },
-]
+export function createStandardOperatorRouteFiles(options: { presentationIds: readonly string[] }): readonly RouteFile[] {
+  return [{ path: "project.tsx", source: options.presentationIds.join(",") }]
+}
 `,
     )
 
     await expect(loadStandardRouteFiles(projectRoot)).resolves.toEqual([
-      { path: "project.tsx", source: "project-owned" },
+      {
+        path: "project.tsx",
+        source: "@voyant-travel/storefront#presentation.customer",
+      },
     ])
   })
 
@@ -335,7 +340,11 @@ async function createTemporaryDirectory(): Promise<string> {
   return directory
 }
 
-async function writeProductBom(projectRoot: string, id: string): Promise<void> {
+async function writeProductBom(
+  projectRoot: string,
+  id: string,
+  presentationIds: readonly string[] = [],
+): Promise<void> {
   const artifactDirectory = path.join(projectRoot, ".voyant")
   await mkdir(artifactDirectory, { recursive: true })
   await writeFile(
@@ -347,6 +356,7 @@ async function writeProductBom(projectRoot: string, id: string): Promise<void> {
         id,
         version: "1",
       },
+      graph: { presentations: presentationIds },
     }),
   )
 }

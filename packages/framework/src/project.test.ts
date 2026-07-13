@@ -133,6 +133,8 @@ describe("framework project resolver", () => {
       "admin/project-admin.generated.ts",
       "admin/selected-graph-admin.generated.d.ts",
       "admin/selected-graph-admin.generated.js",
+      "presentations/selected-graph-presentations.generated.d.ts",
+      "presentations/selected-graph-presentations.generated.js",
       "runtime/project-api.generated.ts",
       "runtime/project-jobs.generated.ts",
       "runtime/project-links.generated.ts",
