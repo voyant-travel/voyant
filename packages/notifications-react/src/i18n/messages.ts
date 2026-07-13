@@ -211,11 +211,6 @@ export type NotificationsUiMessages = {
       smsBodyPlaceholder: string
       tabAuthoring: string
       tabPreview: string
-      insertIntoLabel: string
-      insertTargetSubject: string
-      insertTargetHtmlBody: string
-      insertTargetSmsBody: string
-      insertHint: string
       previewDataLabel: string
       previewDataPlaceholder: string
       previewDataHint: string

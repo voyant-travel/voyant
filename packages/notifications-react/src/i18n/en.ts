@@ -217,12 +217,6 @@ export const notificationsUiEn: NotificationsUiMessages = {
         'Hi {{ traveler.firstName | default: "traveler" }}, your booking is confirmed.',
       tabAuthoring: "Authoring",
       tabPreview: "Preview & Test",
-      insertIntoLabel: "Insert into",
-      insertTargetSubject: "Subject",
-      insertTargetHtmlBody: "HTML body",
-      insertTargetSmsBody: "SMS body",
-      insertHint:
-        "Variables insert as Liquid tags in text fields and as inline chips in the rich-text HTML body.",
       previewDataLabel: "Preview data (JSON)",
       previewDataPlaceholder: '{"booking":{"reference":"BKG-2026-00125"}}',
       previewDataHint: "Use sample JSON to preview Liquid rendering and send a safe test message.",

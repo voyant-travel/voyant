@@ -36,16 +36,6 @@ export type TemplateAuthoringSnippet = {
 type ContractTemplateAuthoringHelpProps = {
   variableGroups: TemplateAuthoringVariableGroup[]
   snippets?: TemplateAuthoringSnippet[]
-  /**
-   * @deprecated Variables now expose a copy-to-clipboard button instead of
-   * an inline insert. Kept for prop-shape compatibility with older callers.
-   */
-  onInsertVariable?: (variable: TemplateAuthoringVariable) => void
-  /**
-   * @deprecated Snippets now expose a copy-to-clipboard button instead of
-   * an inline insert. Kept for prop-shape compatibility with older callers.
-   */
-  onInsertSnippet?: (snippet: TemplateAuthoringSnippet) => void
   className?: string
   title?: string
   description?: string
@@ -112,8 +102,6 @@ function matchesSearch(haystack: string, query: string) {
 export function ContractTemplateAuthoringHelp({
   variableGroups,
   snippets = [],
-  onInsertVariable: _deprecatedOnInsertVariable,
-  onInsertSnippet: _deprecatedOnInsertSnippet,
   className,
   title = "Template variables",
   description = "Templates render with Liquid. Use output tags for variables and control tags for loops and conditionals.",
