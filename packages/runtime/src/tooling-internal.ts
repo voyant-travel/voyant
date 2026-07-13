@@ -90,9 +90,7 @@ const defaultDependencies: VoyantProjectToolingDependencies = {
   replaceDirectory,
 }
 
-type CreateViteBuilder = (
-  config: InlineConfig,
-) => Promise<{ buildApp(): Promise<void> }>
+type CreateViteBuilder = (config: InlineConfig) => Promise<{ buildApp(): Promise<void> }>
 
 /** Build every Vite application environment, including TanStack Start SSR. */
 export async function buildViteApplication(

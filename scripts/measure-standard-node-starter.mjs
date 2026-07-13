@@ -40,22 +40,24 @@ const checkedInMetadataNames = [
   "vite.config.ts",
   "vitest.config.ts",
 ]
-const generatedMetadataNames = [
-  "env.d.ts",
-  "tsconfig.client.json",
-  "tsconfig.server.json",
-  "vite.config.ts",
-  "vitest.config.ts",
+const generatedArtifactNames = [
+  "deployment-artifacts.generated.json",
+  "deployment-graph.generated.json",
+  "migration-plan.generated.json",
+  "product-bom.generated.json",
 ]
+const generatedMetadataRoot = existsSync(join(operatorRoot, ".voyant"))
+  ? join(operatorRoot, ".voyant")
+  : join(operatorRoot, "dist/.voyant")
 const checkedInMetadata = checkedInMetadataNames
   .map((file) => join(operatorRoot, file))
   .filter(existsSync)
-const generatedMetadata = generatedMetadataNames
-  .map((file) => join(operatorRoot, ".voyant", file))
+const generatedMetadata = generatedArtifactNames
+  .map((file) => join(generatedMetadataRoot, file))
   .filter(existsSync)
 
 const report = {
-  schemaVersion: "voyant.starter-performance.v2",
+  schemaVersion: "voyant.starter-performance.v3",
   authoredConfig: {
     lines: configSource.trim().split(/\r?\n/).length,
     repeatsStandardModules: /\bmodules\s*:/.test(configSource),
@@ -63,10 +65,7 @@ const report = {
   },
   metadata: {
     checkedIn: summarizeMetadata(checkedInMetadata),
-    generated: {
-      ...summarizeMetadata(generatedMetadata),
-      declarationPathEntries: generatedDeclarationPathEntries(operatorRoot),
-    },
+    generated: summarizeMetadata(generatedMetadata),
   },
   server: summarize(serverFiles),
   admin: summarize(adminChunks),
@@ -83,7 +82,7 @@ if (check) {
   if (report.authoredConfig.repeatsStandardExtensions)
     failures.push("config repeats standard extensions")
   if (report.metadata.checkedIn.files > 0) failures.push("starter copies checked-in metadata")
-  if (report.metadata.generated.files !== generatedMetadataNames.length) {
+  if (report.metadata.generated.files !== generatedArtifactNames.length) {
     failures.push("generated .voyant metadata is incomplete")
   }
   if (report.server.gzipBytes > 25 * 1024 * 1024)
@@ -107,13 +106,6 @@ function summarizeMetadata(files) {
     bytes: files.reduce((total, file) => total + statSync(file).size, 0),
     paths: files.map((file) => relative(operatorRoot, file)).sort(),
   }
-}
-
-function generatedDeclarationPathEntries(root) {
-  const config = join(root, ".voyant/tsconfig.client.json")
-  if (!existsSync(config)) return 0
-  const parsed = JSON.parse(readFileSync(config, "utf8"))
-  return Object.keys(parsed.compilerOptions?.paths ?? {}).length
 }
 
 function walk(directory) {

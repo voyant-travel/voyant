@@ -49,8 +49,11 @@ the workspace root already owns task orchestration.
 
 `check-standard-node-starter.mjs` rejects restored root copies of those files
 and requires `.voyant/` to remain ignored. `measure-standard-node-starter.mjs`
-reports checked-in metadata count and bytes, generated metadata count and bytes,
-and declaration-path entry count alongside bundle and boot measurements.
+reports checked-in metadata count and bytes and verifies the generated product
+BOM, resolved graph, deployment artifacts, and migration plan alongside bundle
+and boot measurements. After a production build, it reads the durable metadata
+copy from `dist/.voyant/` if the workspace staging directory has already been
+cleaned.
 
 The source-level gate does not replace runtime acceptance or performance
 evidence. Release confidence additionally requires the packaged starter to
