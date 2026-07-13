@@ -41,6 +41,8 @@ The gate requires:
 - a project may add a standard root `vite.config.ts` only when it needs custom
   Vite plugins or options. Both `voyant develop` and `voyant build` must merge
   that file without requiring custom scripts or a fork of generated metadata.
+  The lifecycle-owned `build.outDir` remains `dist` so server, client, and graph
+  artifact paths cannot diverge.
 
 The product BOM still expands into an explicit `.voyant/` graph during build.
 The checked-in development operator follows the same ownership rule for build

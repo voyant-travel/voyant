@@ -200,6 +200,11 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
       createAnalyzePlugin(options.appRootUrl),
     ],
   })
+  config.build = {
+    ...config.build,
+    // The Node host, admin asset resolver, and deployment artifacts share this layout.
+    outDir: "dist",
+  }
   if (options.bootstrap.stylesEntry || options.bootstrap.aliases) {
     const alias = config.resolve?.alias
     config.resolve = {

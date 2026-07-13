@@ -90,6 +90,7 @@ test("minimal starter installs, builds, and boots the Node host", {
       [
         'import { writeFileSync } from "node:fs"',
         "export default {",
+        '  build: { outDir: "custom-dist" },',
         "  plugins: [{",
         '    name: "project-vite-config-acceptance",',
         '    configResolved() { writeFileSync(".voyant/project-vite-plugin.loaded", "ok\\n") },',
@@ -98,6 +99,7 @@ test("minimal starter installs, builds, and boots the Node host", {
       ].join("\n"),
     )
     exec("pnpm", ["build"], app)
+    assert.ok(!existsSync(join(app, "custom-dist")))
     assert.ok(existsSync(join(app, "dist/client")))
     assert.ok(existsSync(join(app, "dist/server/server.js")))
     assert.ok(existsSync(join(app, "dist/.voyant/deployment-graph.generated.json")))

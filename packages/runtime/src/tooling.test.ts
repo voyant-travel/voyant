@@ -63,6 +63,20 @@ describe("Voyant project tooling", () => {
     expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router/ssr/server")).toBe(false)
   })
 
+  it("keeps the Node distribution under the lifecycle-owned dist directory", () => {
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: {},
+    })
+
+    expect(config.build?.outDir).toBe("dist")
+  })
+
   it("generates, builds, and copies both deployment artifact layouts", async () => {
     const projectRoot = "/workspace/operator"
     const calls: string[] = []
