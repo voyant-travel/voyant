@@ -13,6 +13,7 @@ import {
   createVoyantNodeRuntimeHostPrimitives,
   createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime,
+  resolveVoyantNodeWorkflowProvider,
   type VoyantNodeRuntime,
   type VoyantNodeRuntimeEnv,
 } from "@voyant-travel/framework/node-runtime"
@@ -68,7 +69,7 @@ interface GeneratedProjectRuntime {
   graphHash: string
   deployment: {
     mode?: "local" | "managed-cloud" | "self-hosted"
-    providers: Record<string, string>
+    providers: VoyantNodeRuntime["deployment"]["providers"]
   }
   graphRuntime: import("@voyant-travel/framework").VoyantGraphRuntime
   createRuntimePorts(host: {
@@ -281,12 +282,16 @@ async function loadDeploymentGraphRuntime(artifactRoot: string): Promise<Generat
   ) {
     throw new Error("Generated deployment graph runtime is missing or invalid.")
   }
+  const providers = graph.deployment.providers as Record<string, string>
   return {
     kind: "application",
     graphHash: namespace.GENERATED_GRAPH_RUNTIME_HASH,
     deployment: {
       mode: graph.deployment.mode,
-      providers: graph.deployment.providers as Record<string, string>,
+      providers: {
+        ...providers,
+        workflows: resolveVoyantNodeWorkflowProvider(providers.workflows),
+      },
     },
     graphRuntime: namespace.createGeneratedGraphRuntime(),
     createRuntimePorts: namespace.createGeneratedGraphRuntimePorts,
@@ -421,6 +426,10 @@ async function dispatchScheduledProjectJob(input: {
       (!input.event.scheduleId && candidate.cron === input.event.cron),
   )
   if (!job?.workflowId) return
+  const workflowProvider = resolveVoyantNodeWorkflowProvider(
+    input.runtime.deployment.providers.workflows,
+  )
+  if (workflowProvider === "none") return
   const { runScheduledWorkflow, isGraphWorkflowScheduledJob } = await import(
     "@voyant-travel/workflow-runs/scheduled-workflow"
   )
@@ -440,11 +449,18 @@ async function dispatchScheduledProjectJob(input: {
       projectId: input.bindings.VOYANT_CLOUD_APP_SLUG ?? path.basename(input.projectRoot),
       environment: input.bindings.VOYANT_CLOUD_ENVIRONMENT ?? "development",
       load: async () => workflowRuntime,
-      createDriver: (dependencies) =>
-        createVoyantNodeWorkflowDriver(
-          input.bindings,
-          path.basename(input.projectRoot),
-        )(dependencies),
+      createDriver: (dependencies) => {
+        const factory = createVoyantNodeWorkflowDriver({
+          deployment: input.runtime.deployment,
+          env: input.bindings,
+          defaultAppSlug: path.basename(input.projectRoot),
+          oneShot: true,
+        })
+        if (!factory) {
+          throw new Error("Scheduled workflow dispatch requires an enabled workflow provider.")
+        }
+        return factory(dependencies)
+      },
     },
   )
 }

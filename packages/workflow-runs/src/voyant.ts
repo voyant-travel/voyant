@@ -52,13 +52,6 @@ export const workflowRunsVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
-  config: [
-    {
-      id: "@voyant-travel/workflow-runs#config.admin-surface",
-      key: "VOYANT_WORKFLOW_ADMIN_SURFACE",
-      default: "tenant",
-    },
-  ],
   resources: [
     {
       id: "@voyant-travel/workflow-runs#resource.database",

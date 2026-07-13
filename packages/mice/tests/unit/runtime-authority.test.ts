@@ -23,7 +23,12 @@ describe("MICE deployment authority", () => {
       unitId: miceVoyantModule.id,
       projectConfig: {},
       api: miceVoyantModule.api ?? [],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,

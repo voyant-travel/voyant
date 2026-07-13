@@ -51,13 +51,23 @@ import type { KVStore } from "@voyant-travel/utils/cache"
 import { createRedisKvStore } from "@voyant-travel/utils/redis-kv"
 import { createTieredKvStore } from "@voyant-travel/utils/tiered-kv"
 import { createCloudWorkflowDriver } from "@voyant-travel/workflows/client"
+import type { DriverFactory } from "@voyant-travel/workflows/driver"
 import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator/in-memory"
+import {
+  createPostgresConnection,
+  createStandaloneDriver,
+  type PostgresConnection,
+} from "@voyant-travel/workflows-orchestrator/selfhost"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
 import { type CreateVoyantAppConfig, createVoyantApp } from "./create-app.js"
 import type { VoyantGraphDeploymentRequirements } from "./deployment-graph.js"
-import type { VoyantDeploymentEnvRequirement, VoyantDeploymentMode } from "./deployment-types.js"
+import type {
+  VoyantDeploymentEnvRequirement,
+  VoyantDeploymentMode,
+  VoyantDeploymentProviders,
+} from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
 import { composeVoyantGraphRuntime } from "./runtime-composition.js"
 import type { VoyantGraphRuntime } from "./runtime-lowering.js"
@@ -175,7 +185,7 @@ export type VoyantNodeRuntimeResources = Readonly<Record<string, unknown>>
 /** Graph-native deployment settings consumed by the resident Node host. */
 export interface VoyantNodeRuntimeDeployment {
   mode: VoyantDeploymentMode
-  providers: Readonly<Record<string, string>>
+  providers: Readonly<Record<string, string>> & Pick<VoyantDeploymentProviders, "workflows">
 }
 
 /** Inputs for booting a generated application graph in a resident Node process. */
@@ -196,7 +206,10 @@ export interface VoyantNodeRuntimeOptions {
   /** @deprecated Use `resources`; package behavior belongs behind `runtimePorts`. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
+    Omit<
+      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
+      "providers" | "workflows"
+    >
   >
 }
 
@@ -248,6 +261,7 @@ export async function loadVoyantNodeRuntime(
   options: VoyantNodeRuntimeOptions,
 ): Promise<VoyantNodeRuntime> {
   const env = createVoyantNodeEnv(options.env ?? process.env)
+  assertVoyantNodeWorkflowProviderConfigured(options.deployment, env)
   const requirements = options.deploymentRequirements
   const graphValues = await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
     deploymentValues: toPluginEnvRecord(env),
@@ -279,6 +293,7 @@ export async function loadVoyantNodeRuntime(
   const app = createVoyantNodeApp({
     applicationId,
     activeModules,
+    deployment: options.deployment,
     env,
     auth,
     resources,
@@ -361,13 +376,17 @@ function deploymentValueAliases(
 export function createVoyantNodeApp(options: {
   applicationId: string
   activeModules: readonly string[]
+  deployment: VoyantNodeRuntimeDeployment
   env?: VoyantNodeRuntimeEnv
   auth?: VoyantAuthIntegration<VoyantNodeRuntimeEnv>
   resources?: VoyantNodeRuntimeResources
   /** @deprecated Use `resources`; package behavior belongs behind graph runtime ports. */
   providers?: VoyantNodeRuntimeResources
   app?: Partial<
-    Omit<CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>, "providers">
+    Omit<
+      CreateVoyantAppConfig<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>,
+      "providers" | "workflows"
+    >
   >
   modules?: Record<string, ModuleFactory<VoyantNodeRuntimeResources>>
   extensions?: Record<string, ExtensionFactory<VoyantNodeRuntimeResources>>
@@ -377,17 +396,17 @@ export function createVoyantNodeApp(options: {
     auth: options.app?.auth ?? options.auth,
     activeModules: options.activeModules,
   })
+  const workflows = createVoyantNodeWorkflowConfig({
+    deployment: options.deployment,
+    env: options.env ?? createVoyantNodeEnv(process.env),
+    defaultAppSlug: options.applicationId,
+  })
   return createVoyantApp<VoyantNodeRuntimeEnv, VoyantNodeRuntimeResources>({
     db: resolveDb,
     dbTransactional: resolveDb,
     outbox: true,
-    workflows: {
-      driver: (bindings) =>
-        createVoyantNodeWorkflowDriver(bindings as VoyantNodeRuntimeEnv, options.applicationId),
-      environment: options.env?.VOYANT_CLOUD_ENVIRONMENT ?? "development",
-      projectId: options.env?.VOYANT_CLOUD_APP_SLUG ?? options.applicationId,
-    },
     ...options.app,
+    workflows,
     modules: {
       ...(options.app?.modules ?? {}),
       ...(options.modules ?? {}),
@@ -1058,19 +1077,133 @@ function isR2Bucket(value: unknown): value is R2BucketShim {
   return typeof value === "object" && value !== null && "get" in value && "put" in value
 }
 
-export function createVoyantNodeWorkflowDriver(env: VoyantNodeRuntimeEnv, defaultAppSlug: string) {
-  if (env.VOYANT_CLOUD_WORKFLOWS_URL?.trim() && env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN?.trim()) {
+export type VoyantNodeWorkflowProvider = VoyantDeploymentProviders["workflows"]
+
+export interface CreateVoyantNodeWorkflowDriverOptions {
+  deployment: VoyantNodeRuntimeDeployment
+  env: VoyantNodeRuntimeEnv
+  defaultAppSlug: string
+  /** Disable resident scheduler and time-wheel loops for a one-shot cron invocation. */
+  oneShot?: boolean
+}
+
+const WORKFLOW_PROVIDERS = new Set<VoyantNodeWorkflowProvider>([
+  "voyant-cloud",
+  "self-hosted",
+  "none",
+])
+const selfHostedWorkflowConnections = new Map<string, PostgresConnection>()
+
+export function resolveVoyantNodeWorkflowProvider(value: unknown): VoyantNodeWorkflowProvider {
+  if (typeof value === "string" && WORKFLOW_PROVIDERS.has(value as VoyantNodeWorkflowProvider)) {
+    return value as VoyantNodeWorkflowProvider
+  }
+  throw new Error(
+    `Unsupported deployment.providers.workflows value ${JSON.stringify(value)}. Expected "voyant-cloud", "self-hosted", or "none".`,
+  )
+}
+
+export function createVoyantNodeWorkflowDriver(
+  options: CreateVoyantNodeWorkflowDriverOptions,
+): DriverFactory | undefined {
+  const provider = assertVoyantNodeWorkflowProviderConfigured(options.deployment, options.env)
+  if (provider === "none") return undefined
+
+  const environment = options.env.VOYANT_CLOUD_ENVIRONMENT ?? "development"
+  if (provider === "voyant-cloud") {
     return () =>
       createCloudWorkflowDriver({
         env: {
-          VOYANT_CLOUD_WORKFLOWS_URL: env.VOYANT_CLOUD_WORKFLOWS_URL,
-          VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
-          VOYANT_CLOUD_APP_SLUG: env.VOYANT_CLOUD_APP_SLUG ?? defaultAppSlug,
-          VOYANT_CLOUD_ENVIRONMENT: env.VOYANT_CLOUD_ENVIRONMENT,
+          VOYANT_CLOUD_WORKFLOWS_URL: requireWorkflowEnv(
+            options.env.VOYANT_CLOUD_WORKFLOWS_URL,
+            "VOYANT_CLOUD_WORKFLOWS_URL",
+          ),
+          VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: requireWorkflowEnv(
+            options.env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
+            "VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN",
+          ),
+          VOYANT_CLOUD_APP_SLUG: options.env.VOYANT_CLOUD_APP_SLUG ?? options.defaultAppSlug,
+          VOYANT_CLOUD_ENVIRONMENT: environment,
         },
       })
   }
-  return createInMemoryDriver()
+
+  if (options.deployment.mode === "local") {
+    return createInMemoryDriver({
+      defaultEnvironment: environment,
+      ...(options.oneShot ? { disableScheduleRunner: true } : {}),
+    })
+  }
+  if (options.deployment.mode !== "self-hosted") {
+    throw new Error(
+      `deployment.providers.workflows="self-hosted" is not supported in ${options.deployment.mode} mode.`,
+    )
+  }
+
+  const databaseUrl = resolveWorkflowDatabaseUrl(options.env)
+  let connection = selfHostedWorkflowConnections.get(databaseUrl)
+  if (!connection) {
+    connection = createPostgresConnection({ databaseUrl })
+    selfHostedWorkflowConnections.set(databaseUrl, connection)
+  }
+  return createStandaloneDriver({
+    db: connection.db,
+    defaultEnvironment: environment,
+    ...(options.oneShot ? { disableScheduleRunner: true, disableTimeWheel: true } : {}),
+  })
+}
+
+function createVoyantNodeWorkflowConfig(options: CreateVoyantNodeWorkflowDriverOptions) {
+  const provider = assertVoyantNodeWorkflowProviderConfigured(options.deployment, options.env)
+  if (provider === "none") return undefined
+  return {
+    driver: (bindings: unknown) =>
+      createVoyantNodeWorkflowDriver({
+        ...options,
+        env: bindings as VoyantNodeRuntimeEnv,
+      })!,
+    environment: options.env.VOYANT_CLOUD_ENVIRONMENT ?? "development",
+    projectId: options.env.VOYANT_CLOUD_APP_SLUG ?? options.defaultAppSlug,
+  }
+}
+
+function assertVoyantNodeWorkflowProviderConfigured(
+  deployment: VoyantNodeRuntimeDeployment,
+  env: VoyantNodeRuntimeEnv,
+): VoyantNodeWorkflowProvider {
+  const provider = resolveVoyantNodeWorkflowProvider(deployment.providers.workflows)
+  if (provider === "voyant-cloud") {
+    requireWorkflowEnv(env.VOYANT_CLOUD_WORKFLOWS_URL, "VOYANT_CLOUD_WORKFLOWS_URL")
+    requireWorkflowEnv(
+      env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
+      "VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN",
+    )
+  } else if (provider === "self-hosted" && deployment.mode === "self-hosted") {
+    resolveWorkflowDatabaseUrl(env)
+  } else if (provider === "self-hosted" && deployment.mode === "managed-cloud") {
+    throw new Error(
+      'deployment.providers.workflows="self-hosted" is not supported in managed-cloud mode.',
+    )
+  }
+  return provider
+}
+
+function resolveWorkflowDatabaseUrl(env: VoyantNodeRuntimeEnv): string {
+  const databaseUrl = env.DATABASE_URL_DIRECT?.trim() || env.DATABASE_URL?.trim()
+  if (!databaseUrl) {
+    throw new Error(
+      'deployment.providers.workflows="self-hosted" requires DATABASE_URL or DATABASE_URL_DIRECT.',
+    )
+  }
+  return databaseUrl
+}
+
+function requireWorkflowEnv(value: string | undefined, name: string): string {
+  const normalized = value?.trim()
+  if (!normalized) {
+    throw new Error(`deployment.providers.workflows="voyant-cloud" requires ${name}.`)
+  }
+  return normalized
 }
 
 /**

@@ -26,7 +26,12 @@ function factoryContext<T>(
     unitId: "quotes-test",
     projectConfig: {},
     api,
-    graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+    graph: {
+      providerSelections: {},
+      accessCatalog: { resources: [], presets: [] },
+      references: [],
+      tools: [],
+    },
     runtimePorts: {},
     hasPort: () => true,
     getPort: vi.fn(async () => provider) as never,

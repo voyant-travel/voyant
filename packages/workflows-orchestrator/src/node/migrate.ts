@@ -91,7 +91,7 @@ export async function loadPostgresMigrations(dir: string): Promise<PostgresMigra
 }
 
 export function defaultMigrationsDir(): string {
-  return fileURLToPath(new URL("../../drizzle", import.meta.url))
+  return fileURLToPath(new URL("../../migrations", import.meta.url))
 }
 
 function isAlreadyAppliedSchemaError(err: unknown): boolean {

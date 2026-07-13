@@ -281,6 +281,52 @@ describe("framework project resolver", () => {
     ])
   })
 
+  it("includes orchestrator migrations only for the self-hosted workflow provider", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/loyalty",
+      manifest: `export default ${JSON.stringify(moduleManifest("@acme/loyalty"))}\n`,
+    })
+
+    const selfHosted = await resolve(
+      root,
+      defineProject({
+        modules: ["@acme/loyalty"],
+        deployment: {
+          mode: "self-hosted",
+          providers: { workflows: "self-hosted" },
+        },
+      }),
+    )
+    const disabled = await resolve(
+      root,
+      defineProject({
+        modules: ["@acme/loyalty"],
+        deployment: { mode: "self-hosted", providers: { workflows: "none" } },
+      }),
+    )
+
+    expect(selfHosted.artifacts.migrationPlan.migrations).toEqual([
+      expect.objectContaining({ id: "@acme/loyalty#migrations", order: 0 }),
+      {
+        id: "@voyant-travel/workflows-orchestrator#migrations",
+        migrationKind: "schema",
+        order: 1,
+        idempotencyKey: "schema:@voyant-travel/workflows-orchestrator#migrations",
+        owner: "@voyant-travel/workflows-orchestrator",
+        packageName: "@voyant-travel/workflows-orchestrator",
+        source: {
+          kind: "package",
+          packageName: "@voyant-travel/workflows-orchestrator",
+          path: "./migrations",
+        },
+      },
+    ])
+    expect(disabled.artifacts.migrationPlan.migrations.map((migration) => migration.id)).toEqual([
+      "@acme/loyalty#migrations",
+    ])
+  })
+
   it("removes deselected package migrations from the Node runtime plan", async () => {
     const root = projectRoot()
     for (const packageName of ["@acme/foundation", "@acme/feature"]) {

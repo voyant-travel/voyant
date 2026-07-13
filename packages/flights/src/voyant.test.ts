@@ -114,7 +114,12 @@ describe("flights deployment manifest", () => {
       unitId: "@voyant-travel/flights",
       projectConfig: {},
       api: flightsVoyantModule.api ?? [],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => provider) as never,

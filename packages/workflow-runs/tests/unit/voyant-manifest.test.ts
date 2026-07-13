@@ -38,13 +38,6 @@ describe("workflow-runs deployment manifest", () => {
           source: "./migrations",
         },
       ],
-      config: [
-        {
-          id: "@voyant-travel/workflow-runs#config.admin-surface",
-          key: "VOYANT_WORKFLOW_ADMIN_SURFACE",
-          default: "tenant",
-        },
-      ],
       resources: [{ id: "@voyant-travel/workflow-runs#resource.database", kind: "database" }],
       access: {
         resources: [
@@ -62,6 +55,7 @@ describe("workflow-runs deployment manifest", () => {
       },
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
+    expect(workflowRunsVoyantModule.config).toBeUndefined()
   })
 
   it("exports a runtime factory for the existing absolute admin routes", () => {

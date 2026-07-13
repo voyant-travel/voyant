@@ -64,38 +64,41 @@ runtime. Self-host runtime imports use `@voyant-travel/workflows-orchestrator/se
 which uses Postgres for run records, wakeups, manifests, schedules, and admin
 queries.
 
-## Application Wiring
+## Deployment Provider Authority
 
-Self-host apps wire the Postgres driver:
+The resolved `deployment.providers.workflows` value is the only workflow-driver
+selector. Environment variables configure the selected provider; they never
+select one.
 
-```ts
-createApp({
-  workflows: {
-    driver: () => createStandaloneDriver({ db }),
-  },
-})
-```
+| Deployment mode | Provider | Runtime behavior |
+| --- | --- | --- |
+| `local` | `self-hosted` | In-memory local adapter |
+| `self-hosted` | `self-hosted` | Postgres standalone driver |
+| any | `voyant-cloud` | Cloud forwarding; URL and token are required |
+| any | `none` | No workflow manifest, event forwarding, or scheduled dispatch |
 
-Cloud-hosted or Cloud-connected apps forward to the managed Cloud API:
+`managed-cloud` plus `self-hosted` is invalid. Managed deployment snapshots
+must declare `voyant-cloud` before deploying a runtime that enforces this
+contract.
 
-```ts
-createApp({
-  workflows: {
-    driver: () =>
-      createCloudWorkflowDriver({
-        env: {
-          VOYANT_CLOUD_WORKFLOWS_URL: env.VOYANT_CLOUD_WORKFLOWS_URL,
-          VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN: env.VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN,
-          VOYANT_CLOUD_APP_SLUG: env.VOYANT_CLOUD_APP_SLUG,
-          VOYANT_CLOUD_ENVIRONMENT: env.VOYANT_CLOUD_ENVIRONMENT,
-        },
-      }),
-  },
-})
-```
+The standard Operator distribution declares `self-hosted`, so local development
+stays lightweight while deployed self-hosted applications use durable Postgres
+execution. Projects may explicitly select `none` when they do not use workflows.
 
-The `workflows` option remains explicit. Avoid environment probing that silently
-switches drivers.
+Workflow Runs admin routes derive control-plane ownership from the same resolved
+provider selection: `self-hosted` enables tenant actions, `voyant-cloud` leaves
+reads available but reserves actions for Cloud, and `none` disables actions.
+Environment variables do not select this route behavior.
+
+The generated migration plan includes the committed
+`@voyant-travel/workflows-orchestrator#migrations` source only for the
+`self-hosted` provider. Run `voyant migrate` before first boot so run, manifest,
+and wakeup tables exist.
+
+Resident self-hosted drivers keep the schedule runner and persistent time wheel
+active. A Node scheduled-event invocation is one-shot: it reuses the
+process-cached Postgres connection, disables both background loops on the driver,
+and shuts the driver down after trigger success or failure.
 
 ## Bundle Bootstrap Contract
 
@@ -163,5 +166,7 @@ run-bearing workflow modules. Workflow bundle entrypoints still import the full
 - Prefer Node/Postgres for new self-host workflow runtime work.
 - Prefer `@voyant-travel/workflows/client` and
   `createCloudWorkflowDriver(...)` for managed Cloud app bundles.
+- Select the implementation through `deployment.providers.workflows`; credentials
+  must never change provider selection.
 - Do not reintroduce Cloudflare workflow runtime adapter packages or external
   step-server packages.

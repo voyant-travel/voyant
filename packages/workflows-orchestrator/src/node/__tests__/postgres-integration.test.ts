@@ -13,7 +13,7 @@ import type { WakeupStore } from "../wakeup-store.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip
-const migrationsFolder = resolve(fileURLToPath(new URL("../../../", import.meta.url)), "drizzle")
+const migrationsFolder = resolve(fileURLToPath(new URL("../../../", import.meta.url)), "migrations")
 
 describeIfDb("postgres integration", () => {
   const now = () => 1_700_000_000_000

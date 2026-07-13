@@ -46,19 +46,23 @@ export async function runScheduledWorkflow(
     services: loaded.services,
     logger: runtime.logger ?? defaultLogger,
   })
-  const manifest = await buildManifest({
-    projectId: runtime.projectId,
-    environment: runtime.environment,
-    workflows: loaded.workflows.map((workflow) => ({ id: workflow.id, config: workflow.config })),
-    eventFilters: loaded.eventFilters,
-  })
+  try {
+    const manifest = await buildManifest({
+      projectId: runtime.projectId,
+      environment: runtime.environment,
+      workflows: loaded.workflows.map((workflow) => ({ id: workflow.id, config: workflow.config })),
+      eventFilters: loaded.eventFilters,
+    })
 
-  await driver.registerManifest({ environment: runtime.environment, manifest })
-  await driver.trigger(job.workflowId, job.input ?? {}, {
-    environment: runtime.environment,
-    idempotencyKey: `scheduled:${job.id}:${event.scheduledTime ?? runtime.now?.() ?? Date.now()}`,
-    tags: ["scheduled", `schedule:${job.id}`],
-  })
+    await driver.registerManifest({ environment: runtime.environment, manifest })
+    await driver.trigger(job.workflowId, job.input ?? {}, {
+      environment: runtime.environment,
+      idempotencyKey: `scheduled:${job.id}:${event.scheduledTime ?? runtime.now?.() ?? Date.now()}`,
+      tags: ["scheduled", `schedule:${job.id}`],
+    })
+  } finally {
+    await driver.shutdown?.()
+  }
 }
 
 const defaultLogger: DriverFactoryDeps["logger"] = (level, message, data) => {

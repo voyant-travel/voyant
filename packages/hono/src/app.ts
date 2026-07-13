@@ -637,17 +637,6 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (query) {
       c.set("query", query)
     }
-    // Bootstrap (fires once, idempotent) — resolves the workflow driver
-    // with c.env-supplied bindings on the first request, so deferred
-    // driver construction sees real runtime bindings (reviewer P2.1).
-    await ensureRuntimeBootstrapped(c.env)
-    if (workflowDriver) {
-      // Surfaced on `c.var.workflowDriver` so HTTP route handlers can
-      // call `driver.trigger(...)` directly without re-resolving from
-      // the container. Also used by the optional HTTP ingest adapter
-      // (`mountHttpIngestAdapter` from `@voyant-travel/workflows/http-ingest`).
-      c.set("workflowDriver", workflowDriver)
-    }
     return next()
   })
 
@@ -686,6 +675,14 @@ export function mountApp<TBindings extends VoyantBindings>(
     "*",
     db(dbSource, { requiresTransactionalDb: txRequiringModules, basePath: config.basePath }),
   )
+
+  app.use("*", async (c, next) => {
+    // Bootstrap only after auth has admitted the request. Rejected requests
+    // must not initialize package runtimes or contact workflow infrastructure.
+    await ensureRuntimeBootstrapped(c.env)
+    if (workflowDriver) c.set("workflowDriver", workflowDriver)
+    return next()
+  })
 
   if (createRequestLinkService) {
     app.use("*", async (c, next) => {

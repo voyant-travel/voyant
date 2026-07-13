@@ -212,8 +212,9 @@ describe("workflow-runs admin routes", () => {
     }
   })
 
-  test("defaults to cloud surface when managed Cloud workflow env is present", async () => {
+  test("does not infer provider ownership from environment", async () => {
     vi.stubEnv("VOYANT_CLOUD_WORKFLOWS_URL", "https://api.voyant.test")
+    vi.stubEnv("VOYANT_WORKFLOW_ADMIN_SURFACE", "cloud")
     const registry = new WorkflowRunnerRegistry()
     let calls = 0
     registry.register(
@@ -233,11 +234,11 @@ describe("workflow-runs admin routes", () => {
       body: JSON.stringify({ input: {} }),
     })
 
-    expect(res.status).toBe(403)
-    expect((await res.json()) as { surface: WorkflowAdminSurface }).toMatchObject({
-      surface: "cloud",
+    expect(res.status).toBe(202)
+    expect((await res.json()) as { data: { runId: string } }).toMatchObject({
+      data: { runId: "run_blocked" },
     })
-    expect(calls).toBe(0)
+    expect(calls).toBe(1)
   })
 
   test("keeps workflow run reads available when cloud surface gates actions", async () => {

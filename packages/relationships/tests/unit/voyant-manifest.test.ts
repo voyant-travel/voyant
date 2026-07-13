@@ -48,7 +48,12 @@ describe("relationships deployment manifest", () => {
       unitId: relationshipsVoyantModule.id,
       projectConfig: {},
       api: relationshipsVoyantModule.api ?? [],
-      graph: { accessCatalog: { resources: [], presets: [] }, references: [], tools: [] },
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
       runtimePorts: {},
       hasPort: () => true,
       getPort: vi.fn(async () => ({ customFields })) as never,
