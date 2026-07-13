@@ -100,7 +100,6 @@
     "verify:fast": "pnpm lint:changed && pnpm verify:agent-quality:changed && pnpm verify:operator-product-ui-authority && pnpm verify:date-picker-single-source && pnpm verify:ui-components-barrel && pnpm verify:ui-orientation-selectors && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck:affected && pnpm test:affected && pnpm verify:architecture",
     "verify:full": "pnpm lint && pnpm verify:agent-quality && pnpm verify:operator-product-ui-authority && pnpm verify:date-picker-single-source && pnpm verify:ui-components-barrel && pnpm verify:ui-orientation-selectors && pnpm verify:native-date-inputs && pnpm verify:raw-minor-unit-labels && pnpm typecheck && pnpm test && pnpm verify:architecture && pnpm verify:release-config && pnpm build && pnpm verify:package-exports && pnpm verify:publish-tarballs && pnpm i18n:check",
     "prepare": "husky",
-    "seed:operator": "pnpm -C apps/scripts seed:operator",
     "regen:routes": "tsx scripts/regen-route-tree.ts",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 turbo run typecheck --continue",
     "typecheck:affected": "turbo run typecheck --affected --continue --output-logs=new-only",

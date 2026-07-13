@@ -75,10 +75,10 @@ workload class well. On Node none of it is necessary.
   as a compatible alias, so either value satisfies pre-boot validation. The
   graph also verifies Postgres/Redis connection URLs and S3-compatible endpoints
   before boot.
-- **Crons:** declared runtime-neutrally in `src/scheduled-crons.ts`
-  (`OPERATOR_CRON_JOBS`). On Node they can't run on a timer inside the process, so
-  `pnpm --filter operator emit:cloud-scheduler` fans them out to Cloud Scheduler
-  jobs that POST `/__voyant/scheduled?schedule=<stable-id>` with the
+- **Crons:** declared runtime-neutrally by selected package manifests. On Node
+  they can't run on a timer inside the process, so deployment tooling consumes
+  the admitted graph and fans them out to Cloud Scheduler jobs that POST
+  `/__voyant/scheduled?schedule=<stable-id>` with the
   origin-trust header. During rollout the emitted URL also carries `cron` as a
   compatibility fallback for older runtimes.
 - **CI:** the `node-smoke` job builds the operator, boots it under Node, and

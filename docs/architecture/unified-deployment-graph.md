@@ -1729,6 +1729,13 @@ valid evidence for this milestone.
 
 ### `voyant#3080` completion
 
+The standard project does not own migration, environment-validation,
+scheduler-provisioning, or product-demo scripts. Migrations execute through the
+external CLI from the admitted graph. Runtime boot validates graph-selected
+resources, scheduler provisioning consumes framework graph APIs, and destructive
+product fixtures live in `examples/operator-demo`. Generated projects retain an
+empty `src/scripts/seed.ts` only for project-owned data.
+
 The issue is complete only when:
 
 - presets scaffold an explicit graph and named profiles have no runtime meaning

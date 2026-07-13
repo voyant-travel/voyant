@@ -201,6 +201,34 @@ test("rejects restored Catalog operational authority in the checked-in starter",
   }
 })
 
+test("rejects restored generic or demo operational scripts in the checked-in starter", () => {
+  for (const relativePath of [
+    "apps/scripts/package.json",
+    "starters/operator/scripts/seed.ts",
+    "starters/operator/scripts/seed-catalog-verticals.ts",
+    "starters/operator/scripts/seed-catalog-verticals.test.ts",
+    "starters/operator/scripts/migrate.ts",
+    "starters/operator/scripts/migrate.test.ts",
+    "starters/operator/scripts/check-deployment-graph-env.ts",
+    "starters/operator/scripts/emit-cloud-scheduler.ts",
+    "starters/operator/scripts/env-preload.cjs",
+  ]) {
+    const starter = fixture()
+    const root = mkdtempSync(join(tmpdir(), "voyant-standard-node-repository-"))
+    roots.push(root)
+    const script = join(root, relativePath)
+    mkdirSync(dirname(script), { recursive: true })
+    writeFileSync(script, "export const starterOperationalAuthority = true\n")
+    assert.throws(
+      () => run(starter, root),
+      (error) =>
+        String(error.stderr).includes(
+          `standard starter operational authority must stay deleted: ${relativePath}`,
+        ),
+    )
+  }
+})
+
 function run(starterDir, root = repoRoot) {
   return execFileSync(process.execPath, [checker, "--root", root, "--starter-dir", starterDir], {
     cwd: repoRoot,

@@ -7,7 +7,7 @@ import { cruisePrices, cruiseSailings, cruises } from "@voyant-travel/cruises/sc
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { seedAccommodationRooms, seedCruises } from "./seed-catalog-verticals"
 
-describe("catalog vertical seed booking inventory", () => {
+describe("operator demo catalog vertical booking inventory", () => {
   afterEach(() => {
     vi.useRealTimers()
   })

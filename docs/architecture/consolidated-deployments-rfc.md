@@ -47,7 +47,7 @@ This RFC supersedes part of the "no central assembly package" decision: that dec
 | Admin extension factories | **Generated** | `src/admin.extensions.generated.ts` |
 | Admin chrome (remaining) | **Hand-wired**: nav icon map + label keys (`route.tsx`) + route message providers (`admin-extensions.tsx:190`) | `src/routes/_workspace/route.tsx`, `src/lib/admin-extensions.tsx` |
 | Schemas | **Derived** from `voyant.config` → `drizzle.schemas.generated.ts` (drift-checked) | `starters/operator/drizzle.config.ts` |
-| Migrations | **Deployment-generated** into one combined folder + journal; one derived schema set + one migration history; cross-module link tables folded in (`drizzle.links.generated.ts`); not package-owned | `starters/operator/migrations/`, `scripts/migrate.ts`, `migration-resilience-rfc.md` (#1608) |
+| Migrations | **Package-owned** and selected by the admitted graph; the external CLI executes the generated migration plan | package manifests, `.voyant/migration-plan.generated.json`, `voyant migrate` |
 | Versioning | changesets with **per-domain `fixed` groups** (`[module, module-react]`); domains version independently | `.changeset/config.json` |
 | Drift guard | `voyant db doctor --fail-on-drift` gates CI (manifest resolvability, schema parity, generated-manifest freshness, duplicate prefixes, link-table snapshot) | CLI, `schema-discipline.md` |
 

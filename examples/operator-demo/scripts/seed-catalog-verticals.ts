@@ -1,7 +1,7 @@
 // @ts-nocheck -- legacy seed fixture typing cleanup is tracked separately from demo data edits.
 // agent-quality: file-size exception -- curated vertical fixture data stays together for reproducible demo resets.
 /**
- * Operator catalog-vertical seed helpers.
+ * Operator demo catalog-vertical seed helpers.
  *
  * Inserts realistic sample rows into the four "extra" verticals that the
  * operator catalog browse surface knows how to index — extras, cruises,

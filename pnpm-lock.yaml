@@ -233,11 +233,23 @@ importers:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
-  apps/scripts:
+  examples/operator-demo:
     dependencies:
+      '@voyant-travel/accommodations':
+        specifier: workspace:^
+        version: link:../../packages/accommodations
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../../packages/bookings
+      '@voyant-travel/charters':
+        specifier: workspace:^
+        version: link:../../packages/charters
+      '@voyant-travel/commerce':
+        specifier: workspace:^
+        version: link:../../packages/commerce
+      '@voyant-travel/cruises':
+        specifier: workspace:^
+        version: link:../../packages/cruises
       '@voyant-travel/db':
         specifier: workspace:^
         version: link:../../packages/db
@@ -247,9 +259,15 @@ importers:
       '@voyant-travel/finance':
         specifier: workspace:^
         version: link:../../packages/finance
+      '@voyant-travel/identity':
+        specifier: workspace:^
+        version: link:../../packages/identity
       '@voyant-travel/inventory':
         specifier: workspace:^
         version: link:../../packages/inventory
+      '@voyant-travel/legal':
+        specifier: workspace:^
+        version: link:../../packages/legal
       '@voyant-travel/operations':
         specifier: workspace:^
         version: link:../../packages/operations
@@ -259,6 +277,9 @@ importers:
       '@voyant-travel/relationships':
         specifier: workspace:^
         version: link:../../packages/relationships
+      better-auth:
+        specifier: 1.6.23
+        version: 1.6.23
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -281,6 +302,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@types/debug@4.1.13)(@types/node@25.5.2)(@vitest/browser@4.1.9)(happy-dom@20.8.4)(jsdom@28.1.0)(lightningcss@1.32.0)(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(terser@5.46.0)
 
   packages/accommodations:
     dependencies:

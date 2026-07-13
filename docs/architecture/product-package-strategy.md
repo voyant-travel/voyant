@@ -1382,6 +1382,6 @@ stay unchanged.
 | --- | --- | --- |
 | `operator` template | Keep as the reference product assembly. | The template should change after package seams settle, because it is the proof that product modes compose cleanly. |
 | Internal dev-agent tooling | Keep outside the Voyant workspace. | Agent queue, remote sandbox, browser evidence, and code-execution tooling lives in `../internal-dev-agent`, not in the product monorepo. |
-| `@voyant-travel/scripts` | Keep as repository automation. | This is not part of the product package topology. |
+| `examples/operator-demo` | Keep as a private example fixture. | Product-specific seed data is not standard starter or product package authority. |
 | `catalog-demo-api`, `flights-demo-api` | Keep as demo applications. | These may need dependency updates after Catalog, Inventory, or Flights package moves, but they should not drive Module boundaries. |
 | Workflow dashboard/self-host example apps (removed) | Deleted. | The standalone `workflow-runs-dashboard`, `workflows-local-dashboard`, and `workflows-selfhost-node-server` apps were redundant: self-hosting composes the `@voyant-travel/workflows-orchestrator` `./selfhost` runtime with the `@voyant-travel/workflows-react/ui` dashboard, so no in-repo example app is required. |

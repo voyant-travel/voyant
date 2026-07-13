@@ -218,9 +218,18 @@ function inspectRepositoryAuthority(repoRoot) {
     "starters/operator/scripts/seed-flights-reference-airports-europe.ts",
     "starters/operator/scripts/seed-flights-reference-airports-global.ts",
     "starters/operator/scripts/seed-flights-reference-types.ts",
+    "apps/scripts/package.json",
+    "starters/operator/scripts/seed.ts",
+    "starters/operator/scripts/seed-catalog-verticals.ts",
+    "starters/operator/scripts/seed-catalog-verticals.test.ts",
+    "starters/operator/scripts/migrate.ts",
+    "starters/operator/scripts/migrate.test.ts",
+    "starters/operator/scripts/check-deployment-graph-env.ts",
+    "starters/operator/scripts/emit-cloud-scheduler.ts",
+    "starters/operator/scripts/env-preload.cjs",
   ]) {
     if (existsSync(join(repoRoot, relativePath))) {
-      violations.push(`Flights reference fixture must remain package-owned: ${relativePath}`)
+      violations.push(`standard starter operational authority must stay deleted: ${relativePath}`)
     }
   }
 

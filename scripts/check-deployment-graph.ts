@@ -532,20 +532,11 @@ async function main(): Promise<void> {
     }
   }
 
-  const operatorMigrateSource = await readFile(
-    new URL("../starters/operator/scripts/migrate.ts", import.meta.url),
-    "utf8",
-  )
-  if (operatorMigrateSource.includes("drizzle.schemas.generated")) {
-    failures.push("expected operator db:migrate to avoid importing drizzle.schemas.generated.ts")
-  }
-  if (
-    !operatorMigrateSource.includes("createProjectMigrationPlan(options.graph)") ||
-    !operatorMigrateSource.includes("executeNodeMigrationPlan(")
-  ) {
-    failures.push(
-      "expected operator db:migrate to derive and execute the admitted graph migration plan",
-    )
+  const operatorPackage = JSON.parse(
+    await readFile(new URL("../starters/operator/package.json", import.meta.url), "utf8"),
+  ) as { scripts?: Record<string, string> }
+  if (!operatorPackage.scripts?.["db:migrate"]?.includes("voyant migrate")) {
+    failures.push("expected operator db:migrate to delegate to the graph-native external CLI")
   }
   const deploymentGraphEmitterSource = await readFile(
     new URL("./emit-deployment-graph.ts", import.meta.url),
