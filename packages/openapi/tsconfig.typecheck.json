@@ -1563,6 +1563,7 @@
       "@voyant-travel/runtime-core/worker-fetch": ["../runtime-core/dist/worker-fetch.d.ts"],
       "@voyant-travel/runtime/deployment-resources": ["../runtime/dist/deployment-resources.d.ts"],
       "@voyant-travel/runtime/openapi": ["../runtime/dist/openapi.d.ts"],
+      "@voyant-travel/runtime/tooling": ["../runtime/dist/tooling.d.ts"],
       "@voyant-travel/runtime/workflow-entry": ["../runtime/dist/workflow-entry.d.ts"],
       "@voyant-travel/schema-kit": ["../schema-kit/dist/index.d.ts"],
       "@voyant-travel/schema-kit/kms": ["../schema-kit/dist/kms.d.ts"],
