@@ -299,7 +299,7 @@ async function generateRouteTree(options: ProjectRouteGenerationOptions): Promis
 export async function loadStandardRouteFiles(
   projectRoot: string,
 ): Promise<readonly VoyantGeneratedRouteFile[]> {
-  const productBomId = await loadProductBomId(projectRoot)
+  const { productBomId, presentationIds } = await loadProductBomSelection(projectRoot)
   const routeFilesExport = `${productBomId}/${PRODUCT_ROUTE_FILES_EXPORT}`
   const resolveFromProject = createRequire(path.join(projectRoot, "package.json"))
   let resolved: string
@@ -313,16 +313,28 @@ export async function loadStandardRouteFiles(
   }
 
   const module = (await importProjectModule(resolved)) as {
-    standardOperatorRouteFiles?: unknown
+    createStandardOperatorRouteFiles?: unknown
   }
 
-  if (!isGeneratedRouteFileArray(module.standardOperatorRouteFiles)) {
-    throw new TypeError(`${routeFilesExport} must export standardOperatorRouteFiles as an array`)
+  if (typeof module.createStandardOperatorRouteFiles !== "function") {
+    throw new TypeError(
+      `${routeFilesExport} must export createStandardOperatorRouteFiles as a function`,
+    )
   }
-  return module.standardOperatorRouteFiles
+  const files = module.createStandardOperatorRouteFiles({ presentationIds })
+  if (!isGeneratedRouteFileArray(files)) {
+    throw new TypeError(`${routeFilesExport} createStandardOperatorRouteFiles must return an array`)
+  }
+  return files
 }
 
 export async function loadProductBomId(projectRoot: string): Promise<string> {
+  return (await loadProductBomSelection(projectRoot)).productBomId
+}
+
+async function loadProductBomSelection(
+  projectRoot: string,
+): Promise<{ productBomId: string; presentationIds: readonly string[] }> {
   const artifactPath = path.join(projectRoot, PRODUCT_BOM_ARTIFACT)
   let source: string
   try {
@@ -354,7 +366,13 @@ export async function loadProductBomId(projectRoot: string): Promise<string> {
       `Voyant product BOM artifact at ${artifactPath} must declare productBom.id as a canonical package name.`,
     )
   }
-  return productBomId
+  const presentationIds = (artifact as { graph?: { presentations?: unknown } }).graph?.presentations
+  if (!Array.isArray(presentationIds) || presentationIds.some((id) => typeof id !== "string")) {
+    throw new TypeError(
+      `Voyant product BOM artifact at ${artifactPath} must declare graph.presentations as a string array.`,
+    )
+  }
+  return { productBomId, presentationIds }
 }
 
 async function pathExists(file: string): Promise<boolean> {

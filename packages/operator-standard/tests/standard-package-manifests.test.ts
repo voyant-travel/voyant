@@ -36,8 +36,28 @@ describe("standard package manifests", () => {
     })
   })
 
-  it("accepts established route-relative anonymous manifest paths", () => {
+  it("keeps the Storefront presentation as selected graph authority", async () => {
     expect(validateGraphUnitManifest(storefrontVoyantModule)).toEqual([])
     expect(validateGraphUnitManifest(financeVoyantModule)).toEqual([])
+    expect(storefrontVoyantModule.meta).not.toHaveProperty("presentation")
+
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({ modules: [storefrontVoyantModule] }),
+      target: "node",
+      mode: "self-hosted",
+      packageRecords: [
+        { packageName: "@voyant-travel/storefront", source: { kind: "workspace" } },
+        { packageName: "@voyant-travel/storefront-react", source: { kind: "workspace" } },
+      ],
+    })
+    expect(graph.modules[0]?.presentations).toEqual([
+      {
+        id: "@voyant-travel/storefront#presentation.customer",
+        runtime: {
+          entry: "@voyant-travel/storefront-react/storefront",
+          export: "createStorefrontPresentationContribution",
+        },
+      },
+    ])
   })
 })

@@ -178,17 +178,18 @@ function declarationPaths(root, generatedRoot) {
 
 function routeGeneratorSource() {
   return `import { Generator, getConfig } from "@tanstack/router-generator"
-import { standardOperatorRouteFiles } from "@voyant-travel/operator-standard/standard-route-files"
+import { createStandardOperatorRouteFiles } from "@voyant-travel/operator-standard/standard-route-files"
 import {
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   voyantGeneratedRoutes,
 } from "@voyant-travel/vite-config"
 import { fileURLToPath } from "node:url"
+import productBom from "./product-bom.generated.json" with { type: "json" }
 
 const appRoot = fileURLToPath(new URL("..", import.meta.url))
 const generatedRoutes = voyantGeneratedRoutes({
   appRootUrl: new URL("../generated-config-anchor.ts", import.meta.url).href,
-  files: standardOperatorRouteFiles,
+  files: createStandardOperatorRouteFiles({ presentationIds: productBom.graph.presentations }),
 })
 const config = getConfig(
   {
@@ -210,7 +211,7 @@ function viteConfigSource() {
 import { devtools } from "@tanstack/devtools-vite"
 import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
-import { standardOperatorRouteFiles } from "@voyant-travel/operator-standard/standard-route-files"
+import { createStandardOperatorRouteFiles } from "@voyant-travel/operator-standard/standard-route-files"
 import {
   createAnalyzePlugin,
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
@@ -218,11 +219,12 @@ import {
   voyantStartViteConfig,
 } from "@voyant-travel/vite-config"
 import { defineConfig } from "vite"
+import productBom from "./product-bom.generated.json" with { type: "json" }
 
 const appRootUrl = new URL("../generated-config-anchor.ts", import.meta.url).href
 const generatedRoutes = voyantGeneratedRoutes({
   appRootUrl,
-  files: standardOperatorRouteFiles,
+  files: createStandardOperatorRouteFiles({ presentationIds: productBom.graph.presentations }),
 })
 
 export default defineConfig(

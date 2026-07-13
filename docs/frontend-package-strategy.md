@@ -18,15 +18,17 @@ Voyant separates frontend acceleration into three layers:
    provide hooks, query keys, typed clients, providers, frontend view-model
    helpers, and reusable components that are not specific to one app shell.
 
-`admin`, `storefront`, and app/starter packages own shell composition,
+`admin`, `storefront`, and product-distribution packages own shell composition,
 navigation, page assembly, and deployment-specific presentation.
 
-The standard operator is the exception to starter ownership: its complete
-frontend shell is versioned in `@voyant-travel/admin-host`. The operator starter
-retains only generated graph inputs, project extension folders, and generic
-router/Start/style entrypoints. Standard providers, auth and i18n adapters,
-public/storefront routes, API documentation, and product presentation must not
-be copied into `starters/operator/src`.
+The standard Operator product shell is versioned in
+`@voyant-travel/operator-standard`; `@voyant-travel/admin-host` remains the
+product-neutral workspace host. The operator starter retains only generated
+graph inputs, project extension folders, and generic router/Start/style
+entrypoints. Package manifests select presentation factories, and generated
+artifacts connect those factories to the product shell. Standard providers,
+auth and i18n adapters, public/storefront routes, API documentation, and product
+presentation must not be copied into `starters/operator/src`.
 
 ## Why This Split Exists
 

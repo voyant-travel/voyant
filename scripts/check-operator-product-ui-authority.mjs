@@ -168,7 +168,8 @@ const requiredTokens = new Map([
       'from "@voyant-travel/inventory-react/storefront"',
       'from "@voyant-travel/storefront-react/storefront"',
       'from "@voyant-travel/trips-react/storefront"',
-      "createStorefrontPresentationContribution",
+      "presentationFactories",
+      '"@voyant-travel/storefront#presentation.customer"',
       "createFinancePublicRouteContribution",
       "createQuotesPublicRouteContribution",
       "createAdminHostPresentation",
@@ -192,10 +193,20 @@ const requiredTokens = new Map([
     "packages/operator-standard/src/standard-route-files.ts",
     [
       "../../admin/selected-graph-admin.generated",
+      "../../presentations/selected-graph-presentations.generated",
+      "selectedGraphPresentationFactories",
       'import.meta.glob("../../../src/admin/*/index.tsx"',
     ],
   ],
 ])
+
+const standardFrontend = readFileSync(
+  join(root, "packages/operator-standard/src/standard-frontend.tsx"),
+  "utf8",
+)
+if (standardFrontend.includes("createStorefrontPresentationContribution")) {
+  failures.push("operator-standard must consume the graph-selected Storefront presentation factory")
+}
 
 for (const [relativePath, tokens] of requiredTokens) {
   const path = join(root, relativePath)

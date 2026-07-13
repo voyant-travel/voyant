@@ -67,6 +67,42 @@ describe("deployment graph v1", () => {
     expect(graph.plugins.map((unit) => unit.id)).toEqual(["@acme/voyant-fiscal#smartbill"])
   })
 
+  it("validates and normalizes package-owned presentation factories", async () => {
+    const module = defineModule({
+      id: "@acme/storefront",
+      presentations: [
+        {
+          id: "@acme/storefront#presentation.partner",
+          runtime: { entry: "./partner", export: "createPartnerPresentation" },
+        },
+        {
+          id: "@acme/storefront#presentation.customer",
+          runtime: { entry: "./customer", export: "createCustomerPresentation" },
+        },
+      ],
+    })
+
+    expect(validateGraphUnitManifest(module)).toEqual([])
+    expect(
+      validateGraphUnitManifest({
+        ...module,
+        presentations: [
+          { id: "@acme/storefront#presentation.invalid", runtime: { entry: "./invalid" } },
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ facet: "presentations[0].runtime.export" }),
+      ]),
+    )
+
+    const graph = await resolveDeploymentGraph({ project: defineProject({ modules: [module] }) })
+    expect(graph.modules[0]?.presentations?.map(({ id }) => id)).toEqual([
+      "@acme/storefront#presentation.customer",
+      "@acme/storefront#presentation.partner",
+    ])
+  })
+
   it("validates versioned event contracts and declarative lifecycle cleanup", () => {
     const diagnostics = validateGraphUnitManifest({
       ...defineModule({

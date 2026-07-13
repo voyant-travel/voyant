@@ -13,6 +13,7 @@ import type {
   VoyantGraphAdminDeclaration,
   VoyantGraphConfigDeclaration,
   VoyantGraphLifecycleDeclaration,
+  VoyantGraphPresentationDeclaration,
   VoyantGraphProjectAccessDeclaration,
   VoyantGraphProviderDeclaration,
   VoyantGraphResourceDeclaration,
@@ -320,6 +321,7 @@ export interface VoyantGraphUnitManifest {
   providers?: readonly VoyantGraphProviderDeclaration[]
   access?: VoyantGraphAccessDeclaration
   admin?: VoyantGraphAdminDeclaration
+  presentations?: readonly VoyantGraphPresentationDeclaration[]
   tools?: readonly VoyantGraphToolDeclaration[]
   webhooks?: readonly VoyantGraphWebhookDeclaration[]
   actions?: readonly VoyantGraphActionDeclaration[]

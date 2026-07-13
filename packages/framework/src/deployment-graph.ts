@@ -21,6 +21,7 @@ import {
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
+  type VoyantGraphPresentationDeclaration,
   type VoyantGraphProject,
   type VoyantGraphProjectDeploymentMigration,
   type VoyantGraphProjectDeploymentMode,
@@ -86,6 +87,7 @@ export {
   type VoyantGraphLifecycleDeclaration,
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
+  type VoyantGraphPresentationDeclaration,
   type VoyantGraphProject,
   type VoyantGraphProjectSelection,
   type VoyantGraphProjectSelectionProvenance,
@@ -355,6 +357,7 @@ export interface ResolvedVoyantGraphUnit {
   providers?: readonly VoyantGraphProviderDeclaration[]
   access?: VoyantGraphAccessDeclaration
   admin?: VoyantGraphAdminDeclaration
+  presentations?: readonly VoyantGraphPresentationDeclaration[]
   tools?: readonly VoyantGraphToolDeclaration[]
   webhooks?: readonly VoyantGraphWebhookDeclaration[]
   actions?: readonly VoyantGraphActionDeclaration[]
@@ -435,6 +438,7 @@ const SUPPORTED_GRAPH_UNIT_KEYS = new Set([
   "providers",
   "access",
   "admin",
+  "presentations",
   "tools",
   "webhooks",
   "actions",
@@ -1114,6 +1118,7 @@ function resolveUnit(
           },
         }
       : {}),
+    ...(unit.presentations?.length ? { presentations: sortFacetEntities(unit.presentations) } : {}),
     ...(unit.tools?.length ? { tools: sortFacetEntities(unit.tools) } : {}),
     ...(unit.webhooks?.length ? { webhooks: sortFacetEntities(unit.webhooks) } : {}),
     ...(unit.actions?.length ? { actions: sortFacetEntities(unit.actions) } : {}),
@@ -1596,6 +1601,18 @@ function validatePromotedFacets(
 
   validateAccessFacet(input.access, source, diagnostics)
   validateAdminFacet(input.admin, source, diagnostics)
+  diagnostics.push(...validateFacetEntities(input.presentations, "presentations", source))
+  validateEntityArray(input.presentations, "presentations", source, diagnostics, (entry, facet) => {
+    validateRuntimeReference(entry.runtime, `${facet}.runtime`, source, diagnostics)
+    if (!isRecord(entry.runtime) || typeof entry.runtime.export !== "string") {
+      invalidFacet(
+        `${facet}.runtime.export`,
+        source,
+        diagnostics,
+        "Presentation runtime references require a named factory export.",
+      )
+    }
+  })
   if (input.lifecycle !== undefined) {
     if (!isRecord(input.lifecycle)) {
       invalidFacet("lifecycle", source, diagnostics, "Lifecycle metadata must be an object.")
@@ -2754,6 +2771,9 @@ function validateRuntimeReferenceAdmission(
     for (const contribution of unit.admin?.contributions ?? []) {
       add(`admin.contributions.runtime.${contribution.id}.entry`, contribution.runtime)
     }
+    for (const presentation of unit.presentations ?? []) {
+      add(`presentations.runtime.${presentation.id}.entry`, presentation.runtime)
+    }
     for (const tool of unit.tools ?? []) add(`tools.runtime.${tool.id}.entry`, tool.runtime)
     for (const workflow of unit.workflows) {
       add(`workflows.runtime.${workflow.id}.entry`, workflow.runtime)
@@ -2896,6 +2916,7 @@ function unitEntityIds(unit: ResolvedVoyantGraphUnit): string[] {
     ...(unit.admin?.nav ?? []).map((entry) => entry.id),
     ...(unit.admin?.slots ?? []).map((entry) => entry.id),
     ...(unit.admin?.contributions ?? []).map((entry) => entry.id),
+    ...(unit.presentations ?? []).map((entry) => entry.id),
     ...(unit.tools ?? []).map((entry) => entry.id),
     ...(unit.webhooks ?? []).map((entry) => entry.id),
     ...(unit.actions ?? []).map((entry) => entry.id),

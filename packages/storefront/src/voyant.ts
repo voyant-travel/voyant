@@ -109,15 +109,17 @@ export const storefrontVoyantModule = defineModule({
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
-  meta: {
-    ownership: "package",
-    presentation: {
+  presentations: [
+    {
       id: "@voyant-travel/storefront#presentation.customer",
       runtime: {
         entry: "@voyant-travel/storefront-react/storefront",
         export: "createStorefrontPresentationContribution",
       },
     },
+  ],
+  meta: {
+    ownership: "package",
   },
 })
 

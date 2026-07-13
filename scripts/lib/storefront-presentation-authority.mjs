@@ -54,7 +54,8 @@ export function checkStorefrontPresentationAuthority({
     failures.push(`Storefront route hosts grew to ${hostLines} lines; ratchet is 80`)
 
   for (const token of [
-    "createStorefrontPresentationContribution",
+    '"@voyant-travel/storefront#presentation.customer"',
+    "presentationFactories",
     "StorefrontBookingPage",
     "StorefrontComposerPage",
     "CruiseDetailPage",
@@ -64,6 +65,9 @@ export function checkStorefrontPresentationAuthority({
     "useLocale().resolvedLocale",
   ]) {
     if (!hostAdapter.includes(token)) failures.push(`Storefront host adapter must contain ${token}`)
+  }
+  if (hostAdapter.includes("createStorefrontPresentationContribution")) {
+    failures.push("Storefront host adapter must not directly select the package factory")
   }
   for (const token of ["z.object", "redirect(", "createFileRoute", "CustomerAccountPage"]) {
     if (hostAdapter.includes(token)) failures.push(`Storefront host adapter must not own ${token}`)
@@ -113,6 +117,7 @@ export function checkStorefrontPresentationAuthority({
   }
 
   for (const token of [
+    "presentations: [",
     'id: "@voyant-travel/storefront#presentation.customer"',
     'entry: "@voyant-travel/storefront-react/storefront"',
     'export: "createStorefrontPresentationContribution"',

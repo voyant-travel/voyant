@@ -42,9 +42,10 @@ import { AdminWorkspaceRealtimeProvider } from "@voyant-travel/realtime-react"
 import {
   AccommodationDetailPage,
   createStorefrontMessagesProvider,
-  createStorefrontPresentationContribution,
   type StorefrontBookingRouteProps,
   type StorefrontComposerRouteProps,
+  type StorefrontPresentationContribution,
+  type StorefrontPresentationRuntime,
   useStorefrontMessages,
 } from "@voyant-travel/storefront-react/storefront"
 import { StorefrontComposerPage } from "@voyant-travel/trips-react/storefront"
@@ -79,9 +80,12 @@ export interface StandardOperatorCurrentUser {
 export interface CreateStandardOperatorFrontendOptions {
   accessCatalog: AccessCatalog
   selected: Parameters<typeof createAdminHostPresentation>[0]["selected"]
+  presentations: Readonly<Record<string, StandardOperatorPresentationFactory>>
   project?: Record<string, unknown>
   openApiSpecs?: OpenApiSpecLoaders
 }
+
+export type StandardOperatorPresentationFactory = (...args: never[]) => unknown
 
 export interface StandardOperatorFrontend {
   Providers: ComponentType<{ children: ReactNode; queryClient: QueryClient }>
@@ -92,7 +96,7 @@ export interface StandardOperatorFrontend {
     finance: ReturnType<typeof createFinancePublicRouteContribution>["routes"]
     localAuth: ReturnType<typeof createLocalAuthRouteContribution>["routes"]
     quotes: ReturnType<typeof createQuotesPublicRouteContribution>["routes"]
-    storefront: ReturnType<typeof createStorefrontPresentationContribution>["routes"]
+    storefront?: StorefrontPresentationContribution["routes"]
   }
   createRouter<TRouteTree extends AnyRoute>(options: {
     routeTree: TRouteTree
@@ -192,9 +196,15 @@ async function apiCall<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 const useStorefrontLocale = () => useLocale().resolvedLocale
 
-function createPresentationRuntime(presentation: AdminHostPresentation) {
+function createPresentationRuntime(
+  presentation: AdminHostPresentation,
+  presentationFactories: Readonly<Record<string, StandardOperatorPresentationFactory>>,
+) {
   const StorefrontMessagesProvider = createStorefrontMessagesProvider(useStorefrontLocale)
-  const storefront = createStorefrontPresentationContribution({
+  const storefrontFactory = presentationFactories[
+    "@voyant-travel/storefront#presentation.customer"
+  ] as ((runtime: StorefrontPresentationRuntime) => StorefrontPresentationContribution) | undefined
+  const storefront = storefrontFactory?.({
     BookingPage: StandardStorefrontBookingPage,
     ComposerPage: StandardStorefrontComposerPage,
     bookingSearchSchema: storefrontBookingSearchSchema,
@@ -263,7 +273,7 @@ export function createStandardOperatorFrontend(
   options: CreateStandardOperatorFrontendOptions,
 ): StandardOperatorFrontend {
   const presentation = createAdminHostPresentation(options)
-  const runtime = createPresentationRuntime(presentation)
+  const runtime = createPresentationRuntime(presentation, options.presentations)
   const AvailabilityProvider: AdminChildProvider = ({ children }) => (
     <VoyantAvailabilityProvider baseUrl={getAdminApiUrl()} fetcher={adminFetcher}>
       {children}
@@ -293,7 +303,7 @@ export function createStandardOperatorFrontend(
       finance: runtime.finance.routes,
       localAuth: runtime.localAuth.routes,
       quotes: runtime.quotes.routes,
-      storefront: runtime.storefront.routes,
+      ...(runtime.storefront ? { storefront: runtime.storefront.routes } : {}),
     },
     createRouter<TRouteTree extends AnyRoute>({
       routeTree,

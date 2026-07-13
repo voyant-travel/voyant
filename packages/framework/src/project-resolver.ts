@@ -16,6 +16,8 @@ import {
   buildGraphAccessCatalogModule,
   buildGraphAdminBundleDeclarationModule,
   buildGraphAdminBundleModule,
+  buildGraphPresentationBundleDeclarationModule,
+  buildGraphPresentationBundleModule,
   buildGraphWorkflowRuntimeModule,
   buildProjectRuntimeModule,
   createResolvedGraphRuntime,
@@ -39,6 +41,8 @@ import {
   VOYANT_PROJECT_ACCESS_CATALOG_ENTRY,
   VOYANT_PROJECT_ADMIN_BUNDLE_ENTRY,
   VOYANT_PROJECT_ADMIN_BUNDLE_TYPES_ENTRY,
+  VOYANT_PROJECT_PRESENTATION_BUNDLE_ENTRY,
+  VOYANT_PROJECT_PRESENTATION_BUNDLE_TYPES_ENTRY,
   VOYANT_PROJECT_PRODUCT_BOM_ENTRY,
   VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY,
 } from "./project-artifact-paths.js"
@@ -280,6 +284,21 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
         command: "voyant project resolve",
       }),
     },
+    {
+      path: VOYANT_PROJECT_PRESENTATION_BUNDLE_ENTRY,
+      contents: buildGraphPresentationBundleModule({
+        graph: targetNeutralGraph,
+        command: "voyant project resolve",
+        runtimeEntryOverrides,
+      }),
+    },
+    {
+      path: VOYANT_PROJECT_PRESENTATION_BUNDLE_TYPES_ENTRY,
+      contents: buildGraphPresentationBundleDeclarationModule({
+        graph: targetNeutralGraph,
+        command: "voyant project resolve",
+      }),
+    },
     ...projectWorkflowJobs.generatedFiles,
     ...subscriberLinkFiles,
     {
@@ -343,6 +362,10 @@ function buildProductBomExpansionArtifact(graph: ResolvedVoyantProjectGraph): st
         modules: graph.modules.map(({ id }) => id),
         extensions: graph.extensions.map(({ id }) => id),
         plugins: graph.plugins.map(({ id }) => id),
+        presentations: [...graph.modules, ...graph.extensions, ...graph.plugins]
+          .flatMap((unit) => unit.presentations ?? [])
+          .map(({ id }) => id)
+          .sort(),
       },
     },
     null,
@@ -577,6 +600,7 @@ function runtimePackageReferences(
     for (const copy of unit.admin?.copy ?? []) add(unit, copy.runtime)
     for (const route of unit.admin?.routes ?? []) add(unit, route.runtime)
     for (const contribution of unit.admin?.contributions ?? []) add(unit, contribution.runtime)
+    for (const presentation of unit.presentations ?? []) add(unit, presentation.runtime)
     for (const tool of unit.tools ?? []) add(unit, tool.runtime)
     for (const migration of unit.setupMigrations ?? []) add(unit, migration.runtime)
     for (const workflow of unit.workflows) add(unit, workflow.runtime)

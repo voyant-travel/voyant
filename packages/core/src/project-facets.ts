@@ -129,6 +129,11 @@ export interface VoyantGraphAdminDeclaration {
   contributions?: readonly VoyantGraphAdminContribution[]
 }
 
+/** A package-owned frontend presentation selected through the deployment graph. */
+export interface VoyantGraphPresentationDeclaration extends VoyantGraphFacetEntity {
+  runtime: VoyantGraphRuntimeReference
+}
+
 export interface VoyantGraphToolDeclaration extends VoyantGraphFacetEntity {
   name: string
   runtime: VoyantGraphRuntimeReference
