@@ -211,6 +211,22 @@ function inspectRepositoryAuthority(repoRoot) {
   }
 
   for (const relativePath of [
+    "apps/scripts/package.json",
+    "starters/operator/scripts/seed.ts",
+    "starters/operator/scripts/seed-catalog-verticals.ts",
+    "starters/operator/scripts/seed-catalog-verticals.test.ts",
+    "starters/operator/scripts/migrate.ts",
+    "starters/operator/scripts/migrate.test.ts",
+    "starters/operator/scripts/check-deployment-graph-env.ts",
+    "starters/operator/scripts/emit-cloud-scheduler.ts",
+    "starters/operator/scripts/env-preload.cjs",
+  ]) {
+    if (existsSync(join(repoRoot, relativePath))) {
+      violations.push(`standard starter operational authority must stay deleted: ${relativePath}`)
+    }
+  }
+
+  for (const relativePath of [
     "starters/operator/src/api/lib/catalog-context.ts",
     "starters/operator/src/api/runtime/payment-config.ts",
     "starters/operator/src/api/runtime/booking-payment-policy-runtime.ts",

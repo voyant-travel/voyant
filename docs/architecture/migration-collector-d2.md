@@ -5,7 +5,10 @@
 - **Shipped:**
   - `applyD2Migrations` dual-path collector + cutline (`@voyant-travel/framework-migrations`) — PR #2014 (3b-1).
   - Per-package migration folders for all 24 schema-owning sources, the `cutline.generated.json` manifest, and the `verify-package-baseline.mjs --union` gate with **reverse-coverage** (every bundle table must be owned by some source — caught `flights` + `catalog-authoring` as un-onboarded owners) — PR #2016.
-  - The live operator runner (`starters/operator/scripts/migrate.ts`) rewritten to discover package sources from `drizzle.schemas.generated.ts`, topo-order by `requiresSchemas`, and apply via the dual-path collector; the framework bundle is no longer loaded on the apply path — PR #2018 (3b-2).
+  - The Operator runner was rewritten to discover package sources, topo-order by
+    `requiresSchemas`, and apply via the dual-path collector — PR #2018 (3b-2).
+    That project wrapper is now retired; `voyant migrate` executes the generated
+    graph migration plan.
 - **Validated by:** `spikes/d2-migration-collector/run.mjs` (18/18 on the docker test DB) — proves the fresh-vs-existing dual path, import-baseline (no re-create, verified by stable table OIDs), topo-ordering + cycle rejection, the negative control (naive execute → `duplicate_table`), and **column-level convergence** of a fresh D.2 DB and a transitioned D.1 DB. The spike also surfaced the **baseline cutline** requirement (Decision 5).
 - **Supersedes (on acceptance):** the single combined history of `migration-resilience-rfc.md` (voyant#1608) and the standard-profile-only scope of `migration-collector-d1.md`. D.1 explicitly deferred this: *"D.2 (package-owned migrations) would supersede #1608; it is out of scope here and gated behind its own ADR."*
 - **Implements:** `consolidated-deployments-rfc.md` Workstream **D.2**.

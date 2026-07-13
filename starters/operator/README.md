@@ -29,9 +29,9 @@ pnpm -F operator dev          # Vite dev server + SSR (port 3300)
 pnpm -F operator dev:worker   # Voyant Workflows dev loop (port 3310)
 ```
 
-`.env` is loaded into the process by `pnpm dev` and `pnpm start` (via a Node
-`--require` preload — the Node convention; there is no wrangler `.dev.vars`
-anymore). `pnpm dev` serves
+Vite loads `.env` during development and the production command uses Node's
+native `--env-file-if-exists` support. Platform environment variables remain
+authoritative in deployed environments. `pnpm dev` serves
 the SSR dashboard, the `/api/*` routes, and Better Auth with hot-reload — the
 same `src/server.ts` handler runs under Vite's dev server. The first `/api/*`
 request compiles the API module graph on demand (a few seconds), then it's warm.
@@ -44,9 +44,9 @@ pnpm -F operator start        # node dist/server/server.js (PORT, default 8080)
 ```
 
 The server exposes `/healthz` (probe), `/__voyant/scheduled?schedule=<id>` (the
-Cloud Scheduler hook, origin-trust gated), and serves the client build. Generate
-Cloud Scheduler jobs for the jobs in `src/scheduled-crons.ts` with
-`pnpm -F operator emit:cloud-scheduler` (see the script header for env).
+Cloud Scheduler hook, origin-trust gated), and serves the client build. Scheduled
+jobs come from the admitted graph. Provision them through deployment tooling
+using `renderGoogleCloudSchedulerScript` from `@voyant-travel/framework/node-host`.
 
 ## Optional Cloud Services
 
@@ -127,8 +127,8 @@ gcloud run deploy operator \
 
 `/healthz` is the container/liveness probe. Set `ORIGIN_TRUST_SECRET` when a
 dispatcher fronts the service (it stamps `x-voyant-origin-trust`; `/healthz` is
-exempt). Crons don't run in-process — wire Cloud Scheduler with
-`pnpm -F operator emit:cloud-scheduler` (POSTs `/__voyant/scheduled?schedule=…`). See
+exempt). Crons don't run in-process. Deployment tooling derives Cloud Scheduler
+jobs from the admitted graph and POSTs `/__voyant/scheduled?schedule=…`. See
 [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md).
 
 ## Routes

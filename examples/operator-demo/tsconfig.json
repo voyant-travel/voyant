@@ -14,5 +14,5 @@
     "noUncheckedIndexedAccess": false,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["scripts/**/*.ts"]
 }

@@ -1,15 +1,15 @@
 // @ts-nocheck -- legacy seed fixture typing cleanup is tracked separately from demo data edits.
 // agent-quality: file-size exception -- end-to-end operator fixture data stays together for reproducible demo resets.
 /**
- * Operator seed script — a realistic tour-operator scenario.
+ * Operator demo seed — a realistic tour-operator scenario.
  *
  * Seeds: 1 auth org, 5 staff users, a populated CRM (2 orgs, 30 people,
  * 1 sales pipeline with quotes/quote versions), 4 shared places, 6 suppliers,
  * 6 products with availability, 6 bookings across lifecycle states with
  * matching finance docs, a cancellation policy, and a customer contract.
  *
- * Run:   pnpm seed -- --confirm
- * Target: the DATABASE_URL in starters/operator/.env
+ * Run:   pnpm --filter @voyant-travel/example-operator-demo seed -- --confirm
+ * Target: DATABASE_URL from the process, repository env, or example env
  */
 
 import { readFileSync } from "node:fs"
@@ -127,7 +127,6 @@ import {
   seedCruises,
   seedExtras,
 } from "./seed-catalog-verticals"
-import { seedAircraft, seedAirlines, seedAirports } from "./seed-flights-reference"
 
 // ---------- Env & args ----------
 
@@ -165,6 +164,8 @@ function loadEnv(): Record<string, string> {
   const files = [
     resolve(TEMPLATE_DIR, "../../.env"),
     resolve(TEMPLATE_DIR, "../../.env.local"),
+    resolve(TEMPLATE_DIR, "../../starters/operator/.env"),
+    resolve(TEMPLATE_DIR, "../../starters/operator/.env.local"),
     resolve(TEMPLATE_DIR, ".env"),
   ]
   for (const file of files) {
@@ -2728,16 +2729,6 @@ async function seedCatalogVerticals() {
   )
 }
 
-async function seedFlightsReference() {
-  console.log("→ seeding flights reference data (airlines + airports + aircraft)…")
-  const airlineCount = await seedAirlines(db)
-  const airportCount = await seedAirports(db)
-  const aircraftCount = await seedAircraft(db)
-  console.log(
-    `  · airlines: ${airlineCount}, airports: ${airportCount}, aircraft: ${aircraftCount}`,
-  )
-}
-
 // ---------- Run ----------
 
 async function main() {
@@ -2757,7 +2748,6 @@ async function main() {
     await seedLegal()
     await seedBookingsAndFinance()
     await seedCatalogVerticals()
-    await seedFlightsReference()
 
     console.timeEnd("seed")
     console.log("\n✓ Seed complete. Sign in with:")
