@@ -1,8 +1,0 @@
-# Generated aggregate specs (voyant#2733). These are multi-megabyte, unviewable
-# on GitHub, and rewritten wholesale on any route change — so git does not carry
-# them. They're regenerated on demand (`pnpm --filter @voyant-travel/openapi
-# generate`) and at `prepack` for the npm tarball. The committed, browsable
-# surface is the compact per-module files under spec/{admin,storefront}/.
-spec/framework-openapi.json
-spec/framework-admin.json
-spec/framework-storefront.json

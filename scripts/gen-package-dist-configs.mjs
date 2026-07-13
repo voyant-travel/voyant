@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url"
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const CONFIG_DIR = join(ROOT, "packages/typescript-config")
 // Own composition configs (operator) / custom paths (db, ui) / no dist.
-const SKIP = new Set(["db", "ui", "framework", "openapi", "typescript-config"])
+const SKIP = new Set(["db", "ui", "framework", "typescript-config"])
 // Packages that must self-exclude even though they don't `from`-import their own
 // name: they sit in a dependency CYCLE (a dep's emitted .d.ts references back
 // into them), so the shared map would point that back-reference at their own
