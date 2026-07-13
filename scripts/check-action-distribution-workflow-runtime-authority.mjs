@@ -21,7 +21,10 @@ const sources = {
   distributionPackage: read("packages/distribution/package.json"),
   distributionContributor: read("packages/distribution/src/runtime-contributor.ts"),
   distributionRuntime: read("packages/distribution/src/runtime.ts"),
+  runtime: read("packages/runtime/src/index.ts"),
   workflowContributor: read("packages/workflow-runs/src/runtime-contributor.ts"),
+  workflowHonoModule: read("packages/workflow-runs/src/hono-module.ts"),
+  workflowManifest: read("packages/workflow-runs/src/voyant.ts"),
   workflowRunner: read("packages/workflow-runs/src/runner.ts"),
 }
 
@@ -77,10 +80,20 @@ if (existsSync(path.join(root, "packages/distribution-node"))) {
   violations.push("packages/distribution-node must stay deleted")
 }
 if (
-  !sources.workflowContributor.includes("workflowRunnerRegistryService") ||
+  !sources.workflowContributor.includes("new WorkflowRunnerRegistry()") ||
+  !sources.workflowHonoModule.includes("defineGraphRuntimeFactory") ||
+  !sources.workflowHonoModule.includes("getPort(workflowRunnerRegistryRuntimePort)") ||
+  !sources.workflowManifest.includes("requirePort(workflowRunnerRegistryRuntimePort)") ||
   !sources.workflowRunner.includes("activeWorkflowRunnerRegistry = this")
 ) {
-  violations.push("Workflow Runs must bind its package registry service to the app registry")
+  violations.push(
+    "Workflow Runs must create and resolve its registry through selected-graph package authority",
+  )
+}
+for (const forbidden of ["mountWorkflowRunsAdminRoutes", "WorkflowRunnerRegistry"]) {
+  if (sources.runtime.includes(forbidden)) {
+    violations.push(`generic runtime must not retain Workflow Runs route authority: ${forbidden}`)
+  }
 }
 for (const compatibilityPath of [
   "starters/operator/src/api/runtime/action-ledger-health-runtime.ts",
@@ -98,5 +111,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  "check-action-distribution-workflow-runtime-authority: OK (Action Ledger static ports, Distribution domain runtime, and package registry authority)",
+  "check-action-distribution-workflow-runtime-authority: OK (Action Ledger static ports, Distribution domain runtime, and selected-graph Workflow Runs authority)",
 )

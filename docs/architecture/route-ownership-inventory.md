@@ -1,6 +1,14 @@
 # Route Ownership Inventory — `starters/operator/src/api`
 
-Status: living document (baseline 2026-06-15)
+Status: migration record (completed 2026-07-13)
+
+The Operator starter no longer owns product API routes. The table below records
+the original migration inventory; its files have since moved to package-owned
+selected-graph runtime factories.
+
+The separate federated compatibility starter still has two explicitly annotated
+deployment-owned route files. They are outside the Operator starter migration
+and remain until that direct app adopts generated graph composition.
 
 This is the Phase 0 inventory called for by
 [API Route Ownership And Runtime Composition](./api-route-ownership-and-composition.md).
@@ -50,9 +58,10 @@ honest.
 ## Final state (migration complete)
 
 Every route family above now composes through `OPERATOR_RUNTIME_MANIFEST` /
-`operatorComposition` as a module or extension. `app.ts`'s `additionalRoutes`
-contains only the **workflow-runs** admin surface, which is genuinely coupled to
-the app-level runner registry that bundle bootstraps populate at construction.
+`operatorComposition` as a module or extension. Workflow Runs now creates its
+registry through its package runtime contributor and mounts its routes through
+its selected-graph factory. The generic Runtime and Operator starter contain no
+Workflow Runs-specific route mount.
 
 - Package-owned extensions: `channel-push` (distribution), `booking-tax`
   (finance).

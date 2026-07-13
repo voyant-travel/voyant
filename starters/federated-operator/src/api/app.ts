@@ -1,3 +1,4 @@
+// voyant-route-owner: federated host compatibility until this direct app adopts generated graph composition.
 import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
 import { mountApp } from "@voyant-travel/hono/app"
 import { identityHonoModule } from "@voyant-travel/identity"

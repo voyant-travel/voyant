@@ -27,9 +27,20 @@ export function WorkflowsRoute() {
 }
 ```
 
-## Mount the admin routes
+## Selected graph composition
+
+When `@voyant-travel/workflow-runs` is selected in a Voyant project, its package
+contributor creates the runner registry and its graph runtime mounts the admin
+routes. Other selected packages register executable workflows through the
+`workflows.runner-registry` runtime port; the generic Node host does not need
+Workflow Runs-specific wiring.
+
+## Direct composition
 
 `mountWorkflowRunsAdminRoutes` adds the workflow-run list, detail, rerun, and resume endpoints under `/v1/admin/workflow-runs`, plus an explicit trigger endpoint at `POST /v1/admin/workflows/:name/runs`.
+
+Applications that do not use the selected deployment graph can still compose
+the registry and routes directly:
 
 ```ts
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"

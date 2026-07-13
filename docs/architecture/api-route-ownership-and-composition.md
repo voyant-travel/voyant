@@ -13,16 +13,16 @@ Related:
 - [Catalog Booking Route Module Plan](./catalog-booking-route-module-plan.md)
 - [Route Ownership Inventory](./route-ownership-inventory.md)
 
-## Status update (2026-06-15)
+## Status update (2026-07-13)
 
 Implemented for the operator starter. The route-ownership checker (Phase 0),
 first-class context-preserving lazy contributions including the multi-prefix
 `lazyRoutes` variant (Phase 1), and the full route-family migration (Phases 3–4)
-have landed: `app.ts`'s `additionalRoutes` now contains only the workflow-runs
-admin surface, and every other route family composes through the registry. See
+have landed. Workflow Runs was the final generic Node host mount and now composes
+through its package-owned selected-graph runtime port. The Operator starter and
+generic Runtime contain no `additionalRoutes` product composition. See
 [Route Ownership Inventory](./route-ownership-inventory.md) for the per-family
-result. The remaining open work is promoting deployment-local route definitions
-into shared packages where a second deployment would reuse them.
+result.
 
 ## Summary
 
