@@ -1,5 +1,23 @@
 # @voyant-travel/workflow-runs
 
+## 0.119.0
+
+### Minor Changes
+
+- 37031e9: Move Workflow Runs registry and route composition behind its selected-graph runtime port. The generic Node runtime no longer mounts Workflow Runs routes when the module is not selected.
+
+  Direct applications can continue to instantiate `WorkflowRunnerRegistry` and call `mountWorkflowRunsAdminRoutes`. Runtime-port implementations must now expose both `register()` and `get()`.
+
+  See the [Workflow Runs 0.119 migration guide](../docs/migrations/migrating-to-0.119.md) for the custom provider update.
+
+### Patch Changes
+
+- Updated dependencies [3f6694b]
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/hono@0.126.1
+  - @voyant-travel/workflows@0.119.0
+
 ## 0.118.0
 
 ### Patch Changes

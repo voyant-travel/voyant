@@ -1,5 +1,31 @@
 # @voyant-travel/runtime
 
+## 0.8.0
+
+### Minor Changes
+
+- 3f6694b: Select the customer Storefront presentation through the deployment graph. Project resolution now emits a selected presentation factory artifact, and the standard Operator emits Storefront routes only when that presentation is selected.
+- 37031e9: Move Workflow Runs registry and route composition behind its selected-graph runtime port. The generic Node runtime no longer mounts Workflow Runs routes when the module is not selected.
+
+  Direct applications can continue to instantiate `WorkflowRunnerRegistry` and call `mountWorkflowRunsAdminRoutes`. Runtime-port implementations must now expose both `register()` and `get()`.
+
+  See the [Workflow Runs 0.119 migration guide](../docs/migrations/migrating-to-0.119.md) for the custom provider update.
+
+### Patch Changes
+
+- Updated dependencies [4bc540f]
+- Updated dependencies [318ca57]
+- Updated dependencies [3f6694b]
+- Updated dependencies [37031e9]
+  - @voyant-travel/auth@0.128.0
+  - @voyant-travel/framework@0.42.0
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/workflow-runs@0.119.0
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/hono@0.126.1
+  - @voyant-travel/webhook-delivery@0.2.2
+  - @voyant-travel/admin-host@0.5.0
+
 ## 0.7.4
 
 ### Patch Changes

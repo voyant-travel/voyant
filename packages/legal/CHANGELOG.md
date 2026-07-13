@@ -1,5 +1,29 @@
 # @voyant-travel/legal
 
+## 0.155.0
+
+### Minor Changes
+
+- bb6e890: Remove name-based contract-series selection and require the canonical active
+  series identity of `prefix` plus `scope`.
+
+### Patch Changes
+
+- Updated dependencies [3f6694b]
+  - @voyant-travel/core@0.121.0
+  - @voyant-travel/action-ledger@0.108.2
+  - @voyant-travel/bookings@0.155.0
+  - @voyant-travel/commerce@0.35.2
+  - @voyant-travel/db@0.114.1
+  - @voyant-travel/distribution@0.145.0
+  - @voyant-travel/finance@0.155.0
+  - @voyant-travel/hono@0.126.1
+  - @voyant-travel/inventory@0.9.2
+  - @voyant-travel/operator-settings@0.3.8
+  - @voyant-travel/public-document-delivery@0.3.2
+  - @voyant-travel/relationships@0.124.3
+  - @voyant-travel/storage@0.109.2
+
 ## 0.154.0
 
 ### Patch Changes
