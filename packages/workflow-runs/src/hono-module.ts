@@ -3,7 +3,7 @@ import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
-import type { MountWorkflowRunsAdminRoutesOptions } from "./routes.js"
+import type { MountWorkflowRunsAdminRoutesOptions, WorkflowAdminSurface } from "./routes.js"
 import { workflowRunnerRegistryRuntimePort } from "./runtime-port.js"
 
 export const WORKFLOW_RUNS_ADMIN_ROUTE_PATHS = [
@@ -31,12 +31,23 @@ export function createWorkflowRunsHonoModule(
 }
 
 /** Package-owned adapter from the selected runner-registry port to admin routes. */
-export const createWorkflowRunsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createWorkflowRunsHonoModule({
-    runners: await getPort(workflowRunnerRegistryRuntimePort),
-    resolveUserId: (context) => {
-      const userId = (context as { get(key: string): unknown }).get("userId")
-      return typeof userId === "string" ? userId : null
-    },
-  }),
+export const createWorkflowRunsVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ graph, getPort }) =>
+    createWorkflowRunsHonoModule({
+      runners: await getPort(workflowRunnerRegistryRuntimePort),
+      adminSurface: workflowAdminSurfaceForProvider(graph.providerSelections.workflows),
+      resolveUserId: (context) => {
+        const userId = (context as { get(key: string): unknown }).get("userId")
+        return typeof userId === "string" ? userId : null
+      },
+    }),
 )
+
+function workflowAdminSurfaceForProvider(provider: string | undefined): WorkflowAdminSurface {
+  if (provider === "self-hosted") return "tenant"
+  if (provider === "voyant-cloud") return "cloud"
+  if (provider === "none") return "disabled"
+  throw new Error(
+    `Unsupported deployment.providers.workflows value ${JSON.stringify(provider)} for Workflow Runs admin routes.`,
+  )
+}

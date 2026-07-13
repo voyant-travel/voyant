@@ -1,6 +1,7 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -145,6 +146,56 @@ describe("Node migration runner", () => {
     expect(source.legacyNames).toEqual(["schema:@voyant-travel/finance#migrations"])
     expect(source.priority).toBe(9)
     expect(source.migrations.length).toBeGreaterThan(0)
+  })
+
+  it("loads the self-hosted workflow tables from the package-owned migration source", async () => {
+    const root = mkdtempSync(path.join(tmpdir(), "voyant-workflow-migrations-"))
+    const packageLink = path.join(root, "node_modules", "@voyant-travel", "workflows-orchestrator")
+    mkdirSync(path.dirname(packageLink), { recursive: true })
+    symlinkSync(
+      fileURLToPath(new URL("../../workflows-orchestrator", import.meta.url)),
+      packageLink,
+      "dir",
+    )
+    const resolveFrom = path.join(root, "migration-runner.mjs")
+    writeFileSync(resolveFrom, "export {}\n")
+
+    try {
+      const source = await loadNodeSchemaMigrationSource(
+        {
+          id: "@voyant-travel/workflows-orchestrator#migrations",
+          migrationKind: "schema",
+          order: 1,
+          idempotencyKey: "schema:@voyant-travel/workflows-orchestrator#migrations",
+          owner: "@voyant-travel/workflows-orchestrator",
+          packageName: "@voyant-travel/workflows-orchestrator",
+          source: {
+            kind: "package",
+            packageName: "@voyant-travel/workflows-orchestrator",
+            path: "./migrations",
+          },
+        },
+        resolveFrom,
+      )
+
+      expect(source.name).toBe("workflows-orchestrator")
+      expect(source.migrations.map((migration) => migration.tag)).toEqual([
+        "0000_init",
+        "0001_persist_run_record",
+        "0002_allow_null_input",
+        "0003_idempotency_key",
+        "0004_workflow_manifests",
+        "0005_wakeup_priority",
+      ])
+      expect(source.migrations.map((migration) => migration.sql).join("\n")).toContain(
+        'CREATE TABLE IF NOT EXISTS "voyant_workflow_manifests"',
+      )
+      expect(source.migrations.map((migration) => migration.sql).join("\n")).toContain(
+        'CREATE TABLE IF NOT EXISTS "voyant_wakeups"',
+      )
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 })
 

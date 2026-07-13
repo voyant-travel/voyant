@@ -88,11 +88,7 @@ workflowRunnerRegistry.register({
 
 mountWorkflowRunsAdminRoutes(hono, {
   runners: workflowRunnerRegistry,
-  adminSurface: process.env.VOYANT_WORKFLOW_ADMIN_SURFACE as
-    | "tenant"
-    | "cloud"
-    | "disabled"
-    | undefined,
+  adminSurface: "tenant",
 })
 ```
 
@@ -105,9 +101,11 @@ mountWorkflowRunsAdminRoutes(hono, {
 - `disabled` keeps read routes available and disables tenant-admin management
   actions completely.
 
-When omitted, the package reads `VOYANT_WORKFLOW_ADMIN_SURFACE`. If that is
-unset but managed Cloud workflow env is present, the default is `cloud`;
-otherwise the default is `tenant` for local/self-host compatibility.
+Direct composition defaults to `tenant` when `adminSurface` is omitted. Selected
+graph composition derives the surface from `deployment.providers.workflows`:
+`self-hosted` maps to `tenant`, `voyant-cloud` maps to `cloud`, and `none` maps to
+`disabled`. Environment variables never select the admin surface or imply
+provider ownership.
 
 Triggerable workflows must opt in by implementing `trigger(...)` on their registered runner. This keeps rerun/resume-only workflows closed to arbitrary admin dispatch while still allowing operators, cron jobs, queues, and API keys with `workflows:trigger` permission to call:
 

@@ -103,7 +103,7 @@ export const STANDARD_OPERATOR_DEPLOYMENT: VoyantGraphProjectDeployment = {
     sms: "none",
     auth: "better-auth",
     scheduledJobs: "none",
-    workflows: "none",
+    workflows: "self-hosted",
   },
 }
 

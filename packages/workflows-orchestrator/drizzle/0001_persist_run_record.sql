@@ -1,1 +1,0 @@
-ALTER TABLE "voyant_snapshot_runs" ADD COLUMN "run_record" jsonb;

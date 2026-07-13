@@ -12,11 +12,13 @@ describe("scheduled workflow dispatch", () => {
       status: "queued" as const,
       startedAt: 1,
     }))
+    const shutdown = vi.fn(async () => {})
     const driver = {
       registerManifest,
       trigger,
       ingestEvent: vi.fn(),
       getManifest: vi.fn(),
+      shutdown,
     } satisfies WorkflowDriver
     const workflow = {
       id: "notifications.send",
@@ -51,6 +53,39 @@ describe("scheduled workflow dispatch", () => {
         tags: ["scheduled", "schedule:notifications-hourly"],
       },
     )
+    expect(shutdown).toHaveBeenCalledOnce()
+  })
+
+  it("shuts down a one-shot driver when dispatch fails", async () => {
+    const failure = new Error("manifest registration failed")
+    const shutdown = vi.fn(async () => {})
+    const driver = {
+      registerManifest: vi.fn(async () => {
+        throw failure
+      }),
+      trigger: vi.fn(),
+      ingestEvent: vi.fn(),
+      getManifest: vi.fn(),
+      shutdown,
+    } satisfies WorkflowDriver
+
+    await expect(
+      runScheduledWorkflow(
+        { id: "failed", workflowId: "workflow.failed" },
+        { scheduledTime: 1 },
+        {
+          projectId: "operator",
+          environment: "production",
+          load: async () => ({
+            workflows: [],
+            eventFilters: [],
+            services: { resolve: vi.fn(), has: vi.fn(() => false) },
+          }),
+          createDriver: () => driver,
+        },
+      ),
+    ).rejects.toBe(failure)
+    expect(shutdown).toHaveBeenCalledOnce()
   })
 
   it("recognizes only jobs carrying a workflow id", () => {

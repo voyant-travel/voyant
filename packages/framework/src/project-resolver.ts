@@ -68,6 +68,8 @@ import {
 export const VOYANT_MIGRATION_PLAN_SCHEMA_VERSION = "voyant.migration-plan.v1" as const
 export const VOYANT_PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts" as const
 export const VOYANT_PROJECT_MIGRATION_RUNNER = "runtime/project-migrations.generated.mjs" as const
+export const VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID =
+  "@voyant-travel/workflows-orchestrator#migrations" as const
 
 export interface ResolveProjectInput {
   project: unknown
@@ -987,6 +989,27 @@ export function buildMigrationPlan(
     packageSchemaMigrations,
     schemaDependencies,
   )
+  const workflowProviderMigrations: VoyantProjectSchemaMigration[] =
+    graph.deployment.providers.workflows === "self-hosted" &&
+    !orderedPackageMigrations.some(
+      (migration) => migration.id === VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID,
+    )
+      ? [
+          {
+            id: VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID,
+            migrationKind: "schema",
+            order: 0,
+            idempotencyKey: `schema:${VOYANT_SELF_HOSTED_WORKFLOW_MIGRATION_ID}`,
+            owner: "@voyant-travel/workflows-orchestrator",
+            packageName: "@voyant-travel/workflows-orchestrator",
+            source: {
+              kind: "package",
+              packageName: "@voyant-travel/workflows-orchestrator",
+              path: "./migrations",
+            },
+          },
+        ]
+      : []
   const deploymentMigrations: VoyantProjectSchemaMigration[] = (
     graph.deployment.migrations ?? []
   ).map((migration) => ({
@@ -1000,7 +1023,11 @@ export function buildMigrationPlan(
       path: migration.source,
     },
   }))
-  const schemaMigrations = [...orderedPackageMigrations, ...deploymentMigrations]
+  const schemaMigrations = [
+    ...orderedPackageMigrations,
+    ...workflowProviderMigrations,
+    ...deploymentMigrations,
+  ]
   const setupMigrations = units
     .flatMap((unit) =>
       (unit.setupMigrations ?? []).map((migration) => ({

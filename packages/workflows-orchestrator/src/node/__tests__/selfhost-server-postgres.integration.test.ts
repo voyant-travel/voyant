@@ -14,7 +14,7 @@ import { createPostgresWakeupStore } from "../postgres-wakeup-store.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip
-const migrationsFolder = fileURLToPath(new URL("../../../drizzle", import.meta.url))
+const migrationsFolder = fileURLToPath(new URL("../../../migrations", import.meta.url))
 
 describeIfDb("node self-host server over postgres", () => {
   let tempDir: string

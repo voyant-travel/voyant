@@ -7,6 +7,7 @@ import {
   resolveDeploymentGraph,
   validateGraphUnitManifest,
 } from "../../framework/src/deployment-graph.js"
+import { STANDARD_OPERATOR_DEPLOYMENT } from "../src/index.js"
 
 describe("standard package manifests", () => {
   it("resolves a package-owned module manifest without starter synthesis", async () => {
@@ -59,5 +60,12 @@ describe("standard package manifests", () => {
         },
       },
     ])
+  })
+
+  it("selects durable self-hosted workflow execution by default", () => {
+    expect(STANDARD_OPERATOR_DEPLOYMENT).toMatchObject({
+      mode: "self-hosted",
+      providers: { workflows: "self-hosted" },
+    })
   })
 })

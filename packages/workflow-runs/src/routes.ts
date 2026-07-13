@@ -299,7 +299,7 @@ export function mountWorkflowRunsAdminRoutes(
   hono: WorkflowRunsMountTarget,
   opts: MountWorkflowRunsAdminRoutesOptions = {},
 ): void {
-  const adminSurface = opts.adminSurface ?? defaultWorkflowAdminSurface()
+  const adminSurface = opts.adminSurface ?? "tenant"
 
   const handleListRuns = async (c: Context): Promise<Response> => {
     const params = Object.fromEntries(new URL(c.req.url).searchParams)
@@ -614,23 +614,4 @@ function rejectWorkflowAdminAction(
     },
     403,
   )
-}
-
-function defaultWorkflowAdminSurface(): WorkflowAdminSurface {
-  const env = (
-    globalThis as typeof globalThis & {
-      process?: {
-        env?: {
-          VOYANT_CLOUD_APP_SLUG?: string
-          VOYANT_CLOUD_WORKFLOWS_URL?: string
-          VOYANT_WORKFLOW_ADMIN_SURFACE?: string
-        }
-      }
-    }
-  ).process?.env
-  if (env?.VOYANT_WORKFLOW_ADMIN_SURFACE !== undefined) {
-    return resolveWorkflowAdminSurface(env.VOYANT_WORKFLOW_ADMIN_SURFACE)
-  }
-  if (env?.VOYANT_CLOUD_WORKFLOWS_URL || env?.VOYANT_CLOUD_APP_SLUG) return "cloud"
-  return "tenant"
 }

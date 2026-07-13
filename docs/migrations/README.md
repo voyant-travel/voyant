@@ -6,7 +6,7 @@ The full history (including patch-level changes and dependency updates) lives in
 
 ## Available
 
-- [Migrating Framework to 0.42](./migrating-to-0.42.md) - require explicit selected IDs and admitted API runtime reference IDs in hand-authored graph runtime inputs.
+- [Migrating Framework to 0.42](./migrating-to-0.42.md) - require explicit selected IDs and admitted API runtime reference IDs, select workflow execution through `deployment.providers.workflows`, and migrate self-hosted workflow storage.
 - [Migrating Auth to 0.128](./migrating-to-0.128.md) - move the removed top-level `useSecureCookies` option under Better Auth's `advanced` configuration.
 - [Workflow Runs 0.119](./migrating-to-0.119.md) — custom `workflows.runner-registry` providers must implement both `register()` and `get()`; direct registry and route composition APIs remain available.
 - [Migrating to 0.11](./migrating-to-0.11.md) — privatize Booking state machine; replace `PATCH /:id/status` with named verbs; `useBookingStatusMutation` requires `currentStatus`; activity-type enum gains three values.

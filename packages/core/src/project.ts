@@ -130,6 +130,8 @@ export const voyantWorkflowServiceContributionsPort = definePort<VoyantWorkflowS
 )
 
 export interface VoyantGraphRuntimeFactoryGraph {
+  /** Explicit deployment provider selections keyed by provider role. */
+  readonly providerSelections: Readonly<Record<string, string>>
   readonly accessCatalog: {
     readonly resources: readonly {
       readonly id: string

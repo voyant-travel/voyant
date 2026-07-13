@@ -18,8 +18,10 @@ const mocks = vi.hoisted(() => {
   const runtimeFetch = vi.fn(async (request: Request) => new Response(request.url))
   const nodeRuntime = {
     env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    deployment: { mode: "self-hosted", providers: { workflows: "self-hosted" } },
     app: { ready: vi.fn(), fetch: runtimeFetch, services, eventBus },
   }
+  const workflowDriver = { kind: "workflow-driver" }
 
   return {
     adminHostOptions: [] as Array<{
@@ -34,9 +36,19 @@ const mocks = vi.hoisted(() => {
     nodeRuntime,
     resolveNodeDatabase: vi.fn(() => ({ kind: "database" })),
     runtimeFetch,
+    createVoyantNodeWorkflowDriver: vi.fn(() => () => workflowDriver),
     runScheduledWorkflow: vi.fn(
-      async (_job: unknown, _event: unknown, runtime: { load(): Promise<unknown> }) =>
-        runtime.load(),
+      async (
+        _job: unknown,
+        _event: unknown,
+        runtime: {
+          load(): Promise<{ services: unknown }>
+          createDriver(dependencies: unknown): unknown
+        },
+      ) => {
+        const loaded = await runtime.load()
+        return runtime.createDriver({ services: loaded.services, logger: vi.fn() })
+      },
     ),
     runtimePorts,
     workflowGraphRuntime,
@@ -86,8 +98,12 @@ vi.mock("@voyant-travel/framework/node-runtime", () => ({
     config: {},
     events: { deliver: options.deliverEvent },
   }),
-  createVoyantNodeWorkflowDriver: vi.fn(),
+  createVoyantNodeWorkflowDriver: mocks.createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime: mocks.loadVoyantNodeRuntime,
+  resolveVoyantNodeWorkflowProvider: (value: unknown) => {
+    if (value === "voyant-cloud" || value === "self-hosted" || value === "none") return value
+    throw new Error("unsupported workflow provider")
+  },
 }))
 
 vi.mock("@voyant-travel/framework/node-host", () => ({
@@ -118,7 +134,7 @@ vi.mock("tsx/esm/api", () => ({
         createGeneratedProjectRuntime: () => ({
           kind: "application",
           graphHash: "graph-hash",
-          deployment: { mode: "self-hosted", providers: {} },
+          deployment: { mode: "self-hosted", providers: { workflows: "self-hosted" } },
           graphRuntime: mocks.workflowGraphRuntime,
           createRuntimePorts: () => mocks.runtimePorts,
         }),
@@ -140,6 +156,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.adminHostOptions.length = 0
   mocks.authRuntimeOptions.length = 0
+  mocks.nodeRuntime.deployment.providers.workflows = "self-hosted"
 })
 
 afterEach(async () => {
@@ -347,6 +364,41 @@ describe("Voyant project runtime composition", () => {
     expect(mocks.loadVoyantNodeWorkflowRuntime).toHaveBeenCalledWith(
       expect.objectContaining({ runtimePorts: mocks.runtimePorts }),
     )
+    expect(mocks.createVoyantNodeWorkflowDriver).toHaveBeenCalledWith({
+      deployment: mocks.nodeRuntime.deployment,
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      defaultAppSlug: path.basename(projectRoot),
+      oneShot: true,
+    })
+  })
+
+  it("omits scheduled workflow execution when the resolved provider is none", async () => {
+    mocks.nodeRuntime.deployment.providers.workflows = "none"
+    const projectRoot = await createGeneratedProject([
+      { id: "disabled-workflow", cron: "0 * * * *", workflowId: "workflow.disabled" },
+    ])
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+    })
+
+    project.start()
+    const serverOptions = mocks.createNodeServer.mock.calls[0]?.[0] as {
+      scheduled(
+        event: { scheduleId: string; scheduledTime: number },
+        bindings: Record<string, string>,
+        ctx: { waitUntil(promise: Promise<unknown>): void },
+      ): Promise<void>
+    }
+    await serverOptions.scheduled(
+      { scheduleId: "disabled-workflow", scheduledTime: 1 },
+      { DATABASE_URL: "postgres://example.invalid/voyant" },
+      { waitUntil: vi.fn() },
+    )
+
+    expect(mocks.runScheduledWorkflow).not.toHaveBeenCalled()
+    expect(mocks.loadVoyantNodeWorkflowRuntime).not.toHaveBeenCalled()
   })
 })
 
