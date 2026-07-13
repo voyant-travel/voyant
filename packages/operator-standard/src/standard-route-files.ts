@@ -1,7 +1,7 @@
 import type { VoyantGeneratedRouteFile } from "@voyant-travel/vite-config"
 
 const runtimeImport = (path: string) =>
-  path.includes("/") ? "../_lib/operator-frontend" : "./_lib/operator-frontend"
+  path.includes("/") ? "../_lib/operator-frontend.js" : "./_lib/operator-frontend.js"
 const standardFrontendImport = "@voyant-travel/operator-standard/standard-frontend"
 
 const contributionRoute = (
@@ -40,8 +40,8 @@ export const standardOperatorRouteFiles: readonly VoyantGeneratedRouteFile[] = [
     path: "_lib/operator-frontend.tsx",
     source: `
 import { createStandardOperatorFrontend } from ${JSON.stringify(standardFrontendImport)}
-import { accessCatalog } from "../../access/selected-access-catalog.generated"
-import { createSelectedGraphAdminExtensions } from "../../admin/selected-graph-admin.generated"
+import { accessCatalog } from "../../access/selected-access-catalog.generated.js"
+import { createSelectedGraphAdminExtensions } from "../../admin/selected-graph-admin.generated.js"
 
 const workspaceSpecs = import.meta.glob<{ default: Record<string, unknown> }>(
   "../../../../../packages/*/openapi/{admin,storefront}/*.json",
@@ -65,7 +65,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import { createRootRouteWithContext, Outlet, useRouteContext } from "@tanstack/react-router"
 import { AdminRootErrorBoundary, AdminRootShell, adminRootHead } from "@voyant-travel/admin/app/root"
 import { Toaster } from "@voyant-travel/ui/components"
-import { operatorFrontend } from "./_lib/operator-frontend"
+import { operatorFrontend } from "./_lib/operator-frontend.js"
 import "@/styles.css"
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -86,7 +86,7 @@ function RootComponent() {
     path: "docs.tsx",
     source: `
 import { createFileRoute } from "@tanstack/react-router"
-import { operatorFrontend } from "./_lib/operator-frontend"
+import { operatorFrontend } from "./_lib/operator-frontend.js"
 
 export const Route = createFileRoute("/docs")(operatorFrontend.routes.docs)
 `,
@@ -182,7 +182,7 @@ export const Route = createFileRoute("/docs")(operatorFrontend.routes.docs)
     path: "_workspace/route.tsx",
     source: `
 import { createFileRoute, Outlet } from "@tanstack/react-router"
-import { operatorFrontend } from "../_lib/operator-frontend"
+import { operatorFrontend } from "../_lib/operator-frontend.js"
 
 const workspace = operatorFrontend.workspace
 
