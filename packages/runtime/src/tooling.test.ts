@@ -175,6 +175,9 @@ export const standardOperatorRouteFiles: readonly RouteFile[] = [
     await expect(readText(bootstrap.routerEntry!)).resolves.toContain(
       'from "@acme/operator/standard-frontend"',
     )
+    await expect(readText(bootstrap.routerEntry!)).resolves.toContain(
+      'from "../routes/_lib/operator-frontend.js"',
+    )
     await expect(readText(bootstrap.stylesEntry!)).resolves.toBe(
       '@import "@acme/operator/standard-styles.css";\n',
     )

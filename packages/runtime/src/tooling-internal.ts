@@ -222,9 +222,9 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
     await writeGeneratedFile(
       bootstrap.routerEntry,
       `import type { StandardOperatorRouterContext } from ${JSON.stringify(`${productBomId}/standard-frontend`)}
-import { operatorFrontend } from "../routes/_lib/operator-frontend"
-import { Route as workspaceRoute } from "../routes/_workspace/route"
-import { routeTree } from "../routeTree.gen"
+import { operatorFrontend } from "../routes/_lib/operator-frontend.js"
+import { Route as workspaceRoute } from "../routes/_workspace/route.js"
+import { routeTree } from "../routeTree.gen.js"
 
 export type RouterContext = StandardOperatorRouterContext
 
