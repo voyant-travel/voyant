@@ -19,6 +19,7 @@ import {
   getFieldPolicyRegistries,
   loadCatalogSlices,
   withEmbedding,
+  withoutCatalogScopeChannel,
 } from "./runtime/catalog-runtime.js"
 import { configureCatalogRuntimeHost } from "./runtime/host.js"
 import { createOperatorCatalogOffersRouteModuleOptions } from "./runtime/offers-runtime.js"
@@ -73,7 +74,7 @@ export function createCatalogRuntime(
     search: { resolveRuntime: createCatalogSearchRuntime },
     booking: createOperatorCatalogBookingRouteModuleOptions(),
     offers: createOperatorCatalogOffersRouteModuleOptions((context) =>
-      resolveCatalogDefaultScope(context),
+      withoutCatalogScopeChannel(resolveCatalogDefaultScope(context)),
     ),
     content: { resolveRegistry: getBookingEngineRegistryFromContext },
     projection: {

@@ -170,6 +170,13 @@ export interface CatalogOffersTypesenseScope {
   channel?: string
 }
 
+export function withoutCatalogScopeChannel(
+  scope: CatalogOffersTypesenseScope,
+): CatalogOffersTypesenseScope {
+  const { channel: _, ...unscoped } = scope
+  return unscoped
+}
+
 export interface CatalogRuntimeEnv extends CatalogOffersTypesenseEnv {
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
