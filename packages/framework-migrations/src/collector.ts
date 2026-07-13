@@ -25,6 +25,8 @@ export interface MigrationStatement {
 export interface MigrationSource {
   /** Name recorded in the ledger, e.g. `framework` / `deployment`. */
   name: string
+  /** Prior ledger source names that should be adopted without replaying SQL. */
+  legacyNames?: readonly string[]
   /**
    * Apply order across sources within a run (lower first). Framework < deployment
    * is load-bearing — deployment link tables FK into framework tables.
@@ -36,6 +38,7 @@ export interface MigrationSource {
 
 export interface PlannedMigration {
   source: string
+  legacySources?: readonly string[]
   tag: string
   sql: string
   /** sha256 of the raw SQL (immutability key). */
@@ -176,6 +179,7 @@ export function planMigrations(sources: MigrationSource[]): PlannedMigration[] {
     .flatMap((source) =>
       source.migrations.map((m, seq) => ({
         source: source.name,
+        ...(source.legacyNames?.length ? { legacySources: source.legacyNames } : {}),
         priority: source.priority,
         seq,
         tag: m.tag,
@@ -184,7 +188,13 @@ export function planMigrations(sources: MigrationSource[]): PlannedMigration[] {
       })),
     )
     .sort((a, b) => a.priority - b.priority || a.seq - b.seq)
-    .map(({ source, tag, sql, contentHash: hash }) => ({ source, tag, sql, contentHash: hash }))
+    .map(({ source, legacySources, tag, sql, contentHash: hash }) => ({
+      source,
+      ...(legacySources?.length ? { legacySources } : {}),
+      tag,
+      sql,
+      contentHash: hash,
+    }))
 }
 
 function qualifiedLedger(options?: ApplyMigrationsOptions): string {
@@ -244,14 +254,28 @@ export async function applyMigrations(
   const executed: string[] = []
   const baselined: string[] = []
   for (const m of planMigrations(sources)) {
+    const ledgerSources = [...new Set([m.source, ...(m.legacySources ?? [])])]
     const seen = await client.query(
-      `SELECT "content_hash" FROM ${ledger} WHERE "source" = $1 AND "tag" = $2`,
-      [m.source, m.tag],
+      `SELECT "content_hash", "source" FROM ${ledger}
+        WHERE "source" = ANY($1::text[]) AND "tag" = $2`,
+      [ledgerSources, m.tag],
     )
     if (seen.rows.length > 0) {
-      const ledgerHash = String(seen.rows[0]?.content_hash ?? "")
-      if (ledgerHash !== m.contentHash && !isEquivalentMigrationHash(m, ledgerHash)) {
-        throw new MigrationImmutabilityError(m.source, m.tag, ledgerHash, m.contentHash)
+      for (const row of seen.rows) {
+        const ledgerHash = String(row.content_hash ?? "")
+        if (ledgerHash !== m.contentHash && !isEquivalentMigrationHash(m, ledgerHash)) {
+          throw new MigrationImmutabilityError(m.source, m.tag, ledgerHash, m.contentHash)
+        }
+      }
+      const hasStableRow = seen.rows.some(
+        (row) => row.source === undefined || String(row.source) === m.source,
+      )
+      if (!hasStableRow) {
+        await client.query(
+          `INSERT INTO ${ledger} ("source", "tag", "content_hash") VALUES ($1, $2, $3)
+           ON CONFLICT ("source", "tag") DO NOTHING`,
+          [m.source, m.tag, m.contentHash],
+        )
       }
       continue // already applied, identical → no-op
     }

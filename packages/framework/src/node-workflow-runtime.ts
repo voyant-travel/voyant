@@ -44,6 +44,8 @@ export interface VoyantNodeWorkflowServiceHost {
   reportFailure?(error: unknown, context: Readonly<Record<string, unknown>>): void
 }
 
+const graphRegisteredWorkflowServices = new WeakMap<ModuleContainer, Set<string>>()
+
 /** Load workflow behavior exclusively from units selected by the generated graph. */
 export async function loadVoyantNodeWorkflowRuntime<TEnvironment>(
   options: LoadVoyantNodeWorkflowRuntimeOptions<TEnvironment>,
@@ -103,10 +105,21 @@ async function registerWorkflowServiceContributions<TEnvironment>(
   const seen = new Set<string>()
   for (const contribution of contributions as VoyantWorkflowServiceContribution[]) {
     await voyantWorkflowServiceContributionsPort.test(contribution)
-    if (seen.has(contribution.serviceId) || value.services.has(contribution.serviceId)) {
+    if (seen.has(contribution.serviceId)) {
       throw new Error(`Workflow service "${contribution.serviceId}" is registered more than once.`)
     }
     seen.add(contribution.serviceId)
+  }
+  let registered = graphRegisteredWorkflowServices.get(value.services)
+  if (!registered) {
+    registered = new Set()
+    graphRegisteredWorkflowServices.set(value.services, registered)
+  }
+  for (const contribution of contributions as VoyantWorkflowServiceContribution[]) {
+    if (registered.has(contribution.serviceId)) continue
+    if (value.services.has(contribution.serviceId)) {
+      throw new Error(`Workflow service "${contribution.serviceId}" is registered more than once.`)
+    }
     value.services.register(
       contribution.serviceId,
       await contribution.create({
@@ -116,6 +129,7 @@ async function registerWorkflowServiceContributions<TEnvironment>(
         reportFailure: value.reportFailure ?? defaultWorkflowFailureReporter,
       }),
     )
+    registered.add(contribution.serviceId)
   }
   return value.services
 }

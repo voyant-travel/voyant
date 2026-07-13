@@ -60,6 +60,50 @@ describe("loadVoyantNodeWorkflowRuntime", () => {
     })
     expect(contribution.create).toHaveBeenCalledOnce()
   })
+
+  it("reuses graph services when scheduled loads share a container", async () => {
+    const services = createContainer()
+    const serviceHost = { services, eventBus: createEventBus() }
+    const contribution = {
+      serviceId: "example.workflow.runtime",
+      create: vi.fn(() => ({ selected: true })),
+    }
+    const options = {
+      graphRuntime: graphWithUnit(unitWithRuntime({ id: "example" } as never)),
+      environment: {},
+      runtimePorts: {
+        [VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID]: [contribution],
+      },
+      createServices: async () => serviceHost,
+    }
+
+    await loadVoyantNodeWorkflowRuntime(options)
+    await loadVoyantNodeWorkflowRuntime(options)
+
+    expect(contribution.create).toHaveBeenCalledOnce()
+    expect(services.resolve("example.workflow.runtime")).toEqual({ selected: true })
+  })
+
+  it("rejects duplicate workflow services within one contribution batch", async () => {
+    const contribution = (selected: string) => ({
+      serviceId: "example.workflow.runtime",
+      create: vi.fn(() => ({ selected })),
+    })
+
+    await expect(
+      loadVoyantNodeWorkflowRuntime({
+        graphRuntime: graphWithUnit(unitWithRuntime({ id: "example" } as never)),
+        environment: {},
+        runtimePorts: {
+          [VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID]: [
+            contribution("first"),
+            contribution("second"),
+          ],
+        },
+        createServices: async () => ({ services: createContainer(), eventBus: createEventBus() }),
+      }),
+    ).rejects.toThrow('Workflow service "example.workflow.runtime" is registered more than once.')
+  })
 })
 
 function unitWithRuntime(

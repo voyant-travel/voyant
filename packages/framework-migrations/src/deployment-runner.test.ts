@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import type { MigrationSource } from "./collector.js"
-import { expectedSchema } from "./deployment-runner.js"
+import type { MigrationClient, MigrationSource } from "./collector.js"
+import { detectExisting, expectedSchema } from "./deployment-runner.js"
 
 const src = (name: string, sqls: string[]): MigrationSource => ({
   name,
@@ -59,5 +59,23 @@ describe("expectedSchema", () => {
     expect(e.tables.has("tmp")).toBe(false)
     expect(e.dropped.has("tmp")).toBe(true)
     expect([...e.columns].some((c) => c.startsWith("tmp."))).toBe(false)
+  })
+})
+
+describe("detectExisting", () => {
+  it("recognizes graph-era package ledger source names", async () => {
+    const client: MigrationClient = {
+      async query(sql, params = []) {
+        if (sql.startsWith("SELECT to_regclass")) {
+          return { rows: [{ reg: String(params[0]) }] }
+        }
+        if (sql.includes(`"source" LIKE 'schema:%#migrations'`)) {
+          return { rows: [{ n: "1" }] }
+        }
+        return { rows: [{ n: "0" }] }
+      },
+    }
+
+    await expect(detectExisting(client)).resolves.toBe(true)
   })
 })

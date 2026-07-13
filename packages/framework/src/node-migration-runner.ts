@@ -189,7 +189,10 @@ export async function loadNodeSchemaMigrationSource(
       `Package ${migration.source.packageName} does not publish migrations/meta/_journal.json`,
     )
   }
-  return source
+  return {
+    ...source,
+    legacyNames: [migration.idempotencyKey],
+  }
 }
 
 function deploymentPackageRoot(resolveFrom: string | URL): string {

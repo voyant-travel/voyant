@@ -142,6 +142,7 @@ describe("Node migration runner", () => {
     )
 
     expect(source.name).toBe("finance")
+    expect(source.legacyNames).toEqual(["schema:@voyant-travel/finance#migrations"])
     expect(source.priority).toBe(9)
     expect(source.migrations.length).toBeGreaterThan(0)
   })

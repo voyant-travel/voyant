@@ -1,6 +1,8 @@
 // agent-quality: file-size exception -- owner: framework; graph unit, facet, port, route posture, and plugin output contracts share one composition harness.
 import { createEventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory, definePort } from "@voyant-travel/core/project"
+import { mountApp } from "@voyant-travel/hono"
+import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 import {
   composeVoyantGraphRuntime,
@@ -526,6 +528,58 @@ describe("graph runtime composition", () => {
     expect(composition.modules.map((module) => module.module.name)).toEqual(["loyalty"])
     expect(importRuntime).toHaveBeenCalledTimes(1)
     expect(factory).toHaveBeenCalledTimes(1)
+  })
+
+  it("preserves a project API root mount when a single public route is selected", async () => {
+    const publicRoutes = new Hono().get("/foo", (context) => context.json({ route: "foo" }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:project-api-public-route",
+      entries: {
+        "./.voyant/runtime/project-api.generated.js": async () => ({
+          projectApiHonoModule: {
+            module: { name: "project-api" },
+            publicRoutes,
+            publicPath: "/",
+          },
+        }),
+      },
+      modules: [
+        {
+          id: "project/api",
+          localId: "project-api",
+          kind: "module",
+          packageName: "project",
+          order: 0,
+          routes: [
+            {
+              route: {
+                id: "project.api.public.foo",
+                surface: "public",
+                mount: "/foo",
+                runtime: {
+                  entry: "./.voyant/runtime/project-api.generated.js",
+                  export: "projectApiHonoModule",
+                },
+              },
+              importEntry: "./.voyant/runtime/project-api.generated.js",
+            },
+          ],
+        },
+      ],
+      plugins: [],
+    })
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+    const app = mountApp({
+      db: () => ({}) as never,
+      modules: composition.modules,
+      auth: { resolve: () => ({ userId: "user_1", actor: "customer" }) },
+    })
+
+    expect(composition.modules[0]?.publicPath).toBe("/")
+    const bindings = { DATABASE_URL: "postgres://test" }
+    expect((await app.request("/v1/public/foo", {}, bindings)).status).toBe(200)
+    expect((await app.request("/v1/public/foo/foo", {}, bindings)).status).toBe(404)
   })
 
   it("passes only selected API facets to a package runtime factory", async () => {
