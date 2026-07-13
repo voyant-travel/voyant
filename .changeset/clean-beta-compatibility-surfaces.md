@@ -3,6 +3,8 @@
 "@voyant-travel/types": minor
 "@voyant-travel/utils": minor
 "@voyant-travel/db": minor
+"@voyant-travel/finance": patch
+"@voyant-travel/legal": patch
 ---
 
 Remove deprecated beta compatibility surfaces in favor of their canonical APIs.

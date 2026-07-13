@@ -59,6 +59,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/legal-contracts": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
+    "@voyant-travel/public-document-delivery": "workspace:^",
     "@voyant-travel/relationships": "workspace:^",
     "@voyant-travel/storage": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
