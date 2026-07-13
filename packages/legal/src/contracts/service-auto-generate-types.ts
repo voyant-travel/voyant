@@ -358,21 +358,10 @@ export interface AutoGenerateContractOptions {
    */
   scope?: "customer" | "supplier" | "partner" | "channel" | "other"
   /**
-   * When set, the contract tries to allocate a number from the matching
-   * active series on issuance. Without it, the contract issues unnumbered.
-   * @deprecated Prefer `seriesPrefixScope` — `name` has no unique
-   * constraint, so this lookup throws if multiple active rows share the
-   * name. `(prefix, scope)` is the natural key (partial-unique-indexed).
-   */
-  seriesName?: string
-  /**
    * When set, resolves the active series via the `(prefix, scope)`
-   * partial unique index. Takes precedence over `seriesName`.
+   * partial unique index. Without it, the contract issues unnumbered.
    */
-  seriesPrefixScope?: {
-    prefix: string
-    scope: "customer" | "supplier" | "partner" | "channel" | "other"
-  }
+  seriesPrefixScope?: ContractSeriesIdentity
   /**
    * Language code written onto the contract row. Used by the PDF
    * renderer to pick the right locale for date/currency filters.
@@ -397,6 +386,11 @@ export interface AutoGenerateContractOptions {
    * document instead of returning the existing attachment.
    */
   forceRecompute?: boolean
+}
+
+export interface ContractSeriesIdentity {
+  prefix: string
+  scope: "customer" | "supplier" | "partner" | "channel" | "other"
 }
 
 export interface AutoGenerateContractRuntime {

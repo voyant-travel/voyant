@@ -1016,7 +1016,7 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     expect(bodies[0]).toBe("Rooms 1× Twin room")
   })
 
-  it("resolves a series by name and writes seriesId onto the contract", async () => {
+  it("resolves a series by prefix and scope and writes seriesId onto the contract", async () => {
     const { template } = await seedTemplate("cust-series-1")
     const booking = await seedBooking()
     const series = await contractSeriesService.createSeries(db, {
@@ -1032,7 +1032,11 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     const outcome = await autoGenerateContractForBooking(
       db,
       { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
-      { enabled: true, templateSlug: template.slug, seriesName: "2026 Customer" },
+      {
+        enabled: true,
+        templateSlug: template.slug,
+        seriesPrefixScope: { prefix: "CS", scope: "customer" },
+      },
       { generator: makeGenerator() },
     )
     expect(outcome.status).toBe("ok")
@@ -1041,6 +1045,9 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     const contract = await contractRecordsService.getContractById(db, outcome.contractId)
     expect(contract?.seriesId).toBe(series!.id)
     expect(contract?.contractNumber).toBeTruthy() // allocated from series
+    expect((contract?.variables as { contract?: { series?: string } }).contract?.series).toBe(
+      "2026 Customer",
+    )
   })
 
   it("records trigger metadata on the created contract", async () => {

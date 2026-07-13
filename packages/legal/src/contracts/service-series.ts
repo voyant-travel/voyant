@@ -41,8 +41,8 @@ export const contractSeriesService = {
   /**
    * Resolve the single active series for a (prefix, scope) pair. Throws
    * if the partial unique index has been bypassed and >1 active row
-   * exists. Prefer this over `findSeriesByName` — `(prefix, scope)` is
-   * the natural key for the generated number; `name` is just a label.
+   * exists. `(prefix, scope)` is the natural key for the generated number;
+   * `name` is only a display label.
    */
   async findActiveByPrefixScope(db: PostgresJsDatabase, prefix: string, scope: ContractScope) {
     const rows = await db
@@ -108,24 +108,6 @@ export const contractSeriesService = {
    */
   async findSingleActiveByScope(db: PostgresJsDatabase, scope: ContractScope) {
     return contractSeriesService.findDefaultActiveByScope(db, scope)
-  },
-  /**
-   * @deprecated Prefer `findActiveByPrefixScope`. `name` has no unique
-   * constraint, so two active rows can share a name; this method now
-   * throws on multi-match instead of picking the most-recently-updated.
-   */
-  async findSeriesByName(db: PostgresJsDatabase, name: string) {
-    const rows = await db
-      .select()
-      .from(contractNumberSeries)
-      .where(and(eq(contractNumberSeries.name, name), eq(contractNumberSeries.active, true)))
-      .limit(2)
-    if (rows.length > 1) {
-      throw new ContractSeriesAmbiguousError(
-        `Multiple active contract_number_series rows match name=${name}. Resolve by archiving duplicates (active=false) or migrate the caller to findActiveByPrefixScope.`,
-      )
-    }
-    return rows[0] ?? null
   },
   async createSeries(db: PostgresJsDatabase, data: CreateContractNumberSeriesInput) {
     return db.transaction(async (tx) => {

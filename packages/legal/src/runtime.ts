@@ -24,7 +24,11 @@ import {
   createStorageBackedContractDocumentGenerator,
 } from "./index.js"
 
-const DEFAULT_CONTRACT_SERIES_NAME = "customer-contracts"
+const DEFAULT_CONTRACT_SERIES = {
+  name: "customer-contracts",
+  prefix: `CTR-${new Date().getFullYear()}-`,
+  scope: "customer",
+} as const
 const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
 const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
 
@@ -39,7 +43,10 @@ export const DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions
   templateSlug: "customer-sales-agreement",
   scope: "customer",
   language: "en",
-  seriesName: DEFAULT_CONTRACT_SERIES_NAME,
+  seriesPrefixScope: {
+    prefix: DEFAULT_CONTRACT_SERIES.prefix,
+    scope: DEFAULT_CONTRACT_SERIES.scope,
+  },
   resolveVariables: buildContractVariableBindings({
     resolveOperatorProfile: (db) => getOperatorProfile(db),
     resolveOperatorPaymentInstructions: (db) => getOperatorPaymentInstructions(db),
@@ -178,7 +185,7 @@ function createContractDocumentServiceForBindings(
   return createContractDocumentService({
     resolveGenerator: () => resolveContractDocumentGenerator(primitives, bindings) ?? null,
     autoGenerateOptions: DEFAULT_AUTO_GENERATE_CONTRACT_OPTIONS,
-    defaultSeriesName: DEFAULT_CONTRACT_SERIES_NAME,
+    defaultSeries: DEFAULT_CONTRACT_SERIES,
     resolveBindings: () => primitives.env(bindings),
     resolveBookingPiiService: () => resolveBookingPiiService(primitives, bindings),
   })

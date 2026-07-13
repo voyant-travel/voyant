@@ -20,6 +20,7 @@ export type {
   AutoGenerateContractResult,
   AutoGenerateContractRuntime,
   BookingConfirmedLikeEvent,
+  ContractSeriesIdentity,
   DefaultContractVariables,
   GenerateContractForBookingResult,
   ResolveContractVariablesFn,
@@ -179,9 +180,21 @@ export async function autoGenerateContractForBooking(
     return { status: "booking_not_found" }
   }
 
+  // Prefix + scope is the persisted natural identity for an active series.
+  // A missing series remains non-fatal because some operators number
+  // contracts externally.
+  const series = options.seriesPrefixScope
+    ? await contractSeriesService.findActiveByPrefixScope(
+        db,
+        options.seriesPrefixScope.prefix,
+        options.seriesPrefixScope.scope,
+      )
+    : null
+
   const variables = await resolveContractGenerationVariables(db, booking, event, options, runtime, {
     id: template.id,
     language: template.language,
+    seriesLabel: series?.name ?? null,
   })
 
   // Preview branch: render the template body with the freshly-resolved
@@ -205,22 +218,7 @@ export async function autoGenerateContractForBooking(
     }
   }
 
-  // Resolve a series if the consumer gave a (prefix, scope) or a name —
-  // failure to find is non-fatal since a contract can issue without a
-  // number (some operators use templates as standalone records and number
-  // externally). prefix+scope wins when both are set.
-  let seriesId: string | null = null
-  if (options.seriesPrefixScope) {
-    const series = await contractSeriesService.findActiveByPrefixScope(
-      db,
-      options.seriesPrefixScope.prefix,
-      options.seriesPrefixScope.scope,
-    )
-    seriesId = series?.id ?? null
-  } else if (options.seriesName) {
-    const series = await contractSeriesService.findSeriesByName(db, options.seriesName)
-    seriesId = series?.id ?? null
-  }
+  const seriesId = series?.id ?? null
 
   // Branch on whether the storefront pre-created a draft contract
   // at /checkout/start time (carrying the acceptance metadata on

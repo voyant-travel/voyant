@@ -114,6 +114,7 @@ export {
   type ContractDocumentService,
   type ContractDocumentServiceOptions,
   createContractDocumentService,
+  type DefaultContractSeries,
   ensureDefaultContractSeries,
   resetContractDocumentForBooking,
 } from "./contracts/contract-document-service.js"
@@ -136,6 +137,7 @@ export {
   type AutoGenerateContractRuntime,
   autoGenerateContractForBooking,
   type BookingConfirmedLikeEvent,
+  type ContractSeriesIdentity,
   type DefaultContractVariables,
   type GenerateContractForBookingResult,
   generateContractForBookingFromDefaults,
