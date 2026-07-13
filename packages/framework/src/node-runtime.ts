@@ -13,7 +13,7 @@ import {
   createCloudAdminAuthStart,
 } from "@voyant-travel/auth/cloud-broker"
 import { createBetterAuth } from "@voyant-travel/auth/server"
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   createPostgresFixedWindowRateLimitStore,
   createPostgresKvStore,
@@ -180,6 +180,10 @@ export interface VoyantNodeRuntimeOptions {
   deployment: VoyantNodeRuntimeDeployment
   deploymentRequirements: VoyantGraphDeploymentRequirements
   runtimePorts?: import("./runtime-composition.js").VoyantGraphRuntimePorts
+  /** Node-owned durable boundary for graph-selected outbound webhook events. */
+  outboundWebhooks?: {
+    enqueue: (event: EventEnvelope, bindings: unknown) => Promise<unknown>
+  }
   /** Generic resources available to deployment-local factories. */
   resources?: VoyantNodeRuntimeResources
   applicationId?: string
@@ -256,6 +260,7 @@ export async function loadVoyantNodeRuntime(
     runtime: options.graphRuntime,
     capabilities: resources,
     ports: options.runtimePorts,
+    outboundWebhooks: options.outboundWebhooks,
   })
   const actionLedgerCapabilities = lowerVoyantGraphActionsToActionLedgerRegistry(
     options.graphRuntime,

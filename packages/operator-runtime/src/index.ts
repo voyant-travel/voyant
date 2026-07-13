@@ -6,6 +6,7 @@ import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/operator-node-runtime"
 import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
+import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
   createVoyantNodeEnv,
@@ -20,6 +21,8 @@ import { createNodeServer, type NodeServerHandle } from "@voyant-travel/runtime"
 import { enqueuePostgresWebhookEvent } from "@voyant-travel/webhook-delivery/postgres"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { tsImport } from "tsx/esm/api"
+
+import { createOperatorDeploymentResources } from "./deployment-resources.js"
 
 export {
   type CreateOperatorDeploymentResourcesOptions,
@@ -47,6 +50,7 @@ export interface OperatorProjectHost {
   projectRoot: string
   graphHash: string
   runtime: VoyantNodeRuntime
+  runtimePorts: VoyantGraphRuntimePorts
   auth: OperatorProjectAuth
   fetch(request: Request): Response | Promise<Response>
   start(options?: { port?: number }): NodeServerHandle
@@ -95,6 +99,10 @@ export async function loadOperatorProject(
           event as EventEnvelope,
         )),
   })
+  const deploymentResources = createOperatorDeploymentResources({
+    primitives,
+    createRuntimePorts: generated.createRuntimePorts,
+  })
   const projectLinks = await loadGeneratedProjectLinks(artifactRoot)
   const authRuntime = createOperatorAuthNodeRuntime({
     accessCatalog: generated.graphRuntime.accessCatalog,
@@ -109,7 +117,9 @@ export async function loadOperatorProject(
       providers: generated.deployment.providers,
     },
     deploymentRequirements: graph.requirements,
-    runtimePorts: generated.createRuntimePorts({ primitives }),
+    runtimePorts: deploymentResources.ports,
+    resources: deploymentResources.capabilities,
+    outboundWebhooks: deploymentResources.outboundWebhooks,
     env,
     app: {
       linkDefinitions: projectLinks,
@@ -150,6 +160,7 @@ export async function loadOperatorProject(
     projectRoot,
     graphHash: generated.graphHash,
     runtime,
+    runtimePorts: deploymentResources.ports,
     auth: authRuntime,
     fetch,
     start: ({ port } = {}) =>
@@ -164,6 +175,7 @@ export async function loadOperatorProject(
             projectRoot,
             artifactRoot,
             runtime,
+            runtimePorts: deploymentResources.ports,
           }),
         env: runtime.env,
         port,
@@ -352,6 +364,7 @@ async function dispatchScheduledProjectJob(input: {
   projectRoot: string
   artifactRoot: string
   runtime: VoyantNodeRuntime
+  runtimePorts: VoyantGraphRuntimePorts
 }): Promise<void> {
   const job = input.graph.scheduledJobs.find(
     (candidate) =>
@@ -369,6 +382,7 @@ async function dispatchScheduledProjectJob(input: {
     projectRoot: input.projectRoot,
     artifactRoot: input.artifactRoot,
     runtime: input.runtime,
+    runtimePorts: input.runtimePorts,
   })
   await runScheduledWorkflow(
     job,
@@ -387,10 +401,21 @@ async function dispatchScheduledProjectJob(input: {
 }
 
 export async function loadOperatorProjectWorkflowRuntime(
-  options: { projectRoot?: string; artifactRoot?: string; runtime?: VoyantNodeRuntime } = {},
+  options: {
+    projectRoot?: string
+    artifactRoot?: string
+    runtime?: VoyantNodeRuntime
+    runtimePorts?: VoyantGraphRuntimePorts
+  } = {},
 ) {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
-  const runtime = options.runtime ?? (await loadOperatorProject({ projectRoot })).runtime
+  const host =
+    options.runtime && options.runtimePorts ? undefined : await loadOperatorProject({ projectRoot })
+  const runtime = options.runtime ?? host?.runtime
+  const runtimePorts = options.runtimePorts ?? host?.runtimePorts
+  if (!runtime || !runtimePorts) {
+    throw new Error("Operator workflow runtime requires the resident runtime and graph ports.")
+  }
   const artifactRoot = options.artifactRoot ?? (await resolveGeneratedArtifactRoot(projectRoot))
   const entry = path.join(artifactRoot, "runtime/project-package-workflows.generated.ts")
   const generated = (await tsImport(pathToFileURL(entry).href, {
@@ -400,6 +425,7 @@ export async function loadOperatorProjectWorkflowRuntime(
   return loadVoyantNodeWorkflowRuntime({
     graphRuntime: generated.createGeneratedWorkflowRuntime(),
     environment: runtime.env,
+    runtimePorts,
     createServices: async () => {
       await runtime.app.ready(runtime.env)
       return {
