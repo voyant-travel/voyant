@@ -84,7 +84,9 @@ workload class well. On Node none of it is necessary.
   origin-trust header. During rollout the emitted URL also carries `cron` as a
   compatibility fallback for older runtimes.
 - **CI:** the `node-smoke` job builds the operator, boots it under Node, and
-  asserts `/healthz` + API dispatch — so the first-class target is gated.
+  asserts `/healthz`, API dispatch, and a TanStack SSR page. `/healthz` is only
+  a liveness signal; packaged-starter acceptance gates the complete server
+  graph.
 
 ## Workers host separate edge applications
 

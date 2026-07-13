@@ -55,6 +55,7 @@ describe("standard Node starter contract", () => {
           "@voyant-travel/framework",
           "@voyant-travel/runtime",
           "@voyant-travel/operator-standard",
+          "pg",
         ],
         "schemaVersion": "voyant.node-starter.v2",
         "seedEntry": "src/scripts/seed.ts",

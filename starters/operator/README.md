@@ -147,6 +147,11 @@ exempt). Crons don't run in-process. Deployment tooling derives Cloud Scheduler
 jobs from the admitted graph and POSTs `/__voyant/scheduled?schedule=…`. See
 [docs/architecture/deployment-targets.md](../../docs/architecture/deployment-targets.md).
 
+`voyant start --probe` checks the liveness endpoint and then exits. It proves
+that the Node process can boot, not that TanStack SSR or application API
+dispatch can serve traffic. Release and packaged-starter acceptance must also
+request at least one `/api/*` route and one SSR page such as `/docs`.
+
 ## Routes
 
 Standard frontend routes are emitted from package-owned contributions into the

@@ -27,7 +27,8 @@
   "runtimeDependencies": [
     "@voyant-travel/framework",
     "@voyant-travel/runtime",
-    "@voyant-travel/operator-standard"
+    "@voyant-travel/operator-standard",
+    "pg"
   ],
   "developmentDependencies": ["@voyant-travel/cli", "tsx", "typescript"],
   "gitignoreEntries": [".voyant/", "dist/", "node_modules/", ".env", ".env.*", "!.env.example"]

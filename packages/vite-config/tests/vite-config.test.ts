@@ -128,6 +128,12 @@ describe("voyantStartViteConfig", () => {
     expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("immer")
   })
 
+  it("keeps the CommonJS Postgres driver external in Node SSR builds", () => {
+    const config = voyantStartViteConfig({ ...base, nodeSsr: true })
+
+    expect(config.ssr?.external).toContain("pg")
+  })
+
   it("allows dev tunnel hosts by default and supports an explicit host list", () => {
     expect(voyantStartViteConfig(base).server?.allowedHosts).toBe(true)
     expect(

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
+import { execFileSync, spawn } from "node:child_process"
+import { once } from "node:events"
 import {
   existsSync,
   mkdirSync,
@@ -10,19 +11,21 @@ import {
   writeFileSync,
 } from "node:fs"
 import { tmpdir } from "node:os"
+import { createServer as createNetServer } from "node:net"
 import { dirname, join, resolve } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
-test("minimal starter installs, builds, and boots the Node host", {
-  timeout: 180_000,
-}, () => {
+test("minimal starter installs, builds, and serves API and SSR routes", {
+  timeout: 300_000,
+}, async () => {
   const root = mkdtempSync(join(tmpdir(), "voyant-minimal-starter-acceptance-"))
   const out = join(root, "out")
   const app = join(root, "app")
-  const port = 44_000 + (process.pid % 1_000)
+  const port = await reservePort()
+  let server
   try {
     exec(
       process.execPath,
@@ -183,17 +186,37 @@ test("minimal starter installs, builds, and boots the Node host", {
       { NODE_OPTIONS: "--conditions=development" },
     )
 
-    exec(
-      "pnpm",
-      ["start", "--", "--probe", "--port", String(port)],
-      app,
+    server = spawn(
+      process.execPath,
+      [
+        join(app, "node_modules/@voyant-travel/cli/bin/voyant.mjs"),
+        "start",
+        "--port",
+        String(port),
+      ],
       {
-        DATABASE_URL: ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant"].join(""),
-        NODE_OPTIONS: "--conditions=development",
+        cwd: app,
+        env: {
+          ...process.env,
+          BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
+          DATABASE_URL: ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant"].join(""),
+          NODE_OPTIONS: "--conditions=development",
+          SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
+        },
+        stdio: ["ignore", "pipe", "pipe"],
       },
-      30_000,
     )
+    const output = captureOutput(server)
+    await waitForOk(`http://127.0.0.1:${port}/healthz`, server, output)
+
+    const apiResponse = await fetch(`http://127.0.0.1:${port}/api/v1/public/starter-proof`)
+    assert.equal(apiResponse.status, 401, output())
+
+    const ssrResponse = await fetch(`http://127.0.0.1:${port}/docs`)
+    assert.equal(ssrResponse.status, 200, output())
+    assert.match(await ssrResponse.text(), /No OpenAPI specs are available/)
   } finally {
+    if (server) await stop(server)
     rmSync(root, { recursive: true, force: true })
   }
 })
@@ -209,7 +232,7 @@ function useInstalledToolingArtifacts(app) {
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
 }
 
-function exec(command, args, cwd, env = {}, timeout = 120_000) {
+function exec(command, args, cwd, env = {}, timeout = 240_000) {
   return execFileSync(command, args, {
     cwd,
     env: { ...process.env, ...env },
@@ -223,4 +246,61 @@ function write(root, relativePath, contents) {
   const destination = join(root, relativePath)
   mkdirSync(dirname(destination), { recursive: true })
   writeFileSync(destination, contents)
+}
+
+function captureOutput(child) {
+  let output = ""
+  child.stdout.setEncoding("utf8")
+  child.stderr.setEncoding("utf8")
+  child.stdout.on("data", (chunk) => {
+    output += chunk
+  })
+  child.stderr.on("data", (chunk) => {
+    output += chunk
+  })
+  return () => output
+}
+
+async function waitForOk(url, child, output) {
+  const deadline = Date.now() + 30_000
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`Node host exited before it became ready.\n${output()}`)
+    }
+    try {
+      const response = await fetch(url)
+      if (response.ok) return
+    } catch {
+      // The server socket may not be listening yet.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  throw new Error(`Timed out waiting for ${url}.\n${output()}`)
+}
+
+async function stop(child) {
+  if (child.exitCode !== null) return
+  const exited = once(child, "exit")
+  child.kill("SIGTERM")
+  const stopped = await Promise.race([
+    exited.then(() => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), 5_000)),
+  ])
+  if (stopped) return
+  child.kill("SIGKILL")
+  await exited
+}
+
+async function reservePort() {
+  const listener = createNetServer()
+  await new Promise((resolve, reject) => {
+    listener.once("error", reject)
+    listener.listen(0, "127.0.0.1", resolve)
+  })
+  const address = listener.address()
+  await new Promise((resolve, reject) =>
+    listener.close((error) => (error ? reject(error) : resolve())),
+  )
+  assert.ok(address && typeof address === "object")
+  return address.port
 }
