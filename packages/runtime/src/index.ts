@@ -35,10 +35,7 @@ import { tsImport } from "tsx/esm/api"
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
 import { createVoyantDeploymentResources } from "./deployment-resources.js"
-import {
-  loadBuiltProjectStart,
-  startVoyantProjectWithDependencies,
-} from "./project-start.js"
+import { loadBuiltProjectStart, startVoyantProjectWithDependencies } from "./project-start.js"
 
 export {
   type CreateVoyantDeploymentResourcesOptions,

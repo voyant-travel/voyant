@@ -5,18 +5,15 @@ import path from "node:path"
 import type { NodeServerHandle } from "@voyant-travel/runtime-core"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  loadBuiltProjectStart,
-  startVoyantProjectWithDependencies,
-} from "./project-start.js"
+import { loadBuiltProjectStart, startVoyantProjectWithDependencies } from "./project-start.js"
 
 const temporaryDirectories: string[] = []
 
 afterEach(async () => {
   await Promise.all(
-    temporaryDirectories.splice(0).map((directory) =>
-      rm(directory, { recursive: true, force: true }),
-    ),
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
   )
 })
 

@@ -45,7 +45,7 @@ test("operator release archive contains only the minimal authored project", () =
     assert.equal(packageJson.scripts["graph:emit"], undefined)
     assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
     assert.equal(typeof packageJson.dependencies["@voyant-travel/runtime"], "string")
-    assert.equal(typeof packageJson.dependencies.pg, "string")
+    assert.equal(packageJson.dependencies.pg, "8.22.0")
     assert.equal(packageJson.dependencies["@voyant-travel/plugin-smartbill"], undefined)
     assert.equal(packageJson.devDependencies["@voyant-travel/cli"], "^0.40.0")
     const dependencySpecs = Object.values({

@@ -237,9 +237,7 @@ function escapeRegExp(value: string): string {
 }
 
 function relativeEntry(appRootUrl: string, entry: string): string {
-  return `../${path
-    .relative(path.dirname(fileURLToPath(appRootUrl)), entry)
-    .replaceAll("\\", "/")}`
+  return `../${path.relative(path.dirname(fileURLToPath(appRootUrl)), entry).replaceAll("\\", "/")}`
 }
 
 export async function prepareProjectBootstrap(projectRoot: string): Promise<ProjectBootstrap> {

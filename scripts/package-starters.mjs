@@ -120,7 +120,7 @@ function requiredStarterRuntimeVersion(name) {
   if (typeof value !== "string" || /^(?:catalog|workspace|file|link):/.test(value)) {
     throw new Error(`Missing concrete operator starter dependency version: ${name}`)
   }
-  return value
+  return value.replace(/^[~^]/, "")
 }
 
 function supportedCliRange() {
