@@ -227,6 +227,7 @@ function inspectRepositoryAuthority(repoRoot) {
     "starters/operator/scripts/check-deployment-graph-env.ts",
     "starters/operator/scripts/emit-cloud-scheduler.ts",
     "starters/operator/scripts/env-preload.cjs",
+    "starters/operator/scripts/backfill-custom-fields.ts",
   ]) {
     if (existsSync(join(repoRoot, relativePath))) {
       violations.push(`standard starter operational authority must stay deleted: ${relativePath}`)

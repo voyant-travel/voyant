@@ -73,44 +73,12 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
           )
         `)
       await db.execute(sql`
-          INSERT INTO custom_field_definitions (
-            id,
-            entity_type,
-            key,
-            label,
-            field_type
-          )
-          VALUES (
-            'cfdef_merge_person_pref_00000001',
-            'person',
-            'merge_person_pref',
-            'Merge person preference',
-            'text'
-          )
-        `)
-      await db.execute(sql`
-          INSERT INTO custom_field_values (
-            id,
-            definition_id,
-            entity_type,
-            entity_id,
-            text_value
-          )
-          VALUES
-            (
-              'cfval_merge_person_keep_00000001',
-              'cfdef_merge_person_pref_00000001',
-              'person',
-              ${keep.id},
-              'window'
-            ),
-            (
-              'cfval_merge_person_dup_00000001',
-              'cfdef_merge_person_pref_00000001',
-              'person',
-              ${merge.id},
-              'aisle'
-            )
+          UPDATE people
+          SET custom_fields = CASE id
+            WHEN ${keep.id} THEN '{"merge_person_pref":"window"}'::jsonb
+            WHEN ${merge.id} THEN '{"merge_person_pref":"aisle","merge_person_note":"quiet"}'::jsonb
+          END
+          WHERE id IN (${keep.id}, ${merge.id})
         `)
 
       const res = await getApp().request(`/people/${keep.id}/merge`, {
@@ -138,12 +106,20 @@ describe.skipIf(!DB_AVAILABLE)("People account routes", () => {
         `)
       expect(bookingRows[0]?.person_id).toBe(keep.id)
 
-      const customFieldRows = await db.execute<{ entity_id: string; text_value: string }>(sql`
-          SELECT entity_id, text_value
-          FROM custom_field_values
-          WHERE definition_id = 'cfdef_merge_person_pref_00000001'
+      const customFieldRows = await db.execute<{
+        id: string
+        custom_fields: Record<string, unknown>
+      }>(sql`
+          SELECT id, custom_fields
+          FROM people
+          WHERE id = ${keep.id}
         `)
-      expect(customFieldRows).toEqual([{ entity_id: keep.id, text_value: "window" }])
+      expect(customFieldRows).toEqual([
+        {
+          id: keep.id,
+          custom_fields: { merge_person_note: "quiet", merge_person_pref: "window" },
+        },
+      ])
     })
 
     it("rejects self person merges", async () => {
