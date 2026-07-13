@@ -72,7 +72,9 @@ export function createCatalogRuntime(
   return {
     search: { resolveRuntime: createCatalogSearchRuntime },
     booking: createOperatorCatalogBookingRouteModuleOptions(),
-    offers: createOperatorCatalogOffersRouteModuleOptions(),
+    offers: createOperatorCatalogOffersRouteModuleOptions((context) =>
+      resolveCatalogDefaultScope(context),
+    ),
     content: { resolveRegistry: getBookingEngineRegistryFromContext },
     projection: {
       createRuntime(bindings) {
@@ -86,23 +88,30 @@ export function createCatalogRuntime(
 }
 
 function createCatalogSearchRuntime(context: unknown): CatalogSearchRuntime {
+  const env = (context as { env: Record<string, unknown> }).env
+  const embeddings = buildEmbeddingProvider(env)
+  const defaultScope = resolveCatalogDefaultScope(context)
+  return {
+    indexer: buildTypesenseIndexer(env, embeddings),
+    embeddings,
+    defaultScope,
+  }
+}
+
+function resolveCatalogDefaultScope(context: unknown): CatalogSearchRuntime["defaultScope"] {
   const requestContext = context as { env: Record<string, unknown>; var?: { actor?: string } }
   const env = requestContext.env
-  const embeddings = buildEmbeddingProvider(env)
   const actor = requestContext.var?.actor ?? "staff"
   const audience: CatalogSearchRuntime["defaultScope"]["audience"] =
     actor === "staff" ? "staff" : (actor as CatalogSearchRuntime["defaultScope"]["audience"])
   return {
-    indexer: buildTypesenseIndexer(env, embeddings),
-    embeddings,
-    defaultScope: {
-      locale: "en-GB",
-      audience,
-      market: "default",
-      channel:
-        typeof env.VOYANT_STOREFRONT_CHANNEL_ID === "string"
-          ? env.VOYANT_STOREFRONT_CHANNEL_ID
-          : undefined,
-    },
+    locale: stringValue(env.DEFAULT_LOCALE) ?? "en-GB",
+    audience,
+    market: stringValue(env.DEFAULT_MARKET) ?? "default",
+    channel: stringValue(env.VOYANT_STOREFRONT_CHANNEL_ID),
   }
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined
 }
