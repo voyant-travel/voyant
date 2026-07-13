@@ -3267,6 +3267,9 @@ importers:
       '@voyant-travel/auth':
         specifier: workspace:^
         version: link:../auth
+      '@voyant-travel/cloud-sdk':
+        specifier: ^0.11.0
+        version: 0.11.0(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core

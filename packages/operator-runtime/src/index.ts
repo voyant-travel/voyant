@@ -23,6 +23,7 @@ import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-tr
 import { tsImport } from "tsx/esm/api"
 
 import { requireOperatorAuthEnv } from "./auth-env.js"
+import { resolveOperatorCloudAuthEmailSender } from "./cloud-auth-email.js"
 import { createOperatorDeploymentResources } from "./deployment-resources.js"
 
 export {
@@ -111,6 +112,7 @@ export async function loadOperatorProject(
     accessCatalog: generated.graphRuntime.accessCatalog,
     appName: path.basename(projectRoot),
     reporter: consoleReporter(),
+    resolveEmailSender: resolveOperatorCloudAuthEmailSender,
   })
   const runtime = await loadVoyantNodeRuntime({
     applicationId: path.basename(projectRoot),
@@ -153,12 +155,12 @@ export async function loadOperatorProject(
       },
     },
   })
-  const clientAssetsDir = await resolveAdminAssetsDir(projectRoot, options.adminAssetsDir)
+  const clientAssetsDir = resolveAdminAssetsDir(projectRoot, artifactRoot, options.adminAssetsDir)
   const web = serveAdminHost<VoyantNodeRuntimeEnv>({
     clientAssetsDir,
     app: async (request, bindings, ctx) => {
       if (new URL(request.url).pathname.startsWith("/api")) {
-        return runtime.app.fetch(request, bindings, ctx)
+        return runtime.app.fetch(rewriteLegacyMediaRequest(request), bindings, ctx)
       }
       const { createAdminSsrHandler } = await import("@voyant-travel/admin-host/ssr")
       return createAdminSsrHandler<VoyantNodeRuntimeEnv>()(request, bindings, ctx)
@@ -347,21 +349,22 @@ async function loadGeneratedProjectLinks(artifactRoot: string) {
   }
 }
 
-async function resolveAdminAssetsDir(projectRoot: string, explicit?: string): Promise<string> {
+function resolveAdminAssetsDir(
+  projectRoot: string,
+  artifactRoot: string,
+  explicit?: string,
+): string {
   if (explicit) return path.resolve(explicit)
-  const candidates = [
-    path.join(projectRoot, "dist/client"),
-    path.join(projectRoot, ".voyant/admin/client"),
-  ]
-  for (const candidate of candidates) {
-    try {
-      await access(candidate)
-      return candidate
-    } catch {}
-  }
-  // Vite serves assets itself in development; the static middleware may point
-  // at the future build directory without creating project-owned artifacts.
-  return candidates[0]!
+  return artifactRoot === path.join(projectRoot, "dist/.voyant")
+    ? path.join(projectRoot, "dist/client")
+    : path.join(artifactRoot, "admin/client")
+}
+
+function rewriteLegacyMediaRequest(request: Request): Request {
+  const url = new URL(request.url)
+  if (!url.pathname.startsWith("/api/v1/media/")) return request
+  url.pathname = url.pathname.replace("/api/v1/media/", "/api/v1/admin/media/")
+  return new Request(url, request)
 }
 
 async function pathExists(candidate: string): Promise<boolean> {
