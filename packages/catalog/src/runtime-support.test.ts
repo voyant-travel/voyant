@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { createCatalogOffersTypesenseResolvers } from "./runtime-support.js"
+import {
+  createCatalogOffersTypesenseResolvers,
+  withoutCatalogScopeChannel,
+} from "./runtime-support.js"
 
 const resolvers = createCatalogOffersTypesenseResolvers(
   () => ({ TYPESENSE_HOST: "typesense.example.test", TYPESENSE_API_KEY: "test-key" }),
-  () => ({ locale: "ro-RO", audience: "staff", market: "ro", channel: "website" }),
+  () =>
+    withoutCatalogScopeChannel({
+      locale: "ro-RO",
+      audience: "staff",
+      market: "ro",
+      channel: "website",
+    }),
 )
 
 afterEach(() => {
@@ -19,7 +28,7 @@ describe("catalog offer Typesense resolvers", () => {
     await resolvers.fetchIndexFields({}, ["product-1"])
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/collections/products__ro-RO__staff__ro__website/documents/search"),
+      expect.stringContaining("/collections/products__ro-RO__staff__ro/documents/search"),
       { headers: { "X-TYPESENSE-API-KEY": "test-key" } },
     )
   })
@@ -31,7 +40,7 @@ describe("catalog offer Typesense resolvers", () => {
     await resolvers.resolveDynamicHotelIds({}, { countryCode: "RO", city: "Bucharest" }, 10)
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/collections/products__ro-RO__staff__ro__website/documents/search"),
+      expect.stringContaining("/collections/products__ro-RO__staff__ro/documents/search"),
       { headers: { "X-TYPESENSE-API-KEY": "test-key" } },
     )
   })

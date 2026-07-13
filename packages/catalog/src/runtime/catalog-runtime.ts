@@ -19,6 +19,7 @@ import {
   DEFAULT_CATALOG_SLICES,
   DEFAULT_CATALOG_VERTICALS,
   withCatalogEmbedding,
+  withoutCatalogScopeChannel,
 } from "@voyant-travel/catalog/runtime-support"
 import type { DocumentBuilder } from "@voyant-travel/catalog/services/indexer"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -60,6 +61,7 @@ export type CatalogRuntimeEnv = {
 }
 
 export const buildEmbeddingProvider = buildCatalogEmbeddingProvider
+export { withoutCatalogScopeChannel }
 
 export function buildTypesenseIndexer(
   env: CatalogRuntimeEnv,
