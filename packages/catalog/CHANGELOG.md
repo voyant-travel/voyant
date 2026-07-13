@@ -1,5 +1,11 @@
 # @voyant-travel/catalog
 
+## 0.151.2
+
+### Patch Changes
+
+- b29e7e8: Keep staff catalog-offer index lookups on the unscoped staff collection when a storefront channel is configured.
+
 ## 0.151.1
 
 ### Patch Changes
