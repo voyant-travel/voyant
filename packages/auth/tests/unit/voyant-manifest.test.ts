@@ -19,6 +19,7 @@ describe("auth identity/access deployment manifests", () => {
         {
           surface: "admin",
           mount: "invitations",
+          resource: "team",
           openapi: { document: "invitations" },
           transactional: true,
         },

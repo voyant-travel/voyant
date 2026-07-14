@@ -1,6 +1,25 @@
 import { definePort } from "@voyant-travel/core/project"
 
 import type { CreateRealtimeHonoModuleOptions } from "./index.js"
+import type { RealtimeProvider } from "./types.js"
+
+/** Deployment-selected realtime transport supplied before package runtime contributors execute. */
+export const realtimeTransportRuntimePort = definePort<RealtimeProvider>({
+  id: "realtime.transport",
+  test(provider) {
+    if (
+      provider === null ||
+      typeof provider !== "object" ||
+      typeof provider.name !== "string" ||
+      typeof provider.publish !== "function" ||
+      typeof provider.mintClientToken !== "function"
+    ) {
+      throw new Error(
+        "realtime.transport provider must define name and implement publish() and mintClientToken().",
+      )
+    }
+  },
+})
 
 /** Deployment contract required by the package-owned realtime runtime factory. */
 export const realtimeRuntimePort = definePort<CreateRealtimeHonoModuleOptions>({

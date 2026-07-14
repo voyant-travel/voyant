@@ -12,6 +12,7 @@ export const authInvitationsVoyantModule = defineModule({
       id: "@voyant-travel/auth#invitations.api.admin",
       surface: "admin",
       mount: "invitations",
+      resource: "team",
       openapi: { document: "invitations" },
       transactional: true,
       runtime: {
@@ -57,7 +58,26 @@ export const authTeamVoyantModule = defineModule({
       {
         id: "@voyant-travel/auth#access.team",
         resource: "team",
-        actions: ["read", "write", "delete"],
+        label: "Team",
+        description: "Manage staff team members and their access.",
+        actions: [
+          {
+            action: "read",
+            label: "View team",
+            description: "View staff team members.",
+          },
+          {
+            action: "write",
+            label: "Manage team",
+            description: "Create and update staff team members.",
+          },
+          {
+            action: "delete",
+            label: "Delete team members",
+            description: "Delete staff team members.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },

@@ -15,6 +15,7 @@ export const realtimeVoyantModule = defineModule({
       id: "@voyant-travel/realtime#api.admin",
       surface: "admin",
       mount: "realtime",
+      resource: "realtime",
       openapi: { document: "realtime-admin" },
       runtime: {
         entry: "@voyant-travel/realtime",
@@ -25,6 +26,7 @@ export const realtimeVoyantModule = defineModule({
       id: "@voyant-travel/realtime#api.public",
       surface: "public",
       mount: "realtime",
+      resource: "realtime",
       openapi: { document: "realtime-public" },
       runtime: {
         entry: "@voyant-travel/realtime",
@@ -39,21 +41,68 @@ export const realtimeVoyantModule = defineModule({
       export: "createSelectedRealtimeAdminExtension",
     },
   },
+  config: [
+    {
+      id: "@voyant-travel/realtime#config.voyant-cloud-base-url",
+      key: "VOYANT_CLOUD_API_URL",
+      required: false,
+    },
+    {
+      id: "@voyant-travel/realtime#config.voyant-cloud-user-agent",
+      key: "VOYANT_CLOUD_USER_AGENT",
+      required: false,
+    },
+  ],
+  secrets: [
+    {
+      id: "@voyant-travel/realtime#secret.voyant-cloud-api-key",
+      key: "VOYANT_API_KEY",
+      required: true,
+      description: "Voyant Cloud API key used by the selected realtime transport.",
+      rotation: "replace-only",
+    },
+  ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/realtime#access.realtime",
+        resource: "realtime",
+        label: "Realtime",
+        description: "Mint capability-scoped realtime client tokens.",
+        actions: [
+          {
+            action: "write",
+            label: "Connect to realtime",
+            description: "Mint a short-lived capability-scoped realtime client token.",
+          },
+        ],
+      },
+    ],
+  },
   providers: [
     {
       id: "@voyant-travel/realtime#provider.local",
       port: "realtime.transport",
+      selection: { role: "realtime", value: "local" },
       runtime: {
         entry: "@voyant-travel/realtime/providers/local",
-        export: "createLocalRealtimeProvider",
+        export: "createLocalGraphRealtimeProvider",
       },
     },
     {
       id: "@voyant-travel/realtime#provider.voyant-cloud",
       port: "realtime.transport",
+      selection: { role: "realtime", value: "voyant-cloud" },
+      uses: {
+        config: [
+          "@voyant-travel/realtime#config.voyant-cloud-base-url",
+          "@voyant-travel/realtime#config.voyant-cloud-user-agent",
+        ],
+        secrets: ["@voyant-travel/realtime#secret.voyant-cloud-api-key"],
+      },
       runtime: {
         entry: "@voyant-travel/realtime/providers/voyant-cloud",
-        export: "createVoyantCloudRealtimeProvider",
+        export: "createVoyantCloudGraphRealtimeProvider",
       },
     },
   ],

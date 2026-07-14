@@ -10,6 +10,7 @@ export const identityVoyantModule = defineModule({
       id: "@voyant-travel/identity#api.admin",
       surface: "admin",
       mount: "identity",
+      resource: "identity",
       openapi: { document: "identity" },
       runtime: {
         entry: "@voyant-travel/identity",
@@ -29,6 +30,34 @@ export const identityVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/identity#access.identity",
+        resource: "identity",
+        label: "Identity",
+        description: "Manage reusable contact points, addresses, and named contacts.",
+        actions: [
+          {
+            action: "read",
+            label: "View identity records",
+            description: "View contact points, addresses, and named contacts.",
+          },
+          {
+            action: "write",
+            label: "Manage identity records",
+            description: "Create and update contact points, addresses, and named contacts.",
+          },
+          {
+            action: "delete",
+            label: "Delete identity records",
+            description: "Delete contact points, addresses, and named contacts.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

@@ -39,30 +39,37 @@ export const notificationsVoyantModule = defineModule({
     {
       id: "@voyant-travel/notifications#linkable.notification-template",
       source: schemaSource,
+      export: "notificationTemplateLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-delivery",
       source: schemaSource,
+      export: "notificationDeliveryLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-rule",
       source: schemaSource,
+      export: "notificationReminderRuleLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-run",
       source: schemaSource,
+      export: "notificationReminderRunLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-rule-stage",
       source: schemaSource,
+      export: "notificationReminderRuleStageLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-stage-channel",
       source: schemaSource,
+      export: "notificationReminderStageChannelLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-settings",
       source: schemaSource,
+      export: "notificationSettingsLinkable",
     },
   ],
   workflows: [
@@ -121,10 +128,19 @@ export const notificationsVoyantModule = defineModule({
       {
         id: "@voyant-travel/notifications#access.notifications",
         resource: "notifications",
+        label: "Notifications",
+        description: "View notification delivery history and send vetted templates.",
         actions: [
-          "read",
+          {
+            action: "read",
+            label: "View notifications",
+            description: "View notification templates, reminders, and delivery history.",
+          },
           {
             action: "send",
+            label: "Send notifications",
+            description: "Send a vetted notification template to a recipient.",
+            sensitive: true,
             wildcard: "explicit",
           },
         ],
@@ -141,6 +157,7 @@ export const notificationsVoyantModule = defineModule({
       },
       requiredScopes: ["notifications:read"],
       context: ["notifications"],
+      risk: "low",
     },
     {
       id: "@voyant-travel/notifications#tool.get-delivery",
@@ -148,6 +165,7 @@ export const notificationsVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/notifications/tools", export: "getDeliveryTool" },
       requiredScopes: ["notifications:read"],
       context: ["notifications"],
+      risk: "low",
     },
     {
       id: "@voyant-travel/notifications#tool.send-notification",
@@ -158,6 +176,23 @@ export const notificationsVoyantModule = defineModule({
       },
       requiredScopes: ["notifications:send"],
       context: ["notifications"],
+      risk: "high",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/notifications#action.send-notification",
+      version: "v1",
+      kind: "execute",
+      targetType: "notification",
+      resource: "notifications",
+      action: "send",
+      requiredScopes: ["notifications:send"],
+      risk: "high",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      from: { tools: ["@voyant-travel/notifications#tool.send-notification"] },
     },
   ],
   admin: {

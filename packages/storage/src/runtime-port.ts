@@ -1,6 +1,21 @@
 import { definePort } from "@voyant-travel/core/project"
 
 import type { MediaRoutesOptions } from "./routes.js"
+import type { StorageProviderResolver } from "./types.js"
+
+/** Deployment-selected resolver for logical object stores. */
+export const storageObjectRuntimePort = definePort<StorageProviderResolver>({
+  id: "storage.object",
+  test(provider) {
+    if (
+      provider === null ||
+      typeof provider !== "object" ||
+      typeof provider.resolve !== "function"
+    ) {
+      throw new Error("storage.object provider must implement resolve().")
+    }
+  },
+})
 
 /** Deployment contract required by the package-owned media runtime factory. */
 export const storageMediaRuntimePort = definePort<MediaRoutesOptions>({

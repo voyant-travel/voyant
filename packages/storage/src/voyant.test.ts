@@ -8,6 +8,7 @@ import {
   STORAGE_OPENAPI_API_IDS,
   storageMediaRuntimePort,
 } from "./routes.js"
+import { storageObjectRuntimePort } from "./runtime-port.js"
 import { storageVoyantModule } from "./voyant.js"
 
 describe("storage deployment manifest", () => {
@@ -37,6 +38,7 @@ describe("storage deployment manifest", () => {
           id: expect.stringMatching(/^@voyant-travel\/storage#api\.admin\./),
           surface: "admin",
           mount,
+          resource: "media",
           openapi: { document },
           runtime: {
             entry: "@voyant-travel/storage/routes",
@@ -94,6 +96,15 @@ describe("storage deployment manifest", () => {
     ).resolves.toBeUndefined()
     await expect(assertPortConforms(storageMediaRuntimePort, {} as never)).rejects.toThrow(
       /resolveStorage/,
+    )
+  })
+
+  it("validates the deployment-selected object storage resolver", async () => {
+    await expect(
+      assertPortConforms(storageObjectRuntimePort, { resolve: () => null }),
+    ).resolves.toBeUndefined()
+    await expect(assertPortConforms(storageObjectRuntimePort, {} as never)).rejects.toThrow(
+      /resolve/,
     )
   })
 })

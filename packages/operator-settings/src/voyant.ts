@@ -65,7 +65,26 @@ export const operatorSettingsVoyantModule = defineModule({
       {
         id: "@voyant-travel/operator-settings#access.settings",
         resource: "settings",
-        actions: ["read", "write", "delete"],
+        label: "Settings",
+        description: "Manage operator profile and application settings.",
+        actions: [
+          {
+            action: "read",
+            label: "View settings",
+            description: "View operator profile and application settings.",
+          },
+          {
+            action: "write",
+            label: "Manage settings",
+            description: "Create and update operator profile and application settings.",
+          },
+          {
+            action: "delete",
+            label: "Delete settings",
+            description: "Delete operator-managed settings.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },

@@ -54,12 +54,36 @@ export const legalVoyantModule = defineModule({
     },
   ],
   links: [
-    { id: "@voyant-travel/legal#linkable.contract", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.contractTemplate", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.policy", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.policyVersion", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.policyAcceptance", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.term", source: linkableSource },
+    {
+      id: "@voyant-travel/legal#linkable.contract",
+      source: linkableSource,
+      export: "contractLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.contractTemplate",
+      source: linkableSource,
+      export: "contractTemplateLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.policy",
+      source: linkableSource,
+      export: "policyLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.policyVersion",
+      source: linkableSource,
+      export: "policyVersionLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.policyAcceptance",
+      source: linkableSource,
+      export: "policyAcceptanceLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.term",
+      source: linkableSource,
+      export: "legalTermLinkable",
+    },
     {
       id: "@voyant-travel/legal#link.contract-booking",
       source: "@voyant-travel/legal/standard-links",
@@ -154,7 +178,20 @@ export const legalVoyantModule = defineModule({
       {
         id: "@voyant-travel/legal#access.legal",
         resource: "legal",
-        actions: ["read", "write"],
+        label: "Legal",
+        description: "Manage contracts, templates, policies, and legal terms.",
+        actions: [
+          {
+            action: "read",
+            label: "View legal records",
+            description: "View contracts, templates, policies, and legal terms.",
+          },
+          {
+            action: "write",
+            label: "Manage legal records",
+            description: "Create and update contracts, templates, policies, and legal terms.",
+          },
+        ],
       },
     ],
   },
@@ -213,6 +250,7 @@ export const legalContractDocumentVoyantModule = defineModule({
     {
       id: "@voyant-travel/legal#contract-document.api",
       surface: "admin",
+      resource: "legal",
       openapi: { document: "contract-document" },
       runtime: {
         entry: "@voyant-travel/legal/contract-document-routes",

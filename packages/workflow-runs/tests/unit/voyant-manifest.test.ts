@@ -19,6 +19,7 @@ describe("workflow-runs deployment manifest", () => {
           id: "@voyant-travel/workflow-runs#api.admin",
           surface: "admin",
           mount: "workflow-runs",
+          resource: "workflows",
           openapi: { document: "workflow-runs" },
           runtime: {
             entry: "@voyant-travel/workflow-runs/hono-module",
@@ -44,12 +45,29 @@ describe("workflow-runs deployment manifest", () => {
           {
             id: "@voyant-travel/workflow-runs#access.workflows",
             resource: "workflows",
-            actions: ["trigger"],
+            label: "Workflows",
+            description: "Trigger and resume workflow runs.",
+            actions: [
+              {
+                action: "trigger",
+                label: "Trigger workflows",
+                description: "Trigger, rerun, and resume workflow runs.",
+              },
+            ],
           },
           {
             id: "@voyant-travel/workflow-runs#access.webhooks",
             resource: "webhooks",
-            actions: ["relay"],
+            label: "Webhooks",
+            description: "Relay workflow events to configured webhook destinations.",
+            actions: [
+              {
+                action: "relay",
+                label: "Relay webhooks",
+                description: "Relay workflow events to external webhook destinations.",
+                sensitive: true,
+              },
+            ],
           },
         ],
       },

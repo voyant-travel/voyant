@@ -1,10 +1,12 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type {
   InsertInfraPublicDocumentDeliveryGrant,
   SelectInfraPublicDocumentDeliveryGrant,
 } from "@voyant-travel/db/schema/infra"
 import { infraPublicDocumentDeliveryGrantsTable } from "@voyant-travel/db/schema/infra"
 import type { StorageProvider } from "@voyant-travel/storage"
+import { storageObjectRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -398,3 +400,13 @@ export function createPublicDocumentDeliveryHonoModule<
     publicRoutes: createPublicDocumentDeliveryRoutes(options),
   }
 }
+
+/** Package-owned adapter from the selected object-storage resolver to document delivery routes. */
+export const createPublicDocumentDeliveryVoyantRuntime = defineGraphRuntimeFactory(
+  async ({ getPort }) => {
+    const storage = await getPort(storageObjectRuntimePort)
+    return createPublicDocumentDeliveryHonoModule({
+      resolveStorage: () => storage.resolve("documents"),
+    })
+  },
+)

@@ -66,6 +66,33 @@ describe("notifications deployment manifest", () => {
       "@voyant-travel/notifications#linkable.notification-reminder-stage-channel",
       "@voyant-travel/notifications#linkable.notification-settings",
     ])
+    expect(notificationsVoyantModule.links?.map((link) => link.export)).toEqual([
+      "notificationTemplateLinkable",
+      "notificationDeliveryLinkable",
+      "notificationReminderRuleLinkable",
+      "notificationReminderRunLinkable",
+      "notificationReminderRuleStageLinkable",
+      "notificationReminderStageChannelLinkable",
+      "notificationSettingsLinkable",
+    ])
+    expect(notificationsVoyantModule.tools?.map((tool) => [tool.name, tool.risk])).toEqual([
+      ["list_notification_deliveries", "low"],
+      ["get_notification_delivery", "low"],
+      ["send_notification", "high"],
+    ])
+    expect(notificationsVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/notifications#action.send-notification",
+        resource: "notifications",
+        action: "send",
+        requiredScopes: ["notifications:send"],
+        risk: "high",
+        ledger: "required",
+        approval: "required",
+        reversible: false,
+        from: { tools: ["@voyant-travel/notifications#tool.send-notification"] },
+      }),
+    )
   })
 
   it("exports workflow runtime descriptors matching the manifest ids", () => {

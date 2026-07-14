@@ -13,6 +13,7 @@ describe("storefront deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
+      provides: { capabilities: ["storefront.data-owner"] },
       runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
       runtimePorts: [
         { id: "storefront.offers.runtime" },
@@ -34,6 +35,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#api.public",
           surface: "public",
           mount: "/",
+          resource: "storefront",
           openapi: { document: "storefront" },
           anonymous: ["/leads", "/newsletter", "/offers"],
           runtime: {
@@ -58,6 +60,7 @@ describe("storefront deployment manifest", () => {
         {
           id: "@voyant-travel/storefront#linkable.storefrontVerificationChallenge",
           source: "@voyant-travel/storefront/verification",
+          export: "storefrontVerificationLinkable",
         },
       ],
       events: [
@@ -116,6 +119,7 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#customer-portal",
         packageName: "@voyant-travel/storefront",
+        requires: { capabilities: ["storefront.data-owner"] },
         runtime: {
           entry: "@voyant-travel/storefront/customer-portal",
           export: "createCustomerPortalVoyantRuntime",
@@ -126,6 +130,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/storefront#customer-portal.api",
             surface: "public",
             mount: "customer-portal",
+            resource: "storefront",
             openapi: { document: "customer-portal" },
             anonymous: ["/contact-exists"],
             runtime: {
@@ -139,6 +144,7 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#verification",
         packageName: "@voyant-travel/storefront",
+        requires: { capabilities: ["storefront.data-owner"] },
         runtime: {
           entry: "@voyant-travel/storefront/verification",
           export: "createStorefrontVerificationVoyantRuntime",
@@ -166,6 +172,7 @@ describe("storefront deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront#payment-link",
       packageName: "@voyant-travel/storefront",
+      requires: { capabilities: ["storefront.data-owner"] },
       runtime: {
         entry: "@voyant-travel/storefront/payment-link",
         export: "createPaymentLinkVoyantRuntime",
@@ -176,6 +183,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#payment-link.api",
           surface: "public",
           mount: "/",
+          resource: "storefront",
           openapi: { document: "payment-link" },
           anonymous: ["payment-link-config", "payment-link"],
           runtime: {

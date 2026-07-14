@@ -55,6 +55,14 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#link.policy-acceptance-booking",
       "@voyant-travel/legal#link.policy-product",
     ])
+    expect(legalVoyantModule.links?.slice(0, 6).map((link) => link.export)).toEqual([
+      "contractLinkable",
+      "contractTemplateLinkable",
+      "policyLinkable",
+      "policyVersionLinkable",
+      "policyAcceptanceLinkable",
+      "legalTermLinkable",
+    ])
     expect(legalVoyantModule.events).toContainEqual({
       id: "@voyant-travel/legal#event.booking.contract.generated",
       eventType: "booking.contract.generated",
@@ -79,6 +87,7 @@ describe("legal deployment manifest", () => {
         {
           id: "@voyant-travel/legal#contract-document.api",
           surface: "admin",
+          resource: "legal",
           openapi: { document: "contract-document" },
           runtime: {
             entry: "@voyant-travel/legal/contract-document-routes",

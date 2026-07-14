@@ -1,4 +1,5 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { storageObjectRuntimePort } from "@voyant-travel/storage/runtime-port"
 
 /** Import-cheap declaration for the anonymous public document delivery surface. */
 export const publicDocumentDeliveryVoyantModule = defineModule({
@@ -8,6 +9,7 @@ export const publicDocumentDeliveryVoyantModule = defineModule({
   requires: {
     ports: [{ id: "database.client" }, { id: "storage.object" }],
   },
+  runtimePorts: [requirePort(storageObjectRuntimePort)],
   api: [
     {
       id: "@voyant-travel/public-document-delivery#api.public",
@@ -17,7 +19,7 @@ export const publicDocumentDeliveryVoyantModule = defineModule({
       openapi: { document: "public-document-delivery" },
       runtime: {
         entry: "@voyant-travel/public-document-delivery",
-        export: "createPublicDocumentDeliveryHonoModule",
+        export: "createPublicDocumentDeliveryVoyantRuntime",
       },
     },
   ],
