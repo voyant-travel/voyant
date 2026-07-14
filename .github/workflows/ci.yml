@@ -1,24 +1,8 @@
-name: CI
+name: CI fallback
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
-  push:
-    branches:
-      - main
-      - develop
+  workflow_dispatch:
 
-# Cancel in-flight runs only for PR pushes (`pull_request` events). Pushes to
-# main/develop always run to completion: each merged commit is a state we may
-# need to bisect or reproduce later, and the changesets-bot's "chore: release
-# packages" auto-merge pattern lands a follow-up commit within seconds — under
-# the previous `cancel-in-progress: true` rule that follow-up reliably
-# cancelled the bot commit's CI before it could finish, leaving a red X on
-# main with no useful signal. Splitting the group by event keeps PR-side
-# cancellation (still useful — when you push to a PR, the previous run is
-# obsolete) while letting push-side runs complete.
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -26,103 +10,181 @@ concurrency:
 permissions:
   contents: read
 
-# Two jobs run in parallel. `checks` covers everything that only needs source
-# (lint/typecheck/test/architecture/i18n); `build` covers everything that
-# needs fresh dist (turbo build → package exports → publish tarballs). They
-# share the same setup; both rely on the pnpm + turbo remote caches to make
-# the duplicated install/build effectively free on warm caches.
-#
-# NOTE: branch protection rules need to require `CI / checks`, `CI / build`,
-# `CI / db-checks`, and `CI / node-smoke` (the previous single `verify` job no
-# longer exists). `db-checks` is the migration safety gate — it must be a
-# REQUIRED check, or the replay-parity oracle silently provides no protection.
-# `node-smoke` gates the first-class Node deployment target (voyant#2966).
+# Manual fallback only. The native workflow in `.depot/workflows/ci.yml` owns
+# pull-request and push triggers so routine CI is never duplicated.
 
 jobs:
-  checks:
-    name: checks
-    # Depot provides the extra memory needed to typecheck two package graph
-    # nodes concurrently. Keep release.yml on a GitHub-hosted runner: npm
-    # trusted publishing does not accept third-party/self-hosted runners.
-    runs-on: depot-ubuntu-24.04-8
+  quality-graph:
+    name: quality-graph
+    runs-on: depot-ubuntu-24.04-16
+    timeout-minutes: 10
     env:
       HUSKY: 0
-      NODE_OPTIONS: --max-old-space-size=12288
+      NODE_OPTIONS: --max-old-space-size=24576
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      TURBO_RUN_SUMMARY: "true"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck changed graph
+        shell: bash
+        run: |
+          args=(--concurrency=4)
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            args+=(--affected)
+          fi
+          pnpm typecheck:ci "${args[@]}"
+
+      - name: Record Turbo metrics
+        if: always()
+        run: node scripts/summarize-turbo-runs.mjs
+
+      - name: Upload Turbo run summaries
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: turbo-runs-quality-${{ github.run_attempt }}
+          path: .turbo/runs/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  tests:
+    name: tests
+    runs-on: depot-ubuntu-24.04-16
+    timeout-minutes: 10
+    env:
+      HUSKY: 0
+      NODE_OPTIONS: --max-old-space-size=24576
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      TURBO_RUN_SUMMARY: "true"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Test changed graph
+        shell: bash
+        run: |
+          args=(--summarize --output-logs=new-only)
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            args+=(--affected)
+          fi
+          pnpm test "${args[@]}"
+
+      - name: Record Turbo metrics
+        if: always()
+        run: node scripts/summarize-turbo-runs.mjs
+
+      - name: Upload Turbo run summaries
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: turbo-runs-tests-${{ github.run_attempt }}
+          path: .turbo/runs/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  architecture:
+    name: architecture
+    runs-on: depot-ubuntu-24.04-4
+    timeout-minutes: 10
+    env:
+      HUSKY: 0
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
+      TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          filter: blob:none
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm lint
-
-      # Typecheck is split so the heavy COMPOSITION POINTS each get the runner to
-      # themselves. As @hono/zod-openapi adoption grows the admin surface, two
-      # tsc programs balloon: the operator app and the @voyant-travel/framework
-      # composition. Each now needs
-      # >8 GB and would either blow its own heap (exit 134) or, run concurrently,
-      # oversubscribe a standard 16 GB runner and get OOM-killed (exit 137).
-      # The 32 GB Depot runner admits two ordinary package graph nodes, then the
-      # two heavy composition programs still run one-at-a-time, each alone with
-      # its own package-script heap.
-      #
-      # `typecheck` dependsOn `^build`, so this also executes the same multi-gigabyte
-      # *-react and aggregator builds as the Build job. Concurrency=2 is the
-      # conservative ceiling for the 32 GB runner because individual packages
-      # can still consume 8-12 GB.
-      - name: Typecheck (packages)
-        run: NODE_OPTIONS=--max-old-space-size=12288 pnpm turbo run typecheck --continue --concurrency=2 --filter=!./starters/operator --filter=!@voyant-travel/framework --ui=stream --log-order=stream
-
-      - name: Typecheck (composition points)
-        # Serial (concurrency=1): operator app and framework composition each run
-        # alone with the full runner + their own heap (see each package's
-        # package.json). Deps are cached from the step above, so only these two
-        # programs run live here.
-        run: pnpm turbo run typecheck --concurrency=1 --filter=@voyant-travel/framework --filter=./starters/operator --ui=stream --log-order=stream
-
-      - name: Test
-        run: pnpm turbo run test --continue --ui=stream --log-order=stream
+      - uses: ./.github/actions/setup-workspace
 
       - name: Architecture checks
         run: pnpm verify:architecture
 
-      - name: Migration drift check (operator)
-        # Fails the build if the operator starter's generated managed profile
-        # drifts from the installed framework or resolved deployment graph.
-        #
-        # Runs through the operator workspace's own @voyant-travel/cli devDependency
-        # (a public package, already installed) — no extra root dependency.
-        env:
-          NODE_OPTIONS: --conditions=development --max-old-space-size=8192
-        working-directory: starters/operator
-        run: |
-          pnpm exec voyant build --json
-          pnpm exec voyant db doctor --fail-on-drift
-
       - name: i18n checks
         run: pnpm i18n:check
 
-  build:
-    name: build
-    runs-on: depot-ubuntu-24.04-8
+  checks:
+    name: checks
+    if: always()
+    needs:
+      - quality-graph
+      - tests
+      - architecture
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Enforce all quality lanes
+        shell: bash
+        run: |
+          [[ "${{ needs.quality-graph.result }}" == "success" ]]
+          [[ "${{ needs.tests.result }}" == "success" ]]
+          [[ "${{ needs.architecture.result }}" == "success" ]]
+
+  build-graph:
+    name: build-graph
+    runs-on: depot-ubuntu-24.04-16
+    timeout-minutes: 12
     env:
       HUSKY: 0
-      # The composed framework app's tsc build grows with each module's
-      # OpenAPIHono route chain; match the heap the typecheck/db-checks jobs
-      # already use. Bounded concurrency keeps these processes inside runner RAM.
-      NODE_OPTIONS: --max-old-space-size=12288
+      NODE_OPTIONS: --max-old-space-size=24576
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      TURBO_RUN_SUMMARY: "true"
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Build
+        run: pnpm turbo build --concurrency=4 --summarize --output-logs=new-only
+
+      - name: Record Turbo metrics
+        if: always()
+        run: node scripts/summarize-turbo-runs.mjs
+
+      - name: Upload Turbo run summaries
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: turbo-runs-build-graph-${{ github.run_attempt }}
+          path: .turbo/runs/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  packaged-acceptance:
+    name: packaged-acceptance
+    needs: build-graph
+    runs-on: depot-ubuntu-24.04-16
+    timeout-minutes: 12
+    env:
+      HUSKY: 0
+      NODE_OPTIONS: --max-old-space-size=24576
       TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
+      TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     services:
@@ -135,80 +197,111 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd "pg_isready -U voyant -d voyant_starter_acceptance"
+          --health-interval 1s
+          --health-timeout 1s
+          --health-retries 30
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          filter: blob:none
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: ./.github/actions/setup-workspace
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      # Build the @voyant-travel/framework composition first, alone. Its `tsc -p`
-      # grows with every module's OpenAPIHono route chain and now needs >8 GB
-      # (exit 134 at the job's default heap); running it with the full runner +
-      # its own package-script heap avoids that, and because it's a root dep the
-      # rest of the graph would wait on it anyway. The second step reuses its
-      # cached dist, so only the remaining packages build there.
-      - name: Build (framework composition)
-        # --filter builds framework AND its whole upstream dep graph; cap at
-        # concurrency=2 to use the Depot runner without allowing the dependency
-        # slice to fan out uncontrollably. Framework itself runs after its
-        # dependencies and keeps its package-script heap.
-        run: pnpm turbo build --filter=@voyant-travel/framework --concurrency=2 --ui=stream --log-order=stream
-
-      - name: Build
-        # Keep parallelism bounded: bookings-react alone can approach an 8 GB
-        # heap. Framework already built in the preceding step and should hit
-        # cache, while the remaining graph uses at most two workers.
-        run: pnpm turbo build --concurrency=2 --ui=stream --log-order=stream
-
-      - name: Package export checks
-        run: pnpm verify:package-exports
-
-      - name: Publish tarball checks
-        # The preceding `Build` step already produced fresh dist via turbo
-        # (with remote cache); reuse it instead of clean-building each
-        # public package a second time inside the verifier.
-        env:
-          VOYANT_PACK_REUSE_DIST: "1"
-        run: pnpm verify:publish-tarballs
-
-      - name: Install acceptance browser
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Restore build while preparing acceptance browser
+        shell: bash
+        run: |
+          set +e
+          pnpm exec playwright install --with-deps chromium &
+          browser_pid=$!
+          pnpm turbo build --concurrency=4 --output-logs=new-only
+          build_status=$?
+          wait "$browser_pid"
+          browser_status=$?
+          if (( build_status != 0 || browser_status != 0 )); then
+            exit 1
+          fi
 
       - name: Packaged starter production and development acceptance
-        # The full build above supplies fresh dist for the exact production
-        # package closure. The acceptance test packs those packages as consumers
-        # receive them, installs them in isolation, then proves production boot,
-        # browser hydration, and authored-source HMR sequentially.
         run: |
           node scripts/measure-standard-node-starter.mjs --require-build --check
           node --test scripts/tests/minimal-starter-acceptance.test.mjs
 
-  # Migration safety gate (D.1). Everything here needs a real Postgres, so it
-  # used to be invisible in CI (the replay oracle and the custom-field route
-  # tests skip cleanly when TEST_DATABASE_URL is unset). This job provides the
-  # service + env so they actually run on every PR.
-  db-checks:
-    name: db-checks
-    runs-on: ubuntu-latest
+  package-artifacts:
+    name: package-artifacts
+    needs: build-graph
+    runs-on: depot-ubuntu-24.04-16
+    timeout-minutes: 12
     env:
       HUSKY: 0
-      NODE_OPTIONS: --conditions=development --max-old-space-size=8192
+      NODE_OPTIONS: --max-old-space-size=24576
+      TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      # The user is a superuser (CREATEDB) — the replay oracle creates and drops
-      # its own throwaway DBs; the integration tests use voyant_test.
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Restore build graph
+        run: pnpm turbo build --concurrency=4 --output-logs=new-only
+
+      - name: Verify built artifacts in parallel
+        shell: bash
+        run: |
+          set +e
+          pnpm verify:package-exports &
+          exports_pid=$!
+          VOYANT_PACK_REUSE_DIST=1 pnpm verify:publish-tarballs &
+          tarballs_pid=$!
+
+          status=0
+          wait "$exports_pid" || status=1
+          wait "$tarballs_pid" || status=1
+          exit "$status"
+
+  build:
+    name: build
+    if: always()
+    needs:
+      - build-graph
+      - packaged-acceptance
+      - package-artifacts
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Enforce build and package lanes
+        shell: bash
+        run: |
+          [[ "${{ needs.build-graph.result }}" == "success" ]]
+          [[ "${{ needs.packaged-acceptance.result }}" == "success" ]]
+          [[ "${{ needs.package-artifacts.result }}" == "success" ]]
+
+  db-lanes:
+    name: db-${{ matrix.lane }}
+    needs: checks
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: replay
+            runner: depot-ubuntu-24.04-4
+          - lane: union
+            runner: depot-ubuntu-24.04-4
+          - lane: integration
+            runner: depot-ubuntu-24.04-8
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    env:
+      HUSKY: 0
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_test
       DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_test
     services:
@@ -221,89 +314,68 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd "pg_isready -U voyant -d voyant_test"
+          --health-interval 1s
+          --health-timeout 1s
+          --health-retries 30
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
+          filter: blob:none
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: ./.github/actions/setup-workspace
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-          cache: pnpm
+      - name: Run ${{ matrix.lane }} database lane
+        shell: bash
+        run: |
+          case "${{ matrix.lane }}" in
+            replay)
+              node scripts/verify-migration-replay-parity.mjs
+              ;;
+            union)
+              node scripts/migrations/verify-package-baseline.mjs --union
+              ;;
+            integration)
+            NODE_OPTIONS="--conditions=development --import=tsx --max-old-space-size=8192" \
+                pnpm --filter operator db:migrate
+              pnpm --filter @voyant-travel/relationships exec vitest run \
+                tests/integration/custom-fields.test.ts \
+                tests/integration/custom-fields-values.test.ts
+              ;;
+          esac
 
-      - run: pnpm install --frozen-lockfile
+  db-checks:
+    name: db-checks
+    if: always()
+    needs: db-lanes
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Enforce all database lanes
+        run: test "${{ needs.db-lanes.result }}" = "success"
 
-      - name: Replay parity (legacy upgrade == package-owned replay)
-        # Proves the frozen cutline + retired deployment history and a fresh
-        # replay of selected package migrations produce the same schema.
-        run: node scripts/verify-migration-replay-parity.mjs
-
-      - name: D.2 fresh-union (all package migration sources apply together)
-        # The fresh-D.2 gate: every per-package migration source applied together
-        # (deps-first) must not collide and must reconstitute the bundle
-        # column-for-column. Catches duplicate shared enums / missing extensions /
-        # ownerless tables before they ship. Creates/drops its own throwaway DBs.
-        run: node scripts/migrations/verify-package-baseline.mjs --union
-
-      - name: Materialize the selected package schema
-        # Exercise the same graph-derived package migration runner used by Node
-        # deployments before running integration tests against the real schema.
-        env:
-          NODE_OPTIONS: --conditions=development --import=tsx --max-old-space-size=8192
-        run: pnpm --filter operator db:migrate
-
-      - name: Custom-field integration tests
-        run: >-
-          pnpm --filter @voyant-travel/relationships exec vitest run
-          tests/integration/custom-fields.test.ts
-          tests/integration/custom-fields-values.test.ts
-
-  # Gates the first-class production target (voyant#2966): the operator must
-  # build and boot under Node, serve `/healthz`, and dispatch the API. Node is
-  # the recommended operator deployment, so a regression that breaks the Node
-  # boot should fail CI rather than surface at deploy time.
   node-smoke:
     name: node-smoke
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-4
+    timeout-minutes: 10
     env:
       HUSKY: 0
       NODE_OPTIONS: --conditions=development --max-old-space-size=12288
+      TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          filter: blob:none
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-workspace
 
       - name: Build operator (Node target)
-        # Only the operator is built — its Vite config bundles the workspace
-        # packages from SOURCE (the `development` resolve condition), so the
-        # dependency graph does not need to be prebuilt (same as the Dockerfile).
         run: pnpm --filter operator build
 
       - name: Boot under Node and smoke-test
-        # Boot `dist/server/server.js` (the createNodeServer entry), then assert
-        # /healthz is 200 and the API dispatches (a non-5xx status — 401 is the
-        # expected auth rejection for the protected openapi route). No database is
-        # needed: /healthz is served before app.fetch, and the openapi route is
-        # rejected at the auth middleware before any DB access. Throwaway secrets
-        # are generated at runtime (never committed) so the secret scanner has
-        # nothing to flag.
         working-directory: starters/operator
         env:
           PORT: "8080"

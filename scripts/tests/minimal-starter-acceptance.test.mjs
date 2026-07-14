@@ -1,6 +1,6 @@
 // agent-quality: file-size exception -- owner: runtime; the isolated pack, install, build, start, browser, and HMR flow is one end-to-end acceptance contract.
 import assert from "node:assert/strict"
-import { execFileSync, spawn } from "node:child_process"
+import { execFile, execFileSync, spawn } from "node:child_process"
 import { once } from "node:events"
 import {
   existsSync,
@@ -34,7 +34,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
   const out = join(root, "out")
   const app = join(root, "app")
   try {
-    const publishedPackages = packPublishedPackages(join(root, "published-packages"))
+    const publishedPackages = await packPublishedPackages(join(root, "published-packages"))
     exec(
       process.execPath,
       ["scripts/package-starters.mjs", "--version", "0.0.0-test", "--out-dir", out],
@@ -388,7 +388,7 @@ function assertPublishedPackageLayout(app) {
   assert.ok(existsSync(join(dbRoot, "dist/runtime/index.js")))
 }
 
-function packPublishedPackages(root) {
+async function packPublishedPackages(root) {
   const selected = JSON.parse(
     exec(
       "pnpm",
@@ -412,8 +412,12 @@ function packPublishedPackages(root) {
   )
   assert.ok(workspacePackages.length > 80, "Published Operator closure is unexpectedly small")
 
+  mkdirSync(root, { recursive: true })
   const publishedPackages = new Map(
-    workspacePackages.map((entry) => [entry.name, packPublishedPackage(root, entry.path)]),
+    await mapConcurrent(workspacePackages, 8, async (entry) => [
+      entry.name,
+      await packPublishedPackage(root, entry.path),
+    ]),
   )
   assert.ok(
     publishedPackages.has("@voyant-travel/identity-react"),
@@ -422,9 +426,8 @@ function packPublishedPackages(root) {
   return publishedPackages
 }
 
-function packPublishedPackage(root, source) {
-  mkdirSync(root, { recursive: true })
-  const stdout = exec(
+async function packPublishedPackage(root, source) {
+  const stdout = await execAsync(
     "pnpm",
     ["--config.ignore-scripts=true", "pack", "--json", "--pack-destination", root],
     source,
@@ -439,6 +442,23 @@ function packPublishedPackage(root, source) {
   const archive = join(root, basename(packed.filename))
   assert.ok(existsSync(archive), `pnpm pack did not create ${archive}`)
   return archive
+}
+
+async function mapConcurrent(items, concurrency, operation) {
+  const results = new Array(items.length)
+  let nextIndex = 0
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex
+        nextIndex += 1
+        results[index] = await operation(items[index])
+      }
+    }),
+  )
+
+  return results
 }
 
 function acceptanceProofSource(marker) {
@@ -571,6 +591,25 @@ function exec(command, args, cwd, env = {}, timeout = 240_000) {
     encoding: "utf8",
     stdio: "pipe",
     timeout,
+  })
+}
+
+function execAsync(command, args, cwd, env = {}, timeout = 240_000) {
+  return new Promise((resolvePromise, reject) => {
+    execFile(
+      command,
+      args,
+      {
+        cwd,
+        env: { ...process.env, ...env },
+        encoding: "utf8",
+        timeout,
+      },
+      (error, stdout) => {
+        if (error) reject(error)
+        else resolvePromise(stdout)
+      },
+    )
   })
 }
 
