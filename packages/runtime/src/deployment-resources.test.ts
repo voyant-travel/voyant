@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   createVoyantDeploymentResources,
+  resolveAdmittedHostRuntimePorts,
   resolveSelectedGraphProviderPorts,
 } from "./deployment-resources.js"
 
@@ -180,5 +181,35 @@ describe("createVoyantDeploymentResources", () => {
     })
 
     expect(resources.outboundWebhooks).toBeUndefined()
+  })
+})
+
+describe("resolveAdmittedHostRuntimePorts", () => {
+  it.each([
+    "none",
+    "typesense",
+    "algolia",
+    "postgres",
+  ])("keeps search provider %s authoritative over a catalog.indexer host port", (search) => {
+    const otherPort = { ready: true }
+
+    expect(
+      resolveAdmittedHostRuntimePorts(
+        {
+          "catalog.indexer": { engine: "host" },
+          "example.port": otherPort,
+        },
+        { search },
+      ),
+    ).toEqual({ "example.port": otherPort })
+  })
+
+  it("admits a catalog.indexer host port only for custom search", () => {
+    const runtimePorts = {
+      "catalog.indexer": { engine: "host" },
+      "example.port": { ready: true },
+    }
+
+    expect(resolveAdmittedHostRuntimePorts(runtimePorts, { search: "custom" })).toBe(runtimePorts)
   })
 })

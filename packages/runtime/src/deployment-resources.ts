@@ -28,6 +28,22 @@ export interface ResolveSelectedGraphProviderPortsOptions {
   deploymentValueAliases?: Readonly<Record<string, readonly string[]>>
 }
 
+const CATALOG_INDEXER_PORT_ID = "catalog.indexer"
+
+/** Admit host runtime-port overrides without bypassing deployment provider selection. */
+export function resolveAdmittedHostRuntimePorts(
+  runtimePorts: VoyantGraphRuntimePorts,
+  deploymentProviders: Readonly<Record<string, unknown>>,
+): VoyantGraphRuntimePorts {
+  if (deploymentProviders.search === "custom" || !(CATALOG_INDEXER_PORT_ID in runtimePorts)) {
+    return runtimePorts
+  }
+
+  const admitted = { ...runtimePorts }
+  delete admitted[CATALOG_INDEXER_PORT_ID]
+  return admitted
+}
+
 /** Build the domain-neutral resources consumed by a statically generated Voyant graph. */
 export function createVoyantDeploymentResources(
   options: CreateVoyantDeploymentResourcesOptions,

@@ -32,6 +32,7 @@ import { tsImport } from "tsx/esm/api"
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
 import {
+  resolveAdmittedHostRuntimePorts as admitHostPorts,
   createVoyantDeploymentResources,
   resolveSelectedGraphProviderPorts,
 } from "./deployment-resources.js"
@@ -106,7 +107,8 @@ export async function loadVoyantProject(
   const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
-  const providerPlan = resolveVoyantNodeProviderPlan(generated.deployment.providers)
+  const { providers } = generated.deployment
+  const providerPlan = resolveVoyantNodeProviderPlan(providers)
   const rawEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)
   if (providerIssues.length > 0) {
@@ -115,7 +117,7 @@ export async function loadVoyantProject(
     )
   }
   const env = createVoyantNodeEnv(rawEnv, providerPlan)
-  const explicitRuntimePorts = options.host?.runtimePorts ?? {}
+  const explicitRuntimePorts = admitHostPorts(options.host?.runtimePorts ?? {}, providers)
   const selectedProviderPorts = await resolveSelectedGraphProviderPorts(
     generated.graphRuntime,
     rawEnv,

@@ -77,26 +77,30 @@ export default defineConfig({
 configuration uses `search: "none"` until search is enabled; managed-cloud
 defaults select Typesense.
 
-Embedded hosts and tests can override graph selection explicitly by supplying
-an `IndexerProvider` at the `catalog.indexer` runtime port. An explicit port
-wins over, and prevents loading, the graph-selected provider:
+Embedded hosts and tests can supply a custom implementation by selecting
+`deployment.providers.search: "custom"` and passing either an `IndexerAdapter`
+or `IndexerProvider` at the `catalog.indexer` runtime port. The direct adapter
+form is useful when the host already owns the configured adapter instance:
 
 ```typescript
 import { catalogIndexerProviderPort } from "@voyant-travel/catalog/indexer/provider"
-import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
+import type { IndexerAdapter } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { loadVoyantProject } from "@voyant-travel/runtime"
 
-const indexerProvider: IndexerProvider = {
-  create: ({ registries, vectorDimensions }) =>
-    createCustomIndexer({ registries, vectorDimensions }),
-}
+const indexer: IndexerAdapter = createCustomIndexer()
 
 await loadVoyantProject({
   host: {
-    runtimePorts: { [catalogIndexerProviderPort.id]: indexerProvider },
+    runtimePorts: { [catalogIndexerProviderPort.id]: indexer },
   },
 })
 ```
+
+The explicit port is ignored for `none`, `typesense`, `algolia`, and every
+other non-`custom` search selection. Those values remain authoritative and
+resolve only their selected graph provider. With `custom`, an explicit host
+port takes precedence over a graph-declared custom provider; without an
+explicit port, the graph-declared custom provider resolves normally.
 
 Algolia and other engines are external adapter packages. They implement
 `IndexerAdapter` and `IndexerProvider` from

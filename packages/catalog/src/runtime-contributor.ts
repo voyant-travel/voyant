@@ -5,7 +5,10 @@ import {
   catalogSearchRuntimePort,
 } from "@voyant-travel/catalog/api-runtime-ports"
 import type { CatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/booking-engine/operator-routes"
-import { catalogIndexerProviderPort } from "@voyant-travel/catalog/indexer/provider"
+import {
+  type CatalogIndexer,
+  catalogIndexerProviderPort,
+} from "@voyant-travel/catalog/indexer/provider"
 import type { CatalogOffersRouteModuleOptions } from "@voyant-travel/catalog/offers"
 import {
   type CatalogContentRuntime,
@@ -17,7 +20,6 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
-import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
 import {
   type VoyantRuntimeHostPrimitives,
   type VoyantWorkflowServiceContribution,
@@ -92,7 +94,7 @@ export function createCatalogRuntimePortContribution(
         ),
         host.getRuntimePort<FinanceOperatorSettingsRuntime>(financeOperatorSettingsRuntimePort),
         host.hasRuntimePort?.(catalogIndexerProviderPort)
-          ? host.getRuntimePort<IndexerProvider>(catalogIndexerProviderPort)
+          ? host.getRuntimePort<CatalogIndexer>(catalogIndexerProviderPort)
           : undefined,
       ]),
     )
@@ -106,7 +108,7 @@ export function createCatalogRuntimePortContribution(
         inventory,
         operations,
         settings,
-        indexerProvider,
+        indexer,
       ]) =>
         createCatalogRuntime(
           host.primitives,
@@ -120,7 +122,7 @@ export function createCatalogRuntimePortContribution(
             operations,
           },
           settings,
-          { indexerProvider },
+          { indexer },
         ),
     )
   const cruisesRoutes = {
