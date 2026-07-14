@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL, URL } from "node:url"
-import type { Plugin, PluginOption, UserConfig } from "vite"
+import type { Alias, Plugin, PluginOption, ResolverFunction, UserConfig } from "vite"
 
 /**
  * Force heavy vendor libs into their own chunks so they're only downloaded
@@ -180,8 +180,8 @@ export interface VoyantStartViteConfigOptions {
   extraManualChunks?: (id: string) => string | undefined
   /** Extra SSR optimizeDeps entries appended to the Voyant set. */
   ssrOptimizeDepsInclude?: readonly string[]
-  /** Resolved file inside the selected product BOM used for nested dependency resolution. */
-  dependencyResolutionAnchor?: string
+  /** Exact client aliases to physical ESM facades owned by the selected product BOM. */
+  dependencyAliases?: Readonly<Record<string, string>>
   /** Stable product facade specifiers used when server bundles externalize frontend roots. */
   serverDependencyFacades?: Readonly<Record<string, string>>
   /**
@@ -218,9 +218,9 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     VOYANT_SSR_OPTIMIZE_DEPS,
   )
   const serverDependencyFacades = options.serverDependencyFacades ?? {}
-  const dependencyFacadePlugin = createDependencyFacadePlugin(
-    appRootUrl,
-    options.dependencyResolutionAnchor,
+  const dependencyFacadePlugin = createDependencyFacadePlugin()
+  const dependencyFacadeAliases = createDependencyFacadeAliases(
+    options.dependencyAliases ?? {},
     serverDependencyFacades,
   )
   const nestedDependencyIncludes = createNestedDependencyIncludes(serverDependencyFacades)
@@ -239,7 +239,10 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       },
     },
     resolve: {
-      alias: [{ find: "@", replacement: fileURLToPath(new URL("./src", appRootUrl)) }],
+      alias: [
+        { find: "@", replacement: fileURLToPath(new URL("./src", appRootUrl)) },
+        ...dependencyFacadeAliases,
+      ],
       dedupe: resolvableAppRootDependencies(appRootUrl, VOYANT_DEDUPE_DEPENDENCIES),
       tsconfigPaths: true,
     },
@@ -268,31 +271,11 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
   }
 }
 
-function createDependencyFacadePlugin(
-  appRootUrl: string,
-  resolutionAnchor: string | undefined,
-  serverFacades: Readonly<Record<string, string>>,
-): Plugin {
-  const projectManifest = fileURLToPath(new URL("./package.json", appRootUrl))
+function createDependencyFacadePlugin(): Plugin {
   return {
     name: "voyant:dependency-facades",
     enforce: "pre",
     async resolveId(source, importer, options) {
-      const facade = serverFacades[source]
-      if (facade) {
-        if (this.environment.config.consumer === "server") {
-          if (this.environment.mode !== "dev") return { id: facade, external: true }
-          const resolved = await this.resolve(facade, projectManifest, {
-            ...options,
-            skipSelf: true,
-          })
-          return resolved
-            ? { ...resolved, id: pathToFileURL(resolved.id).href, external: true }
-            : null
-        }
-        if (!resolutionAnchor) return null
-        return this.resolve(source, resolutionAnchor, { ...options, skipSelf: true })
-      }
       if (
         source.startsWith("#frontend/") &&
         importer &&
@@ -309,14 +292,56 @@ function createDependencyFacadePlugin(
   }
 }
 
-function createNestedDependencyIncludes(aliases: Readonly<Record<string, string>>): string[] {
-  const productBomId = aliases["@tanstack/react-router"]
-    ? packageNameForSubpath(aliases["@tanstack/react-router"])
+function createDependencyFacadeAliases(
+  aliases: Readonly<Record<string, string>>,
+  serverFacades: Readonly<Record<string, string>>,
+): Alias[] {
+  return Object.entries(aliases).map(([specifier, replacement]) => {
+    const facade = serverFacades[specifier]
+    if (!facade) {
+      throw new Error(`Missing server dependency facade for ${specifier}`)
+    }
+    // Vite 8 applies aliases before user `resolveId` hooks. Its alias custom resolver
+    // type is synchronous even though the implementation awaits resolver promises.
+    // Keep this bridge until Vite exposes environment-specific aliases.
+    const customResolver = async function (
+      this: ThisParameterType<ResolverFunction>,
+      updatedId: Parameters<ResolverFunction>[0],
+      importer: Parameters<ResolverFunction>[1],
+      options: Parameters<ResolverFunction>[2],
+    ) {
+      if (this.environment.config.consumer !== "server") {
+        const dependencyImporter = importer?.replaceAll("\\", "/").includes("/node_modules/")
+        return this.resolve(dependencyImporter ? specifier : updatedId, importer, {
+          ...options,
+          skipSelf: true,
+        })
+      }
+      if (this.environment.mode !== "dev") return { id: facade, external: true }
+      const resolved = await this.resolve(facade, undefined, { ...options, skipSelf: true })
+      return resolved ? { ...resolved, id: pathToFileURL(resolved.id).href, external: true } : null
+    }
+
+    return {
+      find: new RegExp(`^${escapeRegExp(specifier)}$`),
+      replacement,
+      customResolver: customResolver as never,
+    }
+  })
+}
+
+function createNestedDependencyIncludes(facades: Readonly<Record<string, string>>): string[] {
+  const productBomId = facades["@tanstack/react-router"]
+    ? packageNameForSubpath(facades["@tanstack/react-router"])
     : undefined
   if (!productBomId) return []
 
   const reactStore = `${productBomId} > @tanstack/react-router > @tanstack/react-store`
   return [reactStore, `${reactStore} > use-sync-external-store/shim/with-selector`]
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 function resolvableAppRootDependencies(

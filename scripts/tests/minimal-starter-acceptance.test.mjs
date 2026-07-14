@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: runtime; the isolated pack, install, build, start, browser, and HMR flow is one end-to-end acceptance contract.
 import assert from "node:assert/strict"
 import { execFileSync, spawn } from "node:child_process"
 import { once } from "node:events"
@@ -50,7 +51,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       "pnpm",
       [
         "install",
-        "--offline",
+        "--prefer-offline",
         "--ignore-scripts",
         "--ignore-workspace",
         "--config.frozen-lockfile=false",

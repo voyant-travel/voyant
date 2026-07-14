@@ -15,4 +15,6 @@
 
 Repair packaged consumer development and production startup, keep shared UI
 contexts single-instanced under Vite, make unconfigured realtime quiet, and
-restore narrow client-safe validation and Finance voucher setup exports.
+restore narrow client-safe validation and Finance voucher setup exports. Resolve
+legacy frontend imports through product-owned browser facades and allow clean CI
+installs to fetch metadata for external dependencies.

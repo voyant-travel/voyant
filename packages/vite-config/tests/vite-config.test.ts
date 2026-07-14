@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
-import type { Plugin } from "vite"
+import type { Alias, Plugin, ResolverFunction } from "vite"
 import { describe, expect, it, vi } from "vitest"
 import {
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
@@ -102,7 +102,11 @@ describe("voyantStartViteConfig", () => {
   })
 
   it("resolves legacy frontend imports from the product BOM in each Vite environment", async () => {
-    const dependencyResolutionAnchor = "/product/runtime/react.js"
+    const dependencyAliases = {
+      react: "/product/runtime/react.js",
+      "react/jsx-runtime": "/product/runtime/react-jsx-runtime.js",
+      "@tanstack/react-router": "/product/runtime/tanstack-react-router.js",
+    }
     const serverDependencyFacades = {
       react: "@acme/operator/runtime/react",
       "react/jsx-runtime": "@acme/operator/runtime/react/jsx-runtime",
@@ -110,7 +114,7 @@ describe("voyantStartViteConfig", () => {
     }
     const config = voyantStartViteConfig({
       ...base,
-      dependencyResolutionAnchor,
+      dependencyAliases,
       serverDependencyFacades,
       nodeSsr: true,
     })
@@ -119,33 +123,54 @@ describe("voyantStartViteConfig", () => {
     )
     const resolveId = plugin?.resolveId as Exclude<Plugin["resolveId"], object | undefined>
     const resolve = vi.fn(async (source: string) => ({ id: `/resolved/${source}` }))
-    expect(config.resolve?.alias).toEqual([
-      { find: "@", replacement: "/repo/starters/operator/src" },
+    const aliases = config.resolve?.alias as Alias[]
+    expect(aliases[0]).toEqual({ find: "@", replacement: "/repo/starters/operator/src" })
+    expect(aliases.slice(1).map(({ find }) => String(find))).toEqual([
+      "/^react$/",
+      "/^react\\/jsx-runtime$/",
+      "/^@tanstack\\/react-router$/",
     ])
+    const reactAlias = aliases[1]!
+    const customResolver = reactAlias.customResolver as ResolverFunction
 
     await expect(
-      resolveId.call(
+      customResolver.call(
         { environment: { config: { consumer: "server" }, mode: "build" } } as never,
-        "react",
+        reactAlias.replacement,
         "/app/route.tsx",
         {} as never,
       ),
     ).resolves.toEqual({ id: serverDependencyFacades.react, external: true })
 
     await expect(
-      resolveId.call(
+      customResolver.call(
         { environment: { config: { consumer: "client" }, mode: "dev" }, resolve } as never,
-        "react",
+        reactAlias.replacement,
         "/app/route.tsx",
         {} as never,
       ),
-    ).resolves.toEqual({ id: "/resolved/react" })
-    expect(resolve).toHaveBeenCalledWith("react", dependencyResolutionAnchor, { skipSelf: true })
+    ).resolves.toEqual({ id: `/resolved/${reactAlias.replacement}` })
+    expect(resolve).toHaveBeenCalledWith(reactAlias.replacement, "/app/route.tsx", {
+      skipSelf: true,
+    })
 
     await expect(
-      resolveId.call(
+      customResolver.call(
+        { environment: { config: { consumer: "client" }, mode: "dev" }, resolve } as never,
+        reactAlias.replacement,
+        "/product/node_modules/react-dom/index.js",
+        {} as never,
+      ),
+    ).resolves.toEqual({ id: "/resolved/react" })
+    expect(resolve).toHaveBeenCalledWith("react", "/product/node_modules/react-dom/index.js", {
+      skipSelf: true,
+    })
+
+    const jsxAlias = aliases[2]!
+    await expect(
+      (jsxAlias.customResolver as ResolverFunction).call(
         { environment: { config: { consumer: "server" }, mode: "dev" }, resolve } as never,
-        "react/jsx-runtime",
+        jsxAlias.replacement,
         "/app/route.tsx",
         {} as never,
       ),
@@ -153,11 +178,9 @@ describe("voyantStartViteConfig", () => {
       id: "file:///resolved/@acme/operator/runtime/react/jsx-runtime",
       external: true,
     })
-    expect(resolve).toHaveBeenCalledWith(
-      serverDependencyFacades["react/jsx-runtime"],
-      "/repo/starters/operator/package.json",
-      { skipSelf: true },
-    )
+    expect(resolve).toHaveBeenCalledWith(serverDependencyFacades["react/jsx-runtime"], undefined, {
+      skipSelf: true,
+    })
 
     await expect(
       resolveId.call(
@@ -181,6 +204,7 @@ describe("voyantStartViteConfig", () => {
         {} as never,
       ),
     ).resolves.toBeNull()
+
     expect(config.optimizeDeps?.exclude).toEqual([
       "@voyant-travel/operator-standard",
       "@voyant-travel/operator-standard/standard-frontend",

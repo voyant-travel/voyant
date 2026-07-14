@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: runtime; this suite keeps project bootstrap and lifecycle fixtures co-located so packaged-consumer behavior is reviewed as one contract.
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
@@ -69,7 +70,10 @@ describe("Voyant project tooling", () => {
         generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
       },
       bootstrap: {
-        frontendDependencyResolutionAnchor: "/product/runtime/react.js",
+        frontendDependencyAliases: {
+          react: "/product/runtime/react.js",
+          "@tanstack/react-router": "/product/runtime/tanstack-react-router.js",
+        },
         frontendDependencyFacades: dependencyFacades,
         serverEntry: "/workspace/operator/src/server.ts",
       },
@@ -370,7 +374,7 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
     await writeFrontendFacadePackage(projectRoot, "@acme/operator")
 
     const bootstrap = await prepareProjectBootstrap(projectRoot)
-    expect(bootstrap.frontendDependencyResolutionAnchor).toBe(
+    expect(bootstrap.frontendDependencyAliases?.react).toBe(
       await realpath(path.join(projectRoot, "node_modules/@acme/operator/runtime/react.js")),
     )
     expect(bootstrap.frontendDependencyFacades).toEqual({
@@ -407,7 +411,7 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
 
     const bootstrap = await prepareProjectBootstrap(projectRoot)
 
-    expect(bootstrap.frontendDependencyResolutionAnchor).toBeUndefined()
+    expect(bootstrap.frontendDependencyAliases).toBeUndefined()
   })
 
   it("rejects app-owned frontend singletons that are declared but not installed", async () => {
@@ -612,7 +616,14 @@ async function writeFrontendFacadePackage(projectRoot: string, id: string): Prom
       "runtime/react/jsx-dev-runtime",
       "runtime/tanstack/react-query",
       "runtime/tanstack/react-router",
-    ].map((subpath) => [`./${subpath}`, `./${subpath}.js`]),
+    ].map((subpath) => [
+      `./${subpath}`,
+      {
+        browser: `./${subpath}.js`,
+        node: `./${subpath}-node.js`,
+        default: `./${subpath}.js`,
+      },
+    ]),
   )
   await mkdir(packageRoot, { recursive: true })
   await writeFile(
@@ -620,11 +631,13 @@ async function writeFrontendFacadePackage(projectRoot: string, id: string): Prom
     JSON.stringify({ name: id, type: "module", exports }),
   )
   await Promise.all(
-    Object.values(exports).map(async (target) => {
-      const file = path.join(packageRoot, target)
-      await mkdir(path.dirname(file), { recursive: true })
-      await writeFile(file, "export {}\n")
-    }),
+    Object.values(exports).flatMap((targets) =>
+      [...new Set(Object.values(targets))].map(async (target) => {
+        const file = path.join(packageRoot, target)
+        await mkdir(path.dirname(file), { recursive: true })
+        await writeFile(file, "export {}\n")
+      }),
+    ),
   )
   await Promise.all([
     writeMockPackage(packageRoot, "react", [".", "./jsx-runtime", "./jsx-dev-runtime"]),

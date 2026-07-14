@@ -1,4 +1,5 @@
-import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+// agent-quality: file-size exception -- owner: runtime; project bootstrap, Vite lifecycle, and generated route handling remain together until the public tooling contract stabilizes.
+import { access, cp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -66,7 +67,7 @@ interface ProjectViteConfigOptions {
 }
 
 interface ProjectBootstrap {
-  frontendDependencyResolutionAnchor?: string
+  frontendDependencyAliases?: Readonly<Record<string, string>>
   frontendDependencyFacades?: Readonly<Record<string, string>>
   serverEntry: string
   routerEntry?: string
@@ -212,7 +213,7 @@ async function prepareProjectViteConfig(
 export function createProjectViteConfig(options: ProjectViteConfigOptions): InlineConfig {
   const config = voyantStartViteConfig({
     appRootUrl: options.appRootUrl,
-    dependencyResolutionAnchor: options.bootstrap.frontendDependencyResolutionAnchor,
+    dependencyAliases: options.bootstrap.frontendDependencyAliases,
     serverDependencyFacades: options.bootstrap.frontendDependencyFacades,
     nodeSsr: true,
     plugins: [
@@ -270,7 +271,7 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
   const bootstrap: ProjectBootstrap = {
     ...(frontendDependencies
       ? {
-          frontendDependencyResolutionAnchor: frontendDependencies.resolutionAnchor,
+          frontendDependencyAliases: frontendDependencies.aliases,
           frontendDependencyFacades: frontendDependencies.facades,
         }
       : {}),
@@ -333,7 +334,7 @@ async function resolveProductFrontendDependencies(
   productBomId: string,
 ): Promise<
   | {
-      resolutionAnchor: string
+      aliases: Readonly<Record<string, string>>
       facades: Readonly<Record<string, string>>
     }
   | undefined
@@ -387,14 +388,30 @@ async function resolveProductFrontendDependencies(
   }
 
   try {
+    const productPackageRoot = path.join(projectRoot, "node_modules", ...productBomId.split("/"))
+    const productPackageJson = JSON.parse(
+      await readFile(path.join(productPackageRoot, "package.json"), "utf8"),
+    ) as { exports?: Readonly<Record<string, unknown>> }
     const facadeEntries = Object.entries(FRONTEND_RUNTIME_FACADES).map(([specifier, facade]) => {
       const facadeId = `${productBomId}/${facade}`
-      return [specifier, facadeId, resolveFromProject.resolve(facadeId)] as const
+      const browserTarget = resolveBrowserPackageExport(
+        productPackageJson.exports?.[`./${facade}`],
+        facadeId,
+      )
+      return [specifier, facadeId, path.resolve(productPackageRoot, browserTarget)] as const
     })
+    const resolvedFacadeEntries = await Promise.all(
+      facadeEntries.map(
+        async ([specifier, facadeId, browserEntry]) =>
+          [specifier, facadeId, await realpath(browserEntry)] as const,
+      ),
+    )
     return {
-      resolutionAnchor: facadeEntries[0]![2],
+      aliases: Object.fromEntries(
+        resolvedFacadeEntries.map(([specifier, , resolvedFacade]) => [specifier, resolvedFacade]),
+      ),
       facades: Object.fromEntries(
-        facadeEntries.map(([specifier, facadeId]) => [specifier, facadeId]),
+        resolvedFacadeEntries.map(([specifier, facadeId]) => [specifier, facadeId]),
       ),
     }
   } catch (error) {
@@ -403,6 +420,28 @@ async function resolveProductFrontendDependencies(
       { cause: error },
     )
   }
+}
+
+function resolveBrowserPackageExport(value: unknown, facadeId: string): string {
+  if (typeof value === "string" && value.startsWith("./")) return value
+  if (Array.isArray(value)) {
+    for (const candidate of value) {
+      try {
+        return resolveBrowserPackageExport(candidate, facadeId)
+      } catch {
+        // Try the next valid export target.
+      }
+    }
+  }
+  if (typeof value === "object" && value !== null) {
+    const conditions = value as Readonly<Record<string, unknown>>
+    for (const condition of ["browser", "import", "default"]) {
+      if (condition in conditions) {
+        return resolveBrowserPackageExport(conditions[condition], facadeId)
+      }
+    }
+  }
+  throw new Error(`Product frontend facade ${facadeId} has no browser ESM export`)
 }
 
 async function generateRouteTree(options: ProjectRouteGenerationOptions): Promise<void> {
