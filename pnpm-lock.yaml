@@ -4075,6 +4075,9 @@ importers:
       hono:
         specifier: 4.12.25
         version: 4.12.25
+      srvx:
+        specifier: ^0.11.22
+        version: 0.11.22
       tsx:
         specifier: 'catalog:'
         version: 4.22.4

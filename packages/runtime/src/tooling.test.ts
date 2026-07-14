@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: runtime; this suite keeps project bootstrap and lifecycle fixtures co-located so packaged-consumer behavior is reviewed as one contract.
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises"
+import { createServer } from "node:http"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -87,6 +88,56 @@ describe("Voyant project tooling", () => {
     expect(config.plugins).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: "voyant:dependency-facades" })]),
     )
+  })
+
+  it("mounts HTTP handling for Vite fetchable server environments", async () => {
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
+    })
+    const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
+      (candidate) => candidate.name === "voyant:fetchable-development-server",
+    )
+    const use = vi.fn()
+    const dispatchFetch = vi.fn(async (request: Request) =>
+      Response.json({ path: new URL(request.url).pathname }),
+    )
+    const configureServer = plugin?.configureServer as (server: {
+      environments: { server: { dispatchFetch(request: Request): Promise<Response> } }
+      middlewares: { use: typeof use }
+    }) => () => void
+    const install = configureServer({
+      environments: {
+        server: { dispatchFetch },
+      },
+      middlewares: { use },
+    })
+
+    expect(use).not.toHaveBeenCalled()
+    install()
+    expect(use).toHaveBeenCalledOnce()
+
+    const middleware = use.mock.calls[0]?.[0]
+    const httpServer = createServer((request, response) => middleware(request, response))
+    await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve))
+    try {
+      const address = httpServer.address()
+      if (!address || typeof address === "string") throw new Error("HTTP test server has no port")
+      const response = await fetch(`http://127.0.0.1:${address.port}/fetchable-proof`)
+
+      expect(response.status).toBe(200)
+      await expect(response.json()).resolves.toEqual({ path: "/fetchable-proof" })
+      expect(dispatchFetch).toHaveBeenCalledOnce()
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        httpServer.close((error) => (error ? reject(error) : resolve())),
+      )
+    }
   })
 
   it("keeps the Node distribution under the lifecycle-owned dist directory", () => {

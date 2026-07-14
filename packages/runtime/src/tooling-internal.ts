@@ -17,6 +17,7 @@ import {
   voyantGeneratedRoutes,
   voyantStartViteConfig,
 } from "@voyant-travel/vite-config"
+import { NodeRequest, sendNodeResponse } from "srvx/node"
 import { register } from "tsx/esm/api"
 import {
   createBuilder as createViteBuilder,
@@ -272,11 +273,6 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
       devtools(),
       tailwindcss(),
       tanstackStart({
-        vite: {
-          // Packaged Linux installs can expose a dispatchFetch-capable server environment,
-          // which makes TanStack's auto-detection skip its HTTP middleware entirely.
-          installDevServerMiddleware: true,
-        },
         server: {
           entry: relativeEntry(options.appRootUrl, options.bootstrap.serverEntry),
         },
@@ -291,6 +287,7 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
           routeFileIgnorePattern: VOYANT_ROUTE_FILE_IGNORE_PATTERN,
         },
       }),
+      createFetchableDevelopmentServerPlugin(),
       viteReact(),
       createAnalyzePlugin(options.appRootUrl),
     ],
@@ -313,6 +310,55 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     }
   }
   return config
+}
+
+function createFetchableDevelopmentServerPlugin(): PluginOption {
+  return {
+    name: "voyant:fetchable-development-server",
+    configureServer(server) {
+      return () => {
+        const environment = server.environments.server
+        if (!isFetchableServerEnvironment(environment)) return
+
+        server.middlewares.use(async (request, response) => {
+          if (request.originalUrl) request.url = request.originalUrl
+          try {
+            const webResponse = await environment.dispatchFetch(
+              new NodeRequest({ req: request, res: response }),
+            )
+            await sendNodeResponse(response, webResponse)
+          } catch (error) {
+            console.error(error)
+            try {
+              server.ssrFixStacktrace(error as Error)
+            } catch {}
+            if (!response.headersSent) {
+              await sendNodeResponse(
+                response,
+                new Response("Internal Server Error", {
+                  status: 500,
+                  headers: { "content-type": "text/plain; charset=utf-8" },
+                }),
+              )
+            } else {
+              response.end()
+            }
+          }
+        })
+      }
+    },
+  }
+}
+
+function isFetchableServerEnvironment(
+  environment: unknown,
+): environment is { dispatchFetch(request: Request): Promise<Response> } {
+  return (
+    typeof environment === "object" &&
+    environment !== null &&
+    "dispatchFetch" in environment &&
+    typeof environment.dispatchFetch === "function"
+  )
 }
 
 function createDevelopmentReadinessPlugin(readiness?: DevelopmentReadiness): PluginOption {
