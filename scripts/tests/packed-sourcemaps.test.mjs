@@ -33,9 +33,9 @@ test("reports maps whose sources are neither packed nor embedded", () => {
 
 test("accepts maps backed by packed source files", () => {
   const root = createFixture({
-    "dist/index.d.ts.map": JSON.stringify({
+    "dist/index.js.map": JSON.stringify({
       version: 3,
-      file: "index.d.ts",
+      file: "index.js",
       sources: ["../src/index.ts"],
       names: [],
       mappings: "",
@@ -44,9 +44,23 @@ test("accepts maps backed by packed source files", () => {
   })
 
   assert.deepEqual(
-    collectPackedSourceMapProblems(root, packedFiles("dist/index.d.ts.map", "src/index.ts")),
+    collectPackedSourceMapProblems(root, packedFiles("dist/index.js.map", "src/index.ts")),
     [],
   )
+})
+
+test("leaves declaration-map policy outside the runtime source-map gate", () => {
+  const root = createFixture({
+    "dist/index.d.ts.map": JSON.stringify({
+      version: 3,
+      file: "index.d.ts",
+      sources: ["../src/index.ts"],
+      names: [],
+      mappings: "",
+    }),
+  })
+
+  assert.deepEqual(collectPackedSourceMapProblems(root, packedFiles("dist/index.d.ts.map")), [])
 })
 
 function packedFiles(...files) {

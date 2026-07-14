@@ -17,7 +17,7 @@ export function collectPackedSourceMapProblems(extractRoot, packInfo) {
   const tarballFiles = new Set(packInfo.files.map((file) => file.path))
   const sourceMapFiles = packInfo.files
     .map((file) => file.path)
-    .filter((filePath) => filePath.endsWith(".map"))
+    .filter((filePath) => filePath.endsWith(".js.map"))
 
   for (const mapPath of sourceMapFiles) {
     let sourceMap
