@@ -8,7 +8,8 @@ import type { IndexerService } from "../services/indexer-service.js"
 export interface IndexerReconciliationTarget {
   /** A configured slice whose complete expected document set is supplied. */
   slice: IndexerSlice
-  documents: AsyncIterable<IndexerDocument> | Iterable<IndexerDocument>
+  /** Creates a fresh document stream for every reconciliation attempt. */
+  loadDocuments(): AsyncIterable<IndexerDocument> | Iterable<IndexerDocument>
 }
 
 export interface IndexerReconciliationOwnership {
@@ -72,27 +73,34 @@ export async function reconcileIndexer(
 
   for (const target of targetsBySlice.values()) {
     const expectedIds = new Set<string>()
-    const documents = trackExpectedDocuments(target.documents, expectedIds, () => {
-      indexedDocuments += 1
-    })
-    await options.adapter.bulkReindex(target.slice, documents)
+    let upsertBatch: IndexerDocument[] = []
+    for await (const document of target.loadDocuments()) {
+      expectedIds.add(document.id)
+      upsertBatch.push(document)
+      if (upsertBatch.length < batchSize) continue
+
+      await options.adapter.upsert(target.slice, upsertBatch)
+      indexedDocuments += upsertBatch.length
+      upsertBatch = []
+    }
+    if (upsertBatch.length > 0) {
+      await options.adapter.upsert(target.slice, upsertBatch)
+      indexedDocuments += upsertBatch.length
+    }
 
     if (!admin) continue
 
-    let staleIds: string[] = []
+    const staleIds: string[] = []
     for await (const document of admin.scan(target.slice, { batchSize })) {
       if (expectedIds.has(document.id)) continue
       if (!options.ownership.ownsDocument(target.slice, document)) continue
-
       staleIds.push(document.id)
-      if (staleIds.length < batchSize) continue
-      await options.adapter.delete(target.slice, staleIds)
-      deletedDocuments += staleIds.length
-      staleIds = []
     }
-    if (staleIds.length > 0) {
-      await options.adapter.delete(target.slice, staleIds)
-      deletedDocuments += staleIds.length
+
+    for (let offset = 0; offset < staleIds.length; offset += batchSize) {
+      const deleteBatch = staleIds.slice(offset, offset + batchSize)
+      await options.adapter.delete(target.slice, deleteBatch)
+      deletedDocuments += deleteBatch.length
     }
   }
 
@@ -102,7 +110,7 @@ export async function reconcileIndexer(
 
   let droppedSlices = 0
   for (const slice of await admin.list()) {
-    if (targetsBySlice.has(sliceKey(slice))) continue
+    if (isConfiguredSlice(options.service, slice)) continue
     if (!options.ownership.ownsSlice(slice)) continue
     if (await admin.drop(slice)) droppedSlices += 1
   }
@@ -122,10 +130,7 @@ function validateTargets(
       throw new Error(`Indexer reconciliation received duplicate target slice ${key}`)
     }
 
-    const configured = service
-      .slicesForVertical(target.slice.vertical)
-      .some((slice) => sliceKey(slice) === key)
-    if (!configured) {
+    if (!isConfiguredSlice(service, target.slice)) {
       throw new Error(`Indexer reconciliation target is not configured in IndexerService: ${key}`)
     }
     targetsBySlice.set(key, target)
@@ -134,16 +139,14 @@ function validateTargets(
   return targetsBySlice
 }
 
-async function* trackExpectedDocuments(
-  documents: AsyncIterable<IndexerDocument> | Iterable<IndexerDocument>,
-  expectedIds: Set<string>,
-  onDocument: () => void,
-): AsyncIterable<IndexerDocument> {
-  for await (const document of documents) {
-    expectedIds.add(document.id)
-    onDocument()
-    yield document
-  }
+function isConfiguredSlice(
+  service: Pick<IndexerService, "slicesForVertical">,
+  candidate: IndexerSlice,
+): boolean {
+  const key = sliceKey(candidate)
+  return service
+    .slicesForVertical(candidate.vertical)
+    .some((configured) => sliceKey(configured) === key)
 }
 
 function sliceKey(slice: IndexerSlice): string {
