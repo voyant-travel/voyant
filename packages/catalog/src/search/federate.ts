@@ -14,12 +14,13 @@
  *   1. Verifies the actor is authorized for each requested audience.
  *   2. Issues parallel `IndexerAdapter.search` calls — one per audience.
  *   3. Deduplicates hits by entity id (same entity may rank in multiple
- *      pools; keep the highest-scoring instance).
- *   4. Merges the per-pool result sets into a single ranked list.
+ *      pools; keep the representative from its best per-pool rank).
+ *   4. Uses reciprocal-rank fusion to merge per-pool orderings without
+ *      comparing provider scores produced by independent queries.
  *
- * If the adapter declares `supportsCrossAudienceFederation`, the helper
- * delegates to a single multi-collection adapter call instead of fanning
- * out client-side. Either way the API contract is the same to callers.
+ * The current adapter surface has no multi-slice method, so this helper always
+ * fans out. A future native path must preserve the same observable ranking and
+ * deduplication semantics.
  *
  * See `docs/architecture/catalog-architecture.md` for the design.
  */
@@ -55,7 +56,7 @@ export interface FederatedSearchOptions {
 
 /**
  * Federate a search across multiple audience pools. Returns a unified
- * `SearchResults` with deduplicated hits ranked by score.
+ * `SearchResults` with deduplicated hits ranked by a fused score.
  */
 export async function federateAudienceSearch(
   options: FederatedSearchOptions,
@@ -99,26 +100,57 @@ export async function federateAudienceSearch(
 }
 
 /**
- * Merge several `SearchResults` into one, deduplicating by hit id and
- * keeping the highest-scoring instance. Total is the count of unique ids
- * across all pools (after dedupe).
+ * Merge ordered `SearchResults` with reciprocal-rank fusion. Provider scores
+ * are intentionally ignored because independently executed queries do not
+ * share a score scale. Duplicate ids accumulate one contribution per result
+ * list. Their representative hit comes from the best rank, with earlier input
+ * lists breaking equal-rank ties. The returned score is the larger-is-better
+ * fused score, and total is the unique-id count before limiting.
  */
 export function mergeAndDedupe(
   perSlice: ReadonlyArray<SearchResults>,
   limit?: number,
 ): SearchResults {
-  const byId = new Map<string, SearchHit>()
-  for (const result of perSlice) {
-    for (const hit of result.hits) {
+  const byId = new Map<string, FusedHit>()
+  for (const [sliceIndex, result] of perSlice.entries()) {
+    const seenInSlice = new Set<string>()
+    for (const [hitIndex, hit] of result.hits.entries()) {
+      if (seenInSlice.has(hit.id)) continue
+      seenInSlice.add(hit.id)
+      const rank = hitIndex + 1
       const existing = byId.get(hit.id)
-      if (!existing || hit.score > existing.score) {
-        byId.set(hit.id, hit)
+      if (!existing) {
+        byId.set(hit.id, {
+          representative: hit,
+          bestRank: rank,
+          representativeSlice: sliceIndex,
+          firstSeen: byId.size,
+          fusedScore: reciprocalRank(rank),
+        })
+        continue
+      }
+
+      existing.fusedScore += reciprocalRank(rank)
+      if (
+        rank < existing.bestRank ||
+        (rank === existing.bestRank && sliceIndex < existing.representativeSlice)
+      ) {
+        existing.representative = hit
+        existing.bestRank = rank
+        existing.representativeSlice = sliceIndex
       }
     }
   }
 
-  // Sort by score descending — federated semantics rank by best score.
-  const merged = Array.from(byId.values()).sort((a, b) => b.score - a.score)
+  const merged = Array.from(byId.values())
+    .sort(
+      (left, right) =>
+        right.fusedScore - left.fusedScore ||
+        left.bestRank - right.bestRank ||
+        left.representativeSlice - right.representativeSlice ||
+        left.firstSeen - right.firstSeen,
+    )
+    .map(({ representative, fusedScore }) => ({ ...representative, score: fusedScore }))
   const limited = limit != null ? merged.slice(0, limit) : merged
 
   return {
@@ -128,6 +160,20 @@ export function mergeAndDedupe(
     // facet vocabularies is ambiguous. Callers that need facets should
     // search a single audience.
   }
+}
+
+const RECIPROCAL_RANK_FUSION_K = 60
+
+interface FusedHit {
+  representative: SearchHit
+  bestRank: number
+  representativeSlice: number
+  firstSeen: number
+  fusedScore: number
+}
+
+function reciprocalRank(rank: number): number {
+  return 1 / (RECIPROCAL_RANK_FUSION_K + rank)
 }
 
 /**

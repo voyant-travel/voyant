@@ -149,6 +149,7 @@ export async function assertIndexerAdapterConformance(
     await assertSliceIsolation(adapter, primary, isolated, ids)
     await assertPagination(adapter, primary, ids)
     await assertFacets(adapter, primary)
+    await assertInvalidFacetLimits(adapter, primary)
     await assertUpsertReplacement(adapter, primary, ids, alphaDocument, settle)
 
     await adapter.bulkReindex(bulk, toAsyncIterable(documents.slice(0, 2)))
@@ -269,7 +270,7 @@ async function assertKeywordSearchAndHitFidelity(
   assert(hit?.id === hit?.document.id, "search hit id did not match its document id")
   assert(Number.isFinite(hit?.score), "search hit score was not finite")
   assert(
-    sameJson(hit?.document.fields, expectedDocument.fields),
+    structurallyEqual(hit?.document.fields, expectedDocument.fields),
     "search hit did not preserve the indexed document fields",
   )
 }
@@ -399,6 +400,21 @@ async function assertFacets(adapter: IndexerAdapter, slice: IndexerSlice): Promi
   assert(ski?.count === 2, "ski facet count was not 2")
 }
 
+async function assertInvalidFacetLimits(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+): Promise<void> {
+  for (const limit of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5]) {
+    let rejected = false
+    try {
+      await adapter.search(slice, keywordRequest({ facets: [{ field: "categorySlugs", limit }] }))
+    } catch {
+      rejected = true
+    }
+    assert(rejected, `facet limit ${String(limit)} was not rejected`)
+  }
+}
+
 async function assertUpsertReplacement(
   adapter: IndexerAdapter,
   slice: IndexerSlice,
@@ -464,7 +480,7 @@ async function assertAdmin(
   for (const expected of expectedDocuments.filter((document) => document.embeddings)) {
     const actual = scanned.find((document) => document.id === expected.id)
     assert(
-      sameJson(actual?.embeddings, expected.embeddings),
+      structurallyEqual(actual?.embeddings, expected.embeddings),
       `admin scan did not preserve the exact embedding for ${expected.id}`,
     )
     assert(
@@ -595,20 +611,43 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
   const actualSorted = [...actual].sort()
   const expectedSorted = [...expected].sort()
   assert(
-    JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
+    structurallyEqual(actualSorted, expectedSorted),
     `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
   )
 }
 
 function assertOrderedIds(actual: string[], expected: string[], operation: string): void {
   assert(
-    JSON.stringify(actual) === JSON.stringify(expected),
+    structurallyEqual(actual, expected),
     `${operation} returned [${actual.join(", ")}]; expected ordered [${expected.join(", ")}]`,
   )
 }
 
-function sameJson(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
+function structurallyEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => structurallyEqual(value, right[index]))
+    )
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false
+  }
+
+  const leftRecord = left as Record<string, unknown>
+  const rightRecord = right as Record<string, unknown>
+  const leftKeys = Object.keys(leftRecord).sort()
+  const rightKeys = Object.keys(rightRecord).sort()
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every(
+      (key, index) =>
+        key === rightKeys[index] && structurallyEqual(leftRecord[key], rightRecord[key]),
+    )
+  )
 }
 
 function assert(condition: unknown, message: string): asserts condition {

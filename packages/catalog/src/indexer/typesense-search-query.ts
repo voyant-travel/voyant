@@ -1,7 +1,7 @@
 import {
   type IndexerSlice,
   indexFieldNameForPolicyPath,
-  MAX_FACET_BUCKETS,
+  resolveFacetBucketLimit,
   resolveSearchSort,
   type SearchFilter,
   type SearchRequest,
@@ -60,9 +60,7 @@ export function buildSearchQuery(
     // for the largest portable request, then apply each facet's limit while
     // mapping the response.
     query.max_facet_values = Math.max(
-      ...request.facets.map(({ limit }) =>
-        Math.min(Math.max(1, Math.floor(limit ?? MAX_FACET_BUCKETS)), MAX_FACET_BUCKETS),
-      ),
+      ...request.facets.map(({ limit }) => resolveFacetBucketLimit(limit)),
     )
   }
 

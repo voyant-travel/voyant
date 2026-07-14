@@ -20,7 +20,10 @@ export type {
   SearchRequest,
   SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
-export { MAX_FACET_BUCKETS } from "@voyant-travel/catalog-contracts/indexer/contract"
+export {
+  MAX_FACET_BUCKETS,
+  resolveFacetBucketLimit,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 // Public source-adapter contract.
 export {
   ADAPTER_RATE_LIMITED,

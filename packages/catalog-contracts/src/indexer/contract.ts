@@ -122,10 +122,22 @@ export type SearchFilter =
 /** Portable maximum used for omitted and oversized facet bucket limits. */
 export const MAX_FACET_BUCKETS = 250
 
+/** Validate and resolve an optional portable facet bucket limit. */
+export function resolveFacetBucketLimit(limit: number | undefined): number {
+  if (limit === undefined) return MAX_FACET_BUCKETS
+  if (!Number.isFinite(limit) || !Number.isInteger(limit) || limit <= 0) {
+    throw new RangeError(`Facet limit must be a positive finite integer; received ${String(limit)}`)
+  }
+  return Math.min(limit, MAX_FACET_BUCKETS)
+}
+
 /** A single facet aggregation request. */
 export interface FacetRequest {
   field: string
-  /** Maximum bucket count returned. Omitted and larger values use {@link MAX_FACET_BUCKETS}. */
+  /**
+   * Positive finite integer bucket limit. Omitted and larger values use
+   * {@link MAX_FACET_BUCKETS}; invalid explicit values must be rejected.
+   */
   limit?: number
 }
 
@@ -151,7 +163,10 @@ export interface SearchRequest {
 
 export interface SearchHit {
   id: string
-  /** Provider relevance normalized so larger values always rank ahead of smaller values. */
+  /**
+   * Provider relevance where larger values rank first within this response.
+   * Scores from independently executed searches are not comparable.
+   */
   score: number
   /** Indexed id and fields. Providers may omit stored embeddings from search payloads. */
   document: IndexerDocument

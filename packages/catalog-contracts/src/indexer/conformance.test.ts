@@ -11,7 +11,7 @@ import type {
   SearchRequest,
   SearchResults,
 } from "./contract.js"
-import { MAX_FACET_BUCKETS, resolveSearchSort, SEARCH_SORT_SEMANTICS } from "./contract.js"
+import { resolveFacetBucketLimit, resolveSearchSort, SEARCH_SORT_SEMANTICS } from "./contract.js"
 
 describe("portable search sort semantics", () => {
   it("publishes stable field precedence and resolves the first policy-backed candidate", () => {
@@ -43,6 +43,26 @@ describe("portable search sort semantics", () => {
       field: "sellAmountCents",
       direction: "asc",
     })
+  })
+})
+
+describe("portable facet limit semantics", () => {
+  it("defaults and caps valid limits", () => {
+    expect(resolveFacetBucketLimit(undefined)).toBe(250)
+    expect(resolveFacetBucketLimit(2)).toBe(2)
+    expect(resolveFacetBucketLimit(300)).toBe(250)
+  })
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    1.5,
+  ])("rejects invalid explicit limit %s", (limit) => {
+    expect(() => resolveFacetBucketLimit(limit)).toThrow(
+      "Facet limit must be a positive finite integer",
+    )
   })
 })
 
@@ -100,6 +120,55 @@ describe("assertIndexerAdapterConformance", () => {
 
     await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
       "first page returned",
+    )
+  })
+
+  it("accepts search fields with structurally equal reordered object keys", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = async (slice, request) => {
+      const results = await search(slice, request)
+      return {
+        ...results,
+        hits: results.hits.map((hit) => ({
+          ...hit,
+          document: {
+            ...hit.document,
+            fields: Object.fromEntries(Object.entries(hit.document.fields).reverse()),
+          },
+        })),
+      }
+    }
+
+    await expect(
+      assertIndexerAdapterConformance({ createAdapter: () => adapter }),
+    ).resolves.toBeUndefined()
+  })
+
+  it("still treats array order as structural", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = async (slice, request) => {
+      const results = await search(slice, request)
+      return {
+        ...results,
+        hits: results.hits.map((hit) => {
+          const categories = hit.document.fields.categorySlugs
+          return Array.isArray(categories)
+            ? {
+                ...hit,
+                document: {
+                  ...hit.document,
+                  fields: { ...hit.document.fields, categorySlugs: [...categories].reverse() },
+                },
+              }
+            : hit
+        }),
+      }
+    }
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "search hit did not preserve the indexed document fields",
     )
   })
 
@@ -266,6 +335,7 @@ function searchMemoryCollection(
   const facets = request.facets
     ? Object.fromEntries(
         request.facets.map(({ field, limit }) => {
+          const resolvedLimit = resolveFacetBucketLimit(limit)
           const counts = new Map<string | number, number>()
           for (const document of documents) {
             const value = fieldValue(document, field)
@@ -283,7 +353,7 @@ function searchMemoryCollection(
                 (left, right) =>
                   right.count - left.count || String(left.value).localeCompare(String(right.value)),
               )
-              .slice(0, Math.min(limit ?? MAX_FACET_BUCKETS, MAX_FACET_BUCKETS)),
+              .slice(0, resolvedLimit),
           ]
         }),
       )

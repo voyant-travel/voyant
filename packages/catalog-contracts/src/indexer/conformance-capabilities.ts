@@ -112,7 +112,8 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
   const actualSorted = [...actual].sort()
   const expectedSorted = [...expected].sort()
   assert(
-    JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
+    actualSorted.length === expectedSorted.length &&
+      actualSorted.every((id, index) => id === expectedSorted[index]),
     `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
   )
 }

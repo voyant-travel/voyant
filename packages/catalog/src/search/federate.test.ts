@@ -19,8 +19,8 @@ const capabilities: IndexerCapabilities = {
   supportsAdminDenormalization: true,
 }
 
-function hit(id: string, score: number): SearchHit {
-  return { id, score, document: { id, fields: {} } }
+function hit(id: string, score: number, audience?: string): SearchHit {
+  return { id, score, document: { id, fields: { ...(audience ? { audience } : {}) } } }
 }
 
 function makeAdapter(perAudience: Record<string, SearchHit[]>): IndexerAdapter {
@@ -38,38 +38,103 @@ function makeAdapter(perAudience: Record<string, SearchHit[]>): IndexerAdapter {
 }
 
 describe("mergeAndDedupe", () => {
-  it("keeps the highest-scoring instance when an entity appears in multiple pools", () => {
+  it("fuses ordered ranks and keeps the duplicate representative from its best rank", () => {
     const merged = mergeAndDedupe([
-      { hits: [hit("a", 1), hit("b", 2)], total: 2 },
-      { hits: [hit("a", 5), hit("c", 3)], total: 2 },
+      { hits: [hit("a", 0.9, "customer"), hit("b", 0.8)], total: 2 },
+      { hits: [hit("c", 900), hit("a", 800, "partner")], total: 2 },
     ])
-    const ids = merged.hits.map((h) => h.id)
-    expect(ids).toEqual(["a", "c", "b"]) // sorted by score desc
+    expect(merged.hits.map(({ id }) => id)).toEqual(["a", "c", "b"])
     const aHit = merged.hits.find((h) => h.id === "a")
-    expect(aHit?.score).toBe(5)
+    expect(aHit?.document.fields.audience).toBe("customer")
+    expect(aHit?.score).toBeCloseTo(1 / 61 + 1 / 62)
     expect(merged.total).toBe(3)
   })
 
   it("respects the limit parameter", () => {
-    const merged = mergeAndDedupe([{ hits: [hit("a", 1), hit("b", 2), hit("c", 3)], total: 3 }], 2)
+    const merged = mergeAndDedupe([{ hits: [hit("a", 3), hit("b", 2), hit("c", 1)], total: 3 }], 2)
     expect(merged.hits).toHaveLength(2)
     expect(merged.total).toBe(3) // total is unique-id count, not limited
   })
 
-  it("preserves provider order when normalized relevance scores tie", () => {
+  it("breaks equal fused ranks by input-slice order", () => {
     const merged = mergeAndDedupe([
       { hits: [hit("near", 1), hit("first-tie", 0.5)], total: 2 },
       { hits: [hit("second-tie", 0.5), hit("far", 0)], total: 2 },
     ])
 
-    expect(merged.hits.map(({ id }) => id)).toEqual(["near", "first-tie", "second-tie", "far"])
-    expect(merged.hits.map(({ score }) => score)).toEqual([1, 0.5, 0.5, 0])
+    expect(merged.hits.map(({ id }) => id)).toEqual(["near", "second-tie", "first-tie", "far"])
+    expect(merged.hits.map(({ score }) => score)).toEqual([1 / 61, 1 / 61, 1 / 62, 1 / 62])
   })
 
   it("returns an empty result when no pools have hits", () => {
     const merged = mergeAndDedupe([])
     expect(merged.hits).toEqual([])
     expect(merged.total).toBe(0)
+  })
+})
+
+describe("federateAudienceSearch — ranked modes", () => {
+  it("fuses semantic rankings across two audience slices without comparing raw scores", async () => {
+    const adapter = makeAdapter({
+      customer: [hit("shared", 0.9, "customer"), hit("customer-only", 0.8, "customer")],
+      partner: [hit("partner-only", 9000, "partner"), hit("shared", 8000, "partner")],
+    })
+
+    const result = await federateAudienceSearch({
+      adapter,
+      actor: "staff",
+      searchAudiences: ["customer", "partner"],
+      vertical: "products",
+      locale: "en-GB",
+      market: "default",
+      request: { query: "coastal", mode: "semantic", query_embedding: [1, 0, 0] },
+    })
+
+    expect(result.hits.map(({ id }) => id)).toEqual(["shared", "partner-only", "customer-only"])
+    expect(result.hits[0]?.document.fields.audience).toBe("customer")
+    expect(result.hits[0]!.score).toBeGreaterThan(result.hits[1]!.score)
+    expect(result.total).toBe(3)
+  })
+
+  it("fuses hybrid rankings and resolves an equal-rank duplicate by audience order", async () => {
+    const adapter = makeAdapter({
+      customer: [
+        hit("customer-only", 0.9, "customer"),
+        hit("shared", 0.8, "customer"),
+        hit("customer-tail", 0.7, "customer"),
+      ],
+      partner: [
+        hit("partner-only", 9000, "partner"),
+        hit("shared", 8000, "partner"),
+        hit("partner-tail", 7000, "partner"),
+      ],
+    })
+
+    const result = await federateAudienceSearch({
+      adapter,
+      actor: "staff",
+      searchAudiences: ["customer", "partner"],
+      vertical: "products",
+      locale: "en-GB",
+      market: "default",
+      request: {
+        query: "coastal",
+        mode: "hybrid",
+        query_embedding: [1, 0, 0],
+        alpha: 0.5,
+      },
+    })
+
+    expect(result.hits.map(({ id }) => id)).toEqual([
+      "shared",
+      "customer-only",
+      "partner-only",
+      "customer-tail",
+      "partner-tail",
+    ])
+    expect(result.hits[0]?.document.fields.audience).toBe("customer")
+    expect(result.hits[0]!.score).toBeCloseTo(2 / 62)
+    expect(result.total).toBe(5)
   })
 })
 

@@ -61,17 +61,21 @@ denormalization support, the runner also verifies that behavior. Semantic
 fixtures require pure vector ranking even when the request contains conflicting
 text. Hybrid fixtures require the union of keyword-only and vector-only
 candidates and require `alpha` to change the winner of competing signals.
-`SearchHit.score` is always normalized so larger values rank first, including
-through federation. Vector-aware admin scans must return every fixture's exact
-embedding and model id. The runner certifies these portable semantics, not a
-provider's internal query topology or proprietary ranking quality;
-provider-specific native behavior belongs in provider-owned tests. Hosted
-providers can supply `settle` when writes are eventually consistent and
-`namespace` when resource names need a stable prefix.
+`SearchHit.score` uses larger-is-better ordering within one response, but scores
+from independently executed searches are not comparable. Client-side audience
+federation therefore fuses each response's ordered ranks instead of comparing
+raw scores. Vector-aware admin scans must return every fixture's exact embedding
+and model id. The runner certifies these portable semantics, not a provider's
+internal query topology or proprietary ranking quality; provider-specific
+native behavior belongs in provider-owned tests. Hosted providers can supply
+`settle` when writes are eventually consistent and `namespace` when resource
+names need a stable prefix.
 
 Facet requests return at most `MAX_FACET_BUCKETS` (250) buckets per field. An
 omitted `FacetRequest.limit` uses that portable maximum, and values above it are
-clamped. This is a bounded cross-provider contract, not an unlimited request.
+clamped. Explicit limits must be positive finite integers; adapters reject zero,
+negative, nonfinite, and fractional values. This is a bounded cross-provider
+contract, not an unlimited request.
 
 `IndexerDocument.fields` use engine-neutral index field names. They preserve
 field-policy paths except for a terminal list marker: policy path `tags[]` is

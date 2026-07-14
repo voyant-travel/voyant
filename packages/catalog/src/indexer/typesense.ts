@@ -18,6 +18,7 @@ import {
   type IndexerSlice,
   indexFieldNameForPolicyPath,
   MAX_FACET_BUCKETS,
+  resolveFacetBucketLimit,
   type SearchMode,
   type SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
@@ -294,8 +295,30 @@ const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
   supportsAdminDenormalization: true,
 }
 
-function sameJson(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+function structurallyEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => structurallyEqual(value, right[index]))
+    )
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false
+  }
+  const leftRecord = left as Record<string, unknown>
+  const rightRecord = right as Record<string, unknown>
+  const leftKeys = Object.keys(leftRecord).sort()
+  const rightKeys = Object.keys(rightRecord).sort()
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every(
+      (key, index) =>
+        key === rightKeys[index] && structurallyEqual(leftRecord[key], rightRecord[key]),
+    )
+  )
 }
 
 function isTransientCollectionUpdateError(err: unknown): boolean {
@@ -539,6 +562,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     request: Parameters<IndexerAdapter["search"]>[1],
     includeEmbeddings = false,
   ): Promise<SearchResults> => {
+    for (const { limit } of request.facets ?? []) resolveFacetBucketLimit(limit)
     const name = collectionName(slice, collectionPrefix)
     let registry: FieldPolicyRegistry | undefined = registryByVertical.get(slice.vertical)
     if (!registry) {
@@ -660,7 +684,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
       if (updates.length > 0) {
         updatePayload.fields = updates as TypesenseFieldSchema[]
       }
-      if (updates.length === 0 && sameJson(existing.metadata, schema.metadata)) {
+      if (updates.length === 0 && structurallyEqual(existing.metadata, schema.metadata)) {
         return
       }
       await retryTransientCollectionUpdate(
@@ -791,20 +815,23 @@ function mapTypesenseResponse(
   mode: SearchMode,
   requestedFacets: FacetRequest[] | undefined,
 ): SearchResults {
-  const hits = response.hits.map((hit) => {
+  // Hybrid scores must share one response-wide scale. If any native fusion
+  // score is absent or invalid, preserve Typesense's order with reciprocal
+  // ranks for every hit instead of mixing text and vector score domains.
+  const hasCompleteHybridScores =
+    mode === "hybrid" &&
+    response.hits.every((hit) => Number.isFinite(hit.hybrid_search_info?.rank_fusion_score))
+  const hits = response.hits.map((hit, index) => {
     const document = mapTypesenseDocument(hit.document)
     return {
       id: document.id,
-      score: scoreTypesenseHit(hit, mode),
+      score: scoreTypesenseHit(hit, mode, index, hasCompleteHybridScores),
       document,
     }
   })
   const facetLimits = new Map(
     (requestedFacets ?? []).flatMap(({ field, limit }) => [
-      [
-        indexFieldNameForPolicyPath(field),
-        Math.min(Math.max(1, Math.floor(limit ?? MAX_FACET_BUCKETS)), MAX_FACET_BUCKETS),
-      ] as const,
+      [indexFieldNameForPolicyPath(field), resolveFacetBucketLimit(limit)] as const,
     ]),
   )
   const facets: Record<string, Array<{ value: string | number; count: number }>> | undefined =
@@ -826,15 +853,17 @@ function mapTypesenseResponse(
   }
 }
 
-function scoreTypesenseHit(hit: TypesenseSearchHit, mode: SearchMode): number {
+function scoreTypesenseHit(
+  hit: TypesenseSearchHit,
+  mode: SearchMode,
+  index: number,
+  hasCompleteHybridScores: boolean,
+): number {
   if (mode === "semantic") return normalizeCosineDistance(hit.vector_distance) ?? 0
   if (mode === "hybrid") {
-    return (
-      hit.hybrid_search_info?.rank_fusion_score ??
-      normalizeCosineDistance(hit.vector_distance) ??
-      hit.text_match ??
-      0
-    )
+    return hasCompleteHybridScores
+      ? (hit.hybrid_search_info?.rank_fusion_score ?? 0)
+      : 1 / (index + 1)
   }
   return hit.text_match ?? 0
 }

@@ -208,6 +208,33 @@ describe("Typesense catalog indexer", () => {
     expect(keywordOnly.hits.map(({ id }) => id)).toContain("keyword-only")
   })
 
+  it("uses one response-order score scale when hybrid metadata is absent", async () => {
+    const indexer = createTypesenseIndexer({
+      client: createDeterministicTypesenseClient({ omitHybridSearchInfo: true }),
+      vectorDimensions: 3,
+    })
+    const vectorSlice = { ...slice, vertical: "hybrid-score-fallback" }
+    await indexer.ensureCollection(vectorSlice, registry)
+    await indexer.upsert(vectorSlice, [
+      { id: "keyword-only", fields: { name: "Keyword Signal" } },
+      {
+        id: "vector-only",
+        fields: { name: "Alpine" },
+        embeddings: { text_embedding: [1, 0, 0] },
+      },
+    ])
+
+    const results = await indexer.search(vectorSlice, {
+      query: "Keyword Signal",
+      mode: "hybrid",
+      query_embedding: [1, 0, 0],
+      alpha: 0.5,
+    })
+
+    expect(results.hits.map(({ id }) => id)).toEqual(["keyword-only", "vector-only"])
+    expect(results.hits.map(({ score }) => score)).toEqual([1, 0.5])
+  })
+
   it("includes channel in collection names when the slice is channel-scoped", () => {
     expect(collectionName({ ...slice, channel: "chan_website" })).toBe(
       "products__en-GB__customer__default__chan_website",
@@ -396,6 +423,22 @@ describe("Typesense catalog indexer", () => {
       slice,
     )
     expect(oversized.max_facet_values).toBe(250)
+  })
+
+  it("rejects invalid explicit facet limits on direct adapter requests", async () => {
+    const indexer = createTypesenseIndexer({ client: createDeterministicTypesenseClient() })
+    const facetSlice = { ...slice, vertical: "facet-limit-validation" }
+    await indexer.ensureCollection(facetSlice, registry)
+
+    for (const limit of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5]) {
+      await expect(
+        indexer.search(facetSlice, {
+          query: "",
+          mode: "keyword",
+          facets: [{ field: "categorySlugs[]", limit }],
+        }),
+      ).rejects.toThrow("Facet limit must be a positive finite integer")
+    }
   })
 
   it("returns at most 250 facet buckets when a larger limit is requested", async () => {
@@ -716,7 +759,15 @@ describe("Typesense catalog indexer", () => {
           updateCalls += 1
         },
         delete: async () => undefined,
-        retrieve: async () => existingSchema,
+        retrieve: async () => ({
+          ...existingSchema,
+          metadata: {
+            voyant: {
+              defaultSearchFields: ["name", "categorySlugs"],
+              defaultQueryBy: "name,categorySlugs",
+            },
+          },
+        }),
         documents: () => ({
           import: async () => ({}),
           delete: async () => undefined,
@@ -1017,7 +1068,13 @@ interface DeterministicTypesenseCollection {
   documents: Map<string, Record<string, unknown>>
 }
 
-function createDeterministicTypesenseClient(): TypesenseClient {
+interface DeterministicTypesenseClientOptions {
+  omitHybridSearchInfo?: boolean
+}
+
+function createDeterministicTypesenseClient(
+  options: DeterministicTypesenseClientOptions = {},
+): TypesenseClient {
   const collections = new Map<string, DeterministicTypesenseCollection>()
   const requireCollection = (name: string | undefined): DeterministicTypesenseCollection => {
     const collection = name ? collections.get(name) : undefined
@@ -1074,7 +1131,7 @@ function createDeterministicTypesenseClient(): TypesenseClient {
               return { num_deleted: numDeleted }
             },
             async search(query) {
-              return searchDeterministicTypesense(requireCollection(name).documents, query)
+              return searchDeterministicTypesense(requireCollection(name).documents, query, options)
             },
           }
         },
@@ -1086,6 +1143,7 @@ function createDeterministicTypesenseClient(): TypesenseClient {
 function searchDeterministicTypesense(
   source: Map<string, Record<string, unknown>>,
   query: TypesenseSearchQuery,
+  options: DeterministicTypesenseClientOptions,
 ): TypesenseSearchResponse {
   let documents = [...source.values()]
   if (query.filter_by) {
@@ -1180,7 +1238,7 @@ function searchDeterministicTypesense(
         ),
         text_match: isKeywordMatch ? 100 : 0,
         ...(vectorDistances.has(id) ? { vector_distance: vectorDistances.get(id) } : {}),
-        ...(vectorQuery && query.q !== "*"
+        ...(vectorQuery && query.q !== "*" && !options.omitHybridSearchInfo
           ? { hybrid_search_info: { rank_fusion_score: scores.get(id) ?? 0 } }
           : {}),
       }
