@@ -122,6 +122,11 @@ describe("voyantStartViteConfig", () => {
       (candidate) => candidate.name === "voyant:dependency-facades",
     )
     const resolveId = plugin?.resolveId as Exclude<Plugin["resolveId"], object | undefined>
+    const configEnvironmentHook = plugin?.configEnvironment
+    const configEnvironment =
+      typeof configEnvironmentHook === "object"
+        ? configEnvironmentHook.handler
+        : configEnvironmentHook
     const resolve = vi.fn(async (source: string) => ({ id: `/resolved/${source}` }))
     const aliases = config.resolve?.alias as Alias[]
     expect(aliases[0]).toEqual({ find: "@", replacement: "/repo/starters/operator/src" })
@@ -205,6 +210,31 @@ describe("voyantStartViteConfig", () => {
       ),
     ).resolves.toBeNull()
 
+    const clientEnvironment = {
+      consumer: "client",
+      optimizeDeps: {
+        include: [
+          ...(config.optimizeDeps?.include ?? []),
+          "react",
+          "react-dom/client",
+          "@tanstack/react-router > @tanstack/react-store",
+          "unrelated-package",
+        ],
+      },
+    }
+    await configEnvironment?.call(
+      {} as never,
+      "client",
+      clientEnvironment as never,
+      { command: "serve", mode: "development" } as never,
+    )
+    expect(clientEnvironment.optimizeDeps.include).toEqual([
+      ...(config.optimizeDeps?.include ?? []),
+      "@acme/operator > react",
+      "@acme/operator > react-dom/client",
+      "unrelated-package",
+    ])
+
     expect(config.optimizeDeps?.exclude).toEqual([
       "@voyant-travel/operator-standard",
       "@voyant-travel/operator-standard/standard-frontend",
@@ -213,6 +243,7 @@ describe("voyantStartViteConfig", () => {
       "@acme/operator > @tanstack/react-router > @tanstack/react-store",
       "@acme/operator > @tanstack/react-router > @tanstack/react-store > use-sync-external-store/shim/with-selector",
     ])
+    expect(config.optimizeDeps?.holdUntilCrawlEnd).toBe(false)
     expect(config.ssr?.optimizeDeps?.include).toEqual([])
     expect(config.ssr?.external).toEqual(["pg"])
     expect(config.ssr?.noExternal).toEqual([/^@voyant-travel\//, /^@pxmstudio\//])

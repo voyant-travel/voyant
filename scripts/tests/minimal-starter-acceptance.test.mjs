@@ -377,6 +377,10 @@ function assertPublishedPackageLayout(app) {
   assert.equal(operatorManifest.exports["./runtime/react"].browser, "./dist/runtime/react.js")
   assert.equal(operatorManifest.imports["#frontend/react"], "react")
   const resolveFromOperator = createRequire(join(operatorRoot, "package.json"))
+  assert.doesNotThrow(
+    () => resolveFromOperator.resolve("@voyant-travel/identity-react"),
+    "Standard Operator consumer cannot resolve its required identity React runtime",
+  )
   const dbRuntimeEntry = resolveFromOperator.resolve("@voyant-travel/db/runtime")
   const dbRoot = resolve(dirname(dbRuntimeEntry), "../..")
   const dbManifest = JSON.parse(readFileSync(join(dbRoot, "package.json"), "utf8"))
@@ -408,9 +412,14 @@ function packPublishedPackages(root) {
   )
   assert.ok(workspacePackages.length > 80, "Published Operator closure is unexpectedly small")
 
-  return new Map(
+  const publishedPackages = new Map(
     workspacePackages.map((entry) => [entry.name, packPublishedPackage(root, entry.path)]),
   )
+  assert.ok(
+    publishedPackages.has("@voyant-travel/identity-react"),
+    "Published Operator closure is missing its required identity React runtime",
+  )
+  return publishedPackages
 }
 
 function packPublishedPackage(root, source) {

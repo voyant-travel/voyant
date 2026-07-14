@@ -87,6 +87,16 @@ interface ProjectViteServer {
     }
   }
   resolvedUrls: ViteDevServer["resolvedUrls"]
+  environments?: {
+    client?: {
+      depsOptimizer?: {
+        scanProcessing?: Promise<void>
+        metadata?: {
+          discovered?: Readonly<Record<string, { processing?: Promise<void> }>>
+        }
+      }
+    }
+  }
   listen(): Promise<unknown>
   close(): Promise<void>
 }
@@ -171,6 +181,13 @@ export async function developVoyantProjectWithDependencies(
 
   try {
     await server.listen()
+    const clientOptimizer = server.environments?.client?.depsOptimizer
+    await clientOptimizer?.scanProcessing
+    await Promise.all(
+      Object.values(clientOptimizer?.metadata?.discovered ?? {}).map(
+        (dependency) => dependency.processing,
+      ),
+    )
   } catch (error) {
     await server.close().catch(() => undefined)
     restoreDevelopmentEnvironment()

@@ -169,6 +169,8 @@ describe("Voyant project tooling", () => {
     expect(development.url).toBe("http://localhost:3300/")
     expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
     expect(calls).toContain("vite-listen")
+    expect(calls).toContain("vite-scan")
+    expect(calls).toContain("vite-optimize")
 
     await development.close()
     await development.close()
@@ -559,6 +561,24 @@ function createDependencies(calls: string[]): VoyantProjectToolingDependencies {
       resolvedUrls: {
         local: ["http://localhost:3300/"],
         network: [],
+      },
+      environments: {
+        client: {
+          depsOptimizer: {
+            scanProcessing: Promise.resolve().then(() => {
+              calls.push("vite-scan")
+            }),
+            metadata: {
+              discovered: {
+                react: {
+                  processing: Promise.resolve().then(() => {
+                    calls.push("vite-optimize")
+                  }),
+                },
+              },
+            },
+          },
+        },
       },
       listen: vi.fn(async () => {
         calls.push("vite-listen")

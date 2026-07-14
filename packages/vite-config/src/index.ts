@@ -218,7 +218,7 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     VOYANT_SSR_OPTIMIZE_DEPS,
   )
   const serverDependencyFacades = options.serverDependencyFacades ?? {}
-  const dependencyFacadePlugin = createDependencyFacadePlugin()
+  const dependencyFacadePlugin = createDependencyFacadePlugin(serverDependencyFacades)
   const dependencyFacadeAliases = createDependencyFacadeAliases(
     options.dependencyAliases ?? {},
     serverDependencyFacades,
@@ -249,6 +249,7 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     optimizeDeps: {
       include: nestedDependencyIncludes,
       exclude: [...VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE],
+      ...(Object.keys(serverDependencyFacades).length > 0 ? { holdUntilCrawlEnd: false } : {}),
     },
     ssr: {
       optimizeDeps: {
@@ -271,10 +272,29 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
   }
 }
 
-function createDependencyFacadePlugin(): Plugin {
+function createDependencyFacadePlugin(serverFacades: Readonly<Record<string, string>>): Plugin {
+  const nestedDependencyIncludes = createNestedDependencyIncludes(serverFacades)
+  const productBomId = productBomPackageName(serverFacades)
   return {
     name: "voyant:dependency-facades",
     enforce: "pre",
+    configEnvironment: {
+      order: "post",
+      handler(_name, config) {
+        if (config.consumer !== "client" || !productBomId) return
+        const include = config.optimizeDeps?.include
+        if (!include) return
+        config.optimizeDeps!.include = [
+          ...new Set(
+            include.map((dependency) =>
+              nestedDependencyIncludes.includes(dependency)
+                ? dependency
+                : qualifyFrontendSingletonInclude(dependency, productBomId),
+            ),
+          ),
+        ]
+      },
+    },
     async resolveId(source, importer, options) {
       if (
         source.startsWith("#frontend/") &&
@@ -290,6 +310,13 @@ function createDependencyFacadePlugin(): Plugin {
       return null
     },
   }
+}
+
+function qualifyFrontendSingletonInclude(dependency: string, productBomId: string): string {
+  const rootPackage = packageNameForSubpath(dependency.split(">")[0]!.trim())
+  return VOYANT_DEDUPE_DEPENDENCIES.includes(rootPackage)
+    ? `${productBomId} > ${dependency}`
+    : dependency
 }
 
 function createDependencyFacadeAliases(
@@ -331,13 +358,16 @@ function createDependencyFacadeAliases(
 }
 
 function createNestedDependencyIncludes(facades: Readonly<Record<string, string>>): string[] {
-  const productBomId = facades["@tanstack/react-router"]
-    ? packageNameForSubpath(facades["@tanstack/react-router"])
-    : undefined
+  const productBomId = productBomPackageName(facades)
   if (!productBomId) return []
 
   const reactStore = `${productBomId} > @tanstack/react-router > @tanstack/react-store`
   return [reactStore, `${reactStore} > use-sync-external-store/shim/with-selector`]
+}
+
+function productBomPackageName(facades: Readonly<Record<string, string>>): string | undefined {
+  const routerFacade = facades["@tanstack/react-router"]
+  return routerFacade ? packageNameForSubpath(routerFacade) : undefined
 }
 
 function escapeRegExp(value: string): string {
