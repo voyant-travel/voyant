@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import type { createReadStream as CreateReadStream } from "node:fs"
 import { mkdtempSync, readdirSync, rmSync } from "node:fs"
 import type { rm as Remove } from "node:fs/promises"
@@ -19,7 +21,7 @@ import {
   type IndexerReconciliationExclusiveContext,
   type ReconcileIndexerOptions,
   reconcileIndexer,
-} from "./reconciliation.js"
+} from "./reconciliation-node.js"
 
 const fsControl = vi.hoisted(() => ({
   readPaths: [] as string[],
@@ -159,7 +161,7 @@ describe("reconcileIndexer", () => {
     expect(fake.events.indexOf("delete:owned-stale")).toBeLessThan(
       fake.events.indexOf("upsert:owned-concurrent"),
     )
-    expect(fixture.lock.runExclusive).toHaveBeenCalledTimes(1)
+    expect(fixture.lock.exclusiveRuns()).toBe(1)
   })
 
   it("ensures target collections before upserting", async () => {
@@ -481,12 +483,16 @@ function createFakeReconciliationAuthority(
       }
     },
   }
-  const runExclusive = vi.fn<IndexerReconciliationAuthority["runExclusive"]>((operation) =>
-    runLocked(() => operation(context)),
-  )
+  let exclusiveRuns = 0
+  const authority: IndexerReconciliationAuthority = {
+    runExclusive<T>(operation: (context: IndexerReconciliationExclusiveContext) => Promise<T>) {
+      exclusiveRuns += 1
+      return runLocked(() => operation(context))
+    },
+  }
   return {
-    authority: { runExclusive },
-    runExclusive,
+    authority,
+    exclusiveRuns: () => exclusiveRuns,
     runMutation: runLocked,
   }
 }

@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { createReadStream } from "node:fs"
 import { access, type FileHandle, mkdir, mkdtemp, open, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"

@@ -19,12 +19,14 @@ const packageJson = JSON.parse(
 ) as PackageJson
 
 describe("@voyant-travel/catalog package exports", () => {
-  it("publishes index reconciliation operations", () => {
-    expect(packageJson.exports["./indexer/reconciliation"]).toBe("./src/indexer/reconciliation.ts")
-    expect(packageJson.publishConfig.exports["./indexer/reconciliation"]).toEqual({
-      types: "./dist/indexer/reconciliation.d.ts",
-      import: "./dist/indexer/reconciliation.js",
-      default: "./dist/indexer/reconciliation.js",
+  it("publishes Node index reconciliation operations", () => {
+    expect(packageJson.exports["./indexer/reconciliation-node"]).toBe(
+      "./src/indexer/reconciliation-node.ts",
+    )
+    expect(packageJson.publishConfig.exports["./indexer/reconciliation-node"]).toEqual({
+      types: "./dist/indexer/reconciliation-node.d.ts",
+      import: "./dist/indexer/reconciliation-node.js",
+      default: "./dist/indexer/reconciliation-node.js",
     })
   })
 
