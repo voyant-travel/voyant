@@ -648,33 +648,35 @@ function configureSearchProviderRuntime(
   })
 
   mocks.deploymentProviders.search = selection
-  mocks.workflowGraphRuntime = createVoyantGraphRuntime({
-    graphHash: `sha256:search-${selection}`,
-    providerSelections: { search: selection },
-    entries,
-    modules: [
-      {
-        id: "@acme/search",
-        kind: "module",
-        packageName: "@acme/search",
-        order: 0,
-        references,
-        providers: declarations.map((value, index) => ({
-          unitId: "@acme/search",
-          declaration: {
-            id: `search.${value}`,
-            port: "catalog.indexer",
-            selection: { role: "search", value },
-            runtime: { entry: "./provider", export: "createProvider" },
-          },
-          referenceId: references[index]?.id ?? "",
-        })),
-        selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
-        routes: [],
-      },
-    ],
-    plugins: [],
-  }) as unknown as typeof mocks.workflowGraphRuntime
+  mocks.workflowGraphRuntime = {
+    ...createVoyantGraphRuntime({
+      graphHash: `sha256:search-${selection}`,
+      providerSelections: { search: selection },
+      entries,
+      modules: [
+        {
+          id: "@acme/search",
+          kind: "module",
+          packageName: "@acme/search",
+          order: 0,
+          references,
+          providers: declarations.map((value, index) => ({
+            unitId: "@acme/search",
+            declaration: {
+              id: `search.${value}`,
+              port: "catalog.indexer",
+              selection: { role: "search", value },
+              runtime: { entry: "./provider", export: "createProvider" },
+            },
+            referenceId: references[index]?.id ?? "",
+          })),
+          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          routes: [],
+        },
+      ],
+      plugins: [],
+    }),
+  }
   return configured
 }
 
