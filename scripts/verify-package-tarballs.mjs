@@ -293,13 +293,21 @@ function preferredRuntimeTarget(value) {
   return null
 }
 
-async function loadPackedVoyantManifestNamespace(packageDir, packedManifest) {
+let workspaceTypeScriptLoaderPromise
+
+async function ensureWorkspaceTypeScriptLoader() {
+  workspaceTypeScriptLoaderPromise ??= import("tsx/esm/api").then(({ register }) => register())
+  await workspaceTypeScriptLoaderPromise
+}
+
+export async function loadPackedVoyantManifestNamespace(packageDir, packedManifest) {
   const manifestExport = packedManifest.voyant?.manifest
   if (typeof manifestExport !== "string") return {}
 
-  const target = preferredRuntimeTarget(packedManifest.exports?.[manifestExport])
+  const sourceManifest = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
+  const target = preferredRuntimeTarget(sourceManifest.exports?.[manifestExport])
   if (!target?.startsWith("./")) {
-    throw new Error(`${manifestExport} has no relative runtime export target`)
+    throw new Error(`${manifestExport} has no relative source export target`)
   }
 
   const targetPath = path.resolve(packageDir, target)
@@ -308,6 +316,7 @@ async function loadPackedVoyantManifestNamespace(packageDir, packedManifest) {
     throw new Error(`${manifestExport} runtime export target escapes the package directory`)
   }
 
+  await ensureWorkspaceTypeScriptLoader()
   return import(`${pathToFileURL(targetPath).href}?voyant-pack=${Date.now()}-${Math.random()}`)
 }
 

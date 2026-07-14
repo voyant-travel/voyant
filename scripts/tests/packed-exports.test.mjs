@@ -5,7 +5,10 @@ import path from "node:path"
 import { afterEach, test } from "node:test"
 
 import { packedFileExportsName } from "../lib/packed-exports.mjs"
-import { collectPackedManifestRuntimeExportProblems } from "../verify-package-tarballs.mjs"
+import {
+  collectPackedManifestRuntimeExportProblems,
+  loadPackedVoyantManifestNamespace,
+} from "../verify-package-tarballs.mjs"
 
 const temporaryDirectories = []
 
@@ -92,6 +95,21 @@ test("accepts relative and canonical package runtime entries exported by the pac
   )
 
   assert.deepEqual(problems, [])
+})
+
+test("loads workspace TypeScript manifests with source-style .js specifiers", async () => {
+  const root = createFixture({
+    "package.json": JSON.stringify({
+      type: "module",
+      exports: { "./voyant": "./src/voyant.ts" },
+    }),
+    "src/runtime.ts": `export const financeVoyantModule = ${JSON.stringify(financeVoyantModule)}\n`,
+    "src/voyant.ts": 'export { financeVoyantModule } from "./runtime.js"\n',
+  })
+
+  const namespace = await loadPackedVoyantManifestNamespace(root, packedManifest({}))
+
+  assert.deepEqual(namespace.financeVoyantModule, financeVoyantModule)
 })
 
 function packedManifest(exports) {
