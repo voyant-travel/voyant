@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: runtime; project bootstrap, Vite lifecycle, and generated route handling remain together until the public tooling contract stabilizes.
+import { randomUUID } from "node:crypto"
 import { access, cp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import path from "node:path"
@@ -32,6 +33,10 @@ import type {
 } from "./tooling.js"
 
 const DEFAULT_DEVELOPMENT_PORT = 3300
+const DEVELOPMENT_READINESS_HEADER = "x-voyant-development-readiness"
+const DEVELOPMENT_READINESS_PATH = "/.voyant/development-readiness"
+const DEVELOPMENT_READINESS_RETRY_MS = 50
+const DEVELOPMENT_READINESS_TIMEOUT_MS = 30_000
 const PRODUCT_BOM_ARTIFACT = ".voyant/product-bom.generated.json"
 const PRODUCT_ROUTE_FILES_EXPORT = "standard-route-files"
 const FRONTEND_RUNTIME_FACADES = {
@@ -62,9 +67,14 @@ interface GeneratedRoutes {
 
 interface ProjectViteConfigOptions {
   appRootUrl: string
-  developmentReadiness?: Promise<void>
+  developmentReadiness?: DevelopmentReadiness
   generatedRoutes: GeneratedRoutes
   bootstrap: ProjectBootstrap
+}
+
+interface DevelopmentReadiness {
+  promise: Promise<void>
+  token: string
 }
 
 interface ProjectBootstrap {
@@ -113,6 +123,7 @@ export interface VoyantProjectToolingDependencies {
   generateRouteTree(options: ProjectRouteGenerationOptions): Promise<void>
   buildVite(config: InlineConfig): Promise<unknown>
   createViteServer(config: InlineConfig): Promise<ProjectViteServer>
+  waitForDevelopmentApplication(options: { url: string; token: string }): Promise<void>
   replaceDirectory(source: string, destination: string): Promise<void>
 }
 
@@ -124,6 +135,7 @@ const defaultDependencies: VoyantProjectToolingDependencies = {
   generateRouteTree,
   buildVite: buildViteApplication,
   createViteServer,
+  waitForDevelopmentApplication,
   replaceDirectory,
 }
 
@@ -165,9 +177,12 @@ export async function developVoyantProjectWithDependencies(
 ): Promise<VoyantProjectDevelopmentServer> {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   let releaseDevelopmentRequests: () => void = () => undefined
-  const developmentReadiness = new Promise<void>((resolve) => {
-    releaseDevelopmentRequests = resolve
-  })
+  const developmentReadiness: DevelopmentReadiness = {
+    promise: new Promise<void>((resolve) => {
+      releaseDevelopmentRequests = resolve
+    }),
+    token: randomUUID(),
+  }
   const config = await prepareProjectViteConfig(projectRoot, dependencies, developmentReadiness)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
   // Keep native config discovery aligned with the production build.
@@ -186,6 +201,7 @@ export async function developVoyantProjectWithDependencies(
 
   try {
     await server.listen()
+    const developmentUrl = resolveDevelopmentUrl(server, options.host, port)
     const clientOptimizer = server.environments?.client?.depsOptimizer
     await clientOptimizer?.scanProcessing
     await Promise.all(
@@ -193,6 +209,10 @@ export async function developVoyantProjectWithDependencies(
         (dependency) => dependency.processing,
       ),
     )
+    await dependencies.waitForDevelopmentApplication({
+      url: developmentUrl,
+      token: developmentReadiness.token,
+    })
     releaseDevelopmentRequests()
   } catch (error) {
     releaseDevelopmentRequests()
@@ -219,7 +239,7 @@ export async function developVoyantProjectWithDependencies(
 async function prepareProjectViteConfig(
   projectRoot: string,
   dependencies: VoyantProjectToolingDependencies,
-  developmentReadiness?: Promise<void>,
+  developmentReadiness?: DevelopmentReadiness,
 ): Promise<InlineConfig> {
   const appRootUrl = pathToFileURL(path.join(projectRoot, "generated-config-anchor.ts")).href
   const files = await dependencies.loadStandardRouteFiles(projectRoot)
@@ -290,18 +310,55 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
   return config
 }
 
-function createDevelopmentReadinessPlugin(readiness?: Promise<void>): PluginOption {
+function createDevelopmentReadinessPlugin(readiness?: DevelopmentReadiness): PluginOption {
   if (!readiness) return false
 
   return {
     name: "voyant:development-readiness",
     enforce: "pre",
     configureServer(server) {
-      server.middlewares.use((_request, _response, next) => {
-        void readiness.then(() => next(), next)
+      server.middlewares.use((request, _response, next) => {
+        if (request.headers[DEVELOPMENT_READINESS_HEADER] === readiness.token) {
+          next()
+          return
+        }
+        void readiness.promise.then(() => next(), next)
       })
     },
   }
+}
+
+export async function waitForDevelopmentApplication(
+  options: { url: string; token: string },
+  request: typeof fetch = fetch,
+): Promise<void> {
+  const deadline = Date.now() + DEVELOPMENT_READINESS_TIMEOUT_MS
+  const readinessUrl = new URL(DEVELOPMENT_READINESS_PATH, options.url)
+  let lastFailure = "no response"
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await request(readinessUrl, {
+        headers: { [DEVELOPMENT_READINESS_HEADER]: options.token },
+        redirect: "manual",
+        signal: AbortSignal.timeout(5_000),
+      })
+      const body = await response.text()
+      if (response.status < 500 && !isConnectFallbackNotFound(body)) return
+      lastFailure = `HTTP ${response.status}: ${body.slice(0, 200)}`
+    } catch (error) {
+      lastFailure = errorMessage(error)
+    }
+    await new Promise((resolve) => setTimeout(resolve, DEVELOPMENT_READINESS_RETRY_MS))
+  }
+
+  throw new Error(
+    `Voyant development application did not become ready within ${DEVELOPMENT_READINESS_TIMEOUT_MS}ms (${lastFailure})`,
+  )
+}
+
+function isConnectFallbackNotFound(body: string): boolean {
+  return /<pre>Cannot (?:GET|HEAD) \/[^<]*<\/pre>/.test(body)
 }
 
 function relativeEntry(appRootUrl: string, entry: string): string {

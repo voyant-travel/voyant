@@ -14,6 +14,7 @@ import {
   loadStandardRouteFiles,
   prepareProjectBootstrap,
   type VoyantProjectToolingDependencies,
+  waitForDevelopmentApplication,
 } from "./tooling-internal.js"
 
 const temporaryDirectories: string[] = []
@@ -109,7 +110,7 @@ describe("Voyant project tooling", () => {
     })
     const config = createProjectViteConfig({
       appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
-      developmentReadiness: readiness,
+      developmentReadiness: { promise: readiness, token: "readiness-token" },
       generatedRoutes: {
         plugin: { name: "generated-routes" },
         routesDirectory: "/workspace/operator/.voyant/routes",
@@ -132,7 +133,7 @@ describe("Voyant project tooling", () => {
     ) => void
     const next = vi.fn()
 
-    middleware({}, {}, next)
+    middleware({ headers: {} }, {}, next)
     await Promise.resolve()
     expect(next).not.toHaveBeenCalled()
 
@@ -140,6 +141,63 @@ describe("Voyant project tooling", () => {
     await readiness
     await Promise.resolve()
     expect(next).toHaveBeenCalledOnce()
+  })
+
+  it("lets only the internal application probe bypass the development gate", async () => {
+    const readiness = new Promise<void>(() => undefined)
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      developmentReadiness: { promise: readiness, token: "readiness-token" },
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
+    })
+    const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
+      (candidate) => candidate.name === "voyant:development-readiness",
+    )
+    const use = vi.fn()
+    const configureServer = plugin?.configureServer as (server: {
+      middlewares: { use: typeof use }
+    }) => void
+    configureServer({ middlewares: { use } })
+    const middleware = use.mock.calls[0]?.[0] as (
+      request: { headers: Record<string, string> },
+      response: unknown,
+      next: (error?: unknown) => void,
+    ) => void
+    const next = vi.fn()
+
+    middleware({ headers: { "x-voyant-development-readiness": "readiness-token" } }, {}, next)
+
+    expect(next).toHaveBeenCalledOnce()
+  })
+
+  it("waits past Connect's fallback 404 until the application handles requests", async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          "<!DOCTYPE html><html><body><pre>Cannot GET /.voyant/development-readiness</pre></body></html>",
+          { status: 404 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response("application not found", { status: 404 }))
+
+    await waitForDevelopmentApplication(
+      { url: "http://localhost:3300/", token: "readiness-token" },
+      request,
+    )
+
+    expect(request).toHaveBeenCalledTimes(2)
+    expect(request).toHaveBeenLastCalledWith(
+      new URL("http://localhost:3300/.voyant/development-readiness"),
+      expect.objectContaining({
+        headers: { "x-voyant-development-readiness": "readiness-token" },
+      }),
+    )
   })
 
   it("generates, builds, and copies both deployment artifact layouts", async () => {
@@ -207,13 +265,14 @@ describe("Voyant project tooling", () => {
       "configFile",
     )
     expect(
-      vi.mocked(dependencies.createViteConfig).mock.calls[0]?.[0].developmentReadiness,
+      vi.mocked(dependencies.createViteConfig).mock.calls[0]?.[0].developmentReadiness?.promise,
     ).toBeInstanceOf(Promise)
     expect(development.url).toBe("http://localhost:3300/")
     expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
     expect(calls).toContain("vite-listen")
     expect(calls).toContain("vite-scan")
     expect(calls).toContain("vite-optimize")
+    expect(calls).toContain("application-ready")
 
     await development.close()
     await development.close()
@@ -630,6 +689,9 @@ function createDependencies(calls: string[]): VoyantProjectToolingDependencies {
         calls.push("vite-close")
       }),
     })),
+    waitForDevelopmentApplication: vi.fn(async () => {
+      calls.push("application-ready")
+    }),
     replaceDirectory: vi.fn(async () => {
       calls.push("replace-directory")
     }),
