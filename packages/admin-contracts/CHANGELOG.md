@@ -1,5 +1,16 @@
 # @voyant-travel/admin-contracts
 
+## 0.104.11
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance-contracts@0.106.0
+  - @voyant-travel/bookings-contracts@0.108.0
+  - @voyant-travel/products-contracts@0.107.0
+  - @voyant-travel/legal-contracts@0.106.9
+  - @voyant-travel/relationships-contracts@0.108.12
+
 ## 0.104.10
 
 ### Patch Changes
