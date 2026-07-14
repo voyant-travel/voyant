@@ -264,6 +264,7 @@
         "../bookings/dist/extensions/suppliers.d.ts"
       ],
       "@voyant-travel/bookings/extras": ["../bookings/dist/extras.d.ts"],
+      "@voyant-travel/bookings/extras/validation": ["../bookings/dist/extras/validation.d.ts"],
       "@voyant-travel/bookings/linkables": ["../bookings/dist/linkables.d.ts"],
       "@voyant-travel/bookings/pii": ["../bookings/dist/pii.d.ts"],
       "@voyant-travel/bookings/pricing-assignment": ["../bookings/dist/pricing-assignment.d.ts"],
