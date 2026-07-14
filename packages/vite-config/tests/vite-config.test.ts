@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
+  VOYANT_CONTEXT_SINGLETONS,
   VOYANT_SSR_OPTIMIZE_DEPS,
   voyantGeneratedRoutes,
   voyantStartViteConfig,
@@ -98,6 +99,28 @@ describe("voyantStartViteConfig", () => {
     const alias = config.resolve?.alias as Record<string, string>
 
     expect(alias["@"]).toBe("/repo/starters/operator/src")
+  })
+
+  it("deduplicates shared framework and first-party context runtimes", () => {
+    const config = voyantStartViteConfig(base)
+
+    expect(config.resolve?.dedupe).toEqual([
+      "react",
+      "react-dom",
+      "@tanstack/react-query",
+      "@tanstack/react-router",
+      ...VOYANT_CONTEXT_SINGLETONS,
+    ])
+  })
+
+  it("does not prebundle the broad operator composition entry", () => {
+    const config = voyantStartViteConfig(base)
+
+    expect(config.optimizeDeps?.exclude).toEqual([
+      "@voyant-travel/admin",
+      "@voyant-travel/operator-standard",
+      "@voyant-travel/operator-standard/standard-frontend",
+    ])
   })
 
   it("layers extra manual chunks after the Voyant vendor rules", () => {

@@ -27,6 +27,7 @@
     "./checkout-capability": "./src/checkout-capability.ts",
     "./pricing-assignment": "./src/pricing-assignment.ts",
     "./extras": "./src/extras.ts",
+    "./extras/validation": "./src/extras/validation.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status": "./src/status.ts",
     "./status-dispatch": "./src/status-dispatch.ts",
@@ -191,6 +192,11 @@
         "types": "./dist/extras.d.ts",
         "import": "./dist/extras.js",
         "default": "./dist/extras.js"
+      },
+      "./extras/validation": {
+        "types": "./dist/extras/validation.d.ts",
+        "import": "./dist/extras/validation.js",
+        "default": "./dist/extras/validation.js"
       },
       "./extensions/suppliers": {
         "types": "./dist/extensions/suppliers.d.ts",

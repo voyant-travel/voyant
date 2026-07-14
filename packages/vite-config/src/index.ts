@@ -65,6 +65,36 @@ export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
   "swr",
 ]
 
+/** First-party React context owners must resolve to one module instance. */
+export const VOYANT_CONTEXT_SINGLETONS: readonly string[] = [
+  "@voyant-travel/admin",
+  "@voyant-travel/auth-react",
+  "@voyant-travel/bookings-react",
+  "@voyant-travel/catalog-react",
+  "@voyant-travel/charters-react",
+  "@voyant-travel/commerce-react",
+  "@voyant-travel/cruises-react",
+  "@voyant-travel/distribution-react",
+  "@voyant-travel/finance-react",
+  "@voyant-travel/flights-react",
+  "@voyant-travel/i18n",
+  "@voyant-travel/identity-react",
+  "@voyant-travel/inventory-react",
+  "@voyant-travel/legal-react",
+  "@voyant-travel/notifications-react",
+  "@voyant-travel/operations-react",
+  "@voyant-travel/quotes-react",
+  "@voyant-travel/relationships-react",
+  "@voyant-travel/storefront-react",
+  "@voyant-travel/workflows-react",
+]
+
+const VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE: readonly string[] = [
+  "@voyant-travel/admin",
+  "@voyant-travel/operator-standard",
+  "@voyant-travel/operator-standard/standard-frontend",
+]
+
 /**
  * Route-file ignore pattern for TanStack Start's file router: colocated
  * helpers (`_components`, `_hooks`, …) and page/section/dialog modules are
@@ -216,7 +246,17 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       alias: {
         "@": fileURLToPath(new URL("./src", appRootUrl)),
       },
+      dedupe: [
+        "react",
+        "react-dom",
+        "@tanstack/react-query",
+        "@tanstack/react-router",
+        ...VOYANT_CONTEXT_SINGLETONS,
+      ],
       tsconfigPaths: true,
+    },
+    optimizeDeps: {
+      exclude: [...VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE],
     },
     ssr: {
       optimizeDeps: {

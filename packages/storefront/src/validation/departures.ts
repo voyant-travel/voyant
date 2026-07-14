@@ -1,4 +1,4 @@
-import { extraPricingModeSchema } from "@voyant-travel/bookings/extras"
+import { extraPricingModeSchema } from "@voyant-travel/bookings/extras/validation"
 import {
   publicBookingSessionAllocationSchema,
   publicBookingSessionRepriceSummarySchema,

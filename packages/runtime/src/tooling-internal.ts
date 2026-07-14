@@ -17,7 +17,6 @@ import {
 } from "@voyant-travel/vite-config"
 import { register } from "tsx/esm/api"
 import {
-  type Alias,
   createBuilder as createViteBuilder,
   createServer as createViteServer,
   type InlineConfig,
@@ -51,7 +50,6 @@ interface ProjectBootstrap {
   serverEntry: string
   routerEntry?: string
   stylesEntry?: string
-  aliases?: Readonly<Record<string, string>>
 }
 
 interface ProjectRouteGenerationOptions {
@@ -130,21 +128,29 @@ export async function developVoyantProjectWithDependencies(
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const config = await prepareProjectViteConfig(projectRoot, dependencies)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
+  const restoreDevelopmentEnvironment = enableDevelopmentEnvironment()
   // Keep native config discovery aligned with the production build.
-  const server = await dependencies.createViteServer({
-    ...config,
-    root: projectRoot,
-    server: {
-      ...config.server,
-      ...(options.host === undefined ? {} : { host: options.host }),
-      port,
-    },
-  })
+  let server: ProjectViteServer
+  try {
+    server = await dependencies.createViteServer({
+      ...config,
+      root: projectRoot,
+      server: {
+        ...config.server,
+        ...(options.host === undefined ? {} : { host: options.host }),
+        port,
+      },
+    })
+  } catch (error) {
+    restoreDevelopmentEnvironment()
+    throw error
+  }
 
   try {
     await server.listen()
   } catch (error) {
     await server.close().catch(() => undefined)
+    restoreDevelopmentEnvironment()
     throw error
   }
 
@@ -154,7 +160,11 @@ export async function developVoyantProjectWithDependencies(
     close: async () => {
       if (closed) return
       closed = true
-      await server.close()
+      try {
+        await server.close()
+      } finally {
+        restoreDevelopmentEnvironment()
+      }
     },
   }
 }
@@ -209,20 +219,12 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     // The Node host, admin asset resolver, and deployment artifacts share this layout.
     outDir: "dist",
   }
-  if (options.bootstrap.stylesEntry || options.bootstrap.aliases) {
+  if (options.bootstrap.stylesEntry) {
     const alias = config.resolve?.alias
     config.resolve = {
       ...config.resolve,
       alias: [
-        ...Object.entries(options.bootstrap.aliases ?? {}).map(
-          ([specifier, replacement]): Alias => ({
-            find: new RegExp(`^${escapeRegExp(specifier)}$`),
-            replacement,
-          }),
-        ),
-        ...(options.bootstrap.stylesEntry
-          ? [{ find: /^@\/styles\.css$/, replacement: options.bootstrap.stylesEntry }]
-          : []),
+        { find: /^@\/styles\.css$/, replacement: options.bootstrap.stylesEntry },
         ...(Array.isArray(alias)
           ? alias
           : Object.entries(alias ?? {}).map(([find, replacement]) => ({ find, replacement }))),
@@ -230,10 +232,6 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     }
   }
   return config
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 function relativeEntry(appRootUrl: string, entry: string): string {
@@ -249,18 +247,6 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
       ? authoredServerEntry
       : path.join(generatedRoot, "server.ts"),
   }
-  const aliases = resolveProductDependencies(projectRoot, productBomId, [
-    "react/jsx-runtime",
-    "react/jsx-dev-runtime",
-    "react-dom/client",
-    "react-dom/server",
-    "@tanstack/react-query",
-    "@tanstack/react-router",
-    "react-dom",
-    "react",
-  ])
-  if (Object.keys(aliases).length > 0) bootstrap.aliases = aliases
-
   if (!(await pathExists(authoredServerEntry))) {
     await writeGeneratedFile(
       bootstrap.serverEntry,
@@ -431,29 +417,6 @@ async function importProjectModule(resolved: string): Promise<unknown> {
   return import(moduleUrl)
 }
 
-function resolveProductDependencies(
-  projectRoot: string,
-  productBomId: string,
-  dependencies: readonly string[],
-): Readonly<Record<string, string>> {
-  try {
-    const projectRequire = createRequire(path.join(projectRoot, "package.json"))
-    const productEntry = projectRequire.resolve(`${productBomId}/standard-frontend`)
-    const productRequire = createRequire(productEntry)
-    return Object.fromEntries(
-      dependencies.flatMap((dependency) => {
-        try {
-          return [[dependency, productRequire.resolve(dependency)]]
-        } catch {
-          return []
-        }
-      }),
-    )
-  } catch {
-    return {}
-  }
-}
-
 function isPackageName(value: string): boolean {
   return (
     /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(value) ||
@@ -490,10 +453,32 @@ function resolveDevelopmentUrl(
   port: number,
 ): string {
   const resolved = server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
-  if (resolved) return resolved
+  if (resolved) {
+    if (host === undefined) {
+      const url = new URL(resolved)
+      if (url.hostname === "127.0.0.1" || url.hostname === "[::1]") {
+        url.hostname = "localhost"
+      }
+      return url.toString()
+    }
+    return resolved
+  }
 
   const fallbackHost = host && host !== "0.0.0.0" && host !== "::" ? host : "localhost"
   return `http://${formatUrlHost(fallbackHost)}:${port}`
+}
+
+function enableDevelopmentEnvironment(): () => void {
+  const previousAuthFallback = process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
+  process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS ??= "1"
+
+  return () => {
+    if (previousAuthFallback === undefined) {
+      delete process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
+    } else {
+      process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS = previousAuthFallback
+    }
+  }
 }
 
 function formatUrlHost(host: string): string {

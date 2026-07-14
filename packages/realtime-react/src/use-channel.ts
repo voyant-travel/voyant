@@ -40,11 +40,11 @@ export function useChannel(channel: string | null | undefined, options: UseChann
     let cancelled = false
 
     void fetchToken()
-      .then(({ token }) => {
-        if (cancelled) return
+      .then((credentials) => {
+        if (cancelled || !credentials) return
         connection = connector.subscribe({
           channel,
-          token,
+          token: credentials.token,
           sinceId,
           profile,
           onMessage: (message) => handlers.current.onMessage?.(message),

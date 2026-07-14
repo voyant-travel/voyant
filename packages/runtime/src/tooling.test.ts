@@ -40,7 +40,7 @@ describe("Voyant project tooling", () => {
     expect(buildApp).toHaveBeenCalledOnce()
   })
 
-  it("aliases product dependencies exactly without capturing package subpaths", () => {
+  it("does not alias framework dependencies to product package entry files", () => {
     const config = createProjectViteConfig({
       appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
       generatedRoutes: {
@@ -50,18 +50,10 @@ describe("Voyant project tooling", () => {
       },
       bootstrap: {
         serverEntry: "/workspace/operator/src/server.ts",
-        aliases: { "@tanstack/react-router": "/product/react-router/index.cjs" },
       },
     })
     const aliases = config.resolve?.alias
-    expect(Array.isArray(aliases)).toBe(true)
-    const dependencyAlias = (aliases as Array<{ find: string | RegExp; replacement: string }>).find(
-      ({ replacement }) => replacement === "/product/react-router/index.cjs",
-    )
-
-    expect(dependencyAlias?.find).toBeInstanceOf(RegExp)
-    expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router")).toBe(true)
-    expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router/ssr/server")).toBe(false)
+    expect(JSON.stringify(aliases)).not.toContain("/product/")
   })
 
   it("keeps the Node distribution under the lifecycle-owned dist directory", () => {
@@ -143,11 +135,30 @@ describe("Voyant project tooling", () => {
       "configFile",
     )
     expect(development.url).toBe("http://localhost:3300/")
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
     expect(calls).toContain("vite-listen")
 
     await development.close()
     await development.close()
     expect(calls.filter((call) => call === "vite-close")).toHaveLength(1)
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+  })
+
+  it("canonicalizes Vite's default loopback URL to localhost", async () => {
+    const dependencies = createDependencies([])
+    vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      resolvedUrls: { local: ["http://127.0.0.1:3301/"], network: [] },
+      listen: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+    })
+
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator", port: 3301 },
+      dependencies,
+    )
+
+    expect(development.url).toBe("http://localhost:3301/")
+    await development.close()
   })
 
   it("passes explicit host and port to Vite and provides a fallback URL", async () => {

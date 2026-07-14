@@ -17,6 +17,7 @@ import {
   getOperatorAdminMessageOverridesFromUiPrefs,
   type OperatorAdminMessages,
   OperatorAdminMessagesProvider,
+  useOptionalOperatorAdminMessages,
   useOperatorAdminMessages,
 } from "../providers/operator-admin-messages.js"
 import type { AdminUser } from "../types.js"
@@ -208,13 +209,13 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
   mapUser = defaultAdminWorkspaceUser,
   children,
 }: AdminWorkspaceShellProps<TUser>) {
-  const messages = useOperatorAdminMessages()
+  const messages = useOptionalOperatorAdminMessages()
 
   return (
     <OperatorAdminBootstrapGate
       user={user}
       isUserLoading={isUserLoading}
-      loadingFallback={<AdminWorkspacePendingFallback label={messages.loading} />}
+      loadingFallback={<AdminWorkspacePendingFallback label={messages?.loading} />}
     >
       {({ user: loadedUser }) => (
         <OperatorAdminMessagesProvider
