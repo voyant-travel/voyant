@@ -119,7 +119,7 @@
     "generate:dep-paths": "node scripts/gen-composition-dep-paths.mjs",
     "verify:dep-paths": "node scripts/check-composition-dep-paths.mjs",
     "generate:dist-configs": "node scripts/gen-package-dist-configs.mjs",
-    "verify:dist-configs": "node scripts/check-package-dist-configs.mjs",
+    "verify:dist-configs": "node --test scripts/tests/package-self-imports.test.mjs && node scripts/check-package-dist-configs.mjs",
     "verify:catalog-runtime-authority": "node --test scripts/tests/check-catalog-runtime-authority.test.mjs && node scripts/check-catalog-runtime-authority.mjs"
   },
   "devDependencies": {
