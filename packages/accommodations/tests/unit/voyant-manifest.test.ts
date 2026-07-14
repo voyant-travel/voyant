@@ -81,6 +81,28 @@ describe("accommodations deployment manifest", () => {
       ACCOMMODATION_CONTENT_OPENAPI_API_IDS.public,
     )
   })
+
+  it("describes access to the accommodations API mount", () => {
+    expect(accommodationsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "accommodations",
+        label: "Accommodations",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+        ],
+      }),
+    ])
+  })
 })
 
 function openApiDocument(routes: unknown) {

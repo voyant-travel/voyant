@@ -53,9 +53,76 @@ export const distributionVoyantModule = defineModule({
   access: {
     resources: [
       {
+        id: "@voyant-travel/distribution#access.external-refs",
+        resource: "external-refs",
+        label: "External references",
+        description: "Mappings between Voyant records and identifiers in external systems.",
+        actions: [
+          {
+            action: "read",
+            label: "View external references",
+            description: "View external-system identifier mappings.",
+          },
+          {
+            action: "write",
+            label: "Manage external references",
+            description: "Create and update external-system identifier mappings.",
+          },
+          {
+            action: "delete",
+            label: "Delete external references",
+            description: "Delete external-system identifier mappings.",
+            sensitive: true,
+          },
+        ],
+      },
+      {
+        id: "@voyant-travel/distribution#access.distribution",
+        resource: "distribution",
+        label: "Distribution",
+        description: "Channels, contracts, mappings, inventory, settlements, and delivery state.",
+        actions: [
+          {
+            action: "read",
+            label: "View distribution",
+            description: "View channel configuration, mappings, inventory, and delivery state.",
+          },
+          {
+            action: "write",
+            label: "Manage distribution",
+            description: "Create, update, reconcile, and retry distribution records.",
+          },
+          {
+            action: "delete",
+            label: "Delete distribution records",
+            description: "Delete supported channel, mapping, inventory, and settlement records.",
+            sensitive: true,
+          },
+        ],
+      },
+      {
         id: "@voyant-travel/distribution#access.suppliers",
         resource: "suppliers",
-        actions: ["read", "write"],
+        label: "Suppliers",
+        description: "Supplier profiles, contacts, services, rates, notes, and commercial terms.",
+        actions: [
+          {
+            action: "read",
+            label: "View suppliers",
+            description: "View supplier profiles and related commercial records.",
+          },
+          {
+            action: "write",
+            label: "Manage suppliers",
+            description: "Create and update supplier profiles and related commercial records.",
+          },
+          {
+            action: "delete",
+            label: "Delete supplier records",
+            description: "Delete suppliers and supported supplier-owned records.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -117,14 +184,6 @@ export const distributionVoyantModule = defineModule({
       },
     ],
     routes: [
-      {
-        id: "@voyant-travel/distribution#admin.route.channel-sync",
-        path: "/channel-sync",
-        runtime: {
-          entry: "@voyant-travel/distribution-react/admin",
-          export: "createDistributionAdminExtension",
-        },
-      },
       {
         id: "@voyant-travel/distribution#admin.route.suppliers-index",
         path: "/suppliers",
@@ -196,6 +255,18 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       },
     },
   ],
+  admin: {
+    routes: [
+      {
+        id: "@voyant-travel/distribution#channel-push-extension.admin.route.channel-sync",
+        path: "/channel-sync",
+        runtime: {
+          entry: "@voyant-travel/distribution-react/admin",
+          export: "createDistributionAdminExtension",
+        },
+      },
+    ],
+  },
   subscribers: [
     {
       id: "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",

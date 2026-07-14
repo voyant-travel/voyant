@@ -57,7 +57,20 @@ export const accommodationsVoyantModule = defineModule({
       {
         id: "@voyant-travel/accommodations#access.accommodations",
         resource: "accommodations",
-        actions: ["read", "write"],
+        label: "Accommodations",
+        description: "Accommodation room blocks and their managed content.",
+        actions: [
+          {
+            action: "read",
+            label: "View accommodations",
+            description: "View accommodation room blocks and content.",
+          },
+          {
+            action: "write",
+            label: "Manage accommodations",
+            description: "Create and update accommodation room blocks and content.",
+          },
+        ],
       },
     ],
   },

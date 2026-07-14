@@ -83,6 +83,37 @@ describe("MICE deployment manifests", () => {
     )
   })
 
+  it("describes MICE API access and requires the database schema directly", async () => {
+    expect(miceVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "mice",
+        label: "MICE programs",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
+    ])
+
+    const packageJson = await import("../../package.json", { with: { type: "json" } })
+    expect(packageJson.default.voyant.requiresSchemas).toContain("@voyant-travel/db")
+  })
+
   it("references exported runtimes with matching mounts", () => {
     expect(createMiceHonoModule().module.name).toBe("mice")
     expect(miceBookingExtension.extension.module).toBe("bookings")

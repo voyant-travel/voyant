@@ -56,6 +56,34 @@ export const chartersVoyantModule = defineModule({
       source: "@voyant-travel/charters",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/charters#access.charters",
+        resource: "charters",
+        label: "Charters",
+        description: "Charter products, yachts, voyages, availability, and pricing.",
+        actions: [
+          {
+            action: "read",
+            label: "View charters",
+            description: "View charter products and related operational data.",
+          },
+          {
+            action: "write",
+            label: "Manage charters",
+            description: "Create and update charter products and related operational data.",
+          },
+          {
+            action: "delete",
+            label: "Delete charters",
+            description: "Delete or archive charter products and related records.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

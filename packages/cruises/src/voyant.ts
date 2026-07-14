@@ -61,7 +61,26 @@ export const cruisesVoyantModule = defineModule({
       {
         id: "@voyant-travel/cruises#access.cruises",
         resource: "cruises",
-        actions: ["read", "write"],
+        label: "Cruises",
+        description: "Cruise products, ships, sailings, voyage groups, prices, and content.",
+        actions: [
+          {
+            action: "read",
+            label: "View cruises",
+            description: "View cruise products and related operational data.",
+          },
+          {
+            action: "write",
+            label: "Manage cruises",
+            description: "Create and update cruise products and related operational data.",
+          },
+          {
+            action: "delete",
+            label: "Delete cruises",
+            description: "Delete or archive cruise products and related records.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -149,6 +168,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#content-extension.api.public",
       surface: "public",
       mount: "cruises",
+      anonymous: true,
       openapi: { document: "cruises" },
       runtime: {
         entry: "@voyant-travel/cruises/graph-runtime",

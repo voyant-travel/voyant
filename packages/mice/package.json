@@ -134,6 +134,7 @@
     },
     "schema": "./schema",
     "requiresSchemas": [
+      "@voyant-travel/db",
       "@voyant-travel/accommodations",
       "@voyant-travel/operations"
     ]

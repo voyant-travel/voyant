@@ -26,4 +26,32 @@ describe("operations deployment manifest", () => {
       ],
     })
   })
+
+  it("authorizes the actual operations mount and every route method", () => {
+    expect(operationsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "operations",
+        label: "Operations",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
+    ])
+  })
 })

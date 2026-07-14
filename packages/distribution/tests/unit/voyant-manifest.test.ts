@@ -104,7 +104,52 @@ describe("distribution deployment manifests", () => {
           },
         },
       ],
+      admin: {
+        routes: [
+          {
+            id: "@voyant-travel/distribution#channel-push-extension.admin.route.channel-sync",
+            path: "/channel-sync",
+          },
+        ],
+      },
     })
+  })
+
+  it("keeps access and admin ownership aligned with executable mounts", () => {
+    expect(distributionVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({ resource: "external-refs" }),
+      expect.objectContaining({ resource: "distribution" }),
+      expect.objectContaining({ resource: "suppliers" }),
+    ])
+    for (const resource of distributionVoyantModule.access?.resources ?? []) {
+      expect(resource.label).toEqual(expect.any(String))
+      expect(resource.description).toEqual(expect.any(String))
+      expect(resource.actions).toEqual([
+        expect.objectContaining({
+          action: "read",
+          label: expect.any(String),
+          description: expect.any(String),
+        }),
+        expect.objectContaining({
+          action: "write",
+          label: expect.any(String),
+          description: expect.any(String),
+        }),
+        expect.objectContaining({
+          action: "delete",
+          label: expect.any(String),
+          description: expect.any(String),
+          sensitive: true,
+        }),
+      ])
+    }
+    expect(distributionVoyantModule.admin?.routes?.map((route) => route.path)).toEqual([
+      "/suppliers",
+      "/suppliers/$id",
+    ])
+    expect(distributionChannelPushVoyantPlugin.admin?.routes?.map((route) => route.path)).toEqual([
+      "/channel-sync",
+    ])
   })
 
   it("references exported runtimes with matching mounts", () => {

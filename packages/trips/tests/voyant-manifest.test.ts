@@ -62,6 +62,46 @@ describe("trips deployment manifest", () => {
     expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
   })
 
+  it("describes API access and binds the critical reservation action", () => {
+    expect(tripsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "trips",
+        label: "Trips",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
+    ])
+    expect(tripsVoyantModule.actions).toContainEqual({
+      id: "@voyant-travel/trips#action.reserve-trip",
+      version: "v1",
+      kind: "execute",
+      targetType: "trip",
+      requiredScopes: ["trips:write"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      from: { tools: ["@voyant-travel/trips#tool.reserve-trip"] },
+    })
+  })
+
   it("marks every public OpenAPI operation with its graph API id", () => {
     const document = JSON.parse(
       readFileSync(new URL("../openapi/storefront/trips.json", import.meta.url), "utf8"),

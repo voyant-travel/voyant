@@ -21,5 +21,6 @@ describe("availability deployment manifest", () => {
         },
       ],
     })
+    expect(availabilityVoyantModule.access).toBeUndefined()
   })
 })

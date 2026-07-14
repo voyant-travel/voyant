@@ -51,6 +51,28 @@ describe("flights deployment manifest", () => {
     })
   })
 
+  it("describes read and write access to the flights mount", () => {
+    expect(flightsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "flights",
+        label: "Flights",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+        ],
+      }),
+    ])
+  })
+
   it("declares only the existing non-transactional admin surface", () => {
     expect(flightsVoyantModule.api).toEqual([
       {

@@ -32,6 +32,28 @@ export const flightsVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/flights#access.flights",
+        resource: "flights",
+        label: "Flights",
+        description: "Flight search, pricing, booking, orders, ticketing, and reference data.",
+        actions: [
+          {
+            action: "read",
+            label: "View flights",
+            description: "View flight orders and reference data.",
+          },
+          {
+            action: "write",
+            label: "Manage flights",
+            description: "Search, price, book, ticket, and cancel flights.",
+          },
+        ],
+      },
+    ],
+  },
   admin: {
     compositionOrder: 50,
     runtime: {

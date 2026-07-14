@@ -21,5 +21,6 @@ describe("catalog-authoring deployment manifest", () => {
         },
       ],
     })
+    expect(catalogAuthoringVoyantModule.access).toBeUndefined()
   })
 })

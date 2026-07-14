@@ -80,6 +80,34 @@ export const miceVoyantModule = defineModule({
       export: "sessionFunctionSpaceLink",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/mice#access.mice",
+        resource: "mice",
+        label: "MICE programs",
+        description: "Meetings and events programs, sessions, delegates, rooming, RFPs, and bids.",
+        actions: [
+          {
+            action: "read",
+            label: "View MICE programs",
+            description: "View meetings and events programs and related records.",
+          },
+          {
+            action: "write",
+            label: "Manage MICE programs",
+            description: "Create and update meetings and events programs and related records.",
+          },
+          {
+            action: "delete",
+            label: "Delete MICE records",
+            description: "Delete sessions and other supported meetings and events records.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
   events: [
     {
       id: "@voyant-travel/mice#event.rfp-awarded",

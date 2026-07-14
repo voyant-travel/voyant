@@ -64,7 +64,26 @@ export const tripsVoyantModule = defineModule({
       {
         id: "@voyant-travel/trips#access.trips",
         resource: "trips",
-        actions: ["read", "write"],
+        label: "Trips",
+        description: "Customer trips, components, pricing, reservations, and requirements.",
+        actions: [
+          {
+            action: "read",
+            label: "View trips",
+            description: "View trips, components, prices, and reservation status.",
+          },
+          {
+            action: "write",
+            label: "Manage trips",
+            description: "Create, revise, price, and reserve trips and their components.",
+          },
+          {
+            action: "delete",
+            label: "Delete trip components",
+            description: "Remove components from a trip.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -134,6 +153,18 @@ export const tripsVoyantModule = defineModule({
       risk: "low",
       ledger: "optional",
       from: { tools: ["@voyant-travel/trips#tool.price-trip"] },
+    },
+    {
+      id: "@voyant-travel/trips#action.reserve-trip",
+      version: "v1",
+      kind: "execute",
+      targetType: "trip",
+      requiredScopes: ["trips:write"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      from: { tools: ["@voyant-travel/trips#tool.reserve-trip"] },
     },
   ],
   subscribers: [

@@ -70,19 +70,28 @@ export const operationsVoyantModule = defineModule({
   access: {
     resources: [
       {
-        id: "@voyant-travel/operations#access.dashboard",
-        resource: "dashboard",
-        actions: ["read"],
-      },
-      {
-        id: "@voyant-travel/operations#access.ground",
-        resource: "ground",
-        actions: ["read", "write"],
-      },
-      {
-        id: "@voyant-travel/operations#access.resources",
-        resource: "resources",
-        actions: ["read", "write"],
+        id: "@voyant-travel/operations#access.operations",
+        resource: "operations",
+        label: "Operations",
+        description: "Availability, resources, facilities, properties, and ground operations.",
+        actions: [
+          {
+            action: "read",
+            label: "View operations",
+            description: "View availability and operational resources, places, and services.",
+          },
+          {
+            action: "write",
+            label: "Manage operations",
+            description: "Create and update availability and operational records.",
+          },
+          {
+            action: "delete",
+            label: "Delete operational records",
+            description: "Delete supported availability, resource, place, and service records.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },

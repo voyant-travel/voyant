@@ -98,6 +98,7 @@ describe("cruises deployment manifest", () => {
         {
           surface: "public",
           mount: "cruises",
+          anonymous: true,
           openapi: { document: "cruises" },
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
@@ -135,6 +136,34 @@ describe("cruises deployment manifest", () => {
     expect(readApiIds(cruisesBookingExtensionRoutes)).toEqual(
       Array.from({ length: 6 }, () => CRUISES_BOOKING_OPENAPI_API_ID),
     )
+  })
+
+  it("describes read, write, and privileged delete access", () => {
+    expect(cruisesVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "cruises",
+        label: "Cruises",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
+    ])
   })
 
   it("preserves deployment-injected lazy route bridges", () => {
