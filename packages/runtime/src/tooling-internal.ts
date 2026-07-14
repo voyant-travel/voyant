@@ -38,6 +38,7 @@ const DEVELOPMENT_READINESS_HEADER = "x-voyant-development-readiness"
 const DEVELOPMENT_READINESS_PATH = "/.voyant/development-readiness"
 const DEVELOPMENT_READINESS_RETRY_MS = 50
 const DEVELOPMENT_READINESS_TIMEOUT_MS = 30_000
+const TANSTACK_SERVER_ENTRY = "virtual:tanstack-start-server-entry"
 const PRODUCT_BOM_ARTIFACT = ".voyant/product-bom.generated.json"
 const PRODUCT_ROUTE_FILES_EXPORT = "standard-route-files"
 const FRONTEND_RUNTIME_FACADES = {
@@ -273,6 +274,7 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
       devtools(),
       tailwindcss(),
       tanstackStart({
+        vite: { installDevServerMiddleware: false },
         server: {
           entry: relativeEntry(options.appRootUrl, options.bootstrap.serverEntry),
         },
@@ -287,7 +289,7 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
           routeFileIgnorePattern: VOYANT_ROUTE_FILE_IGNORE_PATTERN,
         },
       }),
-      createFetchableDevelopmentServerPlugin(),
+      createDevelopmentServerPlugin(),
       viteReact(),
       createAnalyzePlugin(options.appRootUrl),
     ],
@@ -312,20 +314,26 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
   return config
 }
 
-function createFetchableDevelopmentServerPlugin(): PluginOption {
+function createDevelopmentServerPlugin(): PluginOption {
   return {
-    name: "voyant:fetchable-development-server",
+    name: "voyant:development-server",
     configureServer(server) {
       return () => {
-        const environment = server.environments.server
-        if (!isFetchableServerEnvironment(environment)) return
+        const environment = server.environments.ssr
+        if (
+          !isFetchableServerEnvironment(environment) &&
+          !isRunnableServerEnvironment(environment)
+        ) {
+          throw new Error("Voyant development requires a runnable or fetchable SSR environment")
+        }
 
         server.middlewares.use(async (request, response) => {
           if (request.originalUrl) request.url = request.originalUrl
           try {
-            const webResponse = await environment.dispatchFetch(
-              new NodeRequest({ req: request, res: response }),
-            )
+            const webRequest = new NodeRequest({ req: request, res: response })
+            const webResponse = isFetchableServerEnvironment(environment)
+              ? await environment.dispatchFetch(webRequest)
+              : await fetchRunnableDevelopmentResponse(server, environment, webRequest)
             await sendNodeResponse(response, webResponse)
           } catch (error) {
             console.error(error)
@@ -348,6 +356,59 @@ function createFetchableDevelopmentServerPlugin(): PluginOption {
       }
     },
   }
+}
+
+async function fetchRunnableDevelopmentResponse(
+  server: ViteDevServer,
+  environment: RunnableServerEnvironment,
+  request: Request,
+): Promise<Response> {
+  if (server.config.experimental.bundledDev) {
+    const clientEnvironment = server.environments.client as {
+      devEngine?: { ensureLatestBuildOutput?: () => Promise<void> }
+    }
+    await clientEnvironment.devEngine?.ensureLatestBuildOutput?.()
+    environment.moduleGraph?.invalidateAll?.()
+    environment.runner.clearCache?.()
+  }
+  const serverEntry = await environment.runner.import(TANSTACK_SERVER_ENTRY)
+  const handler = serverEntry.default
+  if (!isFetchHandler(handler)) {
+    throw new TypeError(`${TANSTACK_SERVER_ENTRY} must export a default fetch handler`)
+  }
+  return handler.fetch(request)
+}
+
+interface RunnableServerEnvironment {
+  runner: {
+    clearCache?(): void
+    import(id: string): Promise<Record<string, unknown>>
+  }
+  moduleGraph?: { invalidateAll?(): void }
+}
+
+function isRunnableServerEnvironment(
+  environment: unknown,
+): environment is RunnableServerEnvironment {
+  if (typeof environment !== "object" || environment === null || !("runner" in environment)) {
+    return false
+  }
+  const runner = environment.runner
+  return (
+    typeof runner === "object" &&
+    runner !== null &&
+    "import" in runner &&
+    typeof runner.import === "function"
+  )
+}
+
+function isFetchHandler(value: unknown): value is { fetch(request: Request): Promise<Response> } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "fetch" in value &&
+    typeof value.fetch === "function"
+  )
 }
 
 function isFetchableServerEnvironment(

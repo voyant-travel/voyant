@@ -90,7 +90,7 @@ describe("Voyant project tooling", () => {
     )
   })
 
-  it("mounts HTTP handling for Vite fetchable server environments", async () => {
+  it("mounts HTTP handling without relying on Vite class identity", async () => {
     const config = createProjectViteConfig({
       appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
       generatedRoutes: {
@@ -101,19 +101,26 @@ describe("Voyant project tooling", () => {
       bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
     })
     const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
-      (candidate) => candidate.name === "voyant:fetchable-development-server",
+      (candidate) => candidate.name === "voyant:development-server",
     )
     const use = vi.fn()
-    const dispatchFetch = vi.fn(async (request: Request) =>
+    const serverFetch = vi.fn(async (request: Request) =>
       Response.json({ path: new URL(request.url).pathname }),
     )
+    const importServerEntry = vi.fn(async () => ({ default: { fetch: serverFetch } }))
     const configureServer = plugin?.configureServer as (server: {
-      environments: { server: { dispatchFetch(request: Request): Promise<Response> } }
+      config: { experimental: { bundledDev: boolean } }
+      environments: {
+        client: Record<string, never>
+        ssr: { runner: { import(id: string): Promise<Record<string, unknown>> } }
+      }
       middlewares: { use: typeof use }
     }) => () => void
     const install = configureServer({
+      config: { experimental: { bundledDev: false } },
       environments: {
-        server: { dispatchFetch },
+        client: {},
+        ssr: { runner: { import: importServerEntry } },
       },
       middlewares: { use },
     })
@@ -128,11 +135,12 @@ describe("Voyant project tooling", () => {
     try {
       const address = httpServer.address()
       if (!address || typeof address === "string") throw new Error("HTTP test server has no port")
-      const response = await fetch(`http://127.0.0.1:${address.port}/fetchable-proof`)
+      const response = await fetch(`http://127.0.0.1:${address.port}/runner-proof`)
 
       expect(response.status).toBe(200)
-      await expect(response.json()).resolves.toEqual({ path: "/fetchable-proof" })
-      expect(dispatchFetch).toHaveBeenCalledOnce()
+      await expect(response.json()).resolves.toEqual({ path: "/runner-proof" })
+      expect(importServerEntry).toHaveBeenCalledWith("virtual:tanstack-start-server-entry")
+      expect(serverFetch).toHaveBeenCalledOnce()
     } finally {
       await new Promise<void>((resolve, reject) =>
         httpServer.close((error) => (error ? reject(error) : resolve())),
