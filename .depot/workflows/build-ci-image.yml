@@ -1,0 +1,61 @@
+name: Build CI image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .depot/workflows/build-ci-image.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build-image:
+    name: build-image
+    runs-on: depot-ubuntu-24.04-4
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          filter: blob:none
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 10.18.0
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium and system dependencies
+        run: pnpm dlx playwright@1.61.1 install --with-deps chromium
+
+      - name: Preserve workspace dependency layout
+        shell: bash
+        run: |
+          cache_root=/home/runner/voyant-pnpm-layout
+          rm -rf "$cache_root"
+          mkdir -p "$cache_root"
+          mapfile -d '' module_dirs < <(find . -type d -name node_modules -prune -print0)
+
+          for modules in "${module_dirs[@]}"; do
+            relative=${modules#./}
+            target="$cache_root/$relative"
+            mkdir -p "$(dirname "$target")"
+            mv "$modules" "$target"
+          done
+
+          sha256sum pnpm-lock.yaml | cut -d ' ' -f 1 > "$cache_root/pnpm-lock.sha256"
+
+      - name: Snapshot CI image
+        uses: depot/snapshot-action@a082cbabd407afdf324a7b4f41889795636f4b24 # v1
+        with:
+          image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace

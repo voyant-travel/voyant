@@ -1,59 +1,294 @@
-# Depot CI Migration
-# Source: .github/workflows/ci.yml
-#
-# Changes made:
-# - Changed GitHub runs-on labels to their Depot equivalents
-
 name: CI
+
 on:
+  workflow_dispatch:
   pull_request:
+    branches:
+      - main
+      - develop
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: 0
+  TURBO_RUN_SUMMARY: "true"
+
+# Branch protection should require `CI / checks`, `CI / build`,
+# `CI / db-checks`, and `CI / node-smoke`. Depot reports each native workflow
+# job as a GitHub check, so these contexts remain stable after the cutover.
+
 jobs:
-  ci:
-    # Skip the post-merge CI run on changesets release commits — they only bump
-    # versions + CHANGELOGs (no source change worth re-validating), and the
-    # release workflow on the same push already runs verify:release-train +
-    # verify:package-exports before publishing. Without this gate, every
-    # release fires CI and Release in parallel and rebuilds everything twice.
-    if: >-
-      github.event_name == 'pull_request' ||
-      !startsWith(github.event.head_commit.message, 'chore: release packages')
-    runs-on: depot-ubuntu-latest # was: ubuntu-latest. Mapped standard GitHub runner to Depot equivalent.
-    permissions:
-      contents: read
-    # Turbo remote cache via Vercel. Without these, every run rebuilds all
-    # ~80 packages from scratch (`0 cached, 98 total`) and tsc fan-out OOMs
-    # the runner. With them, unchanged packages restore from cache in seconds.
+  checks:
+    name: checks
+    runs-on:
+      size: 8x32
+      image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
+    timeout-minutes: 10
     env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      NODE_OPTIONS: --conditions=development --max-old-space-size=24576
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
-      # can't OOM the runner (kernel SIGKILLs whichever tsc is heaviest at the
-      # peak — exit 137). Cache hits remain instant; only genuine rebuilds pay
-      # the serialization cost.
-      - name: Build packages
-        run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
-      - name: Verify release train
-        run: pnpm verify:release-train
-      - name: Verify package exports
-        run: pnpm verify:package-exports
-      - name: Verify publish tarballs
-        run: pnpm verify:publish-tarballs
-      - name: Lint
-        run: pnpm turbo lint --filter='./packages/**' --continue --concurrency=4
-      - name: Typecheck
-        run: pnpm turbo typecheck --filter='./packages/**' --continue --concurrency=4
-      - name: Test
-        run: pnpm turbo test --filter='./packages/**' --continue --concurrency=4
+          filter: blob:none
+
+      - uses: ./.depot/actions/setup-workspace
+
+      - fail-fast: false
+        parallel:
+          - name: Lint
+            run: pnpm lint
+
+          - name: Selective typecheck
+            run: pnpm typecheck:ci --concurrency=2
+
+          - name: Test
+            run: pnpm test --summarize --output-logs=new-only
+
+          # verify:architecture already runs the operator graph drift gate via
+          # `operator graph:check`; do not rebuild the full operator here.
+          - name: Architecture checks
+            run: pnpm verify:architecture
+
+          - name: i18n checks
+            run: pnpm i18n:check
+
+      - name: Record Turbo metrics
+        if: always()
+        run: node scripts/summarize-turbo-runs.mjs
+
+  build-graph:
+    name: build-graph
+    runs-on:
+      size: 8x32
+      image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: --max-old-space-size=24576
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          filter: blob:none
+
+      - uses: ./.depot/actions/setup-workspace
+
+      - name: Build
+        run: pnpm turbo build --concurrency=2 --summarize --output-logs=new-only
+
+      - name: Record Turbo metrics
+        if: always()
+        run: node scripts/summarize-turbo-runs.mjs
+
+  packaged-acceptance:
+    name: packaged-acceptance
+    needs: build-graph
+    runs-on:
+      size: 8x32
+      image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: --max-old-space-size=24576
+      TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: voyant
+          POSTGRES_PASSWORD: voyant
+          POSTGRES_DB: voyant_starter_acceptance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U voyant -d voyant_starter_acceptance"
+          --health-interval 1s
+          --health-timeout 1s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          filter: blob:none
+
+      - uses: ./.depot/actions/setup-workspace
+
+      - name: Restore build graph
+        run: pnpm turbo build --concurrency=2 --output-logs=new-only
+
+      - name: Packaged starter production and development acceptance
+        run: |
+          node scripts/measure-standard-node-starter.mjs --require-build --check
+          node --test scripts/tests/minimal-starter-acceptance.test.mjs
+
+  package-artifacts:
+    name: package-artifacts
+    needs: build-graph
+    runs-on:
+      size: 8x32
+      image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: --max-old-space-size=24576
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          filter: blob:none
+
+      - uses: ./.depot/actions/setup-workspace
+
+      - name: Restore build graph
+        run: pnpm turbo build --concurrency=2 --output-logs=new-only
+
+      # These consumers only read the completed dist graph and use isolated
+      # temporary output, so Depot can run them concurrently in one sandbox.
+      - fail-fast: false
+        parallel:
+          - name: Package export checks
+            run: pnpm verify:package-exports
+
+          - name: Publish tarball checks
+            env:
+              VOYANT_PACK_REUSE_DIST: "1"
+            run: pnpm verify:publish-tarballs
+
+  build:
+    name: build
+    if: always()
+    needs:
+      - build-graph
+      - packaged-acceptance
+      - package-artifacts
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Enforce build and package lanes
+        shell: bash
+        run: |
+          [[ "${{ needs.build-graph.result }}" == "success" ]]
+          [[ "${{ needs.packaged-acceptance.result }}" == "success" ]]
+          [[ "${{ needs.package-artifacts.result }}" == "success" ]]
+
+  db-lanes:
+    name: db-${{ matrix.lane }}
+    needs: checks
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: replay
+            size: 4x16
+          - lane: union
+            size: 4x16
+          # The migration process can reserve 8 GB; leave enough headroom for
+          # Postgres and the package-manager/runtime processes around it.
+          - lane: integration
+            size: 8x32
+    runs-on:
+      size: ${{ matrix.size }}
+      image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
+      TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_test
+      DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: voyant
+          POSTGRES_PASSWORD: voyant
+          POSTGRES_DB: voyant_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U voyant -d voyant_test"
+          --health-interval 1s
+          --health-timeout 1s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          filter: blob:none
+
+      - uses: ./.depot/actions/setup-workspace
+
+      - name: Run ${{ matrix.lane }} database lane
+        shell: bash
+        run: |
+          case "${{ matrix.lane }}" in
+            replay)
+              node scripts/verify-migration-replay-parity.mjs
+              ;;
+            union)
+              node scripts/migrations/verify-package-baseline.mjs --union
+              ;;
+            integration)
+              NODE_OPTIONS="--conditions=development --import=tsx --max-old-space-size=8192" \
+                pnpm --filter operator db:migrate
+              pnpm --filter @voyant-travel/relationships exec vitest run \
+                tests/integration/custom-fields.test.ts \
+                tests/integration/custom-fields-values.test.ts
+              ;;
+          esac
+
+  db-checks:
+    name: db-checks
+    if: always()
+    needs: db-lanes
+    runs-on: depot-ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Enforce all database lanes
+        run: test "${{ needs.db-lanes.result }}" = "success"
+
+  node-smoke:
+    name: node-smoke
+    runs-on:
+      size: 4x16
+      image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          filter: blob:none
+
+      - uses: ./.depot/actions/setup-workspace
+
+      - name: Build operator (Node target)
+        run: pnpm --filter operator build
+
+      - name: Boot under Node and smoke-test
+        working-directory: starters/operator
+        env:
+          PORT: "8080"
+          DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
+          EMAIL_FROM: ci@example.com
+          KMS_PROVIDER: local
+          APP_URL: http://localhost:8080/api
+          API_BASE_URL: http://localhost:8080/api
+          CORS_ALLOWLIST: http://localhost:8080
+          DASH_BASE_URL: http://localhost:8080
+        run: |
+          export BETTER_AUTH_SECRET="$(openssl rand -hex 24)"
+          export SESSION_CLAIMS_SECRET="$(openssl rand -hex 24)"
+          export INTERNAL_API_KEY="$(openssl rand -hex 16)"
+          export KMS_LOCAL_KEY="$(openssl rand -hex 16)"
+          node dist/server/server.js &
+          SRV=$!
+          trap 'kill $SRV 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:8080/healthz; then break; fi
+            sleep 1
+          done
+          health=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/healthz)
+          test "$health" = "200"
+          api=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://localhost:8080/api/openapi.json)
+          test "$api" -lt 500

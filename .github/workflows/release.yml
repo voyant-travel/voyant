@@ -31,8 +31,10 @@ jobs:
     env:
       HUSKY: 0
       RELEASE_VERSION: ${{ inputs.release_version }}
-      # Turbo remote cache. Configure in GitHub Settings → Secrets and variables
-      # → Actions; without them turbo silently falls back to no remote cache.
+      # Release jobs stay on GitHub-hosted runners, so they do not receive
+      # Depot's automatic Turborepo cache configuration. Configure all three in
+      # GitHub Settings → Secrets and variables → Actions.
+      TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
@@ -91,8 +93,10 @@ jobs:
       # Large declaration builds such as bookings-react exceed Node's 4 GB default heap.
       # Turbo is serialized below, so one build may safely use the runner's available memory.
       NODE_OPTIONS: --max-old-space-size=12288
-      # Turbo remote cache. Configure in GitHub Settings → Secrets and variables
-      # → Actions; without them turbo silently falls back to no remote cache.
+      # Release jobs stay on GitHub-hosted runners, so they do not receive
+      # Depot's automatic Turborepo cache configuration. Configure all three in
+      # GitHub Settings → Secrets and variables → Actions.
+      TURBO_API: ${{ vars.TURBO_API }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     steps:
