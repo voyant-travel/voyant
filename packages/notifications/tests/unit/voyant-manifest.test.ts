@@ -104,6 +104,84 @@ describe("notifications deployment manifest", () => {
     )
   })
 
+  it("declares concrete payloads for notification-owned events", () => {
+    const events = new Map(
+      notificationsVoyantModule.events?.map(({ eventType, payloadSchema }) => [
+        eventType,
+        payloadSchema,
+      ]),
+    )
+
+    expect(events.get("booking.fully-paid")).toEqual({
+      type: "object",
+      required: [
+        "bookingId",
+        "paymentSessionId",
+        "invoiceId",
+        "amountCents",
+        "currency",
+        "provider",
+      ],
+      properties: {
+        bookingId: { type: "string" },
+        paymentSessionId: { type: "string" },
+        invoiceId: { anyOf: [{ type: "string" }, { type: "null" }] },
+        amountCents: { type: "number" },
+        currency: { type: "string" },
+        provider: { type: "string" },
+      },
+      additionalProperties: false,
+    })
+    expect(events.get("booking.documents.sent")).toMatchObject({
+      required: ["bookingId", "recipient", "deliveryId", "provider", "documentKeys"],
+      properties: {
+        provider: { anyOf: [{ type: "string" }, { type: "null" }] },
+        documentKeys: { type: "array", items: { type: "string" } },
+      },
+      additionalProperties: false,
+    })
+  })
+
+  it("scopes admin routes and binds nav to package-owned copy", () => {
+    const routes = notificationsVoyantModule.admin?.routes ?? []
+    expect(routes).toHaveLength(9)
+    expect(
+      routes.every(({ requiredScopes }) => requiredScopes?.includes("notifications:read")),
+    ).toBe(true)
+    expect(notificationsVoyantModule.admin?.nav).toEqual([
+      {
+        id: "@voyant-travel/notifications#admin.nav.templates",
+        routeId: "@voyant-travel/notifications#admin.route.templates-index",
+        label: { namespace: "notifications.admin", key: "admin.templatesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.reminder-rules",
+        routeId: "@voyant-travel/notifications#admin.route.reminder-rules-index",
+        label: { namespace: "notifications.admin", key: "admin.reminderRulesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.deliveries",
+        routeId: "@voyant-travel/notifications#admin.route.deliveries",
+        label: { namespace: "notifications.admin", key: "admin.deliveriesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.reminder-runs",
+        routeId: "@voyant-travel/notifications#admin.route.reminder-runs",
+        label: { namespace: "notifications.admin", key: "admin.reminderRunsPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.preview",
+        routeId: "@voyant-travel/notifications#admin.route.preview",
+        label: { namespace: "notifications.admin", key: "admin.previewPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.settings",
+        routeId: "@voyant-travel/notifications#admin.route.settings",
+        label: { namespace: "notifications.admin", key: "settings.heading" },
+      },
+    ])
+  })
+
   it("publishes ordered confirmation and reminder subscriber runtime references", () => {
     const declarations = notificationsReminderSubscribersVoyantPlugin.subscribers ?? []
 

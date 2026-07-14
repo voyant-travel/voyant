@@ -1,4 +1,8 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  bookingDocumentsSentEventPayloadSchema,
+  bookingFullyPaidEventPayloadSchema,
+} from "./event-payload-schemas.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
 
 const schemaSource = "@voyant-travel/notifications/schema"
@@ -110,7 +114,7 @@ export const notificationsVoyantModule = defineModule({
       id: "@voyant-travel/notifications#event.booking.fully-paid",
       eventType: "booking.fully-paid",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingFullyPaidEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "notifications", category: "domain" },
     },
@@ -118,7 +122,7 @@ export const notificationsVoyantModule = defineModule({
       id: "@voyant-travel/notifications#event.booking.documents.sent",
       eventType: "booking.documents.sent",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingDocumentsSentEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "notifications", category: "domain" },
     },
@@ -227,11 +231,44 @@ export const notificationsVoyantModule = defineModule({
     ).map(([id, path]) => ({
       id: `@voyant-travel/notifications#admin.route.${id}`,
       path,
+      requiredScopes: ["notifications:read"],
       runtime: {
         entry: "@voyant-travel/notifications-react/admin",
         export: "createNotificationsAdminExtension",
       },
     })),
+    nav: [
+      {
+        id: "@voyant-travel/notifications#admin.nav.templates",
+        routeId: "@voyant-travel/notifications#admin.route.templates-index",
+        label: { namespace: "notifications.admin", key: "admin.templatesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.reminder-rules",
+        routeId: "@voyant-travel/notifications#admin.route.reminder-rules-index",
+        label: { namespace: "notifications.admin", key: "admin.reminderRulesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.deliveries",
+        routeId: "@voyant-travel/notifications#admin.route.deliveries",
+        label: { namespace: "notifications.admin", key: "admin.deliveriesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.reminder-runs",
+        routeId: "@voyant-travel/notifications#admin.route.reminder-runs",
+        label: { namespace: "notifications.admin", key: "admin.reminderRunsPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.preview",
+        routeId: "@voyant-travel/notifications#admin.route.preview",
+        label: { namespace: "notifications.admin", key: "admin.previewPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.settings",
+        routeId: "@voyant-travel/notifications#admin.route.settings",
+        label: { namespace: "notifications.admin", key: "settings.heading" },
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },

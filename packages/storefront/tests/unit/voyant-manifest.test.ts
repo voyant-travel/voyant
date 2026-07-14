@@ -110,6 +110,37 @@ describe("storefront deployment manifest", () => {
     expect(runtime.publicRoutes).toBeDefined()
   })
 
+  it("declares concrete event payloads without inventing an admin surface", () => {
+    const events = new Map(
+      storefrontVoyantModule.events?.map(({ eventType, payloadSchema }) => [
+        eventType,
+        payloadSchema,
+      ]),
+    )
+
+    expect(events.get("customer.signal.created")).toMatchObject({
+      type: "object",
+      required: ["id", "personId", "kind", "source", "status", "intake"],
+      properties: {
+        kind: { enum: ["wishlist", "notify", "inquiry", "request_offer", "referral"] },
+        intake: {
+          oneOf: [
+            expect.objectContaining({ required: ["surface", "type"] }),
+            expect.objectContaining({ required: ["surface", "type", "doubleOptIn"] }),
+          ],
+        },
+      },
+      additionalProperties: false,
+    })
+    expect(events.get("storefront.booking.bootstrap.requested")).toEqual({
+      type: "object",
+      required: ["intentId"],
+      properties: { intentId: { type: "string" } },
+      additionalProperties: false,
+    })
+    expect(storefrontVoyantModule.admin).toBeUndefined()
+  })
+
   it("owns package-namespaced storefront fragments", () => {
     expect([
       storefrontCustomerPortalVoyantModule,

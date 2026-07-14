@@ -1,6 +1,15 @@
 import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
 import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 import { legalBookingContractSubscriberRuntimePort } from "./contracts/booking-contract-subscriber-port.js"
+import {
+  bookingContractGeneratedEventPayloadSchema,
+  contractDocumentGeneratedEventPayloadSchema,
+  contractExecutedEventPayloadSchema,
+  contractIssuedEventPayloadSchema,
+  contractSentEventPayloadSchema,
+  contractSignedEventPayloadSchema,
+  contractVoidedEventPayloadSchema,
+} from "./event-payload-schemas.js"
 import { legalRuntimePort } from "./runtime-port.js"
 
 const legalAdminRuntime = {
@@ -120,7 +129,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.issued",
       eventType: "contract.issued",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractIssuedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -128,7 +137,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.sent",
       eventType: "contract.sent",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractSentEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -136,7 +145,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.signed",
       eventType: "contract.signed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractSignedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -144,7 +153,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.executed",
       eventType: "contract.executed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractExecutedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -152,7 +161,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.voided",
       eventType: "contract.voided",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractVoidedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -160,7 +169,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.document.generated",
       eventType: "contract.document.generated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractDocumentGeneratedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -168,7 +177,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.booking.contract.generated",
       eventType: "booking.contract.generated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingContractGeneratedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -226,8 +235,31 @@ export const legalVoyantModule = defineModule({
     ).map(([id, path]) => ({
       id: `@voyant-travel/legal#admin.route.${id}`,
       path,
+      requiredScopes: ["legal:read"],
       runtime: legalAdminRuntime,
     })),
+    nav: [
+      {
+        id: "@voyant-travel/legal#admin.nav.contracts",
+        routeId: "@voyant-travel/legal#admin.route.contracts-index",
+        label: { namespace: "legal.admin", key: "contractsPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.templates",
+        routeId: "@voyant-travel/legal#admin.route.templates-index",
+        label: { namespace: "legal.admin", key: "templatesPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.policies",
+        routeId: "@voyant-travel/legal#admin.route.policies-index",
+        label: { namespace: "legal.admin", key: "policiesPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.number-series",
+        routeId: "@voyant-travel/legal#admin.route.number-series",
+        label: { namespace: "legal.admin", key: "numberSeriesPage.title" },
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
