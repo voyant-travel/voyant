@@ -138,7 +138,7 @@ for (const [source, required] of [
   ],
   [
     movedRuntimeFactories[5],
-    ["createVoyantConnectClient", "createCatalogOffersTypesenseResolvers", "resolveAirportLabels"],
+    ["createVoyantConnectClient", "createCatalogOffersSearchResolvers", "resolveAirportLabels"],
   ],
   [
     movedRuntimeFactories[6],
@@ -155,6 +155,7 @@ for (const [source, required] of [
   }
 }
 for (const forbidden of [
+  "createCatalogOffersTypesenseResolvers",
   "bookings: { options: {} }",
   "noPolicy",
   "resolveConnectClient: () => null",

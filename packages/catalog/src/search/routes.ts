@@ -1,8 +1,4 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
-import type { Context, Hono as HonoApp } from "hono"
-
 import type {
   IndexerAdapter,
   IndexerSlice,
@@ -11,7 +7,10 @@ import type {
   SearchRequest,
   SearchResults,
   SearchSortOption,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { openApiValidationHook } from "@voyant-travel/hono"
+import type { HonoModule } from "@voyant-travel/hono/module"
+import type { Context, Hono as HonoApp } from "hono"
 
 const searchModeSchema = z.enum(["keyword", "semantic", "hybrid"])
 const searchSortSchema = z.enum(["relevance", "price-asc", "price-desc", "departure-asc", "newest"])
@@ -346,7 +345,7 @@ async function handleSearch(
       {
         error:
           options.indexerUnavailableMessage ??
-          "Search indexer is not configured (missing TYPESENSE_HOST)",
+          "Search indexer is not configured for this deployment.",
       },
       503,
     )

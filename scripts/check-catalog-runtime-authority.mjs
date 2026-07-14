@@ -178,7 +178,7 @@ for (const token of [
   "GeneratedGraphRuntimeContributorHost",
   "asserts value is VoyantGraphRuntimeContributorHost",
   '"getRuntimePort"',
-  "const ports: Record<string, unknown> = {}",
+  "const ports: Record<string, unknown> = { ...(initialRuntimePorts ?? {}) }",
   "const contributorHost = {",
   "contributor(contributorHost)",
   "has multiple static contributors",

@@ -179,7 +179,7 @@ export function createCommerceRuntime(requirements: CommerceRuntimeRequirements)
             ),
           async reindexProduct(productId) {
             const embeddings = catalog.buildEmbeddingProvider(env)
-            const adapter = catalog.buildTypesenseIndexer(env, embeddings)
+            const adapter = catalog.buildIndexer(env, embeddings)
             if (!adapter) return
             await primitives.database.transaction(bindings, async (database) => {
               const db = database as AnyDrizzleDb

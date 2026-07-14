@@ -9,6 +9,8 @@
     "./provenance": "./src/provenance.ts",
     "./content": "./src/content.ts",
     "./drift/events": "./src/drift/events.ts",
+    "./indexer/contract": "./src/indexer/contract.ts",
+    "./indexer/conformance": "./src/indexer/conformance.ts",
     "./adapter/contract": "./src/adapter/contract.ts",
     "./adapter/schemas": "./src/adapter/schemas.ts",
     "./adapter/booking-forwarding": "./src/adapter/booking-forwarding.ts",
@@ -57,6 +59,16 @@
         "types": "./dist/drift/events.d.ts",
         "import": "./dist/drift/events.js",
         "default": "./dist/drift/events.js"
+      },
+      "./indexer/contract": {
+        "types": "./dist/indexer/contract.d.ts",
+        "import": "./dist/indexer/contract.js",
+        "default": "./dist/indexer/contract.js"
+      },
+      "./indexer/conformance": {
+        "types": "./dist/indexer/conformance.d.ts",
+        "import": "./dist/indexer/conformance.js",
+        "default": "./dist/indexer/conformance.js"
       },
       "./adapter/contract": {
         "types": "./dist/adapter/contract.d.ts",

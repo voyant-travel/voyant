@@ -471,7 +471,10 @@ ${contributorFactories}
 export type GeneratedGraphRuntimeContributorHost = Omit<
   VoyantGraphRuntimeContributorHost,
   "getRuntimePort"
->
+> & {
+  /** Selected graph providers and project-owned overrides available to contributors. */
+  runtimePorts?: VoyantGraphRuntimePorts
+}
 
 function assertResolvedContributorHost(
   value: GeneratedGraphRuntimeContributorHost & VoyantGraphRuntimeContributorHost,
@@ -484,10 +487,14 @@ function assertResolvedContributorHost(
 export function createGeneratedGraphRuntimePorts(
   host: GeneratedGraphRuntimeContributorHost,
 ): VoyantGraphRuntimePorts {
-  const ports: Record<string, unknown> = {}
+  const { runtimePorts: initialRuntimePorts, ...contributorHostInput } = host
+  const ports: Record<string, unknown> = { ...(initialRuntimePorts ?? {}) }
   const manyPortIds = new Set<string>(GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS)
   const contributorHost = {
-    ...host,
+    ...contributorHostInput,
+    hasRuntimePort(port: { id: string }): boolean {
+      return Object.hasOwn(ports, port.id)
+    },
     getRuntimePort(port: { id: string }): unknown {
       if (!Object.hasOwn(ports, port.id)) {
         throw new Error(

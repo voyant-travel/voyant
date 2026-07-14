@@ -1,5 +1,10 @@
+import type {
+  IndexerSlice,
+  SearchFilter,
+  SearchRequest,
+  SearchSortOption,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicyRegistry } from "../contract.js"
-import type { IndexerSlice, SearchFilter, SearchRequest, SearchSortOption } from "./contract.js"
 
 export interface TypesenseSearchQuery {
   q: string
@@ -25,7 +30,7 @@ export function buildSearchQuery(
   registry: FieldPolicyRegistry,
   slice?: IndexerSlice,
 ): TypesenseSearchQuery {
-  const perPage = request.pagination?.limit ?? 20
+  const perPage = Math.min(Math.max(Math.floor(request.pagination?.limit ?? 20), 1), 250)
   // Cursor doubles as the 1-indexed page number for Typesense's `page`
   // parameter. Callers wanting a different cursor strategy (e.g. opaque
   // cursor for streaming results) write a different adapter.

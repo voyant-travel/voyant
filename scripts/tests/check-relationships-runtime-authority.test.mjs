@@ -57,6 +57,22 @@ describe("check-relationships-runtime-authority", () => {
     assert.match(result.stdout, /check-relationships-runtime-authority: OK/)
   })
 
+  it("accepts provider-neutral graph ports in generic Node wiring", async () => {
+    const result = await runChecker(
+      await createFixture({
+        "runtime/src/deployment-resources.ts": `
+          providerPorts?: VoyantGraphRuntimePorts
+          return options.createRuntimePorts({
+            primitives,
+            ...(options.providerPorts ? { runtimePorts: options.providerPorts } : {}),
+          })
+        `,
+      }),
+    )
+
+    assert.match(result.stdout, /check-relationships-runtime-authority: OK/)
+  })
+
   it("rejects package-id binding and the compatibility module export", async () => {
     const root = await createFixture({
       "relationships/src/index.ts":

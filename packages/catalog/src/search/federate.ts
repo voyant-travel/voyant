@@ -24,14 +24,14 @@
  * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
-import type { Visibility } from "../contract.js"
 import type {
   IndexerAdapter,
   IndexerSlice,
   SearchHit,
   SearchRequest,
   SearchResults,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import type { Visibility } from "../contract.js"
 
 export interface FederatedSearchOptions {
   adapter: IndexerAdapter

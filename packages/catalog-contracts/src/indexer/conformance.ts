@@ -1,0 +1,436 @@
+import {
+  createFieldPolicyRegistry,
+  type FieldPolicy,
+  type FieldPolicyRegistry,
+} from "../contract.js"
+import type {
+  IndexerAdapter,
+  IndexerAdmin,
+  IndexerDocument,
+  IndexerSlice,
+  SearchFilter,
+  SearchRequest,
+} from "./contract.js"
+
+export type IndexerConformanceMutation = "ensure" | "upsert" | "delete" | "bulk-reindex" | "drop"
+
+export interface IndexerAdapterConformanceOptions {
+  createAdapter: () => IndexerAdapter | Promise<IndexerAdapter>
+  /** Override the primary fixture slice when a provider constrains slice names. */
+  slice?: IndexerSlice
+  /** Override the standard fixture registry. */
+  registry?: FieldPolicyRegistry
+  /** Stable prefix for provider resources and document ids. */
+  namespace?: string
+  /** Wait for hosted engines to make a mutation visible to subsequent reads. */
+  settle?: (mutation: IndexerConformanceMutation, adapter: IndexerAdapter) => void | Promise<void>
+}
+
+/** Registry used by the published indexer conformance fixtures. */
+export function createIndexerConformanceRegistry(): FieldPolicyRegistry {
+  return createFieldPolicyRegistry([
+    fixturePolicy("title", "merchandisable", "entry"),
+    fixturePolicy("categorySlugs[]", "structural", "facet-affecting"),
+    fixturePolicy("priceFromAmountCents", "structural", "entry"),
+    fixturePolicy("isFeatured", "structural", "entry"),
+  ])
+}
+
+/**
+ * Exercise the portable adapter behavior without depending on a test runner.
+ * The runner cleans up documents, and drops fixture slices when admin support
+ * is present.
+ */
+export async function assertIndexerAdapterConformance(
+  options: IndexerAdapterConformanceOptions,
+): Promise<void> {
+  const adapter = await options.createAdapter()
+  const namespace = options.namespace ?? randomNamespace()
+  const registry = options.registry ?? createIndexerConformanceRegistry()
+  const primary = options.slice ?? defaultSlice(namespace)
+  const isolated: IndexerSlice = { ...primary, market: `${primary.market}-isolated` }
+  const bulk: IndexerSlice = { ...primary, market: `${primary.market}-bulk` }
+  const slices = [primary, isolated, bulk]
+  const ids = fixtureIds(namespace)
+  const documents = fixtureDocuments(ids, adapter.capabilities.vectorDimensions)
+  const admin = adapter.admin
+  const settle = async (mutation: IndexerConformanceMutation): Promise<void> => {
+    await options.settle?.(mutation, adapter)
+  }
+
+  assertCapabilities(adapter)
+
+  try {
+    for (const slice of slices) {
+      await adapter.ensureCollection(slice, registry)
+    }
+    await settle("ensure")
+
+    await adapter.upsert(primary, documents)
+    await adapter.upsert(isolated, [
+      {
+        id: ids.isolated,
+        fields: {
+          title: "Voyant Isolated Escape",
+          categorySlugs: ["isolated"],
+          priceFromAmountCents: 400,
+          isFeatured: false,
+        },
+      },
+    ])
+    await settle("upsert")
+
+    await assertFilters(adapter, primary, ids)
+    await assertSliceIsolation(adapter, primary, isolated, ids)
+    await assertPagination(adapter, primary, ids)
+    await assertFacets(adapter, primary)
+
+    await adapter.bulkReindex(bulk, toAsyncIterable(documents.slice(0, 2)))
+    await settle("bulk-reindex")
+    assertIds(await searchAll(adapter, bulk), [ids.alpha, ids.bravo], "bulk reindex")
+
+    await adapter.delete(primary, [ids.charlie])
+    await settle("delete")
+    assertIds(await searchAll(adapter, primary), [ids.alpha, ids.bravo], "delete")
+
+    if (admin) {
+      await assertAdmin(
+        admin,
+        slices,
+        primary,
+        bulk,
+        ids,
+        adapter.capabilities.vectorDimensions,
+        settle,
+      )
+    }
+  } finally {
+    if (admin) {
+      for (const slice of slices) await admin.drop(slice)
+      await settle("drop")
+    } else {
+      await adapter.delete(primary, [ids.alpha, ids.bravo, ids.charlie])
+      await adapter.delete(isolated, [ids.isolated])
+      await adapter.delete(bulk, [ids.alpha, ids.bravo, ids.charlie])
+      await settle("delete")
+    }
+  }
+}
+
+function fixturePolicy(
+  path: string,
+  fieldClass: FieldPolicy["class"],
+  reindex: FieldPolicy["reindex"],
+): FieldPolicy {
+  return {
+    path,
+    class: fieldClass,
+    merge: "replace",
+    drift: "low",
+    reindex,
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner", "supplier"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  }
+}
+
+function assertCapabilities(adapter: IndexerAdapter): void {
+  const capabilities = adapter.capabilities
+  assert(capabilities.supportsKeywordSearch, "supportsKeywordSearch must be true")
+  if (capabilities.supportsVectorFields) {
+    assert(
+      Number.isInteger(capabilities.vectorDimensions) && (capabilities.vectorDimensions ?? 0) > 0,
+      "vectorDimensions must be a positive integer when vector fields are supported",
+    )
+  } else {
+    assert(
+      capabilities.vectorDimensions === null,
+      "vectorDimensions must be null when vector fields are unsupported",
+    )
+  }
+  if (capabilities.supportsHybridSearch) {
+    assert(
+      capabilities.supportsKeywordSearch && capabilities.supportsVectorFields,
+      "hybrid search requires keyword search and vector fields",
+    )
+  }
+  assert(
+    capabilities.maxVectorsPerDocument === null ||
+      (Number.isInteger(capabilities.maxVectorsPerDocument) &&
+        capabilities.maxVectorsPerDocument > 0),
+    "maxVectorsPerDocument must be null or a positive integer",
+  )
+}
+
+async function assertFilters(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+  ids: FixtureIds,
+): Promise<void> {
+  const cases: Array<{ name: string; filters: SearchFilter[]; expected: string[] }> = [
+    {
+      name: "document id filter",
+      filters: [{ kind: "in", field: "id", values: [ids.bravo] }],
+      expected: [ids.bravo],
+    },
+    {
+      name: "equality filter",
+      filters: [{ kind: "eq", field: "isFeatured", value: true }],
+      expected: [ids.alpha, ids.charlie],
+    },
+    {
+      name: "set-membership filter",
+      filters: [{ kind: "in", field: "categorySlugs", values: ["ski", "city"] }],
+      expected: [ids.alpha, ids.charlie],
+    },
+    {
+      name: "range filter",
+      filters: [{ kind: "range", field: "priceFromAmountCents", gte: 150, lte: 250 }],
+      expected: [ids.bravo],
+    },
+    {
+      name: "and filter",
+      filters: [
+        {
+          kind: "and",
+          clauses: [
+            { kind: "eq", field: "isFeatured", value: true },
+            { kind: "range", field: "priceFromAmountCents", gte: 250 },
+          ],
+        },
+      ],
+      expected: [ids.charlie],
+    },
+    {
+      name: "or filter",
+      filters: [
+        {
+          kind: "or",
+          clauses: [
+            { kind: "eq", field: "isFeatured", value: false },
+            { kind: "range", field: "priceFromAmountCents", lte: 100 },
+          ],
+        },
+      ],
+      expected: [ids.alpha, ids.bravo],
+    },
+  ]
+
+  for (const testCase of cases) {
+    const results = await adapter.search(slice, keywordRequest({ filters: testCase.filters }))
+    assertIds(
+      results.hits.map((hit) => hit.id),
+      testCase.expected,
+      testCase.name,
+    )
+  }
+}
+
+async function assertSliceIsolation(
+  adapter: IndexerAdapter,
+  primary: IndexerSlice,
+  isolated: IndexerSlice,
+  ids: FixtureIds,
+): Promise<void> {
+  assert(
+    !(await searchAll(adapter, primary)).includes(ids.isolated),
+    "primary slice returned a document from another slice",
+  )
+  assertIds(await searchAll(adapter, isolated), [ids.isolated], "slice isolation")
+}
+
+async function assertPagination(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+  ids: FixtureIds,
+): Promise<void> {
+  const first = await adapter.search(
+    slice,
+    keywordRequest({ sort: "price-asc", pagination: { limit: 2 } }),
+  )
+  assertIds(
+    first.hits.map((hit) => hit.id),
+    [ids.alpha, ids.bravo],
+    "first page",
+  )
+  assert(first.total === 3, `pagination total was ${first.total}; expected 3`)
+  assert(Boolean(first.next_cursor), "first page did not return next_cursor")
+
+  const second = await adapter.search(
+    slice,
+    keywordRequest({
+      sort: "price-asc",
+      pagination: { limit: 2, cursor: first.next_cursor },
+    }),
+  )
+  assertIds(
+    second.hits.map((hit) => hit.id),
+    [ids.charlie],
+    "second page",
+  )
+}
+
+async function assertFacets(adapter: IndexerAdapter, slice: IndexerSlice): Promise<void> {
+  const results = await adapter.search(
+    slice,
+    keywordRequest({ facets: [{ field: "categorySlugs", limit: 10 }] }),
+  )
+  const buckets = Object.values(results.facets ?? {}).flat()
+  const featured = buckets.find((bucket) => bucket.value === "featured")
+  assert(featured?.count === 2, "featured facet count was not 2")
+}
+
+async function assertAdmin(
+  admin: IndexerAdmin,
+  slices: IndexerSlice[],
+  primary: IndexerSlice,
+  bulk: IndexerSlice,
+  ids: FixtureIds,
+  vectorDimensions: number | null,
+  settle: (mutation: IndexerConformanceMutation) => Promise<void>,
+): Promise<void> {
+  const listed = await admin.list()
+  for (const slice of slices) {
+    assert(
+      listed.some((candidate) => sameSlice(candidate, slice)),
+      "admin list omitted a slice",
+    )
+  }
+
+  const scanned: IndexerDocument[] = []
+  for await (const document of admin.scan(primary, { batchSize: 1 })) {
+    scanned.push(document)
+  }
+  assertIds(
+    scanned.map((document) => document.id),
+    [ids.alpha, ids.bravo],
+    "admin scan",
+  )
+  const alpha = scanned.find((document) => document.id === ids.alpha)
+  assert(alpha?.fields.title === "Voyant Alpine Escape", "admin scan omitted document fields")
+  assert(!Object.hasOwn(alpha?.fields ?? {}, "id"), "admin scan leaked id into document fields")
+  if (alpha?.embeddings) {
+    assert(
+      alpha.embeddings.text_embedding?.length === vectorDimensions,
+      "admin scan did not preserve the document embedding",
+    )
+    assert(
+      alpha.embedding_model_id === "conformance-model",
+      "admin scan omitted embedding model id",
+    )
+  }
+
+  assert(await admin.drop(bulk), "admin drop returned false for an existing slice")
+  await settle("drop")
+  assert(!(await admin.list()).some((slice) => sameSlice(slice, bulk)), "dropped slice listed")
+  assert(!(await admin.drop(bulk)), "admin drop returned true for a missing slice")
+}
+
+function keywordRequest(overrides: Partial<SearchRequest> = {}): SearchRequest {
+  return { query: "", mode: "keyword", ...overrides }
+}
+
+async function searchAll(adapter: IndexerAdapter, slice: IndexerSlice): Promise<string[]> {
+  const results = await adapter.search(slice, keywordRequest({ pagination: { limit: 100 } }))
+  return results.hits.map((hit) => hit.id)
+}
+
+function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): IndexerDocument[] {
+  const documents: IndexerDocument[] = [
+    {
+      id: ids.alpha,
+      fields: {
+        title: "Voyant Alpine Escape",
+        categorySlugs: ["ski", "featured"],
+        priceFromAmountCents: 100,
+        isFeatured: true,
+      },
+    },
+    {
+      id: ids.bravo,
+      fields: {
+        title: "Voyant Coastal Escape",
+        categorySlugs: ["beach"],
+        priceFromAmountCents: 200,
+        isFeatured: false,
+      },
+    },
+    {
+      id: ids.charlie,
+      fields: {
+        title: "Voyant City Break",
+        categorySlugs: ["city", "featured"],
+        priceFromAmountCents: 300,
+        isFeatured: true,
+      },
+    },
+  ]
+  if (vectorDimensions) {
+    documents[0] = {
+      ...documents[0]!,
+      embeddings: { text_embedding: Array.from({ length: vectorDimensions }, () => 0.25) },
+      embedding_model_id: "conformance-model",
+    }
+  }
+  return documents
+}
+
+interface FixtureIds {
+  alpha: string
+  bravo: string
+  charlie: string
+  isolated: string
+}
+
+function fixtureIds(namespace: string): FixtureIds {
+  return {
+    alpha: `${namespace}-alpha`,
+    bravo: `${namespace}-bravo`,
+    charlie: `${namespace}-charlie`,
+    isolated: `${namespace}-isolated`,
+  }
+}
+
+function defaultSlice(namespace: string): IndexerSlice {
+  return {
+    vertical: namespace,
+    locale: "en-GB",
+    audience: "customer",
+    market: "default",
+  }
+}
+
+function randomNamespace(): string {
+  return `conformance-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+async function* toAsyncIterable(documents: IndexerDocument[]): AsyncIterable<IndexerDocument> {
+  yield* documents
+}
+
+function sameSlice(left: IndexerSlice, right: IndexerSlice): boolean {
+  return (
+    left.vertical === right.vertical &&
+    left.locale === right.locale &&
+    left.audience === right.audience &&
+    left.market === right.market &&
+    left.channel === right.channel
+  )
+}
+
+function assertIds(actual: string[], expected: string[], operation: string): void {
+  const actualSorted = [...actual].sort()
+  const expectedSorted = [...expected].sort()
+  assert(
+    JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
+    `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
+  )
+}
+
+function assert(condition: unknown, message: string): asserts condition {
+  if (!condition) throw new Error(`Indexer adapter conformance failed: ${message}`)
+}

@@ -14,13 +14,13 @@
  * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
-import type { EmbeddingProvider } from "../embeddings/contract.js"
 import type {
   IndexerAdapter,
   IndexerSlice,
   SearchRequest,
   SearchResults,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import type { EmbeddingProvider } from "../embeddings/contract.js"
 
 export interface SemanticSearchOptions {
   /** Adapter to query. */

@@ -57,6 +57,18 @@ it("accepts package bindings derived from primitives and static ports", async ()
   assert.match(result.stdout, /5 package bindings derived from primitives and static ports/)
 })
 
+it("accepts provider-neutral graph ports as contributor inputs", async () => {
+  const root = await fixture(`
+    providerPorts?: VoyantGraphRuntimePorts
+    return options.createRuntimePorts({
+      primitives,
+      ...(options.providerPorts ? { runtimePorts: options.providerPorts } : {}),
+    })
+  `)
+  const result = await execFileAsync(process.execPath, [checker, "--root", root])
+  assert.match(result.stdout, /5 package bindings derived from primitives and static ports/)
+})
+
 it("rejects starter-side assembly of a migrated binding", async () => {
   const root = await fixture(
     "return options.createRuntimePorts({ primitives, mice: { resolveDelegatePersonById } })\n",

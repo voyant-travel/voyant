@@ -4,9 +4,10 @@ import type {
   CatalogOffersRouteModuleOptions,
 } from "@voyant-travel/catalog/offers"
 import {
-  type CatalogOffersTypesenseScope,
-  createCatalogOffersTypesenseResolvers,
+  type CatalogOffersSearchScope,
+  createCatalogOffersSearchResolvers,
 } from "@voyant-travel/catalog/runtime-support"
+import type { IndexerAdapter } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { createVoyantConnectClient } from "@voyant-travel/connect-sdk"
 import { createDestinationNameResolver } from "@voyant-travel/plugin-voyant-connect"
 import type { Context } from "hono"
@@ -17,9 +18,6 @@ interface PackageOffersEnv {
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CONNECT_OPERATOR_ID?: string
   VOYANT_CONNECT_API_URL?: string
-  TYPESENSE_HOST?: string
-  TYPESENSE_ADMIN_API_KEY?: string
-  TYPESENSE_API_KEY?: string
 }
 
 function connectApiKey(env: PackageOffersEnv): string | undefined {
@@ -66,16 +64,17 @@ async function resolveAirportLabels(
 }
 
 export function createOperatorCatalogOffersRouteModuleOptions(
-  resolveScope: (context: Context) => CatalogOffersTypesenseScope,
+  resolveScope: (context: Context) => CatalogOffersSearchScope,
+  resolveIndexer: (context: Context) => IndexerAdapter | undefined,
 ): CatalogOffersRouteModuleOptions {
-  const typesenseResolvers = createCatalogOffersTypesenseResolvers(
-    (context) => (context as Context).env as PackageOffersEnv,
+  const searchResolvers = createCatalogOffersSearchResolvers(
+    (context) => resolveIndexer(context as Context),
     (context) => resolveScope(context as Context),
   )
   return {
     resolveConnectClient,
-    fetchIndexFields: typesenseResolvers.fetchIndexFields,
-    resolveDynamicHotelIds: typesenseResolvers.resolveDynamicHotelIds,
+    fetchIndexFields: searchResolvers.fetchIndexFields,
+    resolveDynamicHotelIds: searchResolvers.resolveDynamicHotelIds,
     resolveAirportLabels,
   }
 }

@@ -1,12 +1,11 @@
-import { describe, expect, it } from "vitest"
-
-import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
   IndexerDocument,
   IndexerSlice,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { describe, expect, it } from "vitest"
+import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
 import { createIndexerService } from "./indexer-service.js"
 
 interface AdapterCall {

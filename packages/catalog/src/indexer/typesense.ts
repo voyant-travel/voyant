@@ -9,7 +9,6 @@
  * See `docs/architecture/catalog-architecture.md` §5.4.1 for design.
  */
 
-import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import type {
   DocumentEmitter,
   IndexerAdapter,
@@ -17,7 +16,8 @@ import type {
   IndexerDocument,
   IndexerSlice,
   SearchResults,
-} from "./contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import {
   buildDefaultTypesenseQueryBy,
   buildDefaultTypesenseSearchFields,
@@ -45,6 +45,7 @@ export {
  */
 export interface TypesenseClient {
   collections(name?: string): {
+    list(): Promise<TypesenseCollectionSchema[]>
     create(schema: TypesenseCollectionSchema): Promise<void>
     update(schema: Partial<TypesenseCollectionSchema>): Promise<void>
     delete(): Promise<void>
@@ -324,8 +325,40 @@ async function retryTransientCollectionUpdate(
 export function collectionName(slice: IndexerSlice, prefix = ""): string {
   const base = [slice.vertical, slice.locale, slice.audience, slice.market, slice.channel]
     .filter((part): part is string => Boolean(part))
+    .map(encodeCollectionPart)
     .join("__")
   return prefix ? `${prefix}__${base}` : base
+}
+
+export function parseCollectionName(name: string, prefix = ""): IndexerSlice | undefined {
+  const expectedPrefix = prefix ? `${prefix}__` : ""
+  if (expectedPrefix && !name.startsWith(expectedPrefix)) return undefined
+  const [vertical, locale, audience, market, channel, ...rest] = name
+    .slice(expectedPrefix.length)
+    .split("__")
+    .map(decodeCollectionPart)
+  if (!vertical || !locale || !isIndexerAudience(audience) || !market || rest.length > 0) {
+    return undefined
+  }
+  return { vertical, locale, audience, market, ...(channel ? { channel } : {}) }
+}
+
+function encodeCollectionPart(value: string): string {
+  return value.replaceAll("%", "%25").replaceAll("__", "%5F%5F")
+}
+
+function decodeCollectionPart(value: string): string {
+  return value.replaceAll("%5F%5F", "__").replaceAll("%25", "%")
+}
+
+function isIndexerAudience(value: unknown): value is IndexerSlice["audience"] {
+  return (
+    value === "staff" ||
+    value === "staff-admin" ||
+    value === "customer" ||
+    value === "partner" ||
+    value === "supplier"
+  )
 }
 
 /**
@@ -493,8 +526,68 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     }
   }
 
-  return {
+  const searchIndex = async (
+    slice: IndexerSlice,
+    request: Parameters<IndexerAdapter["search"]>[1],
+    includeEmbeddings = false,
+  ): Promise<SearchResults> => {
+    const name = collectionName(slice, collectionPrefix)
+    let registry: FieldPolicyRegistry | undefined = registryByVertical.get(slice.vertical)
+    if (!registry) {
+      try {
+        registry = await inferRegistryFromCollection(client, name)
+      } catch (error) {
+        if (isCollectionNotFoundError(error)) return { hits: [], total: 0, facets: {} }
+        throw error
+      }
+    }
+    const query = buildSearchQuery(request, registry, slice)
+    if (includeEmbeddings) delete query.exclude_fields
+    try {
+      const response = await client.collections(name).documents().search(query)
+      return mapTypesenseResponse(response, query)
+    } catch (error) {
+      if (isCollectionNotFoundError(error)) return { hits: [], total: 0, facets: {} }
+      throw error
+    }
+  }
+
+  const adapter: IndexerAdapter = {
     capabilities,
+    admin: {
+      async list() {
+        const collections = await client.collections().list()
+        return collections.flatMap(({ name }) => {
+          const slice = parseCollectionName(name, collectionPrefix)
+          return slice ? [slice] : []
+        })
+      },
+      async drop(slice) {
+        try {
+          await client.collections(collectionName(slice, collectionPrefix)).delete()
+          return true
+        } catch (error) {
+          if (isCollectionNotFoundError(error)) return false
+          throw error
+        }
+      },
+      async *scan(slice, options) {
+        let cursor: string | undefined
+        do {
+          const results = await searchIndex(
+            slice,
+            {
+              query: "",
+              mode: "keyword",
+              pagination: { limit: options?.batchSize ?? 250, ...(cursor ? { cursor } : {}) },
+            },
+            true,
+          )
+          for (const hit of results.hits) yield hit.document
+          cursor = results.next_cursor
+        } while (cursor)
+      },
+    },
 
     async ensureCollection(slice, registry) {
       registryByVertical.set(slice.vertical, registry)
@@ -590,37 +683,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     },
 
     async search(slice, request) {
-      const name = collectionName(slice, collectionPrefix)
-      // Use the registry cached at ensureCollection() time so query_by
-      // points at fields that actually exist in the schema. If a caller
-      // searches before ensureCollection has run for this vertical, fall
-      // back to fetching the live schema and inferring string-typed
-      // fields — slower but at least produces a valid query.
-      let registry: FieldPolicyRegistry | undefined = registryByVertical.get(slice.vertical)
-      if (!registry) {
-        try {
-          registry = await inferRegistryFromCollection(client, name)
-        } catch (err) {
-          // Collection doesn't exist (vertical not indexed yet) — return
-          // empty results instead of propagating a 404. Surfacing search
-          // errors for unindexed verticals is hostile UX; downstream UI
-          // already renders "no results" cleanly.
-          if (isCollectionNotFoundError(err)) {
-            return { hits: [], total: 0, facets: {} }
-          }
-          throw err
-        }
-      }
-      const query = buildSearchQuery(request, registry, slice)
-      try {
-        const response = await client.collections(name).documents().search(query)
-        return mapTypesenseResponse(response)
-      } catch (err) {
-        if (isCollectionNotFoundError(err)) {
-          return { hits: [], total: 0, facets: {} }
-        }
-        throw err
-      }
+      return searchIndex(slice, request)
     },
 
     async bulkReindex(slice, stream, _options) {
@@ -645,6 +708,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
       await flush()
     },
   }
+  return adapter
 }
 
 function flattenDocument(document: IndexerDocument): Record<string, unknown> {
@@ -713,18 +777,21 @@ function coerceBool(value: unknown): boolean | undefined {
   return undefined
 }
 
-function mapTypesenseResponse(response: TypesenseSearchResponse): SearchResults {
-  const hits = response.hits.map((hit) => ({
-    id: String(hit.document.id ?? ""),
-    // Wildcard queries (`q=*`) and pure-vector searches don't compute a
-    // `text_match` score — fall back to 0 so downstream consumers always
-    // see a number.
-    score: hit.text_match ?? 0,
-    document: {
-      id: String(hit.document.id ?? ""),
-      fields: hit.document,
-    } satisfies IndexerDocument,
-  }))
+function mapTypesenseResponse(
+  response: TypesenseSearchResponse,
+  query: TypesenseSearchQuery,
+): SearchResults {
+  const hits = response.hits.map((hit) => {
+    const document = mapTypesenseDocument(hit.document)
+    return {
+      id: document.id,
+      // Wildcard queries (`q=*`) and pure-vector searches don't compute a
+      // `text_match` score — fall back to 0 so downstream consumers always
+      // see a number.
+      score: hit.text_match ?? 0,
+      document,
+    }
+  })
   const facets: Record<string, Array<{ value: string | number; count: number }>> | undefined =
     response.facet_counts
       ? Object.fromEntries(response.facet_counts.map((f) => [f.field_name, f.counts]))
@@ -732,7 +799,29 @@ function mapTypesenseResponse(response: TypesenseSearchResponse): SearchResults 
   return {
     hits,
     total: response.found,
+    ...(query.page && query.per_page && query.page * query.per_page < response.found
+      ? { next_cursor: String(query.page + 1) }
+      : {}),
     facets,
+  }
+}
+
+function mapTypesenseDocument(document: Record<string, unknown>): IndexerDocument {
+  const {
+    id,
+    text_embedding: embedding,
+    embedding_model_id: embeddingModelId,
+    ...fields
+  } = document
+  const textEmbedding =
+    Array.isArray(embedding) && embedding.every((value) => typeof value === "number")
+      ? (embedding as number[])
+      : undefined
+  return {
+    id: String(id ?? ""),
+    fields,
+    ...(textEmbedding ? { embeddings: { text_embedding: textEmbedding } } : {}),
+    ...(typeof embeddingModelId === "string" ? { embedding_model_id: embeddingModelId } : {}),
   }
 }
 

@@ -66,10 +66,14 @@ if (
 ) {
   violations.push("Relationships must compose custom fields and MICE lookup package-side")
 }
+const genericContributorInputs =
+  composition.includes("options.createRuntimePorts({ primitives })") ||
+  (composition.includes("providerPorts?: VoyantGraphRuntimePorts") &&
+    composition.includes("runtimePorts: options.providerPorts"))
 if (
   composition.includes("relationshipsRouteRuntimePort") ||
   composition.includes("createDeploymentCapabilities") ||
-  !composition.includes("options.createRuntimePorts({ primitives })")
+  !genericContributorInputs
 ) {
   violations.push("Operator must not bind Relationships-specific runtime behavior")
 }

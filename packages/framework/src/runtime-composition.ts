@@ -41,6 +41,7 @@ export type VoyantGraphRuntimePorts = Readonly<Record<string, unknown>>
 
 /** Typed access to the shared record populated by statically selected contributors. */
 export interface VoyantGraphRuntimePortResolver {
+  hasRuntimePort?(port: Pick<VoyantPort<unknown>, "id">): boolean
   getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
 
@@ -118,7 +119,7 @@ function runtimePortStub(id: string): unknown {
     getOwnedHandlers: unavailable,
     getOwnedHandlersFromContext: unavailable,
     buildEmbeddingProvider: () => undefined,
-    buildTypesenseIndexer: () => undefined,
+    buildIndexer: () => undefined,
     loadSlices: unavailableAsync,
     fieldPolicyRegistries: () => new Map(),
     createProductsDocumentBuilder: unavailable,

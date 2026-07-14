@@ -8,10 +8,7 @@ import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
-import {
-  resolveVoyantGraphRuntimeProviders,
-  type VoyantGraphRuntime,
-} from "@voyant-travel/framework/deployment-artifacts"
+import type { VoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
 import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
   createVoyantNodeEnv,
@@ -34,12 +31,17 @@ import { tsImport } from "tsx/esm/api"
 
 import { requireVoyantAuthEnv } from "./auth-env.js"
 import { resolveVoyantCloudAuthEmailSender } from "./cloud-auth-email.js"
-import { createVoyantDeploymentResources } from "./deployment-resources.js"
+import {
+  createVoyantDeploymentResources,
+  resolveSelectedGraphProviderPorts,
+} from "./deployment-resources.js"
 import { loadBuiltProjectStart, startVoyantProjectWithDependencies } from "./project-start.js"
+import { resolveCustomStorageResolver } from "./storage-resolver.js"
 
 export {
   type CreateVoyantDeploymentResourcesOptions,
   createVoyantDeploymentResources,
+  resolveSelectedGraphProviderPorts,
   type VoyantDeploymentResources,
 } from "./deployment-resources.js"
 
@@ -57,6 +59,8 @@ export interface LoadVoyantProjectOptions {
   host?: {
     config?: Readonly<Record<string, unknown>>
     deliverEvent?: (event: unknown, bindings: unknown) => Promise<unknown>
+    /** Project-owned provider overrides keyed by their published runtime-port id. */
+    runtimePorts?: VoyantGraphRuntimePorts
     storage?: StorageProviderResolver
   }
 }
@@ -86,6 +90,7 @@ interface GeneratedProjectRuntime {
   graphRuntime: VoyantGraphRuntime
   createRuntimePorts(host: {
     primitives: VoyantRuntimeHostPrimitives
+    runtimePorts?: VoyantGraphRuntimePorts
   }): import("@voyant-travel/framework").VoyantGraphRuntimePorts
 }
 
@@ -110,13 +115,22 @@ export async function loadVoyantProject(
     )
   }
   const env = createVoyantNodeEnv(rawEnv, providerPlan)
+  const explicitRuntimePorts = options.host?.runtimePorts ?? {}
+  const selectedProviderPorts = await resolveSelectedGraphProviderPorts(
+    generated.graphRuntime,
+    rawEnv,
+    {
+      excludedPorts: [
+        ...Object.keys(explicitRuntimePorts),
+        ...(options.host?.storage ? ["storage.object"] : []),
+      ],
+      deploymentValueAliases: { DATABASE_URL: ["DATABASE_URL_DIRECT"] },
+    },
+  )
+  const providerPorts = { ...selectedProviderPorts, ...explicitRuntimePorts }
   const customStorage =
     providerPlan.storage === "custom"
-      ? await resolveCustomStorageResolver({
-          graphRuntime: generated.graphRuntime,
-          deploymentValues: rawEnv,
-          explicit: options.host?.storage,
-        })
+      ? resolveCustomStorageResolver(options.host?.storage ?? providerPorts["storage.object"])
       : undefined
   const storage = createVoyantNodeStorageResolver({
     plan: providerPlan,
@@ -151,6 +165,7 @@ export async function loadVoyantProject(
   })
   const deploymentResources = createVoyantDeploymentResources({
     primitives,
+    providerPorts,
     createRuntimePorts: generated.createRuntimePorts,
     outboundWebhooks,
   })
@@ -247,31 +262,6 @@ export async function loadVoyantProject(
           : {}),
       }),
   }
-}
-
-async function resolveCustomStorageResolver(options: {
-  graphRuntime: VoyantGraphRuntime
-  deploymentValues: Readonly<Record<string, unknown>>
-  explicit?: StorageProviderResolver
-}): Promise<StorageProviderResolver> {
-  if (options.explicit) return options.explicit
-  const providers = await resolveVoyantGraphRuntimeProviders(options.graphRuntime, {
-    ports: ["storage.object"],
-    deploymentValues: options.deploymentValues,
-  })
-  const resolver = await providers.getProvider<unknown>("storage.object")
-  if (!isStorageProviderResolver(resolver)) {
-    throw new TypeError(
-      'The selected "storage.object" provider must return a StorageProviderResolver.',
-    )
-  }
-  return resolver
-}
-
-function isStorageProviderResolver(value: unknown): value is StorageProviderResolver {
-  return Boolean(
-    value && typeof value === "object" && typeof Reflect.get(value, "resolve") === "function",
-  )
 }
 
 /** Generic TanStack Start server entry used by a project-owned one-line bootstrap. */

@@ -1,7 +1,11 @@
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import { createVoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
 import { describe, expect, it, vi } from "vitest"
 
-import { createVoyantDeploymentResources } from "./deployment-resources.js"
+import {
+  createVoyantDeploymentResources,
+  resolveSelectedGraphProviderPorts,
+} from "./deployment-resources.js"
 
 function primitives(): VoyantRuntimeHostPrimitives {
   return {
@@ -36,6 +40,120 @@ describe("createVoyantDeploymentResources", () => {
       capabilities: {},
       primitives: hostPrimitives,
       ports: { "example.port": { ready: true } },
+    })
+  })
+
+  it("resolves only deployment-selected providers and honors explicit exclusions", async () => {
+    const importProvider = vi.fn(async () => ({
+      createProvider: ({
+        providerConfig,
+        getConfig,
+      }: {
+        providerConfig: { engine?: string }
+        getConfig(id: string): unknown
+      }) => ({ engine: providerConfig.engine, host: getConfig("search.host") }),
+    }))
+    const runtime = createVoyantGraphRuntime({
+      graphHash: "sha256:providers",
+      providerSelections: { search: "typesense" },
+      entries: { "@acme/search/provider": importProvider },
+      modules: [
+        {
+          id: "@acme/search",
+          kind: "module",
+          packageName: "@acme/search",
+          order: 0,
+          references: [
+            {
+              id: "search-provider",
+              unitId: "@acme/search",
+              facet: "providers.runtime",
+              entityId: "search.typesense",
+              runtime: { entry: "./provider", export: "createProvider" },
+              importEntry: "@acme/search/provider",
+            },
+          ],
+          providers: [
+            {
+              unitId: "@acme/search",
+              declaration: {
+                id: "search.typesense",
+                port: "catalog.indexer",
+                selection: { role: "search", value: "typesense" },
+                runtime: { entry: "./provider", export: "createProvider" },
+                config: { engine: "typesense" },
+                uses: { config: ["search.host"] },
+              },
+              referenceId: "search-provider",
+            },
+          ],
+          config: [
+            {
+              unitId: "@acme/search",
+              declaration: { id: "search.host", key: "SEARCH_HOST", required: true },
+            },
+          ],
+          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          routes: [],
+        },
+      ],
+      plugins: [],
+    })
+
+    await expect(
+      resolveSelectedGraphProviderPorts(
+        runtime,
+        { LEGACY_SEARCH_HOST: "https://search.example" },
+        { deploymentValueAliases: { SEARCH_HOST: ["LEGACY_SEARCH_HOST"] } },
+      ),
+    ).resolves.toEqual({
+      "catalog.indexer": { engine: "typesense", host: "https://search.example" },
+    })
+    expect(importProvider).toHaveBeenCalledOnce()
+
+    importProvider.mockClear()
+    await expect(
+      resolveSelectedGraphProviderPorts(runtime, {}, { excludedPorts: ["catalog.indexer"] }),
+    ).resolves.toEqual({})
+    expect(importProvider).not.toHaveBeenCalled()
+
+    const missingProviderRuntime = { ...runtime, providerSelections: { search: "algolia" } }
+    await expect(resolveSelectedGraphProviderPorts(missingProviderRuntime, {})).rejects.toThrow(
+      /VOYANT_GRAPH_RUNTIME_PROVIDER_MISSING.*catalog\.indexer/s,
+    )
+
+    await expect(
+      resolveSelectedGraphProviderPorts(
+        missingProviderRuntime,
+        {},
+        {
+          excludedPorts: ["catalog.indexer"],
+        },
+      ),
+    ).resolves.toEqual({})
+  })
+
+  it("seeds generated composition with selected and explicit provider ports", () => {
+    const hostPrimitives = primitives()
+    const providerPorts = { "catalog.indexer": { engine: "custom" } }
+    const createRuntimePorts = vi.fn(({ runtimePorts }) => ({
+      ...runtimePorts,
+      "example.port": { ready: true },
+    }))
+
+    const resources = createVoyantDeploymentResources({
+      primitives: hostPrimitives,
+      providerPorts,
+      createRuntimePorts,
+    })
+
+    expect(createRuntimePorts).toHaveBeenCalledWith({
+      primitives: hostPrimitives,
+      runtimePorts: providerPorts,
+    })
+    expect(resources.ports).toEqual({
+      "catalog.indexer": { engine: "custom" },
+      "example.port": { ready: true },
     })
   })
 

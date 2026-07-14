@@ -16,10 +16,13 @@ for (const relativePath of [
 
 const packageRuntimePath = "packages/catalog/src/runtime-support.ts"
 const packageRuntime = readFileSync(resolve(root, packageRuntimePath), "utf8")
+const catalogRuntimePath = "packages/catalog/src/runtime/catalog-runtime.ts"
+const catalogRuntime = readFileSync(resolve(root, catalogRuntimePath), "utf8")
+const commerceRuntimePath = "packages/commerce/src/runtime.ts"
+const commerceRuntime = readFileSync(resolve(root, commerceRuntimePath), "utf8")
 for (const authority of [
   "buildCatalogSlices",
-  "buildCatalogTypesenseIndexer",
-  "createCatalogOffersTypesenseResolvers",
+  "createCatalogOffersSearchResolvers",
   "createProductQuoteShapeEnricher",
   "buildSourcedBookingRowValues",
   "createCatalogPackageHoldPreparer",
@@ -36,7 +39,15 @@ for (const authority of [
   }
 }
 
+if (!catalogRuntime.includes("export function buildIndexer")) {
+  throw new Error(`${catalogRuntimePath} must own buildIndexer`)
+}
+if (commerceRuntime.includes("buildTypesenseIndexer")) {
+  throw new Error(`${commerceRuntimePath} must consume the provider-neutral buildIndexer service`)
+}
+
 for (const forbidden of [
+  "createCatalogOffersTypesenseResolvers",
   "starters/operator",
   "@voyant-travel/inventory",
   "@voyant-travel/commerce",

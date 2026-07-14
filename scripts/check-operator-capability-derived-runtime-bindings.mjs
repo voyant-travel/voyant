@@ -30,8 +30,16 @@ for (const binding of explicitBindings) {
   }
 }
 
-if (!/options\.createRuntimePorts\(\{\s*primitives\s*\}\)/s.test(deploymentResources)) {
-  violations.push("deployment-resources.ts must expose only generic primitives to contributors")
+const primitivesOnly = /options\.createRuntimePorts\(\{\s*primitives\s*\}\)/s.test(
+  deploymentResources,
+)
+const providerNeutralPorts =
+  deploymentResources.includes("providerPorts?: VoyantGraphRuntimePorts") &&
+  deploymentResources.includes("runtimePorts: options.providerPorts")
+if (!primitivesOnly && !providerNeutralPorts) {
+  violations.push(
+    "deployment-resources.ts must expose only generic primitives and graph provider ports to contributors",
+  )
 }
 if (deploymentResources.includes("createOperatorIdentityAccessRuntime")) {
   violations.push("deployment-resources.ts must not retain the Auth runtime factory")

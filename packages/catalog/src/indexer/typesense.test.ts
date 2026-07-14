@@ -1,8 +1,11 @@
 // agent-quality: file-size exception -- owner: catalog; existing test module stays co-located until a dedicated split preserves coverage.
-import { describe, expect, it } from "vitest"
 
+import type {
+  IndexerDocument,
+  IndexerSlice,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { describe, expect, it, vi } from "vitest"
 import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
-import type { IndexerDocument, IndexerSlice } from "./contract.js"
 import {
   buildCollectionSchema,
   buildDefaultTypesenseQueryBy,
@@ -11,6 +14,7 @@ import {
   collectionName,
   createTypesenseIndexer,
   type ImportFailureSummary,
+  parseCollectionName,
   parseTypesenseImportResults,
   summarizeImportFailures,
   type TypesenseClient,
@@ -146,6 +150,27 @@ describe("Typesense catalog indexer", () => {
     )
   })
 
+  it("round-trips prefixed staff-admin channel collection names", () => {
+    const adminSlice: IndexerSlice = {
+      ...slice,
+      audience: "staff-admin",
+      channel: "chan_trade",
+    }
+    const name = collectionName(adminSlice, "tenant_acme")
+
+    expect(name).toBe("tenant_acme__products__en-GB__staff-admin__default__chan_trade")
+    expect(parseCollectionName(name, "tenant_acme")).toEqual(adminSlice)
+    expect(parseCollectionName(name, "tenant_other")).toBeUndefined()
+  })
+
+  it("round-trips slice values containing the collection delimiter", () => {
+    const delimited = { ...slice, market: "trade__uk", channel: "agent__portal" }
+    const name = collectionName(delimited)
+
+    expect(name).toContain("trade%5F%5Fuk")
+    expect(parseCollectionName(name)).toEqual(delimited)
+  })
+
   it("declares known storefront card fields with numeric and boolean types", () => {
     const schema = buildCollectionSchema(slice, registry)
     expect(schema.fields.find((field) => field.name === "priceFromAmountCents")?.type).toBe("int64")
@@ -258,11 +283,210 @@ describe("Typesense catalog indexer", () => {
     expect(query.sort_by).toBeUndefined()
   })
 
+  it("lists only collection slices managed under the configured prefix", async () => {
+    const client: TypesenseClient = {
+      collections: () => ({
+        list: async () => [
+          {
+            name: "tenant_acme__products__en-GB__staff-admin__default__chan_trade",
+            fields: [],
+          },
+          { name: "tenant_acme__products__fr-FR__customer__eu", fields: [] },
+          { name: "tenant_other__products__en-GB__customer__default", fields: [] },
+          { name: "tenant_acme__products__en-GB__unknown__default", fields: [] },
+        ],
+        create: async () => undefined,
+        update: async () => undefined,
+        delete: async () => undefined,
+        retrieve: async () => ({ name: "unused", fields: [] }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({ client, collectionPrefix: "tenant_acme" })
+    const admin = indexer.admin
+    if (!admin) throw new Error("Typesense indexer did not expose admin operations")
+
+    await expect(admin.list()).resolves.toEqual([
+      {
+        vertical: "products",
+        locale: "en-GB",
+        audience: "staff-admin",
+        market: "default",
+        channel: "chan_trade",
+      },
+      {
+        vertical: "products",
+        locale: "fr-FR",
+        audience: "customer",
+        market: "eu",
+      },
+    ])
+  })
+
+  it("drops the prefixed collection and reports a missing collection", async () => {
+    const deletedCollections: Array<string | undefined> = []
+    const client: TypesenseClient = {
+      collections: (name) => ({
+        list: async () => [],
+        create: async () => undefined,
+        update: async () => undefined,
+        delete: async () => {
+          deletedCollections.push(name)
+          if (deletedCollections.length === 2) {
+            throw Object.assign(new Error("missing collection"), { httpStatus: 404 })
+          }
+        },
+        retrieve: async () => ({ name: name ?? "unused", fields: [] }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({ client, collectionPrefix: "tenant_acme" })
+    const admin = indexer.admin
+    if (!admin) throw new Error("Typesense indexer did not expose admin operations")
+
+    await expect(admin.drop(slice)).resolves.toBe(true)
+    await expect(admin.drop(slice)).resolves.toBe(false)
+    expect(deletedCollections).toEqual([
+      "tenant_acme__products__en-GB__customer__default",
+      "tenant_acme__products__en-GB__customer__default",
+    ])
+  })
+
+  it("returns portable next cursors and scans every Typesense page", async () => {
+    const searchQueries: Array<{ page?: number; per_page?: number }> = []
+    const client: TypesenseClient = {
+      collections: () => ({
+        list: async () => [],
+        create: async () => undefined,
+        update: async () => undefined,
+        delete: async () => undefined,
+        retrieve: async () => ({ name: "unused", fields: [] }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async (query) => {
+            searchQueries.push(query)
+            const withEmbedding = (document: Record<string, unknown>) =>
+              query.exclude_fields
+                ? document
+                : {
+                    ...document,
+                    text_embedding: [0.1, 0.2, 0.3],
+                    embedding_model_id: "test-model",
+                  }
+            return query.page === 1
+              ? {
+                  hits: [
+                    {
+                      document: withEmbedding({ id: "prod_abc", name: "Retreat" }),
+                      text_match: 10,
+                    },
+                    { document: withEmbedding({ id: "prod_def", name: "Cruise" }), text_match: 9 },
+                  ],
+                  found: 3,
+                }
+              : {
+                  hits: [
+                    { document: withEmbedding({ id: "prod_ghi", name: "Tour" }), text_match: 8 },
+                  ],
+                  found: 3,
+                }
+          },
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({
+      client,
+      registries: new Map([[slice.vertical, registry]]),
+    })
+    const admin = indexer.admin
+    if (!admin) throw new Error("Typesense indexer did not expose admin operations")
+
+    const firstPage = await indexer.search(slice, {
+      query: "",
+      mode: "keyword",
+      pagination: { limit: 2 },
+    })
+    const secondPage = await indexer.search(slice, {
+      query: "",
+      mode: "keyword",
+      pagination: { limit: 2, cursor: firstPage.next_cursor },
+    })
+
+    expect(firstPage.next_cursor).toBe("2")
+    expect(secondPage.next_cursor).toBeUndefined()
+    expect(searchQueries).toEqual([
+      expect.objectContaining({ page: 1, per_page: 2 }),
+      expect.objectContaining({ page: 2, per_page: 2 }),
+    ])
+
+    searchQueries.length = 0
+    const scanned: IndexerDocument[] = []
+    for await (const indexedDocument of admin.scan(slice, { batchSize: 2 })) {
+      scanned.push(indexedDocument)
+    }
+
+    expect(scanned.map(({ id }) => id)).toEqual(["prod_abc", "prod_def", "prod_ghi"])
+    expect(scanned[0]).toEqual({
+      id: "prod_abc",
+      fields: { name: "Retreat" },
+      embeddings: { text_embedding: [0.1, 0.2, 0.3] },
+      embedding_model_id: "test-model",
+    })
+    expect(searchQueries).toEqual([
+      expect.objectContaining({ page: 1, per_page: 2 }),
+      expect.objectContaining({ page: 2, per_page: 2 }),
+    ])
+  })
+
+  it("caps Typesense pages so portable cursors cannot skip results", async () => {
+    const search = vi.fn(async () => ({
+      hits: [{ document: { id: "prod_abc" }, text_match: 1 }],
+      found: 300,
+    }))
+    const client: TypesenseClient = {
+      collections: () => ({
+        list: async () => [],
+        create: async () => undefined,
+        update: async () => undefined,
+        delete: async () => undefined,
+        retrieve: async () => ({ name: "unused", fields: [] }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search,
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({
+      client,
+      registries: new Map([[slice.vertical, registry]]),
+    })
+
+    const results = await indexer.search(slice, {
+      query: "",
+      mode: "keyword",
+      pagination: { limit: 500 },
+    })
+
+    expect(search).toHaveBeenCalledWith(expect.objectContaining({ page: 1, per_page: 250 }))
+    expect(results.next_cursor).toBe("2")
+  })
+
   it("patches default search metadata onto existing collections without field diffs", async () => {
     const updatePayloads: Partial<ReturnType<typeof buildCollectionSchema>>[] = []
     const existingSchema = buildCollectionSchema(slice, registry)
     const client: TypesenseClient = {
       collections: () => ({
+        list: async () => [],
         create: async () => {
           throw new Error("already exists")
         },
@@ -303,6 +527,7 @@ describe("Typesense catalog indexer", () => {
     let updateCalls = 0
     const client: TypesenseClient = {
       collections: () => ({
+        list: async () => [],
         create: async () => {
           throw new Error("already exists")
         },
@@ -330,6 +555,7 @@ describe("Typesense catalog indexer", () => {
     let updateCalls = 0
     const client: TypesenseClient = {
       collections: () => ({
+        list: async () => [],
         create: async () => {
           throw new Error("already exists")
         },
@@ -368,6 +594,7 @@ describe("Typesense catalog indexer", () => {
     const imported: unknown[][] = []
     const client: TypesenseClient = {
       collections: () => ({
+        list: async () => [],
         create: async () => undefined,
         update: async () => undefined,
         delete: async () => undefined,
@@ -410,6 +637,7 @@ describe("Typesense catalog indexer", () => {
     let fieldNames = new Set<string>()
     const client: TypesenseClient = {
       collections: () => ({
+        list: async () => [],
         create: async (schema) => {
           fieldNames = new Set(["id", ...schema.fields.map((field) => field.name)])
         },
@@ -463,6 +691,7 @@ describe("Typesense catalog indexer", () => {
     const documentsById = new Map<string, Record<string, unknown>>()
     const client: TypesenseClient = {
       collections: () => ({
+        list: async () => [],
         create: async () => undefined,
         update: async () => undefined,
         delete: async () => undefined,
@@ -508,6 +737,7 @@ const document: IndexerDocument = { id: "prod_abc", fields: { name: "Retreat" } 
 function clientReturningImport(result: unknown): TypesenseClient {
   return {
     collections: () => ({
+      list: async () => [],
       create: async () => undefined,
       update: async () => undefined,
       delete: async () => undefined,

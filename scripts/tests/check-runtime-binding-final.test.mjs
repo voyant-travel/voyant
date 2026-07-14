@@ -55,12 +55,21 @@ it("accepts package-owned defaults and generic primitives", async () => {
   assert.match(result.stdout, /11 package-owned runtime families/)
 })
 
+it("accepts optional provider-neutral graph ports", async () => {
+  const root = await fixture(`
+    primitives,
+    ...(options.providerPorts ? { runtimePorts: options.providerPorts } : {}),
+  `)
+  const result = await execFileAsync(process.execPath, [checker, "--root", root])
+  assert.match(result.stdout, /11 package-owned runtime families/)
+})
+
 it("rejects a package-specific generated runtime argument", async () => {
   const root = await fixture(
     "    primitives,\n    finance: loadFinanceRuntime(),\n    host: operatorSmartbillRuntimeHost,",
   )
   await assert.rejects(
     execFileAsync(process.execPath, [checker, "--root", root]),
-    /keys must be exactly primitives/,
+    /arguments must be generic primitives/,
   )
 })

@@ -16,7 +16,7 @@
  * See `docs/architecture/catalog-architecture.md` for the design.
  */
 
-import type { IndexerCapabilities } from "../indexer/contract.js"
+import type { IndexerCapabilities } from "@voyant-travel/catalog-contracts/indexer/contract"
 
 import type { EmbeddingProviderCapabilities } from "./contract.js"
 

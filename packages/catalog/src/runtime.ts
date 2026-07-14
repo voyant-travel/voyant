@@ -1,4 +1,5 @@
 import type { CatalogSearchRuntime } from "@voyant-travel/catalog/search/routes"
+import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
 import {
@@ -13,7 +14,7 @@ import {
 } from "./runtime/booking-runtime.js"
 import {
   buildEmbeddingProvider,
-  buildTypesenseIndexer,
+  buildIndexer,
   createProductsDocumentBuilder,
   DEFAULT_SLICES,
   getFieldPolicyRegistries,
@@ -39,8 +40,25 @@ export function createCatalogRuntime(
   primitives: VoyantRuntimeHostPrimitives,
   extensions: CatalogRuntimeExtensions,
   settings: FinanceOperatorSettingsRuntime,
+  options: { indexerProvider?: IndexerProvider } = {},
 ): CatalogRuntimePortContribution {
   configureCatalogRuntimeHost(primitives, extensions)
+  let indexer: ReturnType<typeof buildIndexer>
+  let vectorDimensions: number | null | undefined
+  const resolveIndexer = (embeddings: ReturnType<typeof buildEmbeddingProvider>) => {
+    if (!options.indexerProvider) return undefined
+    const nextVectorDimensions = embeddings?.capabilities.dimensions ?? null
+    if (indexer && vectorDimensions !== nextVectorDimensions) {
+      throw new Error(
+        `Catalog indexer was initialized with ${vectorDimensions ?? "no"} vector dimensions and cannot be recreated with ${nextVectorDimensions ?? "no"}.`,
+      )
+    }
+    if (!indexer) {
+      vectorDimensions = nextVectorDimensions
+      indexer = buildIndexer(options.indexerProvider, embeddings)
+    }
+    return indexer
+  }
   let projectionRuntime:
     | ReturnType<typeof createOperatorCatalogProjectionRuntime>
     | Promise<ReturnType<typeof createOperatorCatalogProjectionRuntime>>
@@ -54,7 +72,7 @@ export function createCatalogRuntime(
     getOwnedHandlersFromContext: (context) =>
       getOwnedBookingHandlerRegistryFromContext(context as never),
     buildEmbeddingProvider: (env) => buildEmbeddingProvider(env as never),
-    buildTypesenseIndexer: (env, embeddings) => buildTypesenseIndexer(env as never, embeddings),
+    buildIndexer: (_env, embeddings) => resolveIndexer(embeddings),
     loadSlices: loadCatalogSlices,
     fieldPolicyRegistries: getFieldPolicyRegistries,
     createProductsDocumentBuilder,
@@ -71,15 +89,21 @@ export function createCatalogRuntime(
   }
   installCatalogRuntimeServices(services)
   return {
-    search: { resolveRuntime: createCatalogSearchRuntime },
+    search: {
+      resolveRuntime: (context) => createCatalogSearchRuntime(context, resolveIndexer),
+    },
     booking: createOperatorCatalogBookingRouteModuleOptions(),
-    offers: createOperatorCatalogOffersRouteModuleOptions((context) =>
-      withoutCatalogScopeChannel(resolveCatalogDefaultScope(context)),
+    offers: createOperatorCatalogOffersRouteModuleOptions(
+      (context) => withoutCatalogScopeChannel(resolveCatalogDefaultScope(context)),
+      (context) => {
+        const env = context.env as Record<string, unknown>
+        return resolveIndexer(buildEmbeddingProvider(env as never))
+      },
     ),
     content: { resolveRegistry: getBookingEngineRegistryFromContext },
     projection: {
       createRuntime(bindings) {
-        projectionRuntime ??= createOperatorCatalogProjectionRuntime(bindings)
+        projectionRuntime ??= createOperatorCatalogProjectionRuntime(bindings, services)
         return projectionRuntime
       },
     },
@@ -88,12 +112,17 @@ export function createCatalogRuntime(
   }
 }
 
-function createCatalogSearchRuntime(context: unknown): CatalogSearchRuntime {
+function createCatalogSearchRuntime(
+  context: unknown,
+  resolveIndexer: (
+    embeddings: ReturnType<typeof buildEmbeddingProvider>,
+  ) => ReturnType<typeof buildIndexer>,
+): CatalogSearchRuntime {
   const env = (context as { env: Record<string, unknown> }).env
   const embeddings = buildEmbeddingProvider(env)
   const defaultScope = resolveCatalogDefaultScope(context)
   return {
-    indexer: buildTypesenseIndexer(env, embeddings),
+    indexer: resolveIndexer(embeddings),
     embeddings,
     defaultScope,
   }

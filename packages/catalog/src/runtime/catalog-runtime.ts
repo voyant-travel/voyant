@@ -1,9 +1,8 @@
 /**
  * Shared catalog-plane runtime helpers.
  *
- * Centralizes the env-driven construction of the Typesense indexer + the
- * default slice set so both the per-request MCP route handler and the
- * background catalog-bridge subscribers stay aligned.
+ * Centralizes catalog indexer construction and the default slice set so both
+ * request handlers and background subscribers stay aligned.
  */
 
 import {
@@ -11,17 +10,20 @@ import {
   type FieldPolicyRegistry,
 } from "@voyant-travel/catalog/contract"
 import type { EmbeddingProvider } from "@voyant-travel/catalog/embeddings/contract"
-import type { IndexerAdapter, IndexerSlice } from "@voyant-travel/catalog/indexer/contract"
 import {
   buildCatalogEmbeddingProvider,
   buildCatalogSlices,
-  buildCatalogTypesenseIndexer,
   DEFAULT_CATALOG_SLICES,
   DEFAULT_CATALOG_VERTICALS,
   withCatalogEmbedding,
   withoutCatalogScopeChannel,
 } from "@voyant-travel/catalog/runtime-support"
 import type { DocumentBuilder } from "@voyant-travel/catalog/services/indexer"
+import type {
+  IndexerAdapter,
+  IndexerProvider,
+  IndexerSlice,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 
 import { isOwnedProductStorefrontListable } from "./catalog-listability.js"
@@ -52,9 +54,6 @@ export async function loadCatalogSlices(db: AnyDrizzleDb): Promise<IndexerSlice[
 }
 
 export type CatalogRuntimeEnv = {
-  TYPESENSE_HOST?: string
-  TYPESENSE_ADMIN_API_KEY?: string
-  TYPESENSE_API_KEY?: string
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
@@ -63,12 +62,12 @@ export type CatalogRuntimeEnv = {
 export const buildEmbeddingProvider = buildCatalogEmbeddingProvider
 export { withoutCatalogScopeChannel }
 
-export function buildTypesenseIndexer(
-  env: CatalogRuntimeEnv,
+export function buildIndexer(
+  provider: IndexerProvider | undefined,
   embeddings?: EmbeddingProvider,
 ): IndexerAdapter | undefined {
-  return buildCatalogTypesenseIndexer(env, {
-    embeddings,
+  return provider?.create({
+    vectorDimensions: embeddings?.capabilities.dimensions,
     registries: getFieldPolicyRegistries(),
   })
 }

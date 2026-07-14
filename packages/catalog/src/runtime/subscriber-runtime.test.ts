@@ -23,15 +23,6 @@ vi.mock("@voyant-travel/inventory/service-catalog-plane", () => ({
   buildProductSnapshotInput,
 }))
 
-vi.mock("./catalog-runtime.js", () => ({
-  buildEmbeddingProvider: () => undefined,
-  buildTypesenseIndexer: () => ({}),
-  createProductsDocumentBuilder: () => vi.fn(),
-  getFieldPolicyRegistries: () => new Map(),
-  loadCatalogSlices: async () => [],
-  withEmbedding: (builder: unknown) => builder,
-}))
-
 import { configureCatalogRuntimeHost } from "./host.js"
 import {
   createOperatorCatalogBookingSnapshotRuntime,
@@ -56,7 +47,7 @@ describe("Operator Catalog subscriber runtime ports", () => {
   })
 
   it("preserves publication reindex semantics", async () => {
-    const runtime = createOperatorCatalogProjectionRuntime({
+    const runtime = createProjectionRuntime({
       TENANT_ID: "seller_1",
       TYPESENSE_HOST: "http://localhost:8108",
     })
@@ -81,7 +72,7 @@ describe("Operator Catalog subscriber runtime ports", () => {
       }
       activeEnsures -= 1
     })
-    const runtime = createOperatorCatalogProjectionRuntime({
+    const runtime = createProjectionRuntime({
       TYPESENSE_HOST: "http://localhost:8108",
     })
 
@@ -116,6 +107,17 @@ describe("Operator Catalog subscriber runtime ports", () => {
     )
   })
 })
+
+function createProjectionRuntime(bindings: Record<string, unknown>) {
+  return createOperatorCatalogProjectionRuntime(bindings, {
+    buildEmbeddingProvider: () => undefined,
+    buildIndexer: () => ({}),
+    loadSlices: async () => [],
+    fieldPolicyRegistries: () => new Map(),
+    createProductsDocumentBuilder: () => vi.fn(),
+    withEmbedding: (builder: unknown) => builder,
+  } as never)
+}
 
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void

@@ -16,14 +16,14 @@
  * See `docs/architecture/catalog-architecture.md` §5.4 for the design.
  */
 
-import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import type {
   IndexerAdapter,
   IndexerDocument,
   IndexerSlice,
   SearchRequest,
   SearchResults,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 
 /**
  * Options for constructing an IndexerService.

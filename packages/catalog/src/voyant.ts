@@ -59,6 +59,9 @@ export const catalogVoyantModule = defineModule({
   id: "@voyant-travel/catalog",
   packageName: "@voyant-travel/catalog",
   localId: "catalog",
+  requires: {
+    ports: [{ id: "catalog.indexer", optional: true }],
+  },
   runtimePorts: [
     requirePort(catalogSearchRuntimePort),
     requirePort(catalogProjectionRuntimePort),
@@ -101,6 +104,38 @@ export const catalogVoyantModule = defineModule({
     {
       id: "@voyant-travel/catalog#migrations",
       source: "./migrations",
+    },
+  ],
+  config: [
+    {
+      id: "@voyant-travel/catalog#config.typesense-host",
+      key: "TYPESENSE_HOST",
+      required: false,
+    },
+  ],
+  secrets: [
+    {
+      id: "@voyant-travel/catalog#secret.typesense-api-key",
+      key: "TYPESENSE_API_KEY",
+      required: false,
+      description: "Typesense API key used by the selected catalog indexer provider.",
+      rotation: "replace-only",
+    },
+  ],
+  providers: [
+    {
+      id: "@voyant-travel/catalog#provider.typesense",
+      port: "catalog.indexer",
+      selection: { role: "search", value: "typesense" },
+      uses: {
+        config: ["@voyant-travel/catalog#config.typesense-host"],
+        secrets: ["@voyant-travel/catalog#secret.typesense-api-key"],
+      },
+      runtime: {
+        entry: "@voyant-travel/catalog/indexer/typesense-provider",
+        export: "createTypesenseGraphIndexerProvider",
+      },
+      config: { engine: "typesense" },
     },
   ],
   events: [

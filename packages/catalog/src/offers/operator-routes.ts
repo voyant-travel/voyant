@@ -68,7 +68,7 @@ export interface CatalogOffersConnectClient {
   }
 }
 
-/** Hero/index fields the offer cards enrich from (mirrors the Typesense doc). */
+/** Search-index fields used to enrich offer cards. */
 export interface CatalogOffersIndexFields {
   name?: string
   thumbnailUrl?: string

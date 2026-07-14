@@ -10,4 +10,9 @@ describe("deployment provider contracts", () => {
     expect(DEFAULT_MANAGED_CLOUD_PROVIDERS.outboundWebhooks).toBe("postgres")
     expect(DEPLOYMENT_PROVIDER_CONTRACTS.outboundWebhooks).toEqual(["postgres", "host", "none"])
   })
+
+  it("defaults managed search to the shipped adapter without advertising absent engines", () => {
+    expect(DEFAULT_MANAGED_CLOUD_PROVIDERS.search).toBe("typesense")
+    expect(DEPLOYMENT_PROVIDER_CONTRACTS.search).toEqual(["typesense", "algolia", "custom", "none"])
+  })
 })

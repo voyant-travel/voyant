@@ -175,6 +175,10 @@ describe("deployment graph artifacts", () => {
     expect(source).not.toContain("Parameters<typeof GENERATED_RUNTIME_CONTRIBUTOR_0>")
     expect(source).not.toContain("asRuntimeContributor")
     expect(source).toContain('"@acme/voyant-loyalty/runtime-contributor"')
+    expect(source).toContain(
+      "const ports: Record<string, unknown> = { ...(initialRuntimePorts ?? {}) }",
+    )
+    expect(source).toContain("hasRuntimePort(port: { id: string }): boolean")
     expect(source).toContain("getRuntimePort(port: { id: string })")
     expect(source).toContain("contributor(contributorHost)")
     expect(source).toContain("has multiple static contributors")

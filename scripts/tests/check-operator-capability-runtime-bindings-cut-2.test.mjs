@@ -44,6 +44,18 @@ it("accepts package-owned bindings from generic primitives and static ports", as
   assert.match(result.stdout, /4 package-owned families from generic host resources/)
 })
 
+it("accepts provider-neutral graph ports as contributor inputs", async () => {
+  const root = await fixture(`
+    providerPorts?: VoyantGraphRuntimePorts
+    return options.createRuntimePorts({
+      primitives,
+      ...(options.providerPorts ? { runtimePorts: options.providerPorts } : {}),
+    })
+  `)
+  const result = await execFileAsync(process.execPath, [checker, "--root", root])
+  assert.match(result.stdout, /4 package-owned families from generic host resources/)
+})
+
 it("rejects starter-side assembly of a migrated binding", async () => {
   const root = await fixture(
     "return options.createRuntimePorts({\n    primitives,\n    flights: runtime,\n  })\n",

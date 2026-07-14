@@ -1,5 +1,5 @@
+import type { IndexerCapabilities } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { describe, expect, it } from "vitest"
-import type { IndexerCapabilities } from "../indexer/contract.js"
 
 import type { EmbeddingProviderCapabilities } from "./contract.js"
 import {

@@ -14,8 +14,9 @@
     "./overlay/resolver": "./src/overlay/resolver.ts",
     "./snapshot/schema": "./src/snapshot/schema.ts",
     "./indexer/contract": "./src/indexer/contract.ts",
+    "./indexer/provider": "./src/indexer/provider.ts",
     "./indexer/typesense": "./src/indexer/typesense.ts",
-    "./operations/typesense": "./src/indexer/typesense-operations.ts",
+    "./indexer/typesense-provider": "./src/indexer/typesense-provider.ts",
     "./search/routes": "./src/search/routes.ts",
     "./search/rerank": "./src/search/rerank.ts",
     "./search/semantic": "./src/search/semantic.ts",
@@ -150,15 +151,20 @@
         "import": "./dist/indexer/contract.js",
         "default": "./dist/indexer/contract.js"
       },
+      "./indexer/provider": {
+        "types": "./dist/indexer/provider.d.ts",
+        "import": "./dist/indexer/provider.js",
+        "default": "./dist/indexer/provider.js"
+      },
       "./indexer/typesense": {
         "types": "./dist/indexer/typesense.d.ts",
         "import": "./dist/indexer/typesense.js",
         "default": "./dist/indexer/typesense.js"
       },
-      "./operations/typesense": {
-        "types": "./dist/indexer/typesense-operations.d.ts",
-        "import": "./dist/indexer/typesense-operations.js",
-        "default": "./dist/indexer/typesense-operations.js"
+      "./indexer/typesense-provider": {
+        "types": "./dist/indexer/typesense-provider.d.ts",
+        "import": "./dist/indexer/typesense-provider.js",
+        "default": "./dist/indexer/typesense-provider.js"
       },
       "./search/routes": {
         "types": "./dist/search/routes.d.ts",

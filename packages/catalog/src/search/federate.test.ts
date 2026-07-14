@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
   IndexerSlice,
   SearchHit,
   SearchResults,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { describe, expect, it } from "vitest"
 
 import { federateAudienceSearch, mergeAndDedupe } from "./federate.js"
 
