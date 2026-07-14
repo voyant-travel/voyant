@@ -56,6 +56,7 @@ test("minimal starter serves project API and SSR routes in production and develo
       ],
       app,
     )
+    assertNonHoistedConsumerLayout(app)
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
     write(
       app,
@@ -300,6 +301,17 @@ function useInstalledToolingArtifacts(app) {
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+}
+
+function assertNonHoistedConsumerLayout(app) {
+  const packageJson = JSON.parse(readFileSync(join(app, "package.json"), "utf8"))
+
+  assert.ok(packageJson.dependencies["@voyant-travel/operator-standard"])
+  assert.equal(packageJson.dependencies["@voyant-travel/admin"], undefined)
+  assert.ok(
+    !existsSync(join(app, "node_modules/@voyant-travel/admin")),
+    "Packaged consumer fixture unexpectedly hoisted transitive @voyant-travel/admin",
+  )
 }
 
 function resolvePnpmStorePackageEntry(name) {

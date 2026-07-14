@@ -4,7 +4,6 @@ import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
-  VOYANT_CONTEXT_SINGLETONS,
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   VOYANT_SSR_OPTIMIZE_DEPS,
   voyantGeneratedRoutes,
@@ -101,7 +100,7 @@ describe("voyantStartViteConfig", () => {
     expect(alias["@"]).toBe("/repo/starters/operator/src")
   })
 
-  it("deduplicates shared framework and first-party context runtimes", () => {
+  it("deduplicates only dependencies available from the generated app root", () => {
     const config = voyantStartViteConfig(base)
 
     expect(config.resolve?.dedupe).toEqual([
@@ -109,8 +108,8 @@ describe("voyantStartViteConfig", () => {
       "react-dom",
       "@tanstack/react-query",
       "@tanstack/react-router",
-      ...VOYANT_CONTEXT_SINGLETONS,
     ])
+    expect(config.resolve?.dedupe).not.toContain("@voyant-travel/admin")
   })
 
   it("does not prebundle the broad operator composition entry", () => {
