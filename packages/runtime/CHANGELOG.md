@@ -1,5 +1,23 @@
 # @voyant-travel/runtime
 
+## 0.10.0
+
+### Minor Changes
+
+- df3e4ec: Publish the engine-neutral catalog indexer adapter and provider contracts under
+  `./indexer/contract`, including optional admin lifecycle operations. Add the
+  framework-neutral `./indexer/conformance` kit for external adapter packages.
+
+  Make `deployment.providers.search` authoritative through the `catalog.indexer`
+  runtime port, ship Typesense as the selected first-party provider, support
+  explicit project-owned overrides, and remove direct Typesense search and
+  maintenance bypasses.
+
+### Patch Changes
+
+- Updated dependencies [df3e4ec]
+  - @voyant-travel/framework@0.44.0
+
 ## 0.9.0
 
 ### Minor Changes
