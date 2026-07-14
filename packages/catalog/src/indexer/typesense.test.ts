@@ -161,6 +161,53 @@ describe("Typesense catalog indexer", () => {
     ).resolves.toBeUndefined()
   })
 
+  it("keeps semantic search pure vector and exposes larger-is-better vector and hybrid scores", async () => {
+    const indexer = createTypesenseIndexer({
+      client: createDeterministicTypesenseClient(),
+      vectorDimensions: 3,
+    })
+    const vectorSlice = { ...slice, vertical: "vector-score-mapping" }
+    await indexer.ensureCollection(vectorSlice, registry)
+    await indexer.upsert(vectorSlice, [
+      {
+        id: "vector-winner",
+        fields: { name: "Alpine" },
+        embeddings: { text_embedding: [1, 0, 0] },
+      },
+      {
+        id: "keyword-winner",
+        fields: { name: "Coastal" },
+        embeddings: { text_embedding: [-1, 0, 0] },
+      },
+      { id: "keyword-only", fields: { name: "Keyword Signal" } },
+    ])
+
+    const semantic = await indexer.search(vectorSlice, {
+      query: "Coastal",
+      mode: "semantic",
+      query_embedding: [1, 0, 0],
+    })
+    expect(semantic.hits.map(({ id }) => id)).toEqual(["vector-winner", "keyword-winner"])
+    expect(semantic.hits.map(({ score }) => score)).toEqual([1, 0])
+
+    const hybrid = await indexer.search(vectorSlice, {
+      query: "Coastal",
+      mode: "hybrid",
+      query_embedding: [1, 0, 0],
+      alpha: 0.25,
+    })
+    expect(hybrid.hits[0]?.id).toBe("keyword-winner")
+    expect(hybrid.hits[0]!.score).toBeGreaterThan(hybrid.hits[1]!.score)
+
+    const keywordOnly = await indexer.search(vectorSlice, {
+      query: "Keyword Signal",
+      mode: "hybrid",
+      query_embedding: [1, 0, 0],
+      alpha: 0.25,
+    })
+    expect(keywordOnly.hits.map(({ id }) => id)).toContain("keyword-only")
+  })
+
   it("includes channel in collection names when the slice is channel-scoped", () => {
     expect(collectionName({ ...slice, channel: "chan_website" })).toBe(
       "products__en-GB__customer__default__chan_website",
@@ -276,6 +323,20 @@ describe("Typesense catalog indexer", () => {
     )
   })
 
+  it("uses a wildcard text query for semantic mode even when text is non-empty", () => {
+    const query = buildSearchQuery(
+      {
+        query: "conflicting keyword",
+        mode: "semantic",
+        query_embedding: [1, 0, 0],
+      },
+      registry,
+      slice,
+    )
+
+    expect(query.q).toBe("*")
+  })
+
   it("preserves independent facet limits", async () => {
     const categoryPolicy = registry.resolve("categorySlugs[]")!
     const facetRegistry = createFieldPolicyRegistry([
@@ -312,7 +373,7 @@ describe("Typesense catalog indexer", () => {
     expect(results.facets?.themes).toHaveLength(3)
   })
 
-  it("raises Typesense's global facet cap when any requested facet is unlimited", () => {
+  it("uses the portable facet maximum for omitted and oversized limits", () => {
     const query = buildSearchQuery(
       {
         query: "",
@@ -324,6 +385,39 @@ describe("Typesense catalog indexer", () => {
     )
 
     expect(query.max_facet_values).toBe(250)
+
+    const oversized = buildSearchQuery(
+      {
+        query: "",
+        mode: "keyword",
+        facets: [{ field: "categorySlugs[]", limit: 300 }],
+      },
+      registry,
+      slice,
+    )
+    expect(oversized.max_facet_values).toBe(250)
+  })
+
+  it("returns at most 250 facet buckets when a larger limit is requested", async () => {
+    const client = createDeterministicTypesenseClient()
+    const indexer = createTypesenseIndexer({ client })
+    const facetSlice = { ...slice, vertical: "facet-portable-maximum" }
+    await indexer.ensureCollection(facetSlice, registry)
+    await indexer.upsert(
+      facetSlice,
+      Array.from({ length: 251 }, (_, index) => ({
+        id: `facet-${index}`,
+        fields: { name: `Facet ${index}`, categorySlugs: [`bucket-${index}`] },
+      })),
+    )
+
+    const results = await indexer.search(facetSlice, {
+      query: "",
+      mode: "keyword",
+      facets: [{ field: "categorySlugs[]", limit: 300 }],
+    })
+
+    expect(results.facets?.categorySlugs).toHaveLength(250)
   })
 
   it("rejects deterministic imports that do not match the collection schema", async () => {
@@ -998,32 +1092,58 @@ function searchDeterministicTypesense(
     documents = documents.filter((document) => matchesTypesenseFilter(document, query.filter_by!))
   }
   const scores = new Map<string, number>()
+  const vectorDistances = new Map<string, number>()
   const keyword = query.q.toLocaleLowerCase()
   const queryFields = query.query_by.split(",")
   const vectorQuery = query.vector_query ? parseDeterministicVectorQuery(query.vector_query) : null
   if (vectorQuery) {
-    documents = documents.filter((document) => {
-      const embedding = document[vectorQuery.field]
-      if (!isNumberArray(embedding)) return false
-      const distance = cosineDistance(vectorQuery.embedding, embedding)
-      if (vectorQuery.distanceThreshold !== undefined && distance > vectorQuery.distanceThreshold) {
-        return false
-      }
-      const vectorScore = 1 - distance / 2
-      const keywordScore =
-        query.q !== "*" && matchesTypesenseKeyword(document, keyword, queryFields) ? 1 : 0
-      scores.set(
-        String(document.id),
-        query.q === "*"
-          ? vectorScore
-          : vectorQuery.alpha * vectorScore + (1 - vectorQuery.alpha) * keywordScore,
+    const keywordMatches =
+      query.q === "*"
+        ? []
+        : documents.filter((document) => matchesTypesenseKeyword(document, keyword, queryFields))
+    const vectorMatches = documents
+      .flatMap((document) => {
+        const embedding = document[vectorQuery.field]
+        if (!isNumberArray(embedding)) return []
+        const distance = cosineDistance(vectorQuery.embedding, embedding)
+        if (
+          vectorQuery.distanceThreshold !== undefined &&
+          distance > vectorQuery.distanceThreshold
+        ) {
+          return []
+        }
+        vectorDistances.set(String(document.id), distance)
+        return [document]
+      })
+      .sort(
+        (left, right) =>
+          vectorDistances.get(String(left.id))! - vectorDistances.get(String(right.id))!,
       )
-      return true
-    })
-    documents.sort(
-      (left, right) => (scores.get(String(right.id)) ?? 0) - (scores.get(String(left.id)) ?? 0),
-    )
-    documents = documents.slice(0, vectorQuery.k)
+      .slice(0, vectorQuery.k)
+
+    if (query.q === "*") {
+      documents = vectorMatches
+      for (const document of documents) {
+        scores.set(String(document.id), 1 - vectorDistances.get(String(document.id))! / 2)
+      }
+    } else {
+      const keywordRanks = reciprocalRanks(keywordMatches)
+      const vectorRanks = reciprocalRanks(vectorMatches)
+      const candidates = new Map<string, Record<string, unknown>>()
+      for (const document of [...keywordMatches, ...vectorMatches]) {
+        candidates.set(String(document.id), document)
+      }
+      for (const id of candidates.keys()) {
+        scores.set(
+          id,
+          (1 - vectorQuery.alpha) * (keywordRanks.get(id) ?? 0) +
+            vectorQuery.alpha * (vectorRanks.get(id) ?? 0),
+        )
+      }
+      documents = [...candidates.values()].sort(
+        (left, right) => (scores.get(String(right.id)) ?? 0) - (scores.get(String(left.id)) ?? 0),
+      )
+    }
   } else if (query.q !== "*") {
     documents = documents.filter((document) =>
       matchesTypesenseKeyword(document, keyword, queryFields),
@@ -1050,15 +1170,28 @@ function searchDeterministicTypesense(
     : undefined
 
   return {
-    hits: pageDocuments.map((document) => ({
-      document: Object.fromEntries(
-        Object.entries(document).filter(([field]) => !excluded.has(field)),
-      ),
-      text_match: scores.get(String(document.id)) ?? (query.q === "*" ? 0 : 100),
-    })),
+    hits: pageDocuments.map((document) => {
+      const id = String(document.id)
+      const isKeywordMatch =
+        query.q !== "*" && matchesTypesenseKeyword(document, keyword, queryFields)
+      return {
+        document: Object.fromEntries(
+          Object.entries(document).filter(([field]) => !excluded.has(field)),
+        ),
+        text_match: isKeywordMatch ? 100 : 0,
+        ...(vectorDistances.has(id) ? { vector_distance: vectorDistances.get(id) } : {}),
+        ...(vectorQuery && query.q !== "*"
+          ? { hybrid_search_info: { rank_fusion_score: scores.get(id) ?? 0 } }
+          : {}),
+      }
+    }),
     found,
     facet_counts: facetCounts,
   }
+}
+
+function reciprocalRanks(documents: Record<string, unknown>[]): Map<string, number> {
+  return new Map(documents.map((document, index) => [String(document.id), 1 / (index + 1)]))
 }
 
 interface DeterministicVectorQuery {

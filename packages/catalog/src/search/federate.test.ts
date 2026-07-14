@@ -56,6 +56,16 @@ describe("mergeAndDedupe", () => {
     expect(merged.total).toBe(3) // total is unique-id count, not limited
   })
 
+  it("preserves provider order when normalized relevance scores tie", () => {
+    const merged = mergeAndDedupe([
+      { hits: [hit("near", 1), hit("first-tie", 0.5)], total: 2 },
+      { hits: [hit("second-tie", 0.5), hit("far", 0)], total: 2 },
+    ])
+
+    expect(merged.hits.map(({ id }) => id)).toEqual(["near", "first-tie", "second-tie", "far"])
+    expect(merged.hits.map(({ score }) => score)).toEqual([1, 0.5, 0.5, 0])
+  })
+
   it("returns an empty result when no pools have hits", () => {
     const merged = mergeAndDedupe([])
     expect(merged.hits).toEqual([])

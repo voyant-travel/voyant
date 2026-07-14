@@ -119,10 +119,13 @@ export type SearchFilter =
   | { kind: "and"; clauses: SearchFilter[] }
   | { kind: "or"; clauses: SearchFilter[] }
 
+/** Portable maximum used for omitted and oversized facet bucket limits. */
+export const MAX_FACET_BUCKETS = 250
+
 /** A single facet aggregation request. */
 export interface FacetRequest {
   field: string
-  /** Maximum bucket count returned. */
+  /** Maximum bucket count returned. Omitted and larger values use {@link MAX_FACET_BUCKETS}. */
   limit?: number
 }
 
@@ -148,6 +151,7 @@ export interface SearchRequest {
 
 export interface SearchHit {
   id: string
+  /** Provider relevance normalized so larger values always rank ahead of smaller values. */
   score: number
   /** Indexed id and fields. Providers may omit stored embeddings from search payloads. */
   document: IndexerDocument

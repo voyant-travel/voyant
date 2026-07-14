@@ -3,6 +3,7 @@ import type { IndexerAdapter, IndexerSlice } from "./contract.js"
 export interface IndexerCapabilityFixtureIds {
   alpha: string
   bravo: string
+  keywordOnly: string
   admin: string
   federationCustomer: string
   federationPartner: string
@@ -32,16 +33,12 @@ export async function assertVectorCapabilities(
     (_, index) => (index === 0 ? 1 : 0),
   )
   const semantic = await adapter.search(slice, {
-    query: "",
+    query: "Coastal",
     mode: "semantic",
     query_embedding: queryEmbedding,
     pagination: { limit: 10 },
   })
-  assertLeadingId(
-    semantic.hits.map((hit) => hit.id),
-    ids.alpha,
-    "semantic vector search",
-  )
+  assertLeadingId(semantic.hits, ids.alpha, "semantic vector search")
 
   if (!adapter.capabilities.supportsHybridSearch) return
   const keywordWeighted = await adapter.search(slice, {
@@ -51,11 +48,7 @@ export async function assertVectorCapabilities(
     alpha: 0.25,
     pagination: { limit: 10 },
   })
-  assertLeadingId(
-    keywordWeighted.hits.map((hit) => hit.id),
-    ids.bravo,
-    "keyword-weighted hybrid search",
-  )
+  assertLeadingId(keywordWeighted.hits, ids.bravo, "keyword-weighted hybrid search")
 
   const vectorWeighted = await adapter.search(slice, {
     query: "Coastal",
@@ -64,10 +57,18 @@ export async function assertVectorCapabilities(
     alpha: 0.75,
     pagination: { limit: 10 },
   })
-  assertLeadingId(
-    vectorWeighted.hits.map((hit) => hit.id),
-    ids.alpha,
-    "vector-weighted hybrid search",
+  assertLeadingId(vectorWeighted.hits, ids.alpha, "vector-weighted hybrid search")
+
+  const keywordOnly = await adapter.search(slice, {
+    query: "Keyword Signal",
+    mode: "hybrid",
+    query_embedding: queryEmbedding,
+    alpha: 0.25,
+    pagination: { limit: 10 },
+  })
+  assert(
+    keywordOnly.hits.some((hit) => hit.id === ids.keywordOnly),
+    "hybrid search dropped a keyword-only candidate",
   )
 }
 
@@ -116,12 +117,20 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
   )
 }
 
-function assertLeadingId(actual: string[], expected: string, operation: string): void {
+function assertLeadingId(
+  actual: Array<{ id: string; score: number }>,
+  expected: string,
+  operation: string,
+): void {
   assert(
-    actual[0] === expected,
-    `${operation} ranked ${actual[0] ?? "no document"} first; expected ${expected}`,
+    actual[0]?.id === expected,
+    `${operation} ranked ${actual[0]?.id ?? "no document"} first; expected ${expected}`,
   )
   assert(actual.length > 1, `${operation} did not include competing vector candidates`)
+  assert(
+    actual[0]!.score > actual[1]!.score,
+    `${operation} scores did not preserve provider ranking`,
+  )
 }
 
 function assert(condition: unknown, message: string): asserts condition {

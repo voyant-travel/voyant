@@ -11,7 +11,7 @@ import type {
   SearchRequest,
   SearchResults,
 } from "./contract.js"
-import { resolveSearchSort, SEARCH_SORT_SEMANTICS } from "./contract.js"
+import { MAX_FACET_BUCKETS, resolveSearchSort, SEARCH_SORT_SEMANTICS } from "./contract.js"
 
 describe("portable search sort semantics", () => {
   it("publishes stable field precedence and resolves the first policy-backed candidate", () => {
@@ -117,7 +117,27 @@ describe("assertIndexerAdapterConformance", () => {
     }
 
     await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
-      "admin scan did not preserve the document embedding",
+      "admin scan did not preserve the exact embedding",
+    )
+  })
+
+  it("checks every vector fixture embedding returned by admin scan", async () => {
+    const adapter = createMemoryIndexer({
+      supportsVectorFields: true,
+      vectorDimensions: 3,
+    })
+    const admin = adapter.admin!
+    const scan = admin.scan.bind(admin)
+    admin.scan = async function* (slice, options) {
+      let index = 0
+      for await (const document of scan(slice, options)) {
+        index += 1
+        yield index === 2 ? { ...document, embeddings: { text_embedding: [0, 0, 0] } } : document
+      }
+    }
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "admin scan did not preserve the exact embedding",
     )
   })
 
@@ -214,12 +234,16 @@ function searchMemoryCollection(
   if (request.mode === "keyword") {
     if (keyword) documents = documents.filter((document) => matchesKeyword(document, keyword))
   } else if (request.query_embedding) {
-    documents = documents.filter((document) => document.embeddings?.text_embedding)
+    documents = documents.filter(
+      (document) =>
+        Boolean(document.embeddings?.text_embedding) ||
+        (request.mode === "hybrid" && Boolean(keyword) && matchesKeyword(document, keyword)),
+    )
     for (const document of documents) {
-      const vectorScore = normalizedCosineSimilarity(
-        request.query_embedding,
-        document.embeddings!.text_embedding!,
-      )
+      const embedding = document.embeddings?.text_embedding
+      const vectorScore = embedding
+        ? normalizedCosineSimilarity(request.query_embedding, embedding)
+        : 0
       const keywordScore = keyword && matchesKeyword(document, keyword) ? 1 : 0
       const score =
         request.mode === "semantic"
@@ -259,7 +283,7 @@ function searchMemoryCollection(
                 (left, right) =>
                   right.count - left.count || String(left.value).localeCompare(String(right.value)),
               )
-              .slice(0, limit ?? counts.size),
+              .slice(0, Math.min(limit ?? MAX_FACET_BUCKETS, MAX_FACET_BUCKETS)),
           ]
         }),
       )

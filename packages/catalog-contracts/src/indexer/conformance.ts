@@ -82,6 +82,7 @@ export async function assertIndexerAdapterConformance(
   ]
   const ids = fixtureIds(namespace)
   const documents = fixtureDocuments(ids, adapter.capabilities.vectorDimensions)
+  const keywordOnlyDocument = fixtureKeywordOnlyDocument(ids.keywordOnly)
   const admin = adapter.admin
   const settle = async (mutation: IndexerConformanceMutation): Promise<void> => {
     await options.settle?.(mutation, adapter)
@@ -133,7 +134,15 @@ export async function assertIndexerAdapterConformance(
 
     const alphaDocument = documents.find((document) => document.id === ids.alpha)!
     await assertKeywordSearchAndHitFidelity(adapter, primary, ids, alphaDocument)
+    if (adapter.capabilities.supportsHybridSearch) {
+      await adapter.upsert(primary, [keywordOnlyDocument])
+      await settle("upsert")
+    }
     await assertVectorCapabilities(adapter, primary, ids)
+    if (adapter.capabilities.supportsHybridSearch) {
+      await adapter.delete(primary, [ids.keywordOnly])
+      await settle("delete")
+    }
     await assertAdminDenormalization(adapter, adminDenormalized, ids)
     await assertCrossAudienceFederation(adapter, federationBase, ids)
     await assertFilters(adapter, primary, ids)
@@ -146,21 +155,13 @@ export async function assertIndexerAdapterConformance(
     await settle("bulk-reindex")
     assertIds(await searchAll(adapter, bulk), [ids.charlie, ids.bravo], "bulk reindex")
 
+    if (admin) {
+      await assertAdmin(admin, slices, primary, bulk, documents, settle)
+    }
+
     await adapter.delete(primary, [ids.charlie])
     await settle("delete")
     assertIds(await searchAll(adapter, primary), [ids.alpha, ids.bravo], "delete")
-
-    if (admin) {
-      await assertAdmin(
-        admin,
-        slices,
-        primary,
-        bulk,
-        ids,
-        adapter.capabilities.vectorDimensions,
-        settle,
-      )
-    }
   } finally {
     if (admin) {
       for (const slice of slices) await admin.drop(slice)
@@ -291,8 +292,8 @@ async function assertFilters(
     },
     {
       name: "set-membership filter",
-      filters: [{ kind: "in", field: "categorySlugs", values: ["ski", "city"] }],
-      expected: [ids.alpha, ids.charlie],
+      filters: [{ kind: "in", field: "categorySlugs", values: ["beach", "city"] }],
+      expected: [ids.bravo, ids.charlie],
     },
     {
       name: "range filter",
@@ -391,9 +392,11 @@ async function assertFacets(adapter: IndexerAdapter, slice: IndexerSlice): Promi
   assert(results.hits.length === 1, "search result ignored pagination limit")
   const buckets = results.facets?.categorySlugs
   assert(buckets, "categorySlugs facet was omitted")
-  assert(buckets.length <= 2, `facet returned ${buckets.length} buckets; limit was 2`)
+  assert(buckets.length === 2, `facet returned ${buckets.length} buckets; expected exactly 2`)
   const featured = buckets.find((bucket) => bucket.value === "featured")
+  const ski = buckets.find((bucket) => bucket.value === "ski")
   assert(featured?.count === 2, "featured facet count was not 2")
+  assert(ski?.count === 2, "ski facet count was not 2")
 }
 
 async function assertUpsertReplacement(
@@ -432,8 +435,7 @@ async function assertAdmin(
   slices: IndexerSlice[],
   primary: IndexerSlice,
   bulk: IndexerSlice,
-  ids: FixtureIds,
-  vectorDimensions: number | null,
+  expectedDocuments: IndexerDocument[],
   settle: (mutation: IndexerConformanceMutation) => Promise<void>,
 ): Promise<void> {
   const listed = await admin.list()
@@ -450,20 +452,24 @@ async function assertAdmin(
   }
   assertIds(
     scanned.map((document) => document.id),
-    [ids.alpha, ids.bravo],
+    expectedDocuments.map((document) => document.id),
     "admin scan",
   )
-  const alpha = scanned.find((document) => document.id === ids.alpha)
+  const expectedAlpha = expectedDocuments.find(
+    (document) => document.fields.title === "Voyant Alpine Escape",
+  )
+  const alpha = scanned.find((document) => document.id === expectedAlpha?.id)
   assert(alpha?.fields.title === "Voyant Alpine Escape", "admin scan omitted document fields")
   assert(!Object.hasOwn(alpha?.fields ?? {}, "id"), "admin scan leaked id into document fields")
-  if (vectorDimensions !== null) {
+  for (const expected of expectedDocuments.filter((document) => document.embeddings)) {
+    const actual = scanned.find((document) => document.id === expected.id)
     assert(
-      alpha.embeddings?.text_embedding?.length === vectorDimensions,
-      "admin scan did not preserve the document embedding",
+      sameJson(actual?.embeddings, expected.embeddings),
+      `admin scan did not preserve the exact embedding for ${expected.id}`,
     )
     assert(
-      alpha.embedding_model_id === "conformance-model",
-      "admin scan omitted embedding model id",
+      actual?.embedding_model_id === expected.embedding_model_id,
+      `admin scan did not preserve the embedding model id for ${expected.id}`,
     )
   }
 
@@ -497,7 +503,7 @@ function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): Ind
       id: ids.bravo,
       fields: {
         title: "Voyant Coastal Escape",
-        categorySlugs: ["beach"],
+        categorySlugs: ["beach", "ski"],
         priceFromAmountCents: 100,
         isFeatured: false,
       },
@@ -523,6 +529,18 @@ function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): Ind
   return documents
 }
 
+function fixtureKeywordOnlyDocument(id: string): IndexerDocument {
+  return {
+    id,
+    fields: {
+      title: "Voyant Keyword Signal",
+      categorySlugs: ["keyword-only"],
+      priceFromAmountCents: 250,
+      isFeatured: false,
+    },
+  }
+}
+
 interface FixtureIds extends IndexerCapabilityFixtureIds {
   alpha: string
   bravo: string
@@ -537,6 +555,7 @@ function fixtureIds(namespace: string): FixtureIds {
   return {
     alpha: `${namespace}-alpha`,
     bravo: `${namespace}-bravo`,
+    keywordOnly: `${namespace}-keyword-only`,
     charlie: `${namespace}-charlie`,
     isolated: `${namespace}-isolated`,
     admin: `${namespace}-admin`,

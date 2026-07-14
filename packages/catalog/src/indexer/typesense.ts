@@ -17,6 +17,8 @@ import {
   type IndexerDocument,
   type IndexerSlice,
   indexFieldNameForPolicyPath,
+  MAX_FACET_BUCKETS,
+  type SearchMode,
   type SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
@@ -85,7 +87,11 @@ export interface TypesenseCollectionSchema {
 
 export interface TypesenseSearchHit {
   document: Record<string, unknown>
-  text_match: number
+  text_match?: number
+  vector_distance?: number
+  hybrid_search_info?: {
+    rank_fusion_score: number
+  }
 }
 
 export interface TypesenseSearchResponse {
@@ -547,7 +553,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     if (includeEmbeddings) delete query.exclude_fields
     try {
       const response = await client.collections(name).documents().search(query)
-      return mapTypesenseResponse(response, query, request.facets)
+      return mapTypesenseResponse(response, query, request.mode, request.facets)
     } catch (error) {
       if (isCollectionNotFoundError(error)) return { hits: [], total: 0, facets: {} }
       throw error
@@ -782,35 +788,31 @@ function coerceBool(value: unknown): boolean | undefined {
 function mapTypesenseResponse(
   response: TypesenseSearchResponse,
   query: TypesenseSearchQuery,
+  mode: SearchMode,
   requestedFacets: FacetRequest[] | undefined,
 ): SearchResults {
   const hits = response.hits.map((hit) => {
     const document = mapTypesenseDocument(hit.document)
     return {
       id: document.id,
-      // Wildcard queries (`q=*`) and pure-vector searches don't compute a
-      // `text_match` score — fall back to 0 so downstream consumers always
-      // see a number.
-      score: hit.text_match ?? 0,
+      score: scoreTypesenseHit(hit, mode),
       document,
     }
   })
   const facetLimits = new Map(
-    (requestedFacets ?? []).flatMap(({ field, limit }) =>
-      limit === undefined
-        ? []
-        : [[indexFieldNameForPolicyPath(field), Math.max(1, Math.floor(limit))] as const],
-    ),
+    (requestedFacets ?? []).flatMap(({ field, limit }) => [
+      [
+        indexFieldNameForPolicyPath(field),
+        Math.min(Math.max(1, Math.floor(limit ?? MAX_FACET_BUCKETS)), MAX_FACET_BUCKETS),
+      ] as const,
+    ]),
   )
   const facets: Record<string, Array<{ value: string | number; count: number }>> | undefined =
     response.facet_counts
       ? Object.fromEntries(
           response.facet_counts.map((facet) => {
             const limit = facetLimits.get(facet.field_name)
-            return [
-              facet.field_name,
-              limit === undefined ? facet.counts : facet.counts.slice(0, limit),
-            ]
+            return [facet.field_name, facet.counts.slice(0, limit ?? MAX_FACET_BUCKETS)]
           }),
         )
       : undefined
@@ -822,6 +824,24 @@ function mapTypesenseResponse(
       : {}),
     facets,
   }
+}
+
+function scoreTypesenseHit(hit: TypesenseSearchHit, mode: SearchMode): number {
+  if (mode === "semantic") return normalizeCosineDistance(hit.vector_distance) ?? 0
+  if (mode === "hybrid") {
+    return (
+      hit.hybrid_search_info?.rank_fusion_score ??
+      normalizeCosineDistance(hit.vector_distance) ??
+      hit.text_match ??
+      0
+    )
+  }
+  return hit.text_match ?? 0
+}
+
+function normalizeCosineDistance(distance: number | undefined): number | undefined {
+  if (distance === undefined) return undefined
+  return Math.max(0, Math.min(1, 1 - distance / 2))
 }
 
 function mapTypesenseDocument(document: Record<string, unknown>): IndexerDocument {

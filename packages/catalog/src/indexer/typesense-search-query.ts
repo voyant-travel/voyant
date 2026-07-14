@@ -1,6 +1,7 @@
 import {
   type IndexerSlice,
   indexFieldNameForPolicyPath,
+  MAX_FACET_BUCKETS,
   resolveSearchSort,
   type SearchFilter,
   type SearchRequest,
@@ -22,8 +23,6 @@ export interface TypesenseSearchQuery {
   drop_tokens_threshold?: number
 }
 
-const TYPESENSE_UNLIMITED_FACET_VALUE_CAP = 250
-
 /**
  * Translates the catalog plane's `SearchRequest` into a Typesense query.
  * Converts the filter expression tree, the audience-scoped query, and the
@@ -41,7 +40,7 @@ export function buildSearchQuery(
   const page = parsePageCursor(request.pagination?.cursor) ?? 1
 
   const query: TypesenseSearchQuery = {
-    q: request.query.length > 0 ? request.query : "*",
+    q: request.mode === "semantic" || request.query.length === 0 ? "*" : request.query,
     query_by: buildDefaultTypesenseQueryBy(registry, slice),
     per_page: perPage,
     page,
@@ -57,16 +56,13 @@ export function buildSearchQuery(
 
   if (request.facets && request.facets.length > 0) {
     query.facet_by = request.facets.map((f) => normalizeTypesenseField(f.field)).join(",")
-    const hasUnlimitedFacet = request.facets.some(({ limit }) => limit === undefined)
-    const requestedLimits = request.facets.flatMap(({ limit }) =>
-      limit === undefined ? [] : [Math.max(1, Math.floor(limit))],
-    )
-    // Typesense applies one cap to every requested facet. An unlimited facet
-    // therefore raises the shared fetch cap to the adapter's full-result policy;
-    // explicit limits are applied independently while mapping the response.
+    // Typesense applies one shared cap to every requested facet. Fetch enough
+    // for the largest portable request, then apply each facet's limit while
+    // mapping the response.
     query.max_facet_values = Math.max(
-      ...(hasUnlimitedFacet ? [TYPESENSE_UNLIMITED_FACET_VALUE_CAP] : []),
-      ...requestedLimits,
+      ...request.facets.map(({ limit }) =>
+        Math.min(Math.max(1, Math.floor(limit ?? MAX_FACET_BUCKETS)), MAX_FACET_BUCKETS),
+      ),
     )
   }
 
