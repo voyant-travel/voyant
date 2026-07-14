@@ -1,3 +1,22 @@
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM "vouchers"
+    WHERE "code" IS NULL OR trim("code") = ''
+  ) THEN
+    RAISE EXCEPTION 'Cannot migrate Travel Credits: legacy stored-value codes must not be blank';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM "vouchers"
+    GROUP BY lower(trim("code"))
+    HAVING count(*) > 1
+  ) THEN
+    RAISE EXCEPTION 'Cannot migrate Travel Credits: legacy stored-value codes collide after trimming and case normalization';
+  END IF;
+END $$;--> statement-breakpoint
 ALTER TYPE "public"."voucher_source_type" RENAME TO "travel_credit_source_type";--> statement-breakpoint
 ALTER TYPE "public"."voucher_status" RENAME TO "travel_credit_status";--> statement-breakpoint
 ALTER TABLE "voucher_redemptions" RENAME TO "travel_credit_redemptions";--> statement-breakpoint

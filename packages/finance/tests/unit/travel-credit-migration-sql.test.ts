@@ -33,6 +33,13 @@ describe("Travel Credit schema migration", () => {
   })
 
   it("normalizes codes and adds replay-safe redemption keys", () => {
+    const blankCodeGuard = migration.indexOf(`trim("code") = ''`)
+    const collisionGuard = migration.indexOf(`GROUP BY lower(trim("code"))`)
+    const codeNormalization = migration.indexOf(`SET "code" = upper(trim("code"))`)
+
+    expect(blankCodeGuard).toBeGreaterThan(-1)
+    expect(collisionGuard).toBeGreaterThan(blankCodeGuard)
+    expect(codeNormalization).toBeGreaterThan(collisionGuard)
     expect(migration).toContain(`SET "code" = upper(trim("code"))`)
     expect(migration).toContain(
       `CREATE UNIQUE INDEX "uidx_travel_credits_code" ON "travel_credits" USING btree (lower("code"))`,

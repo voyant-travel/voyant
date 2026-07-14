@@ -165,6 +165,9 @@ const travelCreditRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidation
       }
       return c.json({ data: row }, 201)
     } catch (error) {
+      if (error instanceof TravelCreditServiceError && error.code === "invalid_code") {
+        return c.json({ error: error.message }, 400)
+      }
       if (error instanceof TravelCreditServiceError && error.code === "code_in_use") {
         return c.json({ error: "Travel credit code already in use" }, 409)
       }

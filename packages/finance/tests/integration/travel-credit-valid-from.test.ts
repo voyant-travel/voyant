@@ -242,6 +242,17 @@ describe.skipIf(!DB_AVAILABLE)("travel credit validity and redemption", () => {
       ).rejects.toMatchObject({ code: "code_in_use" })
     })
 
+    it("rejects a blank authored code instead of persisting an unusable credit", async () => {
+      await expect(
+        travelCreditsService.create(db, {
+          code: "   ",
+          currency: "EUR",
+          amountCents: 5000,
+          sourceType: "manual",
+        }),
+      ).rejects.toMatchObject({ code: "invalid_code" })
+    })
+
     it("persists seriesCode and validFrom on create", async () => {
       const row = await travelCreditsService.create(db, {
         currency: "EUR",

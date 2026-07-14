@@ -42,6 +42,11 @@ describe("insertTravelCreditSchema", () => {
     expect(result.issuedToPersonId).toBe("pers_abc")
   })
 
+  it("trims authored codes and rejects blank codes", () => {
+    expect(insertTravelCreditSchema.parse({ ...valid, code: "  gift-123  " }).code).toBe("gift-123")
+    expect(() => insertTravelCreditSchema.parse({ ...valid, code: "   " })).toThrow()
+  })
+
   it("rejects non-datetime expiresAt", () => {
     expect(() => insertTravelCreditSchema.parse({ ...valid, expiresAt: "2026-12-31" })).toThrow()
   })

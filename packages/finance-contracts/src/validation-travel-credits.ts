@@ -4,7 +4,7 @@ import { travelCreditSourceTypeSchema, travelCreditStatusSchema } from "./valida
 
 /** Issue a new travel credit. Code is generated server-side when not supplied. */
 export const insertTravelCreditSchema = z.object({
-  code: z.string().min(1).max(64).optional().nullable(),
+  code: z.string().trim().min(1).max(64).optional().nullable(),
   seriesCode: z.string().max(64).optional().nullable(),
   currency: z.string().min(3).max(3),
   amountCents: z.number().int().positive(),

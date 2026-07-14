@@ -18,6 +18,7 @@ type TravelCreditListQuery = z.infer<typeof travelCreditListQuerySchema>
 /**
  * Raised by the travel credit service. Code + message; route handlers map to HTTP.
  * Reasons the route layer cares about:
+ *  - `invalid_code`       — supplied code is blank after normalization
  *  - `code_in_use`        — supplied code collides with an existing travel credit
  *  - `travel_credit_not_found`  — id-not-found / code-not-found read path
  *  - `travel_credit_inactive`   — redeem attempted against non-active status
@@ -28,6 +29,7 @@ type TravelCreditListQuery = z.infer<typeof travelCreditListQuerySchema>
 export class TravelCreditServiceError extends Error {
   constructor(
     readonly code:
+      | "invalid_code"
       | "code_in_use"
       | "travel_credit_not_found"
       | "travel_credit_inactive"
@@ -125,7 +127,11 @@ export const travelCreditsService = {
   },
 
   async create(db: PostgresJsDatabase, input: CreateTravelCreditInput, issuedByUserId?: string) {
-    const code = input.code ? normalizeTravelCreditCode(input.code) : generateTravelCreditCode()
+    const normalizedCode = input.code == null ? null : normalizeTravelCreditCode(input.code)
+    if (normalizedCode === "") {
+      throw new TravelCreditServiceError("invalid_code", "Travel credit code cannot be blank")
+    }
+    const code = normalizedCode ?? generateTravelCreditCode()
     const [existing] = await db
       .select({ id: travelCredits.id })
       .from(travelCredits)
