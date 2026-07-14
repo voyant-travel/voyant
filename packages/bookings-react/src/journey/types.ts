@@ -102,15 +102,15 @@ export interface BillingExtrasContext {
 }
 
 /**
- * Props for the injectable voucher picker. The operator surface wires an async
- * combobox (search the admin vouchers list) so staff pick a voucher without
+ * Props for the injectable Travel Credit picker. The operator surface wires an async
+ * combobox (search the admin Travel Credit list) so staff pick stored value without
  * knowing the exact code; the storefront keeps the customer code-entry form.
  */
-export interface VoucherPickerProps {
-  /** Currently-linked voucher redemption on the draft, if any. */
-  value: { voucherId?: string; amountCents?: number }
-  /** Apply a picked voucher's full remaining balance — or clear with `null`. */
-  onApply: (picked: { voucherId: string; amountCents: number } | null) => void
+export interface TravelCreditPickerProps {
+  /** Currently linked Travel Credit redemption on the draft, if any. */
+  value: { travelCreditId?: string; amountCents?: number }
+  /** Apply a picked Travel Credit's full remaining balance, or clear with `null`. */
+  onApply: (picked: { travelCreditId: string; amountCents: number } | null) => void
   /** Booking currency + payable total, to display/cap the redemption. */
   currency?: string
   amountCents?: number
@@ -318,9 +318,9 @@ export interface BookingJourneyProps {
   /** Operator: pulls from CRM. Storefront: bare inline form. */
   renderLeadContactPicker?: (props: LeadContactPickerProps) => ReactNode
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => ReactNode
-  /** Operator-only voucher picker (async search). When omitted, the voucher
+  /** Operator-only Travel Credit picker (async search). When omitted, the
    *  control falls back to the customer code-entry form. */
-  renderVoucherPicker?: (props: VoucherPickerProps) => ReactNode
+  renderTravelCreditPicker?: (props: TravelCreditPickerProps) => ReactNode
 
   /**
    * Renders the Configure step's `"departure"` sub-step. Operator
@@ -350,7 +350,7 @@ export interface BookingJourneyProps {
   onBeforeStepAdvance?: BookingJourneyTransitionGuard
 
   /** Optional pre/post-step extension slots — useful when a
-   *  template wants to inject a custom block (e.g. coupon code
+   *  template wants to inject a custom block (e.g. Promotion Code
    *  banner, marketing opt-in). */
   renderConfigureExtras?: () => ReactNode
   /** Billing extras — receives the picked lead + departure so a template can,

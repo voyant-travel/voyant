@@ -3,7 +3,7 @@
  * (voyant#2114 / voyant#2208 — finance sub-batch 9C). Authored from the Drizzle
  * `$inferSelect` shapes of the payments-family tables (`supplier_payments`,
  * `payment_instruments`, `payment_authorizations`, `payment_captures`,
- * `vouchers`, `voucher_redemptions`) plus the enriched `UnifiedPaymentRow`
+ * `travel_credits`, `travel_credit_redemptions`) plus the enriched `UnifiedPaymentRow`
  * projection that `listAllPayments` / `getPaymentById` return.
  *
  * §17: timestamp / `date` columns serialize to strings over the wire; integer
@@ -28,7 +28,7 @@ const paymentMethodValues = [
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ] as const
 
@@ -39,7 +39,7 @@ const paymentInstrumentTypeValues = [
   "debit_card",
   "bank_account",
   "wallet",
-  "voucher",
+  "travel_credit",
   "direct_bill",
   "cash",
   "other",
@@ -76,14 +76,15 @@ const captureModeValues = ["automatic", "manual"] as const
 
 const paymentCaptureStatusValues = ["pending", "completed", "failed", "refunded", "voided"] as const
 
-const voucherStatusValues = ["active", "redeemed", "expired", "void"] as const
+const travelCreditStatusValues = ["active", "redeemed", "expired", "void"] as const
 
-const voucherSourceTypeValues = [
+const travelCreditSourceTypeValues = [
   "refund",
   "cancellation_credit",
   "gift",
   "manual",
-  "promo",
+  "goodwill",
+  "promotion",
 ] as const
 
 // --- unified payment (customer + supplier projection) ---------------------
@@ -210,19 +211,19 @@ export const paymentCaptureSchema = z.object({
   updatedAt: isoString,
 })
 
-// --- vouchers -------------------------------------------------------------
+// --- travel credits --------------------------------------------------------
 
-export const voucherSchema = z.object({
+export const travelCreditSchema = z.object({
   id: z.string(),
   code: z.string(),
   seriesCode: z.string().nullable(),
-  status: z.enum(voucherStatusValues),
+  status: z.enum(travelCreditStatusValues),
   currency: z.string(),
   initialAmountCents: z.number().int(),
   remainingAmountCents: z.number().int(),
   issuedToPersonId: z.string().nullable(),
   issuedToOrganizationId: z.string().nullable(),
-  sourceType: z.enum(voucherSourceTypeValues),
+  sourceType: z.enum(travelCreditSourceTypeValues),
   sourceBookingId: z.string().nullable(),
   sourcePaymentId: z.string().nullable(),
   validFrom: isoString.nullable(),
@@ -233,18 +234,23 @@ export const voucherSchema = z.object({
   updatedAt: isoString,
 })
 
-export const voucherRedemptionSchema = z.object({
+export const travelCreditRedemptionSchema = z.object({
   id: z.string(),
-  voucherId: z.string(),
+  travelCreditId: z.string(),
   bookingId: z.string(),
   paymentId: z.string().nullable(),
+  idempotencyKey: z.string().nullable(),
   amountCents: z.number().int(),
   createdAt: isoString,
   createdByUserId: z.string().nullable(),
 })
 
-/** `vouchers.redeem` returns the updated voucher + the inserted redemption row. */
-export const voucherRedeemResultSchema = z.object({
-  voucher: voucherSchema,
-  redemption: voucherRedemptionSchema.nullable(),
+export const travelCreditDetailSchema = travelCreditSchema.extend({
+  redemptions: z.array(travelCreditRedemptionSchema),
+})
+
+/** `travelCredits.redeem` returns the updated travel credit and redemption row. */
+export const travelCreditRedeemResultSchema = z.object({
+  travelCredit: travelCreditSchema,
+  redemption: travelCreditRedemptionSchema.nullable(),
 })

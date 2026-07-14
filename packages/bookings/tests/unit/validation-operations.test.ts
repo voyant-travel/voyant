@@ -98,15 +98,24 @@ describe("Booking fulfillment schema", () => {
   it("accepts valid fulfillment input", () => {
     const result = insertBookingFulfillmentSchema.parse({
       travelerId: "bkpt_123",
-      fulfillmentType: "voucher",
+      fulfillmentType: "service_voucher",
       deliveryChannel: "download",
-      artifactUrl: "https://example.com/voucher.pdf",
+      artifactUrl: "https://example.com/service-voucher.pdf",
     })
 
-    expect(result.fulfillmentType).toBe("voucher")
+    expect(result.fulfillmentType).toBe("service_voucher")
     expect(result.deliveryChannel).toBe("download")
     expect(result.status).toBe("issued")
     expect(result.travelerId).toBe("bkpt_123")
+  })
+
+  it("rejects the legacy voucher fulfillment value", () => {
+    expect(() =>
+      insertBookingFulfillmentSchema.parse({
+        fulfillmentType: "voucher",
+        deliveryChannel: "download",
+      }),
+    ).toThrow()
   })
 
   it("rejects invalid artifact url", () => {

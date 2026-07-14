@@ -119,7 +119,7 @@ export const bookingAllocationStatusEnum = pgEnum("booking_allocation_status", [
 ])
 
 export const bookingFulfillmentTypeEnum = pgEnum("booking_fulfillment_type", [
-  "voucher",
+  "service_voucher",
   "ticket",
   "pdf",
   "qr_code",

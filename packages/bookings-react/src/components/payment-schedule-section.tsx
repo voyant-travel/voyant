@@ -339,13 +339,13 @@ export function PaymentScheduleSection({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(["bank_transfer", "credit_card", "cash", "voucher", "other"] as const).map(
-                    (method) => (
-                      <SelectItem key={method} value={method}>
-                        {paymentMethodLabels[method === "credit_card" ? "card" : method]}
-                      </SelectItem>
-                    ),
-                  )}
+                  {(
+                    ["bank_transfer", "credit_card", "cash", "travel_credit", "other"] as const
+                  ).map((method) => (
+                    <SelectItem key={method} value={method}>
+                      {paymentMethodLabels[method === "credit_card" ? "card" : method]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

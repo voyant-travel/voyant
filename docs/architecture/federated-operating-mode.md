@@ -232,7 +232,7 @@ Record declared source capabilities, such as:
 - cancellation quote
 - cancellation execute
 - status retrieval
-- voucher retrieval
+- Service Voucher retrieval
 - webhook delivery
 - delta sync
 - backfill
@@ -372,14 +372,14 @@ Sourced sellable inventory and upstream booking operations.
 Current posture:
 
 Use the catalog `SourceAdapter` and booking-engine contracts. Extend them where
-real sources need status retrieval, voucher retrieval, amendments, or richer
+real sources need status retrieval, Service Voucher retrieval, amendments, or richer
 reconciliation.
 
 #### External booking status provider
 
 Purpose:
 
-Normalize upstream status, voucher, cancellation, amendment, and refund facts
+Normalize upstream status, Service Voucher, cancellation, amendment, and refund facts
 for bookings whose fulfillment is source-owned.
 
 Preferred direction:

@@ -54,8 +54,8 @@ function getMethodLabel(messages: OperatorAdminMessages, method: string) {
       return messages.finance.paymentMethodWallet
     case "direct_bill":
       return messages.finance.paymentMethodDirectBill
-    case "voucher":
-      return messages.finance.paymentMethodVoucher
+    case "travel_credit":
+      return messages.finance.paymentMethodTravelCredit
     case "other":
       return messages.finance.paymentMethodOther
     default:

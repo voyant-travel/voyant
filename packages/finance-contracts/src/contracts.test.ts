@@ -10,6 +10,7 @@ import {
   invoiceStatusSchema,
   paymentMethodSchema,
   taxClassListQuerySchema,
+  travelCreditSourceTypeSchema,
   updateBookingItemCommissionSchema,
   updateBookingItemTaxLineSchema,
   updatePaymentSchema,
@@ -20,11 +21,16 @@ describe("finance-contracts", () => {
   it("accepts valid enum values", () => {
     expect(invoiceStatusSchema.parse("issued")).toBe("issued")
     expect(paymentMethodSchema.parse("bank_transfer")).toBe("bank_transfer")
+    expect(paymentMethodSchema.parse("travel_credit")).toBe("travel_credit")
+    expect(travelCreditSourceTypeSchema.parse("goodwill")).toBe("goodwill")
+    expect(travelCreditSourceTypeSchema.parse("promotion")).toBe("promotion")
   })
 
   it("rejects invalid enum values", () => {
     expect(invoiceStatusSchema.safeParse("settled").success).toBe(false)
     expect(paymentMethodSchema.safeParse("bitcoin").success).toBe(false)
+    expect(paymentMethodSchema.safeParse("voucher").success).toBe(false)
+    expect(travelCreditSourceTypeSchema.safeParse("promo").success).toBe(false)
   })
 
   it("keeps payment idempotency keys create-only", () => {

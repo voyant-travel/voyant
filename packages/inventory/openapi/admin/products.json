@@ -744,7 +744,7 @@
                           "defaultDeliveryFormat": {
                             "type": "string",
                             "enum": [
-                              "voucher",
+                              "service_voucher",
                               "ticket",
                               "pdf",
                               "qr_code",
@@ -760,7 +760,7 @@
                           "barcodeFormat": {
                             "type": ["string", "null"]
                           },
-                          "voucherMessage": {
+                          "serviceVoucherMessage": {
                             "type": ["string", "null"]
                           },
                           "ticketMessage": {
@@ -780,7 +780,7 @@
                           "defaultDeliveryFormat",
                           "ticketPerUnit",
                           "barcodeFormat",
-                          "voucherMessage",
+                          "serviceVoucherMessage",
                           "ticketMessage",
                           "createdAt",
                           "updatedAt"
@@ -846,7 +846,7 @@
                         "defaultDeliveryFormat": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -862,7 +862,7 @@
                         "barcodeFormat": {
                           "type": ["string", "null"]
                         },
-                        "voucherMessage": {
+                        "serviceVoucherMessage": {
                           "type": ["string", "null"]
                         },
                         "ticketMessage": {
@@ -882,7 +882,7 @@
                         "defaultDeliveryFormat",
                         "ticketPerUnit",
                         "barcodeFormat",
-                        "voucherMessage",
+                        "serviceVoucherMessage",
                         "ticketMessage",
                         "createdAt",
                         "updatedAt"
@@ -943,7 +943,7 @@
                   "defaultDeliveryFormat": {
                     "type": "string",
                     "enum": [
-                      "voucher",
+                      "service_voucher",
                       "ticket",
                       "pdf",
                       "qr_code",
@@ -962,7 +962,7 @@
                     "type": ["string", "null"],
                     "maxLength": 100
                   },
-                  "voucherMessage": {
+                  "serviceVoucherMessage": {
                     "type": ["string", "null"]
                   },
                   "ticketMessage": {
@@ -997,7 +997,7 @@
                         "defaultDeliveryFormat": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -1013,7 +1013,7 @@
                         "barcodeFormat": {
                           "type": ["string", "null"]
                         },
-                        "voucherMessage": {
+                        "serviceVoucherMessage": {
                           "type": ["string", "null"]
                         },
                         "ticketMessage": {
@@ -1033,7 +1033,7 @@
                         "defaultDeliveryFormat",
                         "ticketPerUnit",
                         "barcodeFormat",
-                        "voucherMessage",
+                        "serviceVoucherMessage",
                         "ticketMessage",
                         "createdAt",
                         "updatedAt"
@@ -1163,7 +1163,7 @@
                   "defaultDeliveryFormat": {
                     "type": "string",
                     "enum": [
-                      "voucher",
+                      "service_voucher",
                       "ticket",
                       "pdf",
                       "qr_code",
@@ -1182,7 +1182,7 @@
                     "type": ["string", "null"],
                     "maxLength": 100
                   },
-                  "voucherMessage": {
+                  "serviceVoucherMessage": {
                     "type": ["string", "null"]
                   },
                   "ticketMessage": {
@@ -1217,7 +1217,7 @@
                         "defaultDeliveryFormat": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -1233,7 +1233,7 @@
                         "barcodeFormat": {
                           "type": ["string", "null"]
                         },
-                        "voucherMessage": {
+                        "serviceVoucherMessage": {
                           "type": ["string", "null"]
                         },
                         "ticketMessage": {
@@ -1253,7 +1253,7 @@
                         "defaultDeliveryFormat",
                         "ticketPerUnit",
                         "barcodeFormat",
-                        "voucherMessage",
+                        "serviceVoucherMessage",
                         "ticketMessage",
                         "createdAt",
                         "updatedAt"
@@ -1856,7 +1856,7 @@
                 "private",
                 "shared",
                 "digital_ticket",
-                "voucher_required",
+                "service_voucher_required",
                 "external_inventory",
                 "multi_day",
                 "accommodation",
@@ -1928,7 +1928,7 @@
                               "private",
                               "shared",
                               "digital_ticket",
-                              "voucher_required",
+                              "service_voucher_required",
                               "external_inventory",
                               "multi_day",
                               "accommodation",
@@ -2022,7 +2022,7 @@
                             "private",
                             "shared",
                             "digital_ticket",
-                            "voucher_required",
+                            "service_voucher_required",
                             "external_inventory",
                             "multi_day",
                             "accommodation",
@@ -2110,7 +2110,7 @@
                       "private",
                       "shared",
                       "digital_ticket",
-                      "voucher_required",
+                      "service_voucher_required",
                       "external_inventory",
                       "multi_day",
                       "accommodation",
@@ -2157,7 +2157,7 @@
                             "private",
                             "shared",
                             "digital_ticket",
-                            "voucher_required",
+                            "service_voucher_required",
                             "external_inventory",
                             "multi_day",
                             "accommodation",
@@ -2314,7 +2314,7 @@
                       "private",
                       "shared",
                       "digital_ticket",
-                      "voucher_required",
+                      "service_voucher_required",
                       "external_inventory",
                       "multi_day",
                       "accommodation",
@@ -2362,7 +2362,7 @@
                             "private",
                             "shared",
                             "digital_ticket",
-                            "voucher_required",
+                            "service_voucher_required",
                             "external_inventory",
                             "multi_day",
                             "accommodation",
@@ -2452,7 +2452,16 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["voucher", "ticket", "pdf", "qr_code", "barcode", "email", "mobile", "none"]
+              "enum": [
+                "service_voucher",
+                "ticket",
+                "pdf",
+                "qr_code",
+                "barcode",
+                "email",
+                "mobile",
+                "none"
+              ]
             },
             "required": false,
             "name": "format",
@@ -2502,7 +2511,7 @@
                           "format": {
                             "type": "string",
                             "enum": [
-                              "voucher",
+                              "service_voucher",
                               "ticket",
                               "pdf",
                               "qr_code",
@@ -2587,7 +2596,7 @@
                         "format": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -2666,7 +2675,7 @@
                   "format": {
                     "type": "string",
                     "enum": [
-                      "voucher",
+                      "service_voucher",
                       "ticket",
                       "pdf",
                       "qr_code",
@@ -2705,7 +2714,7 @@
                         "format": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -2853,7 +2862,7 @@
                   "format": {
                     "type": "string",
                     "enum": [
-                      "voucher",
+                      "service_voucher",
                       "ticket",
                       "pdf",
                       "qr_code",
@@ -2893,7 +2902,7 @@
                         "format": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",

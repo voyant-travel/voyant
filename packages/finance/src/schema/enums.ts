@@ -18,7 +18,7 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ])
 
@@ -55,7 +55,7 @@ export const paymentInstrumentTypeEnum = pgEnum("payment_instrument_type", [
   "debit_card",
   "bank_account",
   "wallet",
-  "voucher",
+  "travel_credit",
   "direct_bill",
   "cash",
   "other",
@@ -209,14 +209,20 @@ export const taxRegimeCodeEnum = pgEnum("tax_regime_code", [
   "other",
 ])
 
-export const voucherStatusEnum = pgEnum("voucher_status", ["active", "redeemed", "expired", "void"])
+export const travelCreditStatusEnum = pgEnum("travel_credit_status", [
+  "active",
+  "redeemed",
+  "expired",
+  "void",
+])
 
-export const voucherSourceTypeEnum = pgEnum("voucher_source_type", [
+export const travelCreditSourceTypeEnum = pgEnum("travel_credit_source_type", [
   "refund",
   "cancellation_credit",
   "gift",
   "manual",
-  "promo",
+  "goodwill",
+  "promotion",
 ])
 
 /**

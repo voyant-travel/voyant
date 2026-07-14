@@ -31,7 +31,13 @@ describe("finance deployment manifest", () => {
           id: "@voyant-travel/finance#api.public",
           surface: "public",
           openapi: { document: "finance" },
-          anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
+          anonymous: [
+            "/bookings",
+            "/collections",
+            "/payment-sessions",
+            "/accountant",
+            "/travel-credits",
+          ],
           runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
         },
       ],
@@ -41,8 +47,8 @@ describe("finance deployment manifest", () => {
         {
           id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",
           runtime: {
-            entry: "@voyant-travel/finance/setup/vouchers",
-            export: "runVoucherSetupMigration",
+            entry: "@voyant-travel/finance/setup/travel-credits",
+            export: "runTravelCreditSetupMigration",
           },
           dependsOn: ["@voyant-travel/finance#migrations"],
         },

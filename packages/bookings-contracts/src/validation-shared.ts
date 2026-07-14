@@ -75,7 +75,7 @@ export const bookingAllocationStatusSchema = z.enum([
 ])
 
 export const bookingFulfillmentTypeSchema = z.enum([
-  "voucher",
+  "service_voucher",
   "ticket",
   "pdf",
   "qr_code",

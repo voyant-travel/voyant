@@ -5,8 +5,8 @@ import {
   componentMutationsLockedForEnvelopeStatus,
   failuresToString,
   hydrateBilling,
+  hydrateTravelCredit,
   hydrateTravelers,
-  hydrateVoucher,
   paymentScheduleReserveValidationReason,
   paymentScheduleToRows,
   reserveResultFromApiError,
@@ -29,8 +29,8 @@ describe("admin trips page model", () => {
         { localId: "lead", firstName: "Ana", lastName: "Pop", email: "ana@example.com" },
         { personId: "per_2", firstName: "Mihai", role: "child" },
       ],
-      voucher: {
-        id: "vch_1",
+      travelCredit: {
+        id: "trc_1",
         code: "SUMMER",
         currency: "EUR",
         remainingAmountCents: 2500,
@@ -62,8 +62,8 @@ describe("admin trips page model", () => {
         role: "child",
       },
     ])
-    expect(hydrateVoucher(travelerParty).picked).toMatchObject({
-      id: "vch_1",
+    expect(hydrateTravelCredit(travelerParty).picked).toMatchObject({
+      id: "trc_1",
       code: "SUMMER",
       remainingAmountCents: 2500,
     })

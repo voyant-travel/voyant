@@ -7,11 +7,11 @@ import {
   useAdminNavigate,
 } from "@voyant-travel/admin"
 import { emptyPersonPickerValue } from "@voyant-travel/bookings-react/components/person-picker-section"
-import { emptyVoucherPickerValue } from "@voyant-travel/bookings-react/components/voucher-picker-section"
+import { emptyTravelCreditPickerValue } from "@voyant-travel/bookings-react/components/travel-credit-picker-section"
 import {
   PersonPickerSection,
   type PersonPickerValue,
-  type VoucherPickerValue,
+  type TravelCreditPickerValue,
 } from "@voyant-travel/bookings-react/ui"
 import { usePerson } from "@voyant-travel/relationships-react"
 import type { Trip, TripComponent } from "@voyant-travel/trips"
@@ -46,8 +46,8 @@ import {
   derivePayerName,
   failuresToString,
   hydrateBilling,
+  hydrateTravelCredit,
   hydrateTravelers,
-  hydrateVoucher,
   metadataWithComponentBookingSetup,
   paymentScheduleReserveValidationReason,
   pendingToAddInput,
@@ -99,7 +99,9 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
   const [notes, setNotes] = useState("")
   const [pending, setPending] = useState<PendingComponent[]>([])
   const [committingLocalId, setCommittingLocalId] = useState<string | null>(null)
-  const [voucher, setVoucher] = useState<VoucherPickerValue>(emptyVoucherPickerValue)
+  const [travelCredit, setTravelCredit] = useState<TravelCreditPickerValue>(
+    emptyTravelCreditPickerValue,
+  )
   const [createAsDraft, setCreateAsDraft] = useState(false)
   const [paymentCurrency, setPaymentCurrency] = useState(defaultPaymentCurrency)
   const [selectedCancellationIds, setSelectedCancellationIds] = useState<string[]>([])
@@ -148,7 +150,7 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
       setBilling(emptyPersonPickerValue)
       setTravelers([])
       setNotes("")
-      setVoucher(emptyVoucherPickerValue)
+      setTravelCredit(emptyTravelCreditPickerValue)
       setCreateAsDraft(false)
       setPaymentCurrency(defaultPaymentCurrency)
       return
@@ -156,7 +158,7 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
     setBilling(hydrateBilling(travelerParty))
     setTravelers(hydrateTravelers(travelerParty))
     setNotes(initialTrip.envelope.description ?? "")
-    setVoucher(hydrateVoucher(travelerParty))
+    setTravelCredit(hydrateTravelCredit(travelerParty))
     const constraints = initialTrip.envelope.constraints
     setCreateAsDraft(booleanFromRecord(constraints, "createAsDraft"))
     setPaymentCurrency(
@@ -178,12 +180,12 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
       travelerParty: {
         billing: serializeBilling(billing, payerName, payerEmail),
         travelers,
-        voucher: voucher.picked
+        travelCredit: travelCredit.picked
           ? {
-              id: voucher.picked.id,
-              code: voucher.picked.code,
-              currency: voucher.picked.currency,
-              remainingAmountCents: voucher.picked.remainingAmountCents,
+              id: travelCredit.picked.id,
+              code: travelCredit.picked.code,
+              currency: travelCredit.picked.currency,
+              remainingAmountCents: travelCredit.picked.remainingAmountCents,
             }
           : null,
       },
@@ -664,8 +666,8 @@ export function AdminTripsPage({ initialTrip = null }: AdminTripsPageProps): Rea
             travelers={travelers}
             billing={billing}
             billingPersonId={billing.mode === "existing" ? billing.personId || null : null}
-            voucher={voucher}
-            onVoucherChange={setVoucher}
+            travelCredit={travelCredit}
+            onTravelCreditChange={setTravelCredit}
             paymentCurrency={paymentCurrency}
           />
         </aside>

@@ -28,7 +28,7 @@ export {
   listPaymentSessionActionLedger,
   startPublicBookingGuaranteePaymentSession,
   startPublicBookingSchedulePaymentSession,
-  validatePublicVoucher,
+  validatePublicTravelCredit,
 } from "./operations.js"
 export {
   useVoyantFinanceContext,
@@ -96,8 +96,8 @@ export {
   getSupplierInvoiceQueryOptions,
   getSupplierInvoicesQueryOptions,
   getSupplierPaymentsQueryOptions,
+  getTravelCreditQueryOptions,
+  getTravelCreditsQueryOptions,
   getTravelerProfitabilityQueryOptions,
-  getVoucherQueryOptions,
-  getVouchersQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"

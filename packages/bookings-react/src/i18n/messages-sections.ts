@@ -109,7 +109,7 @@ export type BookingsUiSectionsMessages = {
       uploadFailed: string
     }
   }
-  voucherPickerSection: {
+  travelCreditPickerSection: {
     labels: {
       heading: string
       codePlaceholder: string

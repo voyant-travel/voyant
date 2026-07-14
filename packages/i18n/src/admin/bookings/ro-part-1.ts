@@ -179,10 +179,10 @@ export const adminBookingsMessagesRoPart1 = {
     bookingJourney: {
       travelerPickerLabel: "Cauta un contact",
       leadContactPickerLabel: "Contact principal",
-      voucherPickerLabel: "Voucher",
-      voucherSearchPlaceholder: "Cauta vouchere dupa cod…",
-      voucherEmpty: "Niciun voucher cu sold disponibil.",
-      voucherRemaining: "{amount} ramas",
+      travelCreditPickerLabel: "Credit de calatorie",
+      travelCreditSearchPlaceholder: "Cauta credite de calatorie dupa cod…",
+      travelCreditEmpty: "Niciun credit de calatorie cu sold disponibil.",
+      travelCreditRemaining: "{amount} ramas",
       duplicateDepartureWarning: "Acest client are deja o rezervare pe aceasta plecare:",
     },
     catalogSource: {

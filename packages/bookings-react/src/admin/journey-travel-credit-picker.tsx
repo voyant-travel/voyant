@@ -1,14 +1,14 @@
 "use client"
 
 /**
- * Admin voucher picker — an async combobox over the admin vouchers list.
- * Staff search by code and pick a voucher (the full remaining balance is
+ * Admin Travel Credit picker: an async combobox over the admin Travel Credit list.
+ * Staff search by code and pick a Travel Credit (the full remaining balance is
  * redeemed); they never need to know the exact code, unlike storefront
- * customers. Wired into `<BookingJourneyHost />` via `renderVoucherPicker`.
+ * customers. Wired into `<BookingJourneyHost />` via `renderTravelCreditPicker`.
  */
 
 import { useOperatorAdminMessages } from "@voyant-travel/admin"
-import { useVouchers, type VoucherRecord } from "@voyant-travel/finance-react"
+import { type TravelCreditRecord, useTravelCredits } from "@voyant-travel/finance-react"
 import {
   Combobox,
   ComboboxCollection,
@@ -21,7 +21,7 @@ import {
 import { Label } from "@voyant-travel/ui/components/label"
 import { useEffect, useState } from "react"
 
-import type { VoucherPickerProps } from "../journey/index.js"
+import type { TravelCreditPickerProps } from "../journey/index.js"
 
 function formatMoney(cents: number, currency: string): string {
   try {
@@ -31,44 +31,49 @@ function formatMoney(cents: number, currency: string): string {
   }
 }
 
-function voucherLabel(voucher: VoucherRecord): string {
-  return `${voucher.code} · ${formatMoney(voucher.remainingAmountCents, voucher.currency)}`
+function travelCreditLabel(travelCredit: TravelCreditRecord): string {
+  return `${travelCredit.code} · ${formatMoney(travelCredit.remainingAmountCents, travelCredit.currency)}`
 }
 
-export function JourneyVoucherPicker({ value, onApply }: VoucherPickerProps): React.ReactElement {
+export function JourneyTravelCreditPicker({
+  value,
+  onApply,
+}: TravelCreditPickerProps): React.ReactElement {
   const t = useOperatorAdminMessages().bookings.detail.bookingJourney
   const [inputValue, setInputValue] = useState("")
   const [search, setSearch] = useState("")
 
-  // Active vouchers with a remaining balance, filtered by the typed code.
-  const query = useVouchers({
+  // Active Travel Credits with a remaining balance, filtered by the typed code.
+  const query = useTravelCredits({
     status: "active",
     hasBalance: true,
     search: search || undefined,
     limit: 20,
   })
-  const vouchers = query.data?.data ?? []
-  const byId = new Map(vouchers.map((v) => [v.id, v] as const))
-  const selectedId = value.voucherId ?? null
+  const travelCredits = query.data?.data ?? []
+  const byId = new Map(
+    travelCredits.map((travelCredit) => [travelCredit.id, travelCredit] as const),
+  )
+  const selectedId = value.travelCreditId ?? null
 
-  // Reflect a pre-selected voucher's label once its record loads.
+  // Reflect a pre-selected Travel Credit's label once its record loads.
   useEffect(() => {
     if (selectedId && byId.has(selectedId)) {
-      setInputValue(voucherLabel(byId.get(selectedId)!))
+      setInputValue(travelCreditLabel(byId.get(selectedId)!))
     }
   }, [selectedId, byId])
 
   return (
     <div className="space-y-1">
-      <Label>{t.voucherPickerLabel}</Label>
+      <Label>{t.travelCreditPickerLabel}</Label>
       <Combobox
-        items={vouchers.map((v) => v.id)}
+        items={travelCredits.map((travelCredit) => travelCredit.id)}
         value={selectedId}
         inputValue={inputValue}
         autoHighlight
         itemToStringLabel={(id) => {
           const v = byId.get(id as string)
-          return v ? voucherLabel(v) : (id as string)
+          return v ? travelCreditLabel(v) : (id as string)
         }}
         itemToStringValue={(id) => id as string}
         onInputValueChange={(next) => {
@@ -85,14 +90,14 @@ export function JourneyVoucherPicker({ value, onApply }: VoucherPickerProps): Re
           }
           const v = byId.get(id)
           if (v) {
-            onApply({ voucherId: v.id, amountCents: v.remainingAmountCents })
-            setInputValue(voucherLabel(v))
+            onApply({ travelCreditId: v.id, amountCents: v.remainingAmountCents })
+            setInputValue(travelCreditLabel(v))
           }
         }}
       >
-        <ComboboxInput placeholder={t.voucherSearchPlaceholder} showClear={!!selectedId} />
+        <ComboboxInput placeholder={t.travelCreditSearchPlaceholder} showClear={!!selectedId} />
         <ComboboxContent>
-          <ComboboxEmpty>{t.voucherEmpty}</ComboboxEmpty>
+          <ComboboxEmpty>{t.travelCreditEmpty}</ComboboxEmpty>
           <ComboboxList>
             <ComboboxCollection>
               {(id) => {

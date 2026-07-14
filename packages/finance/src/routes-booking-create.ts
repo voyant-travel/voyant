@@ -13,7 +13,7 @@ import { dualCreateBooking, dualCreateBookingSchema } from "./service-bookings-d
 // --- Response schemas ------------------------------------------------------
 //
 // The success `data` payload is the rich `BookingCreateResult` — a composite of
-// cross-package Drizzle rows (booking, travelers, payment schedules, voucher,
+// cross-package Drizzle rows (booking, travelers, payment schedules, travel credit,
 // invoice, payments) owned by `@voyant-travel/bookings` / `finance`. To avoid
 // asserting (and drifting against) every column those packages own, the heavy
 // row sub-objects are modeled as opaque objects here; the documented contract is
@@ -26,7 +26,7 @@ const bookingCreateResultSchema = z.object({
   booking: opaqueRow,
   travelers: z.array(opaqueRow),
   paymentSchedules: z.array(opaqueRow),
-  voucherRedemption: z.object({ voucher: opaqueRow, redemption: opaqueRow }).nullable(),
+  travelCreditRedemption: z.object({ travelCredit: opaqueRow, redemption: opaqueRow }).nullable(),
   groupMembership: z.object({ groupId: z.string(), member: opaqueRow }).nullable(),
   invoice: opaqueRow.nullable(),
   invoiceDocument: z.union([
@@ -159,12 +159,12 @@ const createBookingRoute = createRoute({
       content: { "application/json": { schema: createBadRequestSchema } },
     },
     404: {
-      description: "Product, voucher, or booking group not found",
+      description: "Product, travel credit, or booking group not found",
       content: { "application/json": { schema: notFoundSchema } },
     },
     409: {
       description:
-        "Conflict: duplicate booking, voucher state conflict, or booking already in a group",
+        "Conflict: duplicate booking, travel credit state conflict, or booking already in a group",
       content: { "application/json": { schema: createConflictSchema } },
     },
   },
@@ -194,11 +194,11 @@ const dualCreateBookingRoute = createRoute({
       content: { "application/json": { schema: dualBadRequestSchema } },
     },
     404: {
-      description: "A sub-booking's product, voucher, or group was not found",
+      description: "A sub-booking's product, travel credit, or group was not found",
       content: { "application/json": { schema: notFoundSchema } },
     },
     409: {
-      description: "A sub-booking hit a duplicate / voucher / already-in-group conflict",
+      description: "A sub-booking hit a duplicate / travel credit / already-in-group conflict",
       content: { "application/json": { schema: dualConflictSchema } },
     },
     500: {
@@ -266,16 +266,16 @@ const createBookingRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidatio
         )
       case "product_not_found":
         return c.json({ error: "Product not found or unavailable" }, 404)
-      case "voucher_not_found":
-        return c.json({ error: "Voucher not found" }, 404)
-      case "voucher_inactive":
-        return c.json({ error: "Voucher is not active" }, 409)
-      case "voucher_not_started":
-        return c.json({ error: "Voucher is not yet valid" }, 409)
-      case "voucher_expired":
-        return c.json({ error: "Voucher has expired" }, 409)
-      case "voucher_insufficient_balance":
-        return c.json({ error: "Voucher does not have enough balance" }, 409)
+      case "travel_credit_not_found":
+        return c.json({ error: "Travel credit not found" }, 404)
+      case "travel_credit_inactive":
+        return c.json({ error: "Travel credit is not active" }, 409)
+      case "travel_credit_not_started":
+        return c.json({ error: "Travel credit is not yet valid" }, 409)
+      case "travel_credit_expired":
+        return c.json({ error: "Travel credit has expired" }, 409)
+      case "travel_credit_insufficient_balance":
+        return c.json({ error: "Travel credit does not have enough balance" }, 409)
       case "group_not_found":
         return c.json({ error: "Booking group not found" }, 404)
       case "booking_already_in_group":
@@ -357,16 +357,19 @@ const createBookingRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidatio
         )
       case "product_not_found":
         return c.json({ ...body, error: `${which}: product not found or unavailable` }, 404)
-      case "voucher_not_found":
-        return c.json({ ...body, error: `${which}: voucher not found` }, 404)
-      case "voucher_inactive":
-        return c.json({ ...body, error: `${which}: voucher is not active` }, 409)
-      case "voucher_not_started":
-        return c.json({ ...body, error: `${which}: voucher is not yet valid` }, 409)
-      case "voucher_expired":
-        return c.json({ ...body, error: `${which}: voucher has expired` }, 409)
-      case "voucher_insufficient_balance":
-        return c.json({ ...body, error: `${which}: voucher does not have enough balance` }, 409)
+      case "travel_credit_not_found":
+        return c.json({ ...body, error: `${which}: travel credit not found` }, 404)
+      case "travel_credit_inactive":
+        return c.json({ ...body, error: `${which}: travel credit is not active` }, 409)
+      case "travel_credit_not_started":
+        return c.json({ ...body, error: `${which}: travel credit is not yet valid` }, 409)
+      case "travel_credit_expired":
+        return c.json({ ...body, error: `${which}: travel credit has expired` }, 409)
+      case "travel_credit_insufficient_balance":
+        return c.json(
+          { ...body, error: `${which}: travel credit does not have enough balance` },
+          409,
+        )
       case "group_not_found":
         return c.json({ ...body, error: `${which}: group linking failed` }, 500)
       case "booking_already_in_group":

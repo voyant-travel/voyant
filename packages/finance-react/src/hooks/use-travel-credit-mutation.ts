@@ -6,57 +6,62 @@ import { fetchWithValidation } from "../client.js"
 import { useVoyantFinanceContext } from "../provider.js"
 import { financeQueryKeys } from "../query-keys.js"
 import {
-  type VoucherRecord,
-  type VoucherRedemptionResult,
-  voucherRedemptionResponse,
-  voucherSingleResponse,
+  type TravelCreditRecord,
+  type TravelCreditRedemptionResult,
+  travelCreditRedemptionResponse,
+  travelCreditSingleResponse,
 } from "../schemas.js"
 
-export interface IssueVoucherInput {
+export interface IssueTravelCreditInput {
   code?: string | null
+  seriesCode?: string | null
   currency: string
   amountCents: number
   issuedToPersonId?: string | null
   issuedToOrganizationId?: string | null
-  sourceType: "refund" | "cancellation_credit" | "gift" | "manual" | "promo"
+  sourceType: "refund" | "cancellation_credit" | "gift" | "manual" | "goodwill" | "promotion"
   sourceBookingId?: string | null
   sourcePaymentId?: string | null
+  validFrom?: string | null
   expiresAt?: string | null
   notes?: string | null
 }
 
-export interface UpdateVoucherInput {
-  status?: VoucherRecord["status"]
+export interface UpdateTravelCreditInput {
+  status?: TravelCreditRecord["status"]
+  seriesCode?: string | null
+  validFrom?: string | null
   expiresAt?: string | null
   notes?: string | null
   issuedToPersonId?: string | null
   issuedToOrganizationId?: string | null
 }
 
-export interface RedeemVoucherInput {
+export interface RedeemTravelCreditInput {
+  idempotencyKey: string
   bookingId: string
   amountCents: number
   paymentId?: string | null
 }
 
 /**
- * Voucher mutations: issue a new voucher, update metadata (status / expiry /
+ * Travel Credit mutations: issue new stored value, update metadata (status / expiry /
  * notes / assignment — NOT balance), or redeem against a booking. The redeem
  * mutation is the only path that decrements `remainingAmountCents`; the
  * server runs it transactionally with a redemption row.
  */
-export function useVoucherMutation() {
+export function useTravelCreditMutation() {
   const { baseUrl, fetcher } = useVoyantFinanceContext()
   const queryClient = useQueryClient()
 
   const invalidateLists = () =>
-    queryClient.invalidateQueries({ queryKey: financeQueryKeys.vouchers() })
+    queryClient.invalidateQueries({ queryKey: financeQueryKeys.travelCredits() })
 
   const issue = useMutation({
-    mutationFn: async (input: IssueVoucherInput) => {
+    mutationFn: async (input: IssueTravelCreditInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/admin/finance/vouchers",
-        voucherSingleResponse,
+        "/v1/admin/finance/travel-credits",
+        travelCreditSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
       )
@@ -64,15 +69,15 @@ export function useVoucherMutation() {
     },
     onSuccess: (data) => {
       invalidateLists()
-      queryClient.setQueryData(financeQueryKeys.voucher(data.id), { data })
+      queryClient.setQueryData(financeQueryKeys.travelCredit(data.id), { data })
     },
   })
 
   const update = useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: UpdateVoucherInput }) => {
+    mutationFn: async ({ id, input }: { id: string; input: UpdateTravelCreditInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/admin/finance/vouchers/${id}`,
-        voucherSingleResponse,
+        `/v1/admin/finance/travel-credits/${id}`,
+        travelCreditSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
       )
@@ -80,7 +85,7 @@ export function useVoucherMutation() {
     },
     onSuccess: (data) => {
       invalidateLists()
-      queryClient.setQueryData(financeQueryKeys.voucher(data.id), { data })
+      queryClient.setQueryData(financeQueryKeys.travelCredit(data.id), { data })
     },
   })
 
@@ -90,11 +95,11 @@ export function useVoucherMutation() {
       input,
     }: {
       id: string
-      input: RedeemVoucherInput
-    }): Promise<VoucherRedemptionResult> => {
+      input: RedeemTravelCreditInput
+    }): Promise<TravelCreditRedemptionResult> => {
       const { data } = await fetchWithValidation(
-        `/v1/admin/finance/vouchers/${id}/redeem`,
-        voucherRedemptionResponse,
+        `/v1/admin/finance/travel-credits/${id}/redeem`,
+        travelCreditRedemptionResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
       )
@@ -103,8 +108,10 @@ export function useVoucherMutation() {
     onSuccess: (result) => {
       invalidateLists()
       // Invalidate the detail entry — the redemption row should show up in
-      // the next `useVoucher` read.
-      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.voucher(result.voucher.id) })
+      // the next `useTravelCredit` read.
+      void queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.travelCredit(result.travelCredit.id),
+      })
     },
   })
 

@@ -106,14 +106,14 @@ The rule of thumb: if a reasonable read of "I need X" finds an existing primitiv
 A short inventory so we don't reinvent (full survey lives in the agent reports cited in the PR description):
 
 - **`packages/bookings/`** — `bookings`, `bookingTravelers`, `bookingItems`, `bookingAllocations`, `bookingGroups` schemas. Booking states: `draft`/`on_hold`/`confirmed`/`in_progress`/`completed`/`expired`/`cancelled`.
-- **`packages/bookings-react/`** — composable sections: `ProductPickerSection`, `RoomsStepperSection`, `PersonPickerSection`, `PassengersSection`, `PaymentScheduleSection`, `SharedRoomSection`, `VoucherPickerSection`, `PriceBreakdownSection`. Each carries a `value` / `onChange` contract, parent owns state.
+- **`packages/bookings-react/`** — composable sections: `ProductPickerSection`, `RoomsStepperSection`, `PersonPickerSection`, `PassengersSection`, `PaymentScheduleSection`, `SharedRoomSection`, `TravelCreditPickerSection`, `PriceBreakdownSection`. Each carries a `value` / `onChange` contract, parent owns state.
 - **`packages/operations/src/availability/`** — `availabilitySlots`, `useSlots`, `useSlotUnitAvailability`. Departure pickers for date / time / slot.
 - **`packages/commerce/src/pricing/`** — per-unit tier matching, `optionPriceRules` and `optionUnitPriceRules`. No unified `computeTotal()` exists yet.
 - **`packages/bookings/src/requirements/`** — `productContactRequirements`, `bookingQuestions`. Per-product per-field booking requirements (passport, dietary, etc.) with `scope` (booking/lead/traveler/booker), `isRequired`, `perTraveler`. **This is the canonical source of "what fields to collect" — the wizard reads from it.**
 - **Booking and Inventory extras owner paths** — Extras schema (selection types, pricing modes). The journey has a generic Extras step; vertical handlers still need richer commit wiring for selected Extras.
 - **Accommodation resale / trip composition** — stay-item shape (check-in/out, room option, occupancy, daily rates) for sourced accommodation or package components. Hotel/property operations are outside the booking journey scope.
-- **`packages/finance/`** — tax regimes, voucher redemption, checkout collection primitives. Product quote tax is wired through the operator starter's quote transform; broader per-line tax class support remains a handler-deepening task.
-- **`bookingsCreateExtension`** — `POST /v1/admin/bookings/create`. One-shot atomic transaction creating booking + travelers + payment schedules + voucher redemption + group membership. The products owned handler uses it as a bridge where the draft shape fits.
+- **`packages/finance/`** — tax regimes, Travel Credit redemption, checkout collection primitives. Product quote tax is wired through the operator starter's quote transform; broader per-line tax class support remains a handler-deepening task.
+- **`bookingsCreateExtension`** — `POST /v1/admin/bookings/create`. One-shot atomic transaction creating booking + travelers + payment schedules + Travel Credit redemption + group membership. The products owned handler uses it as a bridge where the draft shape fits.
 - **`packages/catalog/src/booking-engine/`** — `quoteEntity`, `bookEntity`, `cancelEntity`, `SourceAdapterRegistry`, `OwnedBookingHandlerRegistry`, `catalog_quotes`, `booking_drafts`, route factories, and V1 contracts. Dispatches sourced rows through adapters and owned rows through registered handlers.
 
 Remaining execution gaps are narrower than the original proposal:
@@ -288,7 +288,8 @@ interface BookingDraft {
   }
 
   // Optional cross-step
-  voucher?: { code: string }
+  travelCreditRedemption?: { travelCreditId: string; amountCents: number }
+  promotionCode?: string
   internalNotes?: string
 
   // Engine-controlled — written when /quote returns

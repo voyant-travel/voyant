@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import type { z } from "zod"
+import { bookingFulfillmentTypeSchema } from "../../src/customer-portal/validation-public/common.js"
 import {
   customerPortalBookingBillingContactSchema,
   customerPortalBookingDetailSchema,
@@ -203,7 +204,7 @@ describe("customer-portal booking response contracts", () => {
           id: "bful_123",
           bookingItemId: "bitm_123",
           travelerId: "btrv_123",
-          fulfillmentType: "voucher",
+          fulfillmentType: "service_voucher",
           deliveryChannel: "email",
           status: "issued",
           artifactUrl: null,
@@ -213,5 +214,10 @@ describe("customer-portal booking response contracts", () => {
 
     const parsed = customerPortalBookingDetailSchema.safeParse(jsonRoundTrip(detail).data)
     expect(parsed.success).toBe(true)
+  })
+
+  it("rejects the legacy voucher fulfillment value", () => {
+    expect(bookingFulfillmentTypeSchema.safeParse("service_voucher").success).toBe(true)
+    expect(bookingFulfillmentTypeSchema.safeParse("voucher").success).toBe(false)
   })
 })

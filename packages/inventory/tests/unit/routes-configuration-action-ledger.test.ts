@@ -133,7 +133,7 @@ describe("product configuration routes action ledger", () => {
     vi.spyOn(productsService, "getDeliveryFormatById").mockResolvedValue({
       id: "pdlf_1",
       productId: "prod_1",
-      format: "voucher",
+      format: "service_voucher",
       isDefault: true,
       createdAt: new Date("2026-05-17T10:00:00.000Z"),
       updatedAt: new Date("2026-05-17T10:00:00.000Z"),

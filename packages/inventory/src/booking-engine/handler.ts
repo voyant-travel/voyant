@@ -17,7 +17,7 @@
  *
  * Phase A scope (deliberately narrow):
  *   - Price = product.sellAmountCents × pax_count unless option/unit
- *     pricing, taxes, addons, or vouchers are present.
+ *     pricing, taxes, addons, or Travel Credits are present.
  *   - Commit goes through the bridge into `bookingsCreate`'s input
  *     shape — products-only, no extras / accommodations / cruises / encrypted
  *     travel details / snapshot graph.
@@ -145,10 +145,10 @@ export interface BookingCreateBridgeInput {
   /** Required by booking-create when confirmed != catalog. */
   priceOverrideReason?: string | null
   /**
-   * Gift / refund-credit voucher to redeem atomically inside the create
+   * Travel Credit to redeem atomically inside the create
    * transaction. booking-create re-validates status / expiry / balance.
    */
-  voucherRedemption?: { voucherId: string; amountCents: number }
+  travelCreditRedemption?: { travelCreditId: string; amountCents: number }
   taxLines?: Array<{
     code?: string | null
     name: string
@@ -260,7 +260,7 @@ export interface DraftLike {
   documentGeneration?: BookingCreateBridgeInput["documentGeneration"]
   suppressNotifications?: boolean
   priceOverride?: { amountCents: number; reason: string }
-  voucherRedemption?: { voucherId: string; amountCents: number }
+  travelCreditRedemption?: { travelCreditId: string; amountCents: number }
   addons?: Array<{
     extraId: string
     quantity: number
@@ -936,7 +936,7 @@ export function createProductsBookingHandler(
         // last name AND a real email or phone, and there must be at least one
         // traveler, each with a name (or linked person) and no placeholder
         // email. (The person/org-supplied operator + trips paths skip this
-        // block entirely; voucher/price-override rejections are operator-only
+        // block entirely; Travel Credit/price-override rejections are operator-only
         // fields absent from anonymous drafts.)
         const hasBillingContactPoint =
           Boolean(billingContact.email) || Boolean(billingContact.phone)
@@ -1013,9 +1013,9 @@ export function createProductsBookingHandler(
               priceOverrideReason: draft.priceOverride.reason.trim() || null,
             }
           : {}),
-        // Operator-applied gift / refund-credit voucher. booking-create
+        // Operator-applied Travel Credit. booking-create
         // redeems it atomically and re-checks status / expiry / balance.
-        voucherRedemption: draft.voucherRedemption,
+        travelCreditRedemption: draft.travelCreditRedemption,
         taxLines: extractTaxLines(request.pricing),
         itemLines: bookingItemLinesFromOptionSelections(optionSelections),
         extraLines: bookingExtraLinesFromAddonSelections({

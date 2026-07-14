@@ -95,8 +95,8 @@ Voyant product / option / unit
   -> customer books on channel
   -> channel reserves or books through Voyant adapter
   -> Voyant creates local booking + allocation
-  -> Voyant returns confirmation/voucher/reference
-  -> channel displays marketplace voucher/customer confirmation
+  -> Voyant returns confirmation/Service Voucher/reference
+  -> channel displays marketplace Service Voucher/customer confirmation
   -> post-book changes reconcile through channel booking links
 ```
 
@@ -341,7 +341,7 @@ Needed outputs:
 - lead traveler/contact required
 - hotel pickup field required
 - language selection required
-- voucher delivery constraints
+- Service Voucher delivery constraints
 - accessibility/dietary/free-text fields
 
 The adapter should normalize these into the channel-specific contract and validate incoming booking payloads against the active requirements.
@@ -353,7 +353,7 @@ For channel bookings, Voyant may need to return:
 - supplier confirmation number
 - booking reference
 - barcode or QR code
-- voucher URL
+- Service Voucher URL
 - ticket URL
 - per-traveler ticket artifacts
 - meeting/pickup instructions
@@ -362,7 +362,7 @@ For channel bookings, Voyant may need to return:
 
 Voyant should store channel-delivered references in `channelBookingLinks` and store actual fulfillment artifacts in booking fulfillment records.
 
-If the channel owns the customer voucher, Voyant still needs a supplier-side confirmation reference and operational check-in view.
+If the channel owns the customer Service Voucher, Voyant still needs a supplier-side confirmation reference and operational check-in view.
 
 ## 13. Post-Book Operations
 
@@ -372,7 +372,7 @@ Adapters should support, by capability:
 - amendment
 - reservation expiration
 - booking status lookup
-- voucher reissue
+- Service Voucher reissue
 - redemption verification
 - no-show or check-in status where applicable
 
@@ -399,7 +399,7 @@ Reconciliation should compare:
 - gross amount
 - commission/net amount
 - payout/remittance amount
-- voucher/reference state
+- Service Voucher/reference state
 
 The existing distribution reconciliation and settlement tables are the right home for this, but provider-specific processors are needed.
 
@@ -470,7 +470,7 @@ To make this production-ready, Voyant needs:
 8. Channel-specific reserve/book/cancel/amend handlers.
 9. Idempotency store keyed by channel request identifiers.
 10. Booking requirement export and inbound payload validation.
-11. Fulfillment/voucher/barcode mapping.
+11. Fulfillment/Service Voucher/barcode mapping.
 12. Channel booking reconciliation processors.
 13. Availability/pricing notification jobs where supported.
 14. Certification test harnesses for each channel.
@@ -527,7 +527,7 @@ Deliver:
 - cancellation
 - amendment where supported
 - booking status lookup
-- voucher/reference response
+- Service Voucher/reference response
 - redemption verification where supported
 
 ### Slice 5: Reconciliation And Operations

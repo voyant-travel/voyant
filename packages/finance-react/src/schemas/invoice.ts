@@ -27,7 +27,7 @@ export const paymentMethodSchema = z.enum([
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ])
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>

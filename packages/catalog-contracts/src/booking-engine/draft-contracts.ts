@@ -446,17 +446,17 @@ export const bookingDraftV1 = z.object({
     .optional(),
 
   /**
-   * Operator-applied gift / refund-credit voucher (admin review step).
-   * `voucherId` + `amountCents` mirror finance's `voucherRedemptionInput`
+   * Operator-applied Travel Credit (admin review step).
+   * `travelCreditId` + `amountCents` mirror Finance's redemption input
    * exactly; the owned handler forwards them to booking-create, which
-   * atomically redeems the voucher inside the create transaction after
+   * atomically redeems the Travel Credit inside the create transaction after
    * re-checking status / expiry / balance. The UI validates the code via
-   * `/v1/public/vouchers/validate` before writing this. Distinct from
+   * `/v1/public/finance/travel-credits/validate` before writing this. Distinct from
    * `promotionCode` (a customer discount code) — see the note there.
    */
-  voucherRedemption: z
+  travelCreditRedemption: z
     .object({
-      voucherId: z.string().min(1),
+      travelCreditId: z.string().min(1),
       amountCents: z.number().int().min(1),
     })
     .optional(),
@@ -468,9 +468,8 @@ export const bookingDraftV1 = z.object({
    * `code_*` `invalidReason` on the quote when the code is bad.
    *
    * Per docs/architecture/promotions-architecture.md §7.0 — renamed
-   * from the original placeholder `voucher: { code }` to avoid
-   * collision with the finance `vouchers` domain (gift / refund credit
-   * instruments at `packages/finance/src/schema.ts:239`).
+   * from the original placeholder code field to avoid
+   * collision with Finance Travel Credits.
    */
   promotionCode: z.string().optional(),
   /**

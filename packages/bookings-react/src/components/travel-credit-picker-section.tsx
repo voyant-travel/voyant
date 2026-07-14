@@ -1,40 +1,39 @@
 "use client"
 
-import { usePublicVoucherValidationMutation } from "@voyant-travel/finance-react"
+import { usePublicTravelCreditValidationMutation } from "@voyant-travel/finance-react"
 import { Button, Input, Label } from "@voyant-travel/ui/components"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
-/** Details of a successfully-validated voucher. */
-export interface PickedVoucher {
+/** Details of a successfully validated Travel Credit. */
+export interface PickedTravelCredit {
   id: string
   code: string
-  label: string | null
   currency: string | null
   remainingAmountCents: number | null
   expiresAt: string | null
 }
 
-export interface VoucherPickerValue {
+export interface TravelCreditPickerValue {
   /** Code typed by the operator. Not cleared on failure so they can correct a typo. */
   code: string
   /** Populated only when the last validate call succeeded. */
-  picked: PickedVoucher | null
+  picked: PickedTravelCredit | null
   /** Reason returned by the server when validate fails, or a client-side message. */
   error: string | null
 }
 
-export const emptyVoucherPickerValue: VoucherPickerValue = {
+export const emptyTravelCreditPickerValue: TravelCreditPickerValue = {
   code: "",
   picked: null,
   error: null,
 }
 
-export interface VoucherPickerSectionProps {
-  value: VoucherPickerValue
-  onChange: (value: VoucherPickerValue) => void
+export interface TravelCreditPickerSectionProps {
+  value: TravelCreditPickerValue
+  onChange: (value: TravelCreditPickerValue) => void
   /**
-   * Context for the validate call — when provided, the server rejects vouchers
+   * Context for the validate call. When provided, the server rejects Travel Credits
    * locked to a different booking / mismatched currency / insufficient balance.
    */
   bookingId?: string
@@ -51,28 +50,28 @@ export interface VoucherPickerSectionProps {
 }
 
 /**
- * Voucher picker for booking-create flows. Operator enters a code, clicks
- * Apply, and the server-side `/v1/public/vouchers/validate` runs all the
+ * Travel Credit picker for booking-create flows. The operator enters a code, clicks
+ * Apply, and the server-side `/v1/public/finance/travel-credits/validate` runs all the
  * usual guards (status, expiry, currency, booking-assignment, balance).
  *
  * The section only *validates* — it doesn't redeem. Redemption happens when
- * the parent calls `POST /v1/admin/finance/vouchers/:id/redeem` at submit time,
+ * the parent calls `POST /v1/admin/finance/travel-credits/:id/redeem` at submit time,
  * after the booking exists and the final amount is known. Validate being
  * idempotent means the operator can try a code, correct a typo, and try
  * again without leaving a trail.
  */
-export function VoucherPickerSection({
+export function TravelCreditPickerSection({
   value,
   onChange,
   bookingId,
   currency,
   amountCents,
   labels,
-}: VoucherPickerSectionProps) {
+}: TravelCreditPickerSectionProps) {
   const { formatCurrency } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
-  const merged = { ...messages.voucherPickerSection.labels, ...labels }
-  const validate = usePublicVoucherValidationMutation()
+  const merged = { ...messages.travelCreditPickerSection.labels, ...labels }
+  const validate = usePublicTravelCreditValidationMutation()
 
   const handleApply = async () => {
     const code = value.code.trim()
@@ -86,16 +85,15 @@ export function VoucherPickerSection({
         amountCents: amountCents ?? undefined,
       })
 
-      if (data.valid && data.voucher) {
+      if (data.valid && data.travelCredit) {
         onChange({
           code,
           picked: {
-            id: data.voucher.id,
-            code: data.voucher.code,
-            label: data.voucher.label,
-            currency: data.voucher.currency,
-            remainingAmountCents: data.voucher.remainingAmountCents,
-            expiresAt: data.voucher.expiresAt,
+            id: data.travelCredit.id,
+            code: data.travelCredit.code,
+            currency: data.travelCredit.currency,
+            remainingAmountCents: data.travelCredit.remainingAmountCents,
+            expiresAt: data.travelCredit.expiresAt,
           },
           error: null,
         })
@@ -106,9 +104,9 @@ export function VoucherPickerSection({
         code,
         picked: null,
         error:
-          messages.voucherPickerSection.reasonMessages[
-            data.reason as keyof typeof messages.voucherPickerSection.reasonMessages
-          ] ?? messages.voucherPickerSection.validation.invalid,
+          messages.travelCreditPickerSection.reasonMessages[
+            data.reason as keyof typeof messages.travelCreditPickerSection.reasonMessages
+          ] ?? messages.travelCreditPickerSection.validation.invalid,
       })
     } catch (err) {
       onChange({
@@ -117,12 +115,12 @@ export function VoucherPickerSection({
         error:
           err instanceof Error
             ? err.message
-            : messages.voucherPickerSection.validation.lookupFailed,
+            : messages.travelCreditPickerSection.validation.lookupFailed,
       })
     }
   }
 
-  const handleClear = () => onChange(emptyVoucherPickerValue)
+  const handleClear = () => onChange(emptyTravelCreditPickerValue)
 
   return (
     <div className="flex flex-col gap-2 rounded-md border p-3">
@@ -164,7 +162,7 @@ export function VoucherPickerSection({
             {merged.remainingLabel}{" "}
             <strong>
               {value.picked.remainingAmountCents == null || !value.picked.currency
-                ? messages.voucherPickerSection.validation.amountUnavailable
+                ? messages.travelCreditPickerSection.validation.amountUnavailable
                 : formatCurrency(value.picked.remainingAmountCents / 100, value.picked.currency)}
             </strong>
           </span>

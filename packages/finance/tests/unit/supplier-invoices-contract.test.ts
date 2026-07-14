@@ -310,7 +310,7 @@ describe("finance supplier-invoice single-entity response contracts", () => {
 describe("finance booking-finance read response contract", () => {
   const bookingPaymentSchema = z.object({
     id: z.string(),
-    source: z.enum(["payment", "voucher_redemption"]).default("payment"),
+    source: z.enum(["payment", "travel_credit_redemption"]).default("payment"),
     invoiceId: z.string().nullable(),
     invoiceNumber: z.string().nullable(),
     invoiceType: z.enum(["invoice", "proforma", "credit_note"]).nullable(),
@@ -348,12 +348,12 @@ describe("finance booking-finance read response contract", () => {
           },
           {
             id: "vred_000000000000000000000000",
-            source: "voucher_redemption",
+            source: "travel_credit_redemption",
             invoiceId: null,
             invoiceNumber: null,
             invoiceType: null,
             status: "completed",
-            paymentMethod: "voucher",
+            paymentMethod: "travel_credit",
             amountCents: 5000,
             currency: "EUR",
             baseCurrency: null,

@@ -50,9 +50,8 @@ export const publicStartPaymentSessionSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 
-export const publicValidateVoucherSchema = z.object({
+export const publicValidateTravelCreditSchema = z.object({
   code: z.string().min(1).max(255),
-  provider: z.string().max(255).optional().nullable(),
   bookingId: z.string().optional().nullable(),
   currency: z.string().min(3).max(3).optional().nullable(),
   amountCents: z.number().int().min(1).optional().nullable(),
@@ -243,7 +242,7 @@ export const publicFinanceDocumentLookupSchema = publicFinanceBookingDocumentSch
 
 export const publicFinanceBookingPaymentSchema = z.object({
   id: z.string(),
-  source: z.enum(["payment", "voucher_redemption"]).default("payment"),
+  source: z.enum(["payment", "travel_credit_redemption"]).default("payment"),
   invoiceId: z.string().nullable(),
   invoiceNumber: z.string().nullable(),
   invoiceType: publicFinanceInvoiceTypeSchema.nullable(),
@@ -269,7 +268,7 @@ export const publicBookingFinancePaymentsSchema = z.object({
   payments: z.array(publicFinanceBookingPaymentSchema),
 })
 
-export const publicVoucherValidationSchema = z.object({
+export const publicTravelCreditValidationSchema = z.object({
   valid: z.boolean(),
   reason: z
     .enum([
@@ -282,15 +281,10 @@ export const publicVoucherValidationSchema = z.object({
       "insufficient_balance",
     ])
     .nullable(),
-  voucher: z
+  travelCredit: z
     .object({
       id: z.string(),
       code: z.string(),
-      // Nullable: the new vouchers table (#239) doesn't carry a separate
-      // label column — display falls back to `code`. Legacy
-      // payment_instruments rows still populate this.
-      label: z.string().nullable(),
-      provider: z.string().nullable(),
       currency: z.string().nullable(),
       amountCents: z.number().int().nullable(),
       remainingAmountCents: z.number().int().nullable(),
@@ -311,5 +305,5 @@ export type PublicFinanceDocumentLookup = z.infer<typeof publicFinanceDocumentLo
 export type PublicFinanceBookingPayment = z.infer<typeof publicFinanceBookingPaymentSchema>
 export type PublicBookingFinancePayments = z.infer<typeof publicBookingFinancePaymentsSchema>
 export type PublicStartPaymentSessionInput = z.infer<typeof publicStartPaymentSessionSchema>
-export type PublicValidateVoucherInput = z.infer<typeof publicValidateVoucherSchema>
-export type PublicVoucherValidationResult = z.infer<typeof publicVoucherValidationSchema>
+export type PublicValidateTravelCreditInput = z.infer<typeof publicValidateTravelCreditSchema>
+export type PublicTravelCreditValidationResult = z.infer<typeof publicTravelCreditValidationSchema>

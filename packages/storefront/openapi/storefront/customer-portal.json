@@ -4058,7 +4058,7 @@
                                       "cheque",
                                       "wallet",
                                       "direct_bill",
-                                      "voucher",
+                                      "travel_credit",
                                       "other"
                                     ]
                                   },
@@ -4113,7 +4113,7 @@
                               "fulfillmentType": {
                                 "type": "string",
                                 "enum": [
-                                  "voucher",
+                                  "service_voucher",
                                   "ticket",
                                   "pdf",
                                   "qr_code",

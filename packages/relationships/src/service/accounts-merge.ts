@@ -58,7 +58,7 @@ const OPTIONAL_PERSON_REFERENCES: OptionalReference[] = [
   { table: "order_staff_assignments", column: "person_id" },
   { table: "order_terms", column: "accepted_by" },
   { table: "invoices", column: "person_id" },
-  { table: "vouchers", column: "issued_to_person_id" },
+  { table: "travel_credits", column: "issued_to_person_id" },
   { table: "payment_instruments", column: "person_id" },
   { table: "payment_sessions", column: "payer_person_id" },
   { table: "contracts", column: "person_id" },
@@ -76,7 +76,7 @@ const OPTIONAL_ORGANIZATION_REFERENCES: OptionalReference[] = [
   { table: "offers", column: "organization_id" },
   { table: "orders", column: "organization_id" },
   { table: "invoices", column: "organization_id" },
-  { table: "vouchers", column: "issued_to_organization_id" },
+  { table: "travel_credits", column: "issued_to_organization_id" },
   { table: "payment_instruments", column: "organization_id" },
   { table: "payment_sessions", column: "payer_organization_id" },
   { table: "contracts", column: "organization_id" },
@@ -297,6 +297,7 @@ async function mergeEntityLinks(
   // keeper's, keeper winning on key collisions (`loser || keeper`).
   const table = entityTableName(entityType)
   if (table) {
+    // agent-quality: raw-sql reviewed -- owner: relationships; table names come from the closed entityTableName mapping and values remain bound parameters.
     await db.execute(
       sql`UPDATE ${sql.identifier(table)} k
             SET custom_fields = m.custom_fields || k.custom_fields, updated_at = now()

@@ -42,12 +42,12 @@ export interface BookingPaymentSummaryPaymentRow {
   notes: string | null
 }
 
-export interface BookingPaymentSummaryVoucherRedemptionRow
+export interface BookingPaymentSummaryTravelCreditRedemptionRow
   extends Omit<
     BookingPaymentSummaryPaymentRow,
     "source" | "invoiceId" | "invoiceNumber" | "invoiceType"
   > {
-  source: "voucher_redemption"
+  source: "travel_credit_redemption"
   invoiceId: null
   invoiceNumber: null
   invoiceType: null
@@ -55,7 +55,7 @@ export interface BookingPaymentSummaryVoucherRedemptionRow
 
 export type BookingPaymentsSummaryRow =
   | BookingPaymentSummaryPaymentRow
-  | BookingPaymentSummaryVoucherRedemptionRow
+  | BookingPaymentSummaryTravelCreditRedemptionRow
 
 type BookingPaymentsSummaryInputRow = {
   id: string
@@ -192,10 +192,10 @@ export function BookingPaymentsSummary({
 
         const source = payment.source ?? "payment"
 
-        if (source === "voucher_redemption") {
+        if (source === "travel_credit_redemption") {
           return {
             ...base,
-            source: "voucher_redemption" as const,
+            source: "travel_credit_redemption" as const,
             invoiceId: null,
             invoiceNumber: null,
             invoiceType: null,

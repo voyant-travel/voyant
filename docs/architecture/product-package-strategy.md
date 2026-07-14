@@ -81,7 +81,7 @@ Typical emphasis:
 - availability and allocation
 - extras and product-internal add-ons
 - bookings, traveler records, rooming lists
-- documents, vouchers, checkout, finance
+- documents, Travel Credits, checkout, finance
 - supplier costs and profitability
 
 ### B2B DMC
@@ -97,7 +97,7 @@ Typical emphasis:
 - itinerary composition and manual placeholders
 - supplier costing and margin control
 - local operations: guides, vehicles, transfers, meeting points, allocations
-- staged invoices, payment terms, vouchers, and operational documents
+- staged invoices, payment terms, Travel Credits, and operational documents
 
 This is not a separate architecture family from tour operators. It is the same
 core with a B2B quotes surface and deeper operations.
@@ -169,7 +169,7 @@ and extension Interfaces, not domain records.
 | `bookings` | booking sessions, reservation orchestration, booking requirements, travelers, booking items, allocations as commitment records, fulfillment/redemption, customer-safe booking state | slot/resource truth, price-rule authoring |
 | `operations` | operated execution: availability, resources, allocation resources, places, ground logistics, guides, vehicles, Room Resource Holds, and Space Resource Holds | sourced catalog discovery, invoices/payments, Quote / Quote Version records and state transitions |
 | `mice` | MICE Program lifecycle, program requirements, agenda/sessions, delegate/attendee roster, rooming manifest, RFP/bid workflow, Program Room Blocks, Program Space Blocks, program-level status, and links to bookings, quotes, contracts, and invoices | low-level availability/resource/space truth, Room Resource Hold / Space Resource Hold execution, Quote / Quote Version lifecycle, booking commitment records, invoices/payments/ledger state, supplier/channel identity |
-| `finance` | checkout collection orchestration, payment sessions, payment schedules, invoices, credit notes, tax persistence, supplier invoices, vouchers, settlement, profitability | quote-time price-rule selection, catalog content |
+| `finance` | checkout collection orchestration, payment sessions, payment schedules, invoices, credit notes, tax persistence, supplier invoices, Travel Credits, settlement, profitability | quote-time price-rule selection, catalog content |
 | `distribution` | supplier-side and channel-side commercial network: suppliers, channels, source/operator links, external refs, mappings, allotments, channel push, webhooks, reconciliation, and supplier/channel identity links | internal price formation and finance ledger state |
 | `legal` | contracts, terms, signatures, templates, legal documents | quote composition, payments |
 | `admin` | packaged staff shell and extension surfaces | domain records |
@@ -1329,7 +1329,7 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyant-travel/finance`, `@voyant-travel/finance-react` | Keep as Finance and deepen it with checkout. | Finance owns invoices, payments, payment sessions, tax persistence, supplier invoices, vouchers, settlement, and profitability. |
+| `@voyant-travel/finance`, `@voyant-travel/finance-react` | Keep as Finance and deepen it with checkout. | Finance owns invoices, payments, payment sessions, tax persistence, supplier invoices, Travel Credits, settlement, and profitability. |
 | `@voyant-travel/legal`, `@voyant-travel/legal-react` | Keep separate. | Legal documents, contracts, terms, templates, signatures, and legal workflows cut across quotes, bookings, Distribution, and finance. |
 | `@voyant-travel/distribution`, `@voyant-travel/distribution-react` | Keep as the proposed Distribution Module name and absorb supplier/external-ref scope if the broader commercial-network definition is accepted. | Distribution owns supplier-side and channel-side commercial network concerns: Suppliers, Channels, mappings, allotments, channel push, source/operator links, reconciliation, and integration-facing references. |
 | retired beta Supplier and External Ref packages | Removed from the v1 workspace surface. | Supplier remains a distinct role/entity inside Distribution; external refs are shared integration plumbing for channels, suppliers, sourced inventory, and external systems. |

@@ -76,7 +76,7 @@ export function ReviewStep({
           </ul>
         </div>
         {/* Public storefront collects a customer-facing note. Operator
-            finalize controls (internal notes, price override, voucher, document
+            finalize controls (internal notes, price override, Travel Credit, document
             generation) live on the Payment block, not here. */}
         {isPublic ? (
           <div className="space-y-1">

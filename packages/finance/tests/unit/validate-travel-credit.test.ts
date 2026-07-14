@@ -2,24 +2,17 @@ import { describe, expect, it, vi } from "vitest"
 
 import { publicFinanceService } from "../../src/service-public.js"
 
-describe("publicFinanceService.validateVoucher — new vouchers table path", () => {
-  function makeDb(options: {
-    voucherRow?: Record<string, unknown> | null
-    paymentInstrumentRow?: Record<string, unknown> | null
-  }) {
+describe("publicFinanceService.validateTravelCredit", () => {
+  function makeDb(options: { travelCreditRow?: Record<string, unknown> | null }) {
     // Minimal drizzle chain stub: each builder call returns an object with
     // the next-step method, resolving to an array the service destructures.
-    let selectCall = 0
     return {
       select: vi.fn(() => ({
         from: vi.fn(() => {
-          const row = selectCall++ === 0 ? options.voucherRow : options.paymentInstrumentRow
+          const row = options.travelCreditRow
           return {
             where: vi.fn(() => ({
               limit: vi.fn(async () => (row ? [row] : [])),
-              orderBy: vi.fn(() => ({
-                limit: vi.fn(async () => (row ? [row] : [])),
-              })),
             })),
           }
         }),
@@ -27,9 +20,9 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
     }
   }
 
-  it("returns valid when a matching row exists in the new vouchers table", async () => {
+  it("returns valid when a matching travel credit exists", async () => {
     const db = makeDb({
-      voucherRow: {
+      travelCreditRow: {
         id: "vch_abc",
         code: "GIFT-123",
         status: "active",
@@ -41,12 +34,12 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
       },
     })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "GIFT-123",
     })
 
     expect(result.valid).toBe(true)
-    expect(result.voucher).toMatchObject({
+    expect(result.travelCredit).toMatchObject({
       id: "vch_abc",
       code: "GIFT-123",
       currency: "EUR",
@@ -57,7 +50,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
 
   it("matches case-insensitively so operators can paste the code as-typed", async () => {
     const db = makeDb({
-      voucherRow: {
+      travelCreditRow: {
         id: "vch_abc",
         code: "gift-abc",
         status: "active",
@@ -69,17 +62,17 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
       },
     })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "  GIFT-ABC  ",
     })
 
     expect(result.valid).toBe(true)
-    expect(result.voucher?.id).toBe("vch_abc")
+    expect(result.travelCredit?.id).toBe("vch_abc")
   })
 
   it("returns inactive when status is not active", async () => {
     const db = makeDb({
-      voucherRow: {
+      travelCreditRow: {
         id: "vch_abc",
         code: "GIFT-123",
         status: "redeemed",
@@ -91,7 +84,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
       },
     })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "GIFT-123",
     })
 
@@ -101,7 +94,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
 
   it("returns expired when the expiresAt is in the past", async () => {
     const db = makeDb({
-      voucherRow: {
+      travelCreditRow: {
         id: "vch_abc",
         code: "GIFT-123",
         status: "active",
@@ -113,7 +106,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
       },
     })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "GIFT-123",
     })
 
@@ -123,7 +116,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
 
   it("returns insufficient_balance when the requested amount exceeds remaining", async () => {
     const db = makeDb({
-      voucherRow: {
+      travelCreditRow: {
         id: "vch_abc",
         code: "GIFT-123",
         status: "active",
@@ -135,7 +128,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
       },
     })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "GIFT-123",
       amountCents: 5000,
     })
@@ -144,9 +137,9 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
     expect(result.reason).toBe("insufficient_balance")
   })
 
-  it("returns booking_mismatch when a sourceBookingId pins the voucher to a different booking", async () => {
+  it("returns booking_mismatch when a sourceBookingId pins the travel credit elsewhere", async () => {
     const db = makeDb({
-      voucherRow: {
+      travelCreditRow: {
         id: "vch_abc",
         code: "GIFT-123",
         status: "active",
@@ -158,7 +151,7 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
       },
     })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "GIFT-123",
       bookingId: "book_abc",
     })
@@ -167,43 +160,15 @@ describe("publicFinanceService.validateVoucher — new vouchers table path", () 
     expect(result.reason).toBe("booking_mismatch")
   })
 
-  it("falls back to the legacy payment_instruments path when no new-table row exists", async () => {
-    const db = makeDb({
-      voucherRow: null,
-      paymentInstrumentRow: {
-        id: "pmin_legacy",
-        status: "active",
-        externalToken: "LEGACY-42",
-        directBillReference: null,
-        label: "Legacy voucher",
-        provider: null,
-        metadata: {
-          code: "LEGACY-42",
-          currency: "EUR",
-          amountCents: 2000,
-          remainingAmountCents: 2000,
-        },
-      },
-    })
+  it("returns not_found when no travel credit matches", async () => {
+    const db = makeDb({ travelCreditRow: null })
 
-    const result = await publicFinanceService.validateVoucher(db as never, {
-      code: "LEGACY-42",
-    })
-
-    expect(result.valid).toBe(true)
-    expect(result.voucher?.id).toBe("pmin_legacy")
-    expect(result.voucher?.remainingAmountCents).toBe(2000)
-  })
-
-  it("returns not_found when neither table has a match", async () => {
-    const db = makeDb({ voucherRow: null, paymentInstrumentRow: null })
-
-    const result = await publicFinanceService.validateVoucher(db as never, {
+    const result = await publicFinanceService.validateTravelCredit(db as never, {
       code: "NOPE",
     })
 
     expect(result.valid).toBe(false)
     expect(result.reason).toBe("not_found")
-    expect(result.voucher).toBeNull()
+    expect(result.travelCredit).toBeNull()
   })
 })

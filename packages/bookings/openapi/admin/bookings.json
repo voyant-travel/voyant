@@ -725,7 +725,7 @@
                               "fulfillmentType": {
                                 "type": "string",
                                 "enum": [
-                                  "voucher",
+                                  "service_voucher",
                                   "ticket",
                                   "pdf",
                                   "qr_code",
@@ -7823,7 +7823,7 @@
                           "fulfillmentType": {
                             "type": "string",
                             "enum": [
-                              "voucher",
+                              "service_voucher",
                               "ticket",
                               "pdf",
                               "qr_code",
@@ -7917,7 +7917,15 @@
                   },
                   "fulfillmentType": {
                     "type": "string",
-                    "enum": ["voucher", "ticket", "pdf", "qr_code", "barcode", "mobile", "other"]
+                    "enum": [
+                      "service_voucher",
+                      "ticket",
+                      "pdf",
+                      "qr_code",
+                      "barcode",
+                      "mobile",
+                      "other"
+                    ]
                   },
                   "deliveryChannel": {
                     "type": "string",
@@ -7976,7 +7984,7 @@
                         "fulfillmentType": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -8111,7 +8119,15 @@
                   },
                   "fulfillmentType": {
                     "type": "string",
-                    "enum": ["voucher", "ticket", "pdf", "qr_code", "barcode", "mobile", "other"]
+                    "enum": [
+                      "service_voucher",
+                      "ticket",
+                      "pdf",
+                      "qr_code",
+                      "barcode",
+                      "mobile",
+                      "other"
+                    ]
                   },
                   "deliveryChannel": {
                     "type": "string",
@@ -8169,7 +8185,7 @@
                         "fulfillmentType": {
                           "type": "string",
                           "enum": [
-                            "voucher",
+                            "service_voucher",
                             "ticket",
                             "pdf",
                             "qr_code",
@@ -12954,10 +12970,10 @@
                       "required": ["dueDate", "currency", "amountCents"]
                     }
                   },
-                  "voucherRedemption": {
+                  "travelCreditRedemption": {
                     "type": "object",
                     "properties": {
-                      "voucherId": {
+                      "travelCreditId": {
                         "type": "string",
                         "minLength": 1
                       },
@@ -12966,7 +12982,7 @@
                         "minimum": 1
                       }
                     },
-                    "required": ["voucherId", "amountCents"]
+                    "required": ["travelCreditId", "amountCents"]
                   },
                   "groupMembership": {
                     "oneOf": [
@@ -13075,10 +13091,10 @@
                             "additionalProperties": {}
                           }
                         },
-                        "voucherRedemption": {
+                        "travelCreditRedemption": {
                           "type": ["object", "null"],
                           "properties": {
-                            "voucher": {
+                            "travelCredit": {
                               "type": "object",
                               "additionalProperties": {}
                             },
@@ -13087,7 +13103,7 @@
                               "additionalProperties": {}
                             }
                           },
-                          "required": ["voucher", "redemption"]
+                          "required": ["travelCredit", "redemption"]
                         },
                         "groupMembership": {
                           "type": ["object", "null"],
@@ -13158,7 +13174,7 @@
                         "booking",
                         "travelers",
                         "paymentSchedules",
-                        "voucherRedemption",
+                        "travelCreditRedemption",
                         "groupMembership",
                         "invoice",
                         "invoiceDocument",
@@ -13623,10 +13639,10 @@
                           "required": ["dueDate", "currency", "amountCents"]
                         }
                       },
-                      "voucherRedemption": {
+                      "travelCreditRedemption": {
                         "type": "object",
                         "properties": {
-                          "voucherId": {
+                          "travelCreditId": {
                             "type": "string",
                             "minLength": 1
                           },
@@ -13635,7 +13651,7 @@
                             "minimum": 1
                           }
                         },
-                        "required": ["voucherId", "amountCents"]
+                        "required": ["travelCreditId", "amountCents"]
                       },
                       "documentGeneration": {
                         "type": "object",
@@ -13992,10 +14008,10 @@
                           "required": ["dueDate", "currency", "amountCents"]
                         }
                       },
-                      "voucherRedemption": {
+                      "travelCreditRedemption": {
                         "type": "object",
                         "properties": {
-                          "voucherId": {
+                          "travelCreditId": {
                             "type": "string",
                             "minLength": 1
                           },
@@ -14004,7 +14020,7 @@
                             "minimum": 1
                           }
                         },
-                        "required": ["voucherId", "amountCents"]
+                        "required": ["travelCreditId", "amountCents"]
                       },
                       "documentGeneration": {
                         "type": "object",
@@ -14090,10 +14106,10 @@
                                 "additionalProperties": {}
                               }
                             },
-                            "voucherRedemption": {
+                            "travelCreditRedemption": {
                               "type": ["object", "null"],
                               "properties": {
-                                "voucher": {
+                                "travelCredit": {
                                   "type": "object",
                                   "additionalProperties": {}
                                 },
@@ -14102,7 +14118,7 @@
                                   "additionalProperties": {}
                                 }
                               },
-                              "required": ["voucher", "redemption"]
+                              "required": ["travelCredit", "redemption"]
                             },
                             "groupMembership": {
                               "type": ["object", "null"],
@@ -14173,7 +14189,7 @@
                             "booking",
                             "travelers",
                             "paymentSchedules",
-                            "voucherRedemption",
+                            "travelCreditRedemption",
                             "groupMembership",
                             "invoice",
                             "invoiceDocument",
@@ -14201,10 +14217,10 @@
                                 "additionalProperties": {}
                               }
                             },
-                            "voucherRedemption": {
+                            "travelCreditRedemption": {
                               "type": ["object", "null"],
                               "properties": {
-                                "voucher": {
+                                "travelCredit": {
                                   "type": "object",
                                   "additionalProperties": {}
                                 },
@@ -14213,7 +14229,7 @@
                                   "additionalProperties": {}
                                 }
                               },
-                              "required": ["voucher", "redemption"]
+                              "required": ["travelCredit", "redemption"]
                             },
                             "groupMembership": {
                               "type": ["object", "null"],
@@ -14284,7 +14300,7 @@
                             "booking",
                             "travelers",
                             "paymentSchedules",
-                            "voucherRedemption",
+                            "travelCreditRedemption",
                             "groupMembership",
                             "invoice",
                             "invoiceDocument",

@@ -17,7 +17,7 @@ export const paymentMethodSchema = z.enum([
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ])
 export const paymentStatusSchema = z.enum(["pending", "completed", "failed", "refunded"])
@@ -45,7 +45,7 @@ export const paymentInstrumentTypeSchema = z.enum([
   "debit_card",
   "bank_account",
   "wallet",
-  "voucher",
+  "travel_credit",
   "direct_bill",
   "cash",
   "other",
@@ -134,13 +134,14 @@ export const paginationSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
-export const voucherStatusSchema = z.enum(["active", "redeemed", "expired", "void"])
-export const voucherSourceTypeSchema = z.enum([
+export const travelCreditStatusSchema = z.enum(["active", "redeemed", "expired", "void"])
+export const travelCreditSourceTypeSchema = z.enum([
   "refund",
   "cancellation_credit",
   "gift",
   "manual",
-  "promo",
+  "goodwill",
+  "promotion",
 ])
 
 export const financeAggregatesQuerySchema = z.object({
