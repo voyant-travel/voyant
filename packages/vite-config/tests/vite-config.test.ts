@@ -4,8 +4,8 @@ import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
-  VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   VOYANT_CONTEXT_SINGLETONS,
+  VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   VOYANT_SSR_OPTIMIZE_DEPS,
   voyantGeneratedRoutes,
   voyantStartViteConfig,
