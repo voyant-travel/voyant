@@ -77,6 +77,7 @@ export const catalogSearchResponseSchema = z.object({
   vertical: z.string(),
   mode: z.enum(["keyword", "hybrid", "semantic"]),
   total: z.number(),
+  totalRelation: z.enum(["eq", "gte"]).optional(),
   hits: z.array(searchHitSchema),
   cards: z.array(storefrontCatalogCardSchema).optional(),
   facets: z.record(z.string(), z.array(facetBucketSchema)).optional(),

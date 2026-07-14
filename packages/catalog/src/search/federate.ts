@@ -34,6 +34,12 @@ import type {
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { Visibility } from "../contract.js"
 
+/** Default number of ranked candidates fetched from each audience pool. */
+export const DEFAULT_FEDERATED_CANDIDATE_DEPTH = 50
+
+/** Hard bound on candidates fetched from any one audience pool. */
+export const MAX_FEDERATED_CANDIDATE_DEPTH = 250
+
 export interface FederatedSearchOptions {
   adapter: IndexerAdapter
   /**
@@ -52,6 +58,12 @@ export interface FederatedSearchOptions {
   market: string
   /** The base search request — same shape passed to a single-slice search. */
   request: SearchRequest
+  /**
+   * Ranked candidates fetched per audience before fusion. Defaults to
+   * {@link DEFAULT_FEDERATED_CANDIDATE_DEPTH}, rises to the requested output
+   * limit when needed, and may not exceed {@link MAX_FEDERATED_CANDIDATE_DEPTH}.
+   */
+  candidateDepthPerAudience?: number
 }
 
 /**
@@ -61,7 +73,16 @@ export interface FederatedSearchOptions {
 export async function federateAudienceSearch(
   options: FederatedSearchOptions,
 ): Promise<SearchResults> {
-  const { adapter, actor, searchAudiences, vertical, locale, market, request } = options
+  const {
+    adapter,
+    actor,
+    searchAudiences,
+    vertical,
+    locale,
+    market,
+    request,
+    candidateDepthPerAudience,
+  } = options
 
   if (searchAudiences.length === 0) {
     throw new Error("federateAudienceSearch requires at least one searchAudience")
@@ -75,6 +96,14 @@ export async function federateAudienceSearch(
     const slice: IndexerSlice = { vertical, locale, audience, market }
     return adapter.search(slice, request)
   }
+
+  if (request.pagination?.cursor !== undefined) {
+    throw new Error(
+      "Federated cursor pagination is unsupported because bounded rank fusion has no exact continuation cursor",
+    )
+  }
+  const outputLimit = request.pagination?.limit
+  const candidateDepth = resolveCandidateDepth(candidateDepthPerAudience, outputLimit)
 
   // Engine-side federation when supported — single adapter call.
   if (adapter.capabilities.supportsCrossAudienceFederation) {
@@ -94,9 +123,15 @@ export async function federateAudienceSearch(
     market,
   }))
 
-  const perSliceResults = await Promise.all(slices.map((slice) => adapter.search(slice, request)))
+  const candidateRequest: SearchRequest = {
+    ...request,
+    pagination: { limit: candidateDepth },
+  }
+  const perSliceResults = await Promise.all(
+    slices.map((slice) => adapter.search(slice, candidateRequest)),
+  )
 
-  return mergeAndDedupe(perSliceResults, request.pagination?.limit)
+  return mergeAndDedupe(perSliceResults, outputLimit)
 }
 
 /**
@@ -105,7 +140,9 @@ export async function federateAudienceSearch(
  * share a score scale. Duplicate ids accumulate one contribution per result
  * list. Their representative hit comes from the best rank, with earlier input
  * lists breaking equal-rank ties. The returned score is the larger-is-better
- * fused score, and total is the unique-id count before limiting.
+ * fused score. `total` is the number of unique fetched candidates. It is exact
+ * only when every input result is exhausted; otherwise `totalRelation: "gte"`
+ * marks it as a lower bound and avoids pretending bounded fusion saw all hits.
  */
 export function mergeAndDedupe(
   perSlice: ReadonlyArray<SearchResults>,
@@ -156,6 +193,7 @@ export function mergeAndDedupe(
   return {
     hits: limited,
     total: byId.size,
+    totalRelation: perSlice.every(isExhaustedResult) ? "eq" : "gte",
     // Facets aren't merged — federation across audiences with different
     // facet vocabularies is ambiguous. Callers that need facets should
     // search a single audience.
@@ -174,6 +212,42 @@ interface FusedHit {
 
 function reciprocalRank(rank: number): number {
   return 1 / (RECIPROCAL_RANK_FUSION_K + rank)
+}
+
+function isExhaustedResult(result: SearchResults): boolean {
+  return (
+    result.totalRelation !== "gte" &&
+    result.next_cursor === undefined &&
+    result.hits.length >= result.total
+  )
+}
+
+function resolveCandidateDepth(
+  configured: number | undefined,
+  outputLimit: number | undefined,
+): number {
+  assertBoundedPositiveInteger(
+    configured,
+    "candidateDepthPerAudience",
+    DEFAULT_FEDERATED_CANDIDATE_DEPTH,
+  )
+  assertBoundedPositiveInteger(outputLimit, "request.pagination.limit")
+  return Math.max(configured ?? DEFAULT_FEDERATED_CANDIDATE_DEPTH, outputLimit ?? 0)
+}
+
+function assertBoundedPositiveInteger(
+  value: number | undefined,
+  name: string,
+  fallback?: number,
+): void {
+  const resolved = value ?? fallback
+  if (resolved === undefined) return
+  if (!Number.isFinite(resolved) || !Number.isInteger(resolved) || resolved <= 0) {
+    throw new RangeError(`${name} must be a positive finite integer; received ${String(resolved)}`)
+  }
+  if (resolved > MAX_FEDERATED_CANDIDATE_DEPTH) {
+    throw new RangeError(`${name} may not exceed ${MAX_FEDERATED_CANDIDATE_DEPTH}`)
+  }
 }
 
 /**

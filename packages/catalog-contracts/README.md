@@ -64,12 +64,19 @@ candidates and require `alpha` to change the winner of competing signals.
 `SearchHit.score` uses larger-is-better ordering within one response, but scores
 from independently executed searches are not comparable. Client-side audience
 federation therefore fuses each response's ordered ranks instead of comparing
-raw scores. Vector-aware admin scans must return every fixture's exact embedding
-and model id. The runner certifies these portable semantics, not a provider's
-internal query topology or proprietary ranking quality; provider-specific
-native behavior belongs in provider-owned tests. Hosted providers can supply
-`settle` when writes are eventually consistent and `namespace` when resource
-names need a stable prefix.
+raw scores. Catalog's client-side helper fetches a separate bounded candidate
+page per audience (50 by default, at most 250, and never less than the requested
+output limit) before truncating fused output. It rejects federated cursors
+because bounded RRF has no exact continuation implementation. Federated
+`SearchResults.total` counts unique fetched candidates: `totalRelation: "eq"`
+means every pool was exhausted, while `"gte"` marks the count as a lower bound.
+Normal adapter results may omit the relation, which is equivalent to `"eq"`.
+Vector-aware admin scans must return every fixture's exact embedding and model
+id. The runner certifies these portable semantics, not a provider's internal
+query topology or proprietary ranking quality; provider-specific native
+behavior belongs in provider-owned tests. Hosted providers can supply `settle`
+when writes are eventually consistent and `namespace` when resource names need
+a stable prefix.
 
 Facet requests return at most `MAX_FACET_BUCKETS` (250) buckets per field. An
 omitted `FacetRequest.limit` uses that portable maximum, and values above it are

@@ -179,6 +179,11 @@ export interface SearchFacetBucket {
 
 export interface SearchResults {
   hits: SearchHit[]
+  /**
+   * Count of matching documents represented by `total`. Omitted is equivalent
+   * to `eq`; `gte` means `total` is a lower bound from a bounded search.
+   */
+  totalRelation?: "eq" | "gte"
   total: number
   next_cursor?: string
   facets?: Record<string, SearchFacetBucket[]>

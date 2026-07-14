@@ -401,6 +401,7 @@ describe("createCatalogSearchRoutes", () => {
     const executeSearch = vi.fn(
       async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => ({
         total: 2,
+        totalRelation: "gte",
         facets: { "regions[]": [{ value: "Europe", count: 2 }] },
         hits: [
           { id: "prod_a", score: 9.5, document: { id: "prod_a", fields: { name: "Alpha" } } },
@@ -429,6 +430,7 @@ describe("createCatalogSearchRoutes", () => {
       vertical: "products",
       mode: "keyword",
       total: 2,
+      totalRelation: "gte",
       hits: [
         { id: "prod_a", score: 9.5, document: { id: "prod_a", fields: { name: "Alpha" } } },
         { id: "prod_b", score: 4.25, document: { id: "prod_b", fields: { name: "Beta" } } },

@@ -246,8 +246,10 @@ export {
   fanOutAvailabilitySearch,
 } from "./search/availability-fan-out.js"
 export {
+  DEFAULT_FEDERATED_CANDIDATE_DEPTH,
   type FederatedSearchOptions,
   federateAudienceSearch,
+  MAX_FEDERATED_CANDIDATE_DEPTH,
   mergeAndDedupe,
 } from "./search/federate.js"
 export {
