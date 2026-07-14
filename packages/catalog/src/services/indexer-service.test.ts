@@ -85,7 +85,6 @@ describe("IndexerService", () => {
     })
 
     await service.ensureCollections()
-    expect(service.adapter).toBe(adapter)
     const ensureCalls = adapter.calls.filter((c) => c.op === "ensureCollection")
     expect(ensureCalls).toHaveLength(3)
   })

@@ -57,34 +57,10 @@ export type DocumentBuilder = (
   slice: IndexerSlice,
 ) => Promise<IndexerDocument | null>
 
-const indexerExclusiveWriteLeaseBrand: unique symbol = Symbol("IndexerExclusiveWriteLease")
-
-/**
- * A short-lived capability proving that live writes through an IndexerService
- * are paused. Instances are issued only by `withExclusiveWriteLease` and
- * become invalid when its callback settles.
- */
-export interface IndexerExclusiveWriteLease {
-  readonly [indexerExclusiveWriteLeaseBrand]: true
-
-  /** Run an operation after verifying that this lease is active for `service`. */
-  run<T>(service: IndexerService, operation: () => Promise<T>): Promise<T>
-
-  /** Ensure configured slices through the adapter protected by this lease. */
-  ensureCollections(service: IndexerService, slices: readonly IndexerSlice[]): Promise<void>
-}
-
 /**
  * The IndexerService surface.
  */
 export interface IndexerService {
-  /**
-   * The sole adapter authority for package-owned operational APIs. Live
-   * mutations should use this service's methods so exclusive maintenance can
-   * pause them.
-   */
-  readonly adapter: IndexerAdapter
-
   /**
    * Ensure every configured slice has its engine-side schema set up.
    * Called at deployment startup or after a field-policy registry change.
@@ -122,15 +98,6 @@ export interface IndexerService {
   search(slice: IndexerSlice, request: SearchRequest): Promise<SearchResults>
 
   /**
-   * Pause live service writes while an operational callback runs. Destructive
-   * reconciliation requires the issued lease and rejects expired or foreign
-   * leases.
-   */
-  withExclusiveWriteLease<T>(
-    operation: (lease: IndexerExclusiveWriteLease) => Promise<T>,
-  ): Promise<T>
-
-  /**
    * Returns the slices configured for a given vertical. Useful for callers
    * orchestrating bulk operations themselves.
    */
@@ -143,7 +110,6 @@ export interface IndexerService {
  */
 export function createIndexerService(options: IndexerServiceOptions): IndexerService {
   const { adapter, slices, registries } = options
-  const writeCoordinator = new IndexerWriteCoordinator()
 
   const slicesForVertical = (entityModule: string): IndexerSlice[] =>
     slices.filter((slice) => slice.vertical === entityModule)
@@ -158,176 +124,48 @@ export function createIndexerService(options: IndexerServiceOptions): IndexerSer
     return registry
   }
 
-  const ensureConfiguredCollections = async (requestedSlices: readonly IndexerSlice[]) => {
-    const configured = new Map(slices.map((slice) => [indexerSliceKey(slice), slice]))
-    const ensured = new Set<string>()
-    for (const requested of requestedSlices) {
-      const key = indexerSliceKey(requested)
-      const slice = configured.get(key)
-      if (!slice) {
-        throw new Error(`IndexerService: slice is not configured: ${key}`)
-      }
-      if (ensured.has(key)) continue
-      ensured.add(key)
-      await adapter.ensureCollection(slice, requireRegistry(slice.vertical))
-    }
-  }
-
-  let service: IndexerService
-  const createExclusiveLease = () => {
-    let active = true
-    const requireActiveLease = (candidate: IndexerService) => {
-      if (!active || candidate !== service) {
-        throw new Error(
-          "IndexerService: exclusive write lease is inactive or belongs to another service",
-        )
-      }
-    }
-    const lease: IndexerExclusiveWriteLease = {
-      [indexerExclusiveWriteLeaseBrand]: true,
-      async run(candidate, operation) {
-        requireActiveLease(candidate)
-        return operation()
-      },
-      async ensureCollections(candidate, requestedSlices) {
-        requireActiveLease(candidate)
-        await ensureConfiguredCollections(requestedSlices)
-      },
-    }
-    return {
-      lease,
-      expire() {
-        active = false
-      },
-    }
-  }
-
-  service = {
-    adapter,
-
+  return {
     async ensureCollections() {
-      await writeCoordinator.withExclusive(() => ensureConfiguredCollections(slices))
+      for (const slice of slices) {
+        const registry = requireRegistry(slice.vertical)
+        await adapter.ensureCollection(slice, registry)
+      }
     },
 
     async reindexEntity(entityModule, entityId, builder) {
-      await writeCoordinator.withShared(async () => {
-        const verticalSlices = slicesForVertical(entityModule)
-        for (const slice of verticalSlices) {
-          const document = await builder(entityId, slice)
-          if (!document) {
-            await adapter.delete(slice, [entityId])
-            continue
-          }
-          await adapter.upsert(slice, [document])
-        }
-      })
-    },
-
-    async reindexEntityForSlice(slice, entityId, builder) {
-      await writeCoordinator.withShared(async () => {
+      const verticalSlices = slicesForVertical(entityModule)
+      for (const slice of verticalSlices) {
         const document = await builder(entityId, slice)
         if (!document) {
           await adapter.delete(slice, [entityId])
-          return
+          continue
         }
         await adapter.upsert(slice, [document])
-      })
+      }
+    },
+
+    async reindexEntityForSlice(slice, entityId, builder) {
+      const document = await builder(entityId, slice)
+      if (!document) {
+        await adapter.delete(slice, [entityId])
+        return
+      }
+      await adapter.upsert(slice, [document])
     },
 
     async deleteEntity(entityModule, entityId) {
-      await writeCoordinator.withShared(async () => {
-        const verticalSlices = slicesForVertical(entityModule)
-        for (const slice of verticalSlices) {
-          await adapter.delete(slice, [entityId])
-        }
-      })
+      const verticalSlices = slicesForVertical(entityModule)
+      for (const slice of verticalSlices) {
+        await adapter.delete(slice, [entityId])
+      }
     },
 
     async search(slice, request) {
       return adapter.search(slice, request)
     },
 
-    async withExclusiveWriteLease(operation) {
-      return writeCoordinator.withExclusive(async () => {
-        const issued = createExclusiveLease()
-        try {
-          return await operation(issued.lease)
-        } finally {
-          issued.expire()
-        }
-      })
-    },
-
     slicesForVertical,
   }
-
-  return service
-}
-
-class IndexerWriteCoordinator {
-  private activeShared = 0
-  private activeExclusive = false
-  private readonly queue: Array<{ mode: "shared" | "exclusive"; resume: () => void }> = []
-
-  async withShared<T>(operation: () => Promise<T>): Promise<T> {
-    await this.acquire("shared")
-    try {
-      return await operation()
-    } finally {
-      this.activeShared -= 1
-      this.drain()
-    }
-  }
-
-  async withExclusive<T>(operation: () => Promise<T>): Promise<T> {
-    await this.acquire("exclusive")
-    try {
-      return await operation()
-    } finally {
-      this.activeExclusive = false
-      this.drain()
-    }
-  }
-
-  private acquire(mode: "shared" | "exclusive"): Promise<void> {
-    return new Promise((resume) => {
-      this.queue.push({ mode, resume })
-      this.drain()
-    })
-  }
-
-  private drain() {
-    if (this.activeExclusive || this.queue.length === 0) return
-
-    if (this.activeShared > 0) {
-      while (this.queue[0]?.mode === "shared") {
-        this.activeShared += 1
-        this.queue.shift()?.resume()
-      }
-      return
-    }
-
-    if (this.queue[0]?.mode === "exclusive") {
-      this.activeExclusive = true
-      this.queue.shift()?.resume()
-      return
-    }
-
-    while (this.queue[0]?.mode === "shared") {
-      this.activeShared += 1
-      this.queue.shift()?.resume()
-    }
-  }
-}
-
-function indexerSliceKey(slice: IndexerSlice): string {
-  return JSON.stringify([
-    slice.vertical,
-    slice.locale,
-    slice.audience,
-    slice.market,
-    slice.channel ?? null,
-  ])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

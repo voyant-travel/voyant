@@ -302,7 +302,6 @@ export {
   buildIndexerDocument,
   createIndexerService,
   type DocumentBuilder,
-  type IndexerExclusiveWriteLease,
   type IndexerService,
   type IndexerServiceOptions,
 } from "./services/indexer-service.js"

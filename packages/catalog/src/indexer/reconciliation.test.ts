@@ -1,6 +1,8 @@
+import type { createReadStream as CreateReadStream } from "node:fs"
 import { mkdtempSync, readdirSync, rmSync } from "node:fs"
+import type { rm as Remove } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, join } from "node:path"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
@@ -11,15 +13,43 @@ import type {
 import { describe, expect, it, vi } from "vitest"
 import type { FieldPolicyRegistry } from "../contract.js"
 import {
-  createIndexerService,
-  type IndexerExclusiveWriteLease,
-} from "../services/indexer-service.js"
-import {
   createFileIndexerReconciliationStateStore,
   IndexerAdminUnavailableError,
+  type IndexerReconciliationAuthority,
+  type IndexerReconciliationExclusiveContext,
   type ReconcileIndexerOptions,
   reconcileIndexer,
 } from "./reconciliation.js"
+
+const fsControl = vi.hoisted(() => ({
+  readPaths: [] as string[],
+  failNextRemove: false,
+}))
+
+vi.mock("node:fs", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs")>()
+  return {
+    ...actual,
+    createReadStream(...args: Parameters<typeof CreateReadStream>) {
+      fsControl.readPaths.push(String(args[0]))
+      return actual.createReadStream(...args)
+    },
+  }
+})
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>()
+  return {
+    ...actual,
+    async rm(...args: Parameters<typeof Remove>) {
+      if (fsControl.failNextRemove) {
+        fsControl.failNextRemove = false
+        throw new Error("temporary remove failure")
+      }
+      return actual.rm(...args)
+    },
+  }
+})
 
 const productsCurrent: IndexerSlice = {
   vertical: "products",
@@ -37,7 +67,7 @@ describe("reconcileIndexer", () => {
     const fake = createFakeAdapter([
       [productsCurrent, [document("owned-live"), document("owned-stale"), document("foreign")]],
     ])
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [
@@ -52,7 +82,7 @@ describe("reconcileIndexer", () => {
       ],
     )
 
-    const result = await runReconciliation(options)
+    const result = await reconcileIndexer(fixture.options)
 
     expect(result).toEqual({
       mode: "full",
@@ -80,20 +110,22 @@ describe("reconcileIndexer", () => {
         ],
       ],
     ])
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
     )
 
-    await expect(runReconciliation(options)).resolves.toMatchObject({ deletedDocuments: 3 })
-    expect(fake.deleted).toEqual([
-      [productsCurrent, ["owned-stale-1", "owned-stale-2"]],
-      [productsCurrent, ["owned-stale-3"]],
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ deletedDocuments: 3 })
+    expect(fake.deleted.map(([, ids]) => ids.length)).toEqual([2, 1])
+    expect(fake.deleted.flatMap(([, ids]) => ids).sort()).toEqual([
+      "owned-stale-1",
+      "owned-stale-2",
+      "owned-stale-3",
     ])
   })
 
-  it("holds concurrent service writes outside the destructive scan boundary", async () => {
+  it("holds live writes behind the caller-owned exclusive authority", async () => {
     const scanStarted = createDeferred<void>()
     const releaseScan = createDeferred<void>()
     const fake = createFakeAdapter(
@@ -105,18 +137,16 @@ describe("reconcileIndexer", () => {
         },
       },
     )
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
     )
 
-    const reconciliation = runReconciliation(options)
+    const reconciliation = reconcileIndexer(fixture.options)
     await scanStarted.promise
-    const concurrentWrite = options.service.reindexEntityForSlice(
-      productsCurrent,
-      "owned-concurrent",
-      async () => document("owned-concurrent"),
+    const concurrentWrite = fixture.lock.runMutation(() =>
+      fake.adapter.upsert(productsCurrent, [document("owned-concurrent")]),
     )
     await Promise.resolve()
     expect(fake.upsert).toHaveBeenCalledTimes(1)
@@ -129,39 +159,18 @@ describe("reconcileIndexer", () => {
     expect(fake.events.indexOf("delete:owned-stale")).toBeLessThan(
       fake.events.indexOf("upsert:owned-concurrent"),
     )
-  })
-
-  it("rejects an expired exclusive write lease", async () => {
-    const fake = createFakeAdapter([[productsCurrent, []]])
-    const options = reconciliationOptions(
-      fake,
-      [productsCurrent],
-      [{ slice: productsCurrent, loadDocuments: () => [] }],
-    )
-    let expiredLease: IndexerExclusiveWriteLease | undefined
-    await options.service.withExclusiveWriteLease(async (lease) => {
-      expiredLease = lease
-    })
-
-    await expect(reconcileIndexer({ ...options, lease: expiredLease! })).rejects.toThrow(
-      "exclusive write lease is inactive",
-    )
-    await options.service.withExclusiveWriteLease(async () => {
-      await expect(reconcileIndexer({ ...options, lease: expiredLease! })).rejects.toThrow(
-        "exclusive write lease is inactive",
-      )
-    })
+    expect(fixture.lock.runExclusive).toHaveBeenCalledTimes(1)
   })
 
   it("ensures target collections before upserting", async () => {
     const fake = createFakeAdapter([])
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
     )
 
-    await expect(runReconciliation(options)).resolves.toMatchObject({ indexedDocuments: 1 })
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ indexedDocuments: 1 })
     expect(fake.events.slice(0, 2)).toEqual(["ensure:current", "upsert:owned-live"])
     expect(fake.ids(productsCurrent)).toEqual(["owned-live"])
   })
@@ -172,16 +181,14 @@ describe("reconcileIndexer", () => {
       [productsObsolete, [document("owned-old")]],
       [unrelatedSlice, [document("foreign-old")]],
     ])
-    const options = {
-      ...reconciliationOptions(
-        fake,
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments: () => [] }],
-      ),
-      obsoleteSlices: [productsObsolete],
-    }
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [] }],
+    )
+    fixture.options.obsoleteSlices = [productsObsolete]
 
-    const result = await runReconciliation(options)
+    const result = await reconcileIndexer(fixture.options)
 
     expect(result.droppedSlices).toBe(1)
     expect(fake.has(productsObsolete)).toBe(false)
@@ -196,16 +203,14 @@ describe("reconcileIndexer", () => {
       [productsUntargeted, [document("owned-untargeted")]],
       [productsObsolete, [document("owned-old")]],
     ])
-    const options = {
-      ...reconciliationOptions(
-        fake,
-        [productsCurrent, productsUntargeted],
-        [{ slice: productsCurrent, loadDocuments: () => [] }],
-      ),
-      obsoleteSlices: [productsObsolete],
-    }
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent, productsUntargeted],
+      [{ slice: productsCurrent, loadDocuments: () => [] }],
+    )
+    fixture.options.obsoleteSlices = [productsObsolete]
 
-    await expect(runReconciliation(options)).resolves.toMatchObject({ droppedSlices: 1 })
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ droppedSlices: 1 })
     expect(fake.has(productsUntargeted)).toBe(true)
     expect(fake.has(productsObsolete)).toBe(false)
   })
@@ -215,16 +220,14 @@ describe("reconcileIndexer", () => {
       [productsCurrent, []],
       [unrelatedSlice, [document("foreign-old")]],
     ])
-    const options = {
-      ...reconciliationOptions(
-        fake,
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments: () => [] }],
-      ),
-      obsoleteSlices: [unrelatedSlice],
-    }
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [] }],
+    )
+    fixture.options.obsoleteSlices = [unrelatedSlice]
 
-    await expect(runReconciliation(options)).rejects.toThrow("does not own obsolete slice")
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("does not own obsolete slice")
     expect(fake.ensureCollection).not.toHaveBeenCalled()
     expect(fake.has(unrelatedSlice)).toBe(true)
   })
@@ -234,20 +237,18 @@ describe("reconcileIndexer", () => {
       [productsCurrent, [document("owned-live"), document("owned-stale")]],
       [productsObsolete, []],
     ])
-    const options = {
-      ...reconciliationOptions(
-        fake,
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
-      ),
-      obsoleteSlices: [productsObsolete],
-    }
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
+    )
+    fixture.options.obsoleteSlices = [productsObsolete]
 
-    await expect(runReconciliation(options)).resolves.toMatchObject({
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
       deletedDocuments: 1,
       droppedSlices: 1,
     })
-    await expect(runReconciliation(options)).resolves.toEqual({
+    await expect(reconcileIndexer(fixture.options)).resolves.toEqual({
       mode: "full",
       indexedDocuments: 1,
       deletedDocuments: 0,
@@ -263,24 +264,22 @@ describe("reconcileIndexer", () => {
         yield document("owned-new")
       })(),
     )
-    const options = {
-      ...reconciliationOptions(
-        fake,
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments }],
-      ),
-      onMissingAdmin: "upsert-only" as const,
-    }
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments }],
+    )
+    fixture.options.onMissingAdmin = "upsert-only"
 
-    await expect(runReconciliation(options)).rejects.toThrow("temporary upsert failure")
-    await expect(runReconciliation(options)).resolves.toMatchObject({ indexedDocuments: 2 })
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("temporary upsert failure")
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ indexedDocuments: 2 })
     expect(loadDocuments).toHaveBeenCalledTimes(2)
     expect(fake.ids(productsCurrent)).toEqual(["owned-live", "owned-new"])
   })
 
   it("retries idempotently after one upsert batch succeeds", async () => {
     const fake = createFakeAdapter([], { failUpsertCalls: [2] })
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [
@@ -291,9 +290,9 @@ describe("reconcileIndexer", () => {
       ],
     )
 
-    await expect(runReconciliation(options)).rejects.toThrow("temporary upsert failure")
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("temporary upsert failure")
     expect(fake.ids(productsCurrent)).toEqual(["owned-1", "owned-2"])
-    await expect(runReconciliation(options)).resolves.toMatchObject({ indexedDocuments: 3 })
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ indexedDocuments: 3 })
     expect(fake.ids(productsCurrent)).toEqual(["owned-1", "owned-2", "owned-3"])
   })
 
@@ -312,15 +311,16 @@ describe("reconcileIndexer", () => {
       ],
       { failDeleteCalls: [2] },
     )
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
     )
 
-    await expect(runReconciliation(options)).rejects.toThrow("temporary delete failure")
-    expect(fake.ids(productsCurrent)).toEqual(["owned-live", "owned-stale-3"])
-    await expect(runReconciliation(options)).resolves.toMatchObject({ deletedDocuments: 1 })
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("temporary delete failure")
+    expect(fake.ids(productsCurrent)).toContain("owned-live")
+    expect(fake.ids(productsCurrent).filter((id) => id.startsWith("owned-stale-"))).toHaveLength(1)
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ deletedDocuments: 1 })
     expect(fake.ids(productsCurrent)).toEqual(["owned-live"])
   })
 
@@ -333,60 +333,83 @@ describe("reconcileIndexer", () => {
       ],
       { failDropCalls: [2] },
     )
-    const options = {
-      ...reconciliationOptions(
-        fake,
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments: () => [] }],
-      ),
-      obsoleteSlices: [productsObsolete, productsObsoleteSecond],
-    }
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [] }],
+    )
+    fixture.options.obsoleteSlices = [productsObsolete, productsObsoleteSecond]
 
-    await expect(runReconciliation(options)).rejects.toThrow("temporary drop failure")
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("temporary drop failure")
     expect(fake.has(productsObsolete)).toBe(false)
     expect(fake.has(productsObsoleteSecond)).toBe(true)
-    await expect(runReconciliation(options)).resolves.toMatchObject({ droppedSlices: 1 })
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ droppedSlices: 1 })
     expect(fake.has(productsObsoleteSecond)).toBe(false)
   })
 
-  it("removes filesystem state after success and failure", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-test-"))
-    const stateStore = createFileIndexerReconciliationStateStore({
-      directory,
-      expectedIdBuckets: 2,
-    })
+  it("keeps filesystem cleanup retryable after a remove failure", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-cleanup-"))
+    const store = createFileIndexerReconciliationStateStore({ directory, buckets: 2 })
     try {
-      const successful = reconciliationOptions(
-        createFakeAdapter([]),
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
-      )
-      await runReconciliation({ ...successful, stateStore })
-      expect(readdirSync(directory)).toEqual([])
+      const state = await store.create(productsCurrent)
+      await state.writeExpectedIds(["owned-live"])
+      await state.seal()
 
-      const failing = reconciliationOptions(
-        createFakeAdapter([], { failUpsertCalls: [1] }),
-        [productsCurrent],
-        [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
-      )
-      await expect(runReconciliation({ ...failing, stateStore })).rejects.toThrow(
-        "temporary upsert failure",
-      )
+      fsControl.failNextRemove = true
+      await expect(state.dispose()).rejects.toThrow("temporary remove failure")
+      expect(readdirSync(directory)).toHaveLength(1)
+      await expect(state.dispose()).resolves.toBeUndefined()
+      expect(readdirSync(directory)).toEqual([])
+    } finally {
+      fsControl.failNextRemove = false
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  it("reads each populated spool bucket once for a large reconciliation", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-buckets-"))
+    const expected = Array.from({ length: 1_000 }, (_, index) => document(`owned-live-${index}`))
+    const stale = Array.from({ length: 1_000 }, (_, index) => document(`owned-stale-${index}`))
+    const fake = createFakeAdapter([[productsCurrent, [...expected, ...stale]]])
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => expected }],
+    )
+    fixture.options.batchSize = 100
+    fixture.options.stateStore = createFileIndexerReconciliationStateStore({
+      directory,
+      buckets: 8,
+    })
+    fsControl.readPaths.length = 0
+
+    try {
+      await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
+        indexedDocuments: 1_000,
+        deletedDocuments: 1_000,
+      })
+      const bucketReads = fsControl.readPaths
+        .filter((path) => path.startsWith(directory))
+        .map((path) => basename(path))
+      expect(bucketReads).toHaveLength(16)
+      expect(new Set(bucketReads).size).toBe(bucketReads.length)
       expect(readdirSync(directory)).toEqual([])
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }
   })
 
-  it("fails before mutation when the service adapter has no admin surface", async () => {
+  it("fails before mutation when the authority adapter has no admin surface", async () => {
     const fake = createFakeAdapter([], { withAdmin: false })
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
     )
 
-    await expect(runReconciliation(options)).rejects.toBeInstanceOf(IndexerAdminUnavailableError)
+    await expect(reconcileIndexer(fixture.options)).rejects.toBeInstanceOf(
+      IndexerAdminUnavailableError,
+    )
     expect(fake.ensureCollection).not.toHaveBeenCalled()
     expect(fake.upsert).not.toHaveBeenCalled()
   })
@@ -395,20 +418,19 @@ describe("reconcileIndexer", () => {
     const fake = createFakeAdapter([[productsCurrent, [document("owned-stale")]]], {
       withAdmin: false,
     })
-    const options = reconciliationOptions(
+    const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
     )
+    fixture.options.onMissingAdmin = "upsert-only"
 
-    await expect(runReconciliation({ ...options, onMissingAdmin: "upsert-only" })).resolves.toEqual(
-      {
-        mode: "upsert-only",
-        indexedDocuments: 1,
-        deletedDocuments: 0,
-        droppedSlices: 0,
-      },
-    )
+    await expect(reconcileIndexer(fixture.options)).resolves.toEqual({
+      mode: "upsert-only",
+      indexedDocuments: 1,
+      deletedDocuments: 0,
+      droppedSlices: 0,
+    })
     expect(fake.ids(productsCurrent)).toEqual(["owned-live", "owned-stale"])
     expect(fake.deleted).toEqual([])
     expect(fake.dropped).toEqual([])
@@ -416,19 +438,14 @@ describe("reconcileIndexer", () => {
   })
 })
 
-type TestReconciliationOptions = Omit<ReconcileIndexerOptions, "lease">
-
-function reconciliationOptions(
+function reconciliationFixture(
   fake: ReturnType<typeof createFakeAdapter>,
   slices: IndexerSlice[],
   targets: ReconcileIndexerOptions["targets"],
-): TestReconciliationOptions {
-  return {
-    service: createIndexerService({
-      adapter: fake.adapter,
-      slices,
-      registries: new Map([["products", emptyRegistry]]),
-    }),
+) {
+  const lock = createFakeReconciliationAuthority(fake.adapter, slices)
+  const options: ReconcileIndexerOptions = {
+    authority: lock.authority,
     targets,
     ownership: {
       ownsSlice: (slice) => slice.vertical === "products",
@@ -436,10 +453,42 @@ function reconciliationOptions(
     },
     batchSize: 2,
   }
+  return { options, lock }
 }
 
-function runReconciliation(options: TestReconciliationOptions) {
-  return options.service.withExclusiveWriteLease((lease) => reconcileIndexer({ ...options, lease }))
+function createFakeReconciliationAuthority(
+  adapter: IndexerAdapter,
+  configuredSlices: IndexerSlice[],
+) {
+  let tail = Promise.resolve()
+  const runLocked = <T>(operation: () => Promise<T>): Promise<T> => {
+    const result = tail.then(operation)
+    tail = result.then(
+      () => undefined,
+      () => undefined,
+    )
+    return result
+  }
+  const context: IndexerReconciliationExclusiveContext = {
+    adapter,
+    configuredSlices,
+    async ensureCollections(slices) {
+      const configured = new Set(configuredSlices.map(sliceKey))
+      for (const slice of slices) {
+        if (!configured.has(sliceKey(slice)))
+          throw new Error("attempted to ensure unconfigured slice")
+        await adapter.ensureCollection(slice, emptyRegistry)
+      }
+    },
+  }
+  const runExclusive = vi.fn<IndexerReconciliationAuthority["runExclusive"]>((operation) =>
+    runLocked(() => operation(context)),
+  )
+  return {
+    authority: { runExclusive },
+    runExclusive,
+    runMutation: runLocked,
+  }
 }
 
 const emptyRegistry: FieldPolicyRegistry = {
