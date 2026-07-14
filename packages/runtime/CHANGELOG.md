@@ -1,5 +1,19 @@
 # @voyant-travel/runtime
 
+## 0.10.1
+
+### Patch Changes
+
+- d83d237: Repair packaged consumer development and production startup, keep shared UI
+  contexts single-instanced under Vite, make unconfigured realtime quiet, and
+  restore narrow client-safe validation and Finance voucher setup exports. Resolve
+  legacy frontend imports through product-owned browser facades and allow clean CI
+  installs to fetch metadata for external dependencies.
+- Updated dependencies [d83d237]
+  - @voyant-travel/admin-host@0.5.1
+  - @voyant-travel/framework@0.44.1
+  - @voyant-travel/vite-config@0.3.2
+
 ## 0.10.0
 
 ### Minor Changes
