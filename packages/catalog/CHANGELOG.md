@@ -1,5 +1,23 @@
 # @voyant-travel/catalog
 
+## 0.154.1
+
+### Patch Changes
+
+- 7916020: Add a Node-only, engine-neutral index reconciliation API that requires a deployment-owned distributed write authority, accepts explicit obsolete-slice candidates, applies duplicate expected IDs with deterministic last-occurrence-wins semantics, and processes populated filesystem spool partitions one bucket at a time.
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/bookings@0.156.1
+  - @voyant-travel/catalog-contracts@0.110.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/tools@0.2.1
+  - @voyant-travel/workflows@0.120.2
+
 ## 0.154.0
 
 ### Patch Changes

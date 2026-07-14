@@ -1,5 +1,24 @@
 # @voyant-travel/commerce-react
 
+## 0.38.1
+
+### Patch Changes
+
+- 8d62a7c: Embed TypeScript sources in published JavaScript source maps so consumer dev servers can resolve
+  them without the omitted `src` tree. Stop emitting declaration maps that cannot embed their sources,
+  and reject publish tarballs whose maps reference sources that are neither packed nor embedded.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/utils@0.107.1
+  - @voyant-travel/admin@0.123.3
+  - @voyant-travel/commerce@0.35.6
+  - @voyant-travel/distribution-react@0.146.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/inventory-react@0.38.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/ui@0.109.1
+
 ## 0.38.0
 
 ### Patch Changes

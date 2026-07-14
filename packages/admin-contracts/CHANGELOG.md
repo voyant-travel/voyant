@@ -1,5 +1,18 @@
 # @voyant-travel/admin-contracts
 
+## 0.104.12
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/bookings-contracts@0.108.1
+  - @voyant-travel/finance-contracts@0.106.1
+  - @voyant-travel/legal-contracts@0.106.10
+  - @voyant-travel/products-contracts@0.107.1
+  - @voyant-travel/relationships-contracts@0.108.13
+
 ## 0.104.11
 
 ### Patch Changes

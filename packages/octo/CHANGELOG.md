@@ -1,5 +1,20 @@
 # @voyant-travel/octo
 
+## 0.104.67
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/bookings@0.156.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/inventory@0.10.1
+  - @voyant-travel/operations@0.6.11
+
 ## 0.104.66
 
 ### Patch Changes

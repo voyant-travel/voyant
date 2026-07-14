@@ -1,5 +1,14 @@
 # @voyant-travel/observability-sentry
 
+## 0.12.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/hono@0.126.3
+
 ## 0.12.0
 
 ### Patch Changes

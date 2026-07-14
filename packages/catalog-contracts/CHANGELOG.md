@@ -1,5 +1,12 @@
 # @voyant-travel/catalog-contracts
 
+## 0.110.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+
 ## 0.110.0
 
 ### Minor Changes
