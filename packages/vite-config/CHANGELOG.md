@@ -1,5 +1,13 @@
 # @voyant-travel/vite-config
 
+## 0.3.1
+
+### Patch Changes
+
+- 2669577: Start production operator projects through their Vite-built TanStack server
+  entry so virtual router imports and the React SSR singleton resolve from the
+  generated server graph.
+
 ## 0.3.0
 
 ### Minor Changes
