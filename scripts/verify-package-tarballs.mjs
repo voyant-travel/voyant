@@ -217,107 +217,82 @@ function collectExportTargets(value, targets) {
   }
 }
 
-function packageExportHasTarget(exports, exportKey) {
-  if (!exports || typeof exports !== "object") return false
-  const targets = new Set()
-  collectExportTargets(exports[exportKey], targets)
-  return targets.size > 0
-}
+export async function inspectPackedVoyantManifestRuntimeExports(
+  packageDir,
+  extractRoot,
+  packedManifest,
+) {
+  const manifestExport = packedManifest.voyant?.manifest
+  if (typeof manifestExport !== "string") return []
 
-function packageRuntimeExportKey(packageName, entry) {
-  if (entry.startsWith("./")) return entry
-  if (entry === packageName) return "."
-  if (entry.startsWith(`${packageName}/`)) return `./${entry.slice(packageName.length + 1)}`
-  return null
-}
-
-function collectRuntimeEntries(value, entries, seen = new Set()) {
-  if (!value || typeof value !== "object" || seen.has(value)) return
-  seen.add(value)
-
-  if (typeof value.entry === "string" && typeof value.export === "string") {
-    entries.add(value.entry)
-  }
-
-  for (const nestedValue of Object.values(value)) {
-    collectRuntimeEntries(nestedValue, entries, seen)
-  }
-}
-
-export function collectPackedManifestRuntimeExportProblems(packedManifest, manifestNamespace) {
   const packageName = packedManifest.name
   if (typeof packageName !== "string") return ["packed package manifest has no package name"]
-
-  const runtimeEntries = new Set()
-  const packageRuntime = packedManifest.voyant?.runtime
-  if (
-    packageRuntime &&
-    typeof packageRuntime.entry === "string" &&
-    typeof packageRuntime.export === "string"
-  ) {
-    runtimeEntries.add(packageRuntime.entry)
+  const packageSegments = packageName.split("/")
+  if (packageSegments.some((segment) => !segment || segment === "." || segment === "..")) {
+    return [`packed package manifest has invalid package name ${packageName}`]
   }
 
-  for (const exportedValue of Object.values(manifestNamespace ?? {})) {
-    if (
-      !exportedValue ||
-      typeof exportedValue !== "object" ||
-      typeof exportedValue.schemaVersion !== "string" ||
-      !exportedValue.schemaVersion.startsWith("voyant.")
-    ) {
-      continue
+  const inspectionRoot = fs.mkdtempSync(path.join(rootDir, ".voyant-manifest-check-"))
+  const installedPackage = path.join(inspectionRoot, "node_modules", ...packageSegments)
+  const inspectorPath = path.join(inspectionRoot, "inspect-packed-voyant-manifest.mjs")
+  const inputPath = path.join(inspectionRoot, "input.json")
+  const extractedNodeModules = path.join(extractRoot, "node_modules")
+  const workspaceNodeModules = path.join(packageDir, "node_modules")
+  let linkedWorkspaceDependencies = false
+
+  try {
+    fs.mkdirSync(path.dirname(installedPackage), { recursive: true })
+    fs.symlinkSync(extractRoot, installedPackage, process.platform === "win32" ? "junction" : "dir")
+    if (!fs.existsSync(extractedNodeModules) && fs.existsSync(workspaceNodeModules)) {
+      fs.symlinkSync(
+        workspaceNodeModules,
+        extractedNodeModules,
+        process.platform === "win32" ? "junction" : "dir",
+      )
+      linkedWorkspaceDependencies = true
     }
-    collectRuntimeEntries(exportedValue, runtimeEntries)
+    fs.copyFileSync(
+      path.join(rootDir, "scripts/lib/inspect-packed-voyant-manifest.mjs"),
+      inspectorPath,
+    )
+    fs.writeFileSync(
+      inputPath,
+      JSON.stringify({
+        packageName,
+        manifestExport,
+        packageRuntime: packedManifest.voyant?.runtime,
+        packageRoot: extractRoot,
+      }),
+    )
+
+    const result = await execFileAsync(
+      process.execPath,
+      ["--import", "tsx/esm", inspectorPath, inputPath],
+      {
+        cwd: inspectionRoot,
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        env: process.env,
+      },
+    )
+    const marker = "VOYANT_PACKED_MANIFEST_RESULT="
+    const resultLine = result.stdout
+      .split("\n")
+      .reverse()
+      .find((line) => line.startsWith(marker))
+    if (!resultLine) throw new Error("packed manifest inspector returned no result")
+    const inspection = JSON.parse(resultLine.slice(marker.length))
+    const problems = Array.isArray(inspection.problems) ? inspection.problems : []
+    for (const descriptor of inspection.descriptors ?? []) {
+      if (!packedFileExportsName(extractRoot, descriptor.target, descriptor.export)) {
+        problems.push(`runtime entry ${descriptor.specifier} does not export ${descriptor.export}`)
+      }
+    }
+    return problems
+  } finally {
+    if (linkedWorkspaceDependencies) fs.rmSync(extractedNodeModules, { force: true })
+    fs.rmSync(inspectionRoot, { recursive: true, force: true })
   }
-
-  return [...runtimeEntries].sort().flatMap((entry) => {
-    const exportKey = packageRuntimeExportKey(packageName, entry)
-    if (exportKey === null || packageExportHasTarget(packedManifest.exports, exportKey)) return []
-    return [`runtime entry ${entry} is not exported as ${exportKey}`]
-  })
-}
-
-function preferredRuntimeTarget(value) {
-  if (typeof value === "string") return value
-  if (!value || typeof value !== "object") return null
-
-  for (const condition of ["import", "node", "default"]) {
-    const target = preferredRuntimeTarget(value[condition])
-    if (target) return target
-  }
-  for (const [condition, nestedValue] of Object.entries(value)) {
-    if (condition === "types" || ["import", "node", "default"].includes(condition)) continue
-    const target = preferredRuntimeTarget(nestedValue)
-    if (target) return target
-  }
-  return null
-}
-
-let workspaceTypeScriptLoaderPromise
-
-async function ensureWorkspaceTypeScriptLoader() {
-  workspaceTypeScriptLoaderPromise ??= import("tsx/esm/api").then(({ register }) => register())
-  await workspaceTypeScriptLoaderPromise
-}
-
-export async function loadPackedVoyantManifestNamespace(packageDir, packedManifest) {
-  const manifestExport = packedManifest.voyant?.manifest
-  if (typeof manifestExport !== "string") return {}
-
-  const sourceManifest = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
-  const target = preferredRuntimeTarget(sourceManifest.exports?.[manifestExport])
-  if (!target?.startsWith("./")) {
-    throw new Error(`${manifestExport} has no relative source export target`)
-  }
-
-  const targetPath = path.resolve(packageDir, target)
-  const packageRoot = `${path.resolve(packageDir)}${path.sep}`
-  if (!targetPath.startsWith(packageRoot)) {
-    throw new Error(`${manifestExport} runtime export target escapes the package directory`)
-  }
-
-  await ensureWorkspaceTypeScriptLoader()
-  return import(`${pathToFileURL(targetPath).href}?voyant-pack=${Date.now()}-${Math.random()}`)
 }
 
 function getPackJson(stdout) {
@@ -575,10 +550,10 @@ async function packAndInspectPackage(packageDir) {
     )
     legacyVoyantSpecifiers = collectPackedLegacyVoyantSpecifiers(extracted.root, packInfo)
     missingPackedExports = collectPackedExportProblems(extracted.root, packedManifest.name)
-    const manifestNamespace = await loadPackedVoyantManifestNamespace(packageDir, packedManifest)
-    missingPackedManifestRuntimeExports = collectPackedManifestRuntimeExportProblems(
+    missingPackedManifestRuntimeExports = await inspectPackedVoyantManifestRuntimeExports(
+      packageDir,
+      extracted.root,
       packedManifest,
-      manifestNamespace,
     )
   } catch (error) {
     return { error: `could not parse pnpm pack output: ${error.message}` }

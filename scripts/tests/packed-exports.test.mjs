@@ -5,10 +5,7 @@ import path from "node:path"
 import { afterEach, test } from "node:test"
 
 import { packedFileExportsName } from "../lib/packed-exports.mjs"
-import {
-  collectPackedManifestRuntimeExportProblems,
-  loadPackedVoyantManifestNamespace,
-} from "../verify-package-tarballs.mjs"
+import { inspectPackedVoyantManifestRuntimeExports } from "../verify-package-tarballs.mjs"
 
 const temporaryDirectories = []
 
@@ -54,62 +51,73 @@ test("uses the exported alias rather than the local name", () => {
   assert.equal(packedFileExportsName(root, "dist/index.js", "internal"), false)
 })
 
-test("reports package-owned runtime entries missing from packed exports", () => {
-  const problems = collectPackedManifestRuntimeExportProblems(
-    packedManifest({
-      "./runtime-contributor": "./dist/runtime-contributor.js",
-      "./voyant": "./dist/voyant.js",
-    }),
-    { financeVoyantModule },
-  )
+test("reports package-owned runtime entries missing from packed exports", async () => {
+  const manifest = packedManifest({
+    "./runtime-contributor": "./dist/runtime-contributor.js",
+    "./voyant": "./dist/voyant.js",
+  })
+  const root = createPackedPackageFixture(manifest, {
+    "dist/runtime-contributor.js": "export function createFinanceRuntimePortContribution() {}\n",
+    "dist/voyant.js": `export const financeVoyantModule = ${JSON.stringify(financeVoyantModule)}\n`,
+  })
+
+  const problems = await inspectPackedVoyantManifestRuntimeExports(root, root, manifest)
 
   assert.deepEqual(problems, [
-    "runtime entry @voyant-travel/finance/setup/vouchers is not exported as ./setup/vouchers",
+    "runtime entry @voyant-travel/finance/setup/vouchers cannot be imported (ERR_PACKAGE_PATH_NOT_EXPORTED)",
   ])
 })
 
-test("accepts relative and canonical package runtime entries exported by the packed package", () => {
-  const problems = collectPackedManifestRuntimeExportProblems(
-    packedManifest({
-      "./runtime-contributor": {
-        import: "./dist/runtime-contributor.js",
-        types: "./dist/runtime-contributor.d.ts",
-      },
-      "./setup/vouchers": {
-        import: "./dist/service-vouchers-migration.js",
-        types: "./dist/service-vouchers-migration.d.ts",
-      },
-      "./voyant": "./dist/voyant.js",
-    }),
-    {
-      financeVoyantModule: {
-        ...financeVoyantModule,
-        subscribers: [
-          {
-            id: "@voyant-travel/finance#subscriber.local",
-            runtime: { entry: "./setup/vouchers", export: "runVoucherSetupMigration" },
-          },
-        ],
-      },
+test("accepts package runtime entries with resolvable named exports", async () => {
+  const manifest = packedManifest({
+    "./runtime-contributor": {
+      types: "./dist/runtime-contributor.d.ts",
+      import: "./dist/runtime-contributor.js",
     },
-  )
+    "./setup/*": {
+      types: "./dist/setup/*.d.ts",
+      import: "./dist/setup/*.js",
+    },
+    "./voyant": "./dist/voyant.js",
+  })
+  const packedVoyantModule = {
+    ...financeVoyantModule,
+    subscribers: [
+      {
+        id: "@voyant-travel/finance#subscriber.local",
+        runtime: { entry: "./setup/vouchers", export: "runVoucherSetupMigration" },
+      },
+    ],
+  }
+  const root = createPackedPackageFixture(manifest, {
+    "dist/runtime-contributor.js": "export function createFinanceRuntimePortContribution() {}\n",
+    "dist/setup/vouchers.js": "export function runVoucherSetupMigration() {}\n",
+    "dist/voyant.js": `export const financeVoyantModule = ${JSON.stringify(packedVoyantModule)}\n`,
+  })
+
+  const problems = await inspectPackedVoyantManifestRuntimeExports(root, root, manifest)
 
   assert.deepEqual(problems, [])
 })
 
-test("loads workspace TypeScript manifests with source-style .js specifiers", async () => {
-  const root = createFixture({
-    "package.json": JSON.stringify({
-      type: "module",
-      exports: { "./voyant": "./src/voyant.ts" },
-    }),
-    "src/runtime.ts": `export const financeVoyantModule = ${JSON.stringify(financeVoyantModule)}\n`,
-    "src/voyant.ts": 'export { financeVoyantModule } from "./runtime.js"\n',
+test("checks named exports from the packed manifest instead of workspace source", async () => {
+  const manifest = packedManifest({
+    "./runtime-contributor": "./dist/runtime-contributor.js",
+    "./setup/vouchers": "./dist/service-vouchers-migration.js",
+    "./voyant": "./dist/voyant.js",
+  })
+  const root = createPackedPackageFixture(manifest, {
+    "dist/runtime-contributor.js": "export function createFinanceRuntimePortContribution() {}\n",
+    "dist/service-vouchers-migration.js": "export function staleVoucherMigration() {}\n",
+    "dist/voyant.js": `export const financeVoyantModule = ${JSON.stringify(financeVoyantModule)}\n`,
+    "src/voyant.ts": "export const financeVoyantModule = { setupMigrations: [] }\n",
   })
 
-  const namespace = await loadPackedVoyantManifestNamespace(root, packedManifest({}))
+  const problems = await inspectPackedVoyantManifestRuntimeExports(root, root, manifest)
 
-  assert.deepEqual(namespace.financeVoyantModule, financeVoyantModule)
+  assert.deepEqual(problems, [
+    "runtime entry @voyant-travel/finance/setup/vouchers does not export runVoucherSetupMigration",
+  ])
 })
 
 function packedManifest(exports) {
@@ -159,4 +167,11 @@ function createFixture(files) {
     writeFileSync(destination, source)
   }
   return root
+}
+
+function createPackedPackageFixture(manifest, files) {
+  return createFixture({
+    "package.json": JSON.stringify({ type: "module", ...manifest }),
+    ...files,
+  })
 }
