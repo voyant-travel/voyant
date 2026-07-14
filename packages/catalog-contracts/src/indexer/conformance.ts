@@ -8,6 +8,7 @@ import {
   assertAdminDenormalization,
   assertCrossAudienceFederation,
   assertVectorCapabilities,
+  createConformanceEmbedding,
   type IndexerCapabilityFixtureIds,
 } from "./conformance-capabilities.js"
 import type {
@@ -130,7 +131,8 @@ export async function assertIndexerAdapterConformance(
     }
     await settle("upsert")
 
-    await assertKeywordSearchAndHitFidelity(adapter, primary, ids, documents[0]!)
+    const alphaDocument = documents.find((document) => document.id === ids.alpha)!
+    await assertKeywordSearchAndHitFidelity(adapter, primary, ids, alphaDocument)
     await assertVectorCapabilities(adapter, primary, ids)
     await assertAdminDenormalization(adapter, adminDenormalized, ids)
     await assertCrossAudienceFederation(adapter, federationBase, ids)
@@ -138,11 +140,11 @@ export async function assertIndexerAdapterConformance(
     await assertSliceIsolation(adapter, primary, isolated, ids)
     await assertPagination(adapter, primary, ids)
     await assertFacets(adapter, primary)
-    await assertUpsertReplacement(adapter, primary, ids, documents[0]!, settle)
+    await assertUpsertReplacement(adapter, primary, ids, alphaDocument, settle)
 
     await adapter.bulkReindex(bulk, toAsyncIterable(documents.slice(0, 2)))
     await settle("bulk-reindex")
-    assertIds(await searchAll(adapter, bulk), [ids.alpha, ids.bravo], "bulk reindex")
+    assertIds(await searchAll(adapter, bulk), [ids.charlie, ids.bravo], "bulk reindex")
 
     await adapter.delete(primary, [ids.charlie])
     await settle("delete")
@@ -295,7 +297,7 @@ async function assertFilters(
     {
       name: "range filter",
       filters: [{ kind: "range", field: "priceFromAmountCents", gte: 150, lte: 250 }],
-      expected: [ids.bravo],
+      expected: [ids.charlie],
     },
     {
       name: "and filter",
@@ -308,7 +310,7 @@ async function assertFilters(
           ],
         },
       ],
-      expected: [ids.charlie],
+      expected: [ids.alpha],
     },
     {
       name: "or filter",
@@ -321,7 +323,7 @@ async function assertFilters(
           ],
         },
       ],
-      expected: [ids.alpha, ids.bravo],
+      expected: [ids.bravo],
     },
   ]
 
@@ -357,9 +359,9 @@ async function assertPagination(
     slice,
     keywordRequest({ sort: "price-asc", pagination: { limit: 2 } }),
   )
-  assertIds(
+  assertOrderedIds(
     first.hits.map((hit) => hit.id),
-    [ids.alpha, ids.bravo],
+    [ids.bravo, ids.charlie],
     "first page",
   )
   assert(first.total === 3, `pagination total was ${first.total}; expected 3`)
@@ -372,9 +374,9 @@ async function assertPagination(
       pagination: { limit: 2, cursor: first.next_cursor },
     }),
   )
-  assertIds(
+  assertOrderedIds(
     second.hits.map((hit) => hit.id),
-    [ids.charlie],
+    [ids.alpha],
     "second page",
   )
   assert(second.total === 3, `terminal pagination total was ${second.total}; expected 3`)
@@ -454,9 +456,9 @@ async function assertAdmin(
   const alpha = scanned.find((document) => document.id === ids.alpha)
   assert(alpha?.fields.title === "Voyant Alpine Escape", "admin scan omitted document fields")
   assert(!Object.hasOwn(alpha?.fields ?? {}, "id"), "admin scan leaked id into document fields")
-  if (alpha?.embeddings) {
+  if (vectorDimensions !== null) {
     assert(
-      alpha.embeddings.text_embedding?.length === vectorDimensions,
+      alpha.embeddings?.text_embedding?.length === vectorDimensions,
       "admin scan did not preserve the document embedding",
     )
     assert(
@@ -483,11 +485,11 @@ async function searchAll(adapter: IndexerAdapter, slice: IndexerSlice): Promise<
 function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): IndexerDocument[] {
   const documents: IndexerDocument[] = [
     {
-      id: ids.alpha,
+      id: ids.charlie,
       fields: {
-        title: "Voyant Alpine Escape",
-        categorySlugs: ["ski", "featured"],
-        priceFromAmountCents: 100,
+        title: "Voyant City Break",
+        categorySlugs: ["city", "featured"],
+        priceFromAmountCents: 200,
         isFeatured: true,
       },
     },
@@ -496,25 +498,26 @@ function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): Ind
       fields: {
         title: "Voyant Coastal Escape",
         categorySlugs: ["beach"],
-        priceFromAmountCents: 200,
+        priceFromAmountCents: 100,
         isFeatured: false,
       },
     },
     {
-      id: ids.charlie,
+      id: ids.alpha,
       fields: {
-        title: "Voyant City Break",
-        categorySlugs: ["city", "featured"],
+        title: "Voyant Alpine Escape",
+        categorySlugs: ["ski", "featured"],
         priceFromAmountCents: 300,
         isFeatured: true,
       },
     },
   ]
   if (vectorDimensions) {
-    documents[0] = {
-      ...documents[0]!,
-      embeddings: { text_embedding: Array.from({ length: vectorDimensions }, () => 0.25) },
-      embedding_model_id: "conformance-model",
+    for (const document of documents) {
+      document.embeddings = {
+        text_embedding: createConformanceEmbedding(document.id, ids, vectorDimensions),
+      }
+      document.embedding_model_id = "conformance-model"
     }
   }
   return documents
@@ -575,6 +578,13 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
   assert(
     JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
     `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
+  )
+}
+
+function assertOrderedIds(actual: string[], expected: string[], operation: string): void {
+  assert(
+    JSON.stringify(actual) === JSON.stringify(expected),
+    `${operation} returned [${actual.join(", ")}]; expected ordered [${expected.join(", ")}]`,
   )
 }
 

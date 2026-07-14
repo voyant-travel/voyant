@@ -93,6 +93,34 @@ describe("assertIndexerAdapterConformance", () => {
     )
   })
 
+  it("rejects an adapter that ignores the requested sort order", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = (slice, request) => search(slice, { ...request, sort: undefined })
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "first page returned",
+    )
+  })
+
+  it("requires vector fixtures to round-trip through admin scan", async () => {
+    const adapter = createMemoryIndexer({
+      supportsVectorFields: true,
+      vectorDimensions: 3,
+    })
+    const admin = adapter.admin!
+    const scan = admin.scan.bind(admin)
+    admin.scan = async function* (slice, options) {
+      for await (const document of scan(slice, options)) {
+        yield { id: document.id, fields: document.fields }
+      }
+    }
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "admin scan did not preserve the document embedding",
+    )
+  })
+
   it("rejects vector limits when vector fields are unsupported", async () => {
     const adapter = createMemoryIndexer({ maxVectorsPerDocument: 1 })
 
@@ -180,27 +208,26 @@ function searchMemoryCollection(
   let documents = [...collection.documents.values()].filter((document) =>
     (request.filters ?? []).every((filter) => matchesFilter(document, filter)),
   )
+  const scores = new Map<string, number>()
 
   const keyword = request.query.trim().toLocaleLowerCase()
-  if (keyword) {
-    documents = documents.filter((document) =>
-      Object.values(document.fields).some((value) =>
-        (Array.isArray(value) ? value : [value]).some(
-          (item) => typeof item === "string" && item.toLocaleLowerCase().includes(keyword),
-        ),
-      ),
-    )
-  }
-
-  if (request.mode === "semantic") {
-    documents = documents.filter((document) =>
-      Object.values(document.embeddings ?? {}).some((embedding) => embedding.length > 0),
-    )
-  }
-  if (request.mode === "hybrid" && request.query_embedding) {
-    documents = documents.filter((document) =>
-      Object.values(document.embeddings ?? {}).some((embedding) => embedding.length > 0),
-    )
+  if (request.mode === "keyword") {
+    if (keyword) documents = documents.filter((document) => matchesKeyword(document, keyword))
+  } else if (request.query_embedding) {
+    documents = documents.filter((document) => document.embeddings?.text_embedding)
+    for (const document of documents) {
+      const vectorScore = normalizedCosineSimilarity(
+        request.query_embedding,
+        document.embeddings!.text_embedding!,
+      )
+      const keywordScore = keyword && matchesKeyword(document, keyword) ? 1 : 0
+      const score =
+        request.mode === "semantic"
+          ? vectorScore
+          : (request.alpha ?? 0.3) * vectorScore + (1 - (request.alpha ?? 0.3)) * keywordScore
+      scores.set(document.id, score)
+    }
+    documents.sort((left, right) => (scores.get(right.id) ?? 0) - (scores.get(left.id) ?? 0))
   }
 
   if (request.sort === "price-asc" || request.sort === "price-desc") {
@@ -245,11 +272,31 @@ function searchMemoryCollection(
   const nextOffset = offset + page.length
 
   return {
-    hits: page.map((document) => ({ id: document.id, score: 1, document })),
+    hits: page.map((document) => ({
+      id: document.id,
+      score: scores.get(document.id) ?? 1,
+      document,
+    })),
     total,
     next_cursor: nextOffset < total ? String(nextOffset) : undefined,
     facets,
   }
+}
+
+function matchesKeyword(document: IndexerDocument, keyword: string): boolean {
+  return Object.values(document.fields).some((value) =>
+    (Array.isArray(value) ? value : [value]).some(
+      (item) => typeof item === "string" && item.toLocaleLowerCase().includes(keyword),
+    ),
+  )
+}
+
+function normalizedCosineSimilarity(left: number[], right: number[]): number {
+  const dot = left.reduce((sum, value, index) => sum + value * (right[index] ?? 0), 0)
+  const leftMagnitude = Math.sqrt(left.reduce((sum, value) => sum + value * value, 0))
+  const rightMagnitude = Math.sqrt(right.reduce((sum, value) => sum + value * value, 0))
+  if (leftMagnitude === 0 || rightMagnitude === 0) return 0
+  return (dot / (leftMagnitude * rightMagnitude) + 1) / 2
 }
 
 function matchesFilter(document: IndexerDocument, filter: SearchFilter): boolean {

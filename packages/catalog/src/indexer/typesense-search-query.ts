@@ -22,6 +22,8 @@ export interface TypesenseSearchQuery {
   drop_tokens_threshold?: number
 }
 
+const TYPESENSE_UNLIMITED_FACET_VALUE_CAP = 250
+
 /**
  * Translates the catalog plane's `SearchRequest` into a Typesense query.
  * Converts the filter expression tree, the audience-scoped query, and the
@@ -55,14 +57,17 @@ export function buildSearchQuery(
 
   if (request.facets && request.facets.length > 0) {
     query.facet_by = request.facets.map((f) => normalizeTypesenseField(f.field)).join(",")
+    const hasUnlimitedFacet = request.facets.some(({ limit }) => limit === undefined)
     const requestedLimits = request.facets.flatMap(({ limit }) =>
       limit === undefined ? [] : [Math.max(1, Math.floor(limit))],
     )
-    if (requestedLimits.length > 0) {
-      // Typesense applies one cap to every requested facet. Fetch enough buckets
-      // for the largest request, then trim each facet independently on mapping.
-      query.max_facet_values = Math.max(...requestedLimits)
-    }
+    // Typesense applies one cap to every requested facet. An unlimited facet
+    // therefore raises the shared fetch cap to the adapter's full-result policy;
+    // explicit limits are applied independently while mapping the response.
+    query.max_facet_values = Math.max(
+      ...(hasUnlimitedFacet ? [TYPESENSE_UNLIMITED_FACET_VALUE_CAP] : []),
+      ...requestedLimits,
+    )
   }
 
   const resolvedSort = resolveSearchSort(request.sort, registry, slice)

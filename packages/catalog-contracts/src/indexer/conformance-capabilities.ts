@@ -7,6 +7,19 @@ export interface IndexerCapabilityFixtureIds {
   federationPartner: string
 }
 
+export function createConformanceEmbedding(
+  id: string,
+  ids: IndexerCapabilityFixtureIds,
+  dimensions: number,
+): number[] {
+  const embedding = Array.from({ length: dimensions }, () => 0)
+  if (id === ids.alpha) embedding[0] = 1
+  else if (id === ids.bravo) embedding[0] = -1
+  else if (dimensions > 1) embedding[1] = 1
+  else embedding[0] = -1
+  return embedding
+}
+
 export async function assertVectorCapabilities(
   adapter: IndexerAdapter,
   slice: IndexerSlice,
@@ -15,7 +28,7 @@ export async function assertVectorCapabilities(
   if (!adapter.capabilities.supportsVectorFields) return
   const queryEmbedding = Array.from(
     { length: adapter.capabilities.vectorDimensions ?? 0 },
-    () => 0.25,
+    (_, index) => (index === 0 ? 1 : 0),
   )
   const semantic = await adapter.search(slice, {
     query: "",
@@ -23,23 +36,37 @@ export async function assertVectorCapabilities(
     query_embedding: queryEmbedding,
     pagination: { limit: 10 },
   })
-  assertIds(
+  assertLeadingId(
     semantic.hits.map((hit) => hit.id),
-    [ids.alpha],
+    ids.alpha,
     "semantic vector search",
   )
 
   if (!adapter.capabilities.supportsHybridSearch) return
-  const hybrid = await adapter.search(slice, {
-    query: "Alpine",
+  const keywordWeighted = await adapter.search(slice, {
+    query: "Coastal",
     mode: "hybrid",
     query_embedding: queryEmbedding,
+    alpha: 0.25,
     pagination: { limit: 10 },
   })
-  assertIds(
-    hybrid.hits.map((hit) => hit.id),
-    [ids.alpha],
-    "hybrid search",
+  assertLeadingId(
+    keywordWeighted.hits.map((hit) => hit.id),
+    ids.bravo,
+    "keyword-weighted hybrid search",
+  )
+
+  const vectorWeighted = await adapter.search(slice, {
+    query: "Coastal",
+    mode: "hybrid",
+    query_embedding: queryEmbedding,
+    alpha: 0.75,
+    pagination: { limit: 10 },
+  })
+  assertLeadingId(
+    vectorWeighted.hits.map((hit) => hit.id),
+    ids.alpha,
+    "vector-weighted hybrid search",
   )
 }
 
@@ -86,6 +113,14 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
     JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
     `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
   )
+}
+
+function assertLeadingId(actual: string[], expected: string, operation: string): void {
+  assert(
+    actual[0] === expected,
+    `${operation} ranked ${actual[0] ?? "no document"} first; expected ${expected}`,
+  )
+  assert(actual.length > 1, `${operation} did not include competing vector candidates`)
 }
 
 function assert(condition: unknown, message: string): asserts condition {

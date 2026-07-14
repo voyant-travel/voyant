@@ -305,14 +305,25 @@ describe("Typesense catalog indexer", () => {
     const results = await indexer.search(facetSlice, {
       query: "",
       mode: "keyword",
-      facets: [
-        { field: "categorySlugs[]", limit: 1 },
-        { field: "themes[]", limit: 3 },
-      ],
+      facets: [{ field: "categorySlugs[]", limit: 1 }, { field: "themes[]" }],
     })
 
     expect(results.facets?.categorySlugs).toHaveLength(1)
     expect(results.facets?.themes).toHaveLength(3)
+  })
+
+  it("raises Typesense's global facet cap when any requested facet is unlimited", () => {
+    const query = buildSearchQuery(
+      {
+        query: "",
+        mode: "keyword",
+        facets: [{ field: "categorySlugs[]", limit: 1 }, { field: "themes[]" }],
+      },
+      registry,
+      slice,
+    )
+
+    expect(query.max_facet_values).toBe(250)
   })
 
   it("rejects deterministic imports that do not match the collection schema", async () => {
@@ -983,25 +994,40 @@ function searchDeterministicTypesense(
   query: TypesenseSearchQuery,
 ): TypesenseSearchResponse {
   let documents = [...source.values()]
-  if (query.q !== "*") {
-    const keyword = query.q.toLocaleLowerCase()
-    const queryFields = query.query_by.split(",")
-    documents = documents.filter((document) =>
-      queryFields.some((field) =>
-        valuesOf(document[field]).some(
-          (value) => typeof value === "string" && value.toLocaleLowerCase().includes(keyword),
-        ),
-      ),
-    )
-  }
   if (query.filter_by) {
     documents = documents.filter((document) => matchesTypesenseFilter(document, query.filter_by!))
   }
-  if (query.vector_query) {
+  const scores = new Map<string, number>()
+  const keyword = query.q.toLocaleLowerCase()
+  const queryFields = query.query_by.split(",")
+  const vectorQuery = query.vector_query ? parseDeterministicVectorQuery(query.vector_query) : null
+  if (vectorQuery) {
     documents = documents.filter((document) => {
-      const embedding = document.text_embedding
-      return Array.isArray(embedding) && embedding.every((value) => typeof value === "number")
+      const embedding = document[vectorQuery.field]
+      if (!isNumberArray(embedding)) return false
+      const distance = cosineDistance(vectorQuery.embedding, embedding)
+      if (vectorQuery.distanceThreshold !== undefined && distance > vectorQuery.distanceThreshold) {
+        return false
+      }
+      const vectorScore = 1 - distance / 2
+      const keywordScore =
+        query.q !== "*" && matchesTypesenseKeyword(document, keyword, queryFields) ? 1 : 0
+      scores.set(
+        String(document.id),
+        query.q === "*"
+          ? vectorScore
+          : vectorQuery.alpha * vectorScore + (1 - vectorQuery.alpha) * keywordScore,
+      )
+      return true
     })
+    documents.sort(
+      (left, right) => (scores.get(String(right.id)) ?? 0) - (scores.get(String(left.id)) ?? 0),
+    )
+    documents = documents.slice(0, vectorQuery.k)
+  } else if (query.q !== "*") {
+    documents = documents.filter((document) =>
+      matchesTypesenseKeyword(document, keyword, queryFields),
+    )
   }
   if (query.sort_by) {
     const [field, direction] = query.sort_by.split(":")
@@ -1028,11 +1054,62 @@ function searchDeterministicTypesense(
       document: Object.fromEntries(
         Object.entries(document).filter(([field]) => !excluded.has(field)),
       ),
-      text_match: query.q === "*" ? 0 : 100,
+      text_match: scores.get(String(document.id)) ?? (query.q === "*" ? 0 : 100),
     })),
     found,
     facet_counts: facetCounts,
   }
+}
+
+interface DeterministicVectorQuery {
+  field: string
+  embedding: number[]
+  alpha: number
+  distanceThreshold?: number
+  k: number
+}
+
+function parseDeterministicVectorQuery(value: string): DeterministicVectorQuery {
+  const parsed = value.match(/^([^:]+):\(\[([^\]]*)\],\s*(.*)\)$/)
+  if (!parsed) throw new Error(`Unsupported deterministic vector query: ${value}`)
+  const options = new Map(
+    (parsed[3] ?? "").split(",").map((option) => {
+      const [name, rawValue] = option.trim().split(":")
+      return [name, Number(rawValue)]
+    }),
+  )
+  const distanceThreshold = options.get("distance_threshold")
+  return {
+    field: parsed[1]!,
+    embedding: (parsed[2] ?? "").split(",").map(Number),
+    alpha: options.get("alpha") ?? 0.3,
+    ...(distanceThreshold === undefined ? {} : { distanceThreshold }),
+    k: options.get("k") ?? 100,
+  }
+}
+
+function matchesTypesenseKeyword(
+  document: Record<string, unknown>,
+  keyword: string,
+  queryFields: string[],
+): boolean {
+  return queryFields.some((field) =>
+    valuesOf(document[field]).some(
+      (value) => typeof value === "string" && value.toLocaleLowerCase().includes(keyword),
+    ),
+  )
+}
+
+function cosineDistance(left: number[], right: number[]): number {
+  const dot = left.reduce((sum, value, index) => sum + value * (right[index] ?? 0), 0)
+  const leftMagnitude = Math.sqrt(left.reduce((sum, value) => sum + value * value, 0))
+  const rightMagnitude = Math.sqrt(right.reduce((sum, value) => sum + value * value, 0))
+  if (leftMagnitude === 0 || rightMagnitude === 0) return 2
+  return 1 - dot / (leftMagnitude * rightMagnitude)
+}
+
+function isNumberArray(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "number")
 }
 
 function validateDeterministicTypesenseDocument(

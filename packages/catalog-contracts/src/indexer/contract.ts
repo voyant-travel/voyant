@@ -140,7 +140,7 @@ export interface SearchRequest {
   pagination?: SearchPagination
   /** Staff-only cross-audience federation. */
   search_audiences?: Visibility[]
-  /** Hybrid rank-fusion weight in the inclusive range `0..1`. */
+  /** Hybrid vector-signal weight: `0` is keyword-only and `1` is vector-only. */
   alpha?: number
   /** Maximum cosine distance accepted for vector results. */
   distance_threshold?: number
@@ -169,15 +169,15 @@ export interface SearchResults {
 export interface IndexerCapabilities {
   /** Accepts keyword requests and applies the non-empty query text. */
   supportsKeywordSearch: boolean
-  /** Blends keyword and vector signals for `mode: "hybrid"` requests. */
+  /** Blends keyword and vector ranking signals according to `alpha` for hybrid requests. */
   supportsHybridSearch: boolean
-  /** Stores document embeddings and accepts semantic requests with a query embedding. */
+  /** Stores document embeddings and ranks semantic requests by query-vector similarity. */
   supportsVectorFields: boolean
   /** Required vector dimension, or null when vector fields are unsupported. */
   vectorDimensions: number | null
   /** Engine vector count limit per document, or null when unlimited. */
   maxVectorsPerDocument: number | null
-  /** Honors `search_audiences` as one native cross-audience search request. */
+  /** Honors `search_audiences` through one `adapter.search(...)` call. */
   supportsCrossAudienceFederation: boolean
   /** Indexes and keyword-searches cross-audience fields in `staff-admin` documents. */
   supportsAdminDenormalization: boolean

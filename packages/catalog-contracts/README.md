@@ -53,15 +53,18 @@ await assertIndexerAdapterConformance({
 ```
 
 The runner creates isolated slices, mutates them, and removes them again. It
-checks non-empty keyword matching, filters, canonical sorting, replacement by
+checks non-empty keyword matching, filters, canonical ordered sorting, replacement by
 document id, hit round-tripping, facet and page limits, terminal cursors, slice
 isolation, bulk reindexing, deletion, and optional admin operations. When an
-adapter declares vector, hybrid, native cross-audience federation, or admin
-denormalization support, the runner also issues a focused request for that
-behavior. These checks verify portable request handling and result fidelity;
-they do not grade provider-specific ranking quality. Hosted providers can
-supply `settle` when writes are eventually consistent and `namespace` when
-resource names need a stable prefix.
+adapter declares vector, hybrid, cross-audience federation, or admin
+denormalization support, the runner also verifies that behavior. Semantic
+fixtures require similarity ordering, hybrid fixtures require `alpha` to change
+the winner of competing keyword and vector signals, and federation is observed
+through one `adapter.search(...)` call. The runner certifies these portable
+semantics, not a provider's internal query topology or proprietary ranking
+quality; provider-specific native behavior belongs in provider-owned tests.
+Hosted providers can supply `settle` when writes are eventually consistent and
+`namespace` when resource names need a stable prefix.
 
 `IndexerDocument.fields` use engine-neutral index field names. They preserve
 field-policy paths except for a terminal list marker: policy path `tags[]` is
