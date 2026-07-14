@@ -1,5 +1,16 @@
 # @voyant-travel/storefront-react
 
+## 0.159.0
+
+### Patch Changes
+
+- 0808b21: Publish canonical catalog search sort resolution, strengthen adapter conformance coverage, verify the Typesense implementation against the public runner, and remove provider-specific UI wording.
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog-contracts@0.111.0
+  - @voyant-travel/catalog-react@0.155.0
+  - @voyant-travel/storefront@0.159.0
+  - @voyant-travel/accommodations@0.117.0
+
 ## 0.158.1
 
 ### Patch Changes
