@@ -1,18 +1,18 @@
 # Promotions architecture — design
 
-Status: design v2 — decided, implementation-ready. All architectural threads resolved (see §15 for rationale on the two largest). PR1–PR5 unblocked.
+Status: implemented. The historical sequenced rollout remains documented below for rationale.
 Audience: anyone designing or implementing promotional offers in Voyant — auto-applied catalog discounts (storefront badges + strikethrough prices), code-redeemed discounts at checkout, and channel- / audience- / market-wide blanket discounts.
 
-This document captures the architecture for how Voyant models, evaluates, and surfaces promotional offers across both the **discovery surface** (catalog plane — search badges, strikethrough prices) and the **commercial ladder** (quote/offer/order/booking — code redemption, discount application). It is the design that resolves issue #497 and supersedes the placeholder shapes that already exist in `packages/storefront` (the `StorefrontPromotionalOffer` DTO with no implementation behind it) and `packages/catalog/src/booking-engine/contracts.ts` (the `voucher: { code }` field accepted in the booking draft but consumed by nothing).
+This document captures how Voyant models, evaluates, and surfaces promotional offers across both the **discovery surface** (catalog plane — search badges, strikethrough prices) and the **commercial ladder** (quote/offer/order/booking — code redemption, discount application). It resolves issue #497 and supersedes the former placeholder booking-draft code field with `promotionCode`.
 
 The document covers a single coherent build that ships across **5 sequenced PRs** (§13). Each PR is independently mergeable and useful; the staging is for review / risk management, not for hiding scope.
 
 ## 1. Why this exists
 
-Voyant today has **no implementation** for promotional offers, despite three call-sites suggesting otherwise:
+The implementation was introduced to close three historical gaps:
 
 1. `packages/storefront/src/validation.ts` defines `StorefrontPromotionalOffer` with all the right-shaped fields (discountType, discountValue, applicableProductIds, validFrom/To, minTravelers, stackable). It's a contract for storefront UIs to render. The storefront service exposes `resolvePromotionalOffers` / `getOfferBySlug` callback hooks but **no implementation** — templates would have to wire their own.
-2. `packages/catalog/src/booking-engine/contracts.ts:343` accepts `voucher: { code: string }` in the booking draft. Nothing downstream reads the code, validates it, or applies a discount. **The field will be renamed to `promotionCode` in PR4 (see §7.0)** because `voucher` already names a real domain in finance (gift / refund credit vouchers — `packages/finance/src/schema.ts:239` (`vouchers`) and `:294` (`voucher_redemptions`)); keeping promotions on `voucher.code` would conflate the two and create a permanent terminology trap.
+2. Booking drafts now use `promotionCode`, which Commerce evaluates at quote time. Finance owns Travel Credits and Bookings owns Service Vouchers; promotions never use either vocabulary.
 3. The since-deleted `apps/dev` playground's `stay-booking-item-dialog.tsx` had a `voucherCode` field — but that's a hotel-confirmation voucher number from the supplier, unrelated to discount codes.
 
 So an operator today cannot:
@@ -441,7 +441,7 @@ Mirrors the destinations / taxonomy / departures / pricing pattern from #493:
 
 The placeholder field on `BookingDraft` (`packages/catalog/src/booking-engine/contracts.ts:343`) is renamed in PR4 from `voucher: { code: string }` to `promotionCode: string` (a plain string, not a wrapped object — there's no other voucher-shaped data to carry alongside the code).
 
-The `voucher` name is reserved for the **finance domain**: gift / refund credit instruments at `packages/finance/src/schema.ts:239` (`vouchers`) and `:294` (`voucher_redemptions`). Promotions and finance vouchers are different mechanisms (a promotion is a percentage / fixed discount applied at quote time; a finance voucher is a stored-value credit redeemed against an invoice). Sharing the `voucher` term across both would force every future reader to disambiguate. Better to take the rename hit while the field has zero callers.
+Finance owns **Travel Credits**, while Bookings owns Service Vouchers. Promotions are a third mechanism: a percentage or fixed discount applied at quote time. A Travel Credit carries stored value and is redeemed against an amount due; a Service Voucher is a fulfillment artifact. Promotion fields therefore use `promotionCode` and never either credit or voucher terminology.
 
 There are no live consumers of `draft.voucher.code` today — the audit in §1 confirms it. The rename is a single-call-site change in PR4 with no migration concern.
 
@@ -598,7 +598,7 @@ The public HTTP routes live under the public capability namespace, not an extra 
 - `POST /v1/public/offers/:slug/apply`
 - `POST /v1/public/offers/redeem`
 
-Both parse JSON through `parseJsonBody(...)`, return customer-safe status/reason codes, echo booking/session identifiers when provided, and include price-impact plus conflict metadata. They do not replace finance voucher validation and they do not create payment captures. Booking-level redemption audit rows are still written from confirmed quotes by the `booking.confirmed` subscriber.
+Both parse JSON through `parseJsonBody(...)`, return customer-safe status/reason codes, echo booking/session identifiers when provided, and include price-impact plus conflict metadata. They do not replace Finance Travel Credit validation and they do not create payment captures. Booking-level redemption audit rows are still written from confirmed quotes by the `booking.confirmed` subscriber.
 
 Offer mutation requests require the caller to provide `pax` explicitly. The resolver does not infer traveler counts from booking/session IDs; omitting `pax` would make the evaluator treat minimum-traveler conditions as catalog-plane conditional offers instead of checkout exclusions.
 
@@ -697,7 +697,7 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 6. **Recompute on category mutation** — defer. Explicit operator save re-materializes the link table. Full reactivity is a follow-up that needs a `category.products.changed` event surface which doesn't exist today.
 7. **Storefront `applicableDepartureIds`** — return empty arrays in v1. Departure-scoped offers aren't modeled until there's a real departure-scope rule. DTO compatibility preserved.
 8. **Per-tenant overrides** — out of scope. Per the repo's tenancy ADR, multitenancy is a deployment-boundary concern; no tenant-scoping or override machinery in this module. Reopened only if the shared-tier work happens.
-9. **Booking-draft field rename** — `voucher.code` → `promotionCode`. Avoids permanent collision with the finance `vouchers` domain (`packages/finance/src/schema.ts:239`).
+9. **Booking-draft field rename** — `voucher.code` → `promotionCode`. Keeps Promotions distinct from Finance Travel Credits and Bookings Service Vouchers.
 10. **Catalog → promotions dependency direction** — `@voyant-travel/catalog` does not import `@voyant-travel/commerce`. The quote-time evaluator is an injected dep on `QuoteEntityDeps`; redemption recording is a `booking.confirmed` subscriber registered by the operator starter. **No `BookEntityDeps` hook** — `bookEntity` has no enclosing transaction so the "atomic with commit" framing was wrong (see §7.3.1).
 11. **`PROMOTION_CHANGED_EVENT` payload** — typed discriminated union `affected: { kind: "products" | "all" }`. No `kind: "slices"` — `IndexerService` has no "reindex all products in this slice" helper, so promotions resolves slice-shaped scopes to product IDs at emission time and emits `kind: "products"` (or falls back to `kind: "all"` when the resolved set is too large to enumerate). See §9.1.
 12. **No `channels` scope kind in v1** — `channelScope` lives on `market_product_rules` (not `markets`) and `IndexerSlice` has no channel dimension. Modeling channels properly requires structural changes to either (a) the projection's per-product join load or (b) `IndexerSlice` itself; both are out of scope for the promotions PR. Operators model channel-wide promos via `audiences` + `markets`. See §3.2; deferred follow-up in §14.

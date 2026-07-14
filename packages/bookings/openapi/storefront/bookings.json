@@ -4175,7 +4175,7 @@
                               "fulfillmentType": {
                                 "type": "string",
                                 "enum": [
-                                  "voucher",
+                                  "service_voucher",
                                   "ticket",
                                   "pdf",
                                   "qr_code",
@@ -4582,7 +4582,7 @@
                                   "fulfillmentType": {
                                     "type": "string",
                                     "enum": [
-                                      "voucher",
+                                      "service_voucher",
                                       "ticket",
                                       "pdf",
                                       "qr_code",

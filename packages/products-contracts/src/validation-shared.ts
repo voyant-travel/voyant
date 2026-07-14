@@ -33,7 +33,7 @@ export const productTicketFulfillmentSchema = z.enum([
   "per_item",
 ])
 export const productDeliveryFormatSchema = z.enum([
-  "voucher",
+  "service_voucher",
   "ticket",
   "pdf",
   "qr_code",
@@ -51,7 +51,7 @@ export const productCapabilitySchema = z.enum([
   "private",
   "shared",
   "digital_ticket",
-  "voucher_required",
+  "service_voucher_required",
   "external_inventory",
   "multi_day",
   "accommodation",

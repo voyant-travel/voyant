@@ -7,13 +7,13 @@ import {
   type PublicBookingPaymentOptions,
   type PublicFinanceDocumentLookup,
   type PublicPaymentSession,
-  type PublicVoucherValidationResult,
+  type PublicTravelCreditValidationResult,
   publicBookingFinanceDocumentsSchema,
   publicBookingFinancePaymentsSchema,
   publicBookingPaymentOptionsSchema,
   publicFinanceDocumentLookupSchema,
   publicPaymentSessionSchema,
-  publicVoucherValidationSchema,
+  publicTravelCreditValidationSchema,
 } from "../../src/validation-public.js"
 
 /**
@@ -29,14 +29,12 @@ function jsonRoundTrip<T>(value: T): unknown {
   return JSON.parse(JSON.stringify(value))
 }
 
-const voucherValidation: PublicVoucherValidationResult = {
+const travelCreditValidation: PublicTravelCreditValidationResult = {
   valid: true,
   reason: null,
-  voucher: {
+  travelCredit: {
     id: "pinst_0000000000000000000000000",
     code: "WELCOME10",
-    label: null,
-    provider: null,
     currency: "EUR",
     amountCents: 1000,
     remainingAmountCents: 1000,
@@ -113,12 +111,12 @@ const bookingPayments: PublicBookingFinancePayments = {
     },
     {
       id: "vred_000000000000000000000000",
-      source: "voucher_redemption",
+      source: "travel_credit_redemption",
       invoiceId: null,
       invoiceNumber: null,
       invoiceType: null,
       status: "completed",
-      paymentMethod: "voucher",
+      paymentMethod: "travel_credit",
       amountCents: 20000,
       currency: "EUR",
       baseCurrency: null,
@@ -210,7 +208,11 @@ const paymentSession: PublicPaymentSession = {
 }
 
 const cases: Array<{ name: string; value: unknown; schema: z.ZodTypeAny }> = [
-  { name: "voucher validation", value: voucherValidation, schema: publicVoucherValidationSchema },
+  {
+    name: "travel credit validation",
+    value: travelCreditValidation,
+    schema: publicTravelCreditValidationSchema,
+  },
   { name: "document lookup", value: documentLookup, schema: publicFinanceDocumentLookupSchema },
   {
     name: "booking documents",

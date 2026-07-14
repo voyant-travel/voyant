@@ -517,7 +517,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       })
       await db.insert(bookingFulfillments).values({
         bookingId: booking.id,
-        fulfillmentType: "voucher",
+        fulfillmentType: "service_voucher",
         deliveryChannel: "email",
         status: "issued",
       })
@@ -3349,9 +3349,9 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         ...json({
           bookingItemId: item.id,
           travelerId: participant.id,
-          fulfillmentType: "voucher",
+          fulfillmentType: "service_voucher",
           deliveryChannel: "download",
-          artifactUrl: "https://example.com/voucher.pdf",
+          artifactUrl: "https://example.com/service-voucher.pdf",
         }),
       })
 

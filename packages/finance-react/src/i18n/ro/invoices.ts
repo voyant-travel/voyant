@@ -18,7 +18,7 @@ export const common = {
     cheque: "Cec",
     wallet: "Portofel",
     direct_bill: "Facturare Directa",
-    voucher: "Voucher",
+    travel_credit: "Credit de calatorie",
     other: "Altul",
   },
   supplierPaymentMethodLabels: {

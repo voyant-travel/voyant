@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm"
 import { drizzle, type NodePgClient, type NodePgDatabase } from "drizzle-orm/node-postgres"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { paymentInstruments, vouchers } from "./schema.js"
+import { paymentInstruments, travelCredits } from "./schema.js"
 
 /**
  * Pulls a (possibly nested, array-wrapped, or null) value out of a JSONB
@@ -38,7 +38,7 @@ function asDate(value: string | null): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-export interface VoucherMigrationOptions {
+export interface TravelCreditMigrationOptions {
   /**
    * When true, report what would happen without writing. Defaults to false.
    */
@@ -46,10 +46,10 @@ export interface VoucherMigrationOptions {
   /**
    * Per-row hook for progress reporting. Not called on skipped rows.
    */
-  onRowMigrated?: (info: { paymentInstrumentId: string; voucherCode: string }) => void
+  onRowMigrated?: (info: { paymentInstrumentId: string; travelCreditCode: string }) => void
 }
 
-export interface VoucherMigrationSkip {
+export interface TravelCreditMigrationSkip {
   paymentInstrumentId: string
   reason:
     | "already_migrated"
@@ -59,69 +59,77 @@ export interface VoucherMigrationSkip {
     | "duplicate_code_collision"
 }
 
-export interface VoucherMigrationResult {
+export interface TravelCreditMigrationResult {
   candidates: number
   migrated: number
-  skipped: VoucherMigrationSkip[]
+  skipped: TravelCreditMigrationSkip[]
   dryRun: boolean
 }
 
-export interface VoucherSetupMigrationContext {
+export interface TravelCreditSetupMigrationContext {
   client: NodePgClient
   dryRun: boolean
 }
 
 /** Node migration-runner adapter exported by the package-owned setup facet. */
-export async function runVoucherSetupMigration(
-  context: VoucherSetupMigrationContext,
-): Promise<VoucherMigrationResult> {
+export async function runTravelCreditSetupMigration(
+  context: TravelCreditSetupMigrationContext,
+): Promise<TravelCreditMigrationResult> {
   const db = drizzle(context.client)
-  return migrateVouchersFromPaymentInstruments(db, { dryRun: context.dryRun })
+  const result = await migrateTravelCreditsFromPaymentInstruments(db, { dryRun: context.dryRun })
+  const invalid = result.skipped.filter((skip) => skip.reason !== "already_migrated")
+  if (invalid.length > 0) {
+    const detail = invalid.map((skip) => `${skip.paymentInstrumentId}:${skip.reason}`).join(", ")
+    throw new Error(`Travel Credit setup migration requires manual repair: ${detail}`)
+  }
+  return result
 }
 
 /**
- * Backfill the `vouchers` table from legacy voucher rows in
- * `payment_instruments`. A legacy voucher is a row with `instrumentType =
- * 'voucher'` whose code lives in one of `metadata.code`, `external_token`, or
+ * Backfill `travel_credits` from legacy payment-instrument rows. The schema
+ * migration renames their historical `voucher` type to `travel_credit` before
+ * this setup migration runs. The code lives in one of
+ * `metadata.code`, `external_token`, or
  * `direct_bill_reference`, and whose balance lives in
  * `metadata.remainingAmountCents` (falling back to `metadata.amountCents` when
  * no redemption has touched the row).
  *
- * The migration is idempotent: rows whose code already exists in the new
- * `vouchers` table are skipped so re-running the script after a partial run
- * (or after issuing new vouchers via the first-class API) is safe.
+ * The migration is idempotent: rows whose code already exists in
+ * `travel_credits` are skipped so re-running the script after a partial run
+ * (or after issuing new Travel Credits via the first-class API) is safe.
  *
  * Why skip rather than update: the new table treats `code` as a primary lookup
  * key and the legacy path has already been read-only-fallback since #256
- * landed, so any voucher that exists in both tables is by definition already
+ * landed, so any credit that exists in both tables is by definition already
  * migrated. Picking one source of truth avoids clobbering balances the
  * operator may have adjusted through the new redemption flow.
  */
-export async function migrateVouchersFromPaymentInstruments(
+export async function migrateTravelCreditsFromPaymentInstruments(
   db: PostgresJsDatabase | NodePgDatabase,
-  options: VoucherMigrationOptions = {},
-): Promise<VoucherMigrationResult> {
+  options: TravelCreditMigrationOptions = {},
+): Promise<TravelCreditMigrationResult> {
   const dryRun = options.dryRun ?? false
-  const skipped: VoucherMigrationSkip[] = []
+  const skipped: TravelCreditMigrationSkip[] = []
   let migrated = 0
 
   const candidates = await db
     .select()
     .from(paymentInstruments)
-    .where(eq(paymentInstruments.instrumentType, "voucher"))
+    .where(eq(paymentInstruments.instrumentType, "travel_credit"))
 
   for (const instrument of candidates) {
     const metadata = asRecord(instrument.metadata)
 
-    const code =
+    const rawCode =
       asString(metadata, "code") ?? instrument.externalToken ?? instrument.directBillReference
-    if (!code) {
+    if (!rawCode) {
       skipped.push({ paymentInstrumentId: instrument.id, reason: "missing_code" })
       continue
     }
+    const code = rawCode.trim().toUpperCase()
 
     const currency = asString(metadata, "currency")
-    if (!currency || currency.length !== 3) {
+    if (currency?.length !== 3) {
       skipped.push({ paymentInstrumentId: instrument.id, reason: "missing_currency" })
       continue
     }
@@ -134,13 +142,19 @@ export async function migrateVouchersFromPaymentInstruments(
     const remainingAmountCents = asNumber(metadata, "remainingAmountCents") ?? initialAmountCents
 
     const [existing] = await db
-      .select({ id: vouchers.id })
-      .from(vouchers)
+      .select({ id: travelCredits.id })
+      .from(travelCredits)
       // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-      .where(sql`lower(${vouchers.code}) = ${code.toLowerCase()}`)
+      .where(sql`lower(${travelCredits.code}) = ${code.toLowerCase()}`)
       .limit(1)
     if (existing) {
-      skipped.push({ paymentInstrumentId: instrument.id, reason: "already_migrated" })
+      skipped.push({
+        paymentInstrumentId: instrument.id,
+        reason:
+          asString(metadata, "voyantTravelCreditId") === existing.id
+            ? "already_migrated"
+            : "duplicate_code_collision",
+      })
       continue
     }
 
@@ -162,40 +176,51 @@ export async function migrateVouchersFromPaymentInstruments(
 
     if (dryRun) {
       migrated++
-      options.onRowMigrated?.({ paymentInstrumentId: instrument.id, voucherCode: code })
+      options.onRowMigrated?.({ paymentInstrumentId: instrument.id, travelCreditCode: code })
       continue
     }
 
     try {
-      await db.insert(vouchers).values({
-        code,
-        seriesCode,
-        status,
-        currency: currency.toUpperCase(),
-        initialAmountCents,
-        remainingAmountCents: Math.max(0, remainingAmountCents),
-        issuedToPersonId: instrument.personId ?? null,
-        issuedToOrganizationId: instrument.organizationId ?? null,
-        // We don't know the original source (refund vs gift vs promo) from the
-        // legacy shape, so mark everything as `manual` — operators can reclassify
-        // later via PATCH /vouchers/:id.
-        sourceType: "manual",
-        sourceBookingId,
-        notes: instrument.notes ?? null,
-        validFrom,
-        expiresAt,
-        createdAt: instrument.createdAt,
-        updatedAt: instrument.updatedAt,
-      })
+      const [travelCredit] = await db
+        .insert(travelCredits)
+        .values({
+          code,
+          seriesCode,
+          status,
+          currency: currency.toUpperCase(),
+          initialAmountCents,
+          remainingAmountCents: Math.max(0, remainingAmountCents),
+          issuedToPersonId: instrument.personId ?? null,
+          issuedToOrganizationId: instrument.organizationId ?? null,
+          // We don't know the original source (refund vs gift vs goodwill) from the
+          // legacy shape, so mark everything as `manual` — operators can reclassify
+          // later via PATCH /travel-credits/:id.
+          sourceType: "manual",
+          sourceBookingId,
+          notes: instrument.notes ?? null,
+          validFrom,
+          expiresAt,
+          createdAt: instrument.createdAt,
+          updatedAt: instrument.updatedAt,
+        })
+        .returning()
+      if (!travelCredit) throw new Error(`Failed to migrate Travel Credit ${code}`)
+      await db
+        .update(paymentInstruments)
+        .set({
+          // agent-quality: raw-sql reviewed -- owner: finance; Drizzle binds the identifiers and migrated Travel Credit ID.
+          metadata: sql`coalesce(${paymentInstruments.metadata}, '{}'::jsonb) || jsonb_build_object('voyantTravelCreditId', ${travelCredit.id}::text)`,
+        })
+        .where(eq(paymentInstruments.id, instrument.id))
       migrated++
-      options.onRowMigrated?.({ paymentInstrumentId: instrument.id, voucherCode: code })
+      options.onRowMigrated?.({ paymentInstrumentId: instrument.id, travelCreditCode: code })
     } catch (error) {
       // Unique-index collision is the only realistic insert failure here
       // (another concurrent migration or a race with a manual issuance). Record
       // it as a skip rather than aborting the batch so a retry finishes the
       // rest.
       const message = error instanceof Error ? error.message : String(error)
-      if (message.includes("uidx_vouchers_code") || message.includes("duplicate key")) {
+      if (message.includes("uidx_travel_credits_code") || message.includes("duplicate key")) {
         skipped.push({ paymentInstrumentId: instrument.id, reason: "duplicate_code_collision" })
         continue
       }

@@ -193,12 +193,16 @@ describe("operator composed route mounting (smoke)", () => {
     expect(await status("/v1/admin/smartbill/invoices/inv_123/sync", "POST")).toBe(404)
   })
 
-  it("lets storefront voucher validation pass the public actor gate even with an admin session", async () => {
-    const res = await responseWithSessionActor("staff", "/v1/public/finance/vouchers/validate", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ code: "TEST-VOUCHER" }),
-    })
+  it("lets storefront Travel Credit validation pass the public actor gate with an admin session", async () => {
+    const res = await responseWithSessionActor(
+      "staff",
+      "/v1/public/finance/travel-credits/validate",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: "TEST-CREDIT" }),
+      },
+    )
 
     expect(res.status).not.toBe(401)
     expect(res.status).not.toBe(403)

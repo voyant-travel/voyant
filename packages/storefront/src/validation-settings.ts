@@ -27,7 +27,7 @@ export const storefrontPaymentMethodCodeSchema = z.enum([
   "card",
   "bank_transfer",
   "cash",
-  "voucher",
+  "travel_credit",
   "invoice",
 ])
 

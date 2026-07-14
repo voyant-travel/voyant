@@ -484,9 +484,9 @@ export {
   getPublicBookingPaymentsQueryOptions,
   getPublicFinanceDocumentByReferenceQueryOptions,
   getPublicPaymentSessionQueryOptions,
+  getTravelCreditQueryOptions,
+  getTravelCreditsQueryOptions,
   getTravelerProfitabilityQueryOptions,
-  getVoucherQueryOptions,
-  getVouchersQueryOptions,
 } from "./query-options/public-reporting.js"
 
 export {

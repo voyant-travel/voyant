@@ -127,8 +127,9 @@
     "parameters": {}
   },
   "paths": {
-    "/v1/public/finance/vouchers/validate": {
+    "/v1/public/finance/travel-credits/validate": {
       "post": {
+        "x-voyant-api-id": "@voyant-travel/finance#api.public",
         "requestBody": {
           "required": true,
           "content": {
@@ -139,10 +140,6 @@
                   "code": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "provider": {
-                    "type": ["string", "null"],
                     "maxLength": 255
                   },
                   "bookingId": {
@@ -165,7 +162,7 @@
         },
         "responses": {
           "200": {
-            "description": "Voucher validity result",
+            "description": "Travel credit validity result",
             "content": {
               "application/json": {
                 "schema": {
@@ -190,7 +187,7 @@
                             null
                           ]
                         },
-                        "voucher": {
+                        "travelCredit": {
                           "type": ["object", "null"],
                           "properties": {
                             "id": {
@@ -198,12 +195,6 @@
                             },
                             "code": {
                               "type": "string"
-                            },
-                            "label": {
-                              "type": ["string", "null"]
-                            },
-                            "provider": {
-                              "type": ["string", "null"]
                             },
                             "currency": {
                               "type": ["string", "null"]
@@ -221,8 +212,6 @@
                           "required": [
                             "id",
                             "code",
-                            "label",
-                            "provider",
                             "currency",
                             "amountCents",
                             "remainingAmountCents",
@@ -230,7 +219,7 @@
                           ]
                         }
                       },
-                      "required": ["valid", "reason", "voucher"]
+                      "required": ["valid", "reason", "travelCredit"]
                     }
                   },
                   "required": ["data"]
@@ -239,8 +228,8 @@
             }
           }
         },
-        "operationId": "postPublicFinanceVouchersValidate",
-        "summary": "POST /v1/public/finance/vouchers/validate",
+        "operationId": "postPublicFinanceTravelCreditsValidate",
+        "summary": "POST /v1/public/finance/travel-credits/validate",
         "tags": ["finance"],
         "x-voyant-module": "finance",
         "x-voyant-surface": "storefront"
@@ -755,7 +744,7 @@
                               },
                               "source": {
                                 "type": "string",
-                                "enum": ["payment", "voucher_redemption"],
+                                "enum": ["payment", "travel_credit_redemption"],
                                 "default": "payment"
                               },
                               "invoiceId": {
@@ -782,7 +771,7 @@
                                   "cheque",
                                   "wallet",
                                   "direct_bill",
-                                  "voucher",
+                                  "travel_credit",
                                   "other"
                                 ]
                               },
@@ -901,7 +890,7 @@
                 "debit_card",
                 "bank_account",
                 "wallet",
-                "voucher",
+                "travel_credit",
                 "direct_bill",
                 "cash",
                 "other"
@@ -956,7 +945,7 @@
                                   "debit_card",
                                   "bank_account",
                                   "wallet",
-                                  "voucher",
+                                  "travel_credit",
                                   "direct_bill",
                                   "cash",
                                   "other"
@@ -1427,7 +1416,7 @@
                             "cheque",
                             "wallet",
                             "direct_bill",
-                            "voucher",
+                            "travel_credit",
                             "other",
                             null
                           ]
@@ -1743,7 +1732,7 @@
                       "cheque",
                       "wallet",
                       "direct_bill",
-                      "voucher",
+                      "travel_credit",
                       "other",
                       null
                     ]
@@ -2079,7 +2068,7 @@
                             "cheque",
                             "wallet",
                             "direct_bill",
-                            "voucher",
+                            "travel_credit",
                             "other",
                             null
                           ]
@@ -2411,7 +2400,7 @@
                       "cheque",
                       "wallet",
                       "direct_bill",
-                      "voucher",
+                      "travel_credit",
                       "other",
                       null
                     ]
@@ -2747,7 +2736,7 @@
                             "cheque",
                             "wallet",
                             "direct_bill",
-                            "voucher",
+                            "travel_credit",
                             "other",
                             null
                           ]
@@ -3071,7 +3060,7 @@
                       "cheque",
                       "wallet",
                       "direct_bill",
-                      "voucher",
+                      "travel_credit",
                       "other",
                       null
                     ]
@@ -3407,7 +3396,7 @@
                             "cheque",
                             "wallet",
                             "direct_bill",
-                            "voucher",
+                            "travel_credit",
                             "other",
                             null
                           ]

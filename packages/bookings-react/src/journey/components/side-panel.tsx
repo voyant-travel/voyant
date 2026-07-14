@@ -32,7 +32,7 @@ export function PriceSidePanel({
   pricingExtras,
 }: SidePanelState & {
   className?: string
-  /** Operator-only price controls (override + voucher) rendered with the
+  /** Operator-only price controls (override + Travel Credit) rendered with the
    *  pricing, where they're most in context. */
   pricingExtras?: React.ReactNode
 }): React.ReactElement {

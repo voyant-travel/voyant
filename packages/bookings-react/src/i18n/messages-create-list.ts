@@ -108,12 +108,12 @@ export type BookingsUiCreateListMessages = {
       sharedRoomCreateHint: string
       sharedRoomRemove: string
       sharedRoomGeneratedLabelPrefix: string
-      voucherHeading: string
-      voucherCodePlaceholder: string
-      voucherApply: string
-      voucherClear: string
-      voucherRemainingLabel: string
-      voucherInvalidLabel: string
+      travelCreditHeading: string
+      travelCreditCodePlaceholder: string
+      travelCreditApply: string
+      travelCreditClear: string
+      travelCreditRemainingLabel: string
+      travelCreditInvalidLabel: string
       paymentHeading: string
       previewHeading: string
       previewEmpty: string
@@ -241,7 +241,10 @@ export type BookingsUiCreateListMessages = {
       /** Row actions column header (visually hidden, used by screen readers). */
       actions: string
     }
-    paymentMethodLabels: Record<"card" | "bank_transfer" | "cash" | "voucher" | "other", string>
+    paymentMethodLabels: Record<
+      "card" | "bank_transfer" | "cash" | "travel_credit" | "other",
+      string
+    >
     paymentStatusLabels: Record<"pending" | "completed" | "failed" | "refunded", string>
     actions: {
       /** Trigger button screen-reader label. */

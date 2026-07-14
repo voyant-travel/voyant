@@ -49,7 +49,7 @@ describe("Node migration runner", () => {
     const loaders = {
       "finance#setup": async () => async () => {
         events.push("setup:fail")
-        throw new Error("voucher backfill failed")
+        throw new Error("travel credit backfill failed")
       },
       "finance#later": async () => async () => {
         events.push("setup:later")
@@ -67,7 +67,7 @@ describe("Node migration runner", () => {
       expect.objectContaining({
         id: "finance#setup",
         status: "failed",
-        detail: "voucher backfill failed",
+        detail: "travel credit backfill failed",
       }),
     ])
     expect(events).toEqual(["schema:finance#migrations", "setup:fail", "rollback"])
@@ -216,10 +216,10 @@ function plan(includeLater = false): VoyantProjectMigrationPlan {
         idempotencyKey: "setup:finance#setup",
         owner: "finance",
         packageName: "@voyant-travel/finance",
-        source: "@voyant-travel/finance/setup/vouchers",
+        source: "@voyant-travel/finance/setup/travel-credits",
         runtime: {
-          entry: "@voyant-travel/finance/setup/vouchers",
-          export: "runVoucherSetupMigration",
+          entry: "@voyant-travel/finance/setup/travel-credits",
+          export: "runTravelCreditSetupMigration",
         },
         dependsOn: ["finance#migrations"],
       },

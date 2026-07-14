@@ -746,11 +746,11 @@ function mapDeliveryFormatToFulfillment(format: string) {
     case "mobile":
       return { fulfillmentType: "mobile" as const, deliveryChannel: "wallet" as const }
     case "email":
-      return { fulfillmentType: "voucher" as const, deliveryChannel: "email" as const }
+      return { fulfillmentType: "service_voucher" as const, deliveryChannel: "email" as const }
     case "ticket":
       return { fulfillmentType: "ticket" as const, deliveryChannel: "download" as const }
     default:
-      return { fulfillmentType: "voucher" as const, deliveryChannel: "download" as const }
+      return { fulfillmentType: "service_voucher" as const, deliveryChannel: "download" as const }
   }
 }
 

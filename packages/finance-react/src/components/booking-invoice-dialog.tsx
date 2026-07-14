@@ -155,7 +155,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ]
 

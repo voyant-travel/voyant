@@ -132,8 +132,9 @@ export interface FinanceAllPaymentsListFilters {
   offset?: number | undefined
 }
 
-export interface FinanceVoucherListFilters {
+export interface FinanceTravelCreditListFilters {
   status?: string | undefined
+  seriesCode?: string | undefined
   issuedToPersonId?: string | undefined
   issuedToOrganizationId?: string | undefined
   search?: string | undefined
@@ -274,11 +275,11 @@ export const financeQueryKeys = {
     [...financeQueryKeys.publicCheckout(), "booking-payment-options", bookingId, filters] as const,
   publicPaymentSession: (sessionId: string) =>
     [...financeQueryKeys.publicCheckout(), "payment-session", sessionId] as const,
-  publicVoucherValidation: () =>
-    [...financeQueryKeys.publicCheckout(), "voucher-validation"] as const,
+  publicTravelCreditValidation: () =>
+    [...financeQueryKeys.publicCheckout(), "travel-credit-validation"] as const,
 
-  vouchers: () => [...financeQueryKeys.all, "vouchers"] as const,
-  vouchersList: (filters: FinanceVoucherListFilters) =>
-    [...financeQueryKeys.vouchers(), "list", filters] as const,
-  voucher: (id: string) => [...financeQueryKeys.vouchers(), "detail", id] as const,
+  travelCredits: () => [...financeQueryKeys.all, "travel-credits"] as const,
+  travelCreditsList: (filters: FinanceTravelCreditListFilters) =>
+    [...financeQueryKeys.travelCredits(), "list", filters] as const,
+  travelCredit: (id: string) => [...financeQueryKeys.travelCredits(), "detail", id] as const,
 } as const

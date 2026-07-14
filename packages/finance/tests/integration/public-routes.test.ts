@@ -15,8 +15,8 @@ import {
   paymentInstruments,
   paymentSessions,
   payments,
-  voucherRedemptions,
-  vouchers,
+  travelCreditRedemptions,
+  travelCredits,
 } from "../../src/schema.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -62,8 +62,8 @@ async function cleanupFinanceTestData(
   const tableNames = [
     "payment_sessions",
     "supplier_payments",
-    "voucher_redemptions",
-    "vouchers",
+    "travel_credit_redemptions",
+    "travel_credits",
     "payments",
     "payment_captures",
     "payment_authorizations",
@@ -187,9 +187,9 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     return invoice
   }
 
-  async function seedVoucher(overrides: Partial<typeof vouchers.$inferInsert> = {}) {
-    const [voucher] = await db
-      .insert(vouchers)
+  async function seedTravelCredit(overrides: Partial<typeof travelCredits.$inferInsert> = {}) {
+    const [travelCredit] = await db
+      .insert(travelCredits)
       .values({
         code: `VCH-PUBLIC-${String(seq + 1).padStart(5, "0")}`,
         currency: "USD",
@@ -200,7 +200,7 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       })
       .returning()
 
-    return voucher
+    return travelCredit
   }
 
   it("lists public payment options for a booking", async () => {
@@ -546,20 +546,20 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       ])
       .returning()
 
-    const voucher = await seedVoucher({
+    const travelCredit = await seedTravelCredit({
       code: "VCH-PUBLIC-PAYMENTS",
-      notes: "Internal voucher handling note",
+      notes: "Internal travel credit handling note",
     })
     const [redemption] = await db
-      .insert(voucherRedemptions)
+      .insert(travelCreditRedemptions)
       .values({
-        voucherId: voucher.id,
+        travelCreditId: travelCredit.id,
         bookingId: booking.id,
         amountCents: 15000,
       })
       .returning()
-    await db.insert(voucherRedemptions).values({
-      voucherId: voucher.id,
+    await db.insert(travelCreditRedemptions).values({
+      travelCreditId: travelCredit.id,
       bookingId: booking.id,
       amountCents: 10000,
       paymentId: cardPayment.id,
@@ -575,11 +575,11 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.payments).toEqual([
       expect.objectContaining({
         id: redemption.id,
-        source: "voucher_redemption",
+        source: "travel_credit_redemption",
         invoiceId: null,
         invoiceNumber: null,
         invoiceType: null,
-        paymentMethod: "voucher",
+        paymentMethod: "travel_credit",
         status: "completed",
         amountCents: 15000,
         referenceNumber: "VCH-PUBLIC-PAYMENTS",
@@ -610,13 +610,13 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     ])
   })
 
-  it("lists voucher redemptions when a booking has no invoices", async () => {
+  it("lists travel credit redemptions when a booking has no invoices", async () => {
     const booking = await seedBooking()
-    const voucher = await seedVoucher({ code: "VCH-PUBLIC-NO-INVOICE" })
+    const travelCredit = await seedTravelCredit({ code: "VCH-PUBLIC-NO-INVOICE" })
     const [redemption] = await db
-      .insert(voucherRedemptions)
+      .insert(travelCreditRedemptions)
       .values({
-        voucherId: voucher.id,
+        travelCreditId: travelCredit.id,
         bookingId: booking.id,
         amountCents: 12000,
       })
@@ -633,11 +633,11 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
       payments: [
         expect.objectContaining({
           id: redemption.id,
-          source: "voucher_redemption",
+          source: "travel_credit_redemption",
           invoiceId: null,
           invoiceNumber: null,
           invoiceType: null,
-          paymentMethod: "voucher",
+          paymentMethod: "travel_credit",
           status: "completed",
           amountCents: 12000,
           currency: "USD",
@@ -725,30 +725,18 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(body.data.provider).toBe("netopia")
   })
 
-  it("validates an active voucher instrument for public checkout", async () => {
+  it("validates an active travel credit for public checkout", async () => {
     const booking = await seedBooking()
 
-    const [voucher] = await db
-      .insert(paymentInstruments)
-      .values({
-        ownerType: "internal",
-        instrumentType: "voucher",
-        status: "active",
-        label: "Spring voucher",
-        provider: "manual",
-        externalToken: "SPRING-2026",
-        metadata: {
-          code: "SPRING-2026",
-          currency: "EUR",
-          amountCents: 30000,
-          remainingAmountCents: 18000,
-          bookingIds: [booking.id],
-          expiresAt: "2026-12-31T23:59:59.000Z",
-        },
-      })
-      .returning()
+    const travelCredit = await seedTravelCredit({
+      code: "SPRING-2026",
+      initialAmountCents: 30000,
+      remainingAmountCents: 18000,
+      sourceBookingId: booking.id,
+      expiresAt: new Date("2026-12-31T23:59:59.000Z"),
+    })
 
-    const res = await app.request("/vouchers/validate", {
+    const res = await app.request("/travel-credits/validate", {
       method: "POST",
       headers: { ...json({}).headers, ...(await capabilityHeaders(booking.id)) },
       body: JSON.stringify({
@@ -763,26 +751,18 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     const body = await res.json()
     expect(body.data.valid).toBe(true)
     expect(body.data.reason).toBeNull()
-    expect(body.data.voucher.id).toBe(voucher.id)
-    expect(body.data.voucher.remainingAmountCents).toBe(18000)
+    expect(body.data.travelCredit.id).toBe(travelCredit.id)
+    expect(body.data.travelCredit.remainingAmountCents).toBe(18000)
   })
 
-  it("reports insufficient balance for an otherwise valid voucher", async () => {
-    await db.insert(paymentInstruments).values({
-      ownerType: "internal",
-      instrumentType: "voucher",
-      status: "active",
-      label: "Low balance voucher",
-      provider: "manual",
-      externalToken: "LOW-10",
-      metadata: {
-        code: "LOW-10",
-        currency: "EUR",
-        remainingAmountCents: 1000,
-      },
+  it("reports insufficient balance for an otherwise valid travel credit", async () => {
+    await seedTravelCredit({
+      code: "LOW-10",
+      initialAmountCents: 1000,
+      remainingAmountCents: 1000,
     })
 
-    const res = await app.request("/vouchers/validate", {
+    const res = await app.request("/travel-credits/validate", {
       method: "POST",
       ...json({
         code: "LOW-10",
@@ -804,26 +784,19 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     expect(res.status).toBe(401)
   })
 
-  it("rejects a voucher when booking scope does not match", async () => {
+  it("rejects a travel credit when booking scope does not match", async () => {
     const booking = await seedBooking()
     const otherBooking = await seedBooking()
 
-    await db.insert(paymentInstruments).values({
-      ownerType: "internal",
-      instrumentType: "voucher",
-      status: "active",
-      label: "Scoped voucher",
-      provider: "manual",
-      directBillReference: "SCOPED-1",
-      metadata: {
-        code: "SCOPED-1",
-        bookingId: booking.id,
-        currency: "USD",
-        remainingAmountCents: 5000,
-      },
+    await seedTravelCredit({
+      code: "SCOPED-1",
+      currency: "USD",
+      initialAmountCents: 5000,
+      remainingAmountCents: 5000,
+      sourceBookingId: booking.id,
     })
 
-    const res = await app.request("/vouchers/validate", {
+    const res = await app.request("/travel-credits/validate", {
       method: "POST",
       headers: { ...json({}).headers, ...(await capabilityHeaders(otherBooking.id)) },
       body: JSON.stringify({

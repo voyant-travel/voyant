@@ -3,7 +3,7 @@
 /**
  * Packaged admin host for the unified `<BookingJourney />` wizard —
  * supplies CRM-backed contact pickers, the B2B billing default, real
- * departure/units/voucher pickers over operator inventory, and post-commit
+ * departure/units/Travel Credit pickers over operator inventory, and post-commit
  * navigation to the new booking's detail page.
  *
  * Per booking-journey-architecture §8.1 + §10 Phase B, packaged per the
@@ -38,8 +38,8 @@ import {
 import { useVoyantBookingsContext } from "../provider.js"
 import { JourneyBillingDuplicateWarning } from "./journey-billing-duplicate-warning.js"
 import { JourneyDeparturePicker } from "./journey-departure-picker.js"
+import { JourneyTravelCreditPicker } from "./journey-travel-credit-picker.js"
 import { JourneyUnitsPicker } from "./journey-units-picker.js"
-import { JourneyVoucherPicker } from "./journey-voucher-picker.js"
 
 /** The catalog browse surface the journey returns to when cancelled. */
 function journeyReturnSurface(vertical: string): CatalogDetailSurface {
@@ -105,7 +105,7 @@ export function BookingJourneyHost({
     | "renderTravelerContactPicker"
     | "renderDeparturePicker"
     | "renderUnitsPicker"
-    | "renderVoucherPicker"
+    | "renderTravelCreditPicker"
     | "renderBillingExtras"
     | "renderPaymentProviderStep"
     | "onCommitted"
@@ -128,9 +128,9 @@ export function BookingJourneyHost({
       // Rooms/units for the picked option + departure (operator inventory).
       return <JourneyUnitsPicker {...pickerProps} />
     },
-    renderVoucherPicker(pickerProps) {
-      // Admin searches + selects a voucher (no need to know the code).
-      return <JourneyVoucherPicker {...pickerProps} />
+    renderTravelCreditPicker(pickerProps) {
+      // Admin searches and selects a Travel Credit without needing to know the code.
+      return <JourneyTravelCreditPicker {...pickerProps} />
     },
     renderTravelerContactPicker({ apply, selectedPersonId }) {
       // Travelers reuse the same picker (person-only). Adapt the picker's

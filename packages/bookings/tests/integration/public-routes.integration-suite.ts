@@ -345,15 +345,15 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
       bookingId: session.sessionId,
       participantId: session.travelers[0].id,
       type: "other",
-      fileName: "voucher.pdf",
-      fileUrl: "https://example.com/voucher.pdf",
+      fileName: "service-voucher.pdf",
+      fileUrl: "https://example.com/service-voucher.pdf",
     })
 
     await db.insert(bookingFulfillments).values({
       bookingId: session.sessionId,
       bookingItemId: session.items[0].id,
       participantId: session.travelers[0].id,
-      fulfillmentType: "voucher",
+      fulfillmentType: "service_voucher",
       deliveryChannel: "download",
       status: "issued",
       artifactUrl: "https://example.com/artifact.pdf",

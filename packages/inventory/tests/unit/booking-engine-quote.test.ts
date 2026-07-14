@@ -438,6 +438,10 @@ describe("createProductsBookingHandler.commit", () => {
         configure: {
           optionSelections: [{ optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 2 }],
         },
+        travelCreditRedemption: {
+          travelCreditId: "trc_123",
+          amountCents: 2_500,
+        },
       },
       pricing: {
         base_amount: 8333,
@@ -478,6 +482,10 @@ describe("createProductsBookingHandler.commit", () => {
         ],
         optionId: "opt_suite",
         sellAmountCentsOverride: 10000,
+        travelCreditRedemption: {
+          travelCreditId: "trc_123",
+          amountCents: 2_500,
+        },
       }),
     )
   })

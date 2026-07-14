@@ -27,7 +27,7 @@ describe("finance booking create action ledger builders", () => {
           extraLineCount: 0,
           travelerCount: 2,
           paymentScheduleCount: 1,
-          voucherRedemptionRequested: false,
+          travelCreditRedemptionRequested: false,
           groupMembershipAction: null,
           initialStatus: "draft",
           documentGeneration: {

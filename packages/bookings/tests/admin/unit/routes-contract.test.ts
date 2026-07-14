@@ -207,7 +207,7 @@ const fulfillment: BookingFulfillment = {
   bookingId: "bkg_1",
   bookingItemId: "bki_1",
   travelerId: "btr_1",
-  fulfillmentType: "voucher",
+  fulfillmentType: "service_voucher",
   deliveryChannel: "email",
   status: "issued",
   artifactUrl: "https://example.com/v.pdf",
@@ -309,7 +309,7 @@ describe("bookings core admin contract", () => {
 
   it("fulfillment row schema accepts payload jsonb + nullable columns", () => {
     const parsed = bookingFulfillmentSchema.parse(toWire(fulfillment))
-    expect(parsed.fulfillmentType).toBe("voucher")
+    expect(parsed.fulfillmentType).toBe("service_voucher")
     expect(parsed.deliveryChannel).toBe("email")
     expect(parsed.payload).toEqual({ ref: "abc" })
     expect(parsed.revokedAt).toBeNull()

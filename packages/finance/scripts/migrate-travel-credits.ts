@@ -1,16 +1,17 @@
 #!/usr/bin/env -S node --experimental-strip-types --experimental-transform-types
 /**
- * One-shot data migration: legacy vouchers living as payment_instruments rows
- * with instrumentType='voucher' and balance in metadata JSONB → first-class
- * vouchers table introduced in #227. Idempotent; safe to re-run.
+ * One-shot data migration: legacy stored value living as payment_instruments
+ * rows with instrumentType='travel_credit' after the schema migration and
+ * balance in metadata JSONB becomes first-class Travel Credits. Idempotent;
+ * safe to re-run.
  *
  * Usage:
- *   DATABASE_URL=postgres://... pnpm -F @voyant-travel/finance migrate:vouchers
- *   DATABASE_URL=postgres://... pnpm -F @voyant-travel/finance migrate:vouchers --dry-run
+ *   DATABASE_URL=postgres://... pnpm -F @voyant-travel/finance migrate:travel-credits
+ *   DATABASE_URL=postgres://... pnpm -F @voyant-travel/finance migrate:travel-credits --dry-run
  */
 import { createDbClient } from "@voyant-travel/db"
 
-import { migrateVouchersFromPaymentInstruments } from "../src/service-vouchers-migration.ts"
+import { migrateTravelCreditsFromPaymentInstruments } from "../src/service-travel-credits-migration.ts"
 
 function parseArgs(argv: string[]): { dryRun: boolean; help: boolean } {
   let dryRun = false
@@ -22,17 +23,18 @@ function parseArgs(argv: string[]): { dryRun: boolean; help: boolean } {
   return { dryRun, help }
 }
 
-const HELP = `migrate-vouchers — backfill vouchers table from legacy payment_instruments rows
+const HELP = `migrate-travel-credits - backfill Travel Credits from legacy payment_instruments rows
 
 Usage:
-  DATABASE_URL=postgres://... tsx scripts/migrate-vouchers.ts [options]
+  DATABASE_URL=postgres://... tsx scripts/migrate-travel-credits.ts [options]
 
 Options:
   -n, --dry-run    Report what would be migrated without writing
   -h, --help       Show this message
 
-The script is idempotent: rows whose code already exists in the vouchers
-table are skipped, so partial runs can be resumed safely.`
+The script is idempotent when an existing Travel Credit matches the legacy
+record. Invalid rows and conflicting codes are reported as failures so stored
+value cannot be silently stranded.`
 
 async function main(argv: string[]) {
   const { dryRun, help } = parseArgs(argv.slice(2))
@@ -51,10 +53,10 @@ async function main(argv: string[]) {
   const db = createDbClient(url, { adapter: "node" })
 
   const started = Date.now()
-  const result = await migrateVouchersFromPaymentInstruments(db, {
+  const result = await migrateTravelCreditsFromPaymentInstruments(db, {
     dryRun,
-    onRowMigrated: ({ voucherCode }) => {
-      process.stdout.write(`  ${dryRun ? "would migrate" : "migrated"} ${voucherCode}\n`)
+    onRowMigrated: ({ travelCreditCode }) => {
+      process.stdout.write(`  ${dryRun ? "would migrate" : "migrated"} ${travelCreditCode}\n`)
     },
   })
 
@@ -74,7 +76,7 @@ async function main(argv: string[]) {
     }
   }
 
-  return 0
+  return result.skipped.some((entry) => entry.reason !== "already_migrated") ? 1 : 0
 }
 
 main(process.argv)

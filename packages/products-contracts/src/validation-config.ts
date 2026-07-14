@@ -14,14 +14,16 @@ const activationSettingsCoreSchema = z.object({
   sellAt: z.string().datetime().optional().nullable(),
   stopSellAt: z.string().datetime().optional().nullable(),
 })
-const ticketSettingsCoreSchema = z.object({
-  fulfillmentMode: productTicketFulfillmentSchema.default("none"),
-  defaultDeliveryFormat: productDeliveryFormatSchema.default("none"),
-  ticketPerUnit: z.boolean().default(false),
-  barcodeFormat: z.string().max(100).optional().nullable(),
-  voucherMessage: z.string().optional().nullable(),
-  ticketMessage: z.string().optional().nullable(),
-})
+const ticketSettingsCoreSchema = z
+  .object({
+    fulfillmentMode: productTicketFulfillmentSchema.default("none"),
+    defaultDeliveryFormat: productDeliveryFormatSchema.default("none"),
+    ticketPerUnit: z.boolean().default(false),
+    barcodeFormat: z.string().max(100).optional().nullable(),
+    serviceVoucherMessage: z.string().optional().nullable(),
+    ticketMessage: z.string().optional().nullable(),
+  })
+  .strict()
 const visibilitySettingsCoreSchema = z.object({
   isSearchable: z.boolean().default(false),
   isBookable: z.boolean().default(false),

@@ -44,7 +44,7 @@ export const paymentMethods: Array<{ code: PaymentMethodCode; label: string }> =
   { code: "card", label: "Card" },
   { code: "bank_transfer", label: "Bank transfer" },
   { code: "cash", label: "Cash" },
-  { code: "voucher", label: "Voucher" },
+  { code: "travel_credit", label: "Travel credit" },
   { code: "invoice", label: "Invoice" },
 ]
 
@@ -74,7 +74,7 @@ export const emptyForm: FormState = {
     card: false,
     bank_transfer: false,
     cash: false,
-    voucher: false,
+    travel_credit: false,
     invoice: false,
   },
   paymentStructure: "full",

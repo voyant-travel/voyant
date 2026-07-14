@@ -28,7 +28,7 @@ describe("BookingJourney — missing quote id handling (#2425)", () => {
         entityId="prod-1"
         draftId="draft-1"
         surface="admin"
-        renderVoucherPicker={() => null}
+        renderTravelCreditPicker={() => null}
       />,
     )
 

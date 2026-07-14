@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: inventory; existing configuration routes stay co-located until a dedicated split preserves mount order, OpenAPI output, and route tests.
 /**
  * Admin product operating-configuration routes — activation settings, ticket
  * settings, visibility settings, capabilities, and delivery formats. Mounted by
@@ -38,7 +39,7 @@ const isoTimestamp = z.string()
 const activationModeValues = ["manual", "scheduled", "channel_controlled"] as const
 const ticketFulfillmentValues = ["none", "per_booking", "per_participant", "per_item"] as const
 const deliveryFormatValues = [
-  "voucher",
+  "service_voucher",
   "ticket",
   "pdf",
   "qr_code",
@@ -56,7 +57,7 @@ const capabilityValues = [
   "private",
   "shared",
   "digital_ticket",
-  "voucher_required",
+  "service_voucher_required",
   "external_inventory",
   "multi_day",
   "accommodation",
@@ -84,7 +85,7 @@ const ticketSettingSchema = z.object({
   defaultDeliveryFormat: z.enum(deliveryFormatValues),
   ticketPerUnit: z.boolean(),
   barcodeFormat: z.string().nullable(),
-  voucherMessage: z.string().nullable(),
+  serviceVoucherMessage: z.string().nullable(),
   ticketMessage: z.string().nullable(),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,

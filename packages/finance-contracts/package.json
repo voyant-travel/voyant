@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./travel-credits": "./src/validation-travel-credits.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -30,6 +31,11 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./travel-credits": {
+        "types": "./dist/validation-travel-credits.d.ts",
+        "import": "./dist/validation-travel-credits.js",
+        "default": "./dist/validation-travel-credits.js"
       }
     },
     "main": "./dist/index.js",
