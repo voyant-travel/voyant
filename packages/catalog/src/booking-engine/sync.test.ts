@@ -1,4 +1,5 @@
 import type {
+  IndexerAdapter,
   IndexerDocument,
   IndexerSlice,
   SearchRequest,
@@ -30,6 +31,7 @@ function makeStubIndexer(slicesByVertical: Record<string, IndexerSlice[]>): {
   const upserted: Array<{ slice: IndexerSlice; doc: IndexerDocument }> = []
   const deleted: Array<{ entityModule: string; entityId: string }> = []
   const service: IndexerService = {
+    adapter: {} as IndexerAdapter,
     async ensureCollections() {},
     async reindexEntity(entityModule, entityId, builder: DocumentBuilder) {
       const slices = slicesByVertical[entityModule] ?? []
@@ -47,6 +49,9 @@ function makeStubIndexer(slicesByVertical: Record<string, IndexerSlice[]>): {
     },
     async search(_slice: IndexerSlice, _request: SearchRequest): Promise<SearchResults> {
       return { total: 0, hits: [] }
+    },
+    async withExclusiveWriteLease() {
+      throw new Error("Exclusive writes are not used by this sync test")
     },
     slicesForVertical(entityModule: string): IndexerSlice[] {
       return slicesByVertical[entityModule] ?? []
