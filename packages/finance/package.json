@@ -191,6 +191,11 @@
         "import": "./dist/mcp-runtime.js",
         "default": "./dist/mcp-runtime.js"
       },
+      "./setup/vouchers": {
+        "types": "./dist/service-vouchers-migration.d.ts",
+        "import": "./dist/service-vouchers-migration.js",
+        "default": "./dist/service-vouchers-migration.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",

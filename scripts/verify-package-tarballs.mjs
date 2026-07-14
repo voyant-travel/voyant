@@ -20,6 +20,7 @@ import { execFile } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { pathToFileURL } from "node:url"
 import { promisify } from "node:util"
 
 import { packedFileExportsName } from "./lib/packed-exports.mjs"
@@ -214,6 +215,100 @@ function collectExportTargets(value, targets) {
   for (const nestedValue of Object.values(value)) {
     collectExportTargets(nestedValue, targets)
   }
+}
+
+function packageExportHasTarget(exports, exportKey) {
+  if (!exports || typeof exports !== "object") return false
+  const targets = new Set()
+  collectExportTargets(exports[exportKey], targets)
+  return targets.size > 0
+}
+
+function packageRuntimeExportKey(packageName, entry) {
+  if (entry.startsWith("./")) return entry
+  if (entry === packageName) return "."
+  if (entry.startsWith(`${packageName}/`)) return `./${entry.slice(packageName.length + 1)}`
+  return null
+}
+
+function collectRuntimeEntries(value, entries, seen = new Set()) {
+  if (!value || typeof value !== "object" || seen.has(value)) return
+  seen.add(value)
+
+  if (typeof value.entry === "string" && typeof value.export === "string") {
+    entries.add(value.entry)
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    collectRuntimeEntries(nestedValue, entries, seen)
+  }
+}
+
+export function collectPackedManifestRuntimeExportProblems(packedManifest, manifestNamespace) {
+  const packageName = packedManifest.name
+  if (typeof packageName !== "string") return ["packed package manifest has no package name"]
+
+  const runtimeEntries = new Set()
+  const packageRuntime = packedManifest.voyant?.runtime
+  if (
+    packageRuntime &&
+    typeof packageRuntime.entry === "string" &&
+    typeof packageRuntime.export === "string"
+  ) {
+    runtimeEntries.add(packageRuntime.entry)
+  }
+
+  for (const exportedValue of Object.values(manifestNamespace ?? {})) {
+    if (
+      !exportedValue ||
+      typeof exportedValue !== "object" ||
+      typeof exportedValue.schemaVersion !== "string" ||
+      !exportedValue.schemaVersion.startsWith("voyant.")
+    ) {
+      continue
+    }
+    collectRuntimeEntries(exportedValue, runtimeEntries)
+  }
+
+  return [...runtimeEntries].sort().flatMap((entry) => {
+    const exportKey = packageRuntimeExportKey(packageName, entry)
+    if (exportKey === null || packageExportHasTarget(packedManifest.exports, exportKey)) return []
+    return [`runtime entry ${entry} is not exported as ${exportKey}`]
+  })
+}
+
+function preferredRuntimeTarget(value) {
+  if (typeof value === "string") return value
+  if (!value || typeof value !== "object") return null
+
+  for (const condition of ["import", "node", "default"]) {
+    const target = preferredRuntimeTarget(value[condition])
+    if (target) return target
+  }
+  for (const [condition, nestedValue] of Object.entries(value)) {
+    if (condition === "types" || ["import", "node", "default"].includes(condition)) continue
+    const target = preferredRuntimeTarget(nestedValue)
+    if (target) return target
+  }
+  return null
+}
+
+async function loadPackedVoyantManifestNamespace(packageDir, packedManifest) {
+  const manifestExport = packedManifest.voyant?.manifest
+  if (typeof manifestExport !== "string") return {}
+
+  const target = preferredRuntimeTarget(packedManifest.exports?.[manifestExport])
+  if (!target?.startsWith("./")) {
+    throw new Error(`${manifestExport} has no relative runtime export target`)
+  }
+
+  const targetPath = path.resolve(packageDir, target)
+  const packageRoot = `${path.resolve(packageDir)}${path.sep}`
+  if (!targetPath.startsWith(packageRoot)) {
+    throw new Error(`${manifestExport} runtime export target escapes the package directory`)
+  }
+
+  return import(`${pathToFileURL(targetPath).href}?voyant-pack=${Date.now()}-${Math.random()}`)
 }
 
 function getPackJson(stdout) {
@@ -459,6 +554,7 @@ async function packAndInspectPackage(packageDir) {
   let extensionlessRelativeSpecifiers = []
   let legacyVoyantSpecifiers = []
   let missingPackedExports = []
+  let missingPackedManifestRuntimeExports = []
   let extracted
   try {
     ;[packInfo] = getPackJson(stdout)
@@ -470,6 +566,11 @@ async function packAndInspectPackage(packageDir) {
     )
     legacyVoyantSpecifiers = collectPackedLegacyVoyantSpecifiers(extracted.root, packInfo)
     missingPackedExports = collectPackedExportProblems(extracted.root, packedManifest.name)
+    const manifestNamespace = await loadPackedVoyantManifestNamespace(packageDir, packedManifest)
+    missingPackedManifestRuntimeExports = collectPackedManifestRuntimeExportProblems(
+      packedManifest,
+      manifestNamespace,
+    )
   } catch (error) {
     return { error: `could not parse pnpm pack output: ${error.message}` }
   } finally {
@@ -483,6 +584,7 @@ async function packAndInspectPackage(packageDir) {
     extensionlessRelativeSpecifiers,
     legacyVoyantSpecifiers,
     missingPackedExports,
+    missingPackedManifestRuntimeExports,
   }
 }
 
@@ -493,6 +595,7 @@ function collectTarballProblems(
     extensionlessRelativeSpecifiers,
     legacyVoyantSpecifiers,
     missingPackedExports,
+    missingPackedManifestRuntimeExports,
   },
   sourceFiles,
 ) {
@@ -528,6 +631,13 @@ function collectTarballProblems(
   if (missingPackedExports.length > 0) {
     problems.push(`missing packed exports: ${missingPackedExports.join("; ")}`)
   }
+  if (missingPackedManifestRuntimeExports.length > 0) {
+    problems.push(
+      `packed Voyant manifest references missing runtime exports: ${missingPackedManifestRuntimeExports.join(
+        "; ",
+      )}`,
+    )
+  }
   const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
   if (workspaceProtocolDependencies.length > 0) {
     problems.push(
@@ -552,30 +662,6 @@ function shouldVerifyPackageDir(packageDir) {
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
 
   return PACKAGE_FILTERS.has(pkg.name)
-}
-
-const packageDirs = packageRoots
-  .filter((packageRoot) => fs.existsSync(packageRoot))
-  .flatMap((packageRoot) => findPackageDirs(packageRoot))
-  .filter(shouldVerifyPackageDir)
-  .sort()
-
-if (PACKAGE_FILTERS.size > 0) {
-  const foundPackageNames = new Set(
-    packageDirs.map((packageDir) => {
-      const pkg = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
-      return pkg.name
-    }),
-  )
-  const missingPackageNames = [...PACKAGE_FILTERS].filter((packageName) => {
-    if (!packageName.startsWith("@voyant-travel/")) return false
-    return !foundPackageNames.has(packageName)
-  })
-
-  if (missingPackageNames.length > 0) {
-    console.error(`No package directories found for: ${missingPackageNames.join(", ")}`)
-    process.exit(1)
-  }
 }
 
 async function verifyPackage(packageDir) {
@@ -621,29 +707,61 @@ async function verifyPackage(packageDir) {
   return { name: pkg.name, packageDir, problems }
 }
 
-const failures = []
-const queue = [...packageDirs]
-const workers = Array.from({ length: Math.min(PACK_CONCURRENCY, queue.length) }, async () => {
-  while (queue.length > 0) {
-    const packageDir = queue.shift()
-    if (!packageDir) break
-    const result = await verifyPackage(packageDir)
-    if (result) failures.push(result)
-  }
-})
-await Promise.all(workers)
-failures.sort((left, right) => left.name.localeCompare(right.name))
+async function main() {
+  const packageDirs = packageRoots
+    .filter((packageRoot) => fs.existsSync(packageRoot))
+    .flatMap((packageRoot) => findPackageDirs(packageRoot))
+    .filter(shouldVerifyPackageDir)
+    .sort()
 
-if (failures.length > 0) {
-  console.error("Publish tarball verification failed:\n")
-  for (const failure of failures) {
-    console.error(`${failure.name} (${path.relative(rootDir, failure.packageDir)})`)
-    for (const problem of failure.problems) {
-      console.error(`  - ${problem}`)
+  if (PACKAGE_FILTERS.size > 0) {
+    const foundPackageNames = new Set(
+      packageDirs.map((packageDir) => {
+        const pkg = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
+        return pkg.name
+      }),
+    )
+    const missingPackageNames = [...PACKAGE_FILTERS].filter((packageName) => {
+      if (!packageName.startsWith("@voyant-travel/")) return false
+      return !foundPackageNames.has(packageName)
+    })
+
+    if (missingPackageNames.length > 0) {
+      console.error(`No package directories found for: ${missingPackageNames.join(", ")}`)
+      process.exitCode = 1
+      return
     }
-    console.error("")
   }
-  process.exit(1)
+
+  const failures = []
+  const queue = [...packageDirs]
+  const workers = Array.from({ length: Math.min(PACK_CONCURRENCY, queue.length) }, async () => {
+    while (queue.length > 0) {
+      const packageDir = queue.shift()
+      if (!packageDir) break
+      const result = await verifyPackage(packageDir)
+      if (result) failures.push(result)
+    }
+  })
+  await Promise.all(workers)
+  failures.sort((left, right) => left.name.localeCompare(right.name))
+
+  if (failures.length > 0) {
+    console.error("Publish tarball verification failed:\n")
+    for (const failure of failures) {
+      console.error(`${failure.name} (${path.relative(rootDir, failure.packageDir)})`)
+      for (const problem of failure.problems) {
+        console.error(`  - ${problem}`)
+      }
+      console.error("")
+    }
+    process.exitCode = 1
+    return
+  }
+
+  console.log(`Verified publish tarballs for ${packageDirs.length} package directories.`)
 }
 
-console.log(`Verified publish tarballs for ${packageDirs.length} package directories.`)
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  await main()
+}
