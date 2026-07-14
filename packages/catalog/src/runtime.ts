@@ -1,3 +1,4 @@
+import { validateEmbeddingCompatibility } from "@voyant-travel/catalog/embeddings/model-registry"
 import { type CatalogIndexer, resolveCatalogIndexer } from "@voyant-travel/catalog/indexer/provider"
 import type { CatalogSearchRuntime } from "@voyant-travel/catalog/search/routes"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
@@ -58,6 +59,9 @@ export function createCatalogRuntime(
         vectorDimensions: nextVectorDimensions,
         registries: getFieldPolicyRegistries(),
       })
+      if (embeddings) {
+        validateEmbeddingCompatibility(embeddings.capabilities, indexer.capabilities)
+      }
     }
     return indexer
   }

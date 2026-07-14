@@ -26,7 +26,14 @@ vi.mock("./runtime/booking-runtime.js", () => ({
 }))
 
 vi.mock("./runtime/catalog-runtime.js", () => ({
-  buildEmbeddingProvider: vi.fn(() => ({ capabilities: { dimensions: state.dimensions } })),
+  buildEmbeddingProvider: vi.fn(() => ({
+    capabilities: {
+      dimensions: state.dimensions,
+      maxBatchSize: 32,
+      maxTokensPerInput: 512,
+      modelId: "test/embedding/v1",
+    },
+  })),
   createProductsDocumentBuilder: vi.fn(),
   DEFAULT_SLICES: [],
   getFieldPolicyRegistries: vi.fn(() => state.registries),
@@ -131,5 +138,14 @@ describe("createCatalogRuntime indexer authority", () => {
       registries: state.registries,
       vectorDimensions: state.dimensions,
     })
+  })
+
+  it("validates embedding compatibility for a direct adapter", () => {
+    const adapter = createAdapter()
+    adapter.capabilities.vectorDimensions = 768
+
+    expect(() => resolveRuntimeIndexers(adapter)).toThrow(
+      /test\/embedding\/v1 produces 384-d vectors.*configured for 768-d/s,
+    )
   })
 })

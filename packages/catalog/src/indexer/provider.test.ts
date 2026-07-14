@@ -34,9 +34,32 @@ describe("catalogIndexerProviderPort", () => {
     expect(() => catalogIndexerProviderPort.test(provider)).not.toThrow()
   })
 
+  it("recognizes a complete adapter before an incidental create method", () => {
+    const create = vi.fn(() => createAdapter())
+    const adapter = Object.assign(createAdapter(), { create })
+
+    expect(() => catalogIndexerProviderPort.test(adapter)).not.toThrow()
+    expect(resolveCatalogIndexer(adapter, { registries: new Map() })).toBe(adapter)
+    expect(create).not.toHaveBeenCalled()
+  })
+
   it("rejects values that implement neither indexer shape", () => {
     expect(() => catalogIndexerProviderPort.test({} as never)).toThrow(
       "catalog.indexer must implement IndexerAdapter or IndexerProvider.create().",
+    )
+  })
+
+  it("rejects an ambiguous provider with an incomplete adapter shape", () => {
+    const ambiguous = {
+      capabilities: createAdapter().capabilities,
+      create: () => createAdapter(),
+    }
+
+    expect(() => catalogIndexerProviderPort.test(ambiguous as never)).toThrow(
+      "catalog.indexer contains an incomplete IndexerAdapter shape.",
+    )
+    expect(() => resolveCatalogIndexer(ambiguous as never, { registries: new Map() })).toThrow(
+      "catalog.indexer contains an incomplete IndexerAdapter shape.",
     )
   })
 })
@@ -56,5 +79,13 @@ describe("resolveCatalogIndexer", () => {
     expect(resolveCatalogIndexer({ create }, options)).toBe(adapter)
     expect(create).toHaveBeenCalledOnce()
     expect(create).toHaveBeenCalledWith(options)
+  })
+
+  it("rejects malformed adapter output from a provider", () => {
+    const provider = { create: () => ({ capabilities: {} }) as never }
+
+    expect(() => resolveCatalogIndexer(provider, { registries: new Map() })).toThrow(
+      "catalog.indexer provider create() must return a complete IndexerAdapter.",
+    )
   })
 })
