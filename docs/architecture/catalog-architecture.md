@@ -483,7 +483,7 @@ The Typesense adapter is the only search adapter Voyant maintains as a first-par
 
 The engine-neutral `IndexerAdapter`, `IndexerProvider`, and optional `IndexerAdmin` contracts live in `@voyant-travel/catalog-contracts/indexer/contract`. This keeps external engine packages dependent on the pure contract package rather than the catalog runtime. `@voyant-travel/catalog/indexer/contract` remains a compatibility re-export, not the canonical adapter dependency.
 
-A deployment selects one graph provider by setting `deployment.providers.search` to `typesense`, `algolia`, `custom`, or `none`. A selected adapter package declares a provider for runtime port `catalog.indexer` with a matching `{ role: "search", value }`. Embedded hosts and tests may instead inject an `IndexerProvider` directly at the `catalog.indexer` runtime port; that explicit override takes precedence and prevents the graph-selected provider for that port from loading.
+A deployment selects one graph provider by setting `deployment.providers.search` to `typesense`, `algolia`, `custom`, or `none`. A selected adapter package declares a provider for runtime port `catalog.indexer` with a matching `{ role: "search", value }`. `custom` is the public selection for an operator-owned engine; it is not an implicit fallback and does not mean "choose any provider." Embedded hosts and tests may instead inject an `IndexerProvider` directly at the `catalog.indexer` runtime port; that explicit override takes precedence and prevents the graph-selected provider for that port from loading.
 
 The contract is intentionally narrow:
 
@@ -491,8 +491,10 @@ The contract is intentionally narrow:
 - `upsert(slice, documents)` / `delete(slice, ids)` — write paths from the reindex queue.
 - `search(slice, request)` — portable read path for storefront and admin search, including filters, facets, sorting, and pagination.
 - `bulkReindex(slice, stream)` — cold-start and migration path.
-- `capabilities` — declare what the engine supports (faceting, typo tolerance, vector search, geo, etc.) so consuming code can fail fast on unsupported features rather than producing wrong results silently.
+- `capabilities` — declare keyword, hybrid/vector, cross-audience, and admin-denormalization support plus vector limits so consuming code can fail fast on unsupported features rather than producing wrong results silently.
 - optional `admin` — provider-neutral `list`, `drop`, and streaming `scan` operations for deployment tooling. Raw Typesense collection and document maintenance APIs are not public catalog surface.
+
+The portable sort vocabulary has canonical semantics in `SEARCH_SORT_SEMANTICS`, and adapters resolve it through `resolveSearchSort`. The resolver chooses the first field-policy path available for the vertical and visible in the requested slice, then returns an engine-neutral field and direction. Providers translate that result into native syntax; they do not maintain private field-precedence tables. `relevance` remains the provider's native ranking and resolves without an explicit field.
 
 Swap-in implementers can be:
 
@@ -500,7 +502,17 @@ Swap-in implementers can be:
 - **Operator-built** — a deployment with an existing Elasticsearch cluster writes its own adapter against the contract.
 - **Third-party** — a vendor or integrator publishes an adapter package the same way they would publish a source adapter (§5.6).
 
-External and operator-built adapters should execute `assertIndexerAdapterConformance` from `@voyant-travel/catalog-contracts/indexer/conformance` in their own test suites. The runner verifies the portable adapter behavior, slice isolation, pagination, filters, facets, bulk reindexing, deletion, capability declarations, and optional admin behavior without imposing a test framework.
+An external provider is packaged and admitted as follows:
+
+1. Publish a plugin package with runtime and import-cheap `./voyant` exports. `package.json#voyant` uses `schemaVersion: "voyant.package.v1"`, `kind: "plugin"`, points `manifest` at `./voyant`, and declares compatible framework versions, Node target, and deployment modes.
+2. Implement `IndexerAdapter` and `IndexerProvider` using `@voyant-travel/catalog-contracts` as the adapter dependency. The runtime factory export may create the vendor client from declared resources, config, and secrets; request-runtime `IndexerProvider.create()` remains synchronous.
+3. In the `definePlugin` manifest, declare every consumed config value, secret, and resource. Declare one provider on port `catalog.indexer`, including its runtime export, `uses` references, and selection `{ role: "search", value: "algolia" }` or `{ role: "search", value: "custom" }`.
+4. Install the package and explicitly admit it through the application's `plugins: [{ resolve: "<package>" }]`. Package installation alone does not admit executable behavior.
+5. Select the matching value in `deployment.providers.search`. Graph resolution rejects incompatible metadata, unresolved exports, duplicate IDs, invalid port values, or a selection with no admitted matching provider. Credentials configure only the selected provider and never select one by their presence.
+
+For example, an operator package declaring `{ role: "search", value: "custom" }` is admitted with `plugins: [{ resolve: "@acme/voyant-search" }]` and selected with `deployment: { providers: { search: "custom" } }`. A vendor Algolia package follows the same shape with `value: "algolia"`. The complete package, manifest, runtime-factory, admission, and custom-selection examples live in `packages/catalog-contracts/README.md`.
+
+External and operator-built adapters must execute `assertIndexerAdapterConformance` from `@voyant-travel/catalog-contracts/indexer/conformance` in their own test suites. The runner verifies non-empty keyword matching, replacement by document id, hit fidelity, slice isolation, sorting, pagination limits and terminal cursors, filters, facet counts and limits, bulk reindexing, deletion, capability honesty, and optional admin behavior without imposing a test framework. Hosted engines use the runner's `settle` hook for eventual consistency.
 
 The swap is per-deployment, not per-vertical. A single Voyant deployment runs one indexer adapter; mixing engines across verticals inside the same deployment is not supported and is unlikely to ever be worth the operational complexity.
 

@@ -52,5 +52,137 @@ await assertIndexerAdapterConformance({
 })
 ```
 
+The runner creates isolated slices, mutates them, and removes them again. It
+checks non-empty keyword matching, filters, canonical sorting, replacement by
+document id, hit round-tripping, facet and page limits, terminal cursors, slice
+isolation, bulk reindexing, deletion, optional admin operations, and declared
+capabilities. Hosted providers can supply `settle` when writes are eventually
+consistent and `namespace` when resource names need a stable prefix.
+
+Portable sort options are not vendor aliases. Adapters should use the published
+resolver so field precedence and audience visibility stay consistent:
+
+```ts
+import { resolveSearchSort } from "@voyant-travel/catalog-contracts/indexer/contract"
+
+const resolved = resolveSearchSort(request.sort, registry, slice)
+// Translate resolved?.field and resolved?.direction to the engine query.
+```
+
+## Packaging A Search Provider
+
+A reusable provider is a plugin package with separate runtime and import-cheap
+manifest exports. It depends on `@voyant-travel/catalog-contracts` for the
+adapter API and on `@voyant-travel/core` only for its deployment declaration.
+It does not depend on `@voyant-travel/catalog` or import application runtime
+code.
+
+```jsonc
+{
+  "name": "@acme/voyant-search",
+  "type": "module",
+  "exports": {
+    "./provider": "./dist/provider.js",
+    "./voyant": "./dist/voyant.js"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "plugin",
+    "manifest": "./voyant",
+    "compatibleWith": {
+      "framework": ">=0.26.0",
+      "targets": ["node"],
+      "modes": ["local", "managed-cloud", "self-hosted"]
+    }
+  },
+  "peerDependencies": {
+    "@voyant-travel/catalog-contracts": "^0.109.0",
+    "@voyant-travel/core": "^0.122.0"
+  }
+}
+```
+
+The manifest declares every configuration value and secret consumed by the
+factory, then contributes exactly one provider to `catalog.indexer`. Use
+`value: "algolia"` for an Algolia package and `value: "custom"` for an
+operator-specific engine.
+
+```ts
+// src/voyant.ts
+import { definePlugin } from "@voyant-travel/core/project"
+
+export default definePlugin({
+  id: "@acme/voyant-search",
+  packageName: "@acme/voyant-search",
+  localId: "acme-search",
+  config: [{ id: "@acme/voyant-search#config.endpoint", key: "endpoint", required: true }],
+  secrets: [
+    {
+      id: "@acme/voyant-search#secret.api-key",
+      key: "apiKey",
+      required: true,
+      rotation: "replace-only",
+    },
+  ],
+  providers: [
+    {
+      id: "@acme/voyant-search#provider.custom",
+      port: "catalog.indexer",
+      selection: { role: "search", value: "custom" },
+      uses: {
+        config: ["@acme/voyant-search#config.endpoint"],
+        secrets: ["@acme/voyant-search#secret.api-key"],
+      },
+      runtime: { entry: "@acme/voyant-search/provider", export: "createSearchProvider" },
+    },
+  ],
+})
+```
+
+The runtime export returns an `IndexerProvider`; it may construct vendor clients
+from the declared factory context, but `create()` remains synchronous:
+
+```ts
+// src/provider.ts
+import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
+
+export function createSearchProvider(context: {
+  getConfig(id: string): unknown
+  getSecret(id: string): unknown
+}): IndexerProvider {
+  const client = createVendorClient({
+    endpoint: String(context.getConfig("@acme/voyant-search#config.endpoint")),
+    apiKey: String(context.getSecret("@acme/voyant-search#secret.api-key")),
+  })
+  return {
+    create: ({ registries, vectorDimensions }) =>
+      createVendorIndexer({ client, registries, vectorDimensions }),
+  }
+}
+```
+
+Installing the dependency does not admit it. The application must list the
+plugin and select the same provider value in `voyant.config.ts`:
+
+```ts
+import { defineConfig } from "@voyant-travel/framework/project"
+
+export default defineConfig({
+  plugins: [{ resolve: "@acme/voyant-search" }],
+  deployment: {
+    target: "node",
+    mode: "self-hosted",
+    providers: { search: "custom" },
+  },
+})
+```
+
+Graph admission checks package compatibility, manifest and runtime export
+resolution, duplicate provider IDs, port conformance, and that the selected
+`{ role: "search", value: "custom" }` provider exists. Configuration and secret
+presence only satisfies that selected provider; it never selects one. A
+deployment may instead inject an `IndexerProvider` directly for embedded hosts
+or tests, but that is not reusable package admission.
+
 Existing `@voyant-travel/catalog` contract import paths remain available for
 applications that already depend on the full runtime package.

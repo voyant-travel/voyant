@@ -80,10 +80,12 @@ export async function assertIndexerAdapterConformance(
     ])
     await settle("upsert")
 
+    await assertKeywordSearchAndHitFidelity(adapter, primary, ids, documents[0]!)
     await assertFilters(adapter, primary, ids)
     await assertSliceIsolation(adapter, primary, isolated, ids)
     await assertPagination(adapter, primary, ids)
     await assertFacets(adapter, primary)
+    await assertUpsertReplacement(adapter, primary, ids, documents[0]!, settle)
 
     await adapter.bulkReindex(bulk, toAsyncIterable(documents.slice(0, 2)))
     await settle("bulk-reindex")
@@ -140,6 +142,16 @@ function fixturePolicy(
 
 function assertCapabilities(adapter: IndexerAdapter): void {
   const capabilities = adapter.capabilities
+  const booleanCapabilities = [
+    "supportsKeywordSearch",
+    "supportsHybridSearch",
+    "supportsVectorFields",
+    "supportsCrossAudienceFederation",
+    "supportsAdminDenormalization",
+  ] as const
+  for (const name of booleanCapabilities) {
+    assert(typeof capabilities[name] === "boolean", `${name} must be a boolean`)
+  }
   assert(capabilities.supportsKeywordSearch, "supportsKeywordSearch must be true")
   if (capabilities.supportsVectorFields) {
     assert(
@@ -163,6 +175,34 @@ function assertCapabilities(adapter: IndexerAdapter): void {
       (Number.isInteger(capabilities.maxVectorsPerDocument) &&
         capabilities.maxVectorsPerDocument > 0),
     "maxVectorsPerDocument must be null or a positive integer",
+  )
+  if (!capabilities.supportsVectorFields) {
+    assert(
+      capabilities.maxVectorsPerDocument === null,
+      "maxVectorsPerDocument must be null when vector fields are unsupported",
+    )
+  }
+}
+
+async function assertKeywordSearchAndHitFidelity(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+  ids: FixtureIds,
+  expectedDocument: IndexerDocument,
+): Promise<void> {
+  const results = await adapter.search(slice, keywordRequest({ query: "Alpine" }))
+  assertIds(
+    results.hits.map((hit) => hit.id),
+    [ids.alpha],
+    "non-empty keyword search",
+  )
+  assert(results.total === 1, `keyword search total was ${results.total}; expected 1`)
+  const hit = results.hits[0]
+  assert(hit?.id === hit?.document.id, "search hit id did not match its document id")
+  assert(Number.isFinite(hit?.score), "search hit score was not finite")
+  assert(
+    sameJson(hit?.document.fields, expectedDocument.fields),
+    "search hit did not preserve the indexed document fields",
   )
 }
 
@@ -272,16 +312,52 @@ async function assertPagination(
     [ids.charlie],
     "second page",
   )
+  assert(second.total === 3, `terminal pagination total was ${second.total}; expected 3`)
+  assert(!second.next_cursor, "terminal page returned next_cursor")
 }
 
 async function assertFacets(adapter: IndexerAdapter, slice: IndexerSlice): Promise<void> {
   const results = await adapter.search(
     slice,
-    keywordRequest({ facets: [{ field: "categorySlugs", limit: 10 }] }),
+    keywordRequest({ facets: [{ field: "categorySlugs", limit: 2 }], pagination: { limit: 1 } }),
   )
-  const buckets = Object.values(results.facets ?? {}).flat()
+  assert(results.hits.length === 1, "search result ignored pagination limit")
+  const buckets = results.facets?.categorySlugs
+  assert(buckets, "categorySlugs facet was omitted")
+  assert(buckets.length <= 2, `facet returned ${buckets.length} buckets; limit was 2`)
   const featured = buckets.find((bucket) => bucket.value === "featured")
   assert(featured?.count === 2, "featured facet count was not 2")
+}
+
+async function assertUpsertReplacement(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+  ids: FixtureIds,
+  original: IndexerDocument,
+  settle: (mutation: IndexerConformanceMutation) => Promise<void>,
+): Promise<void> {
+  const replacement: IndexerDocument = {
+    ...original,
+    fields: { ...original.fields, title: "Voyant Mountain Replacement" },
+  }
+  await adapter.upsert(slice, [replacement])
+  await settle("upsert")
+
+  const results = await adapter.search(slice, keywordRequest({ query: "Replacement" }))
+  assertIds(
+    results.hits.map((hit) => hit.id),
+    [ids.alpha],
+    "upsert replacement",
+  )
+  assert(results.total === 1, `upsert replacement total was ${results.total}; expected 1`)
+  assert(
+    results.hits[0]?.document.fields.title === "Voyant Mountain Replacement",
+    "upsert replacement returned stale document fields",
+  )
+  assert((await searchAll(adapter, slice)).length === 3, "upsert replacement duplicated a document")
+
+  await adapter.upsert(slice, [original])
+  await settle("upsert")
 }
 
 async function assertAdmin(
@@ -429,6 +505,10 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
     JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
     `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
   )
+}
+
+function sameJson(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right)
 }
 
 function assert(condition: unknown, message: string): asserts condition {

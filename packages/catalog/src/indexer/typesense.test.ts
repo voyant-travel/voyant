@@ -1,5 +1,6 @@
 // agent-quality: file-size exception -- owner: catalog; existing test module stays co-located until a dedicated split preserves coverage.
 
+import { assertIndexerAdapterConformance } from "@voyant-travel/catalog-contracts/indexer/conformance"
 import type {
   IndexerDocument,
   IndexerSlice,
@@ -18,7 +19,10 @@ import {
   parseTypesenseImportResults,
   summarizeImportFailures,
   type TypesenseClient,
+  type TypesenseCollectionSchema,
   TypesenseImportError,
+  type TypesenseSearchQuery,
+  type TypesenseSearchResponse,
 } from "./typesense.js"
 
 const slice: IndexerSlice = {
@@ -144,6 +148,16 @@ const registry = createFieldPolicyRegistry(
 )
 
 describe("Typesense catalog indexer", () => {
+  it("passes the public adapter conformance suite with a deterministic client", async () => {
+    await expect(
+      assertIndexerAdapterConformance({
+        createAdapter: () =>
+          createTypesenseIndexer({ client: createDeterministicTypesenseClient() }),
+        namespace: "typesense-conformance",
+      }),
+    ).resolves.toBeUndefined()
+  })
+
   it("includes channel in collection names when the slice is channel-scoped", () => {
     expect(collectionName({ ...slice, channel: "chan_website" })).toBe(
       "products__en-GB__customer__default__chan_website",
@@ -243,7 +257,7 @@ describe("Typesense catalog indexer", () => {
       {
         query: "",
         mode: "keyword",
-        facets: [{ field: "categorySlugs[]" }],
+        facets: [{ field: "categorySlugs[]", limit: 3 }],
         filters: [
           { kind: "in", field: "categorySlugs[]", values: ["cruises", "sailing"] },
           { kind: "eq", field: "departureMonths[]", value: "2026-06" },
@@ -253,6 +267,7 @@ describe("Typesense catalog indexer", () => {
     )
 
     expect(query.facet_by).toBe("categorySlugs")
+    expect(query.max_facet_values).toBe(3)
     expect(query.filter_by).toBe(
       'categorySlugs:["cruises","sailing"] && departureMonths:="2026-06"',
     )
@@ -830,3 +845,197 @@ describe("Typesense import-failure detection", () => {
     await expect(indexer.bulkReindex(slice, stream())).rejects.toBeInstanceOf(TypesenseImportError)
   })
 })
+
+interface DeterministicTypesenseCollection {
+  schema: TypesenseCollectionSchema
+  documents: Map<string, Record<string, unknown>>
+}
+
+function createDeterministicTypesenseClient(): TypesenseClient {
+  const collections = new Map<string, DeterministicTypesenseCollection>()
+  const requireCollection = (name: string | undefined): DeterministicTypesenseCollection => {
+    const collection = name ? collections.get(name) : undefined
+    if (!collection)
+      throw Object.assign(new Error(`Missing collection ${name}`), { httpStatus: 404 })
+    return collection
+  }
+
+  return {
+    collections(name) {
+      return {
+        async list() {
+          return [...collections.values()].map(({ schema }) => schema)
+        },
+        async create(schema) {
+          if (collections.has(schema.name)) throw new Error(`Collection ${schema.name} exists`)
+          collections.set(schema.name, { schema, documents: new Map() })
+        },
+        async update(schema) {
+          const collection = requireCollection(name)
+          collection.schema = { ...collection.schema, ...schema }
+        },
+        async delete() {
+          if (!name || !collections.delete(name)) {
+            throw Object.assign(new Error(`Missing collection ${name}`), { httpStatus: 404 })
+          }
+        },
+        async retrieve() {
+          return requireCollection(name).schema
+        },
+        documents() {
+          return {
+            async import(documents) {
+              const target = requireCollection(name).documents
+              for (const document of documents as Record<string, unknown>[]) {
+                target.set(String(document.id), { ...document })
+              }
+              return documents.map(() => ({ success: true }))
+            },
+            async delete(query) {
+              const target = requireCollection(name).documents
+              const ids = query.filter_by.match(/^id:\[(.*)]$/)?.[1]?.split(",") ?? []
+              let numDeleted = 0
+              for (const id of ids) {
+                if (target.delete(id)) numDeleted += 1
+              }
+              return { num_deleted: numDeleted }
+            },
+            async search(query) {
+              return searchDeterministicTypesense(requireCollection(name).documents, query)
+            },
+          }
+        },
+      }
+    },
+  }
+}
+
+function searchDeterministicTypesense(
+  source: Map<string, Record<string, unknown>>,
+  query: TypesenseSearchQuery,
+): TypesenseSearchResponse {
+  let documents = [...source.values()]
+  if (query.q !== "*") {
+    const keyword = query.q.toLocaleLowerCase()
+    const queryFields = query.query_by.split(",")
+    documents = documents.filter((document) =>
+      queryFields.some((field) =>
+        valuesOf(document[field]).some(
+          (value) => typeof value === "string" && value.toLocaleLowerCase().includes(keyword),
+        ),
+      ),
+    )
+  }
+  if (query.filter_by) {
+    documents = documents.filter((document) => matchesTypesenseFilter(document, query.filter_by!))
+  }
+  if (query.sort_by) {
+    const [field, direction] = query.sort_by.split(":")
+    const multiplier = direction === "desc" ? -1 : 1
+    documents.sort(
+      (left, right) => multiplier * (Number(left[field ?? ""]) - Number(right[field ?? ""])),
+    )
+  }
+
+  const found = documents.length
+  const page = query.page ?? 1
+  const perPage = query.per_page ?? 10
+  const pageDocuments = documents.slice((page - 1) * perPage, page * perPage)
+  const excluded = new Set(query.exclude_fields?.split(",") ?? [])
+  const facetCounts = query.facet_by
+    ? query.facet_by.split(",").map((field) => ({
+        field_name: field,
+        counts: countFacetValues(documents, field).slice(0, query.max_facet_values),
+      }))
+    : undefined
+
+  return {
+    hits: pageDocuments.map((document) => ({
+      document: Object.fromEntries(
+        Object.entries(document).filter(([field]) => !excluded.has(field)),
+      ),
+      text_match: query.q === "*" ? 0 : 100,
+    })),
+    found,
+    facet_counts: facetCounts,
+  }
+}
+
+function matchesTypesenseFilter(document: Record<string, unknown>, expression: string): boolean {
+  const filter = stripOuterParentheses(expression.trim())
+  const orClauses = splitTopLevel(filter, " || ")
+  if (orClauses.length > 1) {
+    return orClauses.some((clause) => matchesTypesenseFilter(document, clause))
+  }
+  const andClauses = splitTopLevel(filter, " && ")
+  if (andClauses.length > 1) {
+    return andClauses.every((clause) => matchesTypesenseFilter(document, clause))
+  }
+
+  const list = filter.match(/^([^:]+):\[(.*)]$/)
+  if (list) {
+    const accepted = splitTopLevel(list[2] ?? "", ",").map(parseTypesenseScalar)
+    return valuesOf(document[list[1] ?? ""]).some((value) => accepted.includes(value))
+  }
+  const comparison = filter.match(/^([^:]+):(=|>=|<=)(.*)$/)
+  if (!comparison) throw new Error(`Unsupported deterministic filter: ${filter}`)
+  const values = valuesOf(document[comparison[1] ?? ""])
+  const expected = parseTypesenseScalar(comparison[3] ?? "")
+  if (comparison[2] === "=") return values.includes(expected)
+  if (comparison[2] === ">=") return values.some((value) => Number(value) >= Number(expected))
+  return values.some((value) => Number(value) <= Number(expected))
+}
+
+function countFacetValues(documents: Record<string, unknown>[], field: string) {
+  const counts = new Map<string | number, number>()
+  for (const document of documents) {
+    for (const value of valuesOf(document[field])) {
+      if (typeof value !== "string" && typeof value !== "number") continue
+      counts.set(value, (counts.get(value) ?? 0) + 1)
+    }
+  }
+  return [...counts.entries()]
+    .map(([value, count]) => ({ value, count }))
+    .sort(
+      (left, right) =>
+        right.count - left.count || String(left.value).localeCompare(String(right.value)),
+    )
+}
+
+function valuesOf(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [value]
+}
+
+function parseTypesenseScalar(value: string): unknown {
+  const trimmed = value.trim()
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return trimmed
+  }
+}
+
+function stripOuterParentheses(value: string): string {
+  return value.startsWith("(") && value.endsWith(")") ? value.slice(1, -1) : value
+}
+
+function splitTopLevel(value: string, separator: string): string[] {
+  const parts: string[] = []
+  let start = 0
+  let depth = 0
+  let quoted = false
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index]
+    if (character === '"' && value[index - 1] !== "\\") quoted = !quoted
+    if (quoted) continue
+    if (character === "(" || character === "[") depth += 1
+    if (character === ")" || character === "]") depth -= 1
+    if (depth === 0 && value.startsWith(separator, index)) {
+      parts.push(value.slice(start, index))
+      start = index + separator.length
+      index += separator.length - 1
+    }
+  }
+  parts.push(value.slice(start))
+  return parts
+}

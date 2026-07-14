@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { assertIndexerAdapterConformance } from "./conformance.js"
+import { assertIndexerAdapterConformance, createIndexerConformanceRegistry } from "./conformance.js"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
@@ -10,6 +10,24 @@ import type {
   SearchRequest,
   SearchResults,
 } from "./contract.js"
+import { resolveSearchSort, SEARCH_SORT_SEMANTICS } from "./contract.js"
+
+describe("portable search sort semantics", () => {
+  it("publishes stable field precedence and resolves the first policy-backed candidate", () => {
+    const registry = createIndexerConformanceRegistry()
+
+    expect(SEARCH_SORT_SEMANTICS["price-desc"]).toEqual({
+      fieldCandidates: ["priceFromAmountCents", "sellAmountCents"],
+      direction: "desc",
+    })
+    expect(resolveSearchSort("price-desc", registry)).toEqual({
+      field: "priceFromAmountCents",
+      direction: "desc",
+    })
+    expect(resolveSearchSort("relevance", registry)).toBeUndefined()
+    expect(resolveSearchSort("newest", registry)).toBeUndefined()
+  })
+})
 
 describe("assertIndexerAdapterConformance", () => {
   it("accepts an adapter with portable search and admin behavior", async () => {
@@ -29,6 +47,24 @@ describe("assertIndexerAdapterConformance", () => {
 
     await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
       "vectorDimensions must be null when vector fields are unsupported",
+    )
+  })
+
+  it("rejects an adapter that claims keyword support but ignores the query", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = (slice, request) => search(slice, { ...request, query: "" })
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "non-empty keyword search returned",
+    )
+  })
+
+  it("rejects vector limits when vector fields are unsupported", async () => {
+    const adapter = createMemoryIndexer({ maxVectorsPerDocument: 1 })
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "maxVectorsPerDocument must be null when vector fields are unsupported",
     )
   })
 })
@@ -103,6 +139,17 @@ function searchMemoryCollection(
     (request.filters ?? []).every((filter) => matchesFilter(document, filter)),
   )
 
+  const keyword = request.query.trim().toLocaleLowerCase()
+  if (keyword) {
+    documents = documents.filter((document) =>
+      Object.values(document.fields).some((value) =>
+        (Array.isArray(value) ? value : [value]).some(
+          (item) => typeof item === "string" && item.toLocaleLowerCase().includes(keyword),
+        ),
+      ),
+    )
+  }
+
   if (request.sort === "price-asc" || request.sort === "price-desc") {
     const direction = request.sort === "price-asc" ? 1 : -1
     documents = documents.sort(
@@ -128,6 +175,10 @@ function searchMemoryCollection(
             field,
             [...counts.entries()]
               .map(([value, count]) => ({ value, count }))
+              .sort(
+                (left, right) =>
+                  right.count - left.count || String(left.value).localeCompare(String(right.value)),
+              )
               .slice(0, limit ?? counts.size),
           ]
         }),

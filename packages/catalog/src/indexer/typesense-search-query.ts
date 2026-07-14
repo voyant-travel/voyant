@@ -2,8 +2,8 @@ import type {
   IndexerSlice,
   SearchFilter,
   SearchRequest,
-  SearchSortOption,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
+import { resolveSearchSort } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicyRegistry } from "../contract.js"
 
 export interface TypesenseSearchQuery {
@@ -11,6 +11,7 @@ export interface TypesenseSearchQuery {
   query_by: string
   filter_by?: string
   facet_by?: string
+  max_facet_values?: number
   sort_by?: string
   per_page?: number
   page?: number
@@ -53,11 +54,19 @@ export function buildSearchQuery(
 
   if (request.facets && request.facets.length > 0) {
     query.facet_by = request.facets.map((f) => normalizeTypesenseField(f.field)).join(",")
+    const requestedLimits = request.facets.flatMap(({ limit }) =>
+      limit === undefined ? [] : [Math.max(1, Math.floor(limit))],
+    )
+    if (requestedLimits.length > 0) {
+      // Typesense applies one cap to every requested facet, so use the strictest
+      // request to ensure no facet exceeds its portable per-field limit.
+      query.max_facet_values = Math.min(...requestedLimits)
+    }
   }
 
-  const sortBy = resolveTypesenseSortBy(request.sort, registry, slice)
-  if (sortBy) {
-    query.sort_by = sortBy
+  const resolvedSort = resolveSearchSort(request.sort, registry, slice)
+  if (resolvedSort) {
+    query.sort_by = `${resolvedSort.field}:${resolvedSort.direction}`
   }
 
   // Hybrid / semantic mode: attach the vector query if an embedding was
@@ -133,37 +142,6 @@ export function typesenseTypeForField(
 
 export function isTypesenseSortableStringField(field: string): boolean {
   return SORTABLE_STRING_FIELD_NAMES.has(field)
-}
-
-function resolveTypesenseSortBy(
-  sort: SearchSortOption | undefined,
-  registry: FieldPolicyRegistry,
-  slice: IndexerSlice | undefined,
-): string | undefined {
-  if (!sort || sort === "relevance") return undefined
-  const fields = SORT_FIELDS[sort]
-  const field = fields.find((candidate) => isSortableField(candidate, registry, slice))
-  if (!field) return undefined
-  const direction = sort === "price-desc" || sort === "newest" ? "desc" : "asc"
-  return `${field}:${direction}`
-}
-
-const SORT_FIELDS = {
-  "price-asc": ["priceFromAmountCents", "sellAmountCents"],
-  "price-desc": ["priceFromAmountCents", "sellAmountCents"],
-  "departure-asc": ["nextDepartureDate", "nextDepartureAt", "startDateEpochDays", "startDate"],
-  newest: ["publishedAt", "createdAt"],
-} as const satisfies Record<Exclude<SearchSortOption, "relevance">, readonly string[]>
-
-function isSortableField(
-  field: string,
-  registry: FieldPolicyRegistry,
-  slice: IndexerSlice | undefined,
-): boolean {
-  const policy = registry.resolve(field)
-  if (!policy) return false
-  if (!slice || slice.audience === "staff-admin") return true
-  return policy.visibility.includes(slice.audience)
 }
 
 function parsePageCursor(cursor: string | undefined): number | undefined {

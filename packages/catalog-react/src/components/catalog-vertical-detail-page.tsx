@@ -15,8 +15,8 @@ import {
  * Generic, full-page, URL-addressable detail page for the non-package catalog
  * surfaces (cruises, accommodations, excursions, tours). Reads the rich content
  * **directly from the content route by id** (the same source the detail sheet
- * uses — keyed by the catalog id, so it works where a Typesense `id` filter
- * doesn't) and renders the shared `CatalogDetailView`. Opened in a new tab from
+ * uses — keyed by the catalog id, so it does not depend on indexed id-filter
+ * support) and renders the shared `CatalogDetailView`. Opened in a new tab from
  * the surface's results. Packages keep their own bespoke detail page.
  *
  * Presentational: navigation (`onBook`), breadcrumbs (`onBreadcrumbs`) and

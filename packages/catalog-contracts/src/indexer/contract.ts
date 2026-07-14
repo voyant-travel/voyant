@@ -39,6 +39,60 @@ export type SearchMode = "keyword" | "semantic" | "hybrid"
 /** Portable storefront sort options. */
 export type SearchSortOption = "relevance" | "price-asc" | "price-desc" | "departure-asc" | "newest"
 
+export type SearchSortDirection = "asc" | "desc"
+
+export interface SearchSortSemantics {
+  /** Ordered policy paths. The first field present and visible in the slice wins. */
+  fieldCandidates: readonly string[]
+  direction: SearchSortDirection
+}
+
+/**
+ * Canonical engine-neutral meaning of every portable sort option. Relevance is
+ * provider-native and therefore has no field candidates; all other options
+ * resolve deterministically against the vertical's field-policy registry.
+ */
+export const SEARCH_SORT_SEMANTICS = {
+  relevance: { fieldCandidates: [], direction: "desc" },
+  "price-asc": {
+    fieldCandidates: ["priceFromAmountCents", "sellAmountCents"],
+    direction: "asc",
+  },
+  "price-desc": {
+    fieldCandidates: ["priceFromAmountCents", "sellAmountCents"],
+    direction: "desc",
+  },
+  "departure-asc": {
+    fieldCandidates: ["nextDepartureDate", "nextDepartureAt", "startDateEpochDays", "startDate"],
+    direction: "asc",
+  },
+  newest: {
+    fieldCandidates: ["publishedAt", "createdAt"],
+    direction: "desc",
+  },
+} as const satisfies Record<SearchSortOption, SearchSortSemantics>
+
+export interface ResolvedSearchSort {
+  field: string
+  direction: SearchSortDirection
+}
+
+/** Resolve a portable sort to the first policy-backed field visible in a slice. */
+export function resolveSearchSort(
+  sort: SearchSortOption | undefined,
+  registry: FieldPolicyRegistry,
+  slice?: IndexerSlice,
+): ResolvedSearchSort | undefined {
+  if (!sort || sort === "relevance") return undefined
+  const semantics = SEARCH_SORT_SEMANTICS[sort]
+  const field = semantics.fieldCandidates.find((candidate) => {
+    const policy = registry.resolve(candidate)
+    if (!policy) return false
+    return !slice || slice.audience === "staff-admin" || policy.visibility.includes(slice.audience)
+  })
+  return field ? { field, direction: semantics.direction } : undefined
+}
+
 /** Pagination shape. Cursors are opaque to callers. */
 export interface SearchPagination {
   cursor?: string
@@ -87,6 +141,7 @@ export interface SearchRequest {
 export interface SearchHit {
   id: string
   score: number
+  /** Indexed id and fields. Providers may omit stored embeddings from search payloads. */
   document: IndexerDocument
 }
 
