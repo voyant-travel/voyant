@@ -263,6 +263,7 @@
         "../bookings/dist/extensions/suppliers.d.ts"
       ],
       "@voyant-travel/bookings/extras": ["../bookings/dist/extras.d.ts"],
+      "@voyant-travel/bookings/extras/validation": ["../bookings/dist/extras/validation.d.ts"],
       "@voyant-travel/bookings/linkables": ["../bookings/dist/linkables.d.ts"],
       "@voyant-travel/bookings/pii": ["../bookings/dist/pii.d.ts"],
       "@voyant-travel/bookings/pricing-assignment": ["../bookings/dist/pricing-assignment.d.ts"],
@@ -387,6 +388,9 @@
       "@voyant-travel/catalog/index-subscribers": ["../catalog/dist/index-subscriber-runtime.d.ts"],
       "@voyant-travel/catalog/indexer/contract": ["../catalog/dist/indexer/contract.d.ts"],
       "@voyant-travel/catalog/indexer/provider": ["../catalog/dist/indexer/provider.d.ts"],
+      "@voyant-travel/catalog/indexer/reconciliation-node": [
+        "../catalog/dist/indexer/reconciliation-node.d.ts"
+      ],
       "@voyant-travel/catalog/indexer/typesense": ["../catalog/dist/indexer/typesense.d.ts"],
       "@voyant-travel/catalog/indexer/typesense-provider": [
         "../catalog/dist/indexer/typesense-provider.d.ts"
@@ -844,6 +848,9 @@
       ],
       "@voyant-travel/finance": ["../finance/dist/index.d.ts"],
       "@voyant-travel/finance-contracts": ["../finance-contracts/dist/index.d.ts"],
+      "@voyant-travel/finance-contracts/travel-credits": [
+        "../finance-contracts/dist/validation-travel-credits.d.ts"
+      ],
       "@voyant-travel/finance-contracts/validation": ["../finance-contracts/dist/validation.d.ts"],
       "@voyant-travel/finance-react": ["../finance-react/dist/index.d.ts"],
       "@voyant-travel/finance-react/admin": ["../finance-react/dist/admin/index.d.ts"],
@@ -888,11 +895,14 @@
       "@voyant-travel/finance/runtime-contributor": ["../finance/dist/runtime-contributor.d.ts"],
       "@voyant-travel/finance/runtime-port": ["../finance/dist/runtime-port.d.ts"],
       "@voyant-travel/finance/schema": ["../finance/dist/schema.d.ts"],
-      "@voyant-travel/finance/setup/vouchers": ["../finance/dist/service-vouchers-migration.d.ts"],
+      "@voyant-travel/finance/setup/travel-credits": [
+        "../finance/dist/service-travel-credits-migration.d.ts"
+      ],
       "@voyant-travel/finance/stale-booking-holds-runtime": [
         "../finance/dist/stale-booking-holds-runtime.d.ts"
       ],
       "@voyant-travel/finance/tools": ["../finance/dist/mcp-runtime.d.ts"],
+      "@voyant-travel/finance/travel-credits": ["../finance/dist/service-travel-credits.d.ts"],
       "@voyant-travel/finance/validation": ["../finance/dist/validation.d.ts"],
       "@voyant-travel/finance/voyant": ["../finance/dist/voyant.d.ts"],
       "@voyant-travel/flights": ["../flights/dist/index.d.ts"],
@@ -1414,6 +1424,30 @@
       "@voyant-travel/operator-settings/service": ["../operator-settings/dist/service.d.ts"],
       "@voyant-travel/operator-settings/voyant": ["../operator-settings/dist/voyant.d.ts"],
       "@voyant-travel/operator-standard": ["../operator-standard/dist/index.d.ts"],
+      "@voyant-travel/operator-standard/runtime/react": [
+        "../operator-standard/dist/runtime/react.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react-dom": [
+        "../operator-standard/dist/runtime/react-dom.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react-dom/client": [
+        "../operator-standard/dist/runtime/react-dom-client.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react-dom/server": [
+        "../operator-standard/dist/runtime/react-dom-server.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react/jsx-dev-runtime": [
+        "../operator-standard/dist/runtime/react-jsx-dev-runtime.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react/jsx-runtime": [
+        "../operator-standard/dist/runtime/react-jsx-runtime.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/tanstack/react-query": [
+        "../operator-standard/dist/runtime/tanstack-react-query.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/tanstack/react-router": [
+        "../operator-standard/dist/runtime/tanstack-react-router.d.ts"
+      ],
       "@voyant-travel/operator-standard/standard-frontend": [
         "../operator-standard/dist/standard-frontend.d.ts"
       ],

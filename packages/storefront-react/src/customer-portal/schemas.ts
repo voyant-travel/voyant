@@ -17,7 +17,7 @@ import {
   updateCustomerPortalCompanionSchema,
   updateCustomerPortalProfileDocumentSchema,
   updateCustomerPortalProfileSchema,
-} from "@voyant-travel/storefront/customer-portal"
+} from "@voyant-travel/storefront/customer-portal/public-validation"
 import { z } from "zod"
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })

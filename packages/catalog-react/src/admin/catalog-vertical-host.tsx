@@ -435,7 +435,7 @@ export function CatalogVerticalHost({
             input: { tags: nextTags },
           })
           // Intentionally don't invalidate the catalog search query —
-          // Typesense reindex is async, so a refetch right after the
+          // search reindexing is async, so a refetch right after the
           // PATCH would return the pre-mutation tags and clobber the
           // local optimistic state. The editor keeps its own working
           // set keyed on hit.id; the next time the user opens this

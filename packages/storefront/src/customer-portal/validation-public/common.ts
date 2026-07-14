@@ -56,7 +56,7 @@ export const bookingDocumentTypeSchema = z.enum([
 export const bookingDocumentSourceSchema = z.enum(["booking_document", "legal", "finance"])
 
 export const bookingFulfillmentTypeSchema = z.enum([
-  "voucher",
+  "service_voucher",
   "ticket",
   "pdf",
   "qr_code",
@@ -116,7 +116,7 @@ export const customerPortalFinancePaymentMethodSchema = z.enum([
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ])
 export const customerPortalBookingPaymentSummaryStatusSchema = z.enum([

@@ -17,7 +17,7 @@ type BookingCreateLedgerCommand = {
   extraLineCount?: number
   travelerCount?: number
   paymentScheduleCount?: number
-  voucherRedemptionRequested?: boolean
+  travelCreditRedemptionRequested?: boolean
   groupMembershipAction?: "join" | "create" | null
   initialStatus?: string | null
   documentGeneration?: {
@@ -130,7 +130,7 @@ function sanitizeBookingCreateCommand(command: BookingCreateLedgerCommand) {
     extraLineCount: command.extraLineCount ?? 0,
     travelerCount: command.travelerCount ?? 0,
     paymentScheduleCount: command.paymentScheduleCount ?? 0,
-    voucherRedemptionRequested: command.voucherRedemptionRequested === true,
+    travelCreditRedemptionRequested: command.travelCreditRedemptionRequested === true,
     groupMembershipAction: command.groupMembershipAction ?? null,
     initialStatus: command.initialStatus ?? null,
     documentGeneration: command.documentGeneration ?? null,

@@ -9,13 +9,18 @@
  * See `docs/architecture/catalog-architecture.md` §5.4.1 for design.
  */
 
-import type {
-  DocumentEmitter,
-  IndexerAdapter,
-  IndexerCapabilities,
-  IndexerDocument,
-  IndexerSlice,
-  SearchResults,
+import {
+  type DocumentEmitter,
+  type FacetRequest,
+  type IndexerAdapter,
+  type IndexerCapabilities,
+  type IndexerDocument,
+  type IndexerSlice,
+  indexFieldNameForPolicyPath,
+  MAX_FACET_BUCKETS,
+  resolveFacetBucketLimit,
+  type SearchMode,
+  type SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import {
@@ -83,7 +88,11 @@ export interface TypesenseCollectionSchema {
 
 export interface TypesenseSearchHit {
   document: Record<string, unknown>
-  text_match: number
+  text_match?: number
+  vector_distance?: number
+  hybrid_search_info?: {
+    rank_fusion_score: number
+  }
 }
 
 export interface TypesenseSearchResponse {
@@ -282,12 +291,34 @@ const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
   supportsVectorFields: true,
   vectorDimensions: null, // overridden per-instance based on configured embedding provider
   maxVectorsPerDocument: null,
-  supportsCrossAudienceFederation: true,
+  supportsCrossAudienceFederation: false,
   supportsAdminDenormalization: true,
 }
 
-function sameJson(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+function structurallyEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => structurallyEqual(value, right[index]))
+    )
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false
+  }
+  const leftRecord = left as Record<string, unknown>
+  const rightRecord = right as Record<string, unknown>
+  const leftKeys = Object.keys(leftRecord).sort()
+  const rightKeys = Object.keys(rightRecord).sort()
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every(
+      (key, index) =>
+        key === rightKeys[index] && structurallyEqual(leftRecord[key], rightRecord[key]),
+    )
+  )
 }
 
 function isTransientCollectionUpdateError(err: unknown): boolean {
@@ -531,6 +562,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     request: Parameters<IndexerAdapter["search"]>[1],
     includeEmbeddings = false,
   ): Promise<SearchResults> => {
+    for (const { limit } of request.facets ?? []) resolveFacetBucketLimit(limit)
     const name = collectionName(slice, collectionPrefix)
     let registry: FieldPolicyRegistry | undefined = registryByVertical.get(slice.vertical)
     if (!registry) {
@@ -545,7 +577,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     if (includeEmbeddings) delete query.exclude_fields
     try {
       const response = await client.collections(name).documents().search(query)
-      return mapTypesenseResponse(response, query)
+      return mapTypesenseResponse(response, query, request.mode, request.facets)
     } catch (error) {
       if (isCollectionNotFoundError(error)) return { hits: [], total: 0, facets: {} }
       throw error
@@ -652,7 +684,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
       if (updates.length > 0) {
         updatePayload.fields = updates as TypesenseFieldSchema[]
       }
-      if (updates.length === 0 && sameJson(existing.metadata, schema.metadata)) {
+      if (updates.length === 0 && structurallyEqual(existing.metadata, schema.metadata)) {
         return
       }
       await retryTransientCollectionUpdate(
@@ -714,7 +746,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
 function flattenDocument(document: IndexerDocument): Record<string, unknown> {
   const flat: Record<string, unknown> = { id: document.id }
   for (const [path, value] of Object.entries(document.fields)) {
-    flat[path] = coerceForTypesense(path, value)
+    flat[indexFieldNameForPolicyPath(path)] = coerceForTypesense(path, value)
   }
   if (document.embeddings) {
     for (const [name, vector] of Object.entries(document.embeddings)) {
@@ -780,21 +812,36 @@ function coerceBool(value: unknown): boolean | undefined {
 function mapTypesenseResponse(
   response: TypesenseSearchResponse,
   query: TypesenseSearchQuery,
+  mode: SearchMode,
+  requestedFacets: FacetRequest[] | undefined,
 ): SearchResults {
-  const hits = response.hits.map((hit) => {
+  // Hybrid scores must share one response-wide scale. If any native fusion
+  // score is absent or invalid, preserve Typesense's order with reciprocal
+  // ranks for every hit instead of mixing text and vector score domains.
+  const hasCompleteHybridScores =
+    mode === "hybrid" &&
+    response.hits.every((hit) => Number.isFinite(hit.hybrid_search_info?.rank_fusion_score))
+  const hits = response.hits.map((hit, index) => {
     const document = mapTypesenseDocument(hit.document)
     return {
       id: document.id,
-      // Wildcard queries (`q=*`) and pure-vector searches don't compute a
-      // `text_match` score — fall back to 0 so downstream consumers always
-      // see a number.
-      score: hit.text_match ?? 0,
+      score: scoreTypesenseHit(hit, mode, index, hasCompleteHybridScores),
       document,
     }
   })
+  const facetLimits = new Map(
+    (requestedFacets ?? []).flatMap(({ field, limit }) => [
+      [indexFieldNameForPolicyPath(field), resolveFacetBucketLimit(limit)] as const,
+    ]),
+  )
   const facets: Record<string, Array<{ value: string | number; count: number }>> | undefined =
     response.facet_counts
-      ? Object.fromEntries(response.facet_counts.map((f) => [f.field_name, f.counts]))
+      ? Object.fromEntries(
+          response.facet_counts.map((facet) => {
+            const limit = facetLimits.get(facet.field_name)
+            return [facet.field_name, facet.counts.slice(0, limit ?? MAX_FACET_BUCKETS)]
+          }),
+        )
       : undefined
   return {
     hits,
@@ -804,6 +851,26 @@ function mapTypesenseResponse(
       : {}),
     facets,
   }
+}
+
+function scoreTypesenseHit(
+  hit: TypesenseSearchHit,
+  mode: SearchMode,
+  index: number,
+  hasCompleteHybridScores: boolean,
+): number {
+  if (mode === "semantic") return normalizeCosineDistance(hit.vector_distance) ?? 0
+  if (mode === "hybrid") {
+    return hasCompleteHybridScores
+      ? (hit.hybrid_search_info?.rank_fusion_score ?? 0)
+      : 1 / (index + 1)
+  }
+  return hit.text_match ?? 0
+}
+
+function normalizeCosineDistance(distance: number | undefined): number | undefined {
+  if (distance === undefined) return undefined
+  return Math.max(0, Math.min(1, 1 - distance / 2))
 }
 
 function mapTypesenseDocument(document: Record<string, unknown>): IndexerDocument {

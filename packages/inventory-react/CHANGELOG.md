@@ -1,5 +1,52 @@
 # @voyant-travel/inventory-react
 
+## 0.39.0
+
+### Patch Changes
+
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog-contracts@0.111.0
+  - @voyant-travel/catalog-react@0.155.0
+  - @voyant-travel/storefront-react@0.159.0
+  - @voyant-travel/finance-react@0.157.0
+  - @voyant-travel/finance@0.157.0
+  - @voyant-travel/inventory@0.10.2
+
+## 0.38.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/utils@0.107.1
+  - @voyant-travel/admin@0.123.3
+  - @voyant-travel/catalog-contracts@0.110.1
+  - @voyant-travel/catalog-react@0.154.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/finance-react@0.156.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/inventory@0.10.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/storefront-react@0.158.1
+  - @voyant-travel/ui@0.109.1
+
+## 0.38.0
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/finance-react@0.156.0
+  - @voyant-travel/catalog-contracts@0.110.0
+  - @voyant-travel/inventory@0.10.0
+  - @voyant-travel/i18n@0.111.0
+  - @voyant-travel/storefront-react@0.158.0
+  - @voyant-travel/catalog-react@0.154.0
+  - @voyant-travel/admin@0.123.2
+
 ## 0.37.0
 
 ### Patch Changes

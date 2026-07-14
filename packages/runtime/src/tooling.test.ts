@@ -1,4 +1,6 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+// agent-quality: file-size exception -- owner: runtime; this suite keeps project bootstrap and lifecycle fixtures co-located so packaged-consumer behavior is reviewed as one contract.
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises"
+import { createServer } from "node:http"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -13,6 +15,7 @@ import {
   loadStandardRouteFiles,
   prepareProjectBootstrap,
   type VoyantProjectToolingDependencies,
+  waitForDevelopmentApplication,
 } from "./tooling-internal.js"
 
 const temporaryDirectories: string[] = []
@@ -40,7 +43,7 @@ describe("Voyant project tooling", () => {
     expect(buildApp).toHaveBeenCalledOnce()
   })
 
-  it("aliases product dependencies exactly without capturing package subpaths", () => {
+  it("does not alias framework dependencies to product package entry files", () => {
     const config = createProjectViteConfig({
       appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
       generatedRoutes: {
@@ -50,18 +53,99 @@ describe("Voyant project tooling", () => {
       },
       bootstrap: {
         serverEntry: "/workspace/operator/src/server.ts",
-        aliases: { "@tanstack/react-router": "/product/react-router/index.cjs" },
       },
     })
     const aliases = config.resolve?.alias
-    expect(Array.isArray(aliases)).toBe(true)
-    const dependencyAlias = (aliases as Array<{ find: string | RegExp; replacement: string }>).find(
-      ({ replacement }) => replacement === "/product/react-router/index.cjs",
-    )
+    expect(JSON.stringify(aliases)).not.toContain("/product/")
+  })
 
-    expect(dependencyAlias?.find).toBeInstanceOf(RegExp)
-    expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router")).toBe(true)
-    expect((dependencyAlias?.find as RegExp).test("@tanstack/react-router/ssr/server")).toBe(false)
+  it("forwards product-owned frontend dependency entries to Vite", () => {
+    const dependencyFacades = {
+      react: "@acme/operator/runtime/react",
+      "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
+    }
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: {
+        frontendDependencyAliases: {
+          react: "/product/runtime/react.js",
+          "@tanstack/react-router": "/product/runtime/tanstack-react-router.js",
+        },
+        frontendDependencyFacades: dependencyFacades,
+        serverEntry: "/workspace/operator/src/server.ts",
+      },
+    })
+
+    expect(config.optimizeDeps?.exclude).not.toEqual(
+      expect.arrayContaining(Object.keys(dependencyFacades)),
+    )
+    expect(config.ssr?.optimizeDeps?.include).toEqual([])
+    expect(config.plugins).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "voyant:dependency-facades" })]),
+    )
+  })
+
+  it("mounts HTTP handling without relying on Vite class identity", async () => {
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
+    })
+    const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
+      (candidate) => candidate.name === "voyant:development-server",
+    )
+    const use = vi.fn()
+    const serverFetch = vi.fn(async (request: Request) =>
+      Response.json({ path: new URL(request.url).pathname }),
+    )
+    const importServerEntry = vi.fn(async () => ({ default: { fetch: serverFetch } }))
+    const configureServer = plugin?.configureServer as (server: {
+      config: { experimental: { bundledDev: boolean } }
+      environments: {
+        client: Record<string, never>
+        ssr: { runner: { import(id: string): Promise<Record<string, unknown>> } }
+      }
+      middlewares: { use: typeof use }
+    }) => () => void
+    const install = configureServer({
+      config: { experimental: { bundledDev: false } },
+      environments: {
+        client: {},
+        ssr: { runner: { import: importServerEntry } },
+      },
+      middlewares: { use },
+    })
+
+    expect(use).not.toHaveBeenCalled()
+    install()
+    expect(use).toHaveBeenCalledOnce()
+
+    const middleware = use.mock.calls[0]?.[0]
+    const httpServer = createServer((request, response) => middleware(request, response))
+    await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve))
+    try {
+      const address = httpServer.address()
+      if (!address || typeof address === "string") throw new Error("HTTP test server has no port")
+      const response = await fetch(`http://127.0.0.1:${address.port}/runner-proof`)
+
+      expect(response.status).toBe(200)
+      await expect(response.json()).resolves.toEqual({ path: "/runner-proof" })
+      expect(importServerEntry).toHaveBeenCalledWith("virtual:tanstack-start-server-entry")
+      expect(serverFetch).toHaveBeenCalledOnce()
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        httpServer.close((error) => (error ? reject(error) : resolve())),
+      )
+    }
   })
 
   it("keeps the Node distribution under the lifecycle-owned dist directory", () => {
@@ -76,6 +160,103 @@ describe("Voyant project tooling", () => {
     })
 
     expect(config.build?.outDir).toBe("dist")
+  })
+
+  it("holds development HTTP requests until project tooling is ready", async () => {
+    let release: () => void = () => undefined
+    const readiness = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      developmentReadiness: { promise: readiness, token: "readiness-token" },
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
+    })
+    const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
+      (candidate) => candidate.name === "voyant:development-readiness",
+    )
+    const use = vi.fn()
+    const configureServer = plugin?.configureServer as (server: {
+      middlewares: { use: typeof use }
+    }) => void
+    configureServer({ middlewares: { use } })
+    const middleware = use.mock.calls[0]?.[0] as (
+      request: unknown,
+      response: unknown,
+      next: (error?: unknown) => void,
+    ) => void
+    const next = vi.fn()
+
+    middleware({ headers: {} }, {}, next)
+    await Promise.resolve()
+    expect(next).not.toHaveBeenCalled()
+
+    release()
+    await readiness
+    await Promise.resolve()
+    expect(next).toHaveBeenCalledOnce()
+  })
+
+  it("lets only the internal application probe bypass the development gate", async () => {
+    const readiness = new Promise<void>(() => undefined)
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      developmentReadiness: { promise: readiness, token: "readiness-token" },
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
+    })
+    const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
+      (candidate) => candidate.name === "voyant:development-readiness",
+    )
+    const use = vi.fn()
+    const configureServer = plugin?.configureServer as (server: {
+      middlewares: { use: typeof use }
+    }) => void
+    configureServer({ middlewares: { use } })
+    const middleware = use.mock.calls[0]?.[0] as (
+      request: { headers: Record<string, string> },
+      response: unknown,
+      next: (error?: unknown) => void,
+    ) => void
+    const next = vi.fn()
+
+    middleware({ headers: { "x-voyant-development-readiness": "readiness-token" } }, {}, next)
+
+    expect(next).toHaveBeenCalledOnce()
+  })
+
+  it("waits past Connect's fallback 404 until the application handles requests", async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          "<!DOCTYPE html><html><body><pre>Cannot GET /.voyant/development-readiness</pre></body></html>",
+          { status: 404 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response("application not found", { status: 404 }))
+
+    await waitForDevelopmentApplication(
+      { url: "http://localhost:3300/", token: "readiness-token" },
+      request,
+    )
+
+    expect(request).toHaveBeenCalledTimes(2)
+    expect(request).toHaveBeenLastCalledWith(
+      new URL("http://localhost:3300/.voyant/development-readiness"),
+      expect.objectContaining({
+        headers: { "x-voyant-development-readiness": "readiness-token" },
+      }),
+    )
   })
 
   it("generates, builds, and copies both deployment artifact layouts", async () => {
@@ -142,17 +323,115 @@ describe("Voyant project tooling", () => {
     expect(vi.mocked(dependencies.createViteServer).mock.calls[0]?.[0]).not.toHaveProperty(
       "configFile",
     )
+    expect(
+      vi.mocked(dependencies.createViteConfig).mock.calls[0]?.[0].developmentReadiness?.promise,
+    ).toBeInstanceOf(Promise)
     expect(development.url).toBe("http://localhost:3300/")
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
     expect(calls).toContain("vite-listen")
+    expect(calls).toContain("vite-scan")
+    expect(calls).toContain("vite-optimize")
+    expect(calls).toContain("application-ready")
 
     await development.close()
     await development.close()
     expect(calls.filter((call) => call === "vite-close")).toHaveLength(1)
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+  })
+
+  it("keeps the auth fallback active until every loopback development server closes", async () => {
+    const first = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/first" },
+      createDependencies([]),
+    )
+    const second = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/second" },
+      createDependencies([]),
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+    await first.close()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+    await second.close()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+  })
+
+  it("does not enable auth-secret logging for a network-exposed development server", async () => {
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator", host: "0.0.0.0" },
+      createDependencies([]),
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+    await development.close()
+  })
+
+  it.each([
+    "0.0.0.0",
+    true,
+  ] as const)("does not enable auth-secret logging when project Vite config resolves host to %s", async (host) => {
+    const dependencies = createDependencies([])
+    vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host } },
+      resolvedUrls: null,
+      listen: vi.fn(async () => {
+        expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+      }),
+      close: vi.fn(async () => {}),
+    })
+
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator" },
+      dependencies,
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+    await development.close()
+  })
+
+  it("enables auth-secret logging before listen for a project-configured loopback host", async () => {
+    const dependencies = createDependencies([])
+    vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "127.0.0.1" } },
+      resolvedUrls: null,
+      listen: vi.fn(async () => {
+        expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+      }),
+      close: vi.fn(async () => {}),
+    })
+
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator" },
+      dependencies,
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+    await development.close()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+  })
+
+  it("canonicalizes Vite's default loopback URL to localhost", async () => {
+    const dependencies = createDependencies([])
+    vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "localhost" } },
+      resolvedUrls: { local: ["http://127.0.0.1:3301/"], network: [] },
+      listen: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+    })
+
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator", port: 3301 },
+      dependencies,
+    )
+
+    expect(development.url).toBe("http://localhost:3301/")
+    await development.close()
   })
 
   it("passes explicit host and port to Vite and provides a fallback URL", async () => {
     const dependencies = createDependencies([])
     vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "127.0.0.1" } },
       resolvedUrls: null,
       listen: vi.fn(async () => {}),
       close: vi.fn(async () => {}),
@@ -169,12 +448,14 @@ describe("Voyant project tooling", () => {
       }),
     )
     expect(development.url).toBe("http://127.0.0.1:4400")
+    await development.close()
   })
 
   it("closes Vite when the server cannot start listening", async () => {
     const dependencies = createDependencies([])
     const close = vi.fn(async () => {})
     vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "localhost" } },
       resolvedUrls: null,
       listen: vi.fn(async () => {
         throw new Error("port unavailable")
@@ -186,6 +467,7 @@ describe("Voyant project tooling", () => {
       developVoyantProjectWithDependencies({ projectRoot: "/workspace/operator" }, dependencies),
     ).rejects.toThrow("port unavailable")
     expect(close).toHaveBeenCalledOnce()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
   })
 
   it("loads selected presentation routes from the product BOM package", async () => {
@@ -243,6 +525,115 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
     await expect(readText(bootstrap.stylesEntry!)).resolves.toBe(
       '@import "@acme/operator/standard-styles.css";\n',
     )
+  })
+
+  it("uses every product facade when the app owns none of the frontend singletons", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({ dependencies: { "@acme/operator": "1.0.0" } }),
+    )
+    await writeFrontendFacadePackage(projectRoot, "@acme/operator")
+
+    const bootstrap = await prepareProjectBootstrap(projectRoot)
+    expect(bootstrap.frontendDependencyAliases?.react).toBe(
+      await realpath(path.join(projectRoot, "node_modules/@acme/operator/runtime/react.js")),
+    )
+    expect(bootstrap.frontendDependencyFacades).toEqual({
+      react: "@acme/operator/runtime/react",
+      "react-dom": "@acme/operator/runtime/react-dom",
+      "react-dom/client": "@acme/operator/runtime/react-dom/client",
+      "react-dom/server": "@acme/operator/runtime/react-dom/server",
+      "react/jsx-runtime": "@acme/operator/runtime/react/jsx-runtime",
+      "react/jsx-dev-runtime": "@acme/operator/runtime/react/jsx-dev-runtime",
+      "@tanstack/react-query": "@acme/operator/runtime/tanstack/react-query",
+      "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
+    })
+  })
+
+  it("leaves every frontend singleton app-owned when all four roots are declared", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        dependencies: {
+          react: "1.0.0",
+          "react-dom": "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+          "@tanstack/react-router": "1.0.0",
+        },
+      }),
+    )
+    await Promise.all(
+      ["react", "react-dom", "@tanstack/react-query", "@tanstack/react-router"].map((dependency) =>
+        writeResolvablePackage(projectRoot, dependency),
+      ),
+    )
+
+    const bootstrap = await prepareProjectBootstrap(projectRoot)
+
+    expect(bootstrap.frontendDependencyAliases).toBeUndefined()
+  })
+
+  it("rejects app-owned frontend singletons that are declared but not installed", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        optionalDependencies: {
+          react: "1.0.0",
+          "react-dom": "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+          "@tanstack/react-router": "1.0.0",
+        },
+      }),
+    )
+
+    await expect(prepareProjectBootstrap(projectRoot)).rejects.toThrow(
+      "frontend singleton dependencies are app-owned but not all four roots are installed",
+    )
+  })
+
+  it("rejects partial frontend singleton ownership before Vite can split React", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        dependencies: {
+          react: "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+        },
+      }),
+    )
+
+    await expect(prepareProjectBootstrap(projectRoot)).rejects.toThrow(
+      "Either add all four singleton dependencies (react, react-dom, @tanstack/react-query, @tanstack/react-router) or remove all four so @acme/operator provides them.",
+    )
+  })
+
+  it("does not treat development-only frontend packages as production ownership", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          react: "1.0.0",
+          "react-dom": "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+          "@tanstack/react-router": "1.0.0",
+        },
+      }),
+    )
+    await writeFrontendFacadePackage(projectRoot, "@acme/operator")
+
+    const bootstrap = await prepareProjectBootstrap(projectRoot)
+
+    expect(bootstrap.frontendDependencyFacades?.react).toBe("@acme/operator/runtime/react")
   })
 
   it("preserves project-authored server, router, and style overrides", async () => {
@@ -322,10 +713,33 @@ function createDependencies(calls: string[]): VoyantProjectToolingDependencies {
     buildVite: vi.fn(async () => {
       calls.push("vite-build")
     }),
-    createViteServer: vi.fn(async () => ({
+    createViteServer: vi.fn(async (config) => ({
+      config: {
+        server: {
+          host: config.server?.host ?? "localhost",
+        },
+      },
       resolvedUrls: {
         local: ["http://localhost:3300/"],
         network: [],
+      },
+      environments: {
+        client: {
+          depsOptimizer: {
+            scanProcessing: Promise.resolve().then(() => {
+              calls.push("vite-scan")
+            }),
+            metadata: {
+              discovered: {
+                react: {
+                  processing: Promise.resolve().then(() => {
+                    calls.push("vite-optimize")
+                  }),
+                },
+              },
+            },
+          },
+        },
       },
       listen: vi.fn(async () => {
         calls.push("vite-listen")
@@ -334,6 +748,9 @@ function createDependencies(calls: string[]): VoyantProjectToolingDependencies {
         calls.push("vite-close")
       }),
     })),
+    waitForDevelopmentApplication: vi.fn(async () => {
+      calls.push("application-ready")
+    }),
     replaceDirectory: vi.fn(async () => {
       calls.push("replace-directory")
     }),
@@ -369,4 +786,86 @@ async function writeProductBom(
       graph: { presentations: presentationIds },
     }),
   )
+}
+
+async function writeFrontendFacadePackage(projectRoot: string, id: string): Promise<void> {
+  const packageRoot = path.join(projectRoot, "node_modules", ...id.split("/"))
+  const exports = Object.fromEntries(
+    [
+      "runtime/react",
+      "runtime/react-dom",
+      "runtime/react-dom/client",
+      "runtime/react-dom/server",
+      "runtime/react/jsx-runtime",
+      "runtime/react/jsx-dev-runtime",
+      "runtime/tanstack/react-query",
+      "runtime/tanstack/react-router",
+    ].map((subpath) => [
+      `./${subpath}`,
+      {
+        browser: `./${subpath}.js`,
+        node: `./${subpath}-node.js`,
+        default: `./${subpath}.js`,
+      },
+    ]),
+  )
+  await mkdir(packageRoot, { recursive: true })
+  await writeFile(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({ name: id, type: "module", exports }),
+  )
+  await Promise.all(
+    Object.values(exports).flatMap((targets) =>
+      [...new Set(Object.values(targets))].map(async (target) => {
+        const file = path.join(packageRoot, target)
+        await mkdir(path.dirname(file), { recursive: true })
+        await writeFile(file, "export {}\n")
+      }),
+    ),
+  )
+  await Promise.all([
+    writeMockPackage(packageRoot, "react", [".", "./jsx-runtime", "./jsx-dev-runtime"]),
+    writeMockPackage(packageRoot, "react-dom", [".", "./client", "./server"]),
+    writeMockPackage(packageRoot, "@tanstack/react-query", ["."]),
+    writeMockPackage(packageRoot, "@tanstack/react-router", ["."]),
+  ])
+}
+
+async function writeMockPackage(
+  parent: string,
+  id: string,
+  subpaths: readonly string[],
+): Promise<void> {
+  const packageRoot = path.join(parent, "node_modules", ...id.split("/"))
+  const exports = Object.fromEntries(
+    subpaths.map((subpath) => {
+      const importTarget = subpath === "." ? "./index.js" : `${subpath}.js`
+      const requireTarget = subpath === "." ? "./index.cjs" : `${subpath}.cjs`
+      return [subpath, { import: importTarget, require: requireTarget }]
+    }),
+  )
+  await mkdir(packageRoot, { recursive: true })
+  await writeFile(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({ name: id, type: "module", exports }),
+  )
+  await Promise.all(
+    Object.values(exports).flatMap(({ import: importTarget, require: requireTarget }) =>
+      [importTarget, requireTarget].map(async (target) => {
+        const file = path.join(packageRoot, target)
+        await mkdir(path.dirname(file), { recursive: true })
+        await writeFile(file, target.endsWith(".cjs") ? "module.exports = {}\n" : "export {}\n")
+      }),
+    ),
+  )
+}
+
+async function writeResolvablePackage(projectRoot: string, id: string): Promise<void> {
+  const packageRoot = path.join(projectRoot, "node_modules", ...id.split("/"))
+  await mkdir(packageRoot, { recursive: true })
+  await writeFile(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({ name: id, type: "module", exports: "./index.js" }),
+  )
+  await writeFile(path.join(packageRoot, "index.js"), "export {}\n")
 }

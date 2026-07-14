@@ -32,4 +32,21 @@ describe("@voyant-travel/finance package exports", () => {
       default: "./dist/booking-schedule/subscriber-runtime.js",
     })
   })
+
+  it("publishes the Travel Credit service and graph-declared setup subpaths", () => {
+    expect(packageJson.exports["./travel-credits"]).toBe("./src/service-travel-credits.ts")
+    expect(packageJson.publishConfig.exports["./travel-credits"]).toEqual({
+      types: "./dist/service-travel-credits.d.ts",
+      import: "./dist/service-travel-credits.js",
+      default: "./dist/service-travel-credits.js",
+    })
+    expect(packageJson.exports["./setup/travel-credits"]).toBe(
+      "./src/service-travel-credits-migration.ts",
+    )
+    expect(packageJson.publishConfig.exports["./setup/travel-credits"]).toEqual({
+      types: "./dist/service-travel-credits-migration.d.ts",
+      import: "./dist/service-travel-credits-migration.js",
+      default: "./dist/service-travel-credits-migration.js",
+    })
+  })
 })

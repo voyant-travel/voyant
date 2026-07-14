@@ -1,5 +1,40 @@
 # @voyant-travel/action-ledger-react
 
+## 0.44.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.157.0
+- @voyant-travel/inventory-react@0.39.0
+- @voyant-travel/relationships-react@0.157.0
+
+## 0.43.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/action-ledger@0.108.4
+  - @voyant-travel/admin@0.123.3
+  - @voyant-travel/bookings-react@0.156.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/inventory-react@0.38.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/relationships-react@0.156.1
+  - @voyant-travel/ui@0.109.1
+
+## 0.43.0
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/bookings-react@0.156.0
+  - @voyant-travel/i18n@0.111.0
+  - @voyant-travel/inventory-react@0.38.0
+  - @voyant-travel/admin@0.123.2
+  - @voyant-travel/relationships-react@0.156.0
+
 ## 0.42.0
 
 ### Patch Changes

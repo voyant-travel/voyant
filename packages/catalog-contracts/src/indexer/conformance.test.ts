@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { assertIndexerAdapterConformance } from "./conformance.js"
+import { createFieldPolicyRegistry } from "../contract.js"
+import { assertIndexerAdapterConformance, createIndexerConformanceRegistry } from "./conformance.js"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
@@ -10,6 +11,60 @@ import type {
   SearchRequest,
   SearchResults,
 } from "./contract.js"
+import { resolveFacetBucketLimit, resolveSearchSort, SEARCH_SORT_SEMANTICS } from "./contract.js"
+
+describe("portable search sort semantics", () => {
+  it("publishes stable field precedence and resolves the first policy-backed candidate", () => {
+    const registry = createIndexerConformanceRegistry()
+
+    expect(SEARCH_SORT_SEMANTICS["price-desc"]).toEqual({
+      fieldCandidates: ["priceFromAmountCents", "sellAmountCents"],
+      direction: "desc",
+    })
+    expect(resolveSearchSort("price-desc", registry)).toEqual({
+      field: "priceFromAmountCents",
+      direction: "desc",
+    })
+    expect(resolveSearchSort("relevance", registry)).toBeUndefined()
+    expect(resolveSearchSort("newest", registry)).toBeUndefined()
+  })
+
+  it("skips blob-only candidates and resolves the next indexed policy", () => {
+    const base = createIndexerConformanceRegistry()
+    const pricePolicy = base.resolve("priceFromAmountCents")!
+    const registry = createFieldPolicyRegistry([
+      ...base.policies.map((policy) =>
+        policy.path === pricePolicy.path ? { ...policy, query: "blob-only" as const } : policy,
+      ),
+      { ...pricePolicy, path: "sellAmountCents" },
+    ])
+
+    expect(resolveSearchSort("price-asc", registry)).toEqual({
+      field: "sellAmountCents",
+      direction: "asc",
+    })
+  })
+})
+
+describe("portable facet limit semantics", () => {
+  it("defaults and caps valid limits", () => {
+    expect(resolveFacetBucketLimit(undefined)).toBe(250)
+    expect(resolveFacetBucketLimit(2)).toBe(2)
+    expect(resolveFacetBucketLimit(300)).toBe(250)
+  })
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    1.5,
+  ])("rejects invalid explicit limit %s", (limit) => {
+    expect(() => resolveFacetBucketLimit(limit)).toThrow(
+      "Facet limit must be a positive finite integer",
+    )
+  })
+})
 
 describe("assertIndexerAdapterConformance", () => {
   it("accepts an adapter with portable search and admin behavior", async () => {
@@ -17,6 +72,22 @@ describe("assertIndexerAdapterConformance", () => {
       assertIndexerAdapterConformance({
         createAdapter: createMemoryIndexer,
         namespace: "memory-conformance",
+      }),
+    ).resolves.toBeUndefined()
+  })
+
+  it("exercises every optional capability an adapter declares", async () => {
+    await expect(
+      assertIndexerAdapterConformance({
+        createAdapter: () =>
+          createMemoryIndexer({
+            supportsHybridSearch: true,
+            supportsVectorFields: true,
+            vectorDimensions: 3,
+            supportsCrossAudienceFederation: true,
+            supportsAdminDenormalization: true,
+          }),
+        namespace: "memory-capabilities",
       }),
     ).resolves.toBeUndefined()
   })
@@ -29,6 +100,121 @@ describe("assertIndexerAdapterConformance", () => {
 
     await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
       "vectorDimensions must be null when vector fields are unsupported",
+    )
+  })
+
+  it("rejects an adapter that claims keyword support but ignores the query", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = (slice, request) => search(slice, { ...request, query: "" })
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "non-empty keyword search returned",
+    )
+  })
+
+  it("rejects an adapter that ignores the requested sort order", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = (slice, request) => search(slice, { ...request, sort: undefined })
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "first page returned",
+    )
+  })
+
+  it("accepts search fields with structurally equal reordered object keys", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = async (slice, request) => {
+      const results = await search(slice, request)
+      return {
+        ...results,
+        hits: results.hits.map((hit) => ({
+          ...hit,
+          document: {
+            ...hit.document,
+            fields: Object.fromEntries(Object.entries(hit.document.fields).reverse()),
+          },
+        })),
+      }
+    }
+
+    await expect(
+      assertIndexerAdapterConformance({ createAdapter: () => adapter }),
+    ).resolves.toBeUndefined()
+  })
+
+  it("still treats array order as structural", async () => {
+    const adapter = createMemoryIndexer()
+    const search = adapter.search.bind(adapter)
+    adapter.search = async (slice, request) => {
+      const results = await search(slice, request)
+      return {
+        ...results,
+        hits: results.hits.map((hit) => {
+          const categories = hit.document.fields.categorySlugs
+          return Array.isArray(categories)
+            ? {
+                ...hit,
+                document: {
+                  ...hit.document,
+                  fields: { ...hit.document.fields, categorySlugs: [...categories].reverse() },
+                },
+              }
+            : hit
+        }),
+      }
+    }
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "search hit did not preserve the indexed document fields",
+    )
+  })
+
+  it("requires vector fixtures to round-trip through admin scan", async () => {
+    const adapter = createMemoryIndexer({
+      supportsVectorFields: true,
+      vectorDimensions: 3,
+    })
+    const admin = adapter.admin!
+    const scan = admin.scan.bind(admin)
+    admin.scan = async function* (slice, options) {
+      for await (const document of scan(slice, options)) {
+        yield { id: document.id, fields: document.fields }
+      }
+    }
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "admin scan did not preserve the exact embedding",
+    )
+  })
+
+  it("checks every vector fixture embedding returned by admin scan", async () => {
+    const adapter = createMemoryIndexer({
+      supportsVectorFields: true,
+      vectorDimensions: 3,
+    })
+    const admin = adapter.admin!
+    const scan = admin.scan.bind(admin)
+    admin.scan = async function* (slice, options) {
+      let index = 0
+      for await (const document of scan(slice, options)) {
+        index += 1
+        yield index === 2 ? { ...document, embeddings: { text_embedding: [0, 0, 0] } } : document
+      }
+    }
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "admin scan did not preserve the exact embedding",
+    )
+  })
+
+  it("rejects vector limits when vector fields are unsupported", async () => {
+    const adapter = createMemoryIndexer({ maxVectorsPerDocument: 1 })
+
+    await expect(assertIndexerAdapterConformance({ createAdapter: () => adapter })).rejects.toThrow(
+      "maxVectorsPerDocument must be null when vector fields are unsupported",
     )
   })
 })
@@ -83,6 +269,15 @@ function createMemoryIndexer(
       for (const id of ids) target.delete(id)
     },
     async search(slice, request) {
+      if (request.search_audiences && request.search_audiences.length > 0) {
+        const federated = request.search_audiences.flatMap((audience) => {
+          const target = collection({ ...slice, audience })
+          return searchMemoryCollection(target, { ...request, search_audiences: undefined }).hits
+        })
+        const byId = new Map(federated.map((hit) => [hit.id, hit]))
+        const hits = [...byId.values()].slice(0, request.pagination?.limit ?? byId.size)
+        return { hits, total: byId.size }
+      }
       return searchMemoryCollection(collection(slice), request)
     },
     async bulkReindex(slice, stream) {
@@ -102,6 +297,31 @@ function searchMemoryCollection(
   let documents = [...collection.documents.values()].filter((document) =>
     (request.filters ?? []).every((filter) => matchesFilter(document, filter)),
   )
+  const scores = new Map<string, number>()
+
+  const keyword = request.query.trim().toLocaleLowerCase()
+  if (request.mode === "keyword") {
+    if (keyword) documents = documents.filter((document) => matchesKeyword(document, keyword))
+  } else if (request.query_embedding) {
+    documents = documents.filter(
+      (document) =>
+        Boolean(document.embeddings?.text_embedding) ||
+        (request.mode === "hybrid" && Boolean(keyword) && matchesKeyword(document, keyword)),
+    )
+    for (const document of documents) {
+      const embedding = document.embeddings?.text_embedding
+      const vectorScore = embedding
+        ? normalizedCosineSimilarity(request.query_embedding, embedding)
+        : 0
+      const keywordScore = keyword && matchesKeyword(document, keyword) ? 1 : 0
+      const score =
+        request.mode === "semantic"
+          ? vectorScore
+          : (request.alpha ?? 0.3) * vectorScore + (1 - (request.alpha ?? 0.3)) * keywordScore
+      scores.set(document.id, score)
+    }
+    documents.sort((left, right) => (scores.get(right.id) ?? 0) - (scores.get(left.id) ?? 0))
+  }
 
   if (request.sort === "price-asc" || request.sort === "price-desc") {
     const direction = request.sort === "price-asc" ? 1 : -1
@@ -115,6 +335,7 @@ function searchMemoryCollection(
   const facets = request.facets
     ? Object.fromEntries(
         request.facets.map(({ field, limit }) => {
+          const resolvedLimit = resolveFacetBucketLimit(limit)
           const counts = new Map<string | number, number>()
           for (const document of documents) {
             const value = fieldValue(document, field)
@@ -128,7 +349,11 @@ function searchMemoryCollection(
             field,
             [...counts.entries()]
               .map(([value, count]) => ({ value, count }))
-              .slice(0, limit ?? counts.size),
+              .sort(
+                (left, right) =>
+                  right.count - left.count || String(left.value).localeCompare(String(right.value)),
+              )
+              .slice(0, resolvedLimit),
           ]
         }),
       )
@@ -141,11 +366,31 @@ function searchMemoryCollection(
   const nextOffset = offset + page.length
 
   return {
-    hits: page.map((document) => ({ id: document.id, score: 1, document })),
+    hits: page.map((document) => ({
+      id: document.id,
+      score: scores.get(document.id) ?? 1,
+      document,
+    })),
     total,
     next_cursor: nextOffset < total ? String(nextOffset) : undefined,
     facets,
   }
+}
+
+function matchesKeyword(document: IndexerDocument, keyword: string): boolean {
+  return Object.values(document.fields).some((value) =>
+    (Array.isArray(value) ? value : [value]).some(
+      (item) => typeof item === "string" && item.toLocaleLowerCase().includes(keyword),
+    ),
+  )
+}
+
+function normalizedCosineSimilarity(left: number[], right: number[]): number {
+  const dot = left.reduce((sum, value, index) => sum + value * (right[index] ?? 0), 0)
+  const leftMagnitude = Math.sqrt(left.reduce((sum, value) => sum + value * value, 0))
+  const rightMagnitude = Math.sqrt(right.reduce((sum, value) => sum + value * value, 0))
+  if (leftMagnitude === 0 || rightMagnitude === 0) return 0
+  return (dot / (leftMagnitude * rightMagnitude) + 1) / 2
 }
 
 function matchesFilter(document: IndexerDocument, filter: SearchFilter): boolean {

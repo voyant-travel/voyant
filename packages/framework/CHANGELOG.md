@@ -1,5 +1,60 @@
 # @voyant-travel/framework
 
+## 0.44.4
+
+### Patch Changes
+
+- @voyant-travel/operator-standard@0.4.5
+- @voyant-travel/cruises@0.156.0
+
+## 0.44.3
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/auth@0.128.3
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/runtime-core@0.6.3
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/utils@0.107.1
+  - @voyant-travel/action-ledger@0.108.4
+  - @voyant-travel/cruises@0.155.1
+  - @voyant-travel/framework-migrations@0.8.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/mcp@0.2.4
+  - @voyant-travel/operator-standard@0.4.4
+  - @voyant-travel/storage@0.109.4
+  - @voyant-travel/tools@0.2.1
+  - @voyant-travel/workflows@0.120.2
+  - @voyant-travel/workflows-orchestrator@0.120.2
+
+## 0.44.2
+
+### Patch Changes
+
+- @voyant-travel/cruises@0.155.0
+- @voyant-travel/operator-standard@0.4.3
+- @voyant-travel/db@0.114.3
+- @voyant-travel/auth@0.128.2
+- @voyant-travel/workflows@0.120.1
+- @voyant-travel/workflows-orchestrator@0.120.1
+
+## 0.44.1
+
+### Patch Changes
+
+- d83d237: Repair packaged consumer development and production startup, keep shared UI
+  contexts single-instanced under Vite, make unconfigured realtime quiet, and
+  restore narrow client-safe validation and Finance voucher setup exports. Resolve
+  legacy frontend imports through product-owned browser facades and allow clean CI
+  installs to fetch metadata for external dependencies.
+- Updated dependencies [d83d237]
+  - @voyant-travel/operator-standard@0.4.2
+
 ## 0.44.0
 
 ### Minor Changes

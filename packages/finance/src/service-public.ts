@@ -10,8 +10,8 @@ import {
   invoices,
   paymentInstruments,
   payments,
-  voucherRedemptions,
-  vouchers,
+  travelCreditRedemptions,
+  travelCredits,
 } from "./schema.js"
 import { financeService } from "./service.js"
 import type {
@@ -22,7 +22,7 @@ import type {
   PublicFinanceDocumentLookupQuery,
   PublicPaymentOptionsQuery,
   PublicStartPaymentSessionInput,
-  PublicValidateVoucherInput,
+  PublicValidateTravelCreditInput,
 } from "./validation-public.js"
 
 export interface PublicFinanceRuntimeOptions {
@@ -57,20 +57,6 @@ function getMetadataRecord(metadata: unknown) {
 function getMetadataString(record: Record<string, unknown> | null, key: string) {
   const value = record?.[key]
   return typeof value === "string" && value.length > 0 ? value : null
-}
-
-function getMetadataNumber(record: Record<string, unknown> | null, key: string) {
-  const value = record?.[key]
-  return typeof value === "number" && Number.isFinite(value) ? value : null
-}
-
-function getMetadataStringArray(record: Record<string, unknown> | null, key: string) {
-  const value = record?.[key]
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
 }
 
 function maybeUrl(value: string | null | undefined) {
@@ -521,19 +507,24 @@ export const publicFinanceService = {
 
     const redemptionRows = await db
       .select({
-        id: voucherRedemptions.id,
-        voucherId: voucherRedemptions.voucherId,
-        amountCents: voucherRedemptions.amountCents,
-        createdAt: voucherRedemptions.createdAt,
-        paymentId: voucherRedemptions.paymentId,
-        voucherCode: vouchers.code,
-        currency: vouchers.currency,
-        notes: vouchers.notes,
+        id: travelCreditRedemptions.id,
+        travelCreditId: travelCreditRedemptions.travelCreditId,
+        amountCents: travelCreditRedemptions.amountCents,
+        createdAt: travelCreditRedemptions.createdAt,
+        paymentId: travelCreditRedemptions.paymentId,
+        travelCreditCode: travelCredits.code,
+        currency: travelCredits.currency,
+        notes: travelCredits.notes,
       })
-      .from(voucherRedemptions)
-      .innerJoin(vouchers, eq(vouchers.id, voucherRedemptions.voucherId))
-      .where(and(eq(voucherRedemptions.bookingId, bookingId), isNull(voucherRedemptions.paymentId)))
-      .orderBy(desc(voucherRedemptions.createdAt))
+      .from(travelCreditRedemptions)
+      .innerJoin(travelCredits, eq(travelCredits.id, travelCreditRedemptions.travelCreditId))
+      .where(
+        and(
+          eq(travelCreditRedemptions.bookingId, bookingId),
+          isNull(travelCreditRedemptions.paymentId),
+        ),
+      )
+      .orderBy(desc(travelCreditRedemptions.createdAt))
 
     const paymentProjections = paymentRows.flatMap((payment) => {
       const invoice = invoiceById.get(payment.invoiceId)
@@ -561,14 +552,14 @@ export const publicFinanceService = {
       ]
     })
 
-    const voucherProjections = redemptionRows.map((redemption) => ({
+    const travelCreditProjections = redemptionRows.map((redemption) => ({
       id: redemption.id,
-      source: "voucher_redemption" as const,
+      source: "travel_credit_redemption" as const,
       invoiceId: null,
       invoiceNumber: null,
       invoiceType: null,
       status: "completed" as const,
-      paymentMethod: "voucher" as const,
+      paymentMethod: "travel_credit" as const,
       amountCents: redemption.amountCents,
       currency: redemption.currency,
       baseCurrency: null,
@@ -577,13 +568,13 @@ export const publicFinanceService = {
         redemption.createdAt instanceof Date
           ? redemption.createdAt.toISOString()
           : redemption.createdAt,
-      referenceNumber: redemption.voucherCode,
+      referenceNumber: redemption.travelCreditCode,
       notes: null,
     }))
 
     return {
       bookingId,
-      payments: [...paymentProjections, ...voucherProjections].sort(
+      payments: [...paymentProjections, ...travelCreditProjections].sort(
         (a, b) => Date.parse(b.paymentDate) - Date.parse(a.paymentDate),
       ),
     }
@@ -670,91 +661,20 @@ export const publicFinanceService = {
     return session ? toPublicPaymentSession(session) : null
   },
 
-  async validateVoucher(db: PostgresJsDatabase, input: PublicValidateVoucherInput) {
+  async validateTravelCredit(db: PostgresJsDatabase, input: PublicValidateTravelCreditInput) {
     const normalizedCode = input.code.trim()
-    const normalizedCodeLower = normalizedCode.toLowerCase()
-
-    // New path: first-class `vouchers` table. Covers any voucher issued via
-    // POST /v1/finance/vouchers.
-    const resolvedFromNewTable = await resolveVoucherFromNewTable(db, normalizedCode)
-    if (resolvedFromNewTable) {
-      return evaluateVoucherValidity(resolvedFromNewTable, input)
+    const travelCredit = await resolveTravelCredit(db, normalizedCode)
+    if (!travelCredit) {
+      return { valid: false as const, reason: "not_found" as const, travelCredit: null }
     }
 
-    // Fallback path: legacy payment_instruments rows with instrumentType =
-    // 'voucher' and balance carried in metadata JSONB. Kept working until the
-    // migration script flips remaining rows over to the new table.
-    const voucherConditions = [
-      eq(paymentInstruments.instrumentType, "voucher"),
-      or(
-        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        sql`lower(coalesce(${paymentInstruments.externalToken}, '')) = ${normalizedCodeLower}`,
-        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        sql`lower(coalesce(${paymentInstruments.directBillReference}, '')) = ${normalizedCodeLower}`,
-        // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-        sql`lower(coalesce(${paymentInstruments.metadata} ->> 'code', '')) = ${normalizedCodeLower}`,
-      ),
-    ]
-
-    if (input.provider) {
-      voucherConditions.push(eq(paymentInstruments.provider, input.provider))
-    }
-
-    const [voucher] = await db
-      .select()
-      .from(paymentInstruments)
-      .where(and(...voucherConditions))
-      .orderBy(desc(paymentInstruments.updatedAt))
-      .limit(1)
-
-    if (!voucher) {
-      return { valid: false as const, reason: "not_found" as const, voucher: null }
-    }
-
-    const metadata = getMetadataRecord(voucher.metadata)
-    const voucherCode =
-      getMetadataString(metadata, "code") ??
-      voucher.externalToken ??
-      voucher.directBillReference ??
-      input.code
-    const currency = getMetadataString(metadata, "currency")
-    const amountCents = getMetadataNumber(metadata, "amountCents")
-    const remainingAmountCents = getMetadataNumber(metadata, "remainingAmountCents") ?? amountCents
-    const validFrom = getMetadataString(metadata, "validFrom")
-    const expiresAt = getMetadataString(metadata, "expiresAt")
-    const bookingIds = getMetadataStringArray(metadata, "bookingIds")
-    const bookingId = getMetadataString(metadata, "bookingId")
-    const appliesToBookingIds = bookingId ? [bookingId, ...bookingIds] : bookingIds
-
-    return evaluateVoucherValidity(
-      {
-        id: voucher.id,
-        code: voucherCode,
-        label: voucher.label,
-        provider: voucher.provider ?? null,
-        currency,
-        amountCents,
-        remainingAmountCents,
-        validFrom,
-        expiresAt,
-        appliesToBookingIds,
-        status: voucher.status === "active" ? "active" : "inactive",
-      },
-      input,
-    )
+    return evaluateTravelCreditValidity(travelCredit, input)
   },
 }
 
-/**
- * Normalized shape passed into the validity evaluator. Both the new `vouchers`
- * table and the legacy `payment_instruments` path map onto it so the
- * checks (status/expiry/currency/amount/booking) only need to live in one place.
- */
-interface ResolvedVoucher {
+interface ResolvedTravelCredit {
   id: string
   code: string
-  label: string | null
-  provider: string | null
   currency: string | null
   amountCents: number | null
   remainingAmountCents: number | null
@@ -769,15 +689,15 @@ interface ResolvedVoucher {
   status: "active" | "inactive"
 }
 
-async function resolveVoucherFromNewTable(
+async function resolveTravelCredit(
   db: PostgresJsDatabase,
   code: string,
-): Promise<ResolvedVoucher | null> {
+): Promise<ResolvedTravelCredit | null> {
   const [row] = await db
     .select()
-    .from(vouchers)
+    .from(travelCredits)
     // agent-quality: raw-sql reviewed -- owner: finance; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-    .where(sql`lower(${vouchers.code}) = ${code.toLowerCase()}`)
+    .where(sql`lower(${travelCredits.code}) = ${code.toLowerCase()}`)
     .limit(1)
 
   if (!row) return null
@@ -785,8 +705,6 @@ async function resolveVoucherFromNewTable(
   return {
     id: row.id,
     code: row.code,
-    label: null,
-    provider: null,
     currency: row.currency,
     amountCents: row.initialAmountCents,
     remainingAmountCents: row.remainingAmountCents,
@@ -797,53 +715,66 @@ async function resolveVoucherFromNewTable(
   }
 }
 
-function evaluateVoucherValidity(voucher: ResolvedVoucher, input: PublicValidateVoucherInput) {
-  const publicVoucher = {
-    id: voucher.id,
-    code: voucher.code,
-    label: voucher.label,
-    provider: voucher.provider,
-    currency: voucher.currency,
-    amountCents: voucher.amountCents,
-    remainingAmountCents: voucher.remainingAmountCents,
-    expiresAt: voucher.expiresAt,
+function evaluateTravelCreditValidity(
+  travelCredit: ResolvedTravelCredit,
+  input: PublicValidateTravelCreditInput,
+) {
+  const publicTravelCredit = {
+    id: travelCredit.id,
+    code: travelCredit.code,
+    currency: travelCredit.currency,
+    amountCents: travelCredit.amountCents,
+    remainingAmountCents: travelCredit.remainingAmountCents,
+    expiresAt: travelCredit.expiresAt,
   }
 
-  if (voucher.status !== "active") {
-    return { valid: false as const, reason: "inactive" as const, voucher: publicVoucher }
+  if (travelCredit.status !== "active") {
+    return { valid: false as const, reason: "inactive" as const, travelCredit: publicTravelCredit }
   }
 
-  if (voucher.validFrom && new Date(voucher.validFrom) > new Date()) {
-    return { valid: false as const, reason: "not_started" as const, voucher: publicVoucher }
+  if (travelCredit.validFrom && new Date(travelCredit.validFrom) > new Date()) {
+    return {
+      valid: false as const,
+      reason: "not_started" as const,
+      travelCredit: publicTravelCredit,
+    }
   }
 
-  if (voucher.expiresAt && new Date(voucher.expiresAt) < new Date()) {
-    return { valid: false as const, reason: "expired" as const, voucher: publicVoucher }
+  if (travelCredit.expiresAt && new Date(travelCredit.expiresAt) < new Date()) {
+    return { valid: false as const, reason: "expired" as const, travelCredit: publicTravelCredit }
   }
 
   if (
     input.bookingId &&
-    voucher.appliesToBookingIds.length > 0 &&
-    !voucher.appliesToBookingIds.includes(input.bookingId)
+    travelCredit.appliesToBookingIds.length > 0 &&
+    !travelCredit.appliesToBookingIds.includes(input.bookingId)
   ) {
-    return { valid: false as const, reason: "booking_mismatch" as const, voucher: publicVoucher }
+    return {
+      valid: false as const,
+      reason: "booking_mismatch" as const,
+      travelCredit: publicTravelCredit,
+    }
   }
 
-  if (input.currency && voucher.currency && input.currency !== voucher.currency) {
-    return { valid: false as const, reason: "currency_mismatch" as const, voucher: publicVoucher }
+  if (input.currency && travelCredit.currency && input.currency !== travelCredit.currency) {
+    return {
+      valid: false as const,
+      reason: "currency_mismatch" as const,
+      travelCredit: publicTravelCredit,
+    }
   }
 
   if (
     input.amountCents &&
-    voucher.remainingAmountCents !== null &&
-    input.amountCents > voucher.remainingAmountCents
+    travelCredit.remainingAmountCents !== null &&
+    input.amountCents > travelCredit.remainingAmountCents
   ) {
     return {
       valid: false as const,
       reason: "insufficient_balance" as const,
-      voucher: publicVoucher,
+      travelCredit: publicTravelCredit,
     }
   }
 
-  return { valid: true as const, reason: null, voucher: publicVoucher }
+  return { valid: true as const, reason: null, travelCredit: publicTravelCredit }
 }

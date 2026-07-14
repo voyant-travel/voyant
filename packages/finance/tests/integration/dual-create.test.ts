@@ -4,7 +4,7 @@ import { createEventBus } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { vouchers } from "../../src/schema.js"
+import { travelCredits } from "../../src/schema.js"
 import { dualCreateBooking } from "../../src/service-bookings-dual-create.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -15,8 +15,8 @@ async function resetTables(
 ) {
   const tableNames = [
     "action_ledger_entries",
-    "voucher_redemptions",
-    "vouchers",
+    "travel_credit_redemptions",
+    "travel_credits",
     "payment_instruments",
     "booking_payment_schedules",
     "booking_allocations",
@@ -203,12 +203,12 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
     )
   })
 
-  it("rolls back both bookings and the group when the second booking's voucher is invalid", async () => {
+  it("rolls back both bookings and the group when the second travel credit is invalid", async () => {
     const { productId } = await seedProduct()
-    // Voucher that exists but has zero balance — secondary's redeem attempt
+    // Travel credit that exists but has zero balance; the secondary redeem attempt
     // will abort.
-    const [voucher] = await db
-      .insert(vouchers)
+    const [travelCredit] = await db
+      .insert(travelCredits)
       .values({
         code: "DUAL-ZERO",
         currency: "EUR",
@@ -227,14 +227,14 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
       secondary: {
         productId,
         bookingNumber: "BK-DUAL-S-ROLLBACK",
-        voucherRedemption: { voucherId: voucher!.id, amountCents: 100 },
+        travelCreditRedemption: { travelCreditId: travelCredit!.id, amountCents: 100 },
       },
       group: { kind: "shared_room" },
     })
 
     expect(outcome.status).toBe("secondary_failed")
     if (outcome.status !== "secondary_failed") return
-    expect(outcome.reason.status).toBe("voucher_inactive")
+    expect(outcome.reason.status).toBe("travel_credit_inactive")
 
     // Nothing should have landed — primary's inner savepoint committed but
     // the outer tx aborts on the DualCreateAbort throw, so both bookings
@@ -266,10 +266,10 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
     expect(await db.select().from(bookingGroups)).toHaveLength(0)
   })
 
-  it("applies vouchers and travelers on both sub-bookings", async () => {
+  it("applies travel credits and travelers on both sub-bookings", async () => {
     const { productId } = await seedProduct()
-    const [voucherA] = await db
-      .insert(vouchers)
+    const [travelCreditA] = await db
+      .insert(travelCredits)
       .values({
         code: "DUAL-A",
         currency: "EUR",
@@ -279,8 +279,8 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
         sourceType: "manual",
       })
       .returning()
-    const [voucherB] = await db
-      .insert(vouchers)
+    const [travelCreditB] = await db
+      .insert(travelCredits)
       .values({
         code: "DUAL-B",
         currency: "EUR",
@@ -298,7 +298,7 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
         travelers: [
           { firstName: "Ana", lastName: "Primary", participantType: "traveler", isPrimary: true },
         ],
-        voucherRedemption: { voucherId: voucherA!.id, amountCents: 4000 },
+        travelCreditRedemption: { travelCreditId: travelCreditA!.id, amountCents: 4000 },
       },
       secondary: {
         productId,
@@ -306,7 +306,7 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
         travelers: [
           { firstName: "Bob", lastName: "Secondary", participantType: "traveler", isPrimary: true },
         ],
-        voucherRedemption: { voucherId: voucherB!.id, amountCents: 2000 },
+        travelCreditRedemption: { travelCreditId: travelCreditB!.id, amountCents: 2000 },
       },
       group: { kind: "shared_room" },
     })
@@ -314,10 +314,16 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
     expect(outcome.status).toBe("ok")
     if (outcome.status !== "ok") return
 
-    const [primaryVoucher] = await db.select().from(vouchers).where(eq(vouchers.id, voucherA!.id))
-    const [secondaryVoucher] = await db.select().from(vouchers).where(eq(vouchers.id, voucherB!.id))
-    expect(primaryVoucher?.remainingAmountCents).toBe(6000)
-    expect(secondaryVoucher?.remainingAmountCents).toBe(3000)
+    const [primaryTravelCredit] = await db
+      .select()
+      .from(travelCredits)
+      .where(eq(travelCredits.id, travelCreditA!.id))
+    const [secondaryTravelCredit] = await db
+      .select()
+      .from(travelCredits)
+      .where(eq(travelCredits.id, travelCreditB!.id))
+    expect(primaryTravelCredit?.remainingAmountCents).toBe(6000)
+    expect(secondaryTravelCredit?.remainingAmountCents).toBe(3000)
 
     expect(outcome.result.primary.travelers[0]?.firstName).toBe("Ana")
     expect(outcome.result.secondary.travelers[0]?.firstName).toBe("Bob")

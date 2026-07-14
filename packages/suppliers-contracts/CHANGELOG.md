@@ -1,5 +1,21 @@
 # @voyant-travel/suppliers-contracts
 
+## 0.104.12
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/schema-kit@0.112.1
+
+## 0.104.11
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/schema-kit@0.112.0
+
 ## 0.104.10
 
 ### Patch Changes

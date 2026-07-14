@@ -1,8 +1,10 @@
-import type {
-  IndexerSlice,
-  SearchFilter,
-  SearchRequest,
-  SearchSortOption,
+import {
+  type IndexerSlice,
+  indexFieldNameForPolicyPath,
+  resolveFacetBucketLimit,
+  resolveSearchSort,
+  type SearchFilter,
+  type SearchRequest,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicyRegistry } from "../contract.js"
 
@@ -11,6 +13,7 @@ export interface TypesenseSearchQuery {
   query_by: string
   filter_by?: string
   facet_by?: string
+  max_facet_values?: number
   sort_by?: string
   per_page?: number
   page?: number
@@ -37,7 +40,7 @@ export function buildSearchQuery(
   const page = parsePageCursor(request.pagination?.cursor) ?? 1
 
   const query: TypesenseSearchQuery = {
-    q: request.query.length > 0 ? request.query : "*",
+    q: request.mode === "semantic" || request.query.length === 0 ? "*" : request.query,
     query_by: buildDefaultTypesenseQueryBy(registry, slice),
     per_page: perPage,
     page,
@@ -53,11 +56,17 @@ export function buildSearchQuery(
 
   if (request.facets && request.facets.length > 0) {
     query.facet_by = request.facets.map((f) => normalizeTypesenseField(f.field)).join(",")
+    // Typesense applies one shared cap to every requested facet. Fetch enough
+    // for the largest portable request, then apply each facet's limit while
+    // mapping the response.
+    query.max_facet_values = Math.max(
+      ...request.facets.map(({ limit }) => resolveFacetBucketLimit(limit)),
+    )
   }
 
-  const sortBy = resolveTypesenseSortBy(request.sort, registry, slice)
-  if (sortBy) {
-    query.sort_by = sortBy
+  const resolvedSort = resolveSearchSort(request.sort, registry, slice)
+  if (resolvedSort) {
+    query.sort_by = `${resolvedSort.field}:${resolvedSort.direction}`
   }
 
   // Hybrid / semantic mode: attach the vector query if an embedding was
@@ -135,37 +144,6 @@ export function isTypesenseSortableStringField(field: string): boolean {
   return SORTABLE_STRING_FIELD_NAMES.has(field)
 }
 
-function resolveTypesenseSortBy(
-  sort: SearchSortOption | undefined,
-  registry: FieldPolicyRegistry,
-  slice: IndexerSlice | undefined,
-): string | undefined {
-  if (!sort || sort === "relevance") return undefined
-  const fields = SORT_FIELDS[sort]
-  const field = fields.find((candidate) => isSortableField(candidate, registry, slice))
-  if (!field) return undefined
-  const direction = sort === "price-desc" || sort === "newest" ? "desc" : "asc"
-  return `${field}:${direction}`
-}
-
-const SORT_FIELDS = {
-  "price-asc": ["priceFromAmountCents", "sellAmountCents"],
-  "price-desc": ["priceFromAmountCents", "sellAmountCents"],
-  "departure-asc": ["nextDepartureDate", "nextDepartureAt", "startDateEpochDays", "startDate"],
-  newest: ["publishedAt", "createdAt"],
-} as const satisfies Record<Exclude<SearchSortOption, "relevance">, readonly string[]>
-
-function isSortableField(
-  field: string,
-  registry: FieldPolicyRegistry,
-  slice: IndexerSlice | undefined,
-): boolean {
-  const policy = registry.resolve(field)
-  if (!policy) return false
-  if (!slice || slice.audience === "staff-admin") return true
-  return policy.visibility.includes(slice.audience)
-}
-
 function parsePageCursor(cursor: string | undefined): number | undefined {
   if (!cursor) return undefined
   const n = Number(cursor)
@@ -201,7 +179,7 @@ function quoteString(value: string): string {
 }
 
 function normalizeTypesenseField(field: string): string {
-  return field.endsWith("[]") ? field.slice(0, -2) : field
+  return indexFieldNameForPolicyPath(field)
 }
 
 function isDefaultSearchablePolicy(

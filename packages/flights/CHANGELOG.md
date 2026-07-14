@@ -1,5 +1,43 @@
 # @voyant-travel/flights
 
+## 0.157.0
+
+### Patch Changes
+
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog-contracts@0.111.0
+  - @voyant-travel/catalog@0.155.0
+  - @voyant-travel/flights-contracts@0.104.10
+  - @voyant-travel/finance@0.157.0
+
+## 0.156.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [7916020]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/catalog@0.154.1
+  - @voyant-travel/catalog-contracts@0.110.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/flights-contracts@0.104.9
+  - @voyant-travel/hono@0.126.3
+
+## 0.156.0
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/catalog-contracts@0.110.0
+  - @voyant-travel/catalog@0.154.0
+  - @voyant-travel/flights-contracts@0.104.8
+  - @voyant-travel/db@0.114.3
+
 ## 0.155.1
 
 ### Patch Changes

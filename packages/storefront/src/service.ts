@@ -140,7 +140,7 @@ const defaultPaymentLabels: Record<StorefrontPaymentMethodCode, string> = {
   card: "Card",
   bank_transfer: "Bank transfer",
   cash: "Cash",
-  voucher: "Voucher",
+  travel_credit: "Travel credit",
   invoice: "Invoice",
 }
 

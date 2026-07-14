@@ -1,5 +1,72 @@
 # @voyant-travel/inventory
 
+## 0.10.2
+
+### Patch Changes
+
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog@0.155.0
+  - @voyant-travel/products-contracts@0.107.2
+  - @voyant-travel/bookings@0.157.0
+  - @voyant-travel/finance@0.157.0
+  - @voyant-travel/commerce@0.35.7
+  - @voyant-travel/operations@0.6.12
+  - @voyant-travel/relationships@0.125.2
+  - @voyant-travel/operator-settings@0.3.12
+
+## 0.10.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [7916020]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/utils@0.107.1
+  - @voyant-travel/catalog@0.154.1
+  - @voyant-travel/action-ledger@0.108.4
+  - @voyant-travel/bookings@0.156.1
+  - @voyant-travel/commerce@0.35.6
+  - @voyant-travel/extras-contracts@0.104.3
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/operations@0.6.11
+  - @voyant-travel/operator-settings@0.3.11
+  - @voyant-travel/products-contracts@0.107.1
+  - @voyant-travel/relationships@0.125.1
+  - @voyant-travel/storage@0.109.4
+  - @voyant-travel/tools@0.2.1
+  - @voyant-travel/workflows@0.120.2
+
+## 0.10.0
+
+### Minor Changes
+
+- bbe6396: Replace the overloaded Finance voucher domain with Travel Credits across the
+  database schema, APIs, package exports, booking inputs, storefront settings,
+  and operator UI. Redemption commands are replay-safe, codes are normalized and
+  case-insensitively unique, and legacy records migrate in place without silently
+  skipping invalid balances. Keep Promotion Codes in Commerce and move Bookings
+  fulfillment to the explicit Service Voucher vocabulary.
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/bookings@0.156.0
+  - @voyant-travel/products-contracts@0.107.0
+  - @voyant-travel/relationships@0.125.0
+  - @voyant-travel/catalog@0.154.0
+  - @voyant-travel/commerce@0.35.5
+  - @voyant-travel/operator-settings@0.3.10
+  - @voyant-travel/db@0.114.3
+  - @voyant-travel/workflows@0.120.1
+  - @voyant-travel/operations@0.6.10
+
 ## 0.9.3
 
 ### Patch Changes

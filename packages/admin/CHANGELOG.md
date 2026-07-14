@@ -1,5 +1,35 @@
 # @voyant-travel/admin
 
+## 0.123.3
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/ui@0.109.1
+
+## 0.123.2
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/i18n@0.111.0
+
+## 0.123.1
+
+### Patch Changes
+
+- d83d237: Repair packaged consumer development and production startup, keep shared UI
+  contexts single-instanced under Vite, make unconfigured realtime quiet, and
+  restore narrow client-safe validation and Finance voucher setup exports. Resolve
+  legacy frontend imports through product-owned browser facades and allow clean CI
+  installs to fetch metadata for external dependencies.
+
 ## 0.123.0
 
 ### Patch Changes

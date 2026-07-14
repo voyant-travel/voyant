@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/legal-contracts",
-  "version": "0.106.8",
+  "version": "0.106.10",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

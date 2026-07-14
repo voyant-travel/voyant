@@ -4,7 +4,10 @@ import { createContext, type ReactNode, useContext, useMemo } from "react"
 
 import type { RealtimeConnector } from "./connector.js"
 
-export type RealtimeTokenFetcher = () => Promise<{ token: string; expiresAt: string }>
+export type RealtimeTokenFetcher = () => Promise<{
+  token: string
+  expiresAt: string
+} | null>
 
 export interface RealtimeReactContextValue {
   connector: RealtimeConnector
@@ -44,6 +47,7 @@ export function RealtimeReactProvider({
       fetchToken ??
       (async () => {
         const response = await fetcher(tokenEndpoint, { method: "POST" })
+        if (response.status === 204) return null
         if (!response.ok) {
           throw new Error(`Realtime token request failed: ${response.status}`)
         }

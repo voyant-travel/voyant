@@ -109,8 +109,8 @@ export interface BookingCreateExtraLineInput {
   travelerIndexes?: number[] | null
 }
 
-export interface BookingCreateVoucherRedemptionInput {
-  voucherId: string
+export interface BookingCreateTravelCreditRedemptionInput {
+  travelCreditId: string
   amountCents: number
 }
 
@@ -144,7 +144,7 @@ export interface BookingCreateInput {
   extraLines?: BookingCreateExtraLineInput[]
   travelers?: BookingCreateTravelerInput[]
   paymentSchedules?: BookingCreatePaymentScheduleInput[]
-  voucherRedemption?: BookingCreateVoucherRedemptionInput
+  travelCreditRedemption?: BookingCreateTravelCreditRedemptionInput
   groupMembership?: BookingCreateGroupMembershipInput
   documentGeneration?: BookingCreateDocumentGenerationInput
   /**
@@ -188,7 +188,7 @@ export interface BookingCreateInput {
   contactPostalCode?: string | null
 }
 
-// Response envelope: route returns `{ data: { booking, travelers, paymentSchedules, voucherRedemption, groupMembership } }`.
+// Response envelope: route returns `{ data: { booking, travelers, paymentSchedules, travelCreditRedemption, groupMembership } }`.
 // We validate only the booking shape (which drives cache invalidation) and
 // pass the rest through as-is so the surface can evolve without breaking
 // clients. Callers who want typed assertions on the extras can narrow on the
@@ -197,7 +197,7 @@ const bookingCreateResultSchema = z.object({
   booking: bookingRecordSchema,
   travelers: z.array(z.unknown()).optional(),
   paymentSchedules: z.array(z.unknown()).optional(),
-  voucherRedemption: z.unknown().nullable().optional(),
+  travelCreditRedemption: z.unknown().nullable().optional(),
   groupMembership: z.unknown().nullable().optional(),
   invoice: z.unknown().nullable().optional(),
   invoiceDocument: z.unknown().optional(),
@@ -210,7 +210,7 @@ export type BookingCreateResult = z.infer<typeof bookingCreateResultSchema>
 
 /**
  * Atomic booking-create: calls `POST /v1/admin/bookings/create` which wraps
- * convert-from-product + travelers + payment schedules + voucher redemption
+ * convert-from-product + travelers + payment schedules + Travel Credit redemption
  * + group membership in one transaction. Prefer this over chaining the
  * separate create mutations (convert, group, traveler) from a single submit
  * handler — a mid-chain failure there leaves orphan state.

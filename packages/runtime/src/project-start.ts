@@ -33,6 +33,9 @@ export async function startVoyantProjectWithDependencies<TOptions extends Projec
   if (options.preferBuiltAdminAssets) {
     const builtStart = await dependencies.loadBuiltStart(projectRoot)
     if (builtStart) return builtStart({ ...options, projectRoot })
+    throw new Error(
+      `Voyant production build not found at ${path.join(projectRoot, BUILT_SERVER_ENTRY)}. Run \`voyant build\` before \`voyant start\`.`,
+    )
   }
 
   const host = await dependencies.loadProject({ ...options, projectRoot })
@@ -52,7 +55,10 @@ export async function loadBuiltProjectStart<TOptions extends ProjectStartOptions
   const namespace = (await import(pathToFileURL(entry).href)) as {
     default?: { start?: BuiltProjectStart<TOptions> }
   }
-  return typeof namespace.default?.start === "function"
-    ? namespace.default.start.bind(namespace.default)
-    : undefined
+  if (typeof namespace.default?.start !== "function") {
+    throw new Error(
+      `Legacy Voyant server entry at ${entry} does not export default.start. Update src/server.ts to the current starter contract and run \`voyant build\` again.`,
+    )
+  }
+  return namespace.default.start.bind(namespace.default)
 }

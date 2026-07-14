@@ -7,13 +7,13 @@ import {
   paymentCaptureSchema,
   paymentInstrumentSchema,
   supplierPaymentSchema,
-  voucherRedemptionSchema,
-  voucherSchema,
+  travelCreditRedemptionSchema,
+  travelCreditSchema,
 } from "../../src/routes-payment-schemas.js"
 import type { paymentInstruments } from "../../src/schema/payment-instruments.js"
 import type { paymentAuthorizations, paymentCaptures } from "../../src/schema/payment-processing.js"
 import type { supplierPayments } from "../../src/schema/supplier-invoices.js"
-import type { voucherRedemptions, vouchers } from "../../src/schema/vouchers.js"
+import type { travelCreditRedemptions, travelCredits } from "../../src/schema/travel-credits.js"
 
 /**
  * Response contract tests (voyant#2114 / voyant#2208 — finance sub-batch 9C)
@@ -113,8 +113,8 @@ const paymentCaptureRow: InferSelectModel<typeof paymentCaptures> = {
   updatedAt,
 }
 
-const voucherRow: InferSelectModel<typeof vouchers> = {
-  id: "vouchers_000000000000000000000000000",
+const travelCreditRow: InferSelectModel<typeof travelCredits> = {
+  id: "travel_credits_000000000000000000000000000",
   code: "GIFT-2026-0001",
   seriesCode: "GIFT-2026-Q1",
   status: "active",
@@ -134,11 +134,12 @@ const voucherRow: InferSelectModel<typeof vouchers> = {
   updatedAt,
 }
 
-const voucherRedemptionRow: InferSelectModel<typeof voucherRedemptions> = {
-  id: "voucher_redemptions_000000000000000000",
-  voucherId: voucherRow.id,
+const travelCreditRedemptionRow: InferSelectModel<typeof travelCreditRedemptions> = {
+  id: "travel_credit_redemptions_000000000000000000",
+  travelCreditId: travelCreditRow.id,
   bookingId: "bookings_000000000000000000000000000",
   paymentId: null,
+  idempotencyKey: "redeem-1",
   amountCents: 2500,
   createdAt,
   createdByUserId: null,
@@ -149,8 +150,8 @@ const singleCases = [
   ["payment instrument", paymentInstrumentSchema, paymentInstrumentRow],
   ["payment authorization", paymentAuthorizationSchema, paymentAuthorizationRow],
   ["payment capture", paymentCaptureSchema, paymentCaptureRow],
-  ["voucher", voucherSchema, voucherRow],
-  ["voucher redemption", voucherRedemptionSchema, voucherRedemptionRow],
+  ["travel credit", travelCreditSchema, travelCreditRow],
+  ["travel credit redemption", travelCreditRedemptionSchema, travelCreditRedemptionRow],
 ] as const
 
 describe("finance payment single-entity response contracts", () => {
@@ -172,23 +173,28 @@ describe("finance payment list response contracts", () => {
     expect(parsed.success ? null : parsed.error.toString()).toBeNull()
   })
 
-  it("the serialized voucher list satisfies the declared envelope schema", () => {
+  it("the serialized travel credit list satisfies the declared envelope schema", () => {
     const wire = JSON.parse(
-      JSON.stringify(listResponse([voucherRow], { total: 1, limit: 50, offset: 0 })),
+      JSON.stringify(listResponse([travelCreditRow], { total: 1, limit: 50, offset: 0 })),
     )
-    const parsed = listResponseSchema(voucherSchema).safeParse(wire)
+    const parsed = listResponseSchema(travelCreditSchema).safeParse(wire)
     expect(parsed.success ? null : parsed.error.toString()).toBeNull()
   })
 })
 
-describe("finance voucher redeem-result response contract", () => {
-  it("the serialized { voucher, redemption } result satisfies the declared schema", () => {
+describe("finance travel credit redeem-result response contract", () => {
+  it("the serialized { travelCredit, redemption } result satisfies the declared schema", () => {
     const wire = JSON.parse(
-      JSON.stringify({ data: { voucher: voucherRow, redemption: voucherRedemptionRow } }),
+      JSON.stringify({
+        data: { travelCredit: travelCreditRow, redemption: travelCreditRedemptionRow },
+      }),
     )
     const parsed = z
       .object({
-        data: z.object({ voucher: voucherSchema, redemption: voucherRedemptionSchema.nullable() }),
+        data: z.object({
+          travelCredit: travelCreditSchema,
+          redemption: travelCreditRedemptionSchema.nullable(),
+        }),
       })
       .safeParse(wire)
     expect(parsed.success ? null : parsed.error.toString()).toBeNull()

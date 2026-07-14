@@ -1,5 +1,65 @@
 # @voyant-travel/storefront-react
 
+## 0.159.0
+
+### Patch Changes
+
+- 0808b21: Publish canonical catalog search sort resolution, strengthen adapter conformance coverage, verify the Typesense implementation against the public runner, and remove provider-specific UI wording.
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog-contracts@0.111.0
+  - @voyant-travel/catalog-react@0.155.0
+  - @voyant-travel/storefront@0.159.0
+  - @voyant-travel/accommodations@0.117.0
+
+## 0.158.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/accommodations@0.116.1
+  - @voyant-travel/auth-react@0.128.3
+  - @voyant-travel/catalog-contracts@0.110.1
+  - @voyant-travel/catalog-react@0.154.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/storefront@0.158.1
+  - @voyant-travel/ui@0.109.1
+
+## 0.158.0
+
+### Minor Changes
+
+- bbe6396: Replace the overloaded Finance voucher domain with Travel Credits across the
+  database schema, APIs, package exports, booking inputs, storefront settings,
+  and operator UI. Redemption commands are replay-safe, codes are normalized and
+  case-insensitively unique, and legacy records migrate in place without silently
+  skipping invalid balances. Keep Promotion Codes in Commerce and move Bookings
+  fulfillment to the explicit Service Voucher vocabulary.
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/catalog-contracts@0.110.0
+  - @voyant-travel/i18n@0.111.0
+  - @voyant-travel/storefront@0.158.0
+  - @voyant-travel/accommodations@0.116.0
+  - @voyant-travel/catalog-react@0.154.0
+  - @voyant-travel/auth-react@0.128.2
+
+## 0.157.2
+
+### Patch Changes
+
+- d83d237: Repair packaged consumer development and production startup, keep shared UI
+  contexts single-instanced under Vite, make unconfigured realtime quiet, and
+  restore narrow client-safe validation and Finance voucher setup exports. Resolve
+  legacy frontend imports through product-owned browser facades and allow clean CI
+  installs to fetch metadata for external dependencies.
+- Updated dependencies [d83d237]
+  - @voyant-travel/storefront@0.157.2
+
 ## 0.157.1
 
 ### Patch Changes

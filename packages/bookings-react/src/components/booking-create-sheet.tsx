@@ -44,7 +44,7 @@ import {
 import {
   type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
-  type BookingCreateVoucherRedemptionInput,
+  type BookingCreateTravelCreditRedemptionInput,
   type BookingRecord,
   useBookingCreateMutation,
   usePricingPreview,
@@ -102,6 +102,11 @@ import {
   type SharedRoomValue,
 } from "./shared-room-section.js"
 import {
+  emptyTravelCreditPickerValue,
+  TravelCreditPickerSection,
+  type TravelCreditPickerValue,
+} from "./travel-credit-picker-section.js"
+import {
   emptyTravelerListValue,
   type RoomGroup,
   type RoomUnitOption,
@@ -109,11 +114,6 @@ import {
   type TravelerPricingCategoryOption,
   TravelersSection,
 } from "./travelers-section.js"
-import {
-  emptyVoucherPickerValue,
-  VoucherPickerSection,
-  type VoucherPickerValue,
-} from "./voucher-picker-section.js"
 
 export interface BookingCreateSheetProps {
   open: boolean
@@ -139,7 +139,7 @@ export interface BookingCreateFormProps {
 /**
  * Operator booking-create sheet. Composes the booking-create picker
  * sections — product, departure, rooms, person, shared-room, travelers,
- * price breakdown, voucher, payment schedule — and submits via the atomic
+ * price breakdown, Travel Credit, payment schedule, and submits via the atomic
  * `POST /v1/admin/bookings/create` endpoint so partial failures can't
  * leave orphan state.
  *
@@ -203,7 +203,9 @@ export function BookingCreateForm({
   const [person, setPerson] = React.useState<PersonPickerValue>(emptyPersonPickerValue)
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
   const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
-  const [voucher, setVoucher] = React.useState<VoucherPickerValue>(emptyVoucherPickerValue)
+  const [travelCredit, setTravelCredit] = React.useState<TravelCreditPickerValue>(
+    emptyTravelCreditPickerValue,
+  )
   const [pricing, setPricing] = React.useState<PriceBreakdownValue | null>(null)
   const [paymentSchedule, setPaymentScheduleState] =
     React.useState<PaymentScheduleValue>(emptyPaymentScheduleValue)
@@ -263,7 +265,7 @@ export function BookingCreateForm({
       setPerson(emptyPersonPickerValue)
       setSharedRoom(emptySharedRoomValue)
       setTravelers(emptyTravelerListValue)
-      setVoucher(emptyVoucherPickerValue)
+      setTravelCredit(emptyTravelCreditPickerValue)
       setPricing(null)
       setPaymentScheduleState(emptyPaymentScheduleValue)
       paymentScheduleTouchedRef.current = false
@@ -604,7 +606,7 @@ export function BookingCreateForm({
     [extraLines, travelers.travelers.length],
   )
 
-  // Currency placeholder — used for voucher + payment schedule display.
+  // Currency placeholder used for Travel Credit and payment schedule display.
   // Consumers hooking in real product data should override this by wrapping
   // the component or swapping in their own currency-aware hook.
   const currency = messages.bookingCreateDialog.labels.currency
@@ -845,11 +847,11 @@ export function BookingCreateForm({
 
       const travelerRows = travelersToRows({ travelers: redistributed.travelers })
 
-      const voucherRedemption: BookingCreateVoucherRedemptionInput | undefined =
-        voucher.picked && voucher.picked.remainingAmountCents != null
+      const travelCreditRedemption: BookingCreateTravelCreditRedemptionInput | undefined =
+        travelCredit.picked && travelCredit.picked.remainingAmountCents != null
           ? {
-              voucherId: voucher.picked.id,
-              amountCents: voucher.picked.remainingAmountCents,
+              travelCreditId: travelCredit.picked.id,
+              amountCents: travelCredit.picked.remainingAmountCents,
             }
           : undefined
 
@@ -949,7 +951,7 @@ export function BookingCreateForm({
         extraLines: resolvedExtraLines.length > 0 ? resolvedExtraLines : undefined,
         travelers: travelerRows.length > 0 ? travelerRows : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
-        voucherRedemption,
+        travelCreditRedemption,
         groupMembership,
         documentGeneration: generateProforma
           ? { contractDocument: false, invoiceDocument: true, invoiceType: "proforma" as const }
@@ -1258,7 +1260,7 @@ export function BookingCreateForm({
           </Button>
         </div>
       </div>
-      {/* Right column — preview, pricing, voucher. Stays out of the
+      {/* Right column: preview, pricing, and Travel Credit. Stays out of the
           form column so the footer buttons don't sit beneath it. */}
       <div className="flex flex-col gap-4 lg:col-span-4">
         <BookingPreviewCard
@@ -1279,17 +1281,17 @@ export function BookingCreateForm({
           onPricingChange={setPricing}
         />
         {product.productId && slotId ? (
-          <VoucherPickerSection
-            value={voucher}
-            onChange={setVoucher}
+          <TravelCreditPickerSection
+            value={travelCredit}
+            onChange={setTravelCredit}
             currency={currency}
             labels={{
-              heading: messages.bookingCreateDialog.labels.voucherHeading,
-              codePlaceholder: messages.bookingCreateDialog.labels.voucherCodePlaceholder,
-              apply: messages.bookingCreateDialog.labels.voucherApply,
-              clear: messages.bookingCreateDialog.labels.voucherClear,
-              remainingLabel: messages.bookingCreateDialog.labels.voucherRemainingLabel,
-              invalidLabel: messages.bookingCreateDialog.labels.voucherInvalidLabel,
+              heading: messages.bookingCreateDialog.labels.travelCreditHeading,
+              codePlaceholder: messages.bookingCreateDialog.labels.travelCreditCodePlaceholder,
+              apply: messages.bookingCreateDialog.labels.travelCreditApply,
+              clear: messages.bookingCreateDialog.labels.travelCreditClear,
+              remainingLabel: messages.bookingCreateDialog.labels.travelCreditRemainingLabel,
+              invalidLabel: messages.bookingCreateDialog.labels.travelCreditInvalidLabel,
             }}
           />
         ) : null}

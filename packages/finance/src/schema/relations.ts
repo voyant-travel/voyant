@@ -25,7 +25,7 @@ import {
 } from "./receivables.js"
 import { supplierPayments } from "./supplier-invoices.js"
 import { taxRegimes } from "./tax.js"
-import { voucherRedemptions, vouchers } from "./vouchers.js"
+import { travelCreditRedemptions, travelCredits } from "./travel-credits.js"
 
 // ---------- relations ----------
 
@@ -166,14 +166,14 @@ export const invoiceExternalRefsRelations = relations(invoiceExternalRefs, ({ on
   }),
 }))
 
-export const vouchersRelations = relations(vouchers, ({ many }) => ({
-  redemptions: many(voucherRedemptions),
+export const travelCreditsRelations = relations(travelCredits, ({ many }) => ({
+  redemptions: many(travelCreditRedemptions),
 }))
 
-export const voucherRedemptionsRelations = relations(voucherRedemptions, ({ one }) => ({
-  voucher: one(vouchers, {
-    fields: [voucherRedemptions.voucherId],
-    references: [vouchers.id],
+export const travelCreditRedemptionsRelations = relations(travelCreditRedemptions, ({ one }) => ({
+  travelCredit: one(travelCredits, {
+    fields: [travelCreditRedemptions.travelCreditId],
+    references: [travelCredits.id],
   }),
 }))
 

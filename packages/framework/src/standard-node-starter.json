@@ -28,6 +28,10 @@
     "@voyant-travel/framework",
     "@voyant-travel/runtime",
     "@voyant-travel/operator-standard",
+    "@tanstack/react-query",
+    "@tanstack/react-router",
+    "react",
+    "react-dom",
     "pg"
   ],
   "developmentDependencies": ["@voyant-travel/cli", "tsx", "typescript"],

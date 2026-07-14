@@ -1,0 +1,68 @@
+name: Set up Voyant workspace
+description: Restore the image's Node/pnpm environment and install dependencies.
+
+runs:
+  using: composite
+  steps:
+    # The custom image already contains pnpm 10.18.0. Snapshot files persist,
+    # but PATH does not, so restore the baked binary without reinstalling it.
+    - shell: bash
+      run: |
+        test -x /home/runner/setup-pnpm/node_modules/.bin/pnpm
+        echo "/home/runner/setup-pnpm/node_modules/.bin" >> "$GITHUB_PATH"
+
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      with:
+        node-version: 24
+
+    - name: Restore baked workspace dependencies
+      shell: bash
+      run: |
+        cache_root=/home/runner/voyant-pnpm-layout
+        expected_hash=$(cat "$cache_root/pnpm-lock.sha256" 2>/dev/null || true)
+        actual_hash=$(sha256sum pnpm-lock.yaml | cut -d ' ' -f 1)
+
+        if [[ "$expected_hash" != "$actual_hash" ]]; then
+          echo "Baked dependency layout is stale; falling back to pnpm install."
+          pnpm install --frozen-lockfile
+          exit 0
+        fi
+
+        mapfile -d '' module_dirs < <(
+          find "$cache_root" -type d -name node_modules -prune -print0
+        )
+
+        # pnpm's workspace dependency links are relative to the original
+        # checkout. Retarget only those links to this job's checkout; registry
+        # package links continue resolving inside the baked layout. Search only
+        # direct workspace dependencies; traversing the root .pnpm store costs
+        # tens of seconds and cannot contain workspace links that need fixing.
+        link_dirs=("${module_dirs[@]}")
+        virtual_modules="$cache_root/node_modules/.pnpm/node_modules"
+        if [[ -d "$virtual_modules" ]]; then
+          link_dirs+=("$virtual_modules")
+        fi
+
+        for modules in "${link_dirs[@]}"; do
+          while IFS= read -r -d '' link; do
+            resolved=$(realpath -m "$(dirname "$link")/$(readlink "$link")")
+            relative=${resolved#"$cache_root/"}
+            case "$relative" in
+              packages/* | starters/* | apps/* | examples/*)
+                if [[ "$relative" != */node_modules/* ]]; then
+                  ln -sfn "$GITHUB_WORKSPACE/$relative" "$link"
+                fi
+                ;;
+            esac
+          done < <(find "$modules" -mindepth 1 -maxdepth 2 -type l -print0)
+        done
+
+        for modules in "${module_dirs[@]}"; do
+          relative=${modules#"$cache_root/"}
+          target="$GITHUB_WORKSPACE/$relative"
+          mkdir -p "$(dirname "$target")"
+          rm -rf "$target"
+          ln -s "$modules" "$target"
+        done
+
+        echo "Restored baked pnpm workspace layout for $actual_hash."

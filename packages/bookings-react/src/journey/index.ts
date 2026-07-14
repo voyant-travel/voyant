@@ -58,7 +58,7 @@ export {
   type PaymentProviderCapabilities,
   type PaymentProviderStepRenderProps,
   type SidePanelState,
+  type TravelCreditPickerProps,
   type TravelerContactPickerProps,
   type UnitsPickerProps,
-  type VoucherPickerProps,
 } from "./types.js"

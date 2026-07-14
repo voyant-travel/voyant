@@ -1,5 +1,42 @@
 # @voyant-travel/storefront-sdk
 
+## 0.159.0
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.157.0
+- @voyant-travel/finance@0.157.0
+- @voyant-travel/storefront@0.159.0
+
+## 0.158.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/bookings@0.156.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/storefront@0.158.1
+
+## 0.158.0
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/bookings@0.156.0
+  - @voyant-travel/storefront@0.158.0
+
+## 0.157.2
+
+### Patch Changes
+
+- Updated dependencies [d83d237]
+  - @voyant-travel/bookings@0.155.2
+  - @voyant-travel/finance@0.155.2
+  - @voyant-travel/storefront@0.157.2
+
 ## 0.157.1
 
 ### Patch Changes

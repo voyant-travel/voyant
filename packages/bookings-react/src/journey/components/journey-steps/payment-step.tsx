@@ -14,10 +14,10 @@ import {
   type PaymentScheduleValue,
 } from "../../../components/payment-schedule-section.js"
 import {
-  emptyVoucherPickerValue,
-  VoucherPickerSection,
-  type VoucherPickerValue,
-} from "../../../components/voucher-picker-section.js"
+  emptyTravelCreditPickerValue,
+  TravelCreditPickerSection,
+  type TravelCreditPickerValue,
+} from "../../../components/travel-credit-picker-section.js"
 import { useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import { type Draft, setPayment } from "../../lib/draft-state.js"
 import {
@@ -27,7 +27,7 @@ import {
 import type {
   PaymentProviderCapabilities,
   PaymentProviderStepRenderProps,
-  VoucherPickerProps,
+  TravelCreditPickerProps,
 } from "../../types.js"
 import type { StepCommonProps } from "./shared.js"
 
@@ -357,36 +357,38 @@ function PriceOverrideEditor({
 }
 
 /**
- * Operator-only voucher editor for the review step. Wraps the shared
- * `VoucherPickerSection` (which validates the code against
- * `/v1/public/vouchers/validate`) and mirrors the picked voucher into
- * `draft.voucherRedemption` so the owned handler redeems it atomically at
+ * Operator-only Travel Credit editor for the review step. Wraps the shared
+ * `TravelCreditPickerSection` (which validates the code against
+ * `/v1/public/finance/travel-credits/validate`) and mirrors the picked credit into
+ * `draft.travelCreditRedemption` so the owned handler redeems it atomically at
  * commit — matching the standalone create-sheet's behaviour. Redeems the
  * full remaining balance, same as the create-sheet.
  */
-function VoucherEditor({
+function TravelCreditEditor({
   draft,
   setDraft,
   pricing,
-  renderVoucherPicker,
+  renderTravelCreditPicker,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
   pricing?: { total: number; currency: string } | null
-  renderVoucherPicker?: (props: VoucherPickerProps) => React.ReactNode
+  renderTravelCreditPicker?: (props: TravelCreditPickerProps) => React.ReactNode
 }): React.ReactElement {
   const labels = useBookingsUiMessagesOrDefault().bookingCreateDialog.labels
-  const [voucher, setVoucher] = useState<VoucherPickerValue>(emptyVoucherPickerValue)
+  const [travelCredit, setTravelCredit] = useState<TravelCreditPickerValue>(
+    emptyTravelCreditPickerValue,
+  )
   // Operator surface: an async search combobox (no need to know the code).
-  if (renderVoucherPicker) {
+  if (renderTravelCreditPicker) {
     return (
       <>
-        {renderVoucherPicker({
+        {renderTravelCreditPicker({
           value: {
-            voucherId: draft.voucherRedemption?.voucherId,
-            amountCents: draft.voucherRedemption?.amountCents,
+            travelCreditId: draft.travelCreditRedemption?.travelCreditId,
+            amountCents: draft.travelCreditRedemption?.amountCents,
           },
-          onApply: (picked) => setDraft({ ...draft, voucherRedemption: picked ?? undefined }),
+          onApply: (picked) => setDraft({ ...draft, travelCreditRedemption: picked ?? undefined }),
           currency: pricing?.currency,
           amountCents: pricing?.total ?? undefined,
         })}
@@ -394,28 +396,28 @@ function VoucherEditor({
     )
   }
   return (
-    <VoucherPickerSection
-      value={voucher}
+    <TravelCreditPickerSection
+      value={travelCredit}
       onChange={(next) => {
-        setVoucher(next)
+        setTravelCredit(next)
         const redemption =
           next.picked && next.picked.remainingAmountCents != null
             ? {
-                voucherId: next.picked.id,
+                travelCreditId: next.picked.id,
                 amountCents: next.picked.remainingAmountCents,
               }
             : undefined
-        setDraft({ ...draft, voucherRedemption: redemption })
+        setDraft({ ...draft, travelCreditRedemption: redemption })
       }}
       currency={pricing?.currency}
       amountCents={pricing?.total ?? undefined}
       labels={{
-        heading: labels.voucherHeading,
-        codePlaceholder: labels.voucherCodePlaceholder,
-        apply: labels.voucherApply,
-        clear: labels.voucherClear,
-        remainingLabel: labels.voucherRemainingLabel,
-        invalidLabel: labels.voucherInvalidLabel,
+        heading: labels.travelCreditHeading,
+        codePlaceholder: labels.travelCreditCodePlaceholder,
+        apply: labels.travelCreditApply,
+        clear: labels.travelCreditClear,
+        remainingLabel: labels.travelCreditRemainingLabel,
+        invalidLabel: labels.travelCreditInvalidLabel,
       }}
     />
   )
@@ -484,7 +486,7 @@ function intentMeta(
 
 /**
  * Operator-only PAYMENT-RELATED finalize controls — manual price override and
- * voucher redemption (both change the amount due, so they live in the Payment
+ * Travel Credit redemption (both change the amount due, so they live in the Payment
  * block). Non-payment finalization (internal notes, document generation) lives
  * in the separate Documents step.
  */
@@ -492,24 +494,24 @@ export function FinalizeControls({
   draft,
   setDraft,
   pricing,
-  renderVoucherPicker,
+  renderTravelCreditPicker,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
   pricing?: { total: number; currency: string } | null
-  renderVoucherPicker?: (props: VoucherPickerProps) => React.ReactNode
+  renderTravelCreditPicker?: (props: TravelCreditPickerProps) => React.ReactNode
 }): React.ReactElement {
   return (
     <div className="space-y-4">
       {/* Manual price override — wins over the quote price on commit; a reason
           is required when it differs. */}
       <PriceOverrideEditor draft={draft} setDraft={setDraft} pricing={pricing} />
-      {/* Voucher (gift / refund credit) — redeemed atomically on commit. */}
-      <VoucherEditor
+      {/* Travel Credit is redeemed atomically on commit. */}
+      <TravelCreditEditor
         draft={draft}
         setDraft={setDraft}
         pricing={pricing}
-        renderVoucherPicker={renderVoucherPicker}
+        renderTravelCreditPicker={renderTravelCreditPicker}
       />
     </div>
   )

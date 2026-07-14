@@ -23,8 +23,8 @@ export {
   type BookingCreateItemLineInput,
   type BookingCreatePaymentScheduleInput,
   type BookingCreateResult,
+  type BookingCreateTravelCreditRedemptionInput,
   type BookingCreateTravelerInput,
-  type BookingCreateVoucherRedemptionInput,
   useBookingCreateMutation,
 } from "./use-booking-create-mutation.js"
 export {

@@ -8,8 +8,8 @@ import type { UsePublicBookingPaymentOptionsOptions } from "../hooks/use-public-
 import type { UsePublicBookingPaymentsOptions } from "../hooks/use-public-booking-payments.js"
 import type { UsePublicFinanceDocumentByReferenceOptions } from "../hooks/use-public-finance-document-by-reference.js"
 import type { UsePublicPaymentSessionOptions } from "../hooks/use-public-payment-session.js"
-import type { UseVoucherOptions } from "../hooks/use-voucher.js"
-import type { UseVouchersOptions } from "../hooks/use-vouchers.js"
+import type { UseTravelCreditOptions } from "../hooks/use-travel-credit.js"
+import type { UseTravelCreditsOptions } from "../hooks/use-travel-credits.js"
 import {
   getAdminBookingPayments,
   getPublicBookingDocuments,
@@ -31,9 +31,9 @@ import {
   costCategoriesResponse,
   departureProfitabilityResponse,
   productProfitabilityResponse,
+  travelCreditDetailResponse,
+  travelCreditListResponse,
   travelerProfitabilityResponse,
-  voucherDetailResponse,
-  voucherListResponse,
 } from "../schemas.js"
 
 export function getPublicBookingPaymentOptionsQueryOptions(
@@ -146,17 +146,18 @@ export function getPublicPaymentSessionQueryOptions(
   })
 }
 
-export function getVouchersQueryOptions(
+export function getTravelCreditsQueryOptions(
   client: FetchWithValidationOptions,
-  options: UseVouchersOptions = {},
+  options: UseTravelCreditsOptions = {},
 ) {
   const { enabled: _enabled = true, ...filters } = options
 
   return queryOptions({
-    queryKey: financeQueryKeys.vouchersList(filters),
+    queryKey: financeQueryKeys.travelCreditsList(filters),
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.status) params.set("status", filters.status)
+      if (filters.seriesCode) params.set("seriesCode", filters.seriesCode)
       if (filters.issuedToPersonId) params.set("issuedToPersonId", filters.issuedToPersonId)
       if (filters.issuedToOrganizationId) {
         params.set("issuedToOrganizationId", filters.issuedToOrganizationId)
@@ -168,26 +169,30 @@ export function getVouchersQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/admin/finance/vouchers${qs ? `?${qs}` : ""}`,
-        voucherListResponse,
+        `/v1/admin/finance/travel-credits${qs ? `?${qs}` : ""}`,
+        travelCreditListResponse,
         client,
       )
     },
   })
 }
 
-export function getVoucherQueryOptions(
+export function getTravelCreditQueryOptions(
   client: FetchWithValidationOptions,
   id: string | null | undefined,
-  options: UseVoucherOptions = {},
+  options: UseTravelCreditOptions = {},
 ) {
   const { enabled: _enabled = true } = options
 
   return queryOptions({
-    queryKey: financeQueryKeys.voucher(id ?? ""),
+    queryKey: financeQueryKeys.travelCredit(id ?? ""),
     queryFn: async () => {
-      if (!id) throw new Error("getVoucherQueryOptions requires an id")
-      return fetchWithValidation(`/v1/admin/finance/vouchers/${id}`, voucherDetailResponse, client)
+      if (!id) throw new Error("getTravelCreditQueryOptions requires an id")
+      return fetchWithValidation(
+        `/v1/admin/finance/travel-credits/${id}`,
+        travelCreditDetailResponse,
+        client,
+      )
     },
   })
 }

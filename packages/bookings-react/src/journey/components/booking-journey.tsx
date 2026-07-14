@@ -648,13 +648,13 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             shape={shape}
             draft={draft}
             className={props.sidePanelClassName}
-            // Price override + voucher live with the pricing, not in Payment.
+            // Price override and Travel Credit live with the pricing, not in Payment.
             pricingExtras={
               <FinalizeControls
                 draft={draft}
                 setDraft={setDraft}
                 pricing={quote.data?.pricing ?? null}
-                renderVoucherPicker={props.renderVoucherPicker}
+                renderTravelCreditPicker={props.renderTravelCreditPicker}
               />
             }
           />

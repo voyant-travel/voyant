@@ -1,8 +1,8 @@
 "use client"
 
 import { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
-import type { PersonPickerValue, VoucherPickerValue } from "@voyant-travel/bookings-react/ui"
-import { VoucherPickerSection } from "@voyant-travel/bookings-react/ui"
+import type { PersonPickerValue, TravelCreditPickerValue } from "@voyant-travel/bookings-react/ui"
+import { TravelCreditPickerSection } from "@voyant-travel/bookings-react/ui"
 import { formatMessage } from "@voyant-travel/i18n"
 import { useOrganization, usePerson } from "@voyant-travel/relationships-react"
 import type { Trip, TripComponent } from "@voyant-travel/trips"
@@ -31,8 +31,8 @@ export function TripPreviewRail({
   travelers,
   billing,
   billingPersonId,
-  voucher,
-  onVoucherChange,
+  travelCredit,
+  onTravelCreditChange,
   paymentCurrency,
 }: {
   trip: Trip | null
@@ -40,8 +40,8 @@ export function TripPreviewRail({
   travelers: TripTraveler[]
   billing: PersonPickerValue
   billingPersonId?: string | null
-  voucher: VoucherPickerValue
-  onVoucherChange(value: VoucherPickerValue): void
+  travelCredit: TravelCreditPickerValue
+  onTravelCreditChange(value: TravelCreditPickerValue): void
   paymentCurrency: string
 }) {
   const envelope = trip?.envelope
@@ -111,9 +111,9 @@ export function TripPreviewRail({
 
       {components.length > 0 ? (
         <div className="flex flex-col gap-4 border-t pt-3">
-          <VoucherPickerSection
-            value={voucher}
-            onChange={onVoucherChange}
+          <TravelCreditPickerSection
+            value={travelCredit}
+            onChange={onTravelCreditChange}
             currency={paymentCurrency}
             amountCents={aggregate?.totalAmountCents ?? undefined}
           />

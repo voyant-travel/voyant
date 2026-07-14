@@ -9,8 +9,8 @@ import {
   publicPaymentOptionsQuerySchema,
   publicPaymentSessionSchema,
   publicStartPaymentSessionSchema,
-  publicValidateVoucherSchema,
-  publicVoucherValidationSchema,
+  publicTravelCreditValidationSchema,
+  publicValidateTravelCreditSchema,
 } from "@voyant-travel/finance/public-validation"
 import type { z } from "zod"
 
@@ -27,8 +27,8 @@ export {
   publicPaymentOptionsQuerySchema,
   publicPaymentSessionSchema,
   publicStartPaymentSessionSchema,
-  publicValidateVoucherSchema,
-  publicVoucherValidationSchema,
+  publicTravelCreditValidationSchema,
+  publicValidateTravelCreditSchema,
 }
 
 export const publicBookingPaymentOptionsResponse = singleEnvelope(publicBookingPaymentOptionsSchema)
@@ -40,7 +40,9 @@ export const publicBookingFinancePaymentsResponse = singleEnvelope(
   publicBookingFinancePaymentsSchema,
 )
 export const publicPaymentSessionResponse = singleEnvelope(publicPaymentSessionSchema)
-export const publicVoucherValidationResponse = singleEnvelope(publicVoucherValidationSchema)
+export const publicTravelCreditValidationResponse = singleEnvelope(
+  publicTravelCreditValidationSchema,
+)
 
 export type PublicBookingPaymentOptionsRecord = z.infer<typeof publicBookingPaymentOptionsSchema>
 export type PublicBookingFinanceDocumentsRecord = z.infer<
@@ -55,5 +57,5 @@ export type PublicFinanceBookingDocumentRecord = z.infer<typeof publicFinanceBoo
 export type PublicFinanceBookingPaymentRecord = z.infer<typeof publicFinanceBookingPaymentSchema>
 export type PublicPaymentSessionRecord = z.infer<typeof publicPaymentSessionSchema>
 export type PublicStartPaymentSessionInput = z.input<typeof publicStartPaymentSessionSchema>
-export type PublicValidateVoucherInput = z.input<typeof publicValidateVoucherSchema>
-export type PublicVoucherValidationRecord = z.infer<typeof publicVoucherValidationSchema>
+export type PublicValidateTravelCreditInput = z.input<typeof publicValidateTravelCreditSchema>
+export type PublicTravelCreditValidationRecord = z.infer<typeof publicTravelCreditValidationSchema>

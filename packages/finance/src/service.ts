@@ -13,12 +13,12 @@ import {
 import { financeReferenceDataService } from "./service-reference-data.js"
 import { financeReportService } from "./service-reports.js"
 import { financeSupplierPaymentService } from "./service-supplier-payments.js"
-import { vouchersService } from "./service-vouchers.js"
+import { travelCreditsService } from "./service-travel-credits.js"
 
 export * from "./service-shared.js"
 
 export const financeService = {
-  vouchers: vouchersService,
+  travelCredits: travelCreditsService,
   getFinanceAggregates,
   getDepartureProfitability,
   getProductProfitability,

@@ -15,12 +15,10 @@ import { StorefrontLink, useStorefrontUi } from "./context.js"
 
 /**
  * Storefront landing — real catalog browser backed by
- * `/v1/public/catalog/search` (Typesense slice scoped to
- * `audience: "customer"`).
+ * `/v1/public/catalog/search` (an index slice scoped to `audience: "customer"`).
  *
- * When the deployment hasn't configured Typesense (no
- * `TYPESENSE_HOST`), the search route 503s and we render an
- * instructions block instead — a usable experience either way.
+ * When the deployment has no available search provider, the route 503s and we
+ * render an instructions block instead — a usable experience either way.
  *
  * Search only offers verticals that have a working customer detail + booking
  * page. Charters and flights have no storefront `/content` endpoint or booking

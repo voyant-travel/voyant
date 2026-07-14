@@ -1,5 +1,37 @@
 # @voyant-travel/operator-settings-react
 
+## 0.10.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.157.0
+- @voyant-travel/admin-app@0.49.0
+- @voyant-travel/finance@0.157.0
+
+## 0.9.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/admin@0.123.3
+  - @voyant-travel/admin-app@0.48.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/finance-react@0.156.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/ui@0.109.1
+
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/finance-react@0.156.0
+  - @voyant-travel/admin-app@0.48.0
+  - @voyant-travel/admin@0.123.2
+
 ## 0.8.0
 
 ### Patch Changes

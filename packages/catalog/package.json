@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/catalog",
-  "version": "0.153.2",
+  "version": "0.155.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -15,6 +15,7 @@
     "./snapshot/schema": "./src/snapshot/schema.ts",
     "./indexer/contract": "./src/indexer/contract.ts",
     "./indexer/provider": "./src/indexer/provider.ts",
+    "./indexer/reconciliation-node": "./src/indexer/reconciliation-node.ts",
     "./indexer/typesense": "./src/indexer/typesense.ts",
     "./indexer/typesense-provider": "./src/indexer/typesense-provider.ts",
     "./search/routes": "./src/search/routes.ts",
@@ -155,6 +156,11 @@
         "types": "./dist/indexer/provider.d.ts",
         "import": "./dist/indexer/provider.js",
         "default": "./dist/indexer/provider.js"
+      },
+      "./indexer/reconciliation-node": {
+        "types": "./dist/indexer/reconciliation-node.d.ts",
+        "import": "./dist/indexer/reconciliation-node.js",
+        "default": "./dist/indexer/reconciliation-node.js"
       },
       "./indexer/typesense": {
         "types": "./dist/indexer/typesense.d.ts",
@@ -376,6 +382,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",

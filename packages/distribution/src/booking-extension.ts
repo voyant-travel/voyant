@@ -196,7 +196,7 @@ const bookingDistributionExtensionRoutes = new OpenAPIHono<Env>({
     if (!row) {
       return c.json({ error: "Not found" }, 404)
     }
-    return c.json({ success: true }, 200)
+    return c.json({ success: true } as const, 200)
   })
 
 // ---------- extension export ----------

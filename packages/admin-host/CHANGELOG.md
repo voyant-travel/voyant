@@ -1,5 +1,46 @@
 # @voyant-travel/admin-host
 
+## 0.7.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.49.0
+
+## 0.6.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/runtime-core@0.6.3
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/admin@0.123.3
+  - @voyant-travel/admin-app@0.48.1
+  - @voyant-travel/admin-react@0.123.3
+
+## 0.6.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.48.0
+- @voyant-travel/admin@0.123.2
+- @voyant-travel/admin-react@0.123.2
+
+## 0.5.1
+
+### Patch Changes
+
+- d83d237: Repair packaged consumer development and production startup, keep shared UI
+  contexts single-instanced under Vite, make unconfigured realtime quiet, and
+  restore narrow client-safe validation and Finance voucher setup exports. Resolve
+  legacy frontend imports through product-owned browser facades and allow clean CI
+  installs to fetch metadata for external dependencies.
+- Updated dependencies [d83d237]
+  - @voyant-travel/admin@0.123.1
+  - @voyant-travel/admin-react@0.123.1
+
 ## 0.5.0
 
 ### Patch Changes

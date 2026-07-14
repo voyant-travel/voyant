@@ -50,24 +50,35 @@ describe("production project start", () => {
     expect(loadProject).not.toHaveBeenCalled()
   })
 
-  it("falls back to source startup when a legacy bundle has no start export", async () => {
+  it("rejects a legacy bundle with no start export instead of loading SSR from source", async () => {
     const projectRoot = await createTemporaryDirectory()
     const entry = path.join(projectRoot, "dist/server/server.js")
     await mkdir(path.dirname(entry), { recursive: true })
     await writeFile(entry, "export default { fetch() {} }\n")
-    const start = vi.fn(() => ({}) as NodeServerHandle)
-    const loadProject = vi.fn(async () => ({ start }))
+    const loadProject = vi.fn()
 
-    await expect(loadBuiltProjectStart(projectRoot)).resolves.toBeUndefined()
-    await startVoyantProjectWithDependencies(
-      { port: 4400, preferBuiltAdminAssets: true, projectRoot },
-      { loadBuiltStart: loadBuiltProjectStart, loadProject },
+    await expect(
+      startVoyantProjectWithDependencies(
+        { port: 4400, preferBuiltAdminAssets: true, projectRoot },
+        { loadBuiltStart: loadBuiltProjectStart, loadProject },
+      ),
+    ).rejects.toThrow(
+      "does not export default.start. Update src/server.ts to the current starter contract",
     )
+    expect(loadProject).not.toHaveBeenCalled()
+  })
 
-    expect(loadProject).toHaveBeenCalledWith(
-      expect.objectContaining({ port: 4400, preferBuiltAdminAssets: true, projectRoot }),
-    )
-    expect(start).toHaveBeenCalledWith({ port: 4400 })
+  it("requires a production build before startup", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    const loadProject = vi.fn()
+
+    await expect(
+      startVoyantProjectWithDependencies(
+        { port: 4400, preferBuiltAdminAssets: true, projectRoot },
+        { loadBuiltStart: loadBuiltProjectStart, loadProject },
+      ),
+    ).rejects.toThrow("Run `voyant build` before `voyant start`")
+    expect(loadProject).not.toHaveBeenCalled()
   })
 })
 

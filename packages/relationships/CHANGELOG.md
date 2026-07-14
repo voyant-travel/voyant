@@ -1,5 +1,50 @@
 # @voyant-travel/crm
 
+## 0.125.2
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.157.0
+- @voyant-travel/identity@0.157.0
+
+## 0.125.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/utils@0.107.1
+  - @voyant-travel/action-ledger@0.108.4
+  - @voyant-travel/bookings@0.156.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/identity@0.156.1
+  - @voyant-travel/relationships-contracts@0.108.13
+  - @voyant-travel/tools@0.2.1
+
+## 0.125.0
+
+### Minor Changes
+
+- bbe6396: Replace the overloaded Finance voucher domain with Travel Credits across the
+  database schema, APIs, package exports, booking inputs, storefront settings,
+  and operator UI. Redemption commands are replay-safe, codes are normalized and
+  case-insensitively unique, and legacy records migrate in place without silently
+  skipping invalid balances. Keep Promotion Codes in Commerce and move Bookings
+  fulfillment to the explicit Service Voucher vocabulary.
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/bookings@0.156.0
+  - @voyant-travel/db@0.114.3
+  - @voyant-travel/relationships-contracts@0.108.12
+  - @voyant-travel/identity@0.156.0
+
 ## 0.124.4
 
 ### Patch Changes

@@ -41,7 +41,7 @@ export const productTicketFulfillmentEnum = pgEnum("product_ticket_fulfillment",
   "per_item",
 ])
 export const productDeliveryFormatEnum = pgEnum("product_delivery_format", [
-  "voucher",
+  "service_voucher",
   "ticket",
   "pdf",
   "qr_code",
@@ -59,7 +59,7 @@ export const productCapabilityEnum = pgEnum("product_capability", [
   "private",
   "shared",
   "digital_ticket",
-  "voucher_required",
+  "service_voucher_required",
   "external_inventory",
   "multi_day",
   "accommodation",

@@ -56,7 +56,7 @@ export const productTicketSettings = pgTable(
       .default("none"),
     ticketPerUnit: boolean("ticket_per_unit").notNull().default(false),
     barcodeFormat: text("barcode_format"),
-    voucherMessage: text("voucher_message"),
+    serviceVoucherMessage: text("service_voucher_message"),
     ticketMessage: text("ticket_message"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

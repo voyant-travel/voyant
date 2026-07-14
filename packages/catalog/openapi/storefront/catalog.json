@@ -237,6 +237,13 @@
                     "total": {
                       "type": "number"
                     },
+                    "totalRelation": {
+                      "type": "string",
+                      "enum": ["eq", "gte"]
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    },
                     "hits": {
                       "type": "array",
                       "items": {

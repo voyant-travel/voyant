@@ -69,4 +69,19 @@ describe("booking draft contracts", () => {
       }).success,
     ).toBe(false)
   })
+
+  it("accepts a Travel Credit redemption using the canonical wire fields", () => {
+    const parsed = bookingDraftV1.parse({
+      entity: ENTITY,
+      travelCreditRedemption: {
+        travelCreditId: "trc_123",
+        amountCents: 2_500,
+      },
+    })
+
+    expect(parsed.travelCreditRedemption).toEqual({
+      travelCreditId: "trc_123",
+      amountCents: 2_500,
+    })
+  })
 })

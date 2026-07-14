@@ -1,5 +1,26 @@
 # @voyant-travel/workflow-runs
 
+## 0.120.2
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/workflows@0.120.2
+
+## 0.120.1
+
+### Patch Changes
+
+- @voyant-travel/db@0.114.3
+- @voyant-travel/workflows@0.120.1
+
 ## 0.120.0
 
 ### Patch Changes

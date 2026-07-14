@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/templating",
-  "version": "0.104.1",
+  "version": "0.104.2",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

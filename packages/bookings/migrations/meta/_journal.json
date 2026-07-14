@@ -8,6 +8,13 @@
       "when": 1781958541657,
       "tag": "0000_bookings_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784051209834,
+      "tag": "0001_service_voucher_vocabulary",
+      "breakpoints": true
     }
   ]
 }

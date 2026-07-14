@@ -17,8 +17,8 @@ import {
   invoices,
   paymentInstruments,
   payments,
-  voucherRedemptions,
-  vouchers,
+  travelCreditRedemptions,
+  travelCredits,
 } from "../../src/schema.js"
 import { bookingCreateSchema, createBooking } from "../../src/service-booking-create.js"
 
@@ -34,8 +34,8 @@ async function resetTables(
     "invoice_renditions",
     "invoice_line_items",
     "invoices",
-    "voucher_redemptions",
-    "vouchers",
+    "travel_credit_redemptions",
+    "travel_credits",
     "payment_instruments",
     "booking_payment_schedules",
     "booking_allocations",
@@ -282,7 +282,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     return { productId, optionId, singleRoomUnitId, doubleRoomUnitId, adultUnitId }
   }
 
-  async function seedVoucher(
+  async function seedTravelCredit(
     overrides: {
       code?: string
       remainingAmountCents?: number
@@ -291,7 +291,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     } = {},
   ) {
     const [row] = await db
-      .insert(vouchers)
+      .insert(travelCredits)
       .values({
         code: overrides.code ?? `BC-${productSeq}-${Date.now()}`,
         currency: "EUR",
@@ -492,7 +492,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(outcome.result.travelers).toHaveLength(2)
     expect(outcome.result.travelers[0]?.firstName).toBe("Alice")
     expect(outcome.result.paymentSchedules).toHaveLength(2)
-    expect(outcome.result.voucherRedemption).toBeNull()
+    expect(outcome.result.travelCreditRedemption).toBeNull()
     expect(outcome.result.groupMembership).toBeNull()
 
     const bookingsRows = await db.select().from(bookings)
@@ -1641,39 +1641,42 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     ])
   })
 
-  it("redeems voucher and decrements remaining balance", async () => {
+  it("redeems travel credit and decrements remaining balance", async () => {
     const { productId } = await seedProduct()
-    const voucher = await seedVoucher({ remainingAmountCents: 25000 })
+    const travelCredit = await seedTravelCredit({ remainingAmountCents: 25000 })
 
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
-      voucherRedemption: {
-        voucherId: voucher.id,
+      travelCreditRedemption: {
+        travelCreditId: travelCredit.id,
         amountCents: 10000,
       },
     })
 
     expect(outcome.status).toBe("ok")
     if (outcome.status !== "ok") return
-    expect(outcome.result.voucherRedemption?.voucher.remainingAmountCents).toBe(15000)
-    expect(outcome.result.voucherRedemption?.redemption.amountCents).toBe(10000)
+    expect(outcome.result.travelCreditRedemption?.travelCredit.remainingAmountCents).toBe(15000)
+    expect(outcome.result.travelCreditRedemption?.redemption.amountCents).toBe(10000)
 
-    const [updatedVoucher] = await db.select().from(vouchers).where(eq(vouchers.id, voucher.id))
-    expect(updatedVoucher?.remainingAmountCents).toBe(15000)
+    const [updatedTravelCredit] = await db
+      .select()
+      .from(travelCredits)
+      .where(eq(travelCredits.id, travelCredit.id))
+    expect(updatedTravelCredit?.remainingAmountCents).toBe(15000)
 
     const redemptionRows = await db
       .select()
-      .from(voucherRedemptions)
-      .where(eq(voucherRedemptions.voucherId, voucher.id))
+      .from(travelCreditRedemptions)
+      .where(eq(travelCreditRedemptions.travelCreditId, travelCredit.id))
     expect(redemptionRows).toHaveLength(1)
     expect(redemptionRows[0]?.bookingId).toBe(outcome.result.booking.id)
   })
 
-  it("rolls back booking + travelers when voucher has insufficient balance", async () => {
+  it("rolls back booking + travelers when travel credit has insufficient balance", async () => {
     const { productId } = await seedProduct()
-    const voucher = await seedVoucher({ remainingAmountCents: 500 })
+    const travelCredit = await seedTravelCredit({ remainingAmountCents: 500 })
 
     const outcome = await createBooking(db, {
       productId,
@@ -1688,57 +1691,60 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
           amountCents: 10000,
         },
       ],
-      voucherRedemption: { voucherId: voucher.id, amountCents: 2000 },
+      travelCreditRedemption: { travelCreditId: travelCredit.id, amountCents: 2000 },
     })
 
-    expect(outcome.status).toBe("voucher_insufficient_balance")
+    expect(outcome.status).toBe("travel_credit_insufficient_balance")
     expect(await db.select().from(bookings)).toHaveLength(0)
     expect(await db.select().from(bookingTravelers)).toHaveLength(0)
     expect(await db.select().from(bookingPaymentSchedules)).toHaveLength(0)
 
-    // Voucher balance untouched.
-    const [same] = await db.select().from(vouchers).where(eq(vouchers.id, voucher.id))
+    // Travel credit balance untouched.
+    const [same] = await db
+      .select()
+      .from(travelCredits)
+      .where(eq(travelCredits.id, travelCredit.id))
     expect(same?.remainingAmountCents).toBe(500)
   })
 
-  it("returns voucher_not_found for unknown voucher id (no booking created)", async () => {
+  it("returns travel_credit_not_found for an unknown travel credit", async () => {
     const { productId } = await seedProduct()
 
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
-      voucherRedemption: { voucherId: "vchr_missing", amountCents: 1000 },
+      travelCreditRedemption: { travelCreditId: "vchr_missing", amountCents: 1000 },
     })
 
-    expect(outcome.status).toBe("voucher_not_found")
+    expect(outcome.status).toBe("travel_credit_not_found")
     expect(await db.select().from(bookings)).toHaveLength(0)
   })
 
-  it("returns voucher_inactive for non-active voucher", async () => {
+  it("returns travel_credit_inactive for a non-active travel credit", async () => {
     const { productId } = await seedProduct()
-    const voucher = await seedVoucher({ status: "void" })
+    const travelCredit = await seedTravelCredit({ status: "void" })
 
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
-      voucherRedemption: { voucherId: voucher.id, amountCents: 1000 },
+      travelCreditRedemption: { travelCreditId: travelCredit.id, amountCents: 1000 },
     })
-    expect(outcome.status).toBe("voucher_inactive")
+    expect(outcome.status).toBe("travel_credit_inactive")
   })
 
-  it("returns voucher_expired for past expiresAt", async () => {
+  it("returns travel_credit_expired for past expiresAt", async () => {
     const { productId } = await seedProduct()
-    const voucher = await seedVoucher({ expiresAt: new Date("2020-01-01") })
+    const travelCredit = await seedTravelCredit({ expiresAt: new Date("2020-01-01") })
 
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
-      voucherRedemption: { voucherId: voucher.id, amountCents: 1000 },
+      travelCreditRedemption: { travelCreditId: travelCredit.id, amountCents: 1000 },
     })
-    expect(outcome.status).toBe("voucher_expired")
+    expect(outcome.status).toBe("travel_credit_expired")
   })
 
   it("creates a new booking group and attaches the booking as primary", async () => {
@@ -1853,17 +1859,17 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(envelope.data.createdByUserId).toBe("usrp_tester")
   })
 
-  it("leaves payment_instruments untouched even when voucher orchestration runs", async () => {
-    // Regression guard: the fallback voucher path reads payment_instruments;
+  it("leaves payment_instruments untouched when travel credit orchestration runs", async () => {
+    // Regression guard: travel credit redemption must not mutate payment instruments;
     // the new orchestrator should never write to it.
     const { productId } = await seedProduct()
-    const voucher = await seedVoucher({ remainingAmountCents: 20000 })
+    const travelCredit = await seedTravelCredit({ remainingAmountCents: 20000 })
 
     await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
-      voucherRedemption: { voucherId: voucher.id, amountCents: 5000 },
+      travelCreditRedemption: { travelCreditId: travelCredit.id, amountCents: 5000 },
     })
 
     expect(await db.select().from(paymentInstruments)).toHaveLength(0)

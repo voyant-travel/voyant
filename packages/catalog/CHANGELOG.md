@@ -1,5 +1,44 @@
 # @voyant-travel/catalog
 
+## 0.155.0
+
+### Patch Changes
+
+- 0808b21: Publish canonical catalog search sort resolution, strengthen adapter conformance coverage, verify the Typesense implementation against the public runner, and remove provider-specific UI wording.
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog-contracts@0.111.0
+  - @voyant-travel/bookings@0.157.0
+  - @voyant-travel/finance@0.157.0
+
+## 0.154.1
+
+### Patch Changes
+
+- 7916020: Add a Node-only, engine-neutral index reconciliation API that requires a deployment-owned distributed write authority, accepts explicit obsolete-slice candidates, applies duplicate expected IDs with deterministic last-occurrence-wins semantics, and processes populated filesystem spool partitions one bucket at a time.
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/bookings@0.156.1
+  - @voyant-travel/catalog-contracts@0.110.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/tools@0.2.1
+  - @voyant-travel/workflows@0.120.2
+
+## 0.154.0
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/bookings@0.156.0
+  - @voyant-travel/catalog-contracts@0.110.0
+  - @voyant-travel/db@0.114.3
+  - @voyant-travel/workflows@0.120.1
+
 ## 0.153.2
 
 ### Patch Changes

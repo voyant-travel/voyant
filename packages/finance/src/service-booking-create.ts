@@ -28,17 +28,17 @@ import type {
   BookingPaymentSchedule,
   Invoice,
   Payment,
-  Voucher,
-  VoucherRedemption,
+  TravelCredit,
+  TravelCreditRedemption,
 } from "./schema.js"
-import { bookingPaymentSchedules, vouchers } from "./schema.js"
+import { bookingPaymentSchedules, travelCredits } from "./schema.js"
 import { type FinanceServiceRuntime, financeService, toRows } from "./service.js"
 import {
   buildBookingCreateRejectedActionLedgerInput,
   buildBookingCreateSucceededActionLedgerInput,
 } from "./service-action-ledger.js"
 import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
-import { VoucherServiceError, vouchersService } from "./service-vouchers.js"
+import { TravelCreditServiceError, travelCreditsService } from "./service-travel-credits.js"
 import {
   paymentMethodSchema,
   paymentScheduleStatusSchema,
@@ -134,8 +134,8 @@ const extraLineInputSchema = z.object({
   travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
-const voucherRedemptionInputSchema = z.object({
-  voucherId: z.string().min(1),
+const travelCreditRedemptionInputSchema = z.object({
+  travelCreditId: z.string().min(1),
   amountCents: z.number().int().min(1),
 })
 
@@ -407,7 +407,7 @@ const bookingCreateBaseSchema = z.object({
   itemLines: z.array(itemLineInputSchema).optional(),
   extraLines: z.array(extraLineInputSchema).optional(),
   paymentSchedules: z.array(paymentScheduleInputSchema).optional(),
-  voucherRedemption: voucherRedemptionInputSchema.optional(),
+  travelCreditRedemption: travelCreditRedemptionInputSchema.optional(),
   groupMembership: groupMembershipInputSchema.optional(),
   documentGeneration: documentGenerationInputSchema.optional(),
 })
@@ -448,7 +448,7 @@ export interface BookingCreatedEvent {
   productId: string
   travelerCount: number
   paymentScheduleCount: number
-  voucherRedeemedCents: number | null
+  travelCreditRedeemedCents: number | null
   groupId: string | null
   documentGeneration: {
     contractDocument: boolean
@@ -477,9 +477,9 @@ export interface BookingCreateResult {
   booking: Booking
   travelers: BookingTraveler[]
   paymentSchedules: BookingPaymentSchedule[]
-  voucherRedemption: {
-    voucher: Voucher
-    redemption: VoucherRedemption
+  travelCreditRedemption: {
+    travelCredit: TravelCredit
+    redemption: TravelCreditRedemption
   } | null
   groupMembership: {
     groupId: string
@@ -510,11 +510,11 @@ export type BookingCreateOutcome =
     }
   | { status: "duplicate_booking"; existingBooking: DuplicateBookingMatch }
   | { status: "product_not_found" }
-  | { status: "voucher_not_found" }
-  | { status: "voucher_inactive" }
-  | { status: "voucher_not_started" }
-  | { status: "voucher_expired" }
-  | { status: "voucher_insufficient_balance" }
+  | { status: "travel_credit_not_found" }
+  | { status: "travel_credit_inactive" }
+  | { status: "travel_credit_not_started" }
+  | { status: "travel_credit_expired" }
+  | { status: "travel_credit_insufficient_balance" }
   | { status: "group_not_found" }
   | { status: "booking_already_in_group"; currentGroupId: string }
 
@@ -522,15 +522,15 @@ export type BookingCreateOutcome =
 
 /**
  * Atomic booking-create orchestrator. Runs product conversion + travelers +
- * payment schedules + voucher redemption + group membership inside a single
- * transaction so partial failures (e.g. voucher insufficient-balance after
+ * payment schedules + travel credit redemption + group membership inside a single
+ * transaction so partial failures (e.g. travel credit insufficient-balance after
  * schedules have been written) roll the whole thing back.
  *
  * Event emission is post-commit — if the tx rolls back, subscribers never
  * hear about it.
  *
  * Why the orchestrator lives in `@voyant-travel/finance`: finance already imports
- * from `@voyant-travel/bookings` (invoices-from-bookings, voucher service, payment
+ * from `@voyant-travel/bookings` (invoices-from-bookings, travel credit service, payment
  * schedules all sit here), so this is the one place that can compose the
  * three packages without creating a new workspace dep cycle. The route wires
  * it under `/v1/admin/bookings/create` via a HonoExtension whose
@@ -1128,7 +1128,7 @@ function buildBookingCreateLedgerCommand(
     extraLineCount: input.extraLines?.length ?? 0,
     travelerCount: input.travelers?.length ?? 0,
     paymentScheduleCount: input.paymentSchedules?.length ?? 0,
-    voucherRedemptionRequested: Boolean(input.voucherRedemption),
+    travelCreditRedemptionRequested: Boolean(input.travelCreditRedemption),
     groupMembershipAction: input.groupMembership?.action ?? null,
     initialStatus: input.initialStatus ?? null,
     documentGeneration: options.documentGeneration,
@@ -1186,26 +1186,26 @@ export async function createBooking(
   }
   const pax = deriveBookingCreatePax(input)
 
-  // Validate voucher up-front so we can short-circuit before the tx starts.
+  // Validate the travel credit up-front so we can short-circuit before the tx starts.
   // This is a cheap read — the authoritative balance check still happens
   // inside the redeem savepoint so two concurrent redemptions can't double-
   // spend.
-  if (input.voucherRedemption) {
-    const [voucher] = await db
+  if (input.travelCreditRedemption) {
+    const [travelCredit] = await db
       .select()
-      .from(vouchers)
-      .where(eq(vouchers.id, input.voucherRedemption.voucherId))
+      .from(travelCredits)
+      .where(eq(travelCredits.id, input.travelCreditRedemption.travelCreditId))
       .limit(1)
-    if (!voucher) return { status: "voucher_not_found" }
-    if (voucher.status !== "active") return { status: "voucher_inactive" }
-    if (voucher.validFrom && voucher.validFrom.getTime() > Date.now()) {
-      return { status: "voucher_not_started" }
+    if (!travelCredit) return { status: "travel_credit_not_found" }
+    if (travelCredit.status !== "active") return { status: "travel_credit_inactive" }
+    if (travelCredit.validFrom && travelCredit.validFrom.getTime() > Date.now()) {
+      return { status: "travel_credit_not_started" }
     }
-    if (voucher.expiresAt && voucher.expiresAt.getTime() < Date.now()) {
-      return { status: "voucher_expired" }
+    if (travelCredit.expiresAt && travelCredit.expiresAt.getTime() < Date.now()) {
+      return { status: "travel_credit_expired" }
     }
-    if (input.voucherRedemption.amountCents > voucher.remainingAmountCents) {
-      return { status: "voucher_insufficient_balance" }
+    if (input.travelCreditRedemption.amountCents > travelCredit.remainingAmountCents) {
+      return { status: "travel_credit_insufficient_balance" }
     }
   }
 
@@ -1377,23 +1377,24 @@ export async function createBooking(
         if (row) paymentSchedules.push(row)
       }
 
-      // 4. Voucher redemption. Delegates to vouchersService so the balance
+      // 4. Travel credit redemption. Delegates to travelCreditsService so the balance
       // decrement + redemption-log insert share the savepoint. If anything
       // goes wrong (race with a concurrent redemption, mostly), the thrown
-      // VoucherServiceError surfaces as the outcome below.
-      let voucherRedemption: BookingCreateResult["voucherRedemption"] = null
-      if (input.voucherRedemption) {
-        const { voucher, redemption } = await vouchersService.redeem(
+      // TravelCreditServiceError surfaces as the outcome below.
+      let travelCreditRedemption: BookingCreateResult["travelCreditRedemption"] = null
+      if (input.travelCreditRedemption) {
+        const { travelCredit, redemption } = await travelCreditsService.redeem(
           tx,
-          input.voucherRedemption.voucherId,
+          input.travelCreditRedemption.travelCreditId,
           {
+            idempotencyKey: `booking:${booking.id}`,
             bookingId: booking.id,
-            amountCents: input.voucherRedemption.amountCents,
+            amountCents: input.travelCreditRedemption.amountCents,
           },
           userId,
         )
         if (redemption) {
-          voucherRedemption = { voucher, redemption }
+          travelCreditRedemption = { travelCredit, redemption }
         }
       }
 
@@ -1468,7 +1469,7 @@ export async function createBooking(
         booking,
         travelers,
         paymentSchedules,
-        voucherRedemption,
+        travelCreditRedemption,
         groupMembership,
         invoice: null,
         invoiceDocument: { status: "not_requested" as const },
@@ -1510,12 +1511,14 @@ export async function createBooking(
       )
       return { status: error.code, mismatches: error.mismatches }
     }
-    if (error instanceof VoucherServiceError) {
-      if (error.code === "voucher_not_found") return { status: "voucher_not_found" }
-      if (error.code === "voucher_inactive") return { status: "voucher_inactive" }
-      if (error.code === "voucher_not_started") return { status: "voucher_not_started" }
-      if (error.code === "voucher_expired") return { status: "voucher_expired" }
-      if (error.code === "insufficient_balance") return { status: "voucher_insufficient_balance" }
+    if (error instanceof TravelCreditServiceError) {
+      if (error.code === "travel_credit_not_found") return { status: "travel_credit_not_found" }
+      if (error.code === "travel_credit_inactive") return { status: "travel_credit_inactive" }
+      if (error.code === "travel_credit_not_started") return { status: "travel_credit_not_started" }
+      if (error.code === "travel_credit_expired") return { status: "travel_credit_expired" }
+      if (error.code === "travel_credit_insufficient_balance") {
+        return { status: "travel_credit_insufficient_balance" }
+      }
     }
     throw error
   }
@@ -1620,8 +1623,8 @@ export async function createBooking(
       productId: input.productId,
       travelerCount: result.travelers.length,
       paymentScheduleCount: result.paymentSchedules.length,
-      voucherRedeemedCents: result.voucherRedemption
-        ? result.voucherRedemption.redemption.amountCents
+      travelCreditRedeemedCents: result.travelCreditRedemption
+        ? result.travelCreditRedemption.redemption.amountCents
         : null,
       groupId: result.groupMembership?.groupId ?? null,
       documentGeneration,

@@ -399,8 +399,8 @@ export type {
   NewSupplierPayment,
   NewTaxClass,
   NewTaxRegime,
-  NewVoucher,
-  NewVoucherRedemption,
+  NewTravelCredit,
+  NewTravelCreditRedemption,
   Payment,
   PaymentAuthorization,
   PaymentCapture,
@@ -413,8 +413,8 @@ export type {
   SupplierPayment,
   TaxClass,
   TaxRegime,
-  Voucher,
-  VoucherRedemption,
+  TravelCredit,
+  TravelCreditRedemption,
 } from "./schema.js"
 export {
   apServiceTypeEnum,
@@ -449,10 +449,10 @@ export {
   taxPolicyProfiles,
   taxPolicyRules,
   taxRegimes,
-  voucherRedemptions,
-  voucherSourceTypeEnum,
-  voucherStatusEnum,
-  vouchers,
+  travelCreditRedemptions,
+  travelCreditSourceTypeEnum,
+  travelCreditStatusEnum,
+  travelCredits,
 } from "./schema.js"
 export type {
   BindInvoiceRenditionInput,
@@ -561,13 +561,7 @@ export {
   supplierInvoicesService,
   validateAllocations,
 } from "./service-supplier-invoices.js"
-export { VoucherServiceError, vouchersService } from "./service-vouchers.js"
-export {
-  migrateVouchersFromPaymentInstruments,
-  type VoucherMigrationOptions,
-  type VoucherMigrationResult,
-  type VoucherMigrationSkip,
-} from "./service-vouchers-migration.js"
+export { TravelCreditServiceError, travelCreditsService } from "./service-travel-credits.js"
 export type {
   GeneratedInvoiceDocumentResult,
   GenerateInvoiceDocumentInput,
@@ -683,8 +677,8 @@ export type {
   PublicPaymentOptionsQuery,
   PublicPaymentSession,
   PublicStartPaymentSessionInput,
-  PublicValidateVoucherInput,
-  PublicVoucherValidationResult,
+  PublicTravelCreditValidationResult,
+  PublicValidateTravelCreditInput,
 } from "./validation-public.js"
 export {
   publicBookingFinanceDocumentsSchema,
@@ -700,6 +694,6 @@ export {
   publicPaymentOptionsQuerySchema,
   publicPaymentSessionSchema,
   publicStartPaymentSessionSchema,
-  publicValidateVoucherSchema,
-  publicVoucherValidationSchema,
+  publicTravelCreditValidationSchema,
+  publicValidateTravelCreditSchema,
 } from "./validation-public.js"

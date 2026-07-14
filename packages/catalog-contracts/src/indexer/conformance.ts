@@ -2,7 +2,15 @@ import {
   createFieldPolicyRegistry,
   type FieldPolicy,
   type FieldPolicyRegistry,
+  type Visibility,
 } from "../contract.js"
+import {
+  assertAdminDenormalization,
+  assertCrossAudienceFederation,
+  assertVectorCapabilities,
+  createConformanceEmbedding,
+  type IndexerCapabilityFixtureIds,
+} from "./conformance-capabilities.js"
 import type {
   IndexerAdapter,
   IndexerAdmin,
@@ -33,6 +41,7 @@ export function createIndexerConformanceRegistry(): FieldPolicyRegistry {
     fixturePolicy("categorySlugs[]", "structural", "facet-affecting"),
     fixturePolicy("priceFromAmountCents", "structural", "entry"),
     fixturePolicy("isFeatured", "structural", "entry"),
+    fixturePolicy("customerTitle", "merchandisable", "entry", ["customer"]),
   ])
 }
 
@@ -50,9 +59,30 @@ export async function assertIndexerAdapterConformance(
   const primary = options.slice ?? defaultSlice(namespace)
   const isolated: IndexerSlice = { ...primary, market: `${primary.market}-isolated` }
   const bulk: IndexerSlice = { ...primary, market: `${primary.market}-bulk` }
-  const slices = [primary, isolated, bulk]
+  const adminDenormalized: IndexerSlice = {
+    ...primary,
+    audience: "staff-admin",
+    market: `${primary.market}-admin-denormalized`,
+  }
+  const federationBase: IndexerSlice = {
+    ...primary,
+    audience: "staff-admin",
+    market: `${primary.market}-federated`,
+  }
+  const federationCustomer: IndexerSlice = { ...federationBase, audience: "customer" }
+  const federationPartner: IndexerSlice = { ...federationBase, audience: "partner" }
+  const slices = [
+    primary,
+    isolated,
+    bulk,
+    ...(adapter.capabilities.supportsAdminDenormalization ? [adminDenormalized] : []),
+    ...(adapter.capabilities.supportsCrossAudienceFederation
+      ? [federationBase, federationCustomer, federationPartner]
+      : []),
+  ]
   const ids = fixtureIds(namespace)
   const documents = fixtureDocuments(ids, adapter.capabilities.vectorDimensions)
+  const keywordOnlyDocument = fixtureKeywordOnlyDocument(ids.keywordOnly)
   const admin = adapter.admin
   const settle = async (mutation: IndexerConformanceMutation): Promise<void> => {
     await options.settle?.(mutation, adapter)
@@ -78,40 +108,68 @@ export async function assertIndexerAdapterConformance(
         },
       },
     ])
+    if (adapter.capabilities.supportsAdminDenormalization) {
+      await adapter.upsert(adminDenormalized, [
+        {
+          id: ids.admin,
+          fields: {
+            title: "Voyant Staff Record",
+            customerTitle: "Voyant Customer Alias",
+            categorySlugs: ["admin"],
+            priceFromAmountCents: 500,
+            isFeatured: false,
+          },
+        },
+      ])
+    }
+    if (adapter.capabilities.supportsCrossAudienceFederation) {
+      await adapter.upsert(federationCustomer, [
+        fixtureAudienceDocument(ids.federationCustomer, "Voyant Customer Pool"),
+      ])
+      await adapter.upsert(federationPartner, [
+        fixtureAudienceDocument(ids.federationPartner, "Voyant Partner Pool"),
+      ])
+    }
     await settle("upsert")
 
+    const alphaDocument = documents.find((document) => document.id === ids.alpha)!
+    await assertKeywordSearchAndHitFidelity(adapter, primary, ids, alphaDocument)
+    if (adapter.capabilities.supportsHybridSearch) {
+      await adapter.upsert(primary, [keywordOnlyDocument])
+      await settle("upsert")
+    }
+    await assertVectorCapabilities(adapter, primary, ids)
+    if (adapter.capabilities.supportsHybridSearch) {
+      await adapter.delete(primary, [ids.keywordOnly])
+      await settle("delete")
+    }
+    await assertAdminDenormalization(adapter, adminDenormalized, ids)
+    await assertCrossAudienceFederation(adapter, federationBase, ids)
     await assertFilters(adapter, primary, ids)
     await assertSliceIsolation(adapter, primary, isolated, ids)
     await assertPagination(adapter, primary, ids)
     await assertFacets(adapter, primary)
+    await assertInvalidFacetLimits(adapter, primary)
+    await assertUpsertReplacement(adapter, primary, ids, alphaDocument, settle)
 
     await adapter.bulkReindex(bulk, toAsyncIterable(documents.slice(0, 2)))
     await settle("bulk-reindex")
-    assertIds(await searchAll(adapter, bulk), [ids.alpha, ids.bravo], "bulk reindex")
+    assertIds(await searchAll(adapter, bulk), [ids.charlie, ids.bravo], "bulk reindex")
+
+    if (admin) {
+      await assertAdmin(admin, slices, primary, bulk, documents, settle)
+    }
 
     await adapter.delete(primary, [ids.charlie])
     await settle("delete")
     assertIds(await searchAll(adapter, primary), [ids.alpha, ids.bravo], "delete")
-
-    if (admin) {
-      await assertAdmin(
-        admin,
-        slices,
-        primary,
-        bulk,
-        ids,
-        adapter.capabilities.vectorDimensions,
-        settle,
-      )
-    }
   } finally {
     if (admin) {
       for (const slice of slices) await admin.drop(slice)
       await settle("drop")
     } else {
-      await adapter.delete(primary, [ids.alpha, ids.bravo, ids.charlie])
-      await adapter.delete(isolated, [ids.isolated])
-      await adapter.delete(bulk, [ids.alpha, ids.bravo, ids.charlie])
+      const cleanupIds = Object.values(ids)
+      for (const slice of slices) await adapter.delete(slice, cleanupIds)
       await settle("delete")
     }
   }
@@ -121,6 +179,7 @@ function fixturePolicy(
   path: string,
   fieldClass: FieldPolicy["class"],
   reindex: FieldPolicy["reindex"],
+  visibility: Visibility[] = ["staff", "customer", "partner", "supplier"],
 ): FieldPolicy {
   return {
     path,
@@ -131,15 +190,37 @@ function fixturePolicy(
     snapshot: "never",
     query: "indexed-column",
     localized: false,
-    visibility: ["staff", "customer", "partner", "supplier"],
+    visibility,
     editRole: "none",
     overrideFriction: "none",
     sourceFreshness: "sync",
   }
 }
 
+function fixtureAudienceDocument(id: string, title: string): IndexerDocument {
+  return {
+    id,
+    fields: {
+      title,
+      categorySlugs: ["federated"],
+      priceFromAmountCents: 600,
+      isFeatured: false,
+    },
+  }
+}
+
 function assertCapabilities(adapter: IndexerAdapter): void {
   const capabilities = adapter.capabilities
+  const booleanCapabilities = [
+    "supportsKeywordSearch",
+    "supportsHybridSearch",
+    "supportsVectorFields",
+    "supportsCrossAudienceFederation",
+    "supportsAdminDenormalization",
+  ] as const
+  for (const name of booleanCapabilities) {
+    assert(typeof capabilities[name] === "boolean", `${name} must be a boolean`)
+  }
   assert(capabilities.supportsKeywordSearch, "supportsKeywordSearch must be true")
   if (capabilities.supportsVectorFields) {
     assert(
@@ -164,6 +245,34 @@ function assertCapabilities(adapter: IndexerAdapter): void {
         capabilities.maxVectorsPerDocument > 0),
     "maxVectorsPerDocument must be null or a positive integer",
   )
+  if (!capabilities.supportsVectorFields) {
+    assert(
+      capabilities.maxVectorsPerDocument === null,
+      "maxVectorsPerDocument must be null when vector fields are unsupported",
+    )
+  }
+}
+
+async function assertKeywordSearchAndHitFidelity(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+  ids: FixtureIds,
+  expectedDocument: IndexerDocument,
+): Promise<void> {
+  const results = await adapter.search(slice, keywordRequest({ query: "Alpine" }))
+  assertIds(
+    results.hits.map((hit) => hit.id),
+    [ids.alpha],
+    "non-empty keyword search",
+  )
+  assert(results.total === 1, `keyword search total was ${results.total}; expected 1`)
+  const hit = results.hits[0]
+  assert(hit?.id === hit?.document.id, "search hit id did not match its document id")
+  assert(Number.isFinite(hit?.score), "search hit score was not finite")
+  assert(
+    structurallyEqual(hit?.document.fields, expectedDocument.fields),
+    "search hit did not preserve the indexed document fields",
+  )
 }
 
 async function assertFilters(
@@ -184,13 +293,13 @@ async function assertFilters(
     },
     {
       name: "set-membership filter",
-      filters: [{ kind: "in", field: "categorySlugs", values: ["ski", "city"] }],
-      expected: [ids.alpha, ids.charlie],
+      filters: [{ kind: "in", field: "categorySlugs", values: ["beach", "city"] }],
+      expected: [ids.bravo, ids.charlie],
     },
     {
       name: "range filter",
       filters: [{ kind: "range", field: "priceFromAmountCents", gte: 150, lte: 250 }],
-      expected: [ids.bravo],
+      expected: [ids.charlie],
     },
     {
       name: "and filter",
@@ -203,7 +312,7 @@ async function assertFilters(
           ],
         },
       ],
-      expected: [ids.charlie],
+      expected: [ids.alpha],
     },
     {
       name: "or filter",
@@ -216,7 +325,7 @@ async function assertFilters(
           ],
         },
       ],
-      expected: [ids.alpha, ids.bravo],
+      expected: [ids.bravo],
     },
   ]
 
@@ -252,9 +361,9 @@ async function assertPagination(
     slice,
     keywordRequest({ sort: "price-asc", pagination: { limit: 2 } }),
   )
-  assertIds(
+  assertOrderedIds(
     first.hits.map((hit) => hit.id),
-    [ids.alpha, ids.bravo],
+    [ids.bravo, ids.charlie],
     "first page",
   )
   assert(first.total === 3, `pagination total was ${first.total}; expected 3`)
@@ -267,21 +376,74 @@ async function assertPagination(
       pagination: { limit: 2, cursor: first.next_cursor },
     }),
   )
-  assertIds(
+  assertOrderedIds(
     second.hits.map((hit) => hit.id),
-    [ids.charlie],
+    [ids.alpha],
     "second page",
   )
+  assert(second.total === 3, `terminal pagination total was ${second.total}; expected 3`)
+  assert(!second.next_cursor, "terminal page returned next_cursor")
 }
 
 async function assertFacets(adapter: IndexerAdapter, slice: IndexerSlice): Promise<void> {
   const results = await adapter.search(
     slice,
-    keywordRequest({ facets: [{ field: "categorySlugs", limit: 10 }] }),
+    keywordRequest({ facets: [{ field: "categorySlugs", limit: 2 }], pagination: { limit: 1 } }),
   )
-  const buckets = Object.values(results.facets ?? {}).flat()
+  assert(results.hits.length === 1, "search result ignored pagination limit")
+  const buckets = results.facets?.categorySlugs
+  assert(buckets, "categorySlugs facet was omitted")
+  assert(buckets.length === 2, `facet returned ${buckets.length} buckets; expected exactly 2`)
   const featured = buckets.find((bucket) => bucket.value === "featured")
+  const ski = buckets.find((bucket) => bucket.value === "ski")
   assert(featured?.count === 2, "featured facet count was not 2")
+  assert(ski?.count === 2, "ski facet count was not 2")
+}
+
+async function assertInvalidFacetLimits(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+): Promise<void> {
+  for (const limit of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5]) {
+    let rejected = false
+    try {
+      await adapter.search(slice, keywordRequest({ facets: [{ field: "categorySlugs", limit }] }))
+    } catch {
+      rejected = true
+    }
+    assert(rejected, `facet limit ${String(limit)} was not rejected`)
+  }
+}
+
+async function assertUpsertReplacement(
+  adapter: IndexerAdapter,
+  slice: IndexerSlice,
+  ids: FixtureIds,
+  original: IndexerDocument,
+  settle: (mutation: IndexerConformanceMutation) => Promise<void>,
+): Promise<void> {
+  const replacement: IndexerDocument = {
+    ...original,
+    fields: { ...original.fields, title: "Voyant Mountain Replacement" },
+  }
+  await adapter.upsert(slice, [replacement])
+  await settle("upsert")
+
+  const results = await adapter.search(slice, keywordRequest({ query: "Replacement" }))
+  assertIds(
+    results.hits.map((hit) => hit.id),
+    [ids.alpha],
+    "upsert replacement",
+  )
+  assert(results.total === 1, `upsert replacement total was ${results.total}; expected 1`)
+  assert(
+    results.hits[0]?.document.fields.title === "Voyant Mountain Replacement",
+    "upsert replacement returned stale document fields",
+  )
+  assert((await searchAll(adapter, slice)).length === 3, "upsert replacement duplicated a document")
+
+  await adapter.upsert(slice, [original])
+  await settle("upsert")
 }
 
 async function assertAdmin(
@@ -289,8 +451,7 @@ async function assertAdmin(
   slices: IndexerSlice[],
   primary: IndexerSlice,
   bulk: IndexerSlice,
-  ids: FixtureIds,
-  vectorDimensions: number | null,
+  expectedDocuments: IndexerDocument[],
   settle: (mutation: IndexerConformanceMutation) => Promise<void>,
 ): Promise<void> {
   const listed = await admin.list()
@@ -307,20 +468,24 @@ async function assertAdmin(
   }
   assertIds(
     scanned.map((document) => document.id),
-    [ids.alpha, ids.bravo],
+    expectedDocuments.map((document) => document.id),
     "admin scan",
   )
-  const alpha = scanned.find((document) => document.id === ids.alpha)
+  const expectedAlpha = expectedDocuments.find(
+    (document) => document.fields.title === "Voyant Alpine Escape",
+  )
+  const alpha = scanned.find((document) => document.id === expectedAlpha?.id)
   assert(alpha?.fields.title === "Voyant Alpine Escape", "admin scan omitted document fields")
   assert(!Object.hasOwn(alpha?.fields ?? {}, "id"), "admin scan leaked id into document fields")
-  if (alpha?.embeddings) {
+  for (const expected of expectedDocuments.filter((document) => document.embeddings)) {
+    const actual = scanned.find((document) => document.id === expected.id)
     assert(
-      alpha.embeddings.text_embedding?.length === vectorDimensions,
-      "admin scan did not preserve the document embedding",
+      structurallyEqual(actual?.embeddings, expected.embeddings),
+      `admin scan did not preserve the exact embedding for ${expected.id}`,
     )
     assert(
-      alpha.embedding_model_id === "conformance-model",
-      "admin scan omitted embedding model id",
+      actual?.embedding_model_id === expected.embedding_model_id,
+      `admin scan did not preserve the embedding model id for ${expected.id}`,
     )
   }
 
@@ -342,11 +507,11 @@ async function searchAll(adapter: IndexerAdapter, slice: IndexerSlice): Promise<
 function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): IndexerDocument[] {
   const documents: IndexerDocument[] = [
     {
-      id: ids.alpha,
+      id: ids.charlie,
       fields: {
-        title: "Voyant Alpine Escape",
-        categorySlugs: ["ski", "featured"],
-        priceFromAmountCents: 100,
+        title: "Voyant City Break",
+        categorySlugs: ["city", "featured"],
+        priceFromAmountCents: 200,
         isFeatured: true,
       },
     },
@@ -354,44 +519,64 @@ function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): Ind
       id: ids.bravo,
       fields: {
         title: "Voyant Coastal Escape",
-        categorySlugs: ["beach"],
-        priceFromAmountCents: 200,
+        categorySlugs: ["beach", "ski"],
+        priceFromAmountCents: 100,
         isFeatured: false,
       },
     },
     {
-      id: ids.charlie,
+      id: ids.alpha,
       fields: {
-        title: "Voyant City Break",
-        categorySlugs: ["city", "featured"],
+        title: "Voyant Alpine Escape",
+        categorySlugs: ["ski", "featured"],
         priceFromAmountCents: 300,
         isFeatured: true,
       },
     },
   ]
   if (vectorDimensions) {
-    documents[0] = {
-      ...documents[0]!,
-      embeddings: { text_embedding: Array.from({ length: vectorDimensions }, () => 0.25) },
-      embedding_model_id: "conformance-model",
+    for (const document of documents) {
+      document.embeddings = {
+        text_embedding: createConformanceEmbedding(document.id, ids, vectorDimensions),
+      }
+      document.embedding_model_id = "conformance-model"
     }
   }
   return documents
 }
 
-interface FixtureIds {
+function fixtureKeywordOnlyDocument(id: string): IndexerDocument {
+  return {
+    id,
+    fields: {
+      title: "Voyant Keyword Signal",
+      categorySlugs: ["keyword-only"],
+      priceFromAmountCents: 250,
+      isFeatured: false,
+    },
+  }
+}
+
+interface FixtureIds extends IndexerCapabilityFixtureIds {
   alpha: string
   bravo: string
   charlie: string
   isolated: string
+  admin: string
+  federationCustomer: string
+  federationPartner: string
 }
 
 function fixtureIds(namespace: string): FixtureIds {
   return {
     alpha: `${namespace}-alpha`,
     bravo: `${namespace}-bravo`,
+    keywordOnly: `${namespace}-keyword-only`,
     charlie: `${namespace}-charlie`,
     isolated: `${namespace}-isolated`,
+    admin: `${namespace}-admin`,
+    federationCustomer: `${namespace}-federation-customer`,
+    federationPartner: `${namespace}-federation-partner`,
   }
 }
 
@@ -426,8 +611,42 @@ function assertIds(actual: string[], expected: string[], operation: string): voi
   const actualSorted = [...actual].sort()
   const expectedSorted = [...expected].sort()
   assert(
-    JSON.stringify(actualSorted) === JSON.stringify(expectedSorted),
+    structurallyEqual(actualSorted, expectedSorted),
     `${operation} returned [${actualSorted.join(", ")}]; expected [${expectedSorted.join(", ")}]`,
+  )
+}
+
+function assertOrderedIds(actual: string[], expected: string[], operation: string): void {
+  assert(
+    structurallyEqual(actual, expected),
+    `${operation} returned [${actual.join(", ")}]; expected ordered [${expected.join(", ")}]`,
+  )
+}
+
+function structurallyEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => structurallyEqual(value, right[index]))
+    )
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false
+  }
+
+  const leftRecord = left as Record<string, unknown>
+  const rightRecord = right as Record<string, unknown>
+  const leftKeys = Object.keys(leftRecord).sort()
+  const rightKeys = Object.keys(rightRecord).sort()
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every(
+      (key, index) =>
+        key === rightKeys[index] && structurallyEqual(leftRecord[key], rightRecord[key]),
+    )
   )
 }
 

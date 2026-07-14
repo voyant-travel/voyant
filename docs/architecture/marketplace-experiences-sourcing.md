@@ -18,7 +18,7 @@ Viator and GetYourGuide products are **sourced inventory**, not owned inventory.
 In Voyant vocabulary:
 
 - **Owned Product**: the operator runs the experience. Voyant owns product data, availability slots, capacity allocation, fulfillment, and operational status.
-- **Sourced Experience**: an upstream marketplace or supplier owns the sellable experience and remains the source of truth for live availability, price, hold, booking, cancellation, voucher, and status.
+- **Sourced Experience**: an upstream marketplace or supplier owns the sellable experience and remains the source of truth for live availability, price, hold, booking, cancellation, Service Voucher, and status.
 - **Catalog Projection**: the local normalized browse/search record that makes sourced inventory visible in admin and storefront surfaces.
 - **Catalog Overlay**: local merchandising changes, such as title rewrites, hero images, SEO copy, tags, and internal notes, stored without mutating upstream data.
 - **Booking Snapshot**: the immutable record of what was sold, what the customer saw, what they paid, and which upstream handle must be used after booking.
@@ -181,7 +181,7 @@ The adapter should return:
 - upstream booking reference
 - upstream status
 - hold expiry, if any
-- ticket or voucher metadata, if already available
+- ticket or Service Voucher metadata, if already available
 - opaque upstream payload for snapshot/audit
 
 ### 6.5 Cancel And Status
@@ -196,7 +196,7 @@ Admins should be able to:
 
 - create a marketplace source connection
 - enter credentials securely
-- see source capabilities, such as browse-only, live pricing, booking, cancellation, amendments, voucher support
+- see source capabilities, such as browse-only, live pricing, booking, cancellation, amendments, Service Voucher support
 - choose import scope: all inventory, destinations, attractions, categories, curated product codes, or manual allowlist
 - run initial sync
 - inspect sync health, rate limits, last cursor, and errors
@@ -228,7 +228,7 @@ Storefront detail pages may:
 
 Checkout must always call live adapter flows for final price, availability, requirements, and booking.
 
-Customer-facing copy should distinguish source only when useful for trust, support, cancellation, or voucher expectations. The API contract must preserve provenance even when the UI chooses not to foreground it.
+Customer-facing copy should distinguish source only when useful for trust, support, cancellation, or Service Voucher expectations. The API contract must preserve provenance even when the UI chooses not to foreground it.
 
 ## 9. Booking Flow
 
@@ -256,7 +256,7 @@ sourced catalog entry
   -> local booking item(s)
   -> catalog snapshot
   -> upstream booking link
-  -> fulfillment/voucher records
+  -> fulfillment/Service Voucher records
 ```
 
 This path must not require local `availabilitySlotId` and must not decrement local `availability_slots`.
@@ -272,7 +272,7 @@ The local booking should store:
 - final price breakdown
 - required booking answers
 - cancellation policy snapshot
-- voucher/ticket metadata
+- Service Voucher/ticket metadata
 - raw upstream response where needed for support/reconciliation
 
 ## 10. Booking Requirements
@@ -317,13 +317,13 @@ Do not assume every marketplace source is merchant-of-record through the operato
 
 ## 12. Fulfillment, Vouchers, And Redemption
 
-Sourced bookings may produce upstream voucher URLs, QR codes, barcodes, supplier references, or instructions.
+Sourced bookings may produce upstream Service Voucher URLs, QR codes, barcodes, supplier references, or instructions.
 
 Voyant should store these as booking fulfillments/artifacts, not as product data.
 
 The local fulfillment record should be able to represent:
 
-- voucher URL
+- Service Voucher URL
 - PDF/ticket URL
 - QR/barcode value
 - supplier booking code
@@ -358,7 +358,7 @@ Detect changes to:
 - upstream booking status
 - manual confirmation outcome
 - cancellation outcome
-- voucher issuance
+- Service Voucher issuance
 - amendment state
 - refund status
 - source-side price/status mismatch
@@ -380,7 +380,7 @@ To make this production-ready, Voyant needs:
 9. Booking session support for dynamic adapter requirements.
 10. Sourced booking reserve/confirm path that does not require local slots.
 11. Upstream booking link table or extension fields with source connection/ref/status.
-12. Adapter-aware cancellation, status sync, voucher ingestion, and reconciliation jobs.
+12. Adapter-aware cancellation, status sync, Service Voucher ingestion, and reconciliation jobs.
 13. Finance/distribution handling for commission, net price, payment owner, and cancellation owner.
 14. Certification/rate-limit posture per source.
 
@@ -436,7 +436,7 @@ Deliver:
 - GetYourGuide supported booking or redirect flow
 - local booking creation with snapshot
 - upstream booking link persistence
-- voucher/artifact ingestion
+- Service Voucher/artifact ingestion
 - idempotency and failure recovery
 
 ### Slice 5: Post-Book Operations

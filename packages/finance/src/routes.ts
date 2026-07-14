@@ -19,7 +19,7 @@ import { financeReportRoutes } from "./routes-reports.js"
 export { getActionLedgerRequestContext, getFinanceRouteRuntime } from "./routes-runtime.js"
 
 import type { Env } from "./routes-shared.js"
-import { financeVoucherRoutes } from "./routes-vouchers.js"
+import { financeTravelCreditRoutes } from "./routes-travel-credits.js"
 import { financeService } from "./service.js"
 import { financeAggregatesQuerySchema } from "./validation.js"
 
@@ -51,7 +51,7 @@ export const financeRoutes = new OpenAPIHono<Env>()
   .route("/", financeInvoiceCoreRoutes)
   .route("/", financeReferenceDataRoutes)
   .route("/", financeInvoiceDocumentRoutes)
-  .route("/", financeVoucherRoutes)
+  .route("/", financeTravelCreditRoutes)
   .route("/", financeBookingReadRoutes)
 
 export type FinanceRoutes = typeof financeRoutes

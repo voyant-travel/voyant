@@ -1,5 +1,41 @@
 # @voyant-travel/crm
 
+## 0.128.6
+
+### Patch Changes
+
+- @voyant-travel/trips@0.148.0
+- @voyant-travel/relationships@0.125.2
+- @voyant-travel/operator-settings@0.3.12
+
+## 0.128.5
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/types@0.109.1
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/operator-settings@0.3.11
+  - @voyant-travel/quotes-contracts@0.108.2
+  - @voyant-travel/relationships@0.125.1
+  - @voyant-travel/tools@0.2.1
+  - @voyant-travel/trips@0.147.1
+
+## 0.128.4
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/relationships@0.125.0
+  - @voyant-travel/operator-settings@0.3.10
+  - @voyant-travel/trips@0.147.0
+  - @voyant-travel/db@0.114.3
+
 ## 0.128.3
 
 ### Patch Changes

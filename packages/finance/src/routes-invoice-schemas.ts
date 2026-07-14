@@ -46,7 +46,7 @@ const paymentMethodValues = [
   "cheque",
   "wallet",
   "direct_bill",
-  "voucher",
+  "travel_credit",
   "other",
 ] as const
 

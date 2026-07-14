@@ -133,8 +133,8 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 
 | Term                  | Definition                                                                                       | Aliases to avoid              |
 | --------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------- |
-| **Fulfillment**       | Issuance of a deliverable artifact (voucher, ticket, PDF, QR, barcode) for a Booking Item.       | *ticket-event, issuance*      |
-| **Voucher / Ticket**  | The artifact a Traveler presents at the service — output of a Fulfillment.                       | *confirmation, document*      |
+| **Fulfillment**       | Issuance of a deliverable artifact (Service Voucher, ticket, PDF, QR, barcode) for a Booking Item.       | *ticket-event, issuance*      |
+| **Service Voucher** | A fulfillment artifact a Traveler presents to consume a booked supplier service. It carries no stored monetary balance. | *voucher, confirmation, travel credit* |
 | **Redemption**        | The act of consuming a Fulfillment at the point of service (scan, manual check-in).              | *check-in, scan*              |
 | **Dispatch**          | An operational order in Ground to move passengers from A to B at a time, assigned to a Driver and Vehicle. | *job, run*           |
 | **Vehicle**           | A transport asset (car, van, bus, coach) with capacity, class, and accessibility flags.          | *car, unit*                   |
@@ -153,10 +153,12 @@ For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version
 | **Invoice**           | A billing document issued to a payer; lifecycle `draft → sent → partially_paid / paid / overdue / void`. | *bill*                |
 | **Invoice Number Series** | A configured numbering sequence (per legal entity / year / type) Invoices draw from.         | *sequence*                    |
 | **Credit Note**       | A reversal or adjustment document referencing an Invoice.                                        | *refund-doc, reversal*        |
-| **Payment**           | A recorded inbound transfer of money (bank transfer, card, cash, voucher, direct bill).          | *receipt, transaction*        |
+| **Payment**           | A recorded inbound transfer of money (bank transfer, card, cash, Travel Credit, direct bill).    | *receipt, transaction*        |
+| **Travel Credit**     | Currency-denominated stored value issued by Finance and consumed through an immutable redemption ledger. | *voucher, coupon, promo code* |
+| **Promotion Code**    | A customer-entered Commerce code that activates a Promotion and changes price; it never carries a balance. | *voucher, travel credit* |
 | **Supplier Payment**  | A recorded outbound transfer to a Supplier.                                                      | *payout, AP*                  |
 | **Payment Schedule**  | An installment plan attached to a Booking (deposit, installment, balance, hold) with due dates.  | *plan, instalments*           |
-| **Guarantee**         | A security hold (deposit, pre-auth, card-on-file, agency letter, voucher) ensuring eventual payment. | *deposit (overloaded)*    |
+| **Guarantee**         | A security hold (deposit, pre-auth, card-on-file, agency letter, or Service Voucher) ensuring eventual payment. | *deposit (overloaded)* |
 | **Payment Session**   | An active payment attempt against a target (Booking, Invoice, Schedule line, Guarantee, Program, or explicit legacy/provider reference). | *checkout, intent*            |
 | **Collection Plan**   | A preview of what will be collected from the customer and when.                                  | *quote-of-collections*        |
 
@@ -218,7 +220,7 @@ See [agent tool library](docs/architecture/agent-tool-library.md) and
 | **Confirm**    | Promote from draft/held to a binding state.                                                      | Booking, Allocation, Supplier status |
 | **Start**      | Mark a confirmed Booking as in-progress — service is underway.                                   | Booking                                  |
 | **Complete**   | Mark an in-progress Booking as fully delivered.                                                  | Booking                                  |
-| **Issue**      | Produce a deliverable artifact (voucher, invoice, contract, policy version).                     | Fulfillment, Invoice, Contract, Policy Version |
+| **Issue**      | Produce a deliverable artifact (Service Voucher, invoice, contract, policy version).             | Fulfillment, Invoice, Contract, Policy Version |
 | **Fulfill**    | Mark operational delivery complete.                                                              | Booking Item, Allocation                 |
 | **Deliver**    | Push an issued artifact to the recipient over a channel (email, download, wallet, API).          | Fulfillment, Notification                |
 | **Accept**     | Record that the client chose a Quote Version or accepted required commercial/legal terms; does not by itself mean every supplier component is confirmed. | Quote Version, Policy Version, Contract, legacy Offer |

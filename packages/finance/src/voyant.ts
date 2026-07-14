@@ -49,7 +49,13 @@ export const financeVoyantModule = defineModule({
       surface: "public",
       mount: "finance",
       openapi: { document: "finance" },
-      anonymous: ["/bookings", "/collections", "/payment-sessions", "/accountant", "/vouchers"],
+      anonymous: [
+        "/bookings",
+        "/collections",
+        "/payment-sessions",
+        "/accountant",
+        "/travel-credits",
+      ],
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
@@ -212,10 +218,10 @@ export const financeVoyantModule = defineModule({
   setupMigrations: [
     {
       id: "@voyant-travel/finance#setup.vouchers-from-payment-instruments.v1",
-      source: "@voyant-travel/finance/setup/vouchers",
+      source: "@voyant-travel/finance/setup/travel-credits",
       runtime: {
-        entry: "@voyant-travel/finance/setup/vouchers",
-        export: "runVoucherSetupMigration",
+        entry: "@voyant-travel/finance/setup/travel-credits",
+        export: "runTravelCreditSetupMigration",
       },
       dependsOn: ["@voyant-travel/finance#migrations"],
     },

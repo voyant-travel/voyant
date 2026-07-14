@@ -1,5 +1,65 @@
 # @voyant-travel/trips-react
 
+## 0.148.0
+
+### Patch Changes
+
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog@0.155.0
+  - @voyant-travel/catalog-react@0.155.0
+  - @voyant-travel/bookings-react@0.157.0
+  - @voyant-travel/flights@0.157.0
+  - @voyant-travel/trips@0.148.0
+  - @voyant-travel/flights-react@0.157.0
+  - @voyant-travel/relationships-react@0.157.0
+  - @voyant-travel/finance@0.157.0
+
+## 0.147.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [7916020]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/catalog@0.154.1
+  - @voyant-travel/admin@0.123.3
+  - @voyant-travel/bookings-react@0.156.1
+  - @voyant-travel/catalog-react@0.154.1
+  - @voyant-travel/finance@0.156.1
+  - @voyant-travel/flights@0.156.1
+  - @voyant-travel/flights-react@0.156.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/relationships-react@0.156.1
+  - @voyant-travel/trips@0.147.1
+  - @voyant-travel/ui@0.109.1
+
+## 0.147.0
+
+### Minor Changes
+
+- bbe6396: Replace the overloaded Finance voucher domain with Travel Credits across the
+  database schema, APIs, package exports, booking inputs, storefront settings,
+  and operator UI. Redemption commands are replay-safe, codes are normalized and
+  case-insensitively unique, and legacy records migrate in place without silently
+  skipping invalid balances. Keep Promotion Codes in Commerce and move Bookings
+  fulfillment to the explicit Service Voucher vocabulary.
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/bookings-react@0.156.0
+  - @voyant-travel/i18n@0.111.0
+  - @voyant-travel/catalog@0.154.0
+  - @voyant-travel/flights@0.156.0
+  - @voyant-travel/flights-react@0.156.0
+  - @voyant-travel/trips@0.147.0
+  - @voyant-travel/catalog-react@0.154.0
+  - @voyant-travel/admin@0.123.2
+  - @voyant-travel/relationships-react@0.156.0
+
 ## 0.146.1
 
 ### Patch Changes

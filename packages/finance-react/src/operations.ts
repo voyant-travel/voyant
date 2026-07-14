@@ -7,13 +7,13 @@ import {
   invoiceFxRateResponse,
   type PublicFinanceDocumentLookupQuery,
   type PublicStartPaymentSessionInput,
-  type PublicValidateVoucherInput,
+  type PublicValidateTravelCreditInput,
   publicBookingFinanceDocumentsResponse,
   publicBookingFinancePaymentsResponse,
   publicBookingPaymentOptionsResponse,
   publicFinanceDocumentLookupResponse,
   publicPaymentSessionResponse,
-  publicVoucherValidationResponse,
+  publicTravelCreditValidationResponse,
 } from "./schemas.js"
 
 export interface FinanceActionLedgerListInput {
@@ -168,13 +168,13 @@ export function startPublicBookingGuaranteePaymentSession(
   )
 }
 
-export function validatePublicVoucher(
+export function validatePublicTravelCredit(
   client: FetchWithValidationOptions,
-  input: PublicValidateVoucherInput,
+  input: PublicValidateTravelCreditInput,
 ) {
   return fetchWithValidation(
-    "/v1/public/finance/vouchers/validate",
-    publicVoucherValidationResponse,
+    "/v1/public/finance/travel-credits/validate",
+    publicTravelCreditValidationResponse,
     client,
     { method: "POST", body: JSON.stringify(input) },
   )

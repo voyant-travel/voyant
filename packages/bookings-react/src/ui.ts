@@ -149,6 +149,12 @@ export {
   SupplierStatusList,
   type SupplierStatusListProps,
 } from "./components/supplier-status-list.js"
+export {
+  type PickedTravelCredit,
+  TravelCreditPickerSection,
+  type TravelCreditPickerSectionProps,
+  type TravelCreditPickerValue,
+} from "./components/travel-credit-picker-section.js"
 export { TravelerDialog, type TravelerDialogProps } from "./components/traveler-dialog.js"
 export { TravelerList, type TravelerListProps } from "./components/traveler-list.js"
 export {
@@ -162,12 +168,6 @@ export {
   type TravelersSectionProps,
   type TravelerUnitAssignmentSource,
 } from "./components/travelers-section.js"
-export {
-  type PickedVoucher,
-  VoucherPickerSection,
-  type VoucherPickerSectionProps,
-  type VoucherPickerValue,
-} from "./components/voucher-picker-section.js"
 export {
   type BookingsUiMessageOverrides,
   type BookingsUiMessages,

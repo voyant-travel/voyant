@@ -19,6 +19,17 @@ const packageJson = JSON.parse(
 ) as PackageJson
 
 describe("@voyant-travel/catalog package exports", () => {
+  it("publishes Node index reconciliation operations", () => {
+    expect(packageJson.exports["./indexer/reconciliation-node"]).toBe(
+      "./src/indexer/reconciliation-node.ts",
+    )
+    expect(packageJson.publishConfig.exports["./indexer/reconciliation-node"]).toEqual({
+      types: "./dist/indexer/reconciliation-node.d.ts",
+      import: "./dist/indexer/reconciliation-node.js",
+      default: "./dist/indexer/reconciliation-node.js",
+    })
+  })
+
   it("publishes package-owned API graph runtimes", () => {
     expect(packageJson.exports["./graph-runtime"]).toBe("./src/graph-runtime.ts")
     expect(packageJson.publishConfig.exports["./graph-runtime"]).toEqual({

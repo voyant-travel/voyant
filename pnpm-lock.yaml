@@ -1110,6 +1110,9 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.5.2
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -3452,6 +3455,9 @@ importers:
       '@voyant-travel/identity':
         specifier: workspace:*
         version: link:../identity
+      '@voyant-travel/identity-react':
+        specifier: workspace:*
+        version: link:../identity-react
       '@voyant-travel/inventory':
         specifier: workspace:*
         version: link:../inventory
@@ -4072,6 +4078,9 @@ importers:
       hono:
         specifier: 4.12.25
         version: 4.12.25
+      srvx:
+        specifier: ^0.11.22
+        version: 0.11.22
       tsx:
         specifier: 'catalog:'
         version: 4.22.4

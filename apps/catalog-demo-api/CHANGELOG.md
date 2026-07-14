@@ -1,5 +1,19 @@
 # catalog-demo-api
 
+## 0.20.56
+
+### Patch Changes
+
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog@0.155.0
+
+## 0.20.55
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.154.0
+- @voyant-travel/db@0.114.3
+
 ## 0.20.54
 
 ### Patch Changes

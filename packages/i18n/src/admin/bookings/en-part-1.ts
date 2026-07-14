@@ -179,10 +179,10 @@ export const adminBookingsMessagesEnPart1 = {
     bookingJourney: {
       travelerPickerLabel: "Find a contact",
       leadContactPickerLabel: "Lead contact",
-      voucherPickerLabel: "Voucher",
-      voucherSearchPlaceholder: "Search vouchers by code…",
-      voucherEmpty: "No vouchers with balance found.",
-      voucherRemaining: "{amount} left",
+      travelCreditPickerLabel: "Travel Credit",
+      travelCreditSearchPlaceholder: "Search Travel Credits by code…",
+      travelCreditEmpty: "No Travel Credits with balance found.",
+      travelCreditRemaining: "{amount} left",
       duplicateDepartureWarning: "This customer already has a booking on this departure:",
     },
     catalogSource: {

@@ -1,11 +1,11 @@
 // agent-quality: file-size exception -- owner: trips-react; composer model helpers stay co-located with the existing tests until the admin composer is split further.
 import type { useOperatorAdminMessages as useAdminMessages } from "@voyant-travel/admin"
 import { emptyPersonPickerValue } from "@voyant-travel/bookings-react/components/person-picker-section"
-import { emptyVoucherPickerValue } from "@voyant-travel/bookings-react/components/voucher-picker-section"
+import { emptyTravelCreditPickerValue } from "@voyant-travel/bookings-react/components/travel-credit-picker-section"
 import type {
   PaymentScheduleValue,
   PersonPickerValue,
-  VoucherPickerValue,
+  TravelCreditPickerValue,
 } from "@voyant-travel/bookings-react/ui"
 import { formatMessage } from "@voyant-travel/i18n"
 import type { ReserveTripResult, TripComponent, TripEnvelopeStatus } from "@voyant-travel/trips"
@@ -514,20 +514,23 @@ export function hydrateTravelers(travelerParty: Record<string, unknown>): TripTr
   }))
 }
 
-export function hydrateVoucher(travelerParty: Record<string, unknown>): VoucherPickerValue {
-  const voucher = readRecord(travelerParty.voucher)
-  if (!voucher) return emptyVoucherPickerValue
-  const id = stringFromRecord(voucher, "id")
-  const code = stringFromRecord(voucher, "code")
-  const currencyCode = stringFromRecord(voucher, "currency")
-  const remainingAmountCents = numberFromRecord(voucher, "remainingAmountCents")
-  if (!id || !code || !currencyCode || remainingAmountCents == null) return emptyVoucherPickerValue
+export function hydrateTravelCredit(
+  travelerParty: Record<string, unknown>,
+): TravelCreditPickerValue {
+  const travelCredit = readRecord(travelerParty.travelCredit)
+  if (!travelCredit) return emptyTravelCreditPickerValue
+  const id = stringFromRecord(travelCredit, "id")
+  const code = stringFromRecord(travelCredit, "code")
+  const currencyCode = stringFromRecord(travelCredit, "currency")
+  const remainingAmountCents = numberFromRecord(travelCredit, "remainingAmountCents")
+  if (!id || !code || !currencyCode || remainingAmountCents == null) {
+    return emptyTravelCreditPickerValue
+  }
   return {
     code,
     picked: {
       id,
       code,
-      label: null,
       currency: currencyCode,
       remainingAmountCents,
       expiresAt: null,

@@ -25,7 +25,10 @@ export interface IndexerSlice {
 export interface IndexerDocument {
   /** Document id, typically the entity id. */
   id: string
-  /** Values keyed by field-policy path. */
+  /**
+   * Values keyed by engine-neutral index field name. Index field names preserve
+   * policy paths except for a terminal list marker (`tags[]` becomes `tags`).
+   */
   fields: Record<string, unknown>
   /** Optional embeddings keyed by their index field name. */
   embeddings?: Record<string, number[]>
@@ -33,11 +36,70 @@ export interface IndexerDocument {
   embedding_model_id?: string
 }
 
+/** Convert a field-policy path to its engine-neutral index field name. */
+export function indexFieldNameForPolicyPath(path: string): string {
+  return path.endsWith("[]") ? path.slice(0, -2) : path
+}
+
 /** Search query mode. */
 export type SearchMode = "keyword" | "semantic" | "hybrid"
 
 /** Portable storefront sort options. */
 export type SearchSortOption = "relevance" | "price-asc" | "price-desc" | "departure-asc" | "newest"
+
+export type SearchSortDirection = "asc" | "desc"
+
+export interface SearchSortSemantics {
+  /** Ordered policy paths. The first field present and visible in the slice wins. */
+  fieldCandidates: readonly string[]
+  direction: SearchSortDirection
+}
+
+/**
+ * Canonical engine-neutral meaning of every portable sort option. Relevance is
+ * provider-native and therefore has no field candidates; all other options
+ * resolve deterministically against the vertical's field-policy registry.
+ */
+export const SEARCH_SORT_SEMANTICS = {
+  relevance: { fieldCandidates: [], direction: "desc" },
+  "price-asc": {
+    fieldCandidates: ["priceFromAmountCents", "sellAmountCents"],
+    direction: "asc",
+  },
+  "price-desc": {
+    fieldCandidates: ["priceFromAmountCents", "sellAmountCents"],
+    direction: "desc",
+  },
+  "departure-asc": {
+    fieldCandidates: ["nextDepartureDate", "nextDepartureAt", "startDateEpochDays", "startDate"],
+    direction: "asc",
+  },
+  newest: {
+    fieldCandidates: ["publishedAt", "createdAt"],
+    direction: "desc",
+  },
+} as const satisfies Record<SearchSortOption, SearchSortSemantics>
+
+export interface ResolvedSearchSort {
+  field: string
+  direction: SearchSortDirection
+}
+
+/** Resolve a portable sort to the first policy-backed field visible in a slice. */
+export function resolveSearchSort(
+  sort: SearchSortOption | undefined,
+  registry: FieldPolicyRegistry,
+  slice?: IndexerSlice,
+): ResolvedSearchSort | undefined {
+  if (!sort || sort === "relevance") return undefined
+  const semantics = SEARCH_SORT_SEMANTICS[sort]
+  const field = semantics.fieldCandidates.find((candidate) => {
+    const policy = registry.resolve(candidate)
+    if (!policy || policy.query === "blob-only") return false
+    return !slice || slice.audience === "staff-admin" || policy.visibility.includes(slice.audience)
+  })
+  return field ? { field, direction: semantics.direction } : undefined
+}
 
 /** Pagination shape. Cursors are opaque to callers. */
 export interface SearchPagination {
@@ -57,10 +119,25 @@ export type SearchFilter =
   | { kind: "and"; clauses: SearchFilter[] }
   | { kind: "or"; clauses: SearchFilter[] }
 
+/** Portable maximum used for omitted and oversized facet bucket limits. */
+export const MAX_FACET_BUCKETS = 250
+
+/** Validate and resolve an optional portable facet bucket limit. */
+export function resolveFacetBucketLimit(limit: number | undefined): number {
+  if (limit === undefined) return MAX_FACET_BUCKETS
+  if (!Number.isFinite(limit) || !Number.isInteger(limit) || limit <= 0) {
+    throw new RangeError(`Facet limit must be a positive finite integer; received ${String(limit)}`)
+  }
+  return Math.min(limit, MAX_FACET_BUCKETS)
+}
+
 /** A single facet aggregation request. */
 export interface FacetRequest {
   field: string
-  /** Maximum bucket count returned. */
+  /**
+   * Positive finite integer bucket limit. Omitted and larger values use
+   * {@link MAX_FACET_BUCKETS}; invalid explicit values must be rejected.
+   */
   limit?: number
 }
 
@@ -78,7 +155,7 @@ export interface SearchRequest {
   pagination?: SearchPagination
   /** Staff-only cross-audience federation. */
   search_audiences?: Visibility[]
-  /** Hybrid rank-fusion weight in the inclusive range `0..1`. */
+  /** Hybrid vector-signal weight: `0` is keyword-only and `1` is vector-only. */
   alpha?: number
   /** Maximum cosine distance accepted for vector results. */
   distance_threshold?: number
@@ -86,7 +163,12 @@ export interface SearchRequest {
 
 export interface SearchHit {
   id: string
+  /**
+   * Provider relevance where larger values rank first within this response.
+   * Scores from independently executed searches are not comparable.
+   */
   score: number
+  /** Indexed id and fields. Providers may omit stored embeddings from search payloads. */
   document: IndexerDocument
 }
 
@@ -97,6 +179,11 @@ export interface SearchFacetBucket {
 
 export interface SearchResults {
   hits: SearchHit[]
+  /**
+   * Count of matching documents represented by `total`. Omitted is equivalent
+   * to `eq`; `gte` means `total` is a lower bound from a bounded search.
+   */
+  totalRelation?: "eq" | "gte"
   total: number
   next_cursor?: string
   facets?: Record<string, SearchFacetBucket[]>
@@ -104,14 +191,19 @@ export interface SearchResults {
 
 /** Features declared by an index engine implementation. */
 export interface IndexerCapabilities {
+  /** Accepts keyword requests and applies the non-empty query text. */
   supportsKeywordSearch: boolean
+  /** Blends keyword and vector ranking signals according to `alpha` for hybrid requests. */
   supportsHybridSearch: boolean
+  /** Stores document embeddings and ranks semantic requests by query-vector similarity. */
   supportsVectorFields: boolean
   /** Required vector dimension, or null when vector fields are unsupported. */
   vectorDimensions: number | null
   /** Engine vector count limit per document, or null when unlimited. */
   maxVectorsPerDocument: number | null
+  /** Honors `search_audiences` through one `adapter.search(...)` call. */
   supportsCrossAudienceFederation: boolean
+  /** Indexes and keyword-searches cross-audience fields in `staff-admin` documents. */
   supportsAdminDenormalization: boolean
 }
 

@@ -91,7 +91,7 @@ export const storefrontMessagesEn = {
     verticalCharters: "Charters",
     unavailableTitle: "Catalog search isn't configured",
     unavailableBody:
-      "The search indexer is offline (typically because TYPESENSE_HOST isn't set). You can still demo the booking journey directly — pick a product id from the operator dashboard and visit:",
+      "The catalog search provider is unavailable. You can still open the booking journey directly — pick a product id from the operator dashboard and visit:",
     viewAndBook: "View & book",
     nonBookableTitle: "Not available for online booking",
     nonBookableBody:
@@ -320,7 +320,7 @@ export const storefrontMessagesRo: StorefrontMessages = {
     verticalCharters: "Charter",
     unavailableTitle: "Cautarea in catalog nu este configurata",
     unavailableBody:
-      "Indexul de cautare este offline (de obicei pentru ca TYPESENSE_HOST nu este setat). Poti totusi testa parcursul de rezervare direct — alege un id de produs din panoul operatorului si viziteaza:",
+      "Furnizorul de cautare in catalog nu este disponibil. Poti totusi deschide parcursul de rezervare direct — alege un id de produs din panoul operatorului si viziteaza:",
     viewAndBook: "Vezi si rezerva",
     nonBookableTitle: "Indisponibil pentru rezervare online",
     nonBookableBody:

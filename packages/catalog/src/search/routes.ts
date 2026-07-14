@@ -166,6 +166,8 @@ const searchResponseSchema = z.object({
   vertical: z.string(),
   mode: searchModeSchema,
   total: z.number(),
+  totalRelation: z.enum(["eq", "gte"]).optional(),
+  next_cursor: z.string().optional(),
   hits: z.array(searchHitSchema),
   cards: z.array(storefrontCatalogCardSchema).optional(),
   facets: z.record(z.string(), z.array(searchFacetBucketSchema)),
@@ -376,6 +378,8 @@ async function handleSearch(
       vertical: body.vertical,
       mode: responseMode,
       total: results.total,
+      totalRelation: results.totalRelation,
+      next_cursor: results.next_cursor,
       hits: results.hits,
       cards:
         body.projection === "storefront-card"

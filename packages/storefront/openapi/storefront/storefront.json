@@ -1850,7 +1850,14 @@
                           "properties": {
                             "defaultMethod": {
                               "type": ["string", "null"],
-                              "enum": ["card", "bank_transfer", "cash", "voucher", "invoice", null]
+                              "enum": [
+                                "card",
+                                "bank_transfer",
+                                "cash",
+                                "travel_credit",
+                                "invoice",
+                                null
+                              ]
                             },
                             "methods": {
                               "type": "array",
@@ -1859,7 +1866,13 @@
                                 "properties": {
                                   "code": {
                                     "type": "string",
-                                    "enum": ["card", "bank_transfer", "cash", "voucher", "invoice"]
+                                    "enum": [
+                                      "card",
+                                      "bank_transfer",
+                                      "cash",
+                                      "travel_credit",
+                                      "invoice"
+                                    ]
                                   },
                                   "label": {
                                     "type": "string",

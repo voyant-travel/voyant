@@ -1,6 +1,6 @@
 # @voyant-travel/finance-contracts
 
-Pure finance validation schemas (invoices, payments, tax, vouchers) and enums,
+Pure finance validation schemas (invoices, payments, tax, Travel Credits) and enums,
 zod-only, for consumers (admin SDK, Voyant Connect) that validate finance
 payloads without the finance runtime. `@voyant-travel/finance` re-exports these so
 existing import paths are unchanged.
