@@ -49,7 +49,7 @@ test("accepts maps backed by packed source files", () => {
   )
 })
 
-test("leaves declaration-map policy outside the runtime source-map gate", () => {
+test("reports declaration maps whose source files are unavailable", () => {
   const root = createFixture({
     "dist/index.d.ts.map": JSON.stringify({
       version: 3,
@@ -60,7 +60,9 @@ test("leaves declaration-map policy outside the runtime source-map gate", () => 
     }),
   })
 
-  assert.deepEqual(collectPackedSourceMapProblems(root, packedFiles("dist/index.d.ts.map")), [])
+  assert.deepEqual(collectPackedSourceMapProblems(root, packedFiles("dist/index.d.ts.map")), [
+    "dist/index.d.ts.map references unavailable sources without sourcesContent: ../src/index.ts",
+  ])
 })
 
 function packedFiles(...files) {
