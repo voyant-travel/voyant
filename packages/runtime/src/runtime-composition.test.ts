@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
+import { createVoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
 import { tsImport } from "tsx/esm/api"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => {
     plugins: [],
     accessCatalog: { resources: [] },
   }
-  const workflowGraphRuntime = { ...graphRuntime }
+  const workflowGraphRuntime: Record<string, unknown> = { ...graphRuntime }
   const runtimePorts = { "voyant.workflow-services": [{ serviceId: "package.service" }] }
   const services = { has: vi.fn(() => false), register: vi.fn(), resolve: vi.fn() }
   const eventBus = { emit: vi.fn(), subscribe: vi.fn() }
@@ -37,6 +38,10 @@ const mocks = vi.hoisted(() => {
     loadVoyantNodeWorkflowRuntime: vi.fn(async (_options: unknown) => ({ workflows: [] })),
     nodeRuntime,
     resolveNodeDatabase: vi.fn(() => ({ kind: "database" })),
+    runtimePortHosts: [] as Array<{
+      primitives: unknown
+      runtimePorts?: Readonly<Record<string, unknown>>
+    }>,
     runtimeFetch,
     createVoyantNodeWorkflowDriver: vi.fn(() => () => workflowDriver),
     runScheduledWorkflow: vi.fn(
@@ -146,7 +151,10 @@ vi.mock("tsx/esm/api", () => ({
           graphHash: "graph-hash",
           deployment: { mode: "self-hosted", providers: mocks.deploymentProviders },
           graphRuntime: mocks.workflowGraphRuntime,
-          createRuntimePorts: () => mocks.runtimePorts,
+          createRuntimePorts: (host: (typeof mocks.runtimePortHosts)[number]) => {
+            mocks.runtimePortHosts.push(host)
+            return { ...host.runtimePorts, ...mocks.runtimePorts }
+          },
         }),
       }
     }
@@ -166,8 +174,15 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.adminHostOptions.length = 0
   mocks.authRuntimeOptions.length = 0
+  mocks.runtimePortHosts.length = 0
   mocks.nodeRuntime.deployment.providers.workflows = "self-hosted"
   mocks.deploymentProviders = { workflows: "self-hosted", outboundWebhooks: "postgres" }
+  mocks.workflowGraphRuntime = {
+    modules: [],
+    extensions: [],
+    plugins: [],
+    accessCatalog: { resources: [] },
+  }
   mocks.createPostgresWebhookDeliveryEnqueuer.mockReturnValue({
     enqueue: mocks.postgresEnqueue,
   })
@@ -278,6 +293,93 @@ describe("Voyant project runtime composition", () => {
     expect(mocks.authRuntimeOptions[0]).toMatchObject({
       resolveEmailSender: expect.any(Function),
     })
+  })
+
+  it("ignores a catalog.indexer host override when search is none", async () => {
+    const graph = configureSearchProviderRuntime("none", ["typesense"])
+    const hostIndexer = createTestIndexerProvider("host")
+    const projectRoot = await createGeneratedProject()
+
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      host: { runtimePorts: { "catalog.indexer": hostIndexer } },
+    })
+
+    expect(project.runtimePorts["catalog.indexer"]).toBeUndefined()
+    expect(graph.typesense!.importProvider).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    "typesense",
+    "algolia",
+    "postgres",
+  ])("keeps selected %s search authoritative over a catalog.indexer host override", async (search) => {
+    const graph = configureSearchProviderRuntime(search, [search])
+    const hostIndexer = createTestIndexerProvider("host")
+    const projectRoot = await createGeneratedProject()
+
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      host: { runtimePorts: { "catalog.indexer": hostIndexer } },
+    })
+
+    expect(project.runtimePorts["catalog.indexer"]).toBe(graph[search]?.port)
+    expect(graph[search]?.importProvider).toHaveBeenCalledOnce()
+  })
+
+  it("gives a custom catalog.indexer host port precedence over a graph custom provider", async () => {
+    const graph = configureSearchProviderRuntime("custom", ["custom"])
+    const hostIndexer = createTestIndexerProvider("host")
+    const projectRoot = await createGeneratedProject()
+
+    const project = await loadVoyantProject({
+      projectRoot,
+      adminAssetsDir: path.join(projectRoot, "admin"),
+      env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+      host: { runtimePorts: { "catalog.indexer": hostIndexer } },
+    })
+
+    expect(project.runtimePorts["catalog.indexer"]).toBe(hostIndexer)
+    expect(graph.custom!.importProvider).not.toHaveBeenCalled()
+  })
+
+  it("rejects a selected search provider that is missing from the graph", async () => {
+    const graph = configureSearchProviderRuntime("algolia", ["typesense"])
+    const projectRoot = await createGeneratedProject()
+
+    await expect(
+      loadVoyantProject({
+        projectRoot,
+        adminAssetsDir: path.join(projectRoot, "admin"),
+        env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+        host: { runtimePorts: { "catalog.indexer": createTestIndexerProvider("host") } },
+      }),
+    ).rejects.toThrow(/VOYANT_GRAPH_RUNTIME_PROVIDER_MISSING.*catalog\.indexer/s)
+    expect(graph.typesense!.importProvider).not.toHaveBeenCalled()
+    expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
+  })
+
+  it("rejects mismatched generated search authority before admitting a custom host port", async () => {
+    const graph = configureSearchProviderRuntime("typesense", ["typesense"])
+    mocks.deploymentProviders.search = "custom"
+    const projectRoot = await createGeneratedProject()
+
+    await expect(
+      loadVoyantProject({
+        projectRoot,
+        adminAssetsDir: path.join(projectRoot, "admin"),
+        env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+        host: { runtimePorts: { "catalog.indexer": createTestIndexerProvider("host") } },
+      }),
+    ).rejects.toThrow(
+      /deployment\.providers\.search="custom".*providerSelections\.search="typesense"/,
+    )
+    expect(graph.typesense!.importProvider).not.toHaveBeenCalled()
+    expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
   })
 
   it("uses the explicitly selected Postgres provider", async () => {
@@ -520,4 +622,82 @@ async function createGeneratedProject(
     }),
   )
   return projectRoot
+}
+
+function configureSearchProviderRuntime(
+  selection: string,
+  declarations: readonly string[],
+): Record<string, { importProvider: ReturnType<typeof vi.fn>; port: unknown }> {
+  const configured: Record<string, { importProvider: ReturnType<typeof vi.fn>; port: unknown }> = {}
+  const entries: Record<string, () => Promise<unknown>> = {}
+  const references = declarations.map((value) => {
+    const importEntry = `@acme/search-${value}/provider`
+    const port = createTestIndexerProvider(`graph:${value}`)
+    const createProvider = vi.fn(() => port)
+    const importProvider = vi.fn(async () => ({ createProvider }))
+    configured[value] = { importProvider, port }
+    entries[importEntry] = importProvider
+    return {
+      id: `search-${value}-provider`,
+      unitId: "@acme/search",
+      facet: "providers.runtime" as const,
+      entityId: `search.${value}`,
+      runtime: { entry: "./provider", export: "createProvider" },
+      importEntry,
+    }
+  })
+
+  mocks.deploymentProviders.search = selection
+  mocks.workflowGraphRuntime = {
+    ...createVoyantGraphRuntime({
+      graphHash: `sha256:search-${selection}`,
+      providerSelections: { search: selection },
+      entries,
+      modules: [
+        {
+          id: "@acme/search",
+          kind: "module",
+          packageName: "@acme/search",
+          order: 0,
+          references,
+          providers: declarations.map((value, index) => ({
+            unitId: "@acme/search",
+            declaration: {
+              id: `search.${value}`,
+              port: "catalog.indexer",
+              selection: { role: "search", value },
+              runtime: { entry: "./provider", export: "createProvider" },
+            },
+            referenceId: references[index]?.id ?? "",
+          })),
+          selectedIds: { routes: [], tools: [], workflows: [], events: [], webhooks: [] },
+          routes: [],
+        },
+      ],
+      plugins: [],
+    }),
+  }
+  return configured
+}
+
+function createTestIndexerProvider(source: string) {
+  return {
+    create: vi.fn(() => ({
+      capabilities: {
+        supportsKeywordSearch: true,
+        supportsHybridSearch: false,
+        supportsVectorFields: false,
+        vectorDimensions: null,
+        maxVectorsPerDocument: null,
+        supportsCrossAudienceFederation: false,
+        supportsAdminDenormalization: false,
+      },
+      ensureCollection: vi.fn(async () => undefined),
+      upsert: vi.fn(async () => undefined),
+      delete: vi.fn(async () => undefined),
+      search: vi.fn(async () => ({ hits: [], total: 0 })),
+      bulkReindex: vi.fn(async () => undefined),
+    })),
+    source,
+  }
 }

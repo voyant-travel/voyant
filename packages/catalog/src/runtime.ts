@@ -1,5 +1,6 @@
+import { validateEmbeddingCompatibility } from "@voyant-travel/catalog/embeddings/model-registry"
+import { type CatalogIndexer, resolveCatalogIndexer } from "@voyant-travel/catalog/indexer/provider"
 import type { CatalogSearchRuntime } from "@voyant-travel/catalog/search/routes"
-import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
 import {
@@ -14,7 +15,6 @@ import {
 } from "./runtime/booking-runtime.js"
 import {
   buildEmbeddingProvider,
-  buildIndexer,
   createProductsDocumentBuilder,
   DEFAULT_SLICES,
   getFieldPolicyRegistries,
@@ -40,13 +40,13 @@ export function createCatalogRuntime(
   primitives: VoyantRuntimeHostPrimitives,
   extensions: CatalogRuntimeExtensions,
   settings: FinanceOperatorSettingsRuntime,
-  options: { indexerProvider?: IndexerProvider } = {},
+  options: { indexer?: CatalogIndexer } = {},
 ): CatalogRuntimePortContribution {
   configureCatalogRuntimeHost(primitives, extensions)
-  let indexer: ReturnType<typeof buildIndexer>
+  let indexer: ReturnType<typeof resolveCatalogIndexer> | undefined
   let vectorDimensions: number | null | undefined
   const resolveIndexer = (embeddings: ReturnType<typeof buildEmbeddingProvider>) => {
-    if (!options.indexerProvider) return undefined
+    if (options.indexer === undefined) return undefined
     const nextVectorDimensions = embeddings?.capabilities.dimensions ?? null
     if (indexer && vectorDimensions !== nextVectorDimensions) {
       throw new Error(
@@ -54,8 +54,15 @@ export function createCatalogRuntime(
       )
     }
     if (!indexer) {
+      const adapter = resolveCatalogIndexer(options.indexer, {
+        vectorDimensions: nextVectorDimensions,
+        registries: getFieldPolicyRegistries(),
+      })
+      if (embeddings) {
+        validateEmbeddingCompatibility(embeddings.capabilities, adapter.capabilities)
+      }
       vectorDimensions = nextVectorDimensions
-      indexer = buildIndexer(options.indexerProvider, embeddings)
+      indexer = adapter
     }
     return indexer
   }
@@ -116,7 +123,7 @@ function createCatalogSearchRuntime(
   context: unknown,
   resolveIndexer: (
     embeddings: ReturnType<typeof buildEmbeddingProvider>,
-  ) => ReturnType<typeof buildIndexer>,
+  ) => ReturnType<typeof resolveCatalogIndexer> | undefined,
 ): CatalogSearchRuntime {
   const env = (context as { env: Record<string, unknown> }).env
   const embeddings = buildEmbeddingProvider(env)

@@ -5,7 +5,11 @@ import {
   catalogSearchRuntimePort,
 } from "@voyant-travel/catalog/api-runtime-ports"
 import type { CatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/booking-engine/operator-routes"
-import { catalogIndexerProviderPort } from "@voyant-travel/catalog/indexer/provider"
+import {
+  type CatalogIndexer,
+  catalogIndexerProviderPort,
+  validateCatalogIndexer,
+} from "@voyant-travel/catalog/indexer/provider"
 import type { CatalogOffersRouteModuleOptions } from "@voyant-travel/catalog/offers"
 import {
   type CatalogContentRuntime,
@@ -17,7 +21,6 @@ import {
   catalogBookingSnapshotRuntimePort,
   catalogProjectionRuntimePort,
 } from "@voyant-travel/catalog/subscriber-runtime-ports"
-import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
 import {
   type VoyantRuntimeHostPrimitives,
   type VoyantWorkflowServiceContribution,
@@ -74,6 +77,7 @@ export interface CatalogRuntimeContributorHost {
 export function createCatalogRuntimePortContribution(
   host: CatalogRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const hasIndexerPort = host.hasRuntimePort?.(catalogIndexerProviderPort) === true
   const contribution = Promise.resolve()
     .then(() =>
       Promise.all([
@@ -91,9 +95,7 @@ export function createCatalogRuntimePortContribution(
           catalogOperationsRuntimeExtensionPort,
         ),
         host.getRuntimePort<FinanceOperatorSettingsRuntime>(financeOperatorSettingsRuntimePort),
-        host.hasRuntimePort?.(catalogIndexerProviderPort)
-          ? host.getRuntimePort<IndexerProvider>(catalogIndexerProviderPort)
-          : undefined,
+        hasIndexerPort ? host.getRuntimePort<unknown>(catalogIndexerProviderPort) : undefined,
       ]),
     )
     .then(
@@ -106,9 +108,14 @@ export function createCatalogRuntimePortContribution(
         inventory,
         operations,
         settings,
-        indexerProvider,
-      ]) =>
-        createCatalogRuntime(
+        indexer,
+      ]) => {
+        let catalogIndexer: CatalogIndexer | undefined
+        if (hasIndexerPort) {
+          validateCatalogIndexer(indexer)
+          catalogIndexer = indexer
+        }
+        return createCatalogRuntime(
           host.primitives,
           {
             accommodations,
@@ -120,8 +127,9 @@ export function createCatalogRuntimePortContribution(
             operations,
           },
           settings,
-          { indexerProvider },
-        ),
+          { indexer: catalogIndexer },
+        )
+      },
     )
   const cruisesRoutes = {
     resolveSourceAdapterRegistry: async (bindings: unknown) => {

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   createVoyantDeploymentResources,
+  resolveAdmittedHostRuntimePorts,
   resolveSelectedGraphProviderPorts,
 } from "./deployment-resources.js"
 
@@ -182,3 +183,51 @@ describe("createVoyantDeploymentResources", () => {
     expect(resources.outboundWebhooks).toBeUndefined()
   })
 })
+
+describe("resolveAdmittedHostRuntimePorts", () => {
+  it.each([
+    "none",
+    "typesense",
+    "algolia",
+    "postgres",
+  ])("keeps search provider %s authoritative over a catalog.indexer host port", (search) => {
+    const otherPort = { ready: true }
+
+    expect(
+      resolveAdmittedHostRuntimePorts(
+        {
+          "catalog.indexer": { engine: "host" },
+          "example.port": otherPort,
+        },
+        searchProviderAuthority(search),
+      ),
+    ).toEqual({ "example.port": otherPort })
+  })
+
+  it("admits a catalog.indexer host port only for custom search", () => {
+    const runtimePorts = {
+      "catalog.indexer": { engine: "host" },
+      "example.port": { ready: true },
+    }
+
+    expect(resolveAdmittedHostRuntimePorts(runtimePorts, searchProviderAuthority("custom"))).toBe(
+      runtimePorts,
+    )
+  })
+
+  it("rejects inconsistent deployment and graph search selections", () => {
+    expect(() =>
+      resolveAdmittedHostRuntimePorts(
+        { "catalog.indexer": { engine: "host" } },
+        searchProviderAuthority("custom", "typesense"),
+      ),
+    ).toThrow(/deployment\.providers\.search="custom".*providerSelections\.search="typesense"/)
+  })
+})
+
+function searchProviderAuthority(deploymentSearch: string, graphSearch = deploymentSearch) {
+  return {
+    deployment: { providers: { search: deploymentSearch } },
+    graphRuntime: { providerSelections: { search: graphSearch } },
+  }
+}
