@@ -1,5 +1,14 @@
 # @voyant-travel/workflows-orchestrator
 
+## 0.120.2
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/workflows@0.120.2
+
 ## 0.120.1
 
 ### Patch Changes

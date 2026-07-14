@@ -1,5 +1,20 @@
 # @voyant-travel/cruises-react
 
+## 0.155.1
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/catalog-contracts@0.110.1
+  - @voyant-travel/catalog-react@0.154.1
+  - @voyant-travel/cruises@0.155.1
+  - @voyant-travel/i18n@0.111.1
+  - @voyant-travel/react@0.104.2
+  - @voyant-travel/storefront-react@0.158.1
+  - @voyant-travel/ui@0.109.1
+
 ## 0.155.0
 
 ### Patch Changes

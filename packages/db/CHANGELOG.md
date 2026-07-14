@@ -1,5 +1,18 @@
 # @voyant-travel/db
 
+## 0.114.4
+
+### Patch Changes
+
+- 8d62a7c: Embed TypeScript sources in published JavaScript source maps so consumer dev servers can resolve
+  them without the omitted `src` tree. Stop emitting declaration maps that cannot embed their sources,
+  and reject publish tarballs whose maps reference sources that are neither packed nor embedded.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/schema-kit@0.112.1
+  - @voyant-travel/workflows@0.120.2
+
 ## 0.114.3
 
 ### Patch Changes

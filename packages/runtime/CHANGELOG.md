@@ -1,5 +1,26 @@
 # @voyant-travel/runtime
 
+## 0.10.3
+
+### Patch Changes
+
+- 8d62a7c: Embed TypeScript sources in published JavaScript source maps so consumer dev servers can resolve
+  them without the omitted `src` tree. Stop emitting declaration maps that cannot embed their sources,
+  and reject publish tarballs whose maps reference sources that are neither packed nor embedded.
+- Updated dependencies [8d62a7c]
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/auth@0.128.3
+  - @voyant-travel/core@0.122.1
+  - @voyant-travel/db@0.114.4
+  - @voyant-travel/runtime-core@0.6.3
+  - @voyant-travel/webhook-delivery@0.3.1
+  - @voyant-travel/admin-host@0.6.1
+  - @voyant-travel/framework@0.44.3
+  - @voyant-travel/hono@0.126.3
+  - @voyant-travel/storage@0.109.4
+  - @voyant-travel/vite-config@0.3.3
+  - @voyant-travel/workflow-runs@0.120.2
+
 ## 0.10.2
 
 ### Patch Changes

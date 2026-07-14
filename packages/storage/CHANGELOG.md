@@ -1,5 +1,14 @@
 # @voyant-travel/storage
 
+## 0.109.4
+
+### Patch Changes
+
+- 8d62a7c: Republish every affected TypeScript package without broken declaration maps so the corrected artifact
+  policy reaches npm instead of applying only to future incidental package releases.
+- Updated dependencies [8d62a7c]
+  - @voyant-travel/core@0.122.1
+
 ## 0.109.3
 
 ### Patch Changes
