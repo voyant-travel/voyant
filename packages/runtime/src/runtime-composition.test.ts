@@ -308,7 +308,7 @@ describe("Voyant project runtime composition", () => {
     })
 
     expect(project.runtimePorts["catalog.indexer"]).toBeUndefined()
-    expect(graph.typesense.importProvider).not.toHaveBeenCalled()
+    expect(graph.typesense!.importProvider).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -344,7 +344,7 @@ describe("Voyant project runtime composition", () => {
     })
 
     expect(project.runtimePorts["catalog.indexer"]).toBe(hostIndexer)
-    expect(graph.custom.importProvider).not.toHaveBeenCalled()
+    expect(graph.custom!.importProvider).not.toHaveBeenCalled()
   })
 
   it("rejects a selected search provider that is missing from the graph", async () => {
@@ -359,7 +359,7 @@ describe("Voyant project runtime composition", () => {
         host: { runtimePorts: { "catalog.indexer": createTestIndexerProvider("host") } },
       }),
     ).rejects.toThrow(/VOYANT_GRAPH_RUNTIME_PROVIDER_MISSING.*catalog\.indexer/s)
-    expect(graph.typesense.importProvider).not.toHaveBeenCalled()
+    expect(graph.typesense!.importProvider).not.toHaveBeenCalled()
     expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
   })
 
@@ -378,7 +378,7 @@ describe("Voyant project runtime composition", () => {
     ).rejects.toThrow(
       /deployment\.providers\.search="custom".*providerSelections\.search="typesense"/,
     )
-    expect(graph.typesense.importProvider).not.toHaveBeenCalled()
+    expect(graph.typesense!.importProvider).not.toHaveBeenCalled()
     expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
   })
 
@@ -674,7 +674,7 @@ function configureSearchProviderRuntime(
       },
     ],
     plugins: [],
-  })
+  }) as unknown as typeof mocks.workflowGraphRuntime
   return configured
 }
 
