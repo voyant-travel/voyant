@@ -1,5 +1,11 @@
 # @voyant-travel/workflows
 
+## 0.120.0
+
+### Patch Changes
+
+- 818ea84: Ensure the published package root exports `defineWorkflow` for workflow authoring.
+
 ## 0.119.0
 
 ## 0.118.0

@@ -1,5 +1,24 @@
 # @voyant-travel/db
 
+## 0.114.2
+
+### Patch Changes
+
+- cc85042: Make deployment provider selection authoritative for Node storage, cache, shared
+  state, and rate limiting. Replace vendor-specific object-store bindings and R2
+  shims with logical media/document stores, a memory provider, an AWS SDK v3
+  S3-compatible provider, and package-selected custom adapters. Add a portable
+  storage provider conformance runner, resolve adapters from the `storage.object`
+  graph provider, and make provider config/secret/resource usage explicit. Keep
+  distributed shared state and rate-limit KV authoritative by bypassing the
+  cache-only process-local L1, and move guest booking lookups onto the selected
+  atomic rate-limit store. Remove the former R2/SigV4 exports.
+- Updated dependencies [818ea84]
+- Updated dependencies [cc85042]
+- Updated dependencies [07a6ee3]
+  - @voyant-travel/workflows@0.120.0
+  - @voyant-travel/core@0.122.0
+
 ## 0.114.1
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # @voyant-travel/core
 
+## 0.122.0
+
+### Minor Changes
+
+- 07a6ee3: Make `deployment.providers.workflows` authoritative for Node workflow execution and Workflow Runs admin ownership. Self-hosted Operators now use the durable Postgres driver and receive package-owned orchestrator migrations; local mode uses the in-memory adapter, `none` omits workflow composition, and Voyant Cloud fails closed when credentials are missing.
+
+  Scheduled one-shot dispatch disables resident scheduler and time-wheel loops and always shuts down its driver. Managed Cloud snapshots must select `voyant-cloud` before this release is deployed.
+
+  See the [Framework 0.42 migration guide](../docs/migrations/migrating-to-0.42.md) for provider, migration, and rollout steps.
+
+### Patch Changes
+
+- cc85042: Make deployment provider selection authoritative for Node storage, cache, shared
+  state, and rate limiting. Replace vendor-specific object-store bindings and R2
+  shims with logical media/document stores, a memory provider, an AWS SDK v3
+  S3-compatible provider, and package-selected custom adapters. Add a portable
+  storage provider conformance runner, resolve adapters from the `storage.object`
+  graph provider, and make provider config/secret/resource usage explicit. Keep
+  distributed shared state and rate-limit KV authoritative by bypassing the
+  cache-only process-local L1, and move guest booking lookups onto the selected
+  atomic rate-limit store. Remove the former R2/SigV4 exports.
+
 ## 0.121.0
 
 ### Minor Changes

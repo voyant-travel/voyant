@@ -1,5 +1,69 @@
 # @voyant-travel/operator-standard
 
+## 0.4.0
+
+### Minor Changes
+
+- 2cc954a: Make outbound webhook enqueue authority an explicit deployment provider. Standard Operator and managed-cloud deployments select `outboundWebhooks: "postgres"`; projects may instead select `"host"` with an injected `host.deliverEvent`, or `"none"` to omit graph outbound composition. `@voyant-travel/webhook-delivery` now owns provider resolution and the Postgres enqueuer adapter, while generic Runtime no longer calls the concrete Postgres enqueue function. Regenerate graphs so the provider role is present. See [Migrating to Framework 0.42](../docs/migrations/migrating-to-0.42.md#outbound-webhook-enqueue-provider).
+- 07a6ee3: Make `deployment.providers.workflows` authoritative for Node workflow execution and Workflow Runs admin ownership. Self-hosted Operators now use the durable Postgres driver and receive package-owned orchestrator migrations; local mode uses the in-memory adapter, `none` omits workflow composition, and Voyant Cloud fails closed when credentials are missing.
+
+  Scheduled one-shot dispatch disables resident scheduler and time-wheel loops and always shuts down its driver. Managed Cloud snapshots must select `voyant-cloud` before this release is deployed.
+
+  See the [Framework 0.42 migration guide](../docs/migrations/migrating-to-0.42.md) for provider, migration, and rollout steps.
+
+### Patch Changes
+
+- Updated dependencies [818ea84]
+- Updated dependencies [2669577]
+- Updated dependencies [cc85042]
+- Updated dependencies [07a6ee3]
+  - @voyant-travel/workflows@0.120.0
+  - @voyant-travel/vite-config@0.3.1
+  - @voyant-travel/core@0.122.0
+  - @voyant-travel/bookings@0.155.1
+  - @voyant-travel/db@0.114.2
+  - @voyant-travel/finance@0.155.1
+  - @voyant-travel/inventory@0.9.3
+  - @voyant-travel/legal@0.155.1
+  - @voyant-travel/runtime-core@0.6.2
+  - @voyant-travel/storage@0.109.3
+  - @voyant-travel/workflows-orchestrator@0.120.0
+  - @voyant-travel/workflow-runs@0.120.0
+  - @voyant-travel/distribution@0.145.1
+  - @voyant-travel/accommodations@0.115.1
+  - @voyant-travel/action-ledger@0.108.3
+  - @voyant-travel/auth@0.128.1
+  - @voyant-travel/availability@0.2.9
+  - @voyant-travel/catalog@0.153.1
+  - @voyant-travel/catalog-authoring@0.107.8
+  - @voyant-travel/charters@0.153.1
+  - @voyant-travel/commerce@0.35.3
+  - @voyant-travel/cruises@0.154.1
+  - @voyant-travel/flights@0.155.1
+  - @voyant-travel/identity@0.155.1
+  - @voyant-travel/mcp@0.2.3
+  - @voyant-travel/mice@0.11.1
+  - @voyant-travel/notifications@0.126.2
+  - @voyant-travel/operations@0.6.9
+  - @voyant-travel/operator-settings@0.3.9
+  - @voyant-travel/public-document-delivery@0.3.3
+  - @voyant-travel/quotes@0.128.3
+  - @voyant-travel/realtime@0.4.3
+  - @voyant-travel/relationships@0.124.4
+  - @voyant-travel/storefront@0.157.1
+  - @voyant-travel/trips@0.146.1
+  - @voyant-travel/auth-react@0.128.1
+  - @voyant-travel/bookings-react@0.155.1
+  - @voyant-travel/catalog-react@0.153.1
+  - @voyant-travel/cruises-react@0.154.1
+  - @voyant-travel/distribution-react@0.145.1
+  - @voyant-travel/finance-react@0.155.1
+  - @voyant-travel/flights-react@0.155.1
+  - @voyant-travel/legal-react@0.155.1
+  - @voyant-travel/notifications-react@0.126.2
+  - @voyant-travel/storefront-react@0.157.1
+  - @voyant-travel/trips-react@0.146.1
+
 ## 0.3.0
 
 ### Minor Changes

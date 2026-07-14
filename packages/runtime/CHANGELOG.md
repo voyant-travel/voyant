@@ -1,5 +1,45 @@
 # @voyant-travel/runtime
 
+## 0.9.0
+
+### Minor Changes
+
+- 2cc954a: Make outbound webhook enqueue authority an explicit deployment provider. Standard Operator and managed-cloud deployments select `outboundWebhooks: "postgres"`; projects may instead select `"host"` with an injected `host.deliverEvent`, or `"none"` to omit graph outbound composition. `@voyant-travel/webhook-delivery` now owns provider resolution and the Postgres enqueuer adapter, while generic Runtime no longer calls the concrete Postgres enqueue function. Regenerate graphs so the provider role is present. See [Migrating to Framework 0.42](../docs/migrations/migrating-to-0.42.md#outbound-webhook-enqueue-provider).
+- 07a6ee3: Make `deployment.providers.workflows` authoritative for Node workflow execution and Workflow Runs admin ownership. Self-hosted Operators now use the durable Postgres driver and receive package-owned orchestrator migrations; local mode uses the in-memory adapter, `none` omits workflow composition, and Voyant Cloud fails closed when credentials are missing.
+
+  Scheduled one-shot dispatch disables resident scheduler and time-wheel loops and always shuts down its driver. Managed Cloud snapshots must select `voyant-cloud` before this release is deployed.
+
+  See the [Framework 0.42 migration guide](../docs/migrations/migrating-to-0.42.md) for provider, migration, and rollout steps.
+
+### Patch Changes
+
+- 2669577: Start production operator projects through their Vite-built TanStack server
+  entry so virtual router imports and the React SSR singleton resolve from the
+  generated server graph.
+- cc85042: Make deployment provider selection authoritative for Node storage, cache, shared
+  state, and rate limiting. Replace vendor-specific object-store bindings and R2
+  shims with logical media/document stores, a memory provider, an AWS SDK v3
+  S3-compatible provider, and package-selected custom adapters. Add a portable
+  storage provider conformance runner, resolve adapters from the `storage.object`
+  graph provider, and make provider config/secret/resource usage explicit. Keep
+  distributed shared state and rate-limit KV authoritative by bypassing the
+  cache-only process-local L1, and move guest booking lookups onto the selected
+  atomic rate-limit store. Remove the former R2/SigV4 exports.
+- Updated dependencies [2669577]
+- Updated dependencies [2cc954a]
+- Updated dependencies [cc85042]
+- Updated dependencies [07a6ee3]
+  - @voyant-travel/framework@0.43.0
+  - @voyant-travel/vite-config@0.3.1
+  - @voyant-travel/webhook-delivery@0.3.0
+  - @voyant-travel/core@0.122.0
+  - @voyant-travel/db@0.114.2
+  - @voyant-travel/hono@0.126.2
+  - @voyant-travel/runtime-core@0.6.2
+  - @voyant-travel/storage@0.109.3
+  - @voyant-travel/workflow-runs@0.120.0
+  - @voyant-travel/auth@0.128.1
+
 ## 0.8.0
 
 ### Minor Changes
