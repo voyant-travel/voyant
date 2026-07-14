@@ -3,6 +3,7 @@
 "@voyant-travel/admin-host": patch
 "@voyant-travel/bookings": patch
 "@voyant-travel/framework": patch
+"@voyant-travel/operator-standard": patch
 "@voyant-travel/realtime": patch
 "@voyant-travel/realtime-react": patch
 "@voyant-travel/runtime": patch

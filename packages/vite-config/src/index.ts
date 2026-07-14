@@ -210,6 +210,10 @@ export interface VoyantStartViteConfigOptions {
  */
 export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): UserConfig {
   const { appRootUrl, plugins, allowedHosts = true, extraManualChunks, nodeSsr } = options
+  const resolvableSsrDependencies = resolvableAppRootDependencies(
+    appRootUrl,
+    VOYANT_SSR_OPTIMIZE_DEPS,
+  )
 
   return {
     server: {
@@ -236,7 +240,7 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     },
     ssr: {
       optimizeDeps: {
-        include: [...VOYANT_SSR_OPTIMIZE_DEPS, ...(options.ssrOptimizeDepsInclude ?? [])],
+        include: [...resolvableSsrDependencies, ...(options.ssrOptimizeDepsInclude ?? [])],
       },
       ...(nodeSsr
         ? {
@@ -276,7 +280,7 @@ function resolvableAppRootDependencies(
 
   const resolveFromApp = createRequire(packageJsonPath)
   return candidates.filter((dependency) => {
-    if (!declaredDependencies.has(dependency)) return false
+    if (!declaredDependencies.has(packageNameForSubpath(dependency))) return false
     try {
       resolveFromApp.resolve(dependency)
       return true
@@ -284,4 +288,9 @@ function resolvableAppRootDependencies(
       return false
     }
   })
+}
+
+function packageNameForSubpath(specifier: string): string {
+  const segments = specifier.split("/")
+  return specifier.startsWith("@") ? segments.slice(0, 2).join("/") : segments[0]!
 }

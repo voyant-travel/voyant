@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
 import { financeVoyantModule } from "@voyant-travel/finance/voyant"
 import { storefrontVoyantModule } from "@voyant-travel/storefront/voyant"
@@ -10,6 +12,25 @@ import {
 import { STANDARD_OPERATOR_DEPLOYMENT } from "../src/index.js"
 
 describe("standard package manifests", () => {
+  it("publishes frontend singletons as project-level peers", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    ) as {
+      dependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
+    }
+
+    for (const dependency of [
+      "@tanstack/react-query",
+      "@tanstack/react-router",
+      "react",
+      "react-dom",
+    ]) {
+      expect(manifest.peerDependencies?.[dependency]).toBeDefined()
+      expect(manifest.dependencies?.[dependency]).toBeUndefined()
+    }
+  })
+
   it("selects durable Postgres outbound webhook enqueueing explicitly", () => {
     expect(STANDARD_OPERATOR_DEPLOYMENT.providers?.outboundWebhooks).toBe("postgres")
   })

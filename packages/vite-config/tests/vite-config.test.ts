@@ -146,6 +146,7 @@ describe("voyantStartViteConfig", () => {
       })
 
       expect(config.resolve?.dedupe).toEqual([])
+      expect(config.ssr?.optimizeDeps?.include).toEqual([])
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
@@ -177,10 +178,24 @@ describe("voyantStartViteConfig", () => {
   })
 
   it("appends app-specific SSR optimizeDeps to the Voyant set", () => {
-    const config = voyantStartViteConfig({ ...base, ssrOptimizeDepsInclude: ["my-lib"] })
-    const include = config.ssr?.optimizeDeps?.include ?? []
+    const root = createAppFixture([
+      "react",
+      "react-dom",
+      "@tanstack/react-query",
+      "@tanstack/react-router",
+    ])
+    try {
+      const config = voyantStartViteConfig({
+        ...base,
+        appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+        ssrOptimizeDepsInclude: ["my-lib"],
+      })
+      const include = config.ssr?.optimizeDeps?.include ?? []
 
-    expect(include).toEqual([...VOYANT_SSR_OPTIMIZE_DEPS, "my-lib"])
+      expect(include).toEqual([...VOYANT_SSR_OPTIMIZE_DEPS, "my-lib"])
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it("prebundles only direct generated-app dependencies", () => {
@@ -228,6 +243,13 @@ function writeResolvablePackage(nodeModulesRoot: string, name: string): void {
   mkdirSync(packageRoot, { recursive: true })
   writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name, main: "index.js" }))
   writeFileSync(join(packageRoot, "index.js"), "module.exports = {}\n")
+  if (name === "react") {
+    writeFileSync(join(packageRoot, "jsx-runtime.js"), "module.exports = {}\n")
+    writeFileSync(join(packageRoot, "jsx-dev-runtime.js"), "module.exports = {}\n")
+  }
+  if (name === "react-dom") {
+    writeFileSync(join(packageRoot, "server.js"), "module.exports = {}\n")
+  }
 }
 
 describe("VOYANT_ROUTE_FILE_IGNORE_PATTERN", () => {
