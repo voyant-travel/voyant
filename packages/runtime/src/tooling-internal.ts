@@ -272,6 +272,11 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
       devtools(),
       tailwindcss(),
       tanstackStart({
+        vite: {
+          // Packaged Linux installs can expose a dispatchFetch-capable server environment,
+          // which makes TanStack's auto-detection skip its HTTP middleware entirely.
+          installDevServerMiddleware: true,
+        },
         server: {
           entry: relativeEntry(options.appRootUrl, options.bootstrap.serverEntry),
         },
