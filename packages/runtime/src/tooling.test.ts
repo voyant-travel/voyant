@@ -56,6 +56,33 @@ describe("Voyant project tooling", () => {
     expect(JSON.stringify(aliases)).not.toContain("/product/")
   })
 
+  it("forwards product-owned frontend dependency entries to Vite", () => {
+    const dependencyAliases = {
+      react: "@acme/operator/runtime/react",
+      "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
+    }
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: {
+        frontendDependencyAliases: dependencyAliases,
+        serverEntry: "/workspace/operator/src/server.ts",
+      },
+    })
+
+    expect(config.optimizeDeps?.exclude).toEqual(
+      expect.arrayContaining(Object.keys(dependencyAliases)),
+    )
+    expect(config.ssr?.optimizeDeps?.include).toEqual([])
+    expect(config.plugins).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "voyant:dependency-facades" })]),
+    )
+  })
+
   it("keeps the Node distribution under the lifecycle-owned dist directory", () => {
     const config = createProjectViteConfig({
       appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,

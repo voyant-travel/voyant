@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"
-import { fileURLToPath, URL } from "node:url"
+import { fileURLToPath, pathToFileURL, URL } from "node:url"
 import type { Plugin, PluginOption, UserConfig } from "vite"
 
 /**
@@ -181,6 +181,8 @@ export interface VoyantStartViteConfigOptions {
   extraManualChunks?: (id: string) => string | undefined
   /** Extra SSR optimizeDeps entries appended to the Voyant set. */
   ssrOptimizeDepsInclude?: readonly string[]
+  /** Exact package entry aliases resolved from the selected product BOM. */
+  dependencyAliases?: Readonly<Record<string, string>>
   /**
    * Build the SSR/server environment for a Node runtime (voyant#2966: Voyant
    * deployments are Node-only — no `@cloudflare/vite-plugin`). Adds the
@@ -214,6 +216,11 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     appRootUrl,
     VOYANT_SSR_OPTIMIZE_DEPS,
   )
+  const dependencyFacadePlugin = createDependencyFacadePlugin(
+    appRootUrl,
+    options.dependencyAliases ?? {},
+  )
+  const aliasedDependencies = Object.keys(options.dependencyAliases ?? {})
 
   return {
     server: {
@@ -229,18 +236,18 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       },
     },
     resolve: {
-      alias: {
-        "@": fileURLToPath(new URL("./src", appRootUrl)),
-      },
+      alias: [{ find: "@", replacement: fileURLToPath(new URL("./src", appRootUrl)) }],
       dedupe: resolvableAppRootDependencies(appRootUrl, VOYANT_DEDUPE_DEPENDENCIES),
       tsconfigPaths: true,
     },
     optimizeDeps: {
-      exclude: [...VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE],
+      exclude: [...VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE, ...aliasedDependencies],
     },
     ssr: {
       optimizeDeps: {
-        include: [...resolvableSsrDependencies, ...(options.ssrOptimizeDepsInclude ?? [])],
+        include: [
+          ...new Set([...resolvableSsrDependencies, ...(options.ssrOptimizeDepsInclude ?? [])]),
+        ],
       },
       ...(nodeSsr
         ? {
@@ -253,7 +260,46 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
           }
         : {}),
     },
-    plugins,
+    plugins: [dependencyFacadePlugin, ...plugins],
+  }
+}
+
+function createDependencyFacadePlugin(
+  appRootUrl: string,
+  aliases: Readonly<Record<string, string>>,
+): Plugin {
+  const projectManifest = fileURLToPath(new URL("./package.json", appRootUrl))
+  return {
+    name: "voyant:dependency-facades",
+    enforce: "pre",
+    async resolveId(source, importer, options) {
+      if (
+        source.startsWith("#frontend/") &&
+        importer &&
+        this.environment.config.consumer === "server" &&
+        this.environment.mode === "dev"
+      ) {
+        const resolved = await this.resolve(source, importer, { ...options, skipSelf: true })
+        return resolved
+          ? { ...resolved, id: pathToFileURL(resolved.id).href, external: true }
+          : null
+      }
+      const facade = aliases[source]
+      if (!facade) return null
+      if (this.environment.config.consumer === "server") {
+        if (this.environment.mode === "dev") {
+          const resolved = await this.resolve(facade, projectManifest, {
+            ...options,
+            skipSelf: true,
+          })
+          return resolved
+            ? { ...resolved, id: pathToFileURL(resolved.id).href, external: true }
+            : null
+        }
+        return { id: facade, external: true }
+      }
+      return this.resolve(facade, projectManifest, { ...options, skipSelf: true })
+    },
   }
 }
 

@@ -9,7 +9,6 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
-  symlinkSync,
   writeFileSync,
 } from "node:fs"
 import { createConnection, createServer as createNetServer } from "node:net"
@@ -57,7 +56,6 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       ],
       app,
     )
-    exposeLinkedProductBomPeers(app)
     assertNonHoistedConsumerLayout(app)
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
     write(
@@ -322,9 +320,10 @@ function assertNonHoistedConsumerLayout(app) {
       undefined,
       `Legacy packaged acceptance unexpectedly declares ${dependency}`,
     )
-    assert.ok(
+    assert.equal(
       existsSync(join(app, "node_modules", dependency)),
-      `Product BOM peer ${dependency} was not installed at the legacy app root`,
+      false,
+      `Legacy packaged acceptance unexpectedly hoisted ${dependency}`,
     )
   }
   assert.equal(packageJson.dependencies["@voyant-travel/admin"], undefined)
@@ -332,24 +331,6 @@ function assertNonHoistedConsumerLayout(app) {
     !existsSync(join(app, "node_modules/@voyant-travel/admin")),
     "Packaged consumer fixture unexpectedly hoisted transitive @voyant-travel/admin",
   )
-}
-
-function exposeLinkedProductBomPeers(app) {
-  // Registry installs auto-install BOM peers at the app root; pnpm link: fixtures do not.
-  for (const dependency of [
-    "@tanstack/react-query",
-    "@tanstack/react-router",
-    "react",
-    "react-dom",
-  ]) {
-    const destination = join(app, "node_modules", dependency)
-    mkdirSync(dirname(destination), { recursive: true })
-    symlinkSync(
-      realpathSync(join(repoRoot, "packages/operator-standard/node_modules", dependency)),
-      destination,
-      "dir",
-    )
-  }
 }
 
 function resolvePnpmStorePackageEntry(name) {

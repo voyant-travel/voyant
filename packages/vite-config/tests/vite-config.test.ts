@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
-import { describe, expect, it } from "vitest"
+import type { Plugin } from "vite"
+import { describe, expect, it, vi } from "vitest"
 import {
   VOYANT_ROUTE_FILE_IGNORE_PATTERN,
   VOYANT_SSR_OPTIMIZE_DEPS,
@@ -95,9 +96,98 @@ describe("voyantStartViteConfig", () => {
 
   it("anchors the @ alias at the app's src directory", () => {
     const config = voyantStartViteConfig(base)
-    const alias = config.resolve?.alias as Record<string, string>
+    const aliases = config.resolve?.alias
 
-    expect(alias["@"]).toBe("/repo/starters/operator/src")
+    expect(aliases).toEqual([{ find: "@", replacement: "/repo/starters/operator/src" }])
+  })
+
+  it("resolves legacy frontend imports through exact product dependency aliases", async () => {
+    const dependencyAliases = {
+      react: "@acme/operator/runtime/react",
+      "react/jsx-runtime": "@acme/operator/runtime/react/jsx-runtime",
+      "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
+    }
+    const config = voyantStartViteConfig({ ...base, dependencyAliases, nodeSsr: true })
+    const plugin = (config.plugins as Plugin[]).find(
+      (candidate) => candidate.name === "voyant:dependency-facades",
+    )
+    const resolveId = plugin?.resolveId as Exclude<Plugin["resolveId"], object | undefined>
+    const resolve = vi.fn(async (source: string) => ({ id: `/resolved/${source}` }))
+
+    await expect(
+      resolveId.call(
+        { environment: { config: { consumer: "client" }, mode: "build" }, resolve } as never,
+        "react",
+        "/app/route.tsx",
+        {} as never,
+      ),
+    ).resolves.toEqual({ id: `/resolved/${dependencyAliases.react}` })
+    expect(resolve).toHaveBeenCalledWith(
+      dependencyAliases.react,
+      "/repo/starters/operator/package.json",
+      {
+        skipSelf: true,
+      },
+    )
+    await expect(
+      resolveId.call(
+        { environment: { config: { consumer: "server" }, mode: "dev" }, resolve } as never,
+        "react/jsx-runtime",
+        "/app/route.tsx",
+        {} as never,
+      ),
+    ).resolves.toEqual({
+      id: `file:///resolved/${dependencyAliases["react/jsx-runtime"]}`,
+      external: true,
+    })
+    expect(resolve).toHaveBeenCalledWith(
+      dependencyAliases["react/jsx-runtime"],
+      "/repo/starters/operator/package.json",
+      {
+        skipSelf: true,
+      },
+    )
+    await expect(
+      resolveId.call(
+        { environment: { config: { consumer: "server" }, mode: "dev" }, resolve } as never,
+        "#frontend/react",
+        "/product/runtime/react.js",
+        {} as never,
+      ),
+    ).resolves.toEqual({
+      id: "file:///resolved/%23frontend/react",
+      external: true,
+    })
+    expect(resolve).toHaveBeenCalledWith("#frontend/react", "/product/runtime/react.js", {
+      skipSelf: true,
+    })
+    await expect(
+      resolveId.call(
+        { environment: { config: { consumer: "server" }, mode: "build" } } as never,
+        "@tanstack/react-router",
+        "/app/route.tsx",
+        {} as never,
+      ),
+    ).resolves.toEqual({
+      id: dependencyAliases["@tanstack/react-router"],
+      external: true,
+    })
+    await expect(
+      resolveId.call(
+        { environment: { config: { consumer: "client" }, mode: "build" } } as never,
+        "unrelated",
+        "/app/route.tsx",
+        {} as never,
+      ),
+    ).resolves.toBeNull()
+    expect(config.optimizeDeps?.exclude).toEqual([
+      "@voyant-travel/admin",
+      "@voyant-travel/operator-standard",
+      "@voyant-travel/operator-standard/standard-frontend",
+      ...Object.keys(dependencyAliases),
+    ])
+    expect(config.ssr?.optimizeDeps?.include).toEqual([])
+    expect(config.ssr?.external).toEqual(["pg"])
   })
 
   it("deduplicates framework dependencies declared and resolvable from a fresh app root", () => {
