@@ -31,8 +31,8 @@ export interface ResolveSelectedGraphProviderPortsOptions {
 const CATALOG_INDEXER_PORT_ID = "catalog.indexer"
 
 export interface VoyantSearchProviderAuthority {
-  deployment: { providers: { search?: unknown } }
-  graphRuntime: { providerSelections?: { search?: unknown } }
+  deployment: { providers: Readonly<Record<string, unknown>> }
+  graphRuntime: { providerSelections?: Readonly<Record<string, unknown>> }
 }
 
 /** Admit host runtime-port overrides without bypassing deployment provider selection. */
