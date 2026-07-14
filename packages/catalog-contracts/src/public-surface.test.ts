@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import { pickBestCachedLocale, type SourceAdapter, sourceAdapterSchema } from "./index.js"
+import {
+  assertIndexerAdapterConformance,
+  type IndexerAdapter,
+  type IndexerProvider,
+  pickBestCachedLocale,
+  type SourceAdapter,
+  sourceAdapterSchema,
+} from "./index.js"
 
 describe("@voyant-travel/catalog-contracts public surface", () => {
   it("validates source adapter payload surfaces without runtime dependencies", () => {
@@ -33,5 +40,18 @@ describe("@voyant-travel/catalog-contracts public surface", () => {
       match_kind: "language_match",
       candidate: { payload: "language" },
     })
+  })
+
+  it("exports the indexer provider contract and conformance kit", () => {
+    const provider = {
+      create({ registries, vectorDimensions }) {
+        expect(registries.size).toBe(0)
+        expect(vectorDimensions).toBeNull()
+        return {} as IndexerAdapter
+      },
+    } satisfies IndexerProvider
+
+    expect(typeof provider.create).toBe("function")
+    expect(typeof assertIndexerAdapterConformance).toBe("function")
   })
 })

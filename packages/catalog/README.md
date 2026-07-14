@@ -31,11 +31,14 @@ search services, or catalog runtime services.
 - **`./overlay/schema`** — drizzle table schema for editorial overrides keyed `(entity_module, entity_id, field_path, locale, audience, market)`.
 - **`./overlay/resolver`** — resolver-merge logic with full locale × audience × market fallback chain.
 - **`./snapshot/schema`** — `booking_catalog_snapshot` table for immutable booking-time Catalog Item projection views.
-- **`./indexer/contract`** — engine-agnostic `IndexerAdapter` contract.
-- **`./indexer/typesense`** — native Typesense implementation, the v1 default.
-- **`./operations/typesense`** — provider maintenance primitives for collection cleanup,
-  stale-document discovery, and adapting the official Node SDK. Deployment tooling
-  composes these APIs outside consumer projects.
+- **`./indexer/contract`** — compatibility re-export of the engine-agnostic
+  contracts now owned by `@voyant-travel/catalog-contracts/indexer/contract`.
+- **`./indexer/provider`** — the `catalog.indexer` runtime port used by deployment
+  composition.
+- **`./indexer/typesense`** — native Typesense `IndexerAdapter`, Voyant's only
+  first-party search implementation and the managed-cloud default.
+- **`./indexer/typesense-provider`** — graph provider factory selected by
+  `deployment.providers.search: "typesense"`.
 - **`./search/rerank`** — Tier 2 two-stage-search orchestration helper for browse-time pricing.
 - **`./drift/events`** — drift event types for upstream change detection.
 - **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyant-travel/core/events` and consumed by the existing webhook pipeline.
@@ -51,6 +54,73 @@ The catalog plane is a **contract**, not a polymorphic root. Vertical modules ke
 - Shared cross-cutting infrastructure — overlay store, snapshot graph, indexer pipeline, drift events, webhooks.
 - Three composition patterns — nested fields, promoted child entities, referenced CatalogEntries.
 - Three variant axes on overlays — `locale`, `audience`, `market`; sparse, default deployment uses two audiences and one market.
+
+## Search index providers
+
+Search-engine choice is deployment configuration, not environment detection.
+Set `deployment.providers.search` in `voyant.config.ts`; credentials configure
+the selected provider but never select it:
+
+```typescript
+import { defineConfig } from "@voyant-travel/framework/project"
+
+export default defineConfig({
+  deployment: {
+    target: "node",
+    providers: { search: "typesense" },
+  },
+})
+```
+
+`typesense` selects the first-party provider declared by this package and uses
+`TYPESENSE_HOST` plus `TYPESENSE_API_KEY`. The standard self-hosted operator
+configuration uses `search: "none"` until search is enabled; managed-cloud
+defaults select Typesense.
+
+Embedded hosts and tests can override graph selection explicitly by supplying
+an `IndexerProvider` at the `catalog.indexer` runtime port. An explicit port
+wins over, and prevents loading, the graph-selected provider:
+
+```typescript
+import { catalogIndexerProviderPort } from "@voyant-travel/catalog/indexer/provider"
+import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
+import { loadVoyantProject } from "@voyant-travel/runtime"
+
+const indexerProvider: IndexerProvider = {
+  create: ({ registries, vectorDimensions }) =>
+    createCustomIndexer({ registries, vectorDimensions }),
+}
+
+await loadVoyantProject({
+  host: {
+    runtimePorts: { [catalogIndexerProviderPort.id]: indexerProvider },
+  },
+})
+```
+
+Algolia and other engines are external adapter packages. They implement
+`IndexerAdapter` and `IndexerProvider` from
+`@voyant-travel/catalog-contracts/indexer/contract`, publish a graph provider
+for port `catalog.indexer`, and declare a matching selection such as
+`{ role: "search", value: "algolia" }` or
+`{ role: "search", value: "custom" }`. The deployment admits that package and
+sets the corresponding `deployment.providers.search` value; no Algolia SDK or
+vendor code belongs in `@voyant-travel/catalog`.
+
+Adapter packages should run the test-framework-neutral conformance kit from
+`@voyant-travel/catalog-contracts/indexer/conformance` in their own test suite:
+
+```typescript
+import { assertIndexerAdapterConformance } from "@voyant-travel/catalog-contracts/indexer/conformance"
+
+await assertIndexerAdapterConformance({
+  createAdapter: () => indexerProvider.create({ registries: new Map() }),
+})
+```
+
+Provider-neutral maintenance uses the optional `IndexerAdapter.admin` surface
+(`list`, `drop`, and `scan`). Raw Typesense collection/search maintenance APIs
+are not public catalog package surface.
 
 ## Usage
 

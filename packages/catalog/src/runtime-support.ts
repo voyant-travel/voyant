@@ -1,8 +1,13 @@
 // agent-quality: file-size exception -- owner: catalog; this package rename preserves the
 // existing runtime-support facade without mixing in a behavior-changing decomposition.
 
+import type {
+  IndexerAdapter,
+  IndexerDocument,
+  IndexerSlice,
+  SearchFilter,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { PackageOffer } from "@voyant-travel/connect-sdk"
-
 import type { SourceAdapterContext } from "./adapter/contract.js"
 import type {
   BookEntityResult,
@@ -18,15 +23,6 @@ import type {
 import type { FieldPolicyRegistry } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
 import { createGeminiEmbeddingProvider } from "./embeddings/gemini.js"
-import type { IndexerAdapter, IndexerDocument, IndexerSlice } from "./indexer/contract.js"
-import {
-  collectionName,
-  createTypesenseIndexer,
-  type TypesenseClient,
-  type TypesenseCollectionSchema,
-  type TypesenseSearchQuery,
-  type TypesenseSearchResponse,
-} from "./indexer/typesense.js"
 import type {
   CatalogOffersIndexFields,
   CatalogOffersSearchDestination,
@@ -157,13 +153,7 @@ function merchandisableText(document: IndexerDocument): string {
   return parts.join(" ")
 }
 
-export interface CatalogOffersTypesenseEnv {
-  TYPESENSE_HOST?: string
-  TYPESENSE_ADMIN_API_KEY?: string
-  TYPESENSE_API_KEY?: string
-}
-
-export interface CatalogOffersTypesenseScope {
+export interface CatalogOffersSearchScope {
   locale: string
   audience: IndexerSlice["audience"]
   market: string
@@ -171,13 +161,13 @@ export interface CatalogOffersTypesenseScope {
 }
 
 export function withoutCatalogScopeChannel(
-  scope: CatalogOffersTypesenseScope,
-): CatalogOffersTypesenseScope {
+  scope: CatalogOffersSearchScope,
+): CatalogOffersSearchScope {
   const { channel: _, ...unscoped } = scope
   return unscoped
 }
 
-export interface CatalogRuntimeEnv extends CatalogOffersTypesenseEnv {
+export interface CatalogRuntimeEnv {
   VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
@@ -196,145 +186,28 @@ export function buildCatalogEmbeddingProvider(
   })
 }
 
-export function buildCatalogTypesenseIndexer(
-  env: CatalogRuntimeEnv,
-  options: {
-    embeddings?: EmbeddingProvider
-    registries: ReadonlyMap<string, FieldPolicyRegistry>
-  },
-): IndexerAdapter | undefined {
-  const host = env.TYPESENSE_HOST
-  const apiKey = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!host || !apiKey) return undefined
-  try {
-    new URL(host)
-  } catch {
-    return undefined
-  }
-  return createTypesenseIndexer({
-    client: createTypesenseFetchClient(host, apiKey),
-    vectorDimensions: options.embeddings?.capabilities.dimensions,
-    registries: options.registries,
-  })
-}
-
-function createTypesenseFetchClient(host: string, apiKey: string): TypesenseClient {
-  const baseUrl = host.replace(/\/$/, "")
-  const baseHeaders = { "X-TYPESENSE-API-KEY": apiKey }
-  async function request(path: string, init: RequestInit = {}) {
-    const headers = new Headers(init.headers)
-    headers.set("X-TYPESENSE-API-KEY", apiKey)
-    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json")
-    const response = await fetch(`${baseUrl}${path}`, { ...init, headers })
-    if (!response.ok) {
-      const body = await response.text().catch(() => "")
-      throw new Error(`Typesense ${init.method ?? "GET"} ${path} ${response.status}: ${body}`)
-    }
-    return response
-  }
-  function searchPath(name: string, query: TypesenseSearchQuery) {
-    const params = new URLSearchParams()
-    for (const [key, value] of Object.entries(query)) {
-      if (value != null) params.set(key, String(value))
-    }
-    return `/collections/${encodeURIComponent(name)}/documents/search?${params.toString()}`
-  }
-  return {
-    collections(name?: string) {
-      return {
-        async create(schema: TypesenseCollectionSchema) {
-          await request("/collections", { method: "POST", body: JSON.stringify(schema) })
-        },
-        async update(schema: Partial<TypesenseCollectionSchema>) {
-          if (!name) throw new Error("update requires a collection name")
-          await request(`/collections/${encodeURIComponent(name)}`, {
-            method: "PATCH",
-            body: JSON.stringify(schema),
-          })
-        },
-        async delete() {
-          if (!name) throw new Error("delete requires a collection name")
-          await request(`/collections/${encodeURIComponent(name)}`, { method: "DELETE" })
-        },
-        async retrieve() {
-          if (!name) throw new Error("retrieve requires a collection name")
-          return (await request(`/collections/${encodeURIComponent(name)}`).then((result) =>
-            result.json(),
-          )) as TypesenseCollectionSchema
-        },
-        documents() {
-          if (!name) throw new Error("documents() requires a collection name")
-          return {
-            import: async (documents: unknown[], options?: { action?: "upsert" | "create" }) => {
-              const action = options?.action ?? "create"
-              const response = await fetch(
-                `${baseUrl}/collections/${encodeURIComponent(name)}/documents/import?action=${action}`,
-                {
-                  method: "POST",
-                  headers: { ...baseHeaders, "Content-Type": "text/plain" },
-                  body: documents.map((document) => JSON.stringify(document)).join("\n"),
-                },
-              )
-              if (!response.ok) {
-                const body = await response.text().catch(() => "")
-                throw new Error(`Typesense import ${name} ${response.status}: ${body}`)
-              }
-              return response.text()
-            },
-            async delete(query: { filter_by: string }) {
-              const params = new URLSearchParams({ filter_by: query.filter_by })
-              return request(
-                `/collections/${encodeURIComponent(name)}/documents?${params.toString()}`,
-                { method: "DELETE" },
-              ).then((result) => result.json())
-            },
-            async search(query: TypesenseSearchQuery): Promise<TypesenseSearchResponse> {
-              return request(searchPath(name, query)).then(
-                (result) => result.json() as Promise<TypesenseSearchResponse>,
-              )
-            },
-          }
-        },
-      }
-    },
-  }
-}
-
-function typesenseConfig(env: CatalogOffersTypesenseEnv) {
-  const key = env.TYPESENSE_ADMIN_API_KEY ?? env.TYPESENSE_API_KEY
-  if (!env.TYPESENSE_HOST || !key) return null
-  const base = env.TYPESENSE_HOST.startsWith("http")
-    ? env.TYPESENSE_HOST.replace(/\/$/, "")
-    : `https://${env.TYPESENSE_HOST}`
-  return { base, key }
-}
-
-export function createCatalogOffersTypesenseResolvers(
-  resolveEnv: (context: unknown) => CatalogOffersTypesenseEnv,
-  resolveScope: (context: unknown) => CatalogOffersTypesenseScope,
+export function createCatalogOffersSearchResolvers(
+  resolveIndexer: (context: unknown) => IndexerAdapter | undefined,
+  resolveScope: (context: unknown) => CatalogOffersSearchScope,
 ) {
   return {
     async fetchIndexFields(context: unknown, ids: string[]) {
-      const config = typesenseConfig(resolveEnv(context))
       const output = new Map<string, CatalogOffersIndexFields>()
-      if (!config || ids.length === 0) return output
-      const collection = collectionName({ vertical: "products", ...resolveScope(context) })
+      const indexer = resolveIndexer(context)
+      if (!indexer || ids.length === 0) return output
+      const slice = { vertical: "products", ...resolveScope(context) }
       const distinct = [...new Set(ids)]
       for (let index = 0; index < distinct.length; index += 80) {
         const batch = distinct.slice(index, index + 80)
-        const filter = `id:=[${batch.map((id) => `\`${id}\``).join(",")}]`
-        const url =
-          `${config.base}/collections/${encodeURIComponent(collection)}/documents/search` +
-          `?q=*&query_by=name&filter_by=${encodeURIComponent(filter)}&per_page=${batch.length}` +
-          "&include_fields=id,name,thumbnailUrl,stars,destinations,countryCodes"
         try {
-          const response = (await fetch(url, {
-            headers: { "X-TYPESENSE-API-KEY": config.key },
-          }).then((result) => result.json())) as {
-            hits?: Array<{ document?: CatalogOffersIndexFields & { id?: string } }>
-          }
-          for (const hit of response.hits ?? []) {
-            if (hit.document?.id) output.set(hit.document.id, hit.document)
+          const response = await indexer.search(slice, {
+            query: "",
+            mode: "keyword",
+            filters: [{ kind: "in", field: "id", values: batch }],
+            pagination: { limit: batch.length },
+          })
+          for (const hit of response.hits) {
+            if (hit.id) output.set(hit.id, projectCatalogOffersIndexFields(hit.document.fields))
           }
         } catch {
           // Offer enrichment is best-effort.
@@ -347,28 +220,52 @@ export function createCatalogOffersTypesenseResolvers(
       destination: CatalogOffersSearchDestination,
       limit: number,
     ) {
-      const config = typesenseConfig(resolveEnv(context))
-      if (!config) return []
-      const collection = collectionName({ vertical: "products", ...resolveScope(context) })
-      const filters = ["supplyModel:=dynamic"]
-      if (destination.countryCode) filters.push(`countryCodes:=[\`${destination.countryCode}\`]`)
-      if (destination.city) filters.push(`destinations:=[\`${destination.city}\`]`)
-      const url =
-        `${config.base}/collections/${encodeURIComponent(collection)}/documents/search` +
-        `?q=*&query_by=name&filter_by=${encodeURIComponent(filters.join(" && "))}` +
-        `&per_page=${Math.min(limit, 250)}&include_fields=id`
+      const indexer = resolveIndexer(context)
+      if (!indexer) return []
+      const filters: SearchFilter[] = [{ kind: "eq", field: "supplyModel", value: "dynamic" }]
+      if (destination.countryCode) {
+        filters.push({ kind: "in", field: "countryCodes", values: [destination.countryCode] })
+      }
+      if (destination.city) {
+        filters.push({ kind: "in", field: "destinations", values: [destination.city] })
+      }
       try {
-        const response = (await fetch(url, {
-          headers: { "X-TYPESENSE-API-KEY": config.key },
-        }).then((result) => result.json())) as { hits?: Array<{ document?: { id?: string } }> }
-        return (response.hits ?? [])
-          .map((hit) => hit.document?.id)
-          .filter((id): id is string => Boolean(id))
+        const response = await indexer.search(
+          { vertical: "products", ...resolveScope(context) },
+          {
+            query: "",
+            mode: "keyword",
+            filters,
+            pagination: { limit: Math.min(limit, 250) },
+          },
+        )
+        return response.hits.map((hit) => hit.id).filter(Boolean)
       } catch {
         return []
       }
     },
   }
+}
+
+function projectCatalogOffersIndexFields(
+  fields: Readonly<Record<string, unknown>>,
+): CatalogOffersIndexFields {
+  const destinations = stringArray(fields.destinations)
+  const countryCodes = stringArray(fields.countryCodes)
+  return {
+    ...(typeof fields.name === "string" ? { name: fields.name } : {}),
+    ...(typeof fields.thumbnailUrl === "string" ? { thumbnailUrl: fields.thumbnailUrl } : {}),
+    ...(typeof fields.stars === "string" || typeof fields.stars === "number"
+      ? { stars: fields.stars }
+      : {}),
+    ...(destinations ? { destinations } : {}),
+    ...(countryCodes ? { countryCodes } : {}),
+  }
+}
+
+function stringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.filter((entry): entry is string => typeof entry === "string")
 }
 
 export function createProductQuoteShapeEnricher(dependencies: {

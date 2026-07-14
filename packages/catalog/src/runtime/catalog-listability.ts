@@ -11,7 +11,7 @@
  * projection extensions).
  */
 
-import type { IndexerSlice } from "@voyant-travel/catalog/indexer/contract"
+import type { IndexerSlice } from "@voyant-travel/catalog-contracts/indexer/contract"
 
 export type OwnedProductStorefrontListabilityInput = {
   audience: IndexerSlice["audience"]

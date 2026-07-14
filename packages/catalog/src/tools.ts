@@ -5,6 +5,13 @@
  * catalog package owns the tool contract and audience checks; operator wiring
  * supplies the indexer and resolved-entity runtime.
  */
+
+import type {
+  IndexerSlice,
+  SearchFilter,
+  SearchRequest,
+  SearchResults,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 import {
   defineTool,
   READ_ONLY_RISK,
@@ -14,13 +21,6 @@ import {
   type Visibility,
 } from "@voyant-travel/tools"
 import { z } from "zod"
-
-import type {
-  IndexerSlice,
-  SearchFilter,
-  SearchRequest,
-  SearchResults,
-} from "./indexer/contract.js"
 
 const visibilitySchema = z.enum(["staff", "customer", "partner", "supplier"])
 const searchModeSchema = z.enum(["keyword", "semantic", "hybrid"])

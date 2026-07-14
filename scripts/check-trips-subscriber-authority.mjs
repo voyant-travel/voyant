@@ -46,11 +46,15 @@ requireMatch(
   /entry:\s*["']\.\/payment-subscribers["'][\s\S]*export:\s*["']tripsPaymentCompletedSubscriber["']/,
   "Trips manifest must own the payment subscriber runtime reference",
 )
-requireMatch(
-  sources.composition,
-  /options\.createRuntimePorts\(\{\s*primitives\s*\}\)/,
-  "Operator must pass only generic primitives to selected contributors",
-)
+if (
+  !/options\.createRuntimePorts\(\{\s*primitives\s*\}\)/.test(sources.composition) &&
+  !(
+    sources.composition.includes("providerPorts?: VoyantGraphRuntimePorts") &&
+    sources.composition.includes("runtimePorts: options.providerPorts")
+  )
+) {
+  failures.push("Operator must pass only generic primitives and ports to selected contributors")
+}
 requireMatch(
   sources.tripsRuntime,
   /VoyantRuntimeHostPrimitives/,

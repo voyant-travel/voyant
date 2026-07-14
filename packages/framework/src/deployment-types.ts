@@ -20,7 +20,7 @@ export interface VoyantDeploymentProviders {
   cache: "redis" | "postgres" | "platform" | "memory"
   sharedState: "redis" | "postgres" | "platform" | "memory"
   rateLimit: "redis" | "postgres" | "platform" | "memory"
-  search: "postgres" | "typesense" | "algolia" | "none"
+  search: "typesense" | "algolia" | "custom" | "none"
   email: "voyant-cloud" | "resend" | "sendgrid" | "smtp" | "none"
   sms: "voyant-cloud" | "twilio" | "none"
   auth: "voyant-cloud" | "better-auth"
@@ -55,7 +55,7 @@ export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
   cache: "redis",
   sharedState: "redis",
   rateLimit: "redis",
-  search: "postgres",
+  search: "typesense",
   email: "voyant-cloud",
   sms: "voyant-cloud",
   auth: "voyant-cloud",
@@ -70,7 +70,7 @@ export const DEPLOYMENT_PROVIDER_CONTRACTS = {
   cache: ["redis", "postgres", "platform", "memory"],
   sharedState: ["redis", "postgres", "platform", "memory"],
   rateLimit: ["redis", "postgres", "platform", "memory"],
-  search: ["postgres", "typesense", "algolia", "none"],
+  search: ["typesense", "algolia", "custom", "none"],
   email: ["voyant-cloud", "resend", "sendgrid", "smtp", "none"],
   sms: ["voyant-cloud", "twilio", "none"],
   auth: ["voyant-cloud", "better-auth"],

@@ -1,6 +1,5 @@
+import type { SearchResults } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { describe, expect, it } from "vitest"
-
-import type { SearchResults } from "../indexer/contract.js"
 import { type LivePriceFn, type LivePriceResult, rerank } from "./rerank.js"
 
 const hit = (id: string, score: number) => ({

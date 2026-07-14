@@ -13,7 +13,7 @@
  * See `docs/architecture/catalog-architecture.md` §5.4.3 Tier 2 for design.
  */
 
-import type { SearchHit, SearchResults } from "../indexer/contract.js"
+import type { SearchHit, SearchResults } from "@voyant-travel/catalog-contracts/indexer/contract"
 
 /**
  * The live-pricing function the storefront BFF supplies. Receives a batch

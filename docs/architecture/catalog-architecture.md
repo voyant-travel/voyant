@@ -477,25 +477,30 @@ Typesense is the default search engine because it fits Voyant's deployment model
 - **Search query construction** for the storefront and admin layers, exposing facet aggregations driven by the registry's structural fields.
 - **Bulk reindex tooling** for cold-starts and major schema changes (e.g. when a vertical's field-policy file gains a new indexed field).
 
-The Typesense adapter is the only adapter Voyant maintains as a first-party integration. Operational expectations (Typesense version compatibility, schema migration, collection sharding strategy) are documented in `packages/catalog/README.md` once the package lands.
+The Typesense adapter is the only search adapter Voyant maintains as a first-party integration. It is declared as the `catalog.indexer` graph provider for `{ role: "search", value: "typesense" }`; deployments select it explicitly with `deployment.providers.search: "typesense"`. Managed-cloud deployments use that selection by default. The standard self-hosted operator starts with `search: "none"` until an operator enables a search provider. `TYPESENSE_HOST` and `TYPESENSE_API_KEY` configure the selected Typesense provider; the presence of those values never selects it. Operational expectations and composition examples live in `packages/catalog/README.md`.
 
 #### 5.4.2. Swap-in alternatives
 
-The indexer surface is an abstract `IndexerAdapter` contract — the same provider pattern used by `packages/storage` (local / r2 / s3) and `packages/notifications` (local / resend). A deployment substitutes a different engine by implementing the contract and registering it at template setup, the same way `createApp` already accepts other provider-style services.
+The engine-neutral `IndexerAdapter`, `IndexerProvider`, and optional `IndexerAdmin` contracts live in `@voyant-travel/catalog-contracts/indexer/contract`. This keeps external engine packages dependent on the pure contract package rather than the catalog runtime. `@voyant-travel/catalog/indexer/contract` remains a compatibility re-export, not the canonical adapter dependency.
+
+A deployment selects one graph provider by setting `deployment.providers.search` to `typesense`, `algolia`, `custom`, or `none`. A selected adapter package declares a provider for runtime port `catalog.indexer` with a matching `{ role: "search", value }`. Embedded hosts and tests may instead inject an `IndexerProvider` directly at the `catalog.indexer` runtime port; that explicit override takes precedence and prevents the graph-selected provider for that port from loading.
 
 The contract is intentionally narrow:
 
-- `ensureCollection(vertical, locale, audience, market, channel, fieldPolicy)` — set up or migrate the engine-side schema for one variant slice.
-- `upsert(documents)` / `delete(ids)` — write paths from the reindex queue.
-- `search(query, filters, facets, pagination)` — read path from storefront and admin.
-- `bulkReindex(vertical, locale, audience, market, channel, stream)` — cold-start and migration path.
+- `ensureCollection(slice, fieldPolicy)` — set up or migrate the engine-side schema for one variant slice.
+- `upsert(slice, documents)` / `delete(slice, ids)` — write paths from the reindex queue.
+- `search(slice, request)` — portable read path for storefront and admin search, including filters, facets, sorting, and pagination.
+- `bulkReindex(slice, stream)` — cold-start and migration path.
 - `capabilities` — declare what the engine supports (faceting, typo tolerance, vector search, geo, etc.) so consuming code can fail fast on unsupported features rather than producing wrong results silently.
+- optional `admin` — provider-neutral `list`, `drop`, and streaming `scan` operations for deployment tooling. Raw Typesense collection and document maintenance APIs are not public catalog surface.
 
 Swap-in implementers can be:
 
-- **First-party plugins** — Voyant may publish Algolia, Meilisearch, or Postgres FTS adapters as separate packages (`@voyant-travel/voyant-indexer-algolia`, etc.) if real demand emerges.
+- **External Algolia package** — an Algolia adapter package implements the contracts, declares `{ role: "search", value: "algolia" }`, and is admitted by deployments that select `deployment.providers.search: "algolia"`. Algolia is not bundled or maintained as a first-party catalog implementation.
 - **Operator-built** — a deployment with an existing Elasticsearch cluster writes its own adapter against the contract.
 - **Third-party** — a vendor or integrator publishes an adapter package the same way they would publish a source adapter (§5.6).
+
+External and operator-built adapters should execute `assertIndexerAdapterConformance` from `@voyant-travel/catalog-contracts/indexer/conformance` in their own test suites. The runner verifies the portable adapter behavior, slice isolation, pagination, filters, facets, bulk reindexing, deletion, capability declarations, and optional admin behavior without imposing a test framework.
 
 The swap is per-deployment, not per-vertical. A single Voyant deployment runs one indexer adapter; mixing engines across verticals inside the same deployment is not supported and is unlikely to ever be worth the operational complexity.
 
@@ -1113,8 +1118,8 @@ The work has natural sequencing because vertical adoption depends on contract ty
 3. `packages/catalog/src/overlay/schema.ts` — the overlay table schema (drizzle).
 4. `packages/catalog/src/overlay/resolver.ts` — the resolver-merge logic (apply overlays to a source projection, with locale + audience + market fallback chain).
 5. `packages/catalog/src/snapshot/schema.ts` — the `booking_catalog_snapshot` table schema.
-6. `packages/catalog/src/indexer/contract.ts` — the engine-agnostic `IndexerAdapter` contract and the per-vertical document-emitter interface.
-7. `packages/catalog/src/indexer/typesense.ts` — native Typesense implementation of `IndexerAdapter` (§5.4.1). Default for v1 deployments.
+6. `packages/catalog-contracts/src/indexer/contract.ts` and `conformance.ts` — the engine-agnostic `IndexerAdapter` / `IndexerProvider` contracts and portable adapter conformance kit. `packages/catalog/src/indexer/contract.ts` is a compatibility re-export.
+7. `packages/catalog/src/indexer/typesense.ts` and `typesense-provider.ts` — native Typesense implementation and first-party `catalog.indexer` graph provider (§5.4.1). Default search selection for managed-cloud deployments.
 8. `packages/catalog/src/search/rerank.ts` — Tier 2 two-stage-search orchestration helper for browse-time pricing (§5.4.3). Storefront BFFs import this; v1 ships the helper but storefronts opt in per query.
 9. `packages/catalog/src/drift/events.ts` — drift event types.
 10. `packages/catalog/src/events/taxonomy.ts` — catalog event names + payload builders with field-policy-driven visibility filtering (§5.8). Emits via `@voyant-travel/core/events`; reuses the existing webhook delivery pipeline.

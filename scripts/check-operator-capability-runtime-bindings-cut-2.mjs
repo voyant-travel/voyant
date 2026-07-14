@@ -46,8 +46,14 @@ for (const binding of explicitBindings) {
     violations.push(`deployment-resources.ts must not assemble the ${binding} binding`)
   }
 }
-if (!/options\.createRuntimePorts\(\{\s*primitives\s*\}\)/s.test(generatedCall)) {
-  violations.push("deployment-resources.ts must expose only primitives to generated contributors")
+const primitivesOnly = /options\.createRuntimePorts\(\{\s*primitives\s*\}\)/s.test(generatedCall)
+const providerNeutralPorts =
+  deploymentResources.includes("providerPorts?: VoyantGraphRuntimePorts") &&
+  generatedCall.includes("runtimePorts: options.providerPorts")
+if (!primitivesOnly && !providerNeutralPorts) {
+  violations.push(
+    "deployment-resources.ts must expose only primitives and graph provider ports to generated contributors",
+  )
 }
 for (const [index, [packageName, requirements]] of Object.entries(packageRequirements).entries()) {
   for (const requirement of requirements) {

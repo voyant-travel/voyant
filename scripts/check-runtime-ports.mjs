@@ -85,10 +85,13 @@ if (
   !app &&
   runtime &&
   (!runtime.includes("createVoyantDeploymentResources") ||
+    !runtime.includes("resolveSelectedGraphProviderPorts") ||
+    !runtime.includes("providerPorts,") ||
     !runtime.includes("runtimePorts: deploymentResources.ports") ||
-    !resources.includes("options.createRuntimePorts({ primitives })"))
+    !resources.includes("ports: options.createRuntimePorts({") ||
+    !resources.includes("runtimePorts: options.providerPorts"))
 ) {
-  violations.push("runtime must inject statically generated runtime ports")
+  violations.push("runtime must compose selected providers into statically generated runtime ports")
 }
 for (const port of migratedPorts) {
   if (app.includes(port)) violations.push(`Operator app must not own ${port}`)

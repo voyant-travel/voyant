@@ -312,9 +312,13 @@ function inspectRepositoryAuthority(repoRoot) {
     const operatorRuntime = readFileSync(operatorRuntimePath, "utf8")
     const deploymentResources = readFileSync(deploymentResourcesPath, "utf8")
     const deploymentArtifacts = readFileSync(deploymentArtifactsPath, "utf8")
+    const hasGenericContributorInputs =
+      deploymentResources.includes("ports: options.createRuntimePorts({ primitives })") ||
+      (deploymentResources.includes("providerPorts?: VoyantGraphRuntimePorts") &&
+        deploymentResources.includes("runtimePorts: options.providerPorts"))
     if (
       !operatorRuntime.includes("createRuntimePorts: generated.createRuntimePorts") ||
-      !deploymentResources.includes("ports: options.createRuntimePorts({ primitives })")
+      !hasGenericContributorInputs
     ) {
       violations.push("packaged starter must boot real statically selected runtime ports")
     }

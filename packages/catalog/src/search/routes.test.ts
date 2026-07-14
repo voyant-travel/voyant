@@ -1,13 +1,12 @@
-import { handleApiError } from "@voyant-travel/hono"
-import { Hono } from "hono"
-import { describe, expect, it, vi } from "vitest"
-
 import type {
   IndexerAdapter,
   IndexerSlice,
   SearchRequest,
   SearchResults,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { handleApiError } from "@voyant-travel/hono"
+import { Hono } from "hono"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   type CatalogSearchExecuteInput,
@@ -125,7 +124,7 @@ describe("createCatalogSearchRoutes", () => {
 
     expect(response.status).toBe(503)
     await expect(response.json()).resolves.toEqual({
-      error: "Search indexer is not configured (missing TYPESENSE_HOST)",
+      error: "Search indexer is not configured for this deployment.",
     })
   })
 

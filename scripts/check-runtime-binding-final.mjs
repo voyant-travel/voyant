@@ -34,17 +34,18 @@ const violations = []
 if (existsSync(path.join(root, "starters/operator/src/api/runtime/runtime-adapter.ts"))) {
   violations.push("starters/operator/src/api/runtime/runtime-adapter.ts must stay deleted")
 }
-const generatedCall = deploymentResources.match(/options\.createRuntimePorts\(\{([^}]*)\}\)/)?.[1]
+const generatedCall = extractObjectArgument(deploymentResources, "options.createRuntimePorts(")
 if (!generatedCall) {
   violations.push("deployment resources must call options.createRuntimePorts with an object")
 } else {
-  const keys = generatedCall
-    .split(",")
-    .map((entry) => entry.trim().split(":", 1)[0])
-    .filter(Boolean)
-  if (keys.join(",") !== "primitives") {
+  const normalized = generatedCall.replace(/\s/g, "").replace(/,$/, "")
+  const allowedArguments = new Set([
+    "primitives",
+    "primitives,...(options.providerPorts?{runtimePorts:options.providerPorts}:{})",
+  ])
+  if (!allowedArguments.has(normalized)) {
     violations.push(
-      `createGeneratedGraphRuntimePorts keys must be exactly primitives; found ${keys.join(",") || "none"}`,
+      `createGeneratedGraphRuntimePorts arguments must be generic primitives and optional graph provider ports; found ${normalized || "none"}`,
     )
   }
 }
@@ -69,3 +70,18 @@ if (violations.length > 0) {
 console.log(
   `check-runtime-binding-final: OK (${Object.keys(contributorRequirements).length} package-owned runtime families; 0 legacy capability families)`,
 )
+
+function extractObjectArgument(source, marker) {
+  const callStart = source.indexOf(marker)
+  if (callStart < 0) return undefined
+  const objectStart = source.indexOf("{", callStart + marker.length)
+  if (objectStart < 0) return undefined
+  let depth = 0
+  for (let index = objectStart; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1
+    if (source[index] !== "}") continue
+    depth -= 1
+    if (depth === 0) return source.slice(objectStart + 1, index)
+  }
+  return undefined
+}

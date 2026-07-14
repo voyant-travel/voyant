@@ -81,7 +81,7 @@ if (
 }
 if (
   !operatorRuntime.includes("createRuntimePorts: generated.createRuntimePorts") ||
-  !deploymentResources.includes("ports: options.createRuntimePorts({ primitives })")
+  !deploymentResources.includes("ports: options.createRuntimePorts({")
 ) {
   violations.push(
     "Operator must compose one generated contributor set through opaque deployment resources",

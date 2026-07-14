@@ -1,13 +1,13 @@
-import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { describe, expect, it } from "vitest"
-import type { SourceAdapter } from "../adapter/contract.js"
-import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import type {
   IndexerDocument,
   IndexerSlice,
   SearchRequest,
   SearchResults,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import type { AnyDrizzleDb } from "@voyant-travel/db"
+import { describe, expect, it } from "vitest"
+import type { SourceAdapter } from "../adapter/contract.js"
+import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import type { DocumentBuilder, IndexerService } from "../services/indexer-service.js"
 
 import { createSourceAdapterRegistry } from "./registry.js"

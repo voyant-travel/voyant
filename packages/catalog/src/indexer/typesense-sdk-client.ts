@@ -37,6 +37,12 @@ export function asTypesenseClient(client: TypesenseSdkClientLike): TypesenseClie
       // methods keep their `this` binding.
       const collection = sdk.collections(name) as ReturnType<TypesenseClient["collections"]>
       return {
+        list: async () =>
+          await (
+            sdk.collections() as {
+              retrieve(): Promise<import("./typesense.js").TypesenseCollectionSchema[]>
+            }
+          ).retrieve(),
         create: (schema) => collection.create(schema),
         update: (schema) => collection.update(schema),
         delete: () => collection.delete(),

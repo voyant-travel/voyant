@@ -80,13 +80,19 @@ if (
 if (packageIndex.includes("tripsHonoModule")) {
   violations.push("Trips must not retain the preconfigured compatibility module export")
 }
+const genericContributorInputs =
+  composition.includes("options.createRuntimePorts({ primitives })") ||
+  (composition.includes("providerPorts?: VoyantGraphRuntimePorts") &&
+    composition.includes("runtimePorts: options.providerPorts"))
 if (
   composition.includes('from "@voyant-travel/trips/runtime-contributor"') ||
   composition.includes("createOperatorTripsRoutesOptions") ||
   composition.includes("createDeploymentCapabilities") ||
-  !composition.includes("options.createRuntimePorts({ primitives })")
+  !genericContributorInputs
 ) {
-  violations.push("Operator must expose only generic primitives to the generated Trips contributor")
+  violations.push(
+    "Operator must expose only generic primitives and ports to the generated Trips contributor",
+  )
 }
 if (
   runtimeContributor.includes("host.capabilities") ||

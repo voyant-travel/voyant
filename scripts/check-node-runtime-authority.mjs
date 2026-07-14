@@ -4,6 +4,7 @@ import path from "node:path"
 
 const root = process.cwd()
 const operatorRuntime = await read("packages/runtime/src/index.ts")
+const deploymentResources = await read("packages/runtime/src/deployment-resources.ts")
 const nodeRuntime = await read("packages/framework/src/node-runtime.ts")
 const deploymentArtifacts = await read("packages/framework/src/deployment-artifacts.ts")
 const frameworkPackage = JSON.parse(await read("packages/framework/package.json"))
@@ -57,12 +58,22 @@ for (const required of [
   "createVoyantNodeStorageResolver",
   "validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)",
   "createVoyantNodeEnv(rawEnv, providerPlan)",
-  "resolveVoyantGraphRuntimeProviders",
-  'ports: ["storage.object"]',
-  'getProvider<unknown>("storage.object")',
+  "resolveSelectedGraphProviderPorts",
+  "providerPorts",
+  'providerPorts["storage.object"]',
 ]) {
   if (!operatorRuntime.includes(required)) {
     violations.push(`runtime must consume graph-native Node runtime authority: ${required}`)
+  }
+}
+for (const required of [
+  "resolveVoyantGraphRuntimeProviders",
+  "runtime.providers ?? []",
+  "providers.getProvider(port)",
+  "excludedPorts",
+]) {
+  if (!deploymentResources.includes(required)) {
+    violations.push(`deployment resources must resolve selected providers generically: ${required}`)
   }
 }
 if (operatorRuntime.includes("createVoyantGraphRuntimePortStubs")) {

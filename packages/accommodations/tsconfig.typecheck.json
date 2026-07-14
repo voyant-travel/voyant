@@ -282,6 +282,12 @@
       "@voyant-travel/catalog-contracts/drift/events": [
         "../catalog-contracts/dist/drift/events.d.ts"
       ],
+      "@voyant-travel/catalog-contracts/indexer/conformance": [
+        "../catalog-contracts/dist/indexer/conformance.d.ts"
+      ],
+      "@voyant-travel/catalog-contracts/indexer/contract": [
+        "../catalog-contracts/dist/indexer/contract.d.ts"
+      ],
       "@voyant-travel/catalog-contracts/provenance": ["../catalog-contracts/dist/provenance.d.ts"],
       "@voyant-travel/catalog-contracts/snapshot": ["../catalog-contracts/dist/snapshot.d.ts"],
       "@voyant-travel/catalog-react": ["../catalog-react/dist/index.d.ts"],
@@ -336,11 +342,12 @@
       "@voyant-travel/catalog/graph-runtime": ["../catalog/dist/graph-runtime.d.ts"],
       "@voyant-travel/catalog/index-subscribers": ["../catalog/dist/index-subscriber-runtime.d.ts"],
       "@voyant-travel/catalog/indexer/contract": ["../catalog/dist/indexer/contract.d.ts"],
+      "@voyant-travel/catalog/indexer/provider": ["../catalog/dist/indexer/provider.d.ts"],
       "@voyant-travel/catalog/indexer/typesense": ["../catalog/dist/indexer/typesense.d.ts"],
-      "@voyant-travel/catalog/offers": ["../catalog/dist/offers/operator-routes.d.ts"],
-      "@voyant-travel/catalog/operations/typesense": [
-        "../catalog/dist/indexer/typesense-operations.d.ts"
+      "@voyant-travel/catalog/indexer/typesense-provider": [
+        "../catalog/dist/indexer/typesense-provider.d.ts"
       ],
+      "@voyant-travel/catalog/offers": ["../catalog/dist/offers/operator-routes.d.ts"],
       "@voyant-travel/catalog/overlay/resolver": ["../catalog/dist/overlay/resolver.d.ts"],
       "@voyant-travel/catalog/overlay/schema": ["../catalog/dist/overlay/schema.d.ts"],
       "@voyant-travel/catalog/projection-runtime": ["../catalog/dist/projection-runtime.d.ts"],

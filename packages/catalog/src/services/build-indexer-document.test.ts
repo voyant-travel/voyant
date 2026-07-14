@@ -1,7 +1,6 @@
+import type { IndexerSlice } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { describe, expect, it } from "vitest"
-
 import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
-import type { IndexerSlice } from "../indexer/contract.js"
 import { buildIndexerDocument } from "./indexer-service.js"
 
 const registry = createFieldPolicyRegistry(

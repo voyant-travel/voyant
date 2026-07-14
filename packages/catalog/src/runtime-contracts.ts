@@ -1,3 +1,7 @@
+import type {
+  IndexerAdapter,
+  IndexerSlice,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -15,7 +19,6 @@ import type {
 } from "./booking-snapshot-subscriber-runtime.js"
 import type { FieldPolicy, FieldPolicyRegistry } from "./contract.js"
 import type { EmbeddingProvider } from "./embeddings/contract.js"
-import type { IndexerAdapter, IndexerSlice } from "./indexer/contract.js"
 import type { DocumentBuilder } from "./services/indexer-service.js"
 
 export interface CatalogProjectionExtension {
@@ -191,7 +194,7 @@ export interface CatalogRuntimeServices {
   getOwnedHandlers(env: Readonly<Record<string, unknown>>): OwnedBookingHandlerRegistry
   getOwnedHandlersFromContext(context: unknown): OwnedBookingHandlerRegistry
   buildEmbeddingProvider(env: Readonly<Record<string, unknown>>): EmbeddingProvider | undefined
-  buildTypesenseIndexer(
+  buildIndexer(
     env: Readonly<Record<string, unknown>>,
     embeddings?: EmbeddingProvider,
   ): IndexerAdapter | undefined
@@ -223,7 +226,7 @@ export const catalogRuntimeServicesPort = definePort<CatalogRuntimeServices>({
       "getOwnedHandlers",
       "getOwnedHandlersFromContext",
       "buildEmbeddingProvider",
-      "buildTypesenseIndexer",
+      "buildIndexer",
       "loadSlices",
       "fieldPolicyRegistries",
       "createProductsDocumentBuilder",

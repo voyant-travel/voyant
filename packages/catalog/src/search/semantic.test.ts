@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from "vitest"
-import type { EmbeddingProvider } from "../embeddings/contract.js"
 import type {
   IndexerAdapter,
   IndexerCapabilities,
   IndexerSlice,
   SearchRequest,
-} from "../indexer/contract.js"
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { describe, expect, it, vi } from "vitest"
+import type { EmbeddingProvider } from "../embeddings/contract.js"
 import { executeBYOVectorSearch, executeSemanticSearch } from "./semantic.js"
 
 function makeAdapter(capabilities: Partial<IndexerCapabilities> = {}): IndexerAdapter & {

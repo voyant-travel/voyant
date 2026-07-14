@@ -53,6 +53,20 @@ describe("check-operator-smartbill-authority", () => {
     assert.match(result.stdout, /check-operator-smartbill-authority: OK/)
   })
 
+  it("accepts provider-neutral graph ports in the generic runtime host", async () => {
+    const root = await createFixture({
+      "packages/runtime/src/deployment-resources.ts": `
+        providerPorts?: VoyantGraphRuntimePorts
+        return options.createRuntimePorts({
+          primitives,
+          ...(options.providerPorts ? { runtimePorts: options.providerPorts } : {}),
+        })
+      `,
+    })
+    const result = await runChecker(root)
+    assert.match(result.stdout, /check-operator-smartbill-authority: OK/)
+  })
+
   it("rejects selecting SmartBill in the default project", async () => {
     const root = await createFixture({
       "starters/operator/voyant.config.ts":

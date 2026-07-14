@@ -52,7 +52,7 @@ export function createCruisesRuntimePortContribution(
               catalogRuntimeServicesPort,
             )
             const embeddings = catalogRuntime.buildEmbeddingProvider(context.environment)
-            const indexer = catalogRuntime.buildTypesenseIndexer(context.environment, embeddings)
+            const indexer = catalogRuntime.buildIndexer(context.environment, embeddings)
             if (!indexer) return operation({ db: rawDb as never })
 
             const indexerService = createIndexerService({

@@ -1,5 +1,25 @@
 // Field-policy contract — the load-bearing schema decision.
 
+// Search index — engine-agnostic contract + Typesense default + rerank helper.
+export type {
+  DocumentEmitter,
+  FacetRequest,
+  IndexerAdapter,
+  IndexerAdmin,
+  IndexerCapabilities,
+  IndexerDocument,
+  IndexerProvider,
+  IndexerProviderOptions,
+  IndexerScanOptions,
+  IndexerSlice,
+  SearchFacetBucket,
+  SearchFilter,
+  SearchHit,
+  SearchMode,
+  SearchPagination,
+  SearchRequest,
+  SearchResults,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 // Public source-adapter contract.
 export {
   ADAPTER_RATE_LIMITED,
@@ -152,22 +172,6 @@ export {
   type SourceDisconnectedPayload,
   type SourceReconnectedPayload,
 } from "./events/taxonomy.js"
-// Search index — engine-agnostic contract + Typesense default + rerank helper.
-export type {
-  DocumentEmitter,
-  FacetRequest,
-  IndexerAdapter,
-  IndexerCapabilities,
-  IndexerDocument,
-  IndexerSlice,
-  SearchFacetBucket,
-  SearchFilter,
-  SearchHit,
-  SearchMode,
-  SearchPagination,
-  SearchRequest,
-  SearchResults,
-} from "./indexer/contract.js"
 export {
   attachEmitter,
   buildCollectionSchema,

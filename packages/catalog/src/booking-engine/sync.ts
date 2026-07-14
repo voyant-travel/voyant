@@ -24,11 +24,13 @@
  * `syncSources` is a one-shot bulk pass driven by a CLI or cron job.
  */
 
+import type {
+  IndexerDocument,
+  IndexerSlice,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-
 import type { SourceAdapter, SourceAdapterContext } from "../adapter/contract.js"
 import type { FieldPolicyRegistry } from "../contract.js"
-import type { IndexerDocument, IndexerSlice } from "../indexer/contract.js"
 import { isOwned } from "../provenance.js"
 import type { DocumentBuilder, IndexerService } from "../services/indexer-service.js"
 import { buildIndexerDocument } from "../services/indexer-service.js"

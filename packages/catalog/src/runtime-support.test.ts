@@ -1,47 +1,159 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
-
+import type {
+  IndexerAdapter,
+  SearchResults,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
+import { describe, expect, it, vi } from "vitest"
 import {
-  createCatalogOffersTypesenseResolvers,
+  createCatalogOffersSearchResolvers,
   withoutCatalogScopeChannel,
 } from "./runtime-support.js"
 
-const resolvers = createCatalogOffersTypesenseResolvers(
-  () => ({ TYPESENSE_HOST: "typesense.example.test", TYPESENSE_API_KEY: "test-key" }),
-  () =>
-    withoutCatalogScopeChannel({
-      locale: "ro-RO",
-      audience: "staff",
-      market: "ro",
-      channel: "website",
-    }),
-)
-
-afterEach(() => {
-  vi.unstubAllGlobals()
+const scope = withoutCatalogScopeChannel({
+  locale: "ro-RO",
+  audience: "staff",
+  market: "ro",
+  channel: "website",
 })
 
-describe("catalog offer Typesense resolvers", () => {
-  it("uses the configured scope collection for index-field enrichment", async () => {
-    const fetch = vi.fn(async () => new Response(JSON.stringify({ hits: [] })))
-    vi.stubGlobal("fetch", fetch)
+function createIndexer(search: IndexerAdapter["search"]): IndexerAdapter {
+  return {
+    capabilities: {
+      supportsKeywordSearch: true,
+      supportsHybridSearch: false,
+      supportsVectorFields: false,
+      vectorDimensions: null,
+      maxVectorsPerDocument: null,
+      supportsCrossAudienceFederation: false,
+      supportsAdminDenormalization: false,
+    },
+    async ensureCollection() {},
+    async upsert() {},
+    async delete() {},
+    search,
+    async bulkReindex() {},
+  }
+}
 
-    await resolvers.fetchIndexFields({}, ["product-1"])
+function searchResults(
+  hits: Array<{ id: string; fields?: Record<string, unknown> }>,
+): SearchResults {
+  return {
+    hits: hits.map((hit) => ({
+      id: hit.id,
+      score: 0,
+      document: { id: hit.id, fields: hit.fields ?? {} },
+    })),
+    total: hits.length,
+  }
+}
 
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/collections/products__ro-RO__staff__ro/documents/search"),
-      { headers: { "X-TYPESENSE-API-KEY": "test-key" } },
+describe("catalog offer search resolvers", () => {
+  it("searches the scoped products slice in deduplicated batches of 80", async () => {
+    const search = vi
+      .fn<IndexerAdapter["search"]>()
+      .mockResolvedValueOnce(
+        searchResults([
+          {
+            id: "product-0",
+            fields: {
+              name: "Hotel Zero",
+              thumbnailUrl: "https://cdn.test/zero.jpg",
+              internalSupplierNotes: "must not leak",
+            },
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(searchResults([{ id: "product-80", fields: { stars: 5 } }]))
+    const resolvers = createCatalogOffersSearchResolvers(
+      () => createIndexer(search),
+      () => scope,
+    )
+    const ids = [...Array.from({ length: 82 }, (_, index) => `product-${index}`), "product-0"]
+
+    const fields = await resolvers.fetchIndexFields({}, ids)
+
+    expect(search).toHaveBeenCalledTimes(2)
+    expect(search).toHaveBeenNthCalledWith(
+      1,
+      { vertical: "products", locale: "ro-RO", audience: "staff", market: "ro" },
+      {
+        query: "",
+        mode: "keyword",
+        filters: [
+          {
+            kind: "in",
+            field: "id",
+            values: Array.from({ length: 80 }, (_, index) => `product-${index}`),
+          },
+        ],
+        pagination: { limit: 80 },
+      },
+    )
+    expect(search).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({
+        filters: [{ kind: "in", field: "id", values: ["product-80", "product-81"] }],
+        pagination: { limit: 2 },
+      }),
+    )
+    expect(fields).toEqual(
+      new Map([
+        ["product-0", { name: "Hotel Zero", thumbnailUrl: "https://cdn.test/zero.jpg" }],
+        ["product-80", { stars: 5 }],
+      ]),
     )
   })
 
-  it("uses the configured scope collection for dynamic hotel resolution", async () => {
-    const fetch = vi.fn(async () => new Response(JSON.stringify({ hits: [] })))
-    vi.stubGlobal("fetch", fetch)
-
-    await resolvers.resolveDynamicHotelIds({}, { countryCode: "RO", city: "Bucharest" }, 10)
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/collections/products__ro-RO__staff__ro/documents/search"),
-      { headers: { "X-TYPESENSE-API-KEY": "test-key" } },
+  it("uses portable dynamic-hotel filters and caps the requested result count", async () => {
+    const search = vi
+      .fn<IndexerAdapter["search"]>()
+      .mockResolvedValue(searchResults([{ id: "hotel-1" }, { id: "hotel-2" }]))
+    const resolvers = createCatalogOffersSearchResolvers(
+      () => createIndexer(search),
+      () => scope,
     )
+
+    const ids = await resolvers.resolveDynamicHotelIds(
+      {},
+      { countryCode: "RO", city: "Bucharest" },
+      500,
+    )
+
+    expect(ids).toEqual(["hotel-1", "hotel-2"])
+    expect(search).toHaveBeenCalledWith(
+      { vertical: "products", locale: "ro-RO", audience: "staff", market: "ro" },
+      {
+        query: "",
+        mode: "keyword",
+        filters: [
+          { kind: "eq", field: "supplyModel", value: "dynamic" },
+          { kind: "in", field: "countryCodes", values: ["RO"] },
+          { kind: "in", field: "destinations", values: ["Bucharest"] },
+        ],
+        pagination: { limit: 250 },
+      },
+    )
+  })
+
+  it("keeps offer lookups best-effort when the index is unavailable or search fails", async () => {
+    const unavailable = createCatalogOffersSearchResolvers(
+      () => undefined,
+      () => scope,
+    )
+    const failing = createCatalogOffersSearchResolvers(
+      () =>
+        createIndexer(
+          vi.fn<IndexerAdapter["search"]>().mockRejectedValue(new Error("search unavailable")),
+        ),
+      () => scope,
+    )
+
+    await expect(unavailable.fetchIndexFields({}, ["product-1"])).resolves.toEqual(new Map())
+    await expect(
+      unavailable.resolveDynamicHotelIds({}, { countryCode: "RO" }, 10),
+    ).resolves.toEqual([])
+    await expect(failing.fetchIndexFields({}, ["product-1"])).resolves.toEqual(new Map())
+    await expect(failing.resolveDynamicHotelIds({}, { countryCode: "RO" }, 10)).resolves.toEqual([])
   })
 })
