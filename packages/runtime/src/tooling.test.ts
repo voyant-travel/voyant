@@ -144,6 +144,33 @@ describe("Voyant project tooling", () => {
     expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
   })
 
+  it("keeps the auth fallback active until every loopback development server closes", async () => {
+    const first = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/first" },
+      createDependencies([]),
+    )
+    const second = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/second" },
+      createDependencies([]),
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+    await first.close()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+    await second.close()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+  })
+
+  it("does not enable auth-secret logging for a network-exposed development server", async () => {
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator", host: "0.0.0.0" },
+      createDependencies([]),
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+    await development.close()
+  })
+
   it("canonicalizes Vite's default loopback URL to localhost", async () => {
     const dependencies = createDependencies([])
     vi.mocked(dependencies.createViteServer).mockResolvedValue({
@@ -180,6 +207,7 @@ describe("Voyant project tooling", () => {
       }),
     )
     expect(development.url).toBe("http://127.0.0.1:4400")
+    await development.close()
   })
 
   it("closes Vite when the server cannot start listening", async () => {

@@ -33,6 +33,8 @@ import type {
 const DEFAULT_DEVELOPMENT_PORT = 3300
 const PRODUCT_BOM_ARTIFACT = ".voyant/product-bom.generated.json"
 const PRODUCT_ROUTE_FILES_EXPORT = "standard-route-files"
+let developmentAuthFallbackLeaseCount = 0
+let developmentAuthFallbackPreviousValue: string | undefined
 
 interface GeneratedRoutes {
   plugin: PluginOption
@@ -128,7 +130,7 @@ export async function developVoyantProjectWithDependencies(
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const config = await prepareProjectViteConfig(projectRoot, dependencies)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
-  const restoreDevelopmentEnvironment = enableDevelopmentEnvironment()
+  const restoreDevelopmentEnvironment = enableDevelopmentEnvironment(options.host)
   // Keep native config discovery aligned with the production build.
   let server: ProjectViteServer
   try {
@@ -468,17 +470,46 @@ function resolveDevelopmentUrl(
   return `http://${formatUrlHost(fallbackHost)}:${port}`
 }
 
-function enableDevelopmentEnvironment(): () => void {
-  const previousAuthFallback = process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
-  process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS ??= "1"
+function enableDevelopmentEnvironment(host: string | undefined): () => void {
+  if (!isLoopbackDevelopmentHost(host)) {
+    return () => undefined
+  }
+
+  if (developmentAuthFallbackLeaseCount === 0) {
+    if (process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS !== undefined) {
+      return () => undefined
+    }
+    developmentAuthFallbackPreviousValue = process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
+    process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS = "1"
+  }
+  developmentAuthFallbackLeaseCount += 1
+
+  let restored = false
 
   return () => {
-    if (previousAuthFallback === undefined) {
+    if (restored) return
+    restored = true
+    developmentAuthFallbackLeaseCount -= 1
+    if (developmentAuthFallbackLeaseCount > 0) return
+
+    if (developmentAuthFallbackPreviousValue === undefined) {
       delete process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
     } else {
-      process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS = previousAuthFallback
+      process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS = developmentAuthFallbackPreviousValue
     }
+    developmentAuthFallbackPreviousValue = undefined
   }
+}
+
+function isLoopbackDevelopmentHost(host: string | undefined): boolean {
+  if (host === undefined) return true
+  const normalizedHost = host.replace(/^\[|\]$/g, "").toLowerCase()
+  return (
+    normalizedHost === "localhost" ||
+    normalizedHost === "::1" ||
+    normalizedHost === "127.0.0.1" ||
+    normalizedHost.startsWith("127.")
+  )
 }
 
 function formatUrlHost(host: string): string {
