@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath, URL } from "node:url"
@@ -62,6 +62,20 @@ const VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE: readonly string[] = [
   "@voyant-travel/operator-standard",
   "@voyant-travel/operator-standard/standard-frontend",
 ]
+
+const VOYANT_DEDUPE_DEPENDENCIES: readonly string[] = [
+  "react",
+  "react-dom",
+  "@tanstack/react-query",
+  "@tanstack/react-router",
+]
+
+const DEPENDENCY_FIELDS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+] as const
 
 /**
  * Route-file ignore pattern for TanStack Start's file router: colocated
@@ -214,7 +228,7 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       alias: {
         "@": fileURLToPath(new URL("./src", appRootUrl)),
       },
-      dedupe: ["react", "react-dom", "@tanstack/react-query", "@tanstack/react-router"],
+      dedupe: resolvableAppRootDependencies(appRootUrl, VOYANT_DEDUPE_DEPENDENCIES),
       tsconfigPaths: true,
     },
     optimizeDeps: {
@@ -237,4 +251,37 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
     },
     plugins,
   }
+}
+
+function resolvableAppRootDependencies(
+  appRootUrl: string,
+  candidates: readonly string[],
+): string[] {
+  const packageJsonPath = fileURLToPath(new URL("./package.json", appRootUrl))
+  let parsedManifest: unknown
+  try {
+    parsedManifest = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  } catch {
+    return []
+  }
+  if (typeof parsedManifest !== "object" || parsedManifest === null) return []
+  const manifest = parsedManifest as Record<string, unknown>
+
+  const declaredDependencies = new Set<string>()
+  for (const field of DEPENDENCY_FIELDS) {
+    const dependencies = manifest[field]
+    if (typeof dependencies !== "object" || dependencies === null) continue
+    for (const dependency of Object.keys(dependencies)) declaredDependencies.add(dependency)
+  }
+
+  const resolveFromApp = createRequire(packageJsonPath)
+  return candidates.filter((dependency) => {
+    if (!declaredDependencies.has(dependency)) return false
+    try {
+      resolveFromApp.resolve(dependency)
+      return true
+    } catch {
+      return false
+    }
+  })
 }

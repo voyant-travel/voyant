@@ -171,9 +171,54 @@ describe("Voyant project tooling", () => {
     await development.close()
   })
 
+  it.each([
+    "0.0.0.0",
+    true,
+  ] as const)("does not enable auth-secret logging when project Vite config resolves host to %s", async (host) => {
+    const dependencies = createDependencies([])
+    vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host } },
+      resolvedUrls: null,
+      listen: vi.fn(async () => {
+        expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+      }),
+      close: vi.fn(async () => {}),
+    })
+
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator" },
+      dependencies,
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+    await development.close()
+  })
+
+  it("enables auth-secret logging before listen for a project-configured loopback host", async () => {
+    const dependencies = createDependencies([])
+    vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "127.0.0.1" } },
+      resolvedUrls: null,
+      listen: vi.fn(async () => {
+        expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+      }),
+      close: vi.fn(async () => {}),
+    })
+
+    const development = await developVoyantProjectWithDependencies(
+      { projectRoot: "/workspace/operator" },
+      dependencies,
+    )
+
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
+    await development.close()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
+  })
+
   it("canonicalizes Vite's default loopback URL to localhost", async () => {
     const dependencies = createDependencies([])
     vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "localhost" } },
       resolvedUrls: { local: ["http://127.0.0.1:3301/"], network: [] },
       listen: vi.fn(async () => {}),
       close: vi.fn(async () => {}),
@@ -191,6 +236,7 @@ describe("Voyant project tooling", () => {
   it("passes explicit host and port to Vite and provides a fallback URL", async () => {
     const dependencies = createDependencies([])
     vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "127.0.0.1" } },
       resolvedUrls: null,
       listen: vi.fn(async () => {}),
       close: vi.fn(async () => {}),
@@ -214,6 +260,7 @@ describe("Voyant project tooling", () => {
     const dependencies = createDependencies([])
     const close = vi.fn(async () => {})
     vi.mocked(dependencies.createViteServer).mockResolvedValue({
+      config: { server: { host: "localhost" } },
       resolvedUrls: null,
       listen: vi.fn(async () => {
         throw new Error("port unavailable")
@@ -225,6 +272,7 @@ describe("Voyant project tooling", () => {
       developVoyantProjectWithDependencies({ projectRoot: "/workspace/operator" }, dependencies),
     ).rejects.toThrow("port unavailable")
     expect(close).toHaveBeenCalledOnce()
+    expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBeUndefined()
   })
 
   it("loads selected presentation routes from the product BOM package", async () => {
@@ -361,7 +409,12 @@ function createDependencies(calls: string[]): VoyantProjectToolingDependencies {
     buildVite: vi.fn(async () => {
       calls.push("vite-build")
     }),
-    createViteServer: vi.fn(async () => ({
+    createViteServer: vi.fn(async (config) => ({
+      config: {
+        server: {
+          host: config.server?.host ?? "localhost",
+        },
+      },
       resolvedUrls: {
         local: ["http://localhost:3300/"],
         network: [],

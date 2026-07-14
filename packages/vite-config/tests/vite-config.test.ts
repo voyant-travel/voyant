@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
@@ -100,16 +100,55 @@ describe("voyantStartViteConfig", () => {
     expect(alias["@"]).toBe("/repo/starters/operator/src")
   })
 
-  it("deduplicates only dependencies available from the generated app root", () => {
-    const config = voyantStartViteConfig(base)
-
-    expect(config.resolve?.dedupe).toEqual([
+  it("deduplicates framework dependencies declared and resolvable from a fresh app root", () => {
+    const root = createAppFixture([
       "react",
       "react-dom",
       "@tanstack/react-query",
       "@tanstack/react-router",
     ])
-    expect(config.resolve?.dedupe).not.toContain("@voyant-travel/admin")
+    try {
+      const config = voyantStartViteConfig({
+        ...base,
+        appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+      })
+
+      expect(config.resolve?.dedupe).toEqual([
+        "react",
+        "react-dom",
+        "@tanstack/react-query",
+        "@tanstack/react-router",
+      ])
+      expect(config.resolve?.dedupe).not.toContain("@voyant-travel/admin")
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it("does not deduplicate framework dependencies only installed below a legacy app dependency", () => {
+    const root = createAppFixture(["@voyant-travel/operator-standard"])
+    try {
+      for (const dependency of [
+        "react",
+        "react-dom",
+        "@tanstack/react-query",
+        "@tanstack/react-router",
+      ]) {
+        writeResolvablePackage(
+          join(root, "node_modules/@voyant-travel/operator-standard/node_modules"),
+          dependency,
+        )
+      }
+
+      const config = voyantStartViteConfig({
+        ...base,
+        appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+      })
+
+      expect(config.resolve?.dedupe).toEqual([])
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it("does not prebundle the broad operator composition entry", () => {
@@ -169,6 +208,27 @@ describe("voyantStartViteConfig", () => {
     ).toEqual(["app.example.test"])
   })
 })
+
+function createAppFixture(dependencies: readonly string[]): string {
+  const root = mkdtempSync(join(tmpdir(), "voyant-vite-config-"))
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({
+      name: "test-app",
+      dependencies: Object.fromEntries(dependencies.map((id) => [id, "1.0.0"])),
+    }),
+  )
+  for (const dependency of dependencies)
+    writeResolvablePackage(join(root, "node_modules"), dependency)
+  return root
+}
+
+function writeResolvablePackage(nodeModulesRoot: string, name: string): void {
+  const packageRoot = join(nodeModulesRoot, name)
+  mkdirSync(packageRoot, { recursive: true })
+  writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name, main: "index.js" }))
+  writeFileSync(join(packageRoot, "index.js"), "module.exports = {}\n")
+}
 
 describe("VOYANT_ROUTE_FILE_IGNORE_PATTERN", () => {
   const pattern = new RegExp(VOYANT_ROUTE_FILE_IGNORE_PATTERN)

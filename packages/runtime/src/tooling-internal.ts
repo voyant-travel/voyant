@@ -61,6 +61,11 @@ interface ProjectRouteGenerationOptions {
 }
 
 interface ProjectViteServer {
+  config: {
+    server: {
+      host?: string | boolean
+    }
+  }
   resolvedUrls: ViteDevServer["resolvedUrls"]
   listen(): Promise<unknown>
   close(): Promise<void>
@@ -130,23 +135,19 @@ export async function developVoyantProjectWithDependencies(
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
   const config = await prepareProjectViteConfig(projectRoot, dependencies)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
-  const restoreDevelopmentEnvironment = enableDevelopmentEnvironment(options.host)
   // Keep native config discovery aligned with the production build.
-  let server: ProjectViteServer
-  try {
-    server = await dependencies.createViteServer({
-      ...config,
-      root: projectRoot,
-      server: {
-        ...config.server,
-        ...(options.host === undefined ? {} : { host: options.host }),
-        port,
-      },
-    })
-  } catch (error) {
-    restoreDevelopmentEnvironment()
-    throw error
-  }
+  const server = await dependencies.createViteServer({
+    ...config,
+    root: projectRoot,
+    server: {
+      ...config.server,
+      ...(options.host === undefined ? {} : { host: options.host }),
+      port,
+    },
+  })
+  const restoreDevelopmentEnvironment = enableDevelopmentEnvironment(
+    normalizeViteHost(server.config.server.host),
+  )
 
   try {
     await server.listen()
@@ -510,6 +511,12 @@ function isLoopbackDevelopmentHost(host: string | undefined): boolean {
     normalizedHost === "127.0.0.1" ||
     normalizedHost.startsWith("127.")
   )
+}
+
+function normalizeViteHost(host: string | boolean | undefined): string | undefined {
+  if (host === true) return "0.0.0.0"
+  if (host === false) return undefined
+  return host
 }
 
 function formatUrlHost(host: string): string {
