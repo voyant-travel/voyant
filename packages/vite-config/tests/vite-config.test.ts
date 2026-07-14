@@ -145,10 +145,16 @@ describe("voyantStartViteConfig", () => {
     expect(include).toEqual([...VOYANT_SSR_OPTIMIZE_DEPS, "my-lib"])
   })
 
-  it("does not force optional state libraries into every app", () => {
-    expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("zustand")
-    expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("zustand/react/shallow")
-    expect(VOYANT_SSR_OPTIMIZE_DEPS).not.toContain("immer")
+  it("prebundles only direct generated-app dependencies", () => {
+    expect(VOYANT_SSR_OPTIMIZE_DEPS).toEqual([
+      "react",
+      "react-dom",
+      "react-dom/server",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "@tanstack/react-query",
+      "@tanstack/react-router",
+    ])
   })
 
   it("keeps the CommonJS Postgres driver external in Node SSR builds", () => {

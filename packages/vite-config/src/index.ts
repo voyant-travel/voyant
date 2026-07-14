@@ -48,8 +48,6 @@ export function voyantVendorChunk(id: string): string | undefined {
  * don't pay per-module transform costs for the common runtime set.
  */
 export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
-  "clsx",
-  "tailwind-merge",
   "react",
   "react-dom",
   "react-dom/server",
@@ -57,12 +55,6 @@ export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
   "react/jsx-dev-runtime",
   "@tanstack/react-query",
   "@tanstack/react-router",
-  "sonner",
-  "lucide-react",
-  "date-fns",
-  "zod",
-  "react-hook-form",
-  "swr",
 ]
 
 /** First-party React context owners must resolve to one module instance. */

@@ -25,6 +25,17 @@ test("accepts the strict generated standard Node starter shape", () => {
   )
 })
 
+test("packages the direct dependencies imported by generated frontend sources", () => {
+  for (const dependency of [
+    "@tanstack/react-query",
+    "@tanstack/react-router",
+    "react",
+    "react-dom",
+  ]) {
+    assert.ok(standardNodeStarter.runtimeDependencies.includes(dependency), dependency)
+  }
+})
+
 test("rejects a generated gitignore that does not protect disposable and local files", () => {
   const root = fixture({ extraFiles: { ".gitignore": "node_modules/\n" } })
   assert.throws(
@@ -375,6 +386,10 @@ function fixture(overrides = {}) {
       "@voyant-travel/framework": "1.0.0",
       "@voyant-travel/runtime": "1.0.0",
       "@voyant-travel/operator-standard": "1.0.0",
+      "@tanstack/react-query": "1.0.0",
+      "@tanstack/react-router": "1.0.0",
+      react: "1.0.0",
+      "react-dom": "1.0.0",
     },
     devDependencies: { "@voyant-travel/cli": "1.0.0" },
   }
