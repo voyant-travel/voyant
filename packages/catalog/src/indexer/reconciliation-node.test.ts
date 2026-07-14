@@ -2,7 +2,7 @@
 
 import type { createReadStream as CreateReadStream } from "node:fs"
 import { mkdtempSync, readdirSync, rmSync } from "node:fs"
-import type { appendFile as AppendFile, rm as Remove } from "node:fs/promises"
+import type { access as Access, appendFile as AppendFile, rm as Remove } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import type {
@@ -15,7 +15,6 @@ import type {
 import { describe, expect, it, vi } from "vitest"
 import type { FieldPolicyRegistry } from "../contract.js"
 import {
-  assertIndexerReconciliationAuthoritySerializesAcrossInstances,
   createFileIndexerReconciliationStateStore,
   IndexerAdminUnavailableError,
   type IndexerReconciliationAuthority,
@@ -26,6 +25,8 @@ import {
 } from "./reconciliation-node.js"
 
 const fsControl = vi.hoisted(() => ({
+  accessPaths: [] as string[],
+  appendPaths: [] as string[],
   readPaths: [] as string[],
   openResources: 0,
   maxOpenResources: 0,
@@ -59,7 +60,12 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs/promises")>()
   return {
     ...actual,
+    async access(...args: Parameters<typeof Access>) {
+      fsControl.accessPaths.push(String(args[0]))
+      return actual.access(...args)
+    },
     async appendFile(...args: Parameters<typeof AppendFile>) {
+      fsControl.appendPaths.push(String(args[0]))
       const release = trackOpenResource()
       try {
         return await actual.appendFile(...args)
@@ -88,32 +94,6 @@ const productsObsolete: IndexerSlice = { ...productsCurrent, market: "obsolete" 
 const productsObsoleteSecond: IndexerSlice = { ...productsCurrent, market: "obsolete-second" }
 const productsUntargeted: IndexerSlice = { ...productsCurrent, market: "untargeted" }
 const unrelatedSlice: IndexerSlice = { ...productsCurrent, vertical: "cruises" }
-
-describe("assertIndexerReconciliationAuthoritySerializesAcrossInstances", () => {
-  it("proves independently constructed authorities share one backend lock", async () => {
-    const fake = createFakeAdapter([[productsCurrent, []]])
-    const backend = createTestBackendLock()
-    let constructions = 0
-
-    await expect(
-      assertIndexerReconciliationAuthoritySerializesAcrossInstances(() => {
-        constructions += 1
-        return createFakeReconciliationAuthority(fake.adapter, [productsCurrent], backend).authority
-      }),
-    ).resolves.toBeUndefined()
-    expect(constructions).toBe(2)
-  })
-
-  it("rejects independently constructed authorities without a shared backend lock", async () => {
-    const fake = createFakeAdapter([[productsCurrent, []]])
-
-    await expect(
-      assertIndexerReconciliationAuthoritySerializesAcrossInstances(
-        () => createFakeReconciliationAuthority(fake.adapter, [productsCurrent]).authority,
-      ),
-    ).rejects.toThrow("did not serialize through one shared backend lock")
-  })
-})
 
 describe("reconcileIndexer", () => {
   it("deletes only stale documents owned by the reconciliation", async () => {
@@ -354,27 +334,36 @@ describe("reconcileIndexer", () => {
     expect(fake.ids(productsCurrent)).toEqual(["owned-live", "owned-new"])
   })
 
-  it("rejects duplicate expected IDs before destructive scanning", async () => {
-    const fake = createFakeAdapter([
-      [productsCurrent, [document("owned-live"), document("owned-stale")]],
-    ])
+  it("applies conflicting duplicate expected IDs with last-occurrence-wins across retries", async () => {
+    const fake = createFakeAdapter(
+      [[productsCurrent, [document("owned-live"), document("owned-stale")]]],
+      { failUpsertCalls: [2] },
+    )
     const fixture = reconciliationFixture(
       fake,
       [productsCurrent],
       [
         {
           slice: productsCurrent,
-          loadDocuments: () => [document("owned-live"), document("owned-live")],
+          loadDocuments: () => [
+            document("owned-live", "first"),
+            document("owned-live", "same-batch-last"),
+            document("owned-other"),
+            document("owned-live", "final"),
+          ],
         },
       ],
     )
-    fixture.options.batchSize = 1
 
-    await expect(reconcileIndexer(fixture.options)).rejects.toThrow(
-      "duplicate expected document id owned-live",
-    )
-    expect(fake.events).not.toContain("scan")
-    expect(fake.deleted).toEqual([])
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("temporary upsert failure")
+    expect(fake.get(productsCurrent, "owned-live")?.fields.title).toBe("same-batch-last")
+
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
+      indexedDocuments: 3,
+      deletedDocuments: 1,
+    })
+    expect(fake.get(productsCurrent, "owned-live")?.fields.title).toBe("final")
+    expect(fake.ids(productsCurrent)).toEqual(["owned-live", "owned-other"])
   })
 
   it("deduplicates scanned candidate IDs before deletion", async () => {
@@ -534,9 +523,7 @@ describe("reconcileIndexer", () => {
     fixture.options.stateStore = createFileIndexerReconciliationStateStore({
       directory,
     })
-    fsControl.readPaths.length = 0
-    fsControl.openResources = 0
-    fsControl.maxOpenResources = 0
+    resetFsInstrumentation()
 
     try {
       await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
@@ -550,18 +537,71 @@ describe("reconcileIndexer", () => {
       for (const bucket of bucketReads) {
         readsByBucket.set(bucket, (readsByBucket.get(bucket) ?? 0) + 1)
       }
-      expect(bucketReads.length).toBeLessThanOrEqual(256 * 3)
-      expect(
-        [...readsByBucket].every(([bucket, reads]) =>
-          bucket.startsWith("expected-") ? reads === 2 : reads === 1,
-        ),
-      ).toBe(true)
+      expect(bucketReads.length).toBeLessThanOrEqual(256 * 2)
+      expect([...readsByBucket].every(([, reads]) => reads === 1)).toBe(true)
       expect(fsControl.maxOpenResources).toBeLessThanOrEqual(2)
       expect(fsControl.openResources).toBe(0)
       expect(readdirSync(directory)).toEqual([])
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }
+  })
+
+  it("performs no bucket access for an empty corpus", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-empty-"))
+    const fake = createFakeAdapter([[productsCurrent, []]])
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [] }],
+    )
+    fixture.options.stateStore = createFileIndexerReconciliationStateStore({ directory })
+    resetFsInstrumentation()
+
+    try {
+      await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
+        indexedDocuments: 0,
+        deletedDocuments: 0,
+      })
+      expect(fsControl.accessPaths.filter((path) => path.startsWith(directory))).toEqual([])
+      expect(fsControl.readPaths.filter((path) => path.startsWith(directory))).toEqual([])
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  it("accesses only the sorted union of populated buckets", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-populated-"))
+    const fake = createFakeAdapter([
+      [productsCurrent, [document("owned-live"), document("owned-stale")]],
+    ])
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
+    )
+    fixture.options.stateStore = createFileIndexerReconciliationStateStore({ directory })
+    resetFsInstrumentation()
+
+    try {
+      await reconcileIndexer(fixture.options)
+      const populated = new Set(
+        fsControl.appendPaths.filter((path) => path.startsWith(directory)).map(bucketIndex),
+      )
+      const accessed = fsControl.accessPaths
+        .filter((path) => path.startsWith(directory))
+        .map(bucketIndex)
+      expect(accessed).toHaveLength(populated.size * 2)
+      expect([...new Set(accessed)]).toEqual([...populated].sort((left, right) => left - right))
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  it("rejects unreasonably large filesystem bucket counts", () => {
+    expect(() => createFileIndexerReconciliationStateStore({ buckets: 1_000_000 })).toThrow(
+      "between 1 and 4096",
+    )
   })
 
   it("fails before mutation when the authority adapter has no admin surface", async () => {
@@ -673,7 +713,6 @@ function createTestBackendLock(): TestBackendLock {
 function createStubReconciliationState(): IndexerReconciliationState {
   return {
     async writeExpectedIds() {},
-    async assertExpectedIdsUnique() {},
     async writeCandidateIds() {},
     async seal() {},
     async *staleIdBatches() {},
@@ -687,8 +726,8 @@ const emptyRegistry: FieldPolicyRegistry = {
   resolve: () => undefined,
 }
 
-function document(id: string): IndexerDocument {
-  return { id, fields: { title: id } }
+function document(id: string, title = id): IndexerDocument {
+  return { id, fields: { title } }
 }
 
 interface FakeAdapterOptions {
@@ -811,9 +850,24 @@ function createFakeAdapter(
     deleted,
     dropped,
     has: (slice: IndexerSlice) => collections.has(sliceKey(slice)),
+    get: (slice: IndexerSlice, id: string) => collections.get(sliceKey(slice))?.documents.get(id),
     ids: (slice: IndexerSlice) =>
       [...(collections.get(sliceKey(slice))?.documents.keys() ?? [])].sort(),
   }
+}
+
+function resetFsInstrumentation() {
+  fsControl.accessPaths.length = 0
+  fsControl.appendPaths.length = 0
+  fsControl.readPaths.length = 0
+  fsControl.openResources = 0
+  fsControl.maxOpenResources = 0
+}
+
+function bucketIndex(path: string): number {
+  const match = basename(path).match(/-(\d+)\.jsonl$/)
+  if (!match) throw new Error(`Missing bucket index in ${path}`)
+  return Number(match[1])
 }
 
 function getOrCreateCollection(

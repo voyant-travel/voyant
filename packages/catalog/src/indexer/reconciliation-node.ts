@@ -15,9 +15,9 @@ export interface IndexerReconciliationTarget {
   /** A configured slice whose complete expected document set is supplied. */
   slice: IndexerSlice
   /**
-   * Creates a fresh document stream for every reconciliation attempt. IDs
-   * must be unique. A duplicate aborts before the destructive scan, although
-   * preceding idempotent upsert batches may already have completed.
+   * Creates a fresh document stream for every reconciliation attempt. Batches
+   * are applied sequentially; repeated IDs within a batch collapse to its last
+   * occurrence, and later batches replace earlier ones. Retrying converges.
    */
   loadDocuments(): AsyncIterable<IndexerDocument> | Iterable<IndexerDocument>
 }
@@ -41,7 +41,9 @@ export interface IndexerReconciliationExclusiveContext {
  * long-lived backend or distributed write lock shared by every index mutation
  * path in every process before exposing the callback context. A process-local
  * mutex or an authority created per IndexerService is insufficient. This
- * package intentionally provides no default implementation.
+ * package intentionally provides no default implementation or generic
+ * conformance assertion: deployments must verify exclusion with a
+ * process-separated, backend-specific integration test.
  */
 export interface IndexerReconciliationAuthority {
   runExclusive<T>(
@@ -49,60 +51,9 @@ export interface IndexerReconciliationAuthority {
   ): Promise<T>
 }
 
-/**
- * Caller-side conformance assertion for deployment authority factories. It
- * constructs two independent authorities and verifies that their
- * `runExclusive` callbacks do not overlap. Both instances must use the same
- * backend/distributed lock for this assertion to pass.
- */
-export async function assertIndexerReconciliationAuthoritySerializesAcrossInstances(
-  createAuthority: () => IndexerReconciliationAuthority,
-): Promise<void> {
-  const firstAuthority = createAuthority()
-  const secondAuthority = createAuthority()
-  let active = 0
-  let maxActive = 0
-  let releaseFirst!: () => void
-  let markFirstEntered!: () => void
-  const firstEntered = new Promise<void>((resolve) => {
-    markFirstEntered = resolve
-  })
-  const holdFirst = new Promise<void>((resolve) => {
-    releaseFirst = resolve
-  })
-
-  const first = firstAuthority.runExclusive(async () => {
-    active += 1
-    maxActive = Math.max(maxActive, active)
-    markFirstEntered()
-    try {
-      await holdFirst
-    } finally {
-      active -= 1
-    }
-  })
-  await firstEntered
-  const second = secondAuthority.runExclusive(async () => {
-    active += 1
-    maxActive = Math.max(maxActive, active)
-    active -= 1
-  })
-  await Promise.resolve()
-  releaseFirst()
-  await Promise.all([first, second])
-
-  if (maxActive !== 1) {
-    throw new Error(
-      "Indexer reconciliation authorities did not serialize through one shared backend lock",
-    )
-  }
-}
-
 /** Partitioned state for one target slice during one reconciliation attempt. */
 export interface IndexerReconciliationState {
   writeExpectedIds(ids: readonly string[]): Promise<void>
-  /** Reject duplicate expected IDs before the destructive provider scan. */
-  assertExpectedIdsUnique(): Promise<void>
   writeCandidateIds(ids: readonly string[]): Promise<void>
   /** Prevent further writes before stale bucket reads begin. */
   seal(): Promise<void>
@@ -119,9 +70,11 @@ export interface IndexerReconciliationStateStore {
 export interface FileIndexerReconciliationStateStoreOptions {
   /** Parent directory for temporary state. Defaults to the operating-system temp directory. */
   directory?: string
-  /** Number of expected/candidate hash buckets. Defaults to 256. */
+  /** Number of expected/candidate hash buckets. Defaults to 256; maximum 4096. */
   buckets?: number
 }
+
+const MAX_RECONCILIATION_BUCKETS = 4_096
 
 /**
  * Create the default Node reconciliation state store. IDs are grouped into
@@ -134,8 +87,10 @@ export function createFileIndexerReconciliationStateStore(
 ): IndexerReconciliationStateStore {
   const directory = options.directory ?? tmpdir()
   const buckets = options.buckets ?? 256
-  if (!Number.isSafeInteger(buckets) || buckets < 1) {
-    throw new Error("Indexer reconciliation buckets must be a positive integer")
+  if (!Number.isSafeInteger(buckets) || buckets < 1 || buckets > MAX_RECONCILIATION_BUCKETS) {
+    throw new Error(
+      `Indexer reconciliation buckets must be an integer between 1 and ${MAX_RECONCILIATION_BUCKETS}`,
+    )
   }
 
   return {
@@ -231,18 +186,18 @@ async function reconcileExclusive(
         upsertBatch.push(document)
         if (upsertBatch.length < batchSize) continue
 
-        await state.writeExpectedIds(upsertBatch.map(({ id }) => id))
-        await adapter.upsert(target.slice, upsertBatch)
-        indexedDocuments += upsertBatch.length
+        const documents = lastDocumentById(upsertBatch)
+        await state.writeExpectedIds(documents.map(({ id }) => id))
+        await adapter.upsert(target.slice, documents)
+        indexedDocuments += documents.length
         upsertBatch = []
       }
       if (upsertBatch.length > 0) {
-        await state.writeExpectedIds(upsertBatch.map(({ id }) => id))
-        await adapter.upsert(target.slice, upsertBatch)
-        indexedDocuments += upsertBatch.length
+        const documents = lastDocumentById(upsertBatch)
+        await state.writeExpectedIds(documents.map(({ id }) => id))
+        await adapter.upsert(target.slice, documents)
+        indexedDocuments += documents.length
       }
-
-      await state.assertExpectedIdsUnique()
 
       if (!admin) {
         await state.seal()
@@ -348,6 +303,10 @@ function validateObsoleteSlices(
 type SpoolKind = "expected" | "candidate"
 
 class FileIndexerReconciliationState implements IndexerReconciliationState {
+  private readonly populatedBuckets: Record<SpoolKind, Set<number>> = {
+    expected: new Set(),
+    candidate: new Set(),
+  }
   private sealed = false
   private disposed = false
 
@@ -358,19 +317,6 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
 
   writeExpectedIds(ids: readonly string[]): Promise<void> {
     return this.writeIds("expected", ids)
-  }
-
-  async assertExpectedIdsUnique(): Promise<void> {
-    this.requireWritable()
-    for (let bucket = 0; bucket < this.buckets; bucket += 1) {
-      const expected = new Set<string>()
-      for await (const id of readIds(this.bucketPath("expected", bucket))) {
-        if (expected.has(id)) {
-          throw new Error(`Indexer reconciliation received duplicate expected document id ${id}`)
-        }
-        expected.add(id)
-      }
-    }
   }
 
   writeCandidateIds(ids: readonly string[]): Promise<void> {
@@ -387,7 +333,11 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
     this.requireSealed()
     let batch: string[] = []
 
-    for (let bucket = 0; bucket < this.buckets; bucket += 1) {
+    const populatedBuckets = new Set([
+      ...this.populatedBuckets.expected,
+      ...this.populatedBuckets.candidate,
+    ])
+    for (const bucket of [...populatedBuckets].sort((left, right) => left - right)) {
       const expected = new Set<string>()
       for await (const id of readIds(this.bucketPath("expected", bucket))) expected.add(id)
       const candidates = new Set<string>()
@@ -424,6 +374,7 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
 
     for (const [bucket, bucketIds] of idsByBucket) {
       await appendFile(this.bucketPath(kind, bucket), bucketIds.map(encodeId).join(""), "utf8")
+      this.populatedBuckets[kind].add(bucket)
     }
   }
 
@@ -444,6 +395,10 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
   private requireActive() {
     if (this.disposed) throw new Error("Indexer reconciliation state has been disposed")
   }
+}
+
+function lastDocumentById(documents: readonly IndexerDocument[]): IndexerDocument[] {
+  return [...new Map(documents.map((document) => [document.id, document])).values()]
 }
 
 async function disposeReconciliationState(state: IndexerReconciliationState): Promise<void> {
