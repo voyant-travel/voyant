@@ -54,13 +54,13 @@ export function useLiveQueries(
     }
 
     void fetchToken()
-      .then(({ token }) => {
-        if (cancelled) return
+      .then((credentials) => {
+        if (cancelled || !credentials) return
         for (const channel of channelList) {
           connections.push(
             connector.subscribe({
               channel,
-              token,
+              token: credentials.token,
               onMessage: (message) => {
                 latest.current.onMessage?.(channel, message)
                 for (const queryKey of resolveInvalidationKeys(message, latest.current.map)) {

@@ -25,6 +25,21 @@ function createFakeConnector() {
 }
 
 describe("useChannel", () => {
+  it("does not subscribe when realtime is disabled for the deployment", async () => {
+    const fake = createFakeConnector()
+    const onError = vi.fn()
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <RealtimeReactProvider connector={fake.connector} fetchToken={async () => null}>
+        {children}
+      </RealtimeReactProvider>
+    )
+
+    renderHook(() => useChannel("admin", { onError }), { wrapper })
+
+    await waitFor(() => expect(fake.subscribedChannels()).toEqual([]))
+    expect(onError).not.toHaveBeenCalled()
+  })
+
   it("routes token failures to onError without subscribing", async () => {
     const fake = createFakeConnector()
     const onError = vi.fn()

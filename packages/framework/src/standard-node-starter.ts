@@ -30,6 +30,10 @@ type StandardNodeStarterContract = {
     "@voyant-travel/framework",
     "@voyant-travel/runtime",
     "@voyant-travel/operator-standard",
+    "@tanstack/react-query",
+    "@tanstack/react-router",
+    "react",
+    "react-dom",
     "pg",
   ]
   readonly developmentDependencies: readonly ["@voyant-travel/cli", "tsx", "typescript"]

@@ -61,16 +61,17 @@ describe("createRealtimeRoutes POST /token", () => {
     expect(body.data.capabilities.admin).toBeUndefined()
   })
 
-  it("503s when no provider is configured", async () => {
+  it("quietly disables realtime when no provider is configured", async () => {
     const app = mountTokenApp({}, { actor: "staff", userId: "usr_a" })
     const res = await app.request("/token", { method: "POST" })
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(204)
+    await expect(res.text()).resolves.toBe("")
   })
 
-  it("503s (does not throw) when resolveProviders yields an empty list", async () => {
+  it("returns no content when resolveProviders yields an empty list", async () => {
     const app = mountTokenApp({ resolveProviders: () => [] }, { actor: "staff", userId: "usr_a" })
     const res = await app.request("/token", { method: "POST" })
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(204)
   })
 })
 

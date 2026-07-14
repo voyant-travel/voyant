@@ -32,4 +32,13 @@ describe("@voyant-travel/finance package exports", () => {
       default: "./dist/booking-schedule/subscriber-runtime.js",
     })
   })
+
+  it("publishes the graph-declared voucher setup subpath", () => {
+    expect(packageJson.exports["./setup/vouchers"]).toBe("./src/service-vouchers-migration.ts")
+    expect(packageJson.publishConfig.exports["./setup/vouchers"]).toEqual({
+      types: "./dist/service-vouchers-migration.d.ts",
+      import: "./dist/service-vouchers-migration.js",
+      default: "./dist/service-vouchers-migration.js",
+    })
+  })
 })

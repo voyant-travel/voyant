@@ -117,6 +117,24 @@ describe("useLiveQueries", () => {
     expect(fake.subscribedChannels()).toEqual([])
   })
 
+  it("does not subscribe when realtime is disabled for the deployment", async () => {
+    const fake = createFakeConnector()
+    const queryClient = new QueryClient()
+    const onError = vi.fn()
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RealtimeReactProvider connector={fake.connector} fetchToken={async () => null}>
+          {children}
+        </RealtimeReactProvider>
+      </QueryClientProvider>
+    )
+
+    renderHook(() => useLiveQueries(["admin"], () => [], { onError }), { wrapper })
+
+    await waitFor(() => expect(fake.subscribedChannels()).toEqual([]))
+    expect(onError).not.toHaveBeenCalled()
+  })
+
   it("routes token failures to onError without subscribing", async () => {
     const fake = createFakeConnector()
     const queryClient = new QueryClient()

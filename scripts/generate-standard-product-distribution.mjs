@@ -56,6 +56,7 @@ const distributionRuntimeEntryDeps = {
   "@voyant-travel/cruises": "workspace:*",
   "@voyant-travel/db": "workspace:*",
   "@voyant-travel/framework-migrations": "workspace:*",
+  "@voyant-travel/identity-react": "workspace:*",
   "@voyant-travel/mcp": "workspace:*",
   "@voyant-travel/plugin-voyant-connect": "^0.3.2",
   "@voyant-travel/runtime-core": "workspace:*",

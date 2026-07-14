@@ -3452,6 +3452,9 @@ importers:
       '@voyant-travel/identity':
         specifier: workspace:*
         version: link:../identity
+      '@voyant-travel/identity-react':
+        specifier: workspace:*
+        version: link:../identity-react
       '@voyant-travel/inventory':
         specifier: workspace:*
         version: link:../inventory
@@ -4072,6 +4075,9 @@ importers:
       hono:
         specifier: 4.12.25
         version: 4.12.25
+      srvx:
+        specifier: ^0.11.22
+        version: 0.11.22
       tsx:
         specifier: 'catalog:'
         version: 4.22.4

@@ -61,7 +61,7 @@ export function buildRealtimeRouteRuntime(
     : (options.providers ?? [])
   return {
     // Tolerate zero providers (e.g. no API key configured): the token route
-    // 503s and the bridge registers nothing, rather than failing app boot.
+    // returns no content and the bridge registers nothing, rather than failing app boot.
     service: providers.length > 0 ? createRealtimeService(providers) : null,
     resolvePortalScope: options.resolvePortalScope,
     defaultTtlSeconds: options.defaultTtlSeconds,
@@ -98,7 +98,7 @@ export function createRealtimeRoutes(
   routes.post("/token", async (c) => {
     const runtime = eagerRuntime ?? getRuntime(c)
     if (!runtime?.service) {
-      return c.json({ error: "Realtime provider is not configured" }, 503)
+      return c.body(null, 204)
     }
     const service = runtime.service
 
@@ -135,8 +135,8 @@ export function createRealtimeRoutes(
     summary: "Mint a realtime client token",
     responses: {
       200: { description: "A short-lived capability-scoped client token." },
+      204: { description: "Realtime is not configured for this deployment." },
       401: { description: "Authentication is required." },
-      503: { description: "No realtime transport is configured." },
     },
     "x-voyant-api-id": apiId,
   })

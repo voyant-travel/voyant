@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: runtime; the isolated pack, install, build, start, browser, and HMR flow is one end-to-end acceptance contract.
 import assert from "node:assert/strict"
 import { execFileSync, spawn } from "node:child_process"
 import { once } from "node:events"
@@ -5,38 +6,38 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs"
-import { createServer as createNetServer } from "node:net"
+import { createRequire } from "node:module"
+import { createConnection, createServer as createNetServer } from "node:net"
 import { tmpdir } from "node:os"
-import { dirname, join, resolve } from "node:path"
+import { basename, dirname, join, resolve } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
+const frontendSingletonRoots = [
+  "@tanstack/react-query",
+  "@tanstack/react-router",
+  "react",
+  "react-dom",
+]
 
-test("minimal starter installs, builds, and serves API and SSR routes", {
-  timeout: 300_000,
-}, async () => {
+test("legacy minimal starter serves project API and SSR routes without direct frontend dependencies", {
+  timeout: 420_000,
+}, async (t) => {
   const root = mkdtempSync(join(tmpdir(), "voyant-minimal-starter-acceptance-"))
   const out = join(root, "out")
   const app = join(root, "app")
-  const port = await reservePort()
-  let server
   try {
+    const publishedPackages = packPublishedPackages(join(root, "published-packages"))
     exec(
       process.execPath,
-      [
-        "scripts/package-starters.mjs",
-        "--version",
-        "0.0.0-test",
-        "--local-links",
-        "--out-dir",
-        out,
-      ],
+      ["scripts/package-starters.mjs", "--version", "0.0.0-test", "--out-dir", out],
       repoRoot,
     )
     mkdirSync(app, { recursive: true })
@@ -45,18 +46,20 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
       ["-xzf", join(out, "voyant-starter-operator-0.0.0-test.tar.gz"), "-C", app],
       repoRoot,
     )
-    useInstalledToolingArtifacts(app)
+    useInstalledToolingArtifacts(app, publishedPackages)
     exec(
       "pnpm",
       [
         "install",
-        "--offline",
+        "--prefer-offline",
         "--ignore-scripts",
         "--ignore-workspace",
         "--config.frozen-lockfile=false",
       ],
       app,
     )
+    assertNonHoistedConsumerLayout(app)
+    assertPublishedPackageLayout(app)
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
     write(
       app,
@@ -87,6 +90,7 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
       "src/subscribers/booking-created.ts",
       'export default { id: "booking.created.health-sync", eventType: "booking.created", manifest: { id: "booking.created.health-sync", eventType: "booking.created", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
     )
+    write(app, "src/acceptance-proof.tsx", acceptanceProofSource("before"))
     write(
       app,
       "vite.config.ts",
@@ -94,16 +98,31 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
         'import { writeFileSync } from "node:fs"',
         "export default {",
         '  build: { outDir: "custom-dist" },',
+        // The offline link fixture must expose dependencies of linked workspace sources.
+        "  resolve: { alias: {",
+        `    "@aws-sdk/client-s3": ${JSON.stringify(resolvePnpmStorePackageEntry("@aws-sdk/client-s3"))},`,
+        `    "@aws-sdk/s3-request-presigner": ${JSON.stringify(resolvePnpmStorePackageEntry("@aws-sdk/s3-request-presigner"))},`,
+        "  } },",
         "  plugins: [{",
         '    name: "project-vite-config-acceptance",',
+        '    enforce: "pre",',
         '    configResolved() { writeFileSync(".voyant/project-vite-plugin.loaded", "ok\\n") },',
+        "    transform(code, id) {",
+        '      const normalizedId = id.replaceAll("\\\\", "/").split("?", 1)[0]',
+        '      if (!normalizedId.endsWith("/.voyant/routes/__root.tsx")) return null',
+        '      if (!code.includes("<Outlet />")) throw new Error("Acceptance hook could not find the root outlet")',
+        `      return ${JSON.stringify('import AcceptanceProof from "@/acceptance-proof"\n')} + code.replace("<Outlet />", "<AcceptanceProof /><Outlet />")`,
+        "    },",
         "  }],",
         "}",
       ].join("\n"),
     )
-    exec("pnpm", ["build"], app)
+    const buildOutput = exec("pnpm", ["build"], app)
     assert.ok(!existsSync(join(app, "custom-dist")))
-    assert.ok(existsSync(join(app, "dist/client")))
+    assert.ok(
+      existsSync(join(app, "dist/client")),
+      `Build did not emit dist/client.\n${buildOutput}\nProject root: ${readdirSync(app).join(", ")}`,
+    )
     assert.ok(existsSync(join(app, "dist/server/server.js")))
     assert.ok(existsSync(join(app, "dist/.voyant/deployment-graph.generated.json")))
     assert.ok(existsSync(join(app, "dist/server/.voyant/deployment-graph.generated.json")))
@@ -150,10 +169,7 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
     )
     assert.match(projectRuntime, /createRuntimePorts: createGeneratedGraphRuntimePorts/)
     assert.match(projectRuntime, /GENERATED_GRAPH_RUNTIME_CONTRIBUTORS/)
-    assert.match(
-      projectRuntime,
-      /operator-standard\/node_modules\/@voyant-travel\/storefront\/src\/runtime-contributor/,
-    )
+    assert.match(projectRuntime, /@voyant-travel\/storefront\/dist\/runtime-contributor\.js/)
     assert.doesNotMatch(
       projectRuntime,
       /^import .* from "@voyant-travel\/accommodations\/runtime-contributor"/m,
@@ -185,54 +201,367 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
       app,
       { NODE_OPTIONS: "--conditions=development" },
     )
+    exec("pnpm", ["db:migrate"], app, acceptanceEnvironment())
 
-    server = spawn(
-      process.execPath,
-      [
-        join(app, "node_modules/@voyant-travel/cli/bin/voyant.mjs"),
-        "start",
-        "--port",
-        String(port),
-      ],
-      {
-        cwd: app,
-        env: {
-          ...process.env,
-          BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
-          DATABASE_URL: ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant"].join(""),
-          NODE_OPTIONS: "--conditions=development",
-          SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
-        },
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    )
-    const output = captureOutput(server)
-    await waitForOk(`http://127.0.0.1:${port}/healthz`, server, output)
-
-    const apiResponse = await fetch(`http://127.0.0.1:${port}/api/v1/public/starter-proof`)
-    assert.equal(apiResponse.status, 401, output())
-
-    const ssrResponse = await fetch(`http://127.0.0.1:${port}/docs`)
-    assert.equal(ssrResponse.status, 200, output())
-    assert.match(await ssrResponse.text(), /No OpenAPI specs are available/)
+    await t.test("voyant start serves the authored route and rendered SSR", async (modeTest) => {
+      await assertVoyantServerMode(app, "start", modeTest)
+    })
+    await t.test("voyant develop serves the authored route and rendered SSR", async (modeTest) => {
+      await assertVoyantServerMode(app, "develop", modeTest)
+    })
   } finally {
-    if (server) await stop(server)
     rmSync(root, { recursive: true, force: true })
   }
 })
 
-function useInstalledToolingArtifacts(app) {
+async function assertVoyantServerMode(app, mode, t) {
+  const port = await reservePort()
+  const server = spawnVoyant(app, mode, port)
+  const output = captureOutput(server)
+  try {
+    await waitForListening("127.0.0.1", port, server, output)
+
+    const api = await readResponse(`http://127.0.0.1:${port}/api/v1/public/starter-proof`, {
+      headers: { authorization: "Bearer starter-acceptance-internal-key" },
+    })
+    const ssr = await readResponse(`http://127.0.0.1:${port}/docs`)
+    const failures = []
+
+    if (api.status !== 200) {
+      failures.push(`project API returned ${api.status}: ${api.body}`)
+    } else {
+      try {
+        assert.deepEqual(JSON.parse(api.body), { route: "public" })
+      } catch (error) {
+        failures.push(`project API returned an unexpected body: ${api.body}\n${String(error)}`)
+      }
+    }
+    if (ssr.status !== 200) {
+      failures.push(`SSR route returned ${ssr.status}: ${ssr.body}`)
+    } else {
+      if (!ssr.contentType.includes("text/html")) {
+        failures.push(`SSR route returned unexpected content-type: ${ssr.contentType}`)
+      }
+      if (!/<html[\s>]/i.test(ssr.body)) {
+        failures.push("SSR route did not return an HTML document")
+      }
+      if (!/No OpenAPI specs are available/.test(ssr.body)) {
+        failures.push("SSR route did not render the expected project docs content")
+      }
+    }
+
+    assert.deepEqual(failures, [], `${mode} failed packaged starter HTTP acceptance.\n${output()}`)
+    await t.test(
+      mode === "develop"
+        ? "hydrates and preserves one React identity across authored-source HMR"
+        : "hydrates the production client bundle without browser errors",
+      async (browserTest) => {
+        await assertBrowserHydration(app, port, browserTest, output, { hmr: mode === "develop" })
+      },
+    )
+  } finally {
+    await stop(server)
+  }
+}
+
+function spawnVoyant(app, mode, port) {
+  const args = [join(app, "node_modules/@voyant-travel/cli/bin/voyant.mjs"), mode]
+  if (mode === "develop") args.push("--host", "127.0.0.1")
+  args.push("--port", String(port))
+  const env = acceptanceEnvironment()
+  assert.doesNotMatch(env.NODE_OPTIONS, /conditions=development|tsx/)
+  return spawn(process.execPath, args, {
+    cwd: app,
+    env,
+    stdio: ["ignore", "pipe", "pipe"],
+  })
+}
+
+function acceptanceEnvironment() {
+  return {
+    ...process.env,
+    BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
+    DATABASE_URL:
+      process.env.TEST_DATABASE_URL ??
+      ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant_starter_acceptance"].join(""),
+    INTERNAL_API_KEY: "starter-acceptance-internal-key",
+    NODE_OPTIONS: "--max-old-space-size=6144",
+    SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
+  }
+}
+
+async function readResponse(url, init) {
+  const response = await fetch(url, init)
+  return {
+    status: response.status,
+    contentType: response.headers.get("content-type") ?? "",
+    body: await response.text(),
+  }
+}
+
+function useInstalledToolingArtifacts(app, publishedPackages) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  packageJson.dependencies.pg = `link:${realpathSync(
-    join(repoRoot, "starters/operator/node_modules/pg"),
-  )}`
+  for (const dependency of frontendSingletonRoots) {
+    assert.equal(
+      typeof packageJson.dependencies[dependency],
+      "string",
+      `Supported packaged starter must directly own ${dependency}`,
+    )
+    // Exercise the runtime bridge used by existing projects created before
+    // direct frontend singleton ownership became part of the starter contract.
+    delete packageJson.dependencies[dependency]
+  }
+  packageJson.dependencies["@voyant-travel/operator-standard"] =
+    `file:${publishedPackages.get("@voyant-travel/operator-standard")}`
+  packageJson.dependencies["@voyant-travel/framework"] =
+    `file:${publishedPackages.get("@voyant-travel/framework")}`
+  packageJson.dependencies["@voyant-travel/runtime"] =
+    `file:${publishedPackages.get("@voyant-travel/runtime")}`
+  packageJson.pnpm = {
+    ...packageJson.pnpm,
+    overrides: {
+      ...packageJson.pnpm?.overrides,
+      ...Object.fromEntries(
+        [...publishedPackages].map(([name, archive]) => [name, `file:${archive}`]),
+      ),
+    },
+  }
+  for (const dependency of ["pg"]) {
+    packageJson.dependencies[dependency] = `link:${realpathSync(
+      join(repoRoot, "starters/operator/node_modules", dependency),
+    )}`
+  }
   for (const dependency of ["@voyant-travel/cli", "tsx", "typescript"]) {
     packageJson.devDependencies[dependency] = `link:${realpathSync(
       join(repoRoot, "starters/operator/node_modules", dependency),
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+}
+
+function assertNonHoistedConsumerLayout(app) {
+  const packageJson = JSON.parse(readFileSync(join(app, "package.json"), "utf8"))
+
+  assert.ok(packageJson.dependencies["@voyant-travel/operator-standard"])
+  for (const dependency of frontendSingletonRoots) {
+    assert.equal(
+      packageJson.dependencies[dependency],
+      undefined,
+      `Legacy packaged acceptance unexpectedly declares ${dependency}`,
+    )
+    assert.equal(
+      existsSync(join(app, "node_modules", dependency)),
+      false,
+      `Legacy packaged acceptance unexpectedly hoisted ${dependency}`,
+    )
+  }
+  assert.equal(packageJson.dependencies["@voyant-travel/admin"], undefined)
+  assert.ok(
+    !existsSync(join(app, "node_modules/@voyant-travel/admin")),
+    "Packaged consumer fixture unexpectedly hoisted transitive @voyant-travel/admin",
+  )
+}
+
+function assertPublishedPackageLayout(app) {
+  for (const name of ["@voyant-travel/operator-standard", "@voyant-travel/runtime"]) {
+    const packageRoot = realpathSync(join(app, "node_modules", name))
+    assert.ok(
+      packageRoot.startsWith(`${realpathSync(app)}/`),
+      `${name} resolved outside the isolated consumer fixture: ${packageRoot}`,
+    )
+    assert.ok(existsSync(join(packageRoot, "dist")), `${name} is missing its published dist layout`)
+  }
+  const operatorRoot = realpathSync(join(app, "node_modules/@voyant-travel/operator-standard"))
+  const operatorManifest = JSON.parse(readFileSync(join(operatorRoot, "package.json"), "utf8"))
+  assert.equal(operatorManifest.exports["./runtime/react"].browser, "./dist/runtime/react.js")
+  assert.equal(operatorManifest.imports["#frontend/react"], "react")
+  const resolveFromOperator = createRequire(join(operatorRoot, "package.json"))
+  assert.doesNotThrow(
+    () => resolveFromOperator.resolve("@voyant-travel/identity-react"),
+    "Standard Operator consumer cannot resolve its required identity React runtime",
+  )
+  const dbRuntimeEntry = resolveFromOperator.resolve("@voyant-travel/db/runtime")
+  const dbRoot = resolve(dirname(dbRuntimeEntry), "../..")
+  const dbManifest = JSON.parse(readFileSync(join(dbRoot, "package.json"), "utf8"))
+  assert.equal(dbManifest.exports["./runtime"].import, "./dist/runtime/index.js")
+  assert.ok(existsSync(join(dbRoot, "dist/runtime/index.js")))
+}
+
+function packPublishedPackages(root) {
+  const selected = JSON.parse(
+    exec(
+      "pnpm",
+      [
+        "--filter-prod",
+        "@voyant-travel/framework...",
+        "--filter-prod",
+        "@voyant-travel/runtime...",
+        "--filter-prod",
+        "@voyant-travel/operator-standard...",
+        "list",
+        "--depth",
+        "-1",
+        "--json",
+      ],
+      repoRoot,
+    ),
+  )
+  const workspacePackages = selected.filter(
+    (entry) => entry.name?.startsWith("@voyant-travel/") && entry.path,
+  )
+  assert.ok(workspacePackages.length > 80, "Published Operator closure is unexpectedly small")
+
+  const publishedPackages = new Map(
+    workspacePackages.map((entry) => [entry.name, packPublishedPackage(root, entry.path)]),
+  )
+  assert.ok(
+    publishedPackages.has("@voyant-travel/identity-react"),
+    "Published Operator closure is missing its required identity React runtime",
+  )
+  return publishedPackages
+}
+
+function packPublishedPackage(root, source) {
+  mkdirSync(root, { recursive: true })
+  const stdout = exec(
+    "pnpm",
+    ["--config.ignore-scripts=true", "pack", "--json", "--pack-destination", root],
+    source,
+  )
+  const packResult = JSON.parse(stdout)
+  const packed = Array.isArray(packResult) ? packResult[0] : packResult
+  assert.equal(
+    typeof packed?.filename,
+    "string",
+    `pnpm pack did not return a filename for ${source}`,
+  )
+  const archive = join(root, basename(packed.filename))
+  assert.ok(existsSync(archive), `pnpm pack did not create ${archive}`)
+  return archive
+}
+
+function acceptanceProofSource(marker) {
+  return `import * as React from "react"
+
+const marker = ${JSON.stringify(marker)}
+
+export default function AcceptanceProof() {
+  React.useEffect(() => {
+    const previous = Reflect.get(globalThis, "__voyantAcceptance")
+    Reflect.set(globalThis, "__voyantAcceptance", {
+      pageId: previous?.pageId ?? crypto.randomUUID(),
+      marker,
+      hydrated: true,
+    })
+  }, [marker])
+  return <output data-voyant-acceptance-hmr>{marker}</output>
+}
+`
+}
+
+async function assertBrowserHydration(app, port, t, serverOutput, { hmr }) {
+  const { chromium } = await import("playwright")
+  const executable = chromium.executablePath()
+  if (!existsSync(executable)) {
+    t.skip(`Playwright Chromium executable is unavailable: ${executable}`)
+    return
+  }
+
+  const browser = await chromium.launch({ headless: true })
+  const page = await browser.newPage()
+  const browserErrors = []
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(`console: ${message.text()}`)
+  })
+  page.on("pageerror", (error) => browserErrors.push(`pageerror: ${error.message}`))
+  page.on("requestfailed", (request) => {
+    browserErrors.push(
+      `requestfailed: ${request.url()} (${request.failure()?.errorText ?? "unknown error"})`,
+    )
+  })
+  try {
+    await page.goto(`http://127.0.0.1:${port}/docs`, { waitUntil: "domcontentloaded" })
+    await page
+      .locator("[data-voyant-acceptance-hmr]")
+      .getByText("before", { exact: true })
+      .waitFor({ timeout: 10_000 })
+    await waitForBrowserState(
+      page,
+      () => Reflect.get(globalThis, "__voyantAcceptance")?.hydrated,
+      browserErrors,
+      "Browser did not hydrate the SSR-rendered acceptance probe",
+      serverOutput,
+    )
+    const initial = await page.evaluate(() => {
+      const evidence = Reflect.get(globalThis, "__voyantAcceptance")
+      return {
+        pageId: evidence.pageId,
+        marker: evidence.marker,
+      }
+    })
+    assert.equal(initial.marker, "before")
+
+    if (!hmr) {
+      assert.deepEqual(
+        browserErrors,
+        [],
+        `Production browser hydration errors:\n${browserErrors.join("\n")}`,
+      )
+      return
+    }
+
+    writeFileSync(join(app, "src/acceptance-proof.tsx"), acceptanceProofSource("after"))
+    await page
+      .locator("[data-voyant-acceptance-hmr]")
+      .getByText("after", { exact: true })
+      .waitFor({ timeout: 10_000 })
+    await waitForBrowserState(
+      page,
+      () => Reflect.get(globalThis, "__voyantAcceptance")?.marker === "after",
+      browserErrors,
+      "Authored-source HMR did not run the updated acceptance probe",
+      serverOutput,
+    )
+    const updated = await page.evaluate(() => {
+      const evidence = Reflect.get(globalThis, "__voyantAcceptance")
+      return {
+        pageId: evidence.pageId,
+        marker: evidence.marker,
+      }
+    })
+    assert.equal(updated.marker, "after")
+    assert.equal(updated.pageId, initial.pageId, "HMR performed a full browser reload")
+    assert.deepEqual(
+      browserErrors,
+      [],
+      `Browser hydration/HMR errors:\n${browserErrors.join("\n")}`,
+    )
+  } finally {
+    await browser.close()
+  }
+}
+
+async function waitForBrowserState(page, predicate, browserErrors, message, serverOutput) {
+  try {
+    await page.waitForFunction(predicate, undefined, { timeout: 10_000 })
+  } catch (error) {
+    assert.fail(
+      `${message}.\n${browserErrors.join("\n")}\n${String(error)}\nDev server:\n${serverOutput()}`,
+    )
+  }
+}
+
+function resolvePnpmStorePackageEntry(name) {
+  const store = join(repoRoot, "node_modules/.pnpm")
+  const directoryPrefix = `${name.replace("/", "+")}@`
+  const directory = readdirSync(store).find((entry) => entry.startsWith(directoryPrefix))
+  assert.ok(directory, `Missing ${name} from the pnpm virtual store`)
+  const packageRoot = realpathSync(join(store, directory, "node_modules", name))
+  const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"))
+  const entry = manifest.exports?.["."]?.import ?? manifest.module ?? manifest.main
+  assert.equal(typeof entry, "string", `Missing ESM entry for ${name}`)
+  return join(packageRoot, entry)
 }
 
 function exec(command, args, cwd, env = {}, timeout = 240_000) {
@@ -264,21 +593,30 @@ function captureOutput(child) {
   return () => output
 }
 
-async function waitForOk(url, child, output) {
+async function waitForListening(host, port, child, output) {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Node host exited before it became ready.\n${output()}`)
     }
-    try {
-      const response = await fetch(url)
-      if (response.ok) return
-    } catch {
-      // The server socket may not be listening yet.
-    }
+    if (await canConnect(host, port)) return
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
-  throw new Error(`Timed out waiting for ${url}.\n${output()}`)
+  throw new Error(`Timed out waiting for ${host}:${port}.\n${output()}`)
+}
+
+function canConnect(host, port) {
+  return new Promise((resolve) => {
+    const socket = createConnection({ host, port })
+    socket.once("connect", () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once("error", () => {
+      socket.destroy()
+      resolve(false)
+    })
+  })
 }
 
 async function stop(child) {

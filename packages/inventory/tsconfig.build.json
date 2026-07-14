@@ -264,6 +264,7 @@
         "../bookings/dist/extensions/suppliers.d.ts"
       ],
       "@voyant-travel/bookings/extras": ["../bookings/dist/extras.d.ts"],
+      "@voyant-travel/bookings/extras/validation": ["../bookings/dist/extras/validation.d.ts"],
       "@voyant-travel/bookings/linkables": ["../bookings/dist/linkables.d.ts"],
       "@voyant-travel/bookings/pii": ["../bookings/dist/pii.d.ts"],
       "@voyant-travel/bookings/pricing-assignment": ["../bookings/dist/pricing-assignment.d.ts"],
@@ -1342,6 +1343,30 @@
       "@voyant-travel/operator-settings/service": ["../operator-settings/dist/service.d.ts"],
       "@voyant-travel/operator-settings/voyant": ["../operator-settings/dist/voyant.d.ts"],
       "@voyant-travel/operator-standard": ["../operator-standard/dist/index.d.ts"],
+      "@voyant-travel/operator-standard/runtime/react": [
+        "../operator-standard/dist/runtime/react.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react-dom": [
+        "../operator-standard/dist/runtime/react-dom.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react-dom/client": [
+        "../operator-standard/dist/runtime/react-dom-client.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react-dom/server": [
+        "../operator-standard/dist/runtime/react-dom-server.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react/jsx-dev-runtime": [
+        "../operator-standard/dist/runtime/react-jsx-dev-runtime.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/react/jsx-runtime": [
+        "../operator-standard/dist/runtime/react-jsx-runtime.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/tanstack/react-query": [
+        "../operator-standard/dist/runtime/tanstack-react-query.d.ts"
+      ],
+      "@voyant-travel/operator-standard/runtime/tanstack/react-router": [
+        "../operator-standard/dist/runtime/tanstack-react-router.d.ts"
+      ],
       "@voyant-travel/operator-standard/standard-frontend": [
         "../operator-standard/dist/standard-frontend.d.ts"
       ],

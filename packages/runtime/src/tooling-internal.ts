@@ -1,4 +1,6 @@
-import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+// agent-quality: file-size exception -- owner: runtime; project bootstrap, Vite lifecycle, and generated route handling remain together until the public tooling contract stabilizes.
+import { randomUUID } from "node:crypto"
+import { access, cp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -15,9 +17,9 @@ import {
   voyantGeneratedRoutes,
   voyantStartViteConfig,
 } from "@voyant-travel/vite-config"
+import { NodeRequest, sendNodeResponse } from "srvx/node"
 import { register } from "tsx/esm/api"
 import {
-  type Alias,
   createBuilder as createViteBuilder,
   createServer as createViteServer,
   type InlineConfig,
@@ -32,8 +34,32 @@ import type {
 } from "./tooling.js"
 
 const DEFAULT_DEVELOPMENT_PORT = 3300
+const DEVELOPMENT_READINESS_HEADER = "x-voyant-development-readiness"
+const DEVELOPMENT_READINESS_PATH = "/.voyant/development-readiness"
+const DEVELOPMENT_READINESS_RETRY_MS = 50
+const DEVELOPMENT_READINESS_TIMEOUT_MS = 30_000
+const TANSTACK_SERVER_ENTRY = "virtual:tanstack-start-server-entry"
 const PRODUCT_BOM_ARTIFACT = ".voyant/product-bom.generated.json"
 const PRODUCT_ROUTE_FILES_EXPORT = "standard-route-files"
+const FRONTEND_RUNTIME_FACADES = {
+  react: "runtime/react",
+  "react-dom": "runtime/react-dom",
+  "react-dom/client": "runtime/react-dom/client",
+  "react-dom/server": "runtime/react-dom/server",
+  "react/jsx-runtime": "runtime/react/jsx-runtime",
+  "react/jsx-dev-runtime": "runtime/react/jsx-dev-runtime",
+  "@tanstack/react-query": "runtime/tanstack/react-query",
+  "@tanstack/react-router": "runtime/tanstack/react-router",
+} as const
+const FRONTEND_SINGLETON_ROOTS = [
+  "react",
+  "react-dom",
+  "@tanstack/react-query",
+  "@tanstack/react-router",
+] as const
+const DEPLOYABLE_DEPENDENCY_FIELDS = ["dependencies", "optionalDependencies"] as const
+let developmentAuthFallbackLeaseCount = 0
+let developmentAuthFallbackPreviousValue: string | undefined
 
 interface GeneratedRoutes {
   plugin: PluginOption
@@ -43,15 +69,22 @@ interface GeneratedRoutes {
 
 interface ProjectViteConfigOptions {
   appRootUrl: string
+  developmentReadiness?: DevelopmentReadiness
   generatedRoutes: GeneratedRoutes
   bootstrap: ProjectBootstrap
 }
 
+interface DevelopmentReadiness {
+  promise: Promise<void>
+  token: string
+}
+
 interface ProjectBootstrap {
+  frontendDependencyAliases?: Readonly<Record<string, string>>
+  frontendDependencyFacades?: Readonly<Record<string, string>>
   serverEntry: string
   routerEntry?: string
   stylesEntry?: string
-  aliases?: Readonly<Record<string, string>>
 }
 
 interface ProjectRouteGenerationOptions {
@@ -61,7 +94,22 @@ interface ProjectRouteGenerationOptions {
 }
 
 interface ProjectViteServer {
+  config: {
+    server: {
+      host?: string | boolean
+    }
+  }
   resolvedUrls: ViteDevServer["resolvedUrls"]
+  environments?: {
+    client?: {
+      depsOptimizer?: {
+        scanProcessing?: Promise<void>
+        metadata?: {
+          discovered?: Readonly<Record<string, { processing?: Promise<void> }>>
+        }
+      }
+    }
+  }
   listen(): Promise<unknown>
   close(): Promise<void>
 }
@@ -77,6 +125,7 @@ export interface VoyantProjectToolingDependencies {
   generateRouteTree(options: ProjectRouteGenerationOptions): Promise<void>
   buildVite(config: InlineConfig): Promise<unknown>
   createViteServer(config: InlineConfig): Promise<ProjectViteServer>
+  waitForDevelopmentApplication(options: { url: string; token: string }): Promise<void>
   replaceDirectory(source: string, destination: string): Promise<void>
 }
 
@@ -88,6 +137,7 @@ const defaultDependencies: VoyantProjectToolingDependencies = {
   generateRouteTree,
   buildVite: buildViteApplication,
   createViteServer,
+  waitForDevelopmentApplication,
   replaceDirectory,
 }
 
@@ -128,7 +178,14 @@ export async function developVoyantProjectWithDependencies(
   dependencies: VoyantProjectToolingDependencies = defaultDependencies,
 ): Promise<VoyantProjectDevelopmentServer> {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
-  const config = await prepareProjectViteConfig(projectRoot, dependencies)
+  let releaseDevelopmentRequests: () => void = () => undefined
+  const developmentReadiness: DevelopmentReadiness = {
+    promise: new Promise<void>((resolve) => {
+      releaseDevelopmentRequests = resolve
+    }),
+    token: randomUUID(),
+  }
+  const config = await prepareProjectViteConfig(projectRoot, dependencies, developmentReadiness)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
   // Keep native config discovery aligned with the production build.
   const server = await dependencies.createViteServer({
@@ -140,11 +197,29 @@ export async function developVoyantProjectWithDependencies(
       port,
     },
   })
+  const restoreDevelopmentEnvironment = enableDevelopmentEnvironment(
+    normalizeViteHost(server.config.server.host),
+  )
 
   try {
     await server.listen()
+    const developmentUrl = resolveDevelopmentUrl(server, options.host, port)
+    const clientOptimizer = server.environments?.client?.depsOptimizer
+    await clientOptimizer?.scanProcessing
+    await Promise.all(
+      Object.values(clientOptimizer?.metadata?.discovered ?? {}).map(
+        (dependency) => dependency.processing,
+      ),
+    )
+    await dependencies.waitForDevelopmentApplication({
+      url: developmentUrl,
+      token: developmentReadiness.token,
+    })
+    releaseDevelopmentRequests()
   } catch (error) {
+    releaseDevelopmentRequests()
     await server.close().catch(() => undefined)
+    restoreDevelopmentEnvironment()
     throw error
   }
 
@@ -154,7 +229,11 @@ export async function developVoyantProjectWithDependencies(
     close: async () => {
       if (closed) return
       closed = true
-      await server.close()
+      try {
+        await server.close()
+      } finally {
+        restoreDevelopmentEnvironment()
+      }
     },
   }
 }
@@ -162,6 +241,7 @@ export async function developVoyantProjectWithDependencies(
 async function prepareProjectViteConfig(
   projectRoot: string,
   dependencies: VoyantProjectToolingDependencies,
+  developmentReadiness?: DevelopmentReadiness,
 ): Promise<InlineConfig> {
   const appRootUrl = pathToFileURL(path.join(projectRoot, "generated-config-anchor.ts")).href
   const files = await dependencies.loadStandardRouteFiles(projectRoot)
@@ -174,18 +254,27 @@ async function prepareProjectViteConfig(
     generatedRouteTree: generatedRoutes.generatedRouteTree,
   })
 
-  return dependencies.createViteConfig({ appRootUrl, generatedRoutes, bootstrap })
+  return dependencies.createViteConfig({
+    appRootUrl,
+    ...(developmentReadiness ? { developmentReadiness } : {}),
+    generatedRoutes,
+    bootstrap,
+  })
 }
 
 export function createProjectViteConfig(options: ProjectViteConfigOptions): InlineConfig {
   const config = voyantStartViteConfig({
     appRootUrl: options.appRootUrl,
+    dependencyAliases: options.bootstrap.frontendDependencyAliases,
+    serverDependencyFacades: options.bootstrap.frontendDependencyFacades,
     nodeSsr: true,
     plugins: [
+      createDevelopmentReadinessPlugin(options.developmentReadiness),
       options.generatedRoutes.plugin,
       devtools(),
       tailwindcss(),
       tanstackStart({
+        vite: { installDevServerMiddleware: false },
         server: {
           entry: relativeEntry(options.appRootUrl, options.bootstrap.serverEntry),
         },
@@ -200,6 +289,7 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
           routeFileIgnorePattern: VOYANT_ROUTE_FILE_IGNORE_PATTERN,
         },
       }),
+      createDevelopmentServerPlugin(),
       viteReact(),
       createAnalyzePlugin(options.appRootUrl),
     ],
@@ -209,20 +299,12 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     // The Node host, admin asset resolver, and deployment artifacts share this layout.
     outDir: "dist",
   }
-  if (options.bootstrap.stylesEntry || options.bootstrap.aliases) {
+  if (options.bootstrap.stylesEntry) {
     const alias = config.resolve?.alias
     config.resolve = {
       ...config.resolve,
       alias: [
-        ...Object.entries(options.bootstrap.aliases ?? {}).map(
-          ([specifier, replacement]): Alias => ({
-            find: new RegExp(`^${escapeRegExp(specifier)}$`),
-            replacement,
-          }),
-        ),
-        ...(options.bootstrap.stylesEntry
-          ? [{ find: /^@\/styles\.css$/, replacement: options.bootstrap.stylesEntry }]
-          : []),
+        { find: /^@\/styles\.css$/, replacement: options.bootstrap.stylesEntry },
         ...(Array.isArray(alias)
           ? alias
           : Object.entries(alias ?? {}).map(([find, replacement]) => ({ find, replacement }))),
@@ -232,8 +314,163 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
   return config
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+function createDevelopmentServerPlugin(): PluginOption {
+  return {
+    name: "voyant:development-server",
+    configureServer(server) {
+      return () => {
+        const environment = server.environments.ssr
+        if (
+          !isFetchableServerEnvironment(environment) &&
+          !isRunnableServerEnvironment(environment)
+        ) {
+          throw new Error("Voyant development requires a runnable or fetchable SSR environment")
+        }
+
+        server.middlewares.use(async (request, response) => {
+          if (request.originalUrl) request.url = request.originalUrl
+          try {
+            const webRequest = new NodeRequest({ req: request, res: response })
+            const webResponse = isFetchableServerEnvironment(environment)
+              ? await environment.dispatchFetch(webRequest)
+              : await fetchRunnableDevelopmentResponse(server, environment, webRequest)
+            await sendNodeResponse(response, webResponse)
+          } catch (error) {
+            console.error(error)
+            try {
+              server.ssrFixStacktrace(error as Error)
+            } catch {}
+            if (!response.headersSent) {
+              await sendNodeResponse(
+                response,
+                new Response("Internal Server Error", {
+                  status: 500,
+                  headers: { "content-type": "text/plain; charset=utf-8" },
+                }),
+              )
+            } else {
+              response.end()
+            }
+          }
+        })
+      }
+    },
+  }
+}
+
+async function fetchRunnableDevelopmentResponse(
+  server: ViteDevServer,
+  environment: RunnableServerEnvironment,
+  request: Request,
+): Promise<Response> {
+  if (server.config.experimental.bundledDev) {
+    const clientEnvironment = server.environments.client as {
+      devEngine?: { ensureLatestBuildOutput?: () => Promise<void> }
+    }
+    await clientEnvironment.devEngine?.ensureLatestBuildOutput?.()
+    environment.moduleGraph?.invalidateAll?.()
+    environment.runner.clearCache?.()
+  }
+  const serverEntry = await environment.runner.import(TANSTACK_SERVER_ENTRY)
+  const handler = serverEntry.default
+  if (!isFetchHandler(handler)) {
+    throw new TypeError(`${TANSTACK_SERVER_ENTRY} must export a default fetch handler`)
+  }
+  return handler.fetch(request)
+}
+
+interface RunnableServerEnvironment {
+  runner: {
+    clearCache?(): void
+    import(id: string): Promise<Record<string, unknown>>
+  }
+  moduleGraph?: { invalidateAll?(): void }
+}
+
+function isRunnableServerEnvironment(
+  environment: unknown,
+): environment is RunnableServerEnvironment {
+  if (typeof environment !== "object" || environment === null || !("runner" in environment)) {
+    return false
+  }
+  const runner = environment.runner
+  return (
+    typeof runner === "object" &&
+    runner !== null &&
+    "import" in runner &&
+    typeof runner.import === "function"
+  )
+}
+
+function isFetchHandler(value: unknown): value is { fetch(request: Request): Promise<Response> } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "fetch" in value &&
+    typeof value.fetch === "function"
+  )
+}
+
+function isFetchableServerEnvironment(
+  environment: unknown,
+): environment is { dispatchFetch(request: Request): Promise<Response> } {
+  return (
+    typeof environment === "object" &&
+    environment !== null &&
+    "dispatchFetch" in environment &&
+    typeof environment.dispatchFetch === "function"
+  )
+}
+
+function createDevelopmentReadinessPlugin(readiness?: DevelopmentReadiness): PluginOption {
+  if (!readiness) return false
+
+  return {
+    name: "voyant:development-readiness",
+    enforce: "pre",
+    configureServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        if (request.headers[DEVELOPMENT_READINESS_HEADER] === readiness.token) {
+          next()
+          return
+        }
+        void readiness.promise.then(() => next(), next)
+      })
+    },
+  }
+}
+
+export async function waitForDevelopmentApplication(
+  options: { url: string; token: string },
+  request: typeof fetch = fetch,
+): Promise<void> {
+  const deadline = Date.now() + DEVELOPMENT_READINESS_TIMEOUT_MS
+  const readinessUrl = new URL(DEVELOPMENT_READINESS_PATH, options.url)
+  let lastFailure = "no response"
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await request(readinessUrl, {
+        headers: { [DEVELOPMENT_READINESS_HEADER]: options.token },
+        redirect: "manual",
+        signal: AbortSignal.timeout(5_000),
+      })
+      const body = await response.text()
+      if (response.status < 500 && !isConnectFallbackNotFound(body)) return
+      lastFailure = `HTTP ${response.status}: ${body.slice(0, 200)}`
+    } catch (error) {
+      lastFailure = errorMessage(error)
+    }
+    await new Promise((resolve) => setTimeout(resolve, DEVELOPMENT_READINESS_RETRY_MS))
+  }
+
+  throw new Error(
+    `Voyant development application did not become ready within ${DEVELOPMENT_READINESS_TIMEOUT_MS}ms (${lastFailure})`,
+  )
+}
+
+function isConnectFallbackNotFound(body: string): boolean {
+  return /<pre>Cannot (?:GET|HEAD) \/[^<]*<\/pre>/.test(body)
 }
 
 function relativeEntry(appRootUrl: string, entry: string): string {
@@ -244,23 +481,18 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
   const productBomId = await loadProductBomId(projectRoot)
   const generatedRoot = path.join(projectRoot, ".voyant/app")
   const authoredServerEntry = path.join(projectRoot, "src/server.ts")
+  const frontendDependencies = await resolveProductFrontendDependencies(projectRoot, productBomId)
   const bootstrap: ProjectBootstrap = {
+    ...(frontendDependencies
+      ? {
+          frontendDependencyAliases: frontendDependencies.aliases,
+          frontendDependencyFacades: frontendDependencies.facades,
+        }
+      : {}),
     serverEntry: (await pathExists(authoredServerEntry))
       ? authoredServerEntry
       : path.join(generatedRoot, "server.ts"),
   }
-  const aliases = resolveProductDependencies(projectRoot, productBomId, [
-    "react/jsx-runtime",
-    "react/jsx-dev-runtime",
-    "react-dom/client",
-    "react-dom/server",
-    "@tanstack/react-query",
-    "@tanstack/react-router",
-    "react-dom",
-    "react",
-  ])
-  if (Object.keys(aliases).length > 0) bootstrap.aliases = aliases
-
   if (!(await pathExists(authoredServerEntry))) {
     await writeGeneratedFile(
       bootstrap.serverEntry,
@@ -309,6 +541,121 @@ declare module "@tanstack/react-router" {
     )
   }
   return bootstrap
+}
+
+async function resolveProductFrontendDependencies(
+  projectRoot: string,
+  productBomId: string,
+): Promise<
+  | {
+      aliases: Readonly<Record<string, string>>
+      facades: Readonly<Record<string, string>>
+    }
+  | undefined
+> {
+  const packageJsonPath = path.join(projectRoot, "package.json")
+  let manifest: {
+    dependencies?: Record<string, unknown>
+    optionalDependencies?: Record<string, unknown>
+  }
+  try {
+    manifest = JSON.parse(await readFile(packageJsonPath, "utf8")) as typeof manifest
+  } catch {
+    return undefined
+  }
+  const declared = new Set(
+    DEPLOYABLE_DEPENDENCY_FIELDS.flatMap((field) => Object.keys(manifest[field] ?? {})),
+  )
+  const declaredSingletonRoots = FRONTEND_SINGLETON_ROOTS.filter((dependency) =>
+    declared.has(dependency),
+  )
+  const resolveFromProject = createRequire(packageJsonPath)
+  if (declaredSingletonRoots.length === FRONTEND_SINGLETON_ROOTS.length) {
+    try {
+      for (const dependency of FRONTEND_SINGLETON_ROOTS) {
+        const directPackageJson = path.join(
+          projectRoot,
+          "node_modules",
+          ...dependency.split("/"),
+          "package.json",
+        )
+        if (!(await pathExists(directPackageJson))) {
+          throw new Error(`${dependency} is not installed directly in the project`)
+        }
+        resolveFromProject.resolve(dependency)
+      }
+    } catch (error) {
+      throw new Error(
+        `Voyant frontend singleton dependencies are app-owned but not all four roots are installed (${FRONTEND_SINGLETON_ROOTS.join(", ")}).`,
+        { cause: error },
+      )
+    }
+    return undefined
+  }
+  if (declaredSingletonRoots.length > 0) {
+    const missingSingletonRoots = FRONTEND_SINGLETON_ROOTS.filter(
+      (dependency) => !declared.has(dependency),
+    )
+    throw new Error(
+      `Voyant frontend singleton dependencies must be owned together. This project declares ${declaredSingletonRoots.join(", ")} but is missing ${missingSingletonRoots.join(", ")}. Either add all four singleton dependencies (${FRONTEND_SINGLETON_ROOTS.join(", ")}) or remove all four so ${productBomId} provides them.`,
+    )
+  }
+
+  try {
+    const productPackageRoot = path.join(projectRoot, "node_modules", ...productBomId.split("/"))
+    const productPackageJson = JSON.parse(
+      await readFile(path.join(productPackageRoot, "package.json"), "utf8"),
+    ) as { exports?: Readonly<Record<string, unknown>> }
+    const facadeEntries = Object.entries(FRONTEND_RUNTIME_FACADES).map(([specifier, facade]) => {
+      const facadeId = `${productBomId}/${facade}`
+      const browserTarget = resolveBrowserPackageExport(
+        productPackageJson.exports?.[`./${facade}`],
+        facadeId,
+      )
+      return [specifier, facadeId, path.resolve(productPackageRoot, browserTarget)] as const
+    })
+    const resolvedFacadeEntries = await Promise.all(
+      facadeEntries.map(
+        async ([specifier, facadeId, browserEntry]) =>
+          [specifier, facadeId, await realpath(browserEntry)] as const,
+      ),
+    )
+    return {
+      aliases: Object.fromEntries(
+        resolvedFacadeEntries.map(([specifier, , resolvedFacade]) => [specifier, resolvedFacade]),
+      ),
+      facades: Object.fromEntries(
+        resolvedFacadeEntries.map(([specifier, facadeId]) => [specifier, facadeId]),
+      ),
+    }
+  } catch (error) {
+    throw new Error(
+      `Voyant product BOM ${productBomId} cannot provide legacy frontend dependency resolution: ${errorMessage(error)}`,
+      { cause: error },
+    )
+  }
+}
+
+function resolveBrowserPackageExport(value: unknown, facadeId: string): string {
+  if (typeof value === "string" && value.startsWith("./")) return value
+  if (Array.isArray(value)) {
+    for (const candidate of value) {
+      try {
+        return resolveBrowserPackageExport(candidate, facadeId)
+      } catch {
+        // Try the next valid export target.
+      }
+    }
+  }
+  if (typeof value === "object" && value !== null) {
+    const conditions = value as Readonly<Record<string, unknown>>
+    for (const condition of ["browser", "import", "default"]) {
+      if (condition in conditions) {
+        return resolveBrowserPackageExport(conditions[condition], facadeId)
+      }
+    }
+  }
+  throw new Error(`Product frontend facade ${facadeId} has no browser ESM export`)
 }
 
 async function generateRouteTree(options: ProjectRouteGenerationOptions): Promise<void> {
@@ -431,29 +778,6 @@ async function importProjectModule(resolved: string): Promise<unknown> {
   return import(moduleUrl)
 }
 
-function resolveProductDependencies(
-  projectRoot: string,
-  productBomId: string,
-  dependencies: readonly string[],
-): Readonly<Record<string, string>> {
-  try {
-    const projectRequire = createRequire(path.join(projectRoot, "package.json"))
-    const productEntry = projectRequire.resolve(`${productBomId}/standard-frontend`)
-    const productRequire = createRequire(productEntry)
-    return Object.fromEntries(
-      dependencies.flatMap((dependency) => {
-        try {
-          return [[dependency, productRequire.resolve(dependency)]]
-        } catch {
-          return []
-        }
-      }),
-    )
-  } catch {
-    return {}
-  }
-}
-
 function isPackageName(value: string): boolean {
   return (
     /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(value) ||
@@ -490,10 +814,67 @@ function resolveDevelopmentUrl(
   port: number,
 ): string {
   const resolved = server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
-  if (resolved) return resolved
+  if (resolved) {
+    if (host === undefined) {
+      const url = new URL(resolved)
+      if (url.hostname === "127.0.0.1" || url.hostname === "[::1]") {
+        url.hostname = "localhost"
+      }
+      return url.toString()
+    }
+    return resolved
+  }
 
   const fallbackHost = host && host !== "0.0.0.0" && host !== "::" ? host : "localhost"
   return `http://${formatUrlHost(fallbackHost)}:${port}`
+}
+
+function enableDevelopmentEnvironment(host: string | undefined): () => void {
+  if (!isLoopbackDevelopmentHost(host)) {
+    return () => undefined
+  }
+
+  if (developmentAuthFallbackLeaseCount === 0) {
+    if (process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS !== undefined) {
+      return () => undefined
+    }
+    developmentAuthFallbackPreviousValue = process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
+    process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS = "1"
+  }
+  developmentAuthFallbackLeaseCount += 1
+
+  let restored = false
+
+  return () => {
+    if (restored) return
+    restored = true
+    developmentAuthFallbackLeaseCount -= 1
+    if (developmentAuthFallbackLeaseCount > 0) return
+
+    if (developmentAuthFallbackPreviousValue === undefined) {
+      delete process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS
+    } else {
+      process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS = developmentAuthFallbackPreviousValue
+    }
+    developmentAuthFallbackPreviousValue = undefined
+  }
+}
+
+function isLoopbackDevelopmentHost(host: string | undefined): boolean {
+  if (host === undefined) return true
+  const normalizedHost = host.replace(/^\[|\]$/g, "").toLowerCase()
+  return (
+    normalizedHost === "localhost" ||
+    normalizedHost === "::1" ||
+    normalizedHost === "127.0.0.1" ||
+    normalizedHost.startsWith("127.")
+  )
+}
+
+function normalizeViteHost(host: string | boolean | undefined): string | undefined {
+  if (host === true) return "0.0.0.0"
+  if (host === false) return undefined
+  return host
 }
 
 function formatUrlHost(host: string): string {

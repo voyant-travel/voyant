@@ -1,8 +1,8 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"
-import { fileURLToPath, URL } from "node:url"
-import type { Plugin, PluginOption, UserConfig } from "vite"
+import { fileURLToPath, pathToFileURL, URL } from "node:url"
+import type { Alias, Plugin, PluginOption, ResolverFunction, UserConfig } from "vite"
 
 /**
  * Force heavy vendor libs into their own chunks so they're only downloaded
@@ -48,8 +48,6 @@ export function voyantVendorChunk(id: string): string | undefined {
  * don't pay per-module transform costs for the common runtime set.
  */
 export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
-  "clsx",
-  "tailwind-merge",
   "react",
   "react-dom",
   "react-dom/server",
@@ -57,13 +55,26 @@ export const VOYANT_SSR_OPTIMIZE_DEPS: readonly string[] = [
   "react/jsx-dev-runtime",
   "@tanstack/react-query",
   "@tanstack/react-router",
-  "sonner",
-  "lucide-react",
-  "date-fns",
-  "zod",
-  "react-hook-form",
-  "swr",
 ]
+
+const VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE: readonly string[] = [
+  "@voyant-travel/operator-standard",
+  "@voyant-travel/operator-standard/standard-frontend",
+]
+
+const VOYANT_DEDUPE_DEPENDENCIES: readonly string[] = [
+  "react",
+  "react-dom",
+  "@tanstack/react-query",
+  "@tanstack/react-router",
+]
+
+const DEPENDENCY_FIELDS = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+] as const
 
 /**
  * Route-file ignore pattern for TanStack Start's file router: colocated
@@ -169,6 +180,10 @@ export interface VoyantStartViteConfigOptions {
   extraManualChunks?: (id: string) => string | undefined
   /** Extra SSR optimizeDeps entries appended to the Voyant set. */
   ssrOptimizeDepsInclude?: readonly string[]
+  /** Exact client aliases to physical ESM facades owned by the selected product BOM. */
+  dependencyAliases?: Readonly<Record<string, string>>
+  /** Stable product facade specifiers used when server bundles externalize frontend roots. */
+  serverDependencyFacades?: Readonly<Record<string, string>>
   /**
    * Build the SSR/server environment for a Node runtime (voyant#2966: Voyant
    * deployments are Node-only — no `@cloudflare/vite-plugin`). Adds the
@@ -198,6 +213,17 @@ export interface VoyantStartViteConfigOptions {
  */
 export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): UserConfig {
   const { appRootUrl, plugins, allowedHosts = true, extraManualChunks, nodeSsr } = options
+  const resolvableSsrDependencies = resolvableAppRootDependencies(
+    appRootUrl,
+    VOYANT_SSR_OPTIMIZE_DEPS,
+  )
+  const serverDependencyFacades = options.serverDependencyFacades ?? {}
+  const dependencyFacadePlugin = createDependencyFacadePlugin(serverDependencyFacades)
+  const dependencyFacadeAliases = createDependencyFacadeAliases(
+    options.dependencyAliases ?? {},
+    serverDependencyFacades,
+  )
+  const nestedDependencyIncludes = createNestedDependencyIncludes(serverDependencyFacades)
 
   return {
     server: {
@@ -213,14 +239,23 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
       },
     },
     resolve: {
-      alias: {
-        "@": fileURLToPath(new URL("./src", appRootUrl)),
-      },
+      alias: [
+        { find: "@", replacement: fileURLToPath(new URL("./src", appRootUrl)) },
+        ...dependencyFacadeAliases,
+      ],
+      dedupe: resolvableAppRootDependencies(appRootUrl, VOYANT_DEDUPE_DEPENDENCIES),
       tsconfigPaths: true,
+    },
+    optimizeDeps: {
+      include: nestedDependencyIncludes,
+      exclude: [...VOYANT_CLIENT_OPTIMIZE_DEPS_EXCLUDE],
+      ...(Object.keys(serverDependencyFacades).length > 0 ? { holdUntilCrawlEnd: false } : {}),
     },
     ssr: {
       optimizeDeps: {
-        include: [...VOYANT_SSR_OPTIMIZE_DEPS, ...(options.ssrOptimizeDepsInclude ?? [])],
+        include: [
+          ...new Set([...resolvableSsrDependencies, ...(options.ssrOptimizeDepsInclude ?? [])]),
+        ],
       },
       ...(nodeSsr
         ? {
@@ -233,6 +268,146 @@ export function voyantStartViteConfig(options: VoyantStartViteConfigOptions): Us
           }
         : {}),
     },
-    plugins,
+    plugins: [dependencyFacadePlugin, ...plugins],
   }
+}
+
+function createDependencyFacadePlugin(serverFacades: Readonly<Record<string, string>>): Plugin {
+  const nestedDependencyIncludes = createNestedDependencyIncludes(serverFacades)
+  const productBomId = productBomPackageName(serverFacades)
+  return {
+    name: "voyant:dependency-facades",
+    enforce: "pre",
+    configEnvironment: {
+      order: "post",
+      handler(_name, config) {
+        if (config.consumer !== "client" || !productBomId) return
+        const include = config.optimizeDeps?.include
+        if (!include) return
+        config.optimizeDeps!.include = [
+          ...new Set(
+            include.map((dependency) =>
+              nestedDependencyIncludes.includes(dependency)
+                ? dependency
+                : qualifyFrontendSingletonInclude(dependency, productBomId),
+            ),
+          ),
+        ]
+      },
+    },
+    async resolveId(source, importer, options) {
+      if (
+        source.startsWith("#frontend/") &&
+        importer &&
+        this.environment.config.consumer === "server" &&
+        this.environment.mode === "dev"
+      ) {
+        const resolved = await this.resolve(source, importer, { ...options, skipSelf: true })
+        return resolved
+          ? { ...resolved, id: pathToFileURL(resolved.id).href, external: true }
+          : null
+      }
+      return null
+    },
+  }
+}
+
+function qualifyFrontendSingletonInclude(dependency: string, productBomId: string): string {
+  const rootPackage = packageNameForSubpath(dependency.split(">")[0]!.trim())
+  return VOYANT_DEDUPE_DEPENDENCIES.includes(rootPackage)
+    ? `${productBomId} > ${dependency}`
+    : dependency
+}
+
+function createDependencyFacadeAliases(
+  aliases: Readonly<Record<string, string>>,
+  serverFacades: Readonly<Record<string, string>>,
+): Alias[] {
+  return Object.entries(aliases).map(([specifier, replacement]) => {
+    const facade = serverFacades[specifier]
+    if (!facade) {
+      throw new Error(`Missing server dependency facade for ${specifier}`)
+    }
+    // Vite 8 applies aliases before user `resolveId` hooks. Its alias custom resolver
+    // type is synchronous even though the implementation awaits resolver promises.
+    // Keep this bridge until Vite exposes environment-specific aliases.
+    const customResolver = async function (
+      this: ThisParameterType<ResolverFunction>,
+      updatedId: Parameters<ResolverFunction>[0],
+      importer: Parameters<ResolverFunction>[1],
+      options: Parameters<ResolverFunction>[2],
+    ) {
+      if (this.environment.config.consumer !== "server") {
+        const dependencyImporter = importer?.replaceAll("\\", "/").includes("/node_modules/")
+        return this.resolve(dependencyImporter ? specifier : updatedId, importer, {
+          ...options,
+          skipSelf: true,
+        })
+      }
+      if (this.environment.mode !== "dev") return { id: facade, external: true }
+      const resolved = await this.resolve(facade, undefined, { ...options, skipSelf: true })
+      return resolved ? { ...resolved, id: pathToFileURL(resolved.id).href, external: true } : null
+    }
+
+    return {
+      find: new RegExp(`^${escapeRegExp(specifier)}$`),
+      replacement,
+      customResolver: customResolver as never,
+    }
+  })
+}
+
+function createNestedDependencyIncludes(facades: Readonly<Record<string, string>>): string[] {
+  const productBomId = productBomPackageName(facades)
+  if (!productBomId) return []
+
+  const reactStore = `${productBomId} > @tanstack/react-router > @tanstack/react-store`
+  return [reactStore, `${reactStore} > use-sync-external-store/shim/with-selector`]
+}
+
+function productBomPackageName(facades: Readonly<Record<string, string>>): string | undefined {
+  const routerFacade = facades["@tanstack/react-router"]
+  return routerFacade ? packageNameForSubpath(routerFacade) : undefined
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function resolvableAppRootDependencies(
+  appRootUrl: string,
+  candidates: readonly string[],
+): string[] {
+  const packageJsonPath = fileURLToPath(new URL("./package.json", appRootUrl))
+  let parsedManifest: unknown
+  try {
+    parsedManifest = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  } catch {
+    return []
+  }
+  if (typeof parsedManifest !== "object" || parsedManifest === null) return []
+  const manifest = parsedManifest as Record<string, unknown>
+
+  const declaredDependencies = new Set<string>()
+  for (const field of DEPENDENCY_FIELDS) {
+    const dependencies = manifest[field]
+    if (typeof dependencies !== "object" || dependencies === null) continue
+    for (const dependency of Object.keys(dependencies)) declaredDependencies.add(dependency)
+  }
+
+  const resolveFromApp = createRequire(packageJsonPath)
+  return candidates.filter((dependency) => {
+    if (!declaredDependencies.has(packageNameForSubpath(dependency))) return false
+    try {
+      resolveFromApp.resolve(dependency)
+      return true
+    } catch {
+      return false
+    }
+  })
+}
+
+function packageNameForSubpath(specifier: string): string {
+  const segments = specifier.split("/")
+  return specifier.startsWith("@") ? segments.slice(0, 2).join("/") : segments[0]!
 }

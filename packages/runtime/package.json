@@ -38,6 +38,7 @@
     "@voyant-travel/webhook-delivery": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
     "hono": "catalog:",
+    "srvx": "^0.11.22",
     "tsx": "catalog:",
     "vite": "catalog:"
   },
