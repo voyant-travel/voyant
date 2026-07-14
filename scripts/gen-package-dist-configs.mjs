@@ -22,6 +22,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { packageSelfImports } from "./lib/package-self-imports.mjs"
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const CONFIG_DIR = join(ROOT, "packages/typescript-config")
 // Own composition configs (operator) / custom paths (db, ui) / no dist.
@@ -88,22 +90,6 @@ writeFileSync(
   `${JSON.stringify({ compilerOptions: { paths: sortedShared } }, null, 2)}\n`,
 )
 
-/** Does any source file import the package's own `@voyant-travel/<name>(/…)`? */
-function selfImports(dir, ownName) {
-  const stack = [join(dir, "src")]
-  const re = new RegExp(`from ["']${ownName}(/|["'])`)
-  while (stack.length) {
-    const cur = stack.pop()
-    if (!existsSync(cur)) continue
-    for (const d of readdirSync(cur, { withFileTypes: true })) {
-      const p = join(cur, d.name)
-      if (d.isDirectory()) stack.push(p)
-      else if (/\.tsx?$/.test(d.name) && re.test(readFileSync(p, "utf8"))) return true
-    }
-  }
-  return false
-}
-
 const touched = []
 const formatFiles = []
 for (const pkg of pkgDirs) {
@@ -111,7 +97,7 @@ for (const pkg of pkgDirs) {
   const dir = pkg.dir
   let buildConfig
   let typecheckConfig
-  if (FORCE_SELF_EXCLUDE.has(pkg.simple) || selfImports(dir, pkg.name)) {
+  if (FORCE_SELF_EXCLUDE.has(pkg.simple) || packageSelfImports(dir, pkg.name)) {
     // Inline map with own specifiers excluded.
     const paths = {}
     for (const e of entries) {
