@@ -2,6 +2,7 @@ import type { IndexerAdapter, IndexerSlice } from "./contract.js"
 
 export interface IndexerCapabilityFixtureIds {
   alpha: string
+  bravo: string
   admin: string
   federationCustomer: string
   federationPartner: string
