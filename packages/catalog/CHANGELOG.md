@@ -1,5 +1,15 @@
 # @voyant-travel/catalog
 
+## 0.155.0
+
+### Patch Changes
+
+- 0808b21: Publish canonical catalog search sort resolution, strengthen adapter conformance coverage, verify the Typesense implementation against the public runner, and remove provider-specific UI wording.
+- Updated dependencies [0808b21]
+  - @voyant-travel/catalog-contracts@0.111.0
+  - @voyant-travel/bookings@0.157.0
+  - @voyant-travel/finance@0.157.0
+
 ## 0.154.1
 
 ### Patch Changes

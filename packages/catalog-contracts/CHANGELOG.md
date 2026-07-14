@@ -1,5 +1,11 @@
 # @voyant-travel/catalog-contracts
 
+## 0.111.0
+
+### Minor Changes
+
+- 0808b21: Publish canonical catalog search sort resolution, strengthen adapter conformance coverage, verify the Typesense implementation against the public runner, and remove provider-specific UI wording.
+
 ## 0.110.1
 
 ### Patch Changes
