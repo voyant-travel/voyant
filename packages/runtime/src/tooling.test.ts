@@ -102,6 +102,46 @@ describe("Voyant project tooling", () => {
     expect(config.build?.outDir).toBe("dist")
   })
 
+  it("holds development HTTP requests until project tooling is ready", async () => {
+    let release: () => void = () => undefined
+    const readiness = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const config = createProjectViteConfig({
+      appRootUrl: pathToFileURL("/workspace/operator/generated-config-anchor.ts").href,
+      developmentReadiness: readiness,
+      generatedRoutes: {
+        plugin: { name: "generated-routes" },
+        routesDirectory: "/workspace/operator/.voyant/routes",
+        generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
+      },
+      bootstrap: { serverEntry: "/workspace/operator/src/server.ts" },
+    })
+    const plugin = (config.plugins as Array<{ name?: string; configureServer?: unknown }>).find(
+      (candidate) => candidate.name === "voyant:development-readiness",
+    )
+    const use = vi.fn()
+    const configureServer = plugin?.configureServer as (server: {
+      middlewares: { use: typeof use }
+    }) => void
+    configureServer({ middlewares: { use } })
+    const middleware = use.mock.calls[0]?.[0] as (
+      request: unknown,
+      response: unknown,
+      next: (error?: unknown) => void,
+    ) => void
+    const next = vi.fn()
+
+    middleware({}, {}, next)
+    await Promise.resolve()
+    expect(next).not.toHaveBeenCalled()
+
+    release()
+    await readiness
+    await Promise.resolve()
+    expect(next).toHaveBeenCalledOnce()
+  })
+
   it("generates, builds, and copies both deployment artifact layouts", async () => {
     const projectRoot = "/workspace/operator"
     const calls: string[] = []
@@ -166,6 +206,9 @@ describe("Voyant project tooling", () => {
     expect(vi.mocked(dependencies.createViteServer).mock.calls[0]?.[0]).not.toHaveProperty(
       "configFile",
     )
+    expect(
+      vi.mocked(dependencies.createViteConfig).mock.calls[0]?.[0].developmentReadiness,
+    ).toBeInstanceOf(Promise)
     expect(development.url).toBe("http://localhost:3300/")
     expect(process.env.VOYANT_AUTH_LOG_SECRET_FALLBACKS).toBe("1")
     expect(calls).toContain("vite-listen")

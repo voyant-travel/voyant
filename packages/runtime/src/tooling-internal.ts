@@ -62,6 +62,7 @@ interface GeneratedRoutes {
 
 interface ProjectViteConfigOptions {
   appRootUrl: string
+  developmentReadiness?: Promise<void>
   generatedRoutes: GeneratedRoutes
   bootstrap: ProjectBootstrap
 }
@@ -163,7 +164,11 @@ export async function developVoyantProjectWithDependencies(
   dependencies: VoyantProjectToolingDependencies = defaultDependencies,
 ): Promise<VoyantProjectDevelopmentServer> {
   const projectRoot = path.resolve(options.projectRoot ?? process.cwd())
-  const config = await prepareProjectViteConfig(projectRoot, dependencies)
+  let releaseDevelopmentRequests: () => void = () => undefined
+  const developmentReadiness = new Promise<void>((resolve) => {
+    releaseDevelopmentRequests = resolve
+  })
+  const config = await prepareProjectViteConfig(projectRoot, dependencies, developmentReadiness)
   const port = options.port ?? DEFAULT_DEVELOPMENT_PORT
   // Keep native config discovery aligned with the production build.
   const server = await dependencies.createViteServer({
@@ -188,7 +193,9 @@ export async function developVoyantProjectWithDependencies(
         (dependency) => dependency.processing,
       ),
     )
+    releaseDevelopmentRequests()
   } catch (error) {
+    releaseDevelopmentRequests()
     await server.close().catch(() => undefined)
     restoreDevelopmentEnvironment()
     throw error
@@ -212,6 +219,7 @@ export async function developVoyantProjectWithDependencies(
 async function prepareProjectViteConfig(
   projectRoot: string,
   dependencies: VoyantProjectToolingDependencies,
+  developmentReadiness?: Promise<void>,
 ): Promise<InlineConfig> {
   const appRootUrl = pathToFileURL(path.join(projectRoot, "generated-config-anchor.ts")).href
   const files = await dependencies.loadStandardRouteFiles(projectRoot)
@@ -224,7 +232,12 @@ async function prepareProjectViteConfig(
     generatedRouteTree: generatedRoutes.generatedRouteTree,
   })
 
-  return dependencies.createViteConfig({ appRootUrl, generatedRoutes, bootstrap })
+  return dependencies.createViteConfig({
+    appRootUrl,
+    ...(developmentReadiness ? { developmentReadiness } : {}),
+    generatedRoutes,
+    bootstrap,
+  })
 }
 
 export function createProjectViteConfig(options: ProjectViteConfigOptions): InlineConfig {
@@ -234,6 +247,7 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     serverDependencyFacades: options.bootstrap.frontendDependencyFacades,
     nodeSsr: true,
     plugins: [
+      createDevelopmentReadinessPlugin(options.developmentReadiness),
       options.generatedRoutes.plugin,
       devtools(),
       tailwindcss(),
@@ -274,6 +288,20 @@ export function createProjectViteConfig(options: ProjectViteConfigOptions): Inli
     }
   }
   return config
+}
+
+function createDevelopmentReadinessPlugin(readiness?: Promise<void>): PluginOption {
+  if (!readiness) return false
+
+  return {
+    name: "voyant:development-readiness",
+    enforce: "pre",
+    configureServer(server) {
+      server.middlewares.use((_request, _response, next) => {
+        void readiness.then(() => next(), next)
+      })
+    },
+  }
 }
 
 function relativeEntry(appRootUrl: string, entry: string): string {
