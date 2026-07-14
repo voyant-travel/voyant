@@ -88,6 +88,9 @@ jobs:
       id-token: write
     env:
       HUSKY: 0
+      # Large declaration builds such as bookings-react exceed Node's 4 GB default heap.
+      # Turbo is serialized below, so one build may safely use the runner's available memory.
+      NODE_OPTIONS: --max-old-space-size=12288
       # Turbo remote cache. Configure in GitHub Settings → Secrets and variables
       # → Actions; without them turbo silently falls back to no remote cache.
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
