@@ -5,12 +5,13 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs"
-import { createServer as createNetServer } from "node:net"
+import { createConnection, createServer as createNetServer } from "node:net"
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { test } from "node:test"
@@ -18,14 +19,12 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 
-test("minimal starter installs, builds, and serves API and SSR routes", {
-  timeout: 300_000,
-}, async () => {
+test("minimal starter serves project API and SSR routes in production and development", {
+  timeout: 420_000,
+}, async (t) => {
   const root = mkdtempSync(join(tmpdir(), "voyant-minimal-starter-acceptance-"))
   const out = join(root, "out")
   const app = join(root, "app")
-  const port = await reservePort()
-  let server
   try {
     exec(
       process.execPath,
@@ -94,6 +93,11 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
         'import { writeFileSync } from "node:fs"',
         "export default {",
         '  build: { outDir: "custom-dist" },',
+        // The offline link fixture must expose dependencies of linked workspace sources.
+        "  resolve: { alias: {",
+        `    "@aws-sdk/client-s3": ${JSON.stringify(resolvePnpmStorePackageEntry("@aws-sdk/client-s3"))},`,
+        `    "@aws-sdk/s3-request-presigner": ${JSON.stringify(resolvePnpmStorePackageEntry("@aws-sdk/s3-request-presigner"))},`,
+        "  } },",
         "  plugins: [{",
         '    name: "project-vite-config-acceptance",',
         '    configResolved() { writeFileSync(".voyant/project-vite-plugin.loaded", "ok\\n") },',
@@ -101,9 +105,12 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
         "}",
       ].join("\n"),
     )
-    exec("pnpm", ["build"], app)
+    const buildOutput = exec("pnpm", ["build"], app)
     assert.ok(!existsSync(join(app, "custom-dist")))
-    assert.ok(existsSync(join(app, "dist/client")))
+    assert.ok(
+      existsSync(join(app, "dist/client")),
+      `Build did not emit dist/client.\n${buildOutput}\nProject root: ${readdirSync(app).join(", ")}`,
+    )
     assert.ok(existsSync(join(app, "dist/server/server.js")))
     assert.ok(existsSync(join(app, "dist/.voyant/deployment-graph.generated.json")))
     assert.ok(existsSync(join(app, "dist/server/.voyant/deployment-graph.generated.json")))
@@ -185,41 +192,93 @@ test("minimal starter installs, builds, and serves API and SSR routes", {
       app,
       { NODE_OPTIONS: "--conditions=development" },
     )
+    exec("pnpm", ["db:migrate"], app, acceptanceEnvironment())
 
-    server = spawn(
-      process.execPath,
-      [
-        join(app, "node_modules/@voyant-travel/cli/bin/voyant.mjs"),
-        "start",
-        "--port",
-        String(port),
-      ],
-      {
-        cwd: app,
-        env: {
-          ...process.env,
-          BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
-          DATABASE_URL: ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant"].join(""),
-          NODE_OPTIONS: "--conditions=development",
-          SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
-        },
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    )
-    const output = captureOutput(server)
-    await waitForOk(`http://127.0.0.1:${port}/healthz`, server, output)
-
-    const apiResponse = await fetch(`http://127.0.0.1:${port}/api/v1/public/starter-proof`)
-    assert.equal(apiResponse.status, 401, output())
-
-    const ssrResponse = await fetch(`http://127.0.0.1:${port}/docs`)
-    assert.equal(ssrResponse.status, 200, output())
-    assert.match(await ssrResponse.text(), /No OpenAPI specs are available/)
+    await t.test("voyant start serves the authored route and rendered SSR", async () => {
+      await assertVoyantServerMode(app, "start")
+    })
+    await t.test("voyant develop serves the authored route and rendered SSR", async () => {
+      await assertVoyantServerMode(app, "develop")
+    })
   } finally {
-    if (server) await stop(server)
     rmSync(root, { recursive: true, force: true })
   }
 })
+
+async function assertVoyantServerMode(app, mode) {
+  const port = await reservePort()
+  const server = spawnVoyant(app, mode, port)
+  const output = captureOutput(server)
+  try {
+    await waitForListening("127.0.0.1", port, server, output)
+
+    const api = await readResponse(`http://127.0.0.1:${port}/api/v1/public/starter-proof`, {
+      headers: { authorization: "Bearer starter-acceptance-internal-key" },
+    })
+    const ssr = await readResponse(`http://127.0.0.1:${port}/docs`)
+    const failures = []
+
+    if (api.status !== 200) {
+      failures.push(`project API returned ${api.status}: ${api.body}`)
+    } else {
+      try {
+        assert.deepEqual(JSON.parse(api.body), { route: "public" })
+      } catch (error) {
+        failures.push(`project API returned an unexpected body: ${api.body}\n${String(error)}`)
+      }
+    }
+    if (ssr.status !== 200) {
+      failures.push(`SSR route returned ${ssr.status}: ${ssr.body}`)
+    } else {
+      if (!ssr.contentType.includes("text/html")) {
+        failures.push(`SSR route returned unexpected content-type: ${ssr.contentType}`)
+      }
+      if (!/<html[\s>]/i.test(ssr.body)) {
+        failures.push("SSR route did not return an HTML document")
+      }
+      if (!/No OpenAPI specs are available/.test(ssr.body)) {
+        failures.push("SSR route did not render the expected project docs content")
+      }
+    }
+
+    assert.deepEqual(failures, [], `${mode} failed packaged starter HTTP acceptance.\n${output()}`)
+  } finally {
+    await stop(server)
+  }
+}
+
+function spawnVoyant(app, mode, port) {
+  const args = [join(app, "node_modules/@voyant-travel/cli/bin/voyant.mjs"), mode]
+  if (mode === "develop") args.push("--host", "127.0.0.1")
+  args.push("--port", String(port))
+  return spawn(process.execPath, args, {
+    cwd: app,
+    env: acceptanceEnvironment(),
+    stdio: ["ignore", "pipe", "pipe"],
+  })
+}
+
+function acceptanceEnvironment() {
+  return {
+    ...process.env,
+    BETTER_AUTH_SECRET: "starter-acceptance-better-auth-secret",
+    DATABASE_URL:
+      process.env.TEST_DATABASE_URL ??
+      ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant_starter_acceptance"].join(""),
+    INTERNAL_API_KEY: "starter-acceptance-internal-key",
+    NODE_OPTIONS: "--conditions=development --import=tsx --max-old-space-size=6144",
+    SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
+  }
+}
+
+async function readResponse(url, init) {
+  const response = await fetch(url, init)
+  return {
+    status: response.status,
+    contentType: response.headers.get("content-type") ?? "",
+    body: await response.text(),
+  }
+}
 
 function useInstalledToolingArtifacts(app) {
   const packageJsonPath = join(app, "package.json")
@@ -233,6 +292,18 @@ function useInstalledToolingArtifacts(app) {
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+}
+
+function resolvePnpmStorePackageEntry(name) {
+  const store = join(repoRoot, "node_modules/.pnpm")
+  const directoryPrefix = `${name.replace("/", "+")}@`
+  const directory = readdirSync(store).find((entry) => entry.startsWith(directoryPrefix))
+  assert.ok(directory, `Missing ${name} from the pnpm virtual store`)
+  const packageRoot = realpathSync(join(store, directory, "node_modules", name))
+  const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"))
+  const entry = manifest.exports?.["."]?.import ?? manifest.module ?? manifest.main
+  assert.equal(typeof entry, "string", `Missing ESM entry for ${name}`)
+  return join(packageRoot, entry)
 }
 
 function exec(command, args, cwd, env = {}, timeout = 240_000) {
@@ -264,21 +335,30 @@ function captureOutput(child) {
   return () => output
 }
 
-async function waitForOk(url, child, output) {
+async function waitForListening(host, port, child, output) {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`Node host exited before it became ready.\n${output()}`)
     }
-    try {
-      const response = await fetch(url)
-      if (response.ok) return
-    } catch {
-      // The server socket may not be listening yet.
-    }
+    if (await canConnect(host, port)) return
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
-  throw new Error(`Timed out waiting for ${url}.\n${output()}`)
+  throw new Error(`Timed out waiting for ${host}:${port}.\n${output()}`)
+}
+
+function canConnect(host, port) {
+  return new Promise((resolve) => {
+    const socket = createConnection({ host, port })
+    socket.once("connect", () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once("error", () => {
+      socket.destroy()
+      resolve(false)
+    })
+  })
 }
 
 async function stop(child) {
