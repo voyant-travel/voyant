@@ -107,8 +107,7 @@ export async function loadVoyantProject(
   const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
-  const { providers } = generated.deployment
-  const providerPlan = resolveVoyantNodeProviderPlan(providers)
+  const providerPlan = resolveVoyantNodeProviderPlan(generated.deployment.providers)
   const rawEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)
   if (providerIssues.length > 0) {
