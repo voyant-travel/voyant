@@ -23,6 +23,7 @@ import path from "node:path"
 import { promisify } from "node:util"
 
 import { packedFileExportsName } from "./lib/packed-exports.mjs"
+import { collectPackedSourceMapProblems } from "./lib/packed-sourcemaps.mjs"
 
 const execFileAsync = promisify(execFile)
 const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
@@ -459,6 +460,7 @@ async function packAndInspectPackage(packageDir) {
   let extensionlessRelativeSpecifiers = []
   let legacyVoyantSpecifiers = []
   let missingPackedExports = []
+  let packedSourceMapProblems = []
   let extracted
   try {
     ;[packInfo] = getPackJson(stdout)
@@ -470,6 +472,7 @@ async function packAndInspectPackage(packageDir) {
     )
     legacyVoyantSpecifiers = collectPackedLegacyVoyantSpecifiers(extracted.root, packInfo)
     missingPackedExports = collectPackedExportProblems(extracted.root, packedManifest.name)
+    packedSourceMapProblems = collectPackedSourceMapProblems(extracted.root, packInfo)
   } catch (error) {
     return { error: `could not parse pnpm pack output: ${error.message}` }
   } finally {
@@ -483,6 +486,7 @@ async function packAndInspectPackage(packageDir) {
     extensionlessRelativeSpecifiers,
     legacyVoyantSpecifiers,
     missingPackedExports,
+    packedSourceMapProblems,
   }
 }
 
@@ -493,6 +497,7 @@ function collectTarballProblems(
     extensionlessRelativeSpecifiers,
     legacyVoyantSpecifiers,
     missingPackedExports,
+    packedSourceMapProblems,
   },
   sourceFiles,
 ) {
@@ -528,6 +533,7 @@ function collectTarballProblems(
   if (missingPackedExports.length > 0) {
     problems.push(`missing packed exports: ${missingPackedExports.join("; ")}`)
   }
+  problems.push(...packedSourceMapProblems)
   const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
   if (workspaceProtocolDependencies.length > 0) {
     problems.push(

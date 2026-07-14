@@ -3,8 +3,11 @@
 "@voyant-travel/commerce-react": patch
 "@voyant-travel/core": patch
 "@voyant-travel/db": patch
+"@voyant-travel/runtime-core": patch
+"@voyant-travel/runtime": patch
 "@voyant-travel/types": patch
 "@voyant-travel/utils": patch
+"@voyant-travel/webhook-delivery": patch
 ---
 
 Embed TypeScript sources in published JavaScript source maps so consumer dev servers can resolve

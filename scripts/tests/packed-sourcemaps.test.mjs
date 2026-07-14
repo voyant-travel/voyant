@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 import { afterEach, test } from "node:test"
 
-import { collectPackedSourceMapProblems } from "../verify-publish-tarballs.mjs"
+import { collectPackedSourceMapProblems } from "../lib/packed-sourcemaps.mjs"
 
 const temporaryDirectories = []
 
