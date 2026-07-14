@@ -248,7 +248,7 @@ export function InlineTagsEditor({
   const messages = useCatalogUiMessagesOrDefault().catalogPage.detail
   // Seed the working set from the indexed value on each *hit change*
   // only. The catalog search refetches after every mutation, but
-  // Typesense reindex is asynchronous — for a few seconds after the
+  // search reindexing is asynchronous — for a few seconds after the
   // PATCH the indexed hit still carries the pre-mutation tags. If we
   // re-synced from `value` on every render, those stale tags would
   // clobber the chip the user just added. Pinning the seed to `hit.id`
@@ -434,7 +434,7 @@ export function defaultFormat(
     return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{value}</code>
   }
 
-  // Numeric strings (Typesense stores everything as string)
+  // Numeric strings returned by an index adapter
   if (typeof value === "string" && /^-?\d+(\.\d+)?$/.test(value)) {
     return <span className="text-sm tabular-nums">{value}</span>
   }

@@ -397,10 +397,12 @@ describe("createCatalogSearchRoutes", () => {
     })
   })
 
-  it("returns the declared search-result wire shape (contract)", async () => {
+  it("returns the declared search-result wire shape with the next cursor", async () => {
     const executeSearch = vi.fn(
       async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => ({
         total: 2,
+        totalRelation: "gte",
+        next_cursor: "cursor-page-2",
         facets: { "regions[]": [{ value: "Europe", count: 2 }] },
         hits: [
           { id: "prod_a", score: 9.5, document: { id: "prod_a", fields: { name: "Alpha" } } },
@@ -429,6 +431,8 @@ describe("createCatalogSearchRoutes", () => {
       vertical: "products",
       mode: "keyword",
       total: 2,
+      totalRelation: "gte",
+      next_cursor: "cursor-page-2",
       hits: [
         { id: "prod_a", score: 9.5, document: { id: "prod_a", fields: { name: "Alpha" } } },
         { id: "prod_b", score: 4.25, document: { id: "prod_b", fields: { name: "Beta" } } },

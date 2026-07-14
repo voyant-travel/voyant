@@ -20,6 +20,10 @@ export type {
   SearchRequest,
   SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
+export {
+  MAX_FACET_BUCKETS,
+  resolveFacetBucketLimit,
+} from "@voyant-travel/catalog-contracts/indexer/contract"
 // Public source-adapter contract.
 export {
   ADAPTER_RATE_LIMITED,
@@ -242,8 +246,10 @@ export {
   fanOutAvailabilitySearch,
 } from "./search/availability-fan-out.js"
 export {
+  DEFAULT_FEDERATED_CANDIDATE_DEPTH,
   type FederatedSearchOptions,
   federateAudienceSearch,
+  MAX_FEDERATED_CANDIDATE_DEPTH,
   mergeAndDedupe,
 } from "./search/federate.js"
 export {
