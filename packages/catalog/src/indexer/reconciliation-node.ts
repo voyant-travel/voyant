@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
 import { createReadStream } from "node:fs"
-import { access, type FileHandle, mkdir, mkdtemp, open, rm } from "node:fs/promises"
+import { access, appendFile, mkdir, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createInterface } from "node:readline"
@@ -14,7 +14,11 @@ import type {
 export interface IndexerReconciliationTarget {
   /** A configured slice whose complete expected document set is supplied. */
   slice: IndexerSlice
-  /** Creates a fresh document stream for every reconciliation attempt. */
+  /**
+   * Creates a fresh document stream for every reconciliation attempt. IDs
+   * must be unique. A duplicate aborts before the destructive scan, although
+   * preceding idempotent upsert batches may already have completed.
+   */
   loadDocuments(): AsyncIterable<IndexerDocument> | Iterable<IndexerDocument>
 }
 
@@ -45,11 +49,62 @@ export interface IndexerReconciliationAuthority {
   ): Promise<T>
 }
 
-/** Bounded state for one target slice during one reconciliation attempt. */
+/**
+ * Caller-side conformance assertion for deployment authority factories. It
+ * constructs two independent authorities and verifies that their
+ * `runExclusive` callbacks do not overlap. Both instances must use the same
+ * backend/distributed lock for this assertion to pass.
+ */
+export async function assertIndexerReconciliationAuthoritySerializesAcrossInstances(
+  createAuthority: () => IndexerReconciliationAuthority,
+): Promise<void> {
+  const firstAuthority = createAuthority()
+  const secondAuthority = createAuthority()
+  let active = 0
+  let maxActive = 0
+  let releaseFirst!: () => void
+  let markFirstEntered!: () => void
+  const firstEntered = new Promise<void>((resolve) => {
+    markFirstEntered = resolve
+  })
+  const holdFirst = new Promise<void>((resolve) => {
+    releaseFirst = resolve
+  })
+
+  const first = firstAuthority.runExclusive(async () => {
+    active += 1
+    maxActive = Math.max(maxActive, active)
+    markFirstEntered()
+    try {
+      await holdFirst
+    } finally {
+      active -= 1
+    }
+  })
+  await firstEntered
+  const second = secondAuthority.runExclusive(async () => {
+    active += 1
+    maxActive = Math.max(maxActive, active)
+    active -= 1
+  })
+  await Promise.resolve()
+  releaseFirst()
+  await Promise.all([first, second])
+
+  if (maxActive !== 1) {
+    throw new Error(
+      "Indexer reconciliation authorities did not serialize through one shared backend lock",
+    )
+  }
+}
+
+/** Partitioned state for one target slice during one reconciliation attempt. */
 export interface IndexerReconciliationState {
   writeExpectedIds(ids: readonly string[]): Promise<void>
+  /** Reject duplicate expected IDs before the destructive provider scan. */
+  assertExpectedIdsUnique(): Promise<void>
   writeCandidateIds(ids: readonly string[]): Promise<void>
-  /** Close all write handles before bucket reads begin. */
+  /** Prevent further writes before stale bucket reads begin. */
   seal(): Promise<void>
   staleIdBatches(batchSize: number): AsyncIterable<string[]>
   /** Release all state for this attempt. Must be idempotent and retryable. */
@@ -69,10 +124,10 @@ export interface FileIndexerReconciliationStateStoreOptions {
 }
 
 /**
- * Create the default Node reconciliation state store. IDs are batch-written
- * through reusable file handles, then each hash bucket is read once after the
- * provider scan closes. Peak memory is one expected-ID bucket plus one delete
- * batch; total bucket processing is O(expected + scanned-owned).
+ * Create the default Node reconciliation state store. IDs are grouped into
+ * append-and-close writes, then partitions are processed one bucket at a time
+ * after the provider scan closes. Memory is partition-bounded rather than
+ * globally bounded: one heavily skewed bucket can grow with the corpus.
  */
 export function createFileIndexerReconciliationStateStore(
   options: FileIndexerReconciliationStateStoreOptions = {},
@@ -104,7 +159,7 @@ export interface ReconcileIndexerOptions {
   ownership: IndexerReconciliationOwnership
   /** Preferred upsert, scan, spool, and delete batch size. Defaults to 250. */
   batchSize?: number
-  /** Bounded reconciliation state. Defaults to a temporary filesystem store. */
+  /** Partitioned reconciliation state. Defaults to a temporary filesystem store. */
   stateStore?: IndexerReconciliationStateStore
   /**
    * `error` prevents any mutation when maintenance APIs are unavailable.
@@ -168,6 +223,8 @@ async function reconcileExclusive(
 
   for (const target of targets) {
     const state = await stateStore.create(target.slice)
+    let operationFailed = false
+    let operationError: unknown
     try {
       let upsertBatch: IndexerDocument[] = []
       for await (const document of target.loadDocuments()) {
@@ -185,29 +242,49 @@ async function reconcileExclusive(
         indexedDocuments += upsertBatch.length
       }
 
+      await state.assertExpectedIdsUnique()
+
       if (!admin) {
         await state.seal()
-        continue
-      }
+      } else {
+        let candidateBatch: string[] = []
+        for await (const document of admin.scan(target.slice, { batchSize })) {
+          if (!options.ownership.ownsDocument(target.slice, document)) continue
+          candidateBatch.push(document.id)
+          if (candidateBatch.length < batchSize) continue
+          await state.writeCandidateIds(candidateBatch)
+          candidateBatch = []
+        }
+        if (candidateBatch.length > 0) await state.writeCandidateIds(candidateBatch)
 
-      let candidateBatch: string[] = []
-      for await (const document of admin.scan(target.slice, { batchSize })) {
-        if (!options.ownership.ownsDocument(target.slice, document)) continue
-        candidateBatch.push(document.id)
-        if (candidateBatch.length < batchSize) continue
-        await state.writeCandidateIds(candidateBatch)
-        candidateBatch = []
+        await state.seal()
+        for await (const deleteBatch of state.staleIdBatches(batchSize)) {
+          await adapter.delete(target.slice, deleteBatch)
+          deletedDocuments += deleteBatch.length
+        }
       }
-      if (candidateBatch.length > 0) await state.writeCandidateIds(candidateBatch)
-
-      await state.seal()
-      for await (const deleteBatch of state.staleIdBatches(batchSize)) {
-        await adapter.delete(target.slice, deleteBatch)
-        deletedDocuments += deleteBatch.length
-      }
-    } finally {
-      await state.dispose()
+    } catch (error) {
+      operationFailed = true
+      operationError = error
     }
+
+    let cleanupFailed = false
+    let cleanupError: unknown
+    try {
+      await disposeReconciliationState(state)
+    } catch (error) {
+      cleanupFailed = true
+      cleanupError = error
+    }
+
+    if (operationFailed && cleanupFailed) {
+      throw new AggregateError(
+        [operationError, cleanupError],
+        "Indexer reconciliation operation and state cleanup both failed",
+      )
+    }
+    if (operationFailed) throw operationError
+    if (cleanupFailed) throw cleanupError
   }
 
   if (!admin) {
@@ -226,11 +303,11 @@ function validateTargets(
   configuredSlices: readonly IndexerSlice[],
   targets: ReadonlyArray<IndexerReconciliationTarget>,
 ): IndexerReconciliationTarget[] {
-  const configured = new Set(configuredSlices.map(sliceKey))
+  const configured = configuredSliceKeys(configuredSlices)
   const seen = new Set<string>()
 
   for (const target of targets) {
-    const key = sliceKey(target.slice)
+    const key = canonicalSliceKey(target.slice)
     if (seen.has(key)) {
       throw new Error(`Indexer reconciliation received duplicate target slice ${key}`)
     }
@@ -248,11 +325,11 @@ function validateObsoleteSlices(
   candidates: ReadonlyArray<IndexerSlice>,
   ownership: IndexerReconciliationOwnership,
 ): IndexerSlice[] {
-  const configured = new Set(configuredSlices.map(sliceKey))
+  const configured = configuredSliceKeys(configuredSlices)
   const seen = new Set<string>()
 
   for (const candidate of candidates) {
-    const key = sliceKey(candidate)
+    const key = canonicalSliceKey(candidate)
     if (seen.has(key)) {
       throw new Error(`Indexer reconciliation received duplicate obsolete slice ${key}`)
     }
@@ -271,7 +348,6 @@ function validateObsoleteSlices(
 type SpoolKind = "expected" | "candidate"
 
 class FileIndexerReconciliationState implements IndexerReconciliationState {
-  private readonly handles = new Map<string, FileHandle>()
   private sealed = false
   private disposed = false
 
@@ -284,6 +360,19 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
     return this.writeIds("expected", ids)
   }
 
+  async assertExpectedIdsUnique(): Promise<void> {
+    this.requireWritable()
+    for (let bucket = 0; bucket < this.buckets; bucket += 1) {
+      const expected = new Set<string>()
+      for await (const id of readIds(this.bucketPath("expected", bucket))) {
+        if (expected.has(id)) {
+          throw new Error(`Indexer reconciliation received duplicate expected document id ${id}`)
+        }
+        expected.add(id)
+      }
+    }
+  }
+
   writeCandidateIds(ids: readonly string[]): Promise<void> {
     return this.writeIds("candidate", ids)
   }
@@ -291,7 +380,6 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
   async seal(): Promise<void> {
     this.requireActive()
     if (this.sealed) return
-    await this.closeHandles()
     this.sealed = true
   }
 
@@ -302,8 +390,11 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
     for (let bucket = 0; bucket < this.buckets; bucket += 1) {
       const expected = new Set<string>()
       for await (const id of readIds(this.bucketPath("expected", bucket))) expected.add(id)
+      const candidates = new Set<string>()
 
       for await (const id of readIds(this.bucketPath("candidate", bucket))) {
+        if (candidates.has(id)) continue
+        candidates.add(id)
         if (expected.has(id)) continue
         batch.push(id)
         if (batch.length < batchSize) continue
@@ -317,7 +408,6 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
 
   async dispose(): Promise<void> {
     if (this.disposed) return
-    await this.closeHandles()
     await rm(this.root, { recursive: true, force: true })
     this.disposed = true
   }
@@ -333,24 +423,7 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
     }
 
     for (const [bucket, bucketIds] of idsByBucket) {
-      const handle = await this.handleFor(kind, bucket)
-      await handle.writeFile(bucketIds.map(encodeId).join(""), "utf8")
-    }
-  }
-
-  private async handleFor(kind: SpoolKind, bucket: number): Promise<FileHandle> {
-    const key = `${kind}-${bucket}`
-    const existing = this.handles.get(key)
-    if (existing) return existing
-    const handle = await open(this.bucketPath(kind, bucket), "a")
-    this.handles.set(key, handle)
-    return handle
-  }
-
-  private async closeHandles(): Promise<void> {
-    for (const [key, handle] of this.handles) {
-      await handle.close()
-      this.handles.delete(key)
+      await appendFile(this.bucketPath(kind, bucket), bucketIds.map(encodeId).join(""), "utf8")
     }
   }
 
@@ -370,6 +443,21 @@ class FileIndexerReconciliationState implements IndexerReconciliationState {
 
   private requireActive() {
     if (this.disposed) throw new Error("Indexer reconciliation state has been disposed")
+  }
+}
+
+async function disposeReconciliationState(state: IndexerReconciliationState): Promise<void> {
+  try {
+    await state.dispose()
+  } catch (firstError) {
+    try {
+      await state.dispose()
+    } catch (secondError) {
+      throw new AggregateError(
+        [firstError, secondError],
+        "Indexer reconciliation state cleanup failed after retry",
+      )
+    }
   }
 }
 
@@ -411,12 +499,38 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && "code" in error
 }
 
-function sliceKey(slice: IndexerSlice): string {
+function configuredSliceKeys(slices: readonly IndexerSlice[]): Set<string> {
+  const configured = new Set<string>()
+  for (const slice of slices) {
+    const key = canonicalSliceKey(slice)
+    if (configured.has(key)) {
+      throw new Error(`Indexer reconciliation has duplicate configured slice identity ${key}`)
+    }
+    configured.add(key)
+  }
+  return configured
+}
+
+function canonicalSliceKey(slice: IndexerSlice): string {
+  for (const [component, value] of [
+    ["vertical", slice.vertical],
+    ["locale", slice.locale],
+    ["audience", slice.audience],
+    ["market", slice.market],
+  ] as const) {
+    if (value.trim().length === 0) {
+      throw new Error(`Indexer reconciliation slice ${component} must not be empty`)
+    }
+  }
+  if (slice.channel !== undefined && slice.channel !== "" && slice.channel.trim().length === 0) {
+    throw new Error("Indexer reconciliation slice channel must be omitted or non-blank")
+  }
+
   return JSON.stringify([
     slice.vertical,
     slice.locale,
     slice.audience,
     slice.market,
-    slice.channel ?? null,
+    slice.channel || null,
   ])
 }

@@ -2,7 +2,7 @@
 
 import type { createReadStream as CreateReadStream } from "node:fs"
 import { mkdtempSync, readdirSync, rmSync } from "node:fs"
-import type { rm as Remove } from "node:fs/promises"
+import type { appendFile as AppendFile, rm as Remove } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import type {
@@ -15,18 +15,31 @@ import type {
 import { describe, expect, it, vi } from "vitest"
 import type { FieldPolicyRegistry } from "../contract.js"
 import {
+  assertIndexerReconciliationAuthoritySerializesAcrossInstances,
   createFileIndexerReconciliationStateStore,
   IndexerAdminUnavailableError,
   type IndexerReconciliationAuthority,
   type IndexerReconciliationExclusiveContext,
+  type IndexerReconciliationState,
   type ReconcileIndexerOptions,
   reconcileIndexer,
 } from "./reconciliation-node.js"
 
 const fsControl = vi.hoisted(() => ({
   readPaths: [] as string[],
-  failNextRemove: false,
+  openResources: 0,
+  maxOpenResources: 0,
+  removeCalls: 0,
+  removeFailuresRemaining: 0,
 }))
+
+function trackOpenResource() {
+  fsControl.openResources += 1
+  fsControl.maxOpenResources = Math.max(fsControl.maxOpenResources, fsControl.openResources)
+  return () => {
+    fsControl.openResources -= 1
+  }
+}
 
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs")>()
@@ -34,7 +47,10 @@ vi.mock("node:fs", async (importOriginal) => {
     ...actual,
     createReadStream(...args: Parameters<typeof CreateReadStream>) {
       fsControl.readPaths.push(String(args[0]))
-      return actual.createReadStream(...args)
+      const release = trackOpenResource()
+      const stream = actual.createReadStream(...args)
+      stream.once("close", release)
+      return stream
     },
   }
 })
@@ -43,9 +59,18 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs/promises")>()
   return {
     ...actual,
+    async appendFile(...args: Parameters<typeof AppendFile>) {
+      const release = trackOpenResource()
+      try {
+        return await actual.appendFile(...args)
+      } finally {
+        release()
+      }
+    },
     async rm(...args: Parameters<typeof Remove>) {
-      if (fsControl.failNextRemove) {
-        fsControl.failNextRemove = false
+      fsControl.removeCalls += 1
+      if (fsControl.removeFailuresRemaining > 0) {
+        fsControl.removeFailuresRemaining -= 1
         throw new Error("temporary remove failure")
       }
       return actual.rm(...args)
@@ -63,6 +88,32 @@ const productsObsolete: IndexerSlice = { ...productsCurrent, market: "obsolete" 
 const productsObsoleteSecond: IndexerSlice = { ...productsCurrent, market: "obsolete-second" }
 const productsUntargeted: IndexerSlice = { ...productsCurrent, market: "untargeted" }
 const unrelatedSlice: IndexerSlice = { ...productsCurrent, vertical: "cruises" }
+
+describe("assertIndexerReconciliationAuthoritySerializesAcrossInstances", () => {
+  it("proves independently constructed authorities share one backend lock", async () => {
+    const fake = createFakeAdapter([[productsCurrent, []]])
+    const backend = createTestBackendLock()
+    let constructions = 0
+
+    await expect(
+      assertIndexerReconciliationAuthoritySerializesAcrossInstances(() => {
+        constructions += 1
+        return createFakeReconciliationAuthority(fake.adapter, [productsCurrent], backend).authority
+      }),
+    ).resolves.toBeUndefined()
+    expect(constructions).toBe(2)
+  })
+
+  it("rejects independently constructed authorities without a shared backend lock", async () => {
+    const fake = createFakeAdapter([[productsCurrent, []]])
+
+    await expect(
+      assertIndexerReconciliationAuthoritySerializesAcrossInstances(
+        () => createFakeReconciliationAuthority(fake.adapter, [productsCurrent]).authority,
+      ),
+    ).rejects.toThrow("did not serialize through one shared backend lock")
+  })
+})
 
 describe("reconcileIndexer", () => {
   it("deletes only stale documents owned by the reconciliation", async () => {
@@ -234,6 +285,30 @@ describe("reconcileIndexer", () => {
     expect(fake.has(unrelatedSlice)).toBe(true)
   })
 
+  it("rejects an empty-channel obsolete alias of a configured slice before mutation", async () => {
+    const configured = { ...productsCurrent, channel: undefined }
+    const alias = { ...productsCurrent, channel: "" }
+    const fake = createFakeAdapter([[configured, [document("owned-live")]]])
+    const fixture = reconciliationFixture(fake, [configured], [])
+    fixture.options.obsoleteSlices = [alias]
+
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow("cannot drop configured slice")
+    expect(fake.ensureCollection).not.toHaveBeenCalled()
+    expect(fake.drop).not.toHaveBeenCalled()
+    expect(fake.has(configured)).toBe(true)
+  })
+
+  it("rejects empty required slice components before mutation", async () => {
+    const invalid = { ...productsCurrent, market: " " }
+    const fake = createFakeAdapter([])
+    const fixture = reconciliationFixture(fake, [invalid], [])
+
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow(
+      "slice market must not be empty",
+    )
+    expect(fake.ensureCollection).not.toHaveBeenCalled()
+  })
+
   it("is idempotent after stale documents and explicit slices are removed", async () => {
     const fake = createFakeAdapter([
       [productsCurrent, [document("owned-live"), document("owned-stale")]],
@@ -277,6 +352,48 @@ describe("reconcileIndexer", () => {
     await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({ indexedDocuments: 2 })
     expect(loadDocuments).toHaveBeenCalledTimes(2)
     expect(fake.ids(productsCurrent)).toEqual(["owned-live", "owned-new"])
+  })
+
+  it("rejects duplicate expected IDs before destructive scanning", async () => {
+    const fake = createFakeAdapter([
+      [productsCurrent, [document("owned-live"), document("owned-stale")]],
+    ])
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [
+        {
+          slice: productsCurrent,
+          loadDocuments: () => [document("owned-live"), document("owned-live")],
+        },
+      ],
+    )
+    fixture.options.batchSize = 1
+
+    await expect(reconcileIndexer(fixture.options)).rejects.toThrow(
+      "duplicate expected document id owned-live",
+    )
+    expect(fake.events).not.toContain("scan")
+    expect(fake.deleted).toEqual([])
+  })
+
+  it("deduplicates scanned candidate IDs before deletion", async () => {
+    const fake = createFakeAdapter(
+      [[productsCurrent, [document("owned-live"), document("owned-stale")]]],
+      {
+        scanDocuments: [document("owned-live"), document("owned-stale"), document("owned-stale")],
+      },
+    )
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
+    )
+
+    await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
+      deletedDocuments: 1,
+    })
+    expect(fake.deleted).toEqual([[productsCurrent, ["owned-stale"]]])
   })
 
   it("retries idempotently after one upsert batch succeeds", async () => {
@@ -349,26 +466,61 @@ describe("reconcileIndexer", () => {
     expect(fake.has(productsObsoleteSecond)).toBe(false)
   })
 
-  it("keeps filesystem cleanup retryable after a remove failure", async () => {
+  it("retries filesystem cleanup internally after a remove failure", async () => {
     const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-cleanup-"))
-    const store = createFileIndexerReconciliationStateStore({ directory, buckets: 2 })
+    const fake = createFakeAdapter([[productsCurrent, []]])
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [] }],
+    )
+    fixture.options.stateStore = createFileIndexerReconciliationStateStore({
+      directory,
+      buckets: 2,
+    })
     try {
-      const state = await store.create(productsCurrent)
-      await state.writeExpectedIds(["owned-live"])
-      await state.seal()
-
-      fsControl.failNextRemove = true
-      await expect(state.dispose()).rejects.toThrow("temporary remove failure")
-      expect(readdirSync(directory)).toHaveLength(1)
-      await expect(state.dispose()).resolves.toBeUndefined()
+      fsControl.removeCalls = 0
+      fsControl.removeFailuresRemaining = 1
+      await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
+        indexedDocuments: 0,
+      })
+      expect(fsControl.removeCalls).toBe(2)
       expect(readdirSync(directory)).toEqual([])
     } finally {
-      fsControl.failNextRemove = false
+      fsControl.removeFailuresRemaining = 0
       rmSync(directory, { recursive: true, force: true })
     }
   })
 
-  it("reads each populated spool bucket once for a large reconciliation", async () => {
+  it("preserves operation and cleanup failures when dispose retry is exhausted", async () => {
+    const fake = createFakeAdapter([], { failUpsertCalls: [1] })
+    const firstCleanupError = new Error("first cleanup failure")
+    const secondCleanupError = new Error("second cleanup failure")
+    const state = createStubReconciliationState()
+    state.dispose = vi
+      .fn<IndexerReconciliationState["dispose"]>()
+      .mockRejectedValueOnce(firstCleanupError)
+      .mockRejectedValueOnce(secondCleanupError)
+    const fixture = reconciliationFixture(
+      fake,
+      [productsCurrent],
+      [{ slice: productsCurrent, loadDocuments: () => [document("owned-live")] }],
+    )
+    fixture.options.stateStore = { create: async () => state }
+
+    const error = await reconcileIndexer(fixture.options).catch((caught) => caught)
+    expect(error).toBeInstanceOf(AggregateError)
+    const aggregate = error as AggregateError
+    expect((aggregate.errors[0] as Error).message).toBe("temporary upsert failure")
+    expect(aggregate.errors[1]).toBeInstanceOf(AggregateError)
+    expect((aggregate.errors[1] as AggregateError).errors).toEqual([
+      firstCleanupError,
+      secondCleanupError,
+    ])
+    expect(state.dispose).toHaveBeenCalledTimes(2)
+  })
+
+  it("keeps open resources small while processing default bucket partitions", async () => {
     const directory = mkdtempSync(join(tmpdir(), "voyant-reconciliation-buckets-"))
     const expected = Array.from({ length: 1_000 }, (_, index) => document(`owned-live-${index}`))
     const stale = Array.from({ length: 1_000 }, (_, index) => document(`owned-stale-${index}`))
@@ -381,9 +533,10 @@ describe("reconcileIndexer", () => {
     fixture.options.batchSize = 100
     fixture.options.stateStore = createFileIndexerReconciliationStateStore({
       directory,
-      buckets: 8,
     })
     fsControl.readPaths.length = 0
+    fsControl.openResources = 0
+    fsControl.maxOpenResources = 0
 
     try {
       await expect(reconcileIndexer(fixture.options)).resolves.toMatchObject({
@@ -393,8 +546,18 @@ describe("reconcileIndexer", () => {
       const bucketReads = fsControl.readPaths
         .filter((path) => path.startsWith(directory))
         .map((path) => basename(path))
-      expect(bucketReads).toHaveLength(16)
-      expect(new Set(bucketReads).size).toBe(bucketReads.length)
+      const readsByBucket = new Map<string, number>()
+      for (const bucket of bucketReads) {
+        readsByBucket.set(bucket, (readsByBucket.get(bucket) ?? 0) + 1)
+      }
+      expect(bucketReads.length).toBeLessThanOrEqual(256 * 3)
+      expect(
+        [...readsByBucket].every(([bucket, reads]) =>
+          bucket.startsWith("expected-") ? reads === 2 : reads === 1,
+        ),
+      ).toBe(true)
+      expect(fsControl.maxOpenResources).toBeLessThanOrEqual(2)
+      expect(fsControl.openResources).toBe(0)
       expect(readdirSync(directory)).toEqual([])
     } finally {
       rmSync(directory, { recursive: true, force: true })
@@ -461,16 +624,8 @@ function reconciliationFixture(
 function createFakeReconciliationAuthority(
   adapter: IndexerAdapter,
   configuredSlices: IndexerSlice[],
+  backend = createTestBackendLock(),
 ) {
-  let tail = Promise.resolve()
-  const runLocked = <T>(operation: () => Promise<T>): Promise<T> => {
-    const result = tail.then(operation)
-    tail = result.then(
-      () => undefined,
-      () => undefined,
-    )
-    return result
-  }
   const context: IndexerReconciliationExclusiveContext = {
     adapter,
     configuredSlices,
@@ -487,13 +642,42 @@ function createFakeReconciliationAuthority(
   const authority: IndexerReconciliationAuthority = {
     runExclusive<T>(operation: (context: IndexerReconciliationExclusiveContext) => Promise<T>) {
       exclusiveRuns += 1
-      return runLocked(() => operation(context))
+      return backend.run(() => operation(context))
     },
   }
   return {
     authority,
     exclusiveRuns: () => exclusiveRuns,
-    runMutation: runLocked,
+    runMutation: <T>(operation: () => Promise<T>) => backend.run(operation),
+  }
+}
+
+interface TestBackendLock {
+  run<T>(operation: () => Promise<T>): Promise<T>
+}
+
+function createTestBackendLock(): TestBackendLock {
+  let tail = Promise.resolve()
+  return {
+    run<T>(operation: () => Promise<T>): Promise<T> {
+      const result = tail.then(operation)
+      tail = result.then(
+        () => undefined,
+        () => undefined,
+      )
+      return result
+    },
+  }
+}
+
+function createStubReconciliationState(): IndexerReconciliationState {
+  return {
+    async writeExpectedIds() {},
+    async assertExpectedIdsUnique() {},
+    async writeCandidateIds() {},
+    async seal() {},
+    async *staleIdBatches() {},
+    async dispose() {},
   }
 }
 
@@ -513,6 +697,7 @@ interface FakeAdapterOptions {
   failDeleteCalls?: number[]
   failDropCalls?: number[]
   onScanStart?: () => Promise<void>
+  scanDocuments?: readonly IndexerDocument[]
 }
 
 function createFakeAdapter(
@@ -585,9 +770,11 @@ function createFakeAdapter(
             async *scan(slice: IndexerSlice) {
               scanActive = true
               try {
+                events.push("scan")
                 await options.onScanStart?.()
                 const collection = collections.get(sliceKey(slice))
-                for (const indexedDocument of collection?.documents.values() ?? []) {
+                const documents = options.scanDocuments ?? collection?.documents.values() ?? []
+                for (const indexedDocument of documents) {
                   yield indexedDocument
                 }
               } finally {
@@ -619,6 +806,7 @@ function createFakeAdapter(
     upsert,
     bulkReindex,
     list,
+    drop,
     events,
     deleted,
     dropped,
@@ -655,6 +843,6 @@ function sliceKey(slice: IndexerSlice): string {
     slice.locale,
     slice.audience,
     slice.market,
-    slice.channel ?? null,
+    slice.channel || null,
   ])
 }
