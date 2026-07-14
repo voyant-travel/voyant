@@ -117,8 +117,23 @@ jobs:
       # OpenAPIHono route chain; match the heap the typecheck/db-checks jobs
       # already use. Serial execution keeps this 12 GB process inside runner RAM.
       NODE_OPTIONS: --max-old-space-size=12288
+      TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: voyant
+          POSTGRES_PASSWORD: voyant
+          POSTGRES_DB: voyant_starter_acceptance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -162,6 +177,18 @@ jobs:
         env:
           VOYANT_PACK_REUSE_DIST: "1"
         run: pnpm verify:publish-tarballs
+
+      - name: Install acceptance browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Packaged starter production and development acceptance
+        # The full build above supplies fresh dist for the exact production
+        # package closure. The acceptance test packs those packages as consumers
+        # receive them, installs them in isolation, then proves production boot,
+        # browser hydration, and authored-source HMR sequentially.
+        run: |
+          node scripts/measure-standard-node-starter.mjs --require-build --check
+          node --test scripts/tests/minimal-starter-acceptance.test.mjs
 
   # Migration safety gate (D.1). Everything here needs a real Postgres, so it
   # used to be invisible in CI (the replay oracle and the custom-field route
@@ -242,23 +269,8 @@ jobs:
     env:
       HUSKY: 0
       NODE_OPTIONS: --conditions=development --max-old-space-size=12288
-      TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: voyant
-          POSTGRES_PASSWORD: voyant
-          POSTGRES_DB: voyant_starter_acceptance
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -315,14 +327,3 @@ jobs:
           api=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 http://localhost:8080/api/openapi.json)
           echo "api dispatch -> $api"
           test "$api" -lt 500
-
-      - name: Packaged starter production and development acceptance
-        # Reuse the build above for bounded server/admin/boot metrics, then run one
-        # serialized packaged-starter install, graph emission, and convention scan.
-        # The acceptance test builds its fixture once, then runs `voyant start` and
-        # `voyant develop` sequentially against one migrated PostgreSQL database.
-        # Both modes must serve an authenticated project-owned public API response
-        # and rendered SSR.
-        run: |
-          node scripts/measure-standard-node-starter.mjs --require-build --check
-          node --test scripts/tests/minimal-starter-acceptance.test.mjs

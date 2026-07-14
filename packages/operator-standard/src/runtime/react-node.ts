@@ -25,7 +25,6 @@ export const {
   lazy,
   memo,
   startTransition,
-  unstable_useCacheRefresh,
   use,
   useActionState,
   useCallback,

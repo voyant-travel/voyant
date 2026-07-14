@@ -101,34 +101,47 @@ describe("voyantStartViteConfig", () => {
     expect(aliases).toEqual([{ find: "@", replacement: "/repo/starters/operator/src" }])
   })
 
-  it("resolves legacy frontend imports through exact product dependency aliases", async () => {
-    const dependencyAliases = {
+  it("resolves legacy frontend imports from the product BOM in each Vite environment", async () => {
+    const dependencyResolutionAnchor = "/product/runtime/react.js"
+    const serverDependencyFacades = {
       react: "@acme/operator/runtime/react",
       "react/jsx-runtime": "@acme/operator/runtime/react/jsx-runtime",
       "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
     }
-    const config = voyantStartViteConfig({ ...base, dependencyAliases, nodeSsr: true })
+    const config = voyantStartViteConfig({
+      ...base,
+      dependencyResolutionAnchor,
+      serverDependencyFacades,
+      nodeSsr: true,
+    })
     const plugin = (config.plugins as Plugin[]).find(
       (candidate) => candidate.name === "voyant:dependency-facades",
     )
     const resolveId = plugin?.resolveId as Exclude<Plugin["resolveId"], object | undefined>
     const resolve = vi.fn(async (source: string) => ({ id: `/resolved/${source}` }))
+    expect(config.resolve?.alias).toEqual([
+      { find: "@", replacement: "/repo/starters/operator/src" },
+    ])
 
     await expect(
       resolveId.call(
-        { environment: { config: { consumer: "client" }, mode: "build" }, resolve } as never,
+        { environment: { config: { consumer: "server" }, mode: "build" } } as never,
         "react",
         "/app/route.tsx",
         {} as never,
       ),
-    ).resolves.toEqual({ id: `/resolved/${dependencyAliases.react}` })
-    expect(resolve).toHaveBeenCalledWith(
-      dependencyAliases.react,
-      "/repo/starters/operator/package.json",
-      {
-        skipSelf: true,
-      },
-    )
+    ).resolves.toEqual({ id: serverDependencyFacades.react, external: true })
+
+    await expect(
+      resolveId.call(
+        { environment: { config: { consumer: "client" }, mode: "dev" }, resolve } as never,
+        "react",
+        "/app/route.tsx",
+        {} as never,
+      ),
+    ).resolves.toEqual({ id: "/resolved/react" })
+    expect(resolve).toHaveBeenCalledWith("react", dependencyResolutionAnchor, { skipSelf: true })
+
     await expect(
       resolveId.call(
         { environment: { config: { consumer: "server" }, mode: "dev" }, resolve } as never,
@@ -137,16 +150,15 @@ describe("voyantStartViteConfig", () => {
         {} as never,
       ),
     ).resolves.toEqual({
-      id: `file:///resolved/${dependencyAliases["react/jsx-runtime"]}`,
+      id: "file:///resolved/@acme/operator/runtime/react/jsx-runtime",
       external: true,
     })
     expect(resolve).toHaveBeenCalledWith(
-      dependencyAliases["react/jsx-runtime"],
+      serverDependencyFacades["react/jsx-runtime"],
       "/repo/starters/operator/package.json",
-      {
-        skipSelf: true,
-      },
+      { skipSelf: true },
     )
+
     await expect(
       resolveId.call(
         { environment: { config: { consumer: "server" }, mode: "dev" }, resolve } as never,
@@ -163,17 +175,6 @@ describe("voyantStartViteConfig", () => {
     })
     await expect(
       resolveId.call(
-        { environment: { config: { consumer: "server" }, mode: "build" } } as never,
-        "@tanstack/react-router",
-        "/app/route.tsx",
-        {} as never,
-      ),
-    ).resolves.toEqual({
-      id: dependencyAliases["@tanstack/react-router"],
-      external: true,
-    })
-    await expect(
-      resolveId.call(
         { environment: { config: { consumer: "client" }, mode: "build" } } as never,
         "unrelated",
         "/app/route.tsx",
@@ -181,13 +182,16 @@ describe("voyantStartViteConfig", () => {
       ),
     ).resolves.toBeNull()
     expect(config.optimizeDeps?.exclude).toEqual([
-      "@voyant-travel/admin",
       "@voyant-travel/operator-standard",
       "@voyant-travel/operator-standard/standard-frontend",
-      ...Object.keys(dependencyAliases),
+    ])
+    expect(config.optimizeDeps?.include).toEqual([
+      "@acme/operator > @tanstack/react-router > @tanstack/react-store",
+      "@acme/operator > @tanstack/react-router > @tanstack/react-store > use-sync-external-store/shim/with-selector",
     ])
     expect(config.ssr?.optimizeDeps?.include).toEqual([])
     expect(config.ssr?.external).toEqual(["pg"])
+    expect(config.ssr?.noExternal).toEqual([/^@voyant-travel\//, /^@pxmstudio\//])
   })
 
   it("deduplicates framework dependencies declared and resolvable from a fresh app root", () => {
@@ -246,7 +250,6 @@ describe("voyantStartViteConfig", () => {
     const config = voyantStartViteConfig(base)
 
     expect(config.optimizeDeps?.exclude).toEqual([
-      "@voyant-travel/admin",
       "@voyant-travel/operator-standard",
       "@voyant-travel/operator-standard/standard-frontend",
     ])

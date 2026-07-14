@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -57,7 +57,7 @@ describe("Voyant project tooling", () => {
   })
 
   it("forwards product-owned frontend dependency entries to Vite", () => {
-    const dependencyAliases = {
+    const dependencyFacades = {
       react: "@acme/operator/runtime/react",
       "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
     }
@@ -69,13 +69,14 @@ describe("Voyant project tooling", () => {
         generatedRouteTree: "/workspace/operator/.voyant/routeTree.gen.ts",
       },
       bootstrap: {
-        frontendDependencyAliases: dependencyAliases,
+        frontendDependencyResolutionAnchor: "/product/runtime/react.js",
+        frontendDependencyFacades: dependencyFacades,
         serverEntry: "/workspace/operator/src/server.ts",
       },
     })
 
-    expect(config.optimizeDeps?.exclude).toEqual(
-      expect.arrayContaining(Object.keys(dependencyAliases)),
+    expect(config.optimizeDeps?.exclude).not.toEqual(
+      expect.arrayContaining(Object.keys(dependencyFacades)),
     )
     expect(config.ssr?.optimizeDeps?.include).toEqual([])
     expect(config.plugins).toEqual(
@@ -359,6 +360,115 @@ export function createStandardOperatorRouteFiles(options: { presentationIds: rea
     )
   })
 
+  it("uses every product facade when the app owns none of the frontend singletons", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({ dependencies: { "@acme/operator": "1.0.0" } }),
+    )
+    await writeFrontendFacadePackage(projectRoot, "@acme/operator")
+
+    const bootstrap = await prepareProjectBootstrap(projectRoot)
+    expect(bootstrap.frontendDependencyResolutionAnchor).toBe(
+      await realpath(path.join(projectRoot, "node_modules/@acme/operator/runtime/react.js")),
+    )
+    expect(bootstrap.frontendDependencyFacades).toEqual({
+      react: "@acme/operator/runtime/react",
+      "react-dom": "@acme/operator/runtime/react-dom",
+      "react-dom/client": "@acme/operator/runtime/react-dom/client",
+      "react-dom/server": "@acme/operator/runtime/react-dom/server",
+      "react/jsx-runtime": "@acme/operator/runtime/react/jsx-runtime",
+      "react/jsx-dev-runtime": "@acme/operator/runtime/react/jsx-dev-runtime",
+      "@tanstack/react-query": "@acme/operator/runtime/tanstack/react-query",
+      "@tanstack/react-router": "@acme/operator/runtime/tanstack/react-router",
+    })
+  })
+
+  it("leaves every frontend singleton app-owned when all four roots are declared", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        dependencies: {
+          react: "1.0.0",
+          "react-dom": "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+          "@tanstack/react-router": "1.0.0",
+        },
+      }),
+    )
+    await Promise.all(
+      ["react", "react-dom", "@tanstack/react-query", "@tanstack/react-router"].map((dependency) =>
+        writeResolvablePackage(projectRoot, dependency),
+      ),
+    )
+
+    const bootstrap = await prepareProjectBootstrap(projectRoot)
+
+    expect(bootstrap.frontendDependencyResolutionAnchor).toBeUndefined()
+  })
+
+  it("rejects app-owned frontend singletons that are declared but not installed", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        optionalDependencies: {
+          react: "1.0.0",
+          "react-dom": "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+          "@tanstack/react-router": "1.0.0",
+        },
+      }),
+    )
+
+    await expect(prepareProjectBootstrap(projectRoot)).rejects.toThrow(
+      "frontend singleton dependencies are app-owned but not all four roots are installed",
+    )
+  })
+
+  it("rejects partial frontend singleton ownership before Vite can split React", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        dependencies: {
+          react: "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+        },
+      }),
+    )
+
+    await expect(prepareProjectBootstrap(projectRoot)).rejects.toThrow(
+      "Either add all four singleton dependencies (react, react-dom, @tanstack/react-query, @tanstack/react-router) or remove all four so @acme/operator provides them.",
+    )
+  })
+
+  it("does not treat development-only frontend packages as production ownership", async () => {
+    const projectRoot = await createTemporaryDirectory()
+    await writeProductBom(projectRoot, "@acme/operator")
+    await writeFile(
+      path.join(projectRoot, "package.json"),
+      JSON.stringify({
+        devDependencies: {
+          react: "1.0.0",
+          "react-dom": "1.0.0",
+          "@tanstack/react-query": "1.0.0",
+          "@tanstack/react-router": "1.0.0",
+        },
+      }),
+    )
+    await writeFrontendFacadePackage(projectRoot, "@acme/operator")
+
+    const bootstrap = await prepareProjectBootstrap(projectRoot)
+
+    expect(bootstrap.frontendDependencyFacades?.react).toBe("@acme/operator/runtime/react")
+  })
+
   it("preserves project-authored server, router, and style overrides", async () => {
     const projectRoot = await createTemporaryDirectory()
     await writeProductBom(projectRoot, "@acme/operator")
@@ -488,4 +598,77 @@ async function writeProductBom(
       graph: { presentations: presentationIds },
     }),
   )
+}
+
+async function writeFrontendFacadePackage(projectRoot: string, id: string): Promise<void> {
+  const packageRoot = path.join(projectRoot, "node_modules", ...id.split("/"))
+  const exports = Object.fromEntries(
+    [
+      "runtime/react",
+      "runtime/react-dom",
+      "runtime/react-dom/client",
+      "runtime/react-dom/server",
+      "runtime/react/jsx-runtime",
+      "runtime/react/jsx-dev-runtime",
+      "runtime/tanstack/react-query",
+      "runtime/tanstack/react-router",
+    ].map((subpath) => [`./${subpath}`, `./${subpath}.js`]),
+  )
+  await mkdir(packageRoot, { recursive: true })
+  await writeFile(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({ name: id, type: "module", exports }),
+  )
+  await Promise.all(
+    Object.values(exports).map(async (target) => {
+      const file = path.join(packageRoot, target)
+      await mkdir(path.dirname(file), { recursive: true })
+      await writeFile(file, "export {}\n")
+    }),
+  )
+  await Promise.all([
+    writeMockPackage(packageRoot, "react", [".", "./jsx-runtime", "./jsx-dev-runtime"]),
+    writeMockPackage(packageRoot, "react-dom", [".", "./client", "./server"]),
+    writeMockPackage(packageRoot, "@tanstack/react-query", ["."]),
+    writeMockPackage(packageRoot, "@tanstack/react-router", ["."]),
+  ])
+}
+
+async function writeMockPackage(
+  parent: string,
+  id: string,
+  subpaths: readonly string[],
+): Promise<void> {
+  const packageRoot = path.join(parent, "node_modules", ...id.split("/"))
+  const exports = Object.fromEntries(
+    subpaths.map((subpath) => {
+      const importTarget = subpath === "." ? "./index.js" : `${subpath}.js`
+      const requireTarget = subpath === "." ? "./index.cjs" : `${subpath}.cjs`
+      return [subpath, { import: importTarget, require: requireTarget }]
+    }),
+  )
+  await mkdir(packageRoot, { recursive: true })
+  await writeFile(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({ name: id, type: "module", exports }),
+  )
+  await Promise.all(
+    Object.values(exports).flatMap(({ import: importTarget, require: requireTarget }) =>
+      [importTarget, requireTarget].map(async (target) => {
+        const file = path.join(packageRoot, target)
+        await mkdir(path.dirname(file), { recursive: true })
+        await writeFile(file, target.endsWith(".cjs") ? "module.exports = {}\n" : "export {}\n")
+      }),
+    ),
+  )
+}
+
+async function writeResolvablePackage(projectRoot: string, id: string): Promise<void> {
+  const packageRoot = path.join(projectRoot, "node_modules", ...id.split("/"))
+  await mkdir(packageRoot, { recursive: true })
+  await writeFile(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({ name: id, type: "module", exports: "./index.js" }),
+  )
+  await writeFile(path.join(packageRoot, "index.js"), "export {}\n")
 }

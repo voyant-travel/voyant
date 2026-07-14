@@ -1,2 +1,4 @@
-export * from "#frontend/react-dom/client"
-export { default } from "#frontend/react-dom/client"
+import ReactDomClient from "#frontend/react-dom/client"
+
+export default ReactDomClient
+export const { createRoot, hydrateRoot } = ReactDomClient

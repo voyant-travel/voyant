@@ -92,6 +92,7 @@
     "@voyant-travel/flights": "workspace:*",
     "@voyant-travel/flights-react": "workspace:*",
     "@voyant-travel/identity": "workspace:*",
+    "@voyant-travel/identity-react": "workspace:*",
     "@voyant-travel/inventory": "workspace:*",
     "@voyant-travel/inventory-react": "workspace:*",
     "@voyant-travel/legal": "workspace:*",

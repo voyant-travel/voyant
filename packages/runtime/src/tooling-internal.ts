@@ -43,6 +43,13 @@ const FRONTEND_RUNTIME_FACADES = {
   "@tanstack/react-query": "runtime/tanstack/react-query",
   "@tanstack/react-router": "runtime/tanstack/react-router",
 } as const
+const FRONTEND_SINGLETON_ROOTS = [
+  "react",
+  "react-dom",
+  "@tanstack/react-query",
+  "@tanstack/react-router",
+] as const
+const DEPLOYABLE_DEPENDENCY_FIELDS = ["dependencies", "optionalDependencies"] as const
 let developmentAuthFallbackLeaseCount = 0
 let developmentAuthFallbackPreviousValue: string | undefined
 
@@ -59,7 +66,8 @@ interface ProjectViteConfigOptions {
 }
 
 interface ProjectBootstrap {
-  frontendDependencyAliases?: Readonly<Record<string, string>>
+  frontendDependencyResolutionAnchor?: string
+  frontendDependencyFacades?: Readonly<Record<string, string>>
   serverEntry: string
   routerEntry?: string
   stylesEntry?: string
@@ -204,7 +212,8 @@ async function prepareProjectViteConfig(
 export function createProjectViteConfig(options: ProjectViteConfigOptions): InlineConfig {
   const config = voyantStartViteConfig({
     appRootUrl: options.appRootUrl,
-    dependencyAliases: options.bootstrap.frontendDependencyAliases,
+    dependencyResolutionAnchor: options.bootstrap.frontendDependencyResolutionAnchor,
+    serverDependencyFacades: options.bootstrap.frontendDependencyFacades,
     nodeSsr: true,
     plugins: [
       options.generatedRoutes.plugin,
@@ -257,12 +266,14 @@ export async function prepareProjectBootstrap(projectRoot: string): Promise<Proj
   const productBomId = await loadProductBomId(projectRoot)
   const generatedRoot = path.join(projectRoot, ".voyant/app")
   const authoredServerEntry = path.join(projectRoot, "src/server.ts")
-  const frontendDependencyAliases = await resolveProductFrontendDependencyAliases(
-    projectRoot,
-    productBomId,
-  )
+  const frontendDependencies = await resolveProductFrontendDependencies(projectRoot, productBomId)
   const bootstrap: ProjectBootstrap = {
-    ...(frontendDependencyAliases ? { frontendDependencyAliases } : {}),
+    ...(frontendDependencies
+      ? {
+          frontendDependencyResolutionAnchor: frontendDependencies.resolutionAnchor,
+          frontendDependencyFacades: frontendDependencies.facades,
+        }
+      : {}),
     serverEntry: (await pathExists(authoredServerEntry))
       ? authoredServerEntry
       : path.join(generatedRoot, "server.ts"),
@@ -317,53 +328,81 @@ declare module "@tanstack/react-router" {
   return bootstrap
 }
 
-async function resolveProductFrontendDependencyAliases(
+async function resolveProductFrontendDependencies(
   projectRoot: string,
   productBomId: string,
-): Promise<Readonly<Record<string, string>> | undefined> {
+): Promise<
+  | {
+      resolutionAnchor: string
+      facades: Readonly<Record<string, string>>
+    }
+  | undefined
+> {
   const packageJsonPath = path.join(projectRoot, "package.json")
   let manifest: {
     dependencies?: Record<string, unknown>
-    devDependencies?: Record<string, unknown>
+    optionalDependencies?: Record<string, unknown>
   }
   try {
     manifest = JSON.parse(await readFile(packageJsonPath, "utf8")) as typeof manifest
   } catch {
     return undefined
   }
-  const declared = new Set([
-    ...Object.keys(manifest.dependencies ?? {}),
-    ...Object.keys(manifest.devDependencies ?? {}),
-  ])
-  const missingRoots = new Set(
-    Object.keys(FRONTEND_RUNTIME_FACADES)
-      .map(packageNameForSpecifier)
-      .filter((dependency) => !declared.has(dependency)),
+  const declared = new Set(
+    DEPLOYABLE_DEPENDENCY_FIELDS.flatMap((field) => Object.keys(manifest[field] ?? {})),
   )
-  if (missingRoots.size === 0) return undefined
+  const declaredSingletonRoots = FRONTEND_SINGLETON_ROOTS.filter((dependency) =>
+    declared.has(dependency),
+  )
+  const resolveFromProject = createRequire(packageJsonPath)
+  if (declaredSingletonRoots.length === FRONTEND_SINGLETON_ROOTS.length) {
+    try {
+      for (const dependency of FRONTEND_SINGLETON_ROOTS) {
+        const directPackageJson = path.join(
+          projectRoot,
+          "node_modules",
+          ...dependency.split("/"),
+          "package.json",
+        )
+        if (!(await pathExists(directPackageJson))) {
+          throw new Error(`${dependency} is not installed directly in the project`)
+        }
+        resolveFromProject.resolve(dependency)
+      }
+    } catch (error) {
+      throw new Error(
+        `Voyant frontend singleton dependencies are app-owned but not all four roots are installed (${FRONTEND_SINGLETON_ROOTS.join(", ")}).`,
+        { cause: error },
+      )
+    }
+    return undefined
+  }
+  if (declaredSingletonRoots.length > 0) {
+    const missingSingletonRoots = FRONTEND_SINGLETON_ROOTS.filter(
+      (dependency) => !declared.has(dependency),
+    )
+    throw new Error(
+      `Voyant frontend singleton dependencies must be owned together. This project declares ${declaredSingletonRoots.join(", ")} but is missing ${missingSingletonRoots.join(", ")}. Either add all four singleton dependencies (${FRONTEND_SINGLETON_ROOTS.join(", ")}) or remove all four so ${productBomId} provides them.`,
+    )
+  }
 
   try {
-    const resolveFromProject = createRequire(packageJsonPath)
-    return Object.fromEntries(
-      Object.entries(FRONTEND_RUNTIME_FACADES)
-        .filter(([specifier]) => missingRoots.has(packageNameForSpecifier(specifier)))
-        .map(([specifier, facade]) => {
-          const facadeId = `${productBomId}/${facade}`
-          resolveFromProject.resolve(facadeId)
-          return [specifier, facadeId]
-        }),
-    )
+    const facadeEntries = Object.entries(FRONTEND_RUNTIME_FACADES).map(([specifier, facade]) => {
+      const facadeId = `${productBomId}/${facade}`
+      return [specifier, facadeId, resolveFromProject.resolve(facadeId)] as const
+    })
+    return {
+      resolutionAnchor: facadeEntries[0]![2],
+      facades: Object.fromEntries(
+        facadeEntries.map(([specifier, facadeId]) => [specifier, facadeId]),
+      ),
+    }
   } catch (error) {
     throw new Error(
       `Voyant product BOM ${productBomId} cannot provide legacy frontend dependency resolution: ${errorMessage(error)}`,
       { cause: error },
     )
   }
-}
-
-function packageNameForSpecifier(specifier: string): string {
-  const segments = specifier.split("/")
-  return specifier.startsWith("@") ? segments.slice(0, 2).join("/") : segments[0]!
 }
 
 async function generateRouteTree(options: ProjectRouteGenerationOptions): Promise<void> {

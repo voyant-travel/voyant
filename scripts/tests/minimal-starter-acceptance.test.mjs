@@ -11,13 +11,20 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs"
+import { createRequire } from "node:module"
 import { createConnection, createServer as createNetServer } from "node:net"
 import { tmpdir } from "node:os"
-import { dirname, join, resolve } from "node:path"
+import { basename, dirname, join, resolve } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
+const frontendSingletonRoots = [
+  "@tanstack/react-query",
+  "@tanstack/react-router",
+  "react",
+  "react-dom",
+]
 
 test("legacy minimal starter serves project API and SSR routes without direct frontend dependencies", {
   timeout: 420_000,
@@ -26,16 +33,10 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
   const out = join(root, "out")
   const app = join(root, "app")
   try {
+    const publishedPackages = packPublishedPackages(join(root, "published-packages"))
     exec(
       process.execPath,
-      [
-        "scripts/package-starters.mjs",
-        "--version",
-        "0.0.0-test",
-        "--local-links",
-        "--out-dir",
-        out,
-      ],
+      ["scripts/package-starters.mjs", "--version", "0.0.0-test", "--out-dir", out],
       repoRoot,
     )
     mkdirSync(app, { recursive: true })
@@ -44,7 +45,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       ["-xzf", join(out, "voyant-starter-operator-0.0.0-test.tar.gz"), "-C", app],
       repoRoot,
     )
-    useInstalledToolingArtifacts(app)
+    useInstalledToolingArtifacts(app, publishedPackages)
     exec(
       "pnpm",
       [
@@ -57,6 +58,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       app,
     )
     assertNonHoistedConsumerLayout(app)
+    assertPublishedPackageLayout(app)
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
     write(
       app,
@@ -87,6 +89,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       "src/subscribers/booking-created.ts",
       'export default { id: "booking.created.health-sync", eventType: "booking.created", manifest: { id: "booking.created.health-sync", eventType: "booking.created", payloadHash: "hash", targetWorkflowId: "health.sync" } }\n',
     )
+    write(app, "src/acceptance-proof.tsx", acceptanceProofSource("before"))
     write(
       app,
       "vite.config.ts",
@@ -101,7 +104,14 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
         "  } },",
         "  plugins: [{",
         '    name: "project-vite-config-acceptance",',
+        '    enforce: "pre",',
         '    configResolved() { writeFileSync(".voyant/project-vite-plugin.loaded", "ok\\n") },',
+        "    transform(code, id) {",
+        '      const normalizedId = id.replaceAll("\\\\", "/").split("?", 1)[0]',
+        '      if (!normalizedId.endsWith("/.voyant/routes/__root.tsx")) return null',
+        '      if (!code.includes("<Outlet />")) throw new Error("Acceptance hook could not find the root outlet")',
+        `      return ${JSON.stringify('import AcceptanceProof from "@/acceptance-proof"\n')} + code.replace("<Outlet />", "<AcceptanceProof /><Outlet />")`,
+        "    },",
         "  }],",
         "}",
       ].join("\n"),
@@ -158,10 +168,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
     )
     assert.match(projectRuntime, /createRuntimePorts: createGeneratedGraphRuntimePorts/)
     assert.match(projectRuntime, /GENERATED_GRAPH_RUNTIME_CONTRIBUTORS/)
-    assert.match(
-      projectRuntime,
-      /operator-standard\/node_modules\/@voyant-travel\/storefront\/src\/runtime-contributor/,
-    )
+    assert.match(projectRuntime, /@voyant-travel\/storefront\/dist\/runtime-contributor\.js/)
     assert.doesNotMatch(
       projectRuntime,
       /^import .* from "@voyant-travel\/accommodations\/runtime-contributor"/m,
@@ -195,18 +202,18 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
     )
     exec("pnpm", ["db:migrate"], app, acceptanceEnvironment())
 
-    await t.test("voyant start serves the authored route and rendered SSR", async () => {
-      await assertVoyantServerMode(app, "start")
+    await t.test("voyant start serves the authored route and rendered SSR", async (modeTest) => {
+      await assertVoyantServerMode(app, "start", modeTest)
     })
-    await t.test("voyant develop serves the authored route and rendered SSR", async () => {
-      await assertVoyantServerMode(app, "develop")
+    await t.test("voyant develop serves the authored route and rendered SSR", async (modeTest) => {
+      await assertVoyantServerMode(app, "develop", modeTest)
     })
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
 })
 
-async function assertVoyantServerMode(app, mode) {
+async function assertVoyantServerMode(app, mode, t) {
   const port = await reservePort()
   const server = spawnVoyant(app, mode, port)
   const output = captureOutput(server)
@@ -243,6 +250,14 @@ async function assertVoyantServerMode(app, mode) {
     }
 
     assert.deepEqual(failures, [], `${mode} failed packaged starter HTTP acceptance.\n${output()}`)
+    await t.test(
+      mode === "develop"
+        ? "hydrates and preserves one React identity across authored-source HMR"
+        : "hydrates the production client bundle without browser errors",
+      async (browserTest) => {
+        await assertBrowserHydration(app, port, browserTest, output, { hmr: mode === "develop" })
+      },
+    )
   } finally {
     await stop(server)
   }
@@ -252,9 +267,11 @@ function spawnVoyant(app, mode, port) {
   const args = [join(app, "node_modules/@voyant-travel/cli/bin/voyant.mjs"), mode]
   if (mode === "develop") args.push("--host", "127.0.0.1")
   args.push("--port", String(port))
+  const env = acceptanceEnvironment()
+  assert.doesNotMatch(env.NODE_OPTIONS, /conditions=development|tsx/)
   return spawn(process.execPath, args, {
     cwd: app,
-    env: acceptanceEnvironment(),
+    env,
     stdio: ["ignore", "pipe", "pipe"],
   })
 }
@@ -267,7 +284,7 @@ function acceptanceEnvironment() {
       process.env.TEST_DATABASE_URL ??
       ["postgresql", "://postgres:postgres@127.0.0.1:5432/voyant_starter_acceptance"].join(""),
     INTERNAL_API_KEY: "starter-acceptance-internal-key",
-    NODE_OPTIONS: "--conditions=development --import=tsx --max-old-space-size=6144",
+    NODE_OPTIONS: "--max-old-space-size=6144",
     SESSION_CLAIMS_SECRET: "starter-acceptance-session-claims-secret",
   }
 }
@@ -281,16 +298,33 @@ async function readResponse(url, init) {
   }
 }
 
-function useInstalledToolingArtifacts(app) {
+function useInstalledToolingArtifacts(app, publishedPackages) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  for (const dependency of [
-    "@tanstack/react-query",
-    "@tanstack/react-router",
-    "react",
-    "react-dom",
-  ]) {
+  for (const dependency of frontendSingletonRoots) {
+    assert.equal(
+      typeof packageJson.dependencies[dependency],
+      "string",
+      `Supported packaged starter must directly own ${dependency}`,
+    )
+    // Exercise the runtime bridge used by existing projects created before
+    // direct frontend singleton ownership became part of the starter contract.
     delete packageJson.dependencies[dependency]
+  }
+  packageJson.dependencies["@voyant-travel/operator-standard"] =
+    `file:${publishedPackages.get("@voyant-travel/operator-standard")}`
+  packageJson.dependencies["@voyant-travel/framework"] =
+    `file:${publishedPackages.get("@voyant-travel/framework")}`
+  packageJson.dependencies["@voyant-travel/runtime"] =
+    `file:${publishedPackages.get("@voyant-travel/runtime")}`
+  packageJson.pnpm = {
+    ...packageJson.pnpm,
+    overrides: {
+      ...packageJson.pnpm?.overrides,
+      ...Object.fromEntries(
+        [...publishedPackages].map(([name, archive]) => [name, `file:${archive}`]),
+      ),
+    },
   }
   for (const dependency of ["pg"]) {
     packageJson.dependencies[dependency] = `link:${realpathSync(
@@ -309,12 +343,7 @@ function assertNonHoistedConsumerLayout(app) {
   const packageJson = JSON.parse(readFileSync(join(app, "package.json"), "utf8"))
 
   assert.ok(packageJson.dependencies["@voyant-travel/operator-standard"])
-  for (const dependency of [
-    "@tanstack/react-query",
-    "@tanstack/react-router",
-    "react",
-    "react-dom",
-  ]) {
+  for (const dependency of frontendSingletonRoots) {
     assert.equal(
       packageJson.dependencies[dependency],
       undefined,
@@ -331,6 +360,186 @@ function assertNonHoistedConsumerLayout(app) {
     !existsSync(join(app, "node_modules/@voyant-travel/admin")),
     "Packaged consumer fixture unexpectedly hoisted transitive @voyant-travel/admin",
   )
+}
+
+function assertPublishedPackageLayout(app) {
+  for (const name of ["@voyant-travel/operator-standard", "@voyant-travel/runtime"]) {
+    const packageRoot = realpathSync(join(app, "node_modules", name))
+    assert.ok(
+      packageRoot.startsWith(`${realpathSync(app)}/`),
+      `${name} resolved outside the isolated consumer fixture: ${packageRoot}`,
+    )
+    assert.ok(existsSync(join(packageRoot, "dist")), `${name} is missing its published dist layout`)
+  }
+  const operatorRoot = realpathSync(join(app, "node_modules/@voyant-travel/operator-standard"))
+  const operatorManifest = JSON.parse(readFileSync(join(operatorRoot, "package.json"), "utf8"))
+  assert.equal(operatorManifest.exports["./runtime/react"].browser, "./dist/runtime/react.js")
+  assert.equal(operatorManifest.imports["#frontend/react"], "react")
+  const resolveFromOperator = createRequire(join(operatorRoot, "package.json"))
+  const dbRuntimeEntry = resolveFromOperator.resolve("@voyant-travel/db/runtime")
+  const dbRoot = resolve(dirname(dbRuntimeEntry), "../..")
+  const dbManifest = JSON.parse(readFileSync(join(dbRoot, "package.json"), "utf8"))
+  assert.equal(dbManifest.exports["./runtime"].import, "./dist/runtime/index.js")
+  assert.ok(existsSync(join(dbRoot, "dist/runtime/index.js")))
+}
+
+function packPublishedPackages(root) {
+  const selected = JSON.parse(
+    exec(
+      "pnpm",
+      [
+        "--filter-prod",
+        "@voyant-travel/framework...",
+        "--filter-prod",
+        "@voyant-travel/runtime...",
+        "--filter-prod",
+        "@voyant-travel/operator-standard...",
+        "list",
+        "--depth",
+        "-1",
+        "--json",
+      ],
+      repoRoot,
+    ),
+  )
+  const workspacePackages = selected.filter(
+    (entry) => entry.name?.startsWith("@voyant-travel/") && entry.path,
+  )
+  assert.ok(workspacePackages.length > 80, "Published Operator closure is unexpectedly small")
+
+  return new Map(
+    workspacePackages.map((entry) => [entry.name, packPublishedPackage(root, entry.path)]),
+  )
+}
+
+function packPublishedPackage(root, source) {
+  mkdirSync(root, { recursive: true })
+  const stdout = exec(
+    "pnpm",
+    ["--config.ignore-scripts=true", "pack", "--json", "--pack-destination", root],
+    source,
+  )
+  const packResult = JSON.parse(stdout)
+  const packed = Array.isArray(packResult) ? packResult[0] : packResult
+  assert.equal(
+    typeof packed?.filename,
+    "string",
+    `pnpm pack did not return a filename for ${source}`,
+  )
+  const archive = join(root, basename(packed.filename))
+  assert.ok(existsSync(archive), `pnpm pack did not create ${archive}`)
+  return archive
+}
+
+function acceptanceProofSource(marker) {
+  return `import * as React from "react"
+
+const marker = ${JSON.stringify(marker)}
+
+export default function AcceptanceProof() {
+  React.useEffect(() => {
+    const previous = Reflect.get(globalThis, "__voyantAcceptance")
+    Reflect.set(globalThis, "__voyantAcceptance", {
+      pageId: previous?.pageId ?? crypto.randomUUID(),
+      marker,
+      hydrated: true,
+    })
+  }, [marker])
+  return <output data-voyant-acceptance-hmr>{marker}</output>
+}
+`
+}
+
+async function assertBrowserHydration(app, port, t, serverOutput, { hmr }) {
+  const { chromium } = await import("playwright")
+  const executable = chromium.executablePath()
+  if (!existsSync(executable)) {
+    t.skip(`Playwright Chromium executable is unavailable: ${executable}`)
+    return
+  }
+
+  const browser = await chromium.launch({ headless: true })
+  const page = await browser.newPage()
+  const browserErrors = []
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(`console: ${message.text()}`)
+  })
+  page.on("pageerror", (error) => browserErrors.push(`pageerror: ${error.message}`))
+  page.on("requestfailed", (request) => {
+    browserErrors.push(
+      `requestfailed: ${request.url()} (${request.failure()?.errorText ?? "unknown error"})`,
+    )
+  })
+  try {
+    await page.goto(`http://127.0.0.1:${port}/docs`, { waitUntil: "domcontentloaded" })
+    await page
+      .locator("[data-voyant-acceptance-hmr]")
+      .getByText("before", { exact: true })
+      .waitFor({ timeout: 10_000 })
+    await waitForBrowserState(
+      page,
+      () => Reflect.get(globalThis, "__voyantAcceptance")?.hydrated,
+      browserErrors,
+      "Browser did not hydrate the SSR-rendered acceptance probe",
+      serverOutput,
+    )
+    const initial = await page.evaluate(() => {
+      const evidence = Reflect.get(globalThis, "__voyantAcceptance")
+      return {
+        pageId: evidence.pageId,
+        marker: evidence.marker,
+      }
+    })
+    assert.equal(initial.marker, "before")
+
+    if (!hmr) {
+      assert.deepEqual(
+        browserErrors,
+        [],
+        `Production browser hydration errors:\n${browserErrors.join("\n")}`,
+      )
+      return
+    }
+
+    writeFileSync(join(app, "src/acceptance-proof.tsx"), acceptanceProofSource("after"))
+    await page
+      .locator("[data-voyant-acceptance-hmr]")
+      .getByText("after", { exact: true })
+      .waitFor({ timeout: 10_000 })
+    await waitForBrowserState(
+      page,
+      () => Reflect.get(globalThis, "__voyantAcceptance")?.marker === "after",
+      browserErrors,
+      "Authored-source HMR did not run the updated acceptance probe",
+      serverOutput,
+    )
+    const updated = await page.evaluate(() => {
+      const evidence = Reflect.get(globalThis, "__voyantAcceptance")
+      return {
+        pageId: evidence.pageId,
+        marker: evidence.marker,
+      }
+    })
+    assert.equal(updated.marker, "after")
+    assert.equal(updated.pageId, initial.pageId, "HMR performed a full browser reload")
+    assert.deepEqual(
+      browserErrors,
+      [],
+      `Browser hydration/HMR errors:\n${browserErrors.join("\n")}`,
+    )
+  } finally {
+    await browser.close()
+  }
+}
+
+async function waitForBrowserState(page, predicate, browserErrors, message, serverOutput) {
+  try {
+    await page.waitForFunction(predicate, undefined, { timeout: 10_000 })
+  } catch (error) {
+    assert.fail(
+      `${message}.\n${browserErrors.join("\n")}\n${String(error)}\nDev server:\n${serverOutput()}`,
+    )
+  }
 }
 
 function resolvePnpmStorePackageEntry(name) {

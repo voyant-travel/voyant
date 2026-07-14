@@ -3452,6 +3452,9 @@ importers:
       '@voyant-travel/identity':
         specifier: workspace:*
         version: link:../identity
+      '@voyant-travel/identity-react':
+        specifier: workspace:*
+        version: link:../identity-react
       '@voyant-travel/inventory':
         specifier: workspace:*
         version: link:../inventory
