@@ -8,6 +8,7 @@ import type { CatalogBookingRouteModuleOptions } from "@voyant-travel/catalog/bo
 import {
   type CatalogIndexer,
   catalogIndexerProviderPort,
+  validateCatalogIndexer,
 } from "@voyant-travel/catalog/indexer/provider"
 import type { CatalogOffersRouteModuleOptions } from "@voyant-travel/catalog/offers"
 import {
@@ -76,6 +77,7 @@ export interface CatalogRuntimeContributorHost {
 export function createCatalogRuntimePortContribution(
   host: CatalogRuntimeContributorHost,
 ): Readonly<Record<string, unknown>> {
+  const hasIndexerPort = host.hasRuntimePort?.(catalogIndexerProviderPort) === true
   const contribution = Promise.resolve()
     .then(() =>
       Promise.all([
@@ -93,9 +95,7 @@ export function createCatalogRuntimePortContribution(
           catalogOperationsRuntimeExtensionPort,
         ),
         host.getRuntimePort<FinanceOperatorSettingsRuntime>(financeOperatorSettingsRuntimePort),
-        host.hasRuntimePort?.(catalogIndexerProviderPort)
-          ? host.getRuntimePort<CatalogIndexer>(catalogIndexerProviderPort)
-          : undefined,
+        hasIndexerPort ? host.getRuntimePort<unknown>(catalogIndexerProviderPort) : undefined,
       ]),
     )
     .then(
@@ -109,8 +109,13 @@ export function createCatalogRuntimePortContribution(
         operations,
         settings,
         indexer,
-      ]) =>
-        createCatalogRuntime(
+      ]) => {
+        let catalogIndexer: CatalogIndexer | undefined
+        if (hasIndexerPort) {
+          validateCatalogIndexer(indexer)
+          catalogIndexer = indexer
+        }
+        return createCatalogRuntime(
           host.primitives,
           {
             accommodations,
@@ -122,8 +127,9 @@ export function createCatalogRuntimePortContribution(
             operations,
           },
           settings,
-          { indexer },
-        ),
+          { indexer: catalogIndexer },
+        )
+      },
     )
   const cruisesRoutes = {
     resolveSourceAdapterRegistry: async (bindings: unknown) => {

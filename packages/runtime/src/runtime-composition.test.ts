@@ -297,7 +297,7 @@ describe("Voyant project runtime composition", () => {
 
   it("ignores a catalog.indexer host override when search is none", async () => {
     const graph = configureSearchProviderRuntime("none", ["typesense"])
-    const hostIndexer = { source: "host" }
+    const hostIndexer = createTestIndexerProvider("host")
     const projectRoot = await createGeneratedProject()
 
     const project = await loadVoyantProject({
@@ -317,7 +317,7 @@ describe("Voyant project runtime composition", () => {
     "postgres",
   ])("keeps selected %s search authoritative over a catalog.indexer host override", async (search) => {
     const graph = configureSearchProviderRuntime(search, [search])
-    const hostIndexer = { source: "host" }
+    const hostIndexer = createTestIndexerProvider("host")
     const projectRoot = await createGeneratedProject()
 
     const project = await loadVoyantProject({
@@ -333,7 +333,7 @@ describe("Voyant project runtime composition", () => {
 
   it("gives a custom catalog.indexer host port precedence over a graph custom provider", async () => {
     const graph = configureSearchProviderRuntime("custom", ["custom"])
-    const hostIndexer = { source: "host" }
+    const hostIndexer = createTestIndexerProvider("host")
     const projectRoot = await createGeneratedProject()
 
     const project = await loadVoyantProject({
@@ -356,9 +356,28 @@ describe("Voyant project runtime composition", () => {
         projectRoot,
         adminAssetsDir: path.join(projectRoot, "admin"),
         env: { DATABASE_URL: "postgres://example.invalid/voyant" },
-        host: { runtimePorts: { "catalog.indexer": { source: "host" } } },
+        host: { runtimePorts: { "catalog.indexer": createTestIndexerProvider("host") } },
       }),
     ).rejects.toThrow(/VOYANT_GRAPH_RUNTIME_PROVIDER_MISSING.*catalog\.indexer/s)
+    expect(graph.typesense.importProvider).not.toHaveBeenCalled()
+    expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
+  })
+
+  it("rejects mismatched generated search authority before admitting a custom host port", async () => {
+    const graph = configureSearchProviderRuntime("typesense", ["typesense"])
+    mocks.deploymentProviders.search = "custom"
+    const projectRoot = await createGeneratedProject()
+
+    await expect(
+      loadVoyantProject({
+        projectRoot,
+        adminAssetsDir: path.join(projectRoot, "admin"),
+        env: { DATABASE_URL: "postgres://example.invalid/voyant" },
+        host: { runtimePorts: { "catalog.indexer": createTestIndexerProvider("host") } },
+      }),
+    ).rejects.toThrow(
+      /deployment\.providers\.search="custom".*providerSelections\.search="typesense"/,
+    )
     expect(graph.typesense.importProvider).not.toHaveBeenCalled()
     expect(mocks.loadVoyantNodeRuntime).not.toHaveBeenCalled()
   })
@@ -613,7 +632,7 @@ function configureSearchProviderRuntime(
   const entries: Record<string, () => Promise<unknown>> = {}
   const references = declarations.map((value) => {
     const importEntry = `@acme/search-${value}/provider`
-    const port = { source: `graph:${value}` }
+    const port = createTestIndexerProvider(`graph:${value}`)
     const createProvider = vi.fn(() => port)
     const importProvider = vi.fn(async () => ({ createProvider }))
     configured[value] = { importProvider, port }
@@ -657,4 +676,26 @@ function configureSearchProviderRuntime(
     plugins: [],
   })
   return configured
+}
+
+function createTestIndexerProvider(source: string) {
+  return {
+    create: vi.fn(() => ({
+      capabilities: {
+        supportsKeywordSearch: true,
+        supportsHybridSearch: false,
+        supportsVectorFields: false,
+        vectorDimensions: null,
+        maxVectorsPerDocument: null,
+        supportsCrossAudienceFederation: false,
+        supportsAdminDenormalization: false,
+      },
+      ensureCollection: vi.fn(async () => undefined),
+      upsert: vi.fn(async () => undefined),
+      delete: vi.fn(async () => undefined),
+      search: vi.fn(async () => ({ hits: [], total: 0 })),
+      bulkReindex: vi.fn(async () => undefined),
+    })),
+    source,
+  }
 }

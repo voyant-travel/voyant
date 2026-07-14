@@ -46,7 +46,7 @@ export function createCatalogRuntime(
   let indexer: ReturnType<typeof resolveCatalogIndexer> | undefined
   let vectorDimensions: number | null | undefined
   const resolveIndexer = (embeddings: ReturnType<typeof buildEmbeddingProvider>) => {
-    if (!options.indexer) return undefined
+    if (options.indexer === undefined) return undefined
     const nextVectorDimensions = embeddings?.capabilities.dimensions ?? null
     if (indexer && vectorDimensions !== nextVectorDimensions) {
       throw new Error(
@@ -54,14 +54,15 @@ export function createCatalogRuntime(
       )
     }
     if (!indexer) {
-      vectorDimensions = nextVectorDimensions
-      indexer = resolveCatalogIndexer(options.indexer, {
+      const adapter = resolveCatalogIndexer(options.indexer, {
         vectorDimensions: nextVectorDimensions,
         registries: getFieldPolicyRegistries(),
       })
       if (embeddings) {
-        validateEmbeddingCompatibility(embeddings.capabilities, indexer.capabilities)
+        validateEmbeddingCompatibility(embeddings.capabilities, adapter.capabilities)
       }
+      vectorDimensions = nextVectorDimensions
+      indexer = adapter
     }
     return indexer
   }

@@ -24,9 +24,13 @@ export function resolveCatalogIndexer(
 export const catalogIndexerProviderPort = definePort<CatalogIndexer>({
   id: "catalog.indexer",
   test(indexer) {
-    classifyCatalogIndexer(indexer)
+    validateCatalogIndexer(indexer)
   },
 })
+
+export function validateCatalogIndexer(indexer: unknown): asserts indexer is CatalogIndexer {
+  classifyCatalogIndexer(indexer)
+}
 
 const INDEXER_ADAPTER_METHODS = [
   "ensureCollection",
@@ -50,10 +54,10 @@ type ClassifiedCatalogIndexer =
 
 function classifyCatalogIndexer(indexer: unknown): ClassifiedCatalogIndexer {
   if (isIndexerAdapter(indexer)) return { kind: "adapter", value: indexer }
+  if (isIndexerProvider(indexer)) return { kind: "provider", value: indexer }
   if (hasIndexerAdapterMembers(indexer)) {
     throw new Error("catalog.indexer contains an incomplete IndexerAdapter shape.")
   }
-  if (isIndexerProvider(indexer)) return { kind: "provider", value: indexer }
   throw new Error("catalog.indexer must implement IndexerAdapter or IndexerProvider.create().")
 }
 

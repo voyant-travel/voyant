@@ -117,7 +117,7 @@ export async function loadVoyantProject(
     )
   }
   const env = createVoyantNodeEnv(rawEnv, providerPlan)
-  const explicitRuntimePorts = admitHostPorts(options.host?.runtimePorts ?? {}, providers)
+  const explicitRuntimePorts = admitHostPorts(options.host?.runtimePorts ?? {}, generated)
   const selectedProviderPorts = await resolveSelectedGraphProviderPorts(
     generated.graphRuntime,
     rawEnv,

@@ -30,12 +30,24 @@ export interface ResolveSelectedGraphProviderPortsOptions {
 
 const CATALOG_INDEXER_PORT_ID = "catalog.indexer"
 
+export interface VoyantSearchProviderAuthority {
+  deployment: { providers: { search?: unknown } }
+  graphRuntime: { providerSelections?: { search?: unknown } }
+}
+
 /** Admit host runtime-port overrides without bypassing deployment provider selection. */
 export function resolveAdmittedHostRuntimePorts(
   runtimePorts: VoyantGraphRuntimePorts,
-  deploymentProviders: Readonly<Record<string, unknown>>,
+  authority: VoyantSearchProviderAuthority,
 ): VoyantGraphRuntimePorts {
-  if (deploymentProviders.search === "custom" || !(CATALOG_INDEXER_PORT_ID in runtimePorts)) {
+  const deploymentSearch = authority.deployment.providers.search
+  const graphSearch = authority.graphRuntime.providerSelections?.search
+  if (deploymentSearch !== graphSearch) {
+    throw new Error(
+      `Generated search provider authority mismatch: deployment.providers.search=${JSON.stringify(deploymentSearch)} does not match graphRuntime.providerSelections.search=${JSON.stringify(graphSearch)}.`,
+    )
+  }
+  if (deploymentSearch === "custom" || !(CATALOG_INDEXER_PORT_ID in runtimePorts)) {
     return runtimePorts
   }
 

@@ -83,6 +83,18 @@ or `IndexerProvider` at the `catalog.indexer` runtime port. The direct adapter
 form is useful when the host already owns the configured adapter instance:
 
 ```typescript
+// voyant.config.ts
+import { defineConfig } from "@voyant-travel/framework/project"
+
+export default defineConfig({
+  deployment: {
+    target: "node",
+    providers: { search: "custom" },
+  },
+})
+```
+
+```typescript
 import { catalogIndexerProviderPort } from "@voyant-travel/catalog/indexer/provider"
 import type { IndexerAdapter } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { loadVoyantProject } from "@voyant-travel/runtime"
@@ -116,6 +128,11 @@ Adapter packages should run the test-framework-neutral conformance kit from
 
 ```typescript
 import { assertIndexerAdapterConformance } from "@voyant-travel/catalog-contracts/indexer/conformance"
+import type { IndexerProvider } from "@voyant-travel/catalog-contracts/indexer/contract"
+
+const indexerProvider: IndexerProvider = {
+  create: (options) => createCustomIndexer(options),
+}
 
 await assertIndexerAdapterConformance({
   createAdapter: () => indexerProvider.create({ registries: new Map() }),

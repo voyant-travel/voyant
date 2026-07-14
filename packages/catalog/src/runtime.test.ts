@@ -148,4 +148,22 @@ describe("createCatalogRuntime indexer authority", () => {
       /test\/embedding\/v1 produces 384-d vectors.*configured for 768-d/s,
     )
   })
+
+  it("does not cache an adapter when embedding validation fails", () => {
+    const incompatible = createAdapter()
+    incompatible.capabilities.vectorDimensions = 768
+    const compatible = createAdapter()
+    const create = vi.fn().mockReturnValueOnce(incompatible).mockReturnValueOnce(compatible)
+    const runtime = createCatalogRuntime({} as never, {} as never, {} as never, {
+      indexer: { create },
+    })
+    const search = runtime.search as CatalogSearchRuntimeOptions
+    const context = { env: {}, var: { actor: "staff" } }
+
+    expect(() => search.resolveRuntime(context as never)).toThrow(
+      /test\/embedding\/v1 produces 384-d vectors.*configured for 768-d/s,
+    )
+    expect(search.resolveRuntime(context as never).indexer).toBe(compatible)
+    expect(create).toHaveBeenCalledTimes(2)
+  })
 })

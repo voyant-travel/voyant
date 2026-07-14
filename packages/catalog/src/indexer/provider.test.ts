@@ -49,16 +49,25 @@ describe("catalogIndexerProviderPort", () => {
     )
   })
 
-  it("rejects an ambiguous provider with an incomplete adapter shape", () => {
-    const ambiguous = {
+  it("accepts providers with arbitrary adapter-named metadata", () => {
+    const adapter = createAdapter()
+    const create = vi.fn(() => adapter)
+    const provider = {
+      admin: { source: "external" },
       capabilities: createAdapter().capabilities,
-      create: () => createAdapter(),
+      create,
+      search: { endpoint: "https://search.example" },
     }
 
-    expect(() => catalogIndexerProviderPort.test(ambiguous as never)).toThrow(
-      "catalog.indexer contains an incomplete IndexerAdapter shape.",
-    )
-    expect(() => resolveCatalogIndexer(ambiguous as never, { registries: new Map() })).toThrow(
+    expect(() => catalogIndexerProviderPort.test(provider)).not.toThrow()
+    expect(resolveCatalogIndexer(provider, { registries: new Map() })).toBe(adapter)
+    expect(create).toHaveBeenCalledOnce()
+  })
+
+  it("rejects an incomplete adapter without a provider factory", () => {
+    const incomplete = { capabilities: createAdapter().capabilities }
+
+    expect(() => catalogIndexerProviderPort.test(incomplete as never)).toThrow(
       "catalog.indexer contains an incomplete IndexerAdapter shape.",
     )
   })

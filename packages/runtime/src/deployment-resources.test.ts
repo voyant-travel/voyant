@@ -199,7 +199,7 @@ describe("resolveAdmittedHostRuntimePorts", () => {
           "catalog.indexer": { engine: "host" },
           "example.port": otherPort,
         },
-        { search },
+        searchProviderAuthority(search),
       ),
     ).toEqual({ "example.port": otherPort })
   })
@@ -210,6 +210,24 @@ describe("resolveAdmittedHostRuntimePorts", () => {
       "example.port": { ready: true },
     }
 
-    expect(resolveAdmittedHostRuntimePorts(runtimePorts, { search: "custom" })).toBe(runtimePorts)
+    expect(resolveAdmittedHostRuntimePorts(runtimePorts, searchProviderAuthority("custom"))).toBe(
+      runtimePorts,
+    )
+  })
+
+  it("rejects inconsistent deployment and graph search selections", () => {
+    expect(() =>
+      resolveAdmittedHostRuntimePorts(
+        { "catalog.indexer": { engine: "host" } },
+        searchProviderAuthority("custom", "typesense"),
+      ),
+    ).toThrow(/deployment\.providers\.search="custom".*providerSelections\.search="typesense"/)
   })
 })
+
+function searchProviderAuthority(deploymentSearch: string, graphSearch = deploymentSearch) {
+  return {
+    deployment: { providers: { search: deploymentSearch } },
+    graphRuntime: { providerSelections: { search: graphSearch } },
+  }
+}
