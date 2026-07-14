@@ -1,5 +1,12 @@
 # @voyant-travel/identity
 
+## 0.156.0
+
+### Patch Changes
+
+- @voyant-travel/db@0.114.3
+- @voyant-travel/identity-contracts@0.104.9
+
 ## 0.155.1
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # @voyant-travel/finance-react
 
+## 0.156.0
+
+### Minor Changes
+
+- bbe6396: Replace the overloaded Finance voucher domain with Travel Credits across the
+  database schema, APIs, package exports, booking inputs, storefront settings,
+  and operator UI. Redemption commands are replay-safe, codes are normalized and
+  case-insensitively unique, and legacy records migrate in place without silently
+  skipping invalid balances. Keep Promotion Codes in Commerce and move Bookings
+  fulfillment to the explicit Service Voucher vocabulary.
+
+### Patch Changes
+
+- Updated dependencies [bbe6396]
+  - @voyant-travel/finance@0.156.0
+  - @voyant-travel/bookings-react@0.156.0
+  - @voyant-travel/i18n@0.111.0
+  - @voyant-travel/inventory-react@0.38.0
+  - @voyant-travel/distribution-react@0.146.0
+  - @voyant-travel/operations-react@0.37.0
+  - @voyant-travel/admin@0.123.2
+
 ## 0.155.2
 
 ### Patch Changes
