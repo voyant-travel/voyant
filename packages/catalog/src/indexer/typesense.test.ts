@@ -152,7 +152,10 @@ describe("Typesense catalog indexer", () => {
     await expect(
       assertIndexerAdapterConformance({
         createAdapter: () =>
-          createTypesenseIndexer({ client: createDeterministicTypesenseClient() }),
+          createTypesenseIndexer({
+            client: createDeterministicTypesenseClient(),
+            vectorDimensions: 3,
+          }),
         namespace: "typesense-conformance",
       }),
     ).resolves.toBeUndefined()
@@ -271,6 +274,64 @@ describe("Typesense catalog indexer", () => {
     expect(query.filter_by).toBe(
       'categorySlugs:["cruises","sailing"] && departureMonths:="2026-06"',
     )
+  })
+
+  it("preserves independent facet limits", async () => {
+    const categoryPolicy = registry.resolve("categorySlugs[]")!
+    const facetRegistry = createFieldPolicyRegistry([
+      ...registry.policies,
+      { ...categoryPolicy, path: "themes[]" },
+    ])
+    const client = createDeterministicTypesenseClient()
+    const indexer = createTypesenseIndexer({ client })
+    const facetSlice = { ...slice, vertical: "facet-limits" }
+
+    await indexer.ensureCollection(facetSlice, facetRegistry)
+    await indexer.upsert(facetSlice, [
+      {
+        id: "one",
+        fields: { name: "One", categorySlugs: ["a"], themes: ["one"] },
+      },
+      {
+        id: "two",
+        fields: { name: "Two", categorySlugs: ["b"], themes: ["two"] },
+      },
+      {
+        id: "three",
+        fields: { name: "Three", categorySlugs: ["c"], themes: ["three"] },
+      },
+    ])
+
+    const results = await indexer.search(facetSlice, {
+      query: "",
+      mode: "keyword",
+      facets: [
+        { field: "categorySlugs[]", limit: 1 },
+        { field: "themes[]", limit: 3 },
+      ],
+    })
+
+    expect(results.facets?.categorySlugs).toHaveLength(1)
+    expect(results.facets?.themes).toHaveLength(3)
+  })
+
+  it("rejects deterministic imports that do not match the collection schema", async () => {
+    const client = createDeterministicTypesenseClient()
+    const indexer = createTypesenseIndexer({ client })
+
+    await indexer.ensureCollection(slice, registry)
+    await expect(
+      client
+        .collections(collectionName(slice))
+        .documents()
+        .import([{ id: "invalid", name: "Invalid", undeclared: true }]),
+    ).resolves.toEqual([
+      {
+        success: false,
+        error:
+          'Field "undeclared" is not declared in collection "products__en-GB__customer__default"',
+      },
+    ])
   })
 
   it("filters vector searches by embedding model id", () => {
@@ -885,11 +946,18 @@ function createDeterministicTypesenseClient(): TypesenseClient {
         documents() {
           return {
             async import(documents) {
-              const target = requireCollection(name).documents
+              const collection = requireCollection(name)
+              const results: Array<{ success: boolean; error?: string }> = []
               for (const document of documents as Record<string, unknown>[]) {
-                target.set(String(document.id), { ...document })
+                const error = validateDeterministicTypesenseDocument(collection.schema, document)
+                if (error) {
+                  results.push({ success: false, error })
+                  continue
+                }
+                collection.documents.set(String(document.id), { ...document })
+                results.push({ success: true })
               }
-              return documents.map(() => ({ success: true }))
+              return results
             },
             async delete(query) {
               const target = requireCollection(name).documents
@@ -929,6 +997,12 @@ function searchDeterministicTypesense(
   if (query.filter_by) {
     documents = documents.filter((document) => matchesTypesenseFilter(document, query.filter_by!))
   }
+  if (query.vector_query) {
+    documents = documents.filter((document) => {
+      const embedding = document.text_embedding
+      return Array.isArray(embedding) && embedding.every((value) => typeof value === "number")
+    })
+  }
   if (query.sort_by) {
     const [field, direction] = query.sort_by.split(":")
     const multiplier = direction === "desc" ? -1 : 1
@@ -959,6 +1033,41 @@ function searchDeterministicTypesense(
     found,
     facet_counts: facetCounts,
   }
+}
+
+function validateDeterministicTypesenseDocument(
+  schema: TypesenseCollectionSchema,
+  document: Record<string, unknown>,
+): string | undefined {
+  const fields = new Map(schema.fields.map((field) => [field.name, field]))
+  for (const [name, value] of Object.entries(document)) {
+    if (name === "id") continue
+    const field = fields.get(name)
+    if (!field) return `Field "${name}" is not declared in collection "${schema.name}"`
+    if (!matchesDeterministicTypesenseType(value, field.type)) {
+      return `Field "${name}" does not match declared type "${field.type}"`
+    }
+  }
+  return undefined
+}
+
+function matchesDeterministicTypesenseType(
+  value: unknown,
+  type: TypesenseCollectionSchema["fields"][number]["type"],
+): boolean {
+  if (value === undefined) return true
+  if (type === "string") return typeof value === "string"
+  if (type === "string[]") {
+    return Array.isArray(value) && value.every((item) => typeof item === "string")
+  }
+  if (type === "int32" || type === "int64" || type === "float") {
+    return typeof value === "number" && Number.isFinite(value)
+  }
+  if (type === "bool") return typeof value === "boolean"
+  if (type === "float[]") {
+    return Array.isArray(value) && value.every((item) => typeof item === "number")
+  }
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
 function matchesTypesenseFilter(document: Record<string, unknown>, expression: string): boolean {

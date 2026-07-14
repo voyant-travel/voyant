@@ -55,9 +55,19 @@ await assertIndexerAdapterConformance({
 The runner creates isolated slices, mutates them, and removes them again. It
 checks non-empty keyword matching, filters, canonical sorting, replacement by
 document id, hit round-tripping, facet and page limits, terminal cursors, slice
-isolation, bulk reindexing, deletion, optional admin operations, and declared
-capabilities. Hosted providers can supply `settle` when writes are eventually
-consistent and `namespace` when resource names need a stable prefix.
+isolation, bulk reindexing, deletion, and optional admin operations. When an
+adapter declares vector, hybrid, native cross-audience federation, or admin
+denormalization support, the runner also issues a focused request for that
+behavior. These checks verify portable request handling and result fidelity;
+they do not grade provider-specific ranking quality. Hosted providers can
+supply `settle` when writes are eventually consistent and `namespace` when
+resource names need a stable prefix.
+
+`IndexerDocument.fields` use engine-neutral index field names. They preserve
+field-policy paths except for a terminal list marker: policy path `tags[]` is
+stored, filtered, faceted, and returned as index field `tags`. Providers should
+apply `indexFieldNameForPolicyPath(...)` at their engine boundary rather than
+maintaining a vendor-specific path convention.
 
 Portable sort options are not vendor aliases. Adapters should use the published
 resolver so field precedence and audience visibility stay consistent:
@@ -90,13 +100,13 @@ code.
     "kind": "plugin",
     "manifest": "./voyant",
     "compatibleWith": {
-      "framework": ">=0.26.0",
+      "framework": ">=0.44.0",
       "targets": ["node"],
       "modes": ["local", "managed-cloud", "self-hosted"]
     }
   },
   "peerDependencies": {
-    "@voyant-travel/catalog-contracts": "^0.109.0",
+    "@voyant-travel/catalog-contracts": "^0.110.0",
     "@voyant-travel/core": "^0.122.0"
   }
 }

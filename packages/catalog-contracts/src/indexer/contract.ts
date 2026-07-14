@@ -25,12 +25,20 @@ export interface IndexerSlice {
 export interface IndexerDocument {
   /** Document id, typically the entity id. */
   id: string
-  /** Values keyed by field-policy path. */
+  /**
+   * Values keyed by engine-neutral index field name. Index field names preserve
+   * policy paths except for a terminal list marker (`tags[]` becomes `tags`).
+   */
   fields: Record<string, unknown>
   /** Optional embeddings keyed by their index field name. */
   embeddings?: Record<string, number[]>
   /** Embedding model identifier used to prevent mixed-model comparisons. */
   embedding_model_id?: string
+}
+
+/** Convert a field-policy path to its engine-neutral index field name. */
+export function indexFieldNameForPolicyPath(path: string): string {
+  return path.endsWith("[]") ? path.slice(0, -2) : path
 }
 
 /** Search query mode. */
@@ -87,7 +95,7 @@ export function resolveSearchSort(
   const semantics = SEARCH_SORT_SEMANTICS[sort]
   const field = semantics.fieldCandidates.find((candidate) => {
     const policy = registry.resolve(candidate)
-    if (!policy) return false
+    if (!policy || policy.query === "blob-only") return false
     return !slice || slice.audience === "staff-admin" || policy.visibility.includes(slice.audience)
   })
   return field ? { field, direction: semantics.direction } : undefined
@@ -159,14 +167,19 @@ export interface SearchResults {
 
 /** Features declared by an index engine implementation. */
 export interface IndexerCapabilities {
+  /** Accepts keyword requests and applies the non-empty query text. */
   supportsKeywordSearch: boolean
+  /** Blends keyword and vector signals for `mode: "hybrid"` requests. */
   supportsHybridSearch: boolean
+  /** Stores document embeddings and accepts semantic requests with a query embedding. */
   supportsVectorFields: boolean
   /** Required vector dimension, or null when vector fields are unsupported. */
   vectorDimensions: number | null
   /** Engine vector count limit per document, or null when unlimited. */
   maxVectorsPerDocument: number | null
+  /** Honors `search_audiences` as one native cross-audience search request. */
   supportsCrossAudienceFederation: boolean
+  /** Indexes and keyword-searches cross-audience fields in `staff-admin` documents. */
   supportsAdminDenormalization: boolean
 }
 

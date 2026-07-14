@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { createFieldPolicyRegistry } from "../contract.js"
 import { assertIndexerAdapterConformance, createIndexerConformanceRegistry } from "./conformance.js"
 import type {
   IndexerAdapter,
@@ -27,6 +28,22 @@ describe("portable search sort semantics", () => {
     expect(resolveSearchSort("relevance", registry)).toBeUndefined()
     expect(resolveSearchSort("newest", registry)).toBeUndefined()
   })
+
+  it("skips blob-only candidates and resolves the next indexed policy", () => {
+    const base = createIndexerConformanceRegistry()
+    const pricePolicy = base.resolve("priceFromAmountCents")!
+    const registry = createFieldPolicyRegistry([
+      ...base.policies.map((policy) =>
+        policy.path === pricePolicy.path ? { ...policy, query: "blob-only" as const } : policy,
+      ),
+      { ...pricePolicy, path: "sellAmountCents" },
+    ])
+
+    expect(resolveSearchSort("price-asc", registry)).toEqual({
+      field: "sellAmountCents",
+      direction: "asc",
+    })
+  })
 })
 
 describe("assertIndexerAdapterConformance", () => {
@@ -35,6 +52,22 @@ describe("assertIndexerAdapterConformance", () => {
       assertIndexerAdapterConformance({
         createAdapter: createMemoryIndexer,
         namespace: "memory-conformance",
+      }),
+    ).resolves.toBeUndefined()
+  })
+
+  it("exercises every optional capability an adapter declares", async () => {
+    await expect(
+      assertIndexerAdapterConformance({
+        createAdapter: () =>
+          createMemoryIndexer({
+            supportsHybridSearch: true,
+            supportsVectorFields: true,
+            vectorDimensions: 3,
+            supportsCrossAudienceFederation: true,
+            supportsAdminDenormalization: true,
+          }),
+        namespace: "memory-capabilities",
       }),
     ).resolves.toBeUndefined()
   })
@@ -119,6 +152,15 @@ function createMemoryIndexer(
       for (const id of ids) target.delete(id)
     },
     async search(slice, request) {
+      if (request.search_audiences && request.search_audiences.length > 0) {
+        const federated = request.search_audiences.flatMap((audience) => {
+          const target = collection({ ...slice, audience })
+          return searchMemoryCollection(target, { ...request, search_audiences: undefined }).hits
+        })
+        const byId = new Map(federated.map((hit) => [hit.id, hit]))
+        const hits = [...byId.values()].slice(0, request.pagination?.limit ?? byId.size)
+        return { hits, total: byId.size }
+      }
       return searchMemoryCollection(collection(slice), request)
     },
     async bulkReindex(slice, stream) {
@@ -147,6 +189,17 @@ function searchMemoryCollection(
           (item) => typeof item === "string" && item.toLocaleLowerCase().includes(keyword),
         ),
       ),
+    )
+  }
+
+  if (request.mode === "semantic") {
+    documents = documents.filter((document) =>
+      Object.values(document.embeddings ?? {}).some((embedding) => embedding.length > 0),
+    )
+  }
+  if (request.mode === "hybrid" && request.query_embedding) {
+    documents = documents.filter((document) =>
+      Object.values(document.embeddings ?? {}).some((embedding) => embedding.length > 0),
     )
   }
 

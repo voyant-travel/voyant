@@ -2,7 +2,14 @@ import {
   createFieldPolicyRegistry,
   type FieldPolicy,
   type FieldPolicyRegistry,
+  type Visibility,
 } from "../contract.js"
+import {
+  assertAdminDenormalization,
+  assertCrossAudienceFederation,
+  assertVectorCapabilities,
+  type IndexerCapabilityFixtureIds,
+} from "./conformance-capabilities.js"
 import type {
   IndexerAdapter,
   IndexerAdmin,
@@ -33,6 +40,7 @@ export function createIndexerConformanceRegistry(): FieldPolicyRegistry {
     fixturePolicy("categorySlugs[]", "structural", "facet-affecting"),
     fixturePolicy("priceFromAmountCents", "structural", "entry"),
     fixturePolicy("isFeatured", "structural", "entry"),
+    fixturePolicy("customerTitle", "merchandisable", "entry", ["customer"]),
   ])
 }
 
@@ -50,7 +58,27 @@ export async function assertIndexerAdapterConformance(
   const primary = options.slice ?? defaultSlice(namespace)
   const isolated: IndexerSlice = { ...primary, market: `${primary.market}-isolated` }
   const bulk: IndexerSlice = { ...primary, market: `${primary.market}-bulk` }
-  const slices = [primary, isolated, bulk]
+  const adminDenormalized: IndexerSlice = {
+    ...primary,
+    audience: "staff-admin",
+    market: `${primary.market}-admin-denormalized`,
+  }
+  const federationBase: IndexerSlice = {
+    ...primary,
+    audience: "staff-admin",
+    market: `${primary.market}-federated`,
+  }
+  const federationCustomer: IndexerSlice = { ...federationBase, audience: "customer" }
+  const federationPartner: IndexerSlice = { ...federationBase, audience: "partner" }
+  const slices = [
+    primary,
+    isolated,
+    bulk,
+    ...(adapter.capabilities.supportsAdminDenormalization ? [adminDenormalized] : []),
+    ...(adapter.capabilities.supportsCrossAudienceFederation
+      ? [federationBase, federationCustomer, federationPartner]
+      : []),
+  ]
   const ids = fixtureIds(namespace)
   const documents = fixtureDocuments(ids, adapter.capabilities.vectorDimensions)
   const admin = adapter.admin
@@ -78,9 +106,34 @@ export async function assertIndexerAdapterConformance(
         },
       },
     ])
+    if (adapter.capabilities.supportsAdminDenormalization) {
+      await adapter.upsert(adminDenormalized, [
+        {
+          id: ids.admin,
+          fields: {
+            title: "Voyant Staff Record",
+            customerTitle: "Voyant Customer Alias",
+            categorySlugs: ["admin"],
+            priceFromAmountCents: 500,
+            isFeatured: false,
+          },
+        },
+      ])
+    }
+    if (adapter.capabilities.supportsCrossAudienceFederation) {
+      await adapter.upsert(federationCustomer, [
+        fixtureAudienceDocument(ids.federationCustomer, "Voyant Customer Pool"),
+      ])
+      await adapter.upsert(federationPartner, [
+        fixtureAudienceDocument(ids.federationPartner, "Voyant Partner Pool"),
+      ])
+    }
     await settle("upsert")
 
     await assertKeywordSearchAndHitFidelity(adapter, primary, ids, documents[0]!)
+    await assertVectorCapabilities(adapter, primary, ids)
+    await assertAdminDenormalization(adapter, adminDenormalized, ids)
+    await assertCrossAudienceFederation(adapter, federationBase, ids)
     await assertFilters(adapter, primary, ids)
     await assertSliceIsolation(adapter, primary, isolated, ids)
     await assertPagination(adapter, primary, ids)
@@ -111,9 +164,8 @@ export async function assertIndexerAdapterConformance(
       for (const slice of slices) await admin.drop(slice)
       await settle("drop")
     } else {
-      await adapter.delete(primary, [ids.alpha, ids.bravo, ids.charlie])
-      await adapter.delete(isolated, [ids.isolated])
-      await adapter.delete(bulk, [ids.alpha, ids.bravo, ids.charlie])
+      const cleanupIds = Object.values(ids)
+      for (const slice of slices) await adapter.delete(slice, cleanupIds)
       await settle("delete")
     }
   }
@@ -123,6 +175,7 @@ function fixturePolicy(
   path: string,
   fieldClass: FieldPolicy["class"],
   reindex: FieldPolicy["reindex"],
+  visibility: Visibility[] = ["staff", "customer", "partner", "supplier"],
 ): FieldPolicy {
   return {
     path,
@@ -133,10 +186,22 @@ function fixturePolicy(
     snapshot: "never",
     query: "indexed-column",
     localized: false,
-    visibility: ["staff", "customer", "partner", "supplier"],
+    visibility,
     editRole: "none",
     overrideFriction: "none",
     sourceFreshness: "sync",
+  }
+}
+
+function fixtureAudienceDocument(id: string, title: string): IndexerDocument {
+  return {
+    id,
+    fields: {
+      title,
+      categorySlugs: ["federated"],
+      priceFromAmountCents: 600,
+      isFeatured: false,
+    },
   }
 }
 
@@ -455,11 +520,14 @@ function fixtureDocuments(ids: FixtureIds, vectorDimensions: number | null): Ind
   return documents
 }
 
-interface FixtureIds {
+interface FixtureIds extends IndexerCapabilityFixtureIds {
   alpha: string
   bravo: string
   charlie: string
   isolated: string
+  admin: string
+  federationCustomer: string
+  federationPartner: string
 }
 
 function fixtureIds(namespace: string): FixtureIds {
@@ -468,6 +536,9 @@ function fixtureIds(namespace: string): FixtureIds {
     bravo: `${namespace}-bravo`,
     charlie: `${namespace}-charlie`,
     isolated: `${namespace}-isolated`,
+    admin: `${namespace}-admin`,
+    federationCustomer: `${namespace}-federation-customer`,
+    federationPartner: `${namespace}-federation-partner`,
   }
 }
 

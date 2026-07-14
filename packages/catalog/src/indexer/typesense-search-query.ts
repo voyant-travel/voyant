@@ -1,9 +1,10 @@
-import type {
-  IndexerSlice,
-  SearchFilter,
-  SearchRequest,
+import {
+  type IndexerSlice,
+  indexFieldNameForPolicyPath,
+  resolveSearchSort,
+  type SearchFilter,
+  type SearchRequest,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
-import { resolveSearchSort } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicyRegistry } from "../contract.js"
 
 export interface TypesenseSearchQuery {
@@ -58,9 +59,9 @@ export function buildSearchQuery(
       limit === undefined ? [] : [Math.max(1, Math.floor(limit))],
     )
     if (requestedLimits.length > 0) {
-      // Typesense applies one cap to every requested facet, so use the strictest
-      // request to ensure no facet exceeds its portable per-field limit.
-      query.max_facet_values = Math.min(...requestedLimits)
+      // Typesense applies one cap to every requested facet. Fetch enough buckets
+      // for the largest request, then trim each facet independently on mapping.
+      query.max_facet_values = Math.max(...requestedLimits)
     }
   }
 
@@ -179,7 +180,7 @@ function quoteString(value: string): string {
 }
 
 function normalizeTypesenseField(field: string): string {
-  return field.endsWith("[]") ? field.slice(0, -2) : field
+  return indexFieldNameForPolicyPath(field)
 }
 
 function isDefaultSearchablePolicy(

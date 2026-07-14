@@ -9,13 +9,15 @@
  * See `docs/architecture/catalog-architecture.md` §5.4.1 for design.
  */
 
-import type {
-  DocumentEmitter,
-  IndexerAdapter,
-  IndexerCapabilities,
-  IndexerDocument,
-  IndexerSlice,
-  SearchResults,
+import {
+  type DocumentEmitter,
+  type FacetRequest,
+  type IndexerAdapter,
+  type IndexerCapabilities,
+  type IndexerDocument,
+  type IndexerSlice,
+  indexFieldNameForPolicyPath,
+  type SearchResults,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import type { FieldPolicy, FieldPolicyRegistry } from "../contract.js"
 import {
@@ -282,7 +284,7 @@ const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
   supportsVectorFields: true,
   vectorDimensions: null, // overridden per-instance based on configured embedding provider
   maxVectorsPerDocument: null,
-  supportsCrossAudienceFederation: true,
+  supportsCrossAudienceFederation: false,
   supportsAdminDenormalization: true,
 }
 
@@ -545,7 +547,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
     if (includeEmbeddings) delete query.exclude_fields
     try {
       const response = await client.collections(name).documents().search(query)
-      return mapTypesenseResponse(response, query)
+      return mapTypesenseResponse(response, query, request.facets)
     } catch (error) {
       if (isCollectionNotFoundError(error)) return { hits: [], total: 0, facets: {} }
       throw error
@@ -714,7 +716,7 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
 function flattenDocument(document: IndexerDocument): Record<string, unknown> {
   const flat: Record<string, unknown> = { id: document.id }
   for (const [path, value] of Object.entries(document.fields)) {
-    flat[path] = coerceForTypesense(path, value)
+    flat[indexFieldNameForPolicyPath(path)] = coerceForTypesense(path, value)
   }
   if (document.embeddings) {
     for (const [name, vector] of Object.entries(document.embeddings)) {
@@ -780,6 +782,7 @@ function coerceBool(value: unknown): boolean | undefined {
 function mapTypesenseResponse(
   response: TypesenseSearchResponse,
   query: TypesenseSearchQuery,
+  requestedFacets: FacetRequest[] | undefined,
 ): SearchResults {
   const hits = response.hits.map((hit) => {
     const document = mapTypesenseDocument(hit.document)
@@ -792,9 +795,24 @@ function mapTypesenseResponse(
       document,
     }
   })
+  const facetLimits = new Map(
+    (requestedFacets ?? []).flatMap(({ field, limit }) =>
+      limit === undefined
+        ? []
+        : [[indexFieldNameForPolicyPath(field), Math.max(1, Math.floor(limit))] as const],
+    ),
+  )
   const facets: Record<string, Array<{ value: string | number; count: number }>> | undefined =
     response.facet_counts
-      ? Object.fromEntries(response.facet_counts.map((f) => [f.field_name, f.counts]))
+      ? Object.fromEntries(
+          response.facet_counts.map((facet) => {
+            const limit = facetLimits.get(facet.field_name)
+            return [
+              facet.field_name,
+              limit === undefined ? facet.counts : facet.counts.slice(0, limit),
+            ]
+          }),
+        )
       : undefined
   return {
     hits,
