@@ -107,6 +107,15 @@ export const financeInvoiceCreditNoteService = {
       .orderBy(desc(creditNotes.createdAt))
   },
 
+  async getCreditNoteById(db: PostgresJsDatabase, creditNoteId: string) {
+    const [row] = await db
+      .select()
+      .from(creditNotes)
+      .where(eq(creditNotes.id, creditNoteId))
+      .limit(1)
+    return row ?? null
+  },
+
   async createCreditNote(
     db: PostgresJsDatabase,
     invoiceId: string,

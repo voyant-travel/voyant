@@ -303,6 +303,18 @@ describe("actionLedgerService.validateApprovedAction", () => {
     const { db } = makeValidateApprovedActionDb({
       approval,
       entry: requestedAction,
+      existingExecutions: [
+        makeEntry({
+          id: "alge_execution",
+          actionName: requestedAction.actionName,
+          actionKind: "update",
+          status: "succeeded",
+          targetType: requestedAction.targetType,
+          targetId: requestedAction.targetId,
+          causationActionId: requestedAction.id,
+          approvalId: approval.id,
+        }),
+      ],
     })
 
     await expect(
@@ -344,6 +356,18 @@ describe("actionLedgerService.validateApprovedAction", () => {
     const { db } = makeValidateApprovedActionDb({
       approval,
       entry: requestedAction,
+      existingExecutions: [
+        makeEntry({
+          id: "alge_execution",
+          actionName: requestedAction.actionName,
+          actionKind: "update",
+          status: "succeeded",
+          targetType: requestedAction.targetType,
+          targetId: requestedAction.targetId,
+          causationActionId: requestedAction.id,
+          approvalId: approval.id,
+        }),
+      ],
     })
 
     await expect(
@@ -386,6 +410,18 @@ describe("actionLedgerService.validateApprovedAction", () => {
     const { db } = makeValidateApprovedActionDb({
       approval,
       entry: requestedAction,
+      existingExecutions: [
+        makeEntry({
+          id: "alge_execution",
+          actionName: requestedAction.actionName,
+          actionKind: "update",
+          status: "succeeded",
+          targetType: requestedAction.targetType,
+          targetId: requestedAction.targetId,
+          causationActionId: requestedAction.id,
+          approvalId: approval.id,
+        }),
+      ],
     })
 
     await expect(

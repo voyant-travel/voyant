@@ -61,6 +61,7 @@ export type FinanceRefundAuthorizationResult =
       approval: Awaited<ReturnType<typeof requestActionLedgerApproval>>["approval"]
       replayed: boolean
     }
+  | { status: "already_executed"; access: ActionLedgerCapabilityAccessResult; creditNoteId: string }
   | { status: "denied"; access: ActionLedgerCapabilityAccessResult }
   | { status: "missing_idempotency_key"; access: ActionLedgerCapabilityAccessResult }
   | {
@@ -146,7 +147,25 @@ export async function authorizeFinanceRefund(
       executionActionKind: "create",
       executionStatus: "succeeded",
     })
-    if (!validation.ok) return { status: "invalid_approval", access, validation }
+    if (!validation.ok) {
+      const requestedAction = validation.requestedAction
+      const isExactReplay =
+        validation.reason === "already_executed" &&
+        requestedAction !== undefined &&
+        requestedAction.idempotencyFingerprint === fingerprint &&
+        (!principal.principalType ||
+          !principal.principalId ||
+          (requestedAction.principalType === principal.principalType &&
+            requestedAction.principalId === principal.principalId))
+      if (isExactReplay && validation.existingActionId) {
+        const creditNoteId = await resolveExecutedRefundCreditNoteId(
+          input.db,
+          validation.existingActionId,
+        )
+        if (creditNoteId) return { status: "already_executed", access, creditNoteId }
+      }
+      return { status: "invalid_approval", access, validation }
+    }
     return {
       status: "authorized",
       access,
@@ -205,6 +224,21 @@ export async function authorizeFinanceRefund(
     }
     throw error
   }
+}
+
+export function parseCreditNoteCommandResultRef(resultRef: string | null): string | null {
+  const prefix = "credit_note:"
+  if (!resultRef?.startsWith(prefix)) return null
+  const creditNoteId = resultRef.slice(prefix.length).trim()
+  return creditNoteId || null
+}
+
+export async function resolveExecutedRefundCreditNoteId(
+  db: PostgresJsDatabase,
+  existingActionId: string,
+): Promise<string | null> {
+  const existing = await actionLedgerService.getEntry(db, existingActionId)
+  return parseCreditNoteCommandResultRef(existing?.mutationDetail?.commandResultRef ?? null)
 }
 
 async function loadInvoiceRefundTargetState(db: PostgresJsDatabase, invoiceId: string) {
