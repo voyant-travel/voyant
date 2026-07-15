@@ -50,7 +50,6 @@
 "@voyant-travel/trips": patch
 "@voyant-travel/trips-react": patch
 "@voyant-travel/types": patch
-"@voyant-travel/voyant-typescript-config": patch
 "@voyant-travel/workflow-runs": patch
 "@voyant-travel/workflows": patch
 "@voyant-travel/workflows-orchestrator": patch
