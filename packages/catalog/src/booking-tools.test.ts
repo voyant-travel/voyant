@@ -1,12 +1,8 @@
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
 
-import {
-  type CatalogBookingToolContext,
-  catalogBookingTools,
-  commitCatalogBookingTool,
-  quoteCatalogEntityTool,
-} from "./booking-tools.js"
+import type { CatalogBookingToolContext } from "./booking-tools.js"
+import { catalogBookingTools, commitCatalogBookingTool, quoteCatalogEntityTool } from "./tools.js"
 
 function context(): CatalogBookingToolContext {
   return {
@@ -30,7 +26,7 @@ function context(): CatalogBookingToolContext {
       commit: vi.fn(async () => ({
         bookingId: "booking_1",
         orderRef: "order_1",
-        status: "confirmed",
+        status: "confirmed" as const,
         snapshotId: "snapshot_1",
       })),
       listOrders: vi.fn(async () => ({ rows: [] })),

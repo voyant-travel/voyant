@@ -5,7 +5,12 @@ import {
   bookResponseV1,
   quoteResponseV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  READ_ONLY_RISK,
+  requireService,
+  type ToolAudiencePolicy,
+  type ToolContext,
+} from "@voyant-travel/tools"
 import { z } from "zod"
 
 import type { CatalogBookingQuoteBody } from "./booking-engine/index.js"
@@ -83,7 +88,7 @@ function booking(ctx: CatalogBookingToolContext): CatalogBookingToolServices {
   return requireService(ctx.catalogBooking, "catalogBooking")
 }
 
-function metadata(scopes: readonly string[], audience = BOOKING_AUDIENCE) {
+function metadata(scopes: readonly string[], audience: ToolAudiencePolicy = BOOKING_AUDIENCE) {
   return {
     owner: OWNER,
     capabilityVersion: VERSION,
@@ -92,8 +97,8 @@ function metadata(scopes: readonly string[], audience = BOOKING_AUDIENCE) {
   }
 }
 
-export const quoteCatalogEntityTool = defineTool({
-  ...metadata(["catalog:read"]),
+export const quoteCatalogEntityDefinition = {
+  ...metadata(["catalog:quote"]),
   capabilityId: `${OWNER}#tool.quote-catalog-entity`,
   name: "quote_catalog_entity",
   description:
@@ -113,9 +118,9 @@ export const quoteCatalogEntityTool = defineTool({
       },
     })
   },
-})
+} as const
 
-export const commitCatalogBookingTool = defineTool({
+export const commitCatalogBookingDefinition = {
   ...metadata(["catalog:read", "bookings:write"]),
   capabilityId: `${OWNER}#tool.commit-catalog-booking`,
   name: "commit_catalog_booking",
@@ -128,9 +133,9 @@ export const commitCatalogBookingTool = defineTool({
   async handler(input: CommitInput, ctx: CatalogBookingToolContext) {
     return booking(ctx).commit(input)
   },
-})
+} as const
 
-export const listCatalogOrdersTool = defineTool({
+export const listCatalogOrdersDefinition = {
   ...metadata(["bookings:read"], STAFF_AUDIENCE),
   capabilityId: `${OWNER}#tool.list-catalog-orders`,
   name: "list_catalog_orders",
@@ -144,9 +149,9 @@ export const listCatalogOrdersTool = defineTool({
   async handler(input: OrderListInput, ctx: CatalogBookingToolContext) {
     return orderListOutputSchema.parse(await booking(ctx).listOrders(input))
   },
-})
+} as const
 
-export const getCatalogOrderTool = defineTool({
+export const getCatalogOrderDefinition = {
   ...metadata(["bookings:read"], STAFF_AUDIENCE),
   capabilityId: `${OWNER}#tool.get-catalog-order`,
   name: "get_catalog_order",
@@ -159,11 +164,4 @@ export const getCatalogOrderTool = defineTool({
   async handler({ id }: z.infer<typeof orderIdInputSchema>, ctx: CatalogBookingToolContext) {
     return catalogOrderSchema.nullable().parse(await booking(ctx).getOrder(id))
   },
-})
-
-export const catalogBookingTools = [
-  quoteCatalogEntityTool,
-  commitCatalogBookingTool,
-  listCatalogOrdersTool,
-  getCatalogOrderTool,
-] as const
+} as const

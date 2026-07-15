@@ -10,7 +10,6 @@ import { createCatalogBookingToolServices } from "./booking-tool-services.js"
 import { executeSemanticSearch } from "./search/semantic.js"
 import type { CatalogToolServices } from "./tools.js"
 
-export * from "./booking-tools.js"
 export * from "./tools.js"
 
 export const voyantToolContextContribution = defineToolContextContribution({
