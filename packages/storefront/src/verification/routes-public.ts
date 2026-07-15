@@ -288,7 +288,7 @@ function normalizeDestination(channel: "email" | "sms", destination: string): st
   return channel === "email" ? destination.trim().toLowerCase() : destination.trim()
 }
 
-async function enforceVerificationStartLimits(
+export async function enforceVerificationStartLimits(
   c: Context<Env>,
   channel: "email" | "sms",
   destination: string,
