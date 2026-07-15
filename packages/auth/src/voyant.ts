@@ -1,6 +1,7 @@
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 
 import { identityAccessRuntimePort } from "./identity-access-runtime-port.js"
+import { teamManagementRuntimePort } from "./team-management-runtime-port.js"
 
 export const authInvitationsVoyantModule = defineModule({
   id: "@voyant-travel/auth#invitations",
@@ -50,8 +51,8 @@ export const authTeamVoyantModule = defineModule({
   id: "@voyant-travel/auth#team",
   packageName: "@voyant-travel/auth",
   localId: "auth.team",
-  provides: { ports: [providePort(identityAccessRuntimePort)] },
-  runtimePorts: [requirePort(identityAccessRuntimePort)],
+  provides: { ports: [providePort(teamManagementRuntimePort)] },
+  runtimePorts: [requirePort(teamManagementRuntimePort)],
   api: [
     {
       id: "@voyant-travel/auth#team.api.admin",
@@ -89,6 +90,35 @@ export const authTeamVoyantModule = defineModule({
             sensitive: true,
           },
         ],
+      },
+    ],
+  },
+  admin: {
+    compositionOrder: 5,
+    runtime: {
+      entry: "@voyant-travel/auth-react/admin",
+      export: "createSelectedAuthTeamAdminExtension",
+    },
+    copy: [
+      {
+        id: "@voyant-travel/auth#team.admin.copy",
+        namespace: "auth.admin.team",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/auth-react/i18n",
+          export: "authUiMessageDefinitions",
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "@voyant-travel/auth#team.admin.route",
+        path: "/settings/team",
+        requiredScopes: ["team:read"],
+        runtime: {
+          entry: "@voyant-travel/auth-react/admin",
+          export: "createSelectedAuthTeamAdminExtension",
+        },
       },
     ],
   },

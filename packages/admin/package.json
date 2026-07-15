@@ -20,7 +20,6 @@
     "./components/operator-admin-bootstrap-gate": "./src/components/operator-admin-bootstrap-gate.tsx",
     "./components/operator-admin-page-shell": "./src/components/operator-admin-page-shell.tsx",
     "./components/operator-admin-sidebar": "./src/components/operator-admin-sidebar.tsx",
-    "./components/team-settings-page": "./src/components/team-settings-page.tsx",
     "./components/operator-admin-user-menu": "./src/components/operator-admin-user-menu.tsx",
     "./dashboard": "./src/dashboard/dashboard-page.tsx",
     "./dashboard/query-options": "./src/dashboard/dashboard-query-options.ts",
@@ -162,11 +161,6 @@
         "types": "./dist/components/operator-admin-user-menu.d.ts",
         "import": "./dist/components/operator-admin-user-menu.js",
         "default": "./dist/components/operator-admin-user-menu.js"
-      },
-      "./components/team-settings-page": {
-        "types": "./dist/components/team-settings-page.d.ts",
-        "import": "./dist/components/team-settings-page.js",
-        "default": "./dist/components/team-settings-page.js"
       },
       "./dashboard": {
         "types": "./dist/dashboard/dashboard-page.d.ts",

@@ -31,6 +31,7 @@ export {
   revokeCloudAdminInvitation,
   setCloudAdminMemberAccess,
   setCloudAdminMemberPermissions,
+  setCloudAdminMemberRole,
 } from "./cloud-broker/members.js"
 export type {
   CloudAdminAuthStartConfig,

@@ -1,5 +1,5 @@
 import type { OperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
-import { Coins, Hash, KeyRound, Layers, Package, Percent, Tag, Tags, Users } from "lucide-react"
+import { Coins, Hash, KeyRound, Layers, Package, Percent, Tag, Tags } from "lucide-react"
 import type * as React from "react"
 
 /**
@@ -11,7 +11,6 @@ import type * as React from "react"
  */
 
 export type AdminCoreSettingsPageId =
-  | "team"
   | "api-tokens"
   | "channels"
   | "taxes"
@@ -45,15 +44,6 @@ export interface AdminCoreSettingsNavEntry {
 }
 
 export const adminCoreSettingsNavEntries: ReadonlyArray<AdminCoreSettingsNavEntry> = [
-  {
-    id: "team",
-    path: "/team",
-    icon: Users,
-    group: "general",
-    order: 20,
-    label: (settings) => settings.team,
-    defaultTitle: "Team",
-  },
   {
     id: "api-tokens",
     path: "/api-tokens",

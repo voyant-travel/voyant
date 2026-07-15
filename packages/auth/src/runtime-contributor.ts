@@ -4,6 +4,10 @@ import {
   type IdentityAccessRuntimeProvider,
   identityAccessRuntimePort,
 } from "./identity-access-runtime-port.js"
+import { createCloudTeamManagementAdapter } from "./team-management-cloud-adapter.js"
+import { createLocalTeamManagementAdapter } from "./team-management-local-adapter.js"
+import { createGuardedTeamManagementProvider } from "./team-management-policy.js"
+import { teamManagementRuntimePort } from "./team-management-runtime-port.js"
 
 interface InvitationNotificationProvider {
   readonly channels: ReadonlyArray<string>
@@ -77,5 +81,22 @@ export function createAuthRuntimePortContribution(
     },
   }
 
-  return { [identityAccessRuntimePort.id]: identityAccess }
+  const localTeamManagement = createLocalTeamManagementAdapter(identityAccess)
+  const cloudTeamManagement = createCloudTeamManagementAdapter(identityAccess)
+  const teamManagement = createGuardedTeamManagementProvider((context) => {
+    const selectedAuthProvider = host.primitives.config.read(
+      context.bindings,
+      "deployment.providers.auth",
+    )
+    if (selectedAuthProvider === "better-auth") return localTeamManagement
+    if (selectedAuthProvider === "voyant-cloud") return cloudTeamManagement
+    throw new Error(
+      "Team management requires deployment.providers.auth to select better-auth or voyant-cloud.",
+    )
+  })
+
+  return {
+    [identityAccessRuntimePort.id]: identityAccess,
+    [teamManagementRuntimePort.id]: teamManagement,
+  }
 }

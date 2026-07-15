@@ -40,7 +40,6 @@ describe("createAdminCoreExtension", async () => {
     expect(settings?.path).toBe("/settings")
     expect(settings?.children?.map((child) => child.id)).toEqual([
       "core-settings-index",
-      "core-settings-team",
       "core-settings-api-tokens",
       "core-settings-channels",
       "core-settings-taxes",
@@ -67,7 +66,7 @@ describe("createAdminCoreExtension", async () => {
     expect(settings?.children?.some((child) => child.id === "core-settings-product-tags")).toBe(
       false,
     )
-    expect(settings?.children?.[0]?.redirectTo).toBe("/settings/team")
+    expect(settings?.children?.[0]?.redirectTo).toBe("/settings/api-tokens")
   })
 
   it("binds app-supplied extra settings pages as child contributions", () => {
@@ -97,7 +96,6 @@ describe("createAdminCoreExtension", async () => {
       {
         exclude: [
           "/",
-          "/team",
           "/api-tokens",
           "/channels",
           "/taxes",

@@ -11,6 +11,7 @@ import { hashPassword } from "better-auth/crypto"
 import { and, desc, eq, gt, isNull } from "drizzle-orm"
 
 import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
+import { localRoleForRedeemedInvitation } from "./team-management-local-adapter.js"
 
 type IdentityAccessEnv = {
   Bindings: Record<string, unknown>
@@ -241,6 +242,7 @@ export function createInvitationsPublicRoutes() {
     const userId = crypto.randomUUID()
     const name = input.name.trim()
     const [firstName, ...rest] = name.split(/\s+/)
+    const teamRole = localRoleForRedeemedInvitation(invite.metadata)
     await db.insert(authUser).values({
       id: userId,
       name,
@@ -266,6 +268,8 @@ export function createInvitationsPublicRoutes() {
         firstName: firstName ?? null,
         lastName: rest.join(" ") || null,
         avatarUrl: null,
+        isSuperAdmin: teamRole.isSuperAdmin,
+        permissions: teamRole.permissions,
       })
       .onConflictDoNothing()
     await db

@@ -17,8 +17,10 @@
     "./query-keys": "./src/query-keys.ts",
     "./ui": "./src/ui.ts",
     "./local-auth-routes": "./src/local-auth-routes.tsx",
+    "./admin": "./src/admin.tsx",
     "./account": "./src/components/account-page.tsx",
     "./organization-members": "./src/components/organization-members-page.tsx",
+    "./team-management": "./src/components/team-management-page.tsx",
     "./styles.css": "./src/styles.css",
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
@@ -121,6 +123,11 @@
         "import": "./dist/local-auth-routes.js",
         "default": "./dist/local-auth-routes.js"
       },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js",
+        "default": "./dist/admin.js"
+      },
       "./account": {
         "types": "./dist/components/account-page.d.ts",
         "import": "./dist/components/account-page.js",
@@ -130,6 +137,11 @@
         "types": "./dist/components/organization-members-page.d.ts",
         "import": "./dist/components/organization-members-page.js",
         "default": "./dist/components/organization-members-page.js"
+      },
+      "./team-management": {
+        "types": "./dist/components/team-management-page.d.ts",
+        "import": "./dist/components/team-management-page.js",
+        "default": "./dist/components/team-management-page.js"
       },
       "./styles.css": {
         "default": "./src/styles.css"

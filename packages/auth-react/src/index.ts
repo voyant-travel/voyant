@@ -28,3 +28,4 @@ export {
   getServiceApiKeysQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"
+export * from "./components/team-management-page.js"

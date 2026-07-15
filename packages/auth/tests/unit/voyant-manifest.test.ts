@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises"
 import { describe, expect, it } from "vitest"
 
 import { identityAccessRuntimePort } from "../../src/identity-access-runtime-port.js"
+import { teamManagementRuntimePort } from "../../src/team-management-runtime-port.js"
 import {
   createInvitationsAdminRoutes,
   createInvitationsPublicRoutes,
@@ -10,7 +11,7 @@ import { createTeamAdminRoutes } from "../../src/team-routes.js"
 import { authInvitationsVoyantModule, authTeamVoyantModule } from "../../src/voyant.js"
 
 describe("auth identity/access deployment manifests", () => {
-  it("owns invitations and team route bundles behind one typed deployment port", () => {
+  it("owns invitations and team route bundles behind typed deployment ports", () => {
     expect(authInvitationsVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#invitations",
       packageName: "@voyant-travel/auth",
@@ -45,9 +46,17 @@ describe("auth identity/access deployment manifests", () => {
     expect(authTeamVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#team",
       packageName: "@voyant-travel/auth",
-      provides: { ports: [{ id: identityAccessRuntimePort.id }] },
-      runtimePorts: [{ id: identityAccessRuntimePort.id }],
+      provides: { ports: [{ id: teamManagementRuntimePort.id }] },
+      runtimePorts: [{ id: teamManagementRuntimePort.id }],
       api: [{ surface: "admin", mount: "team", openapi: { document: "team" } }],
+      admin: {
+        runtime: {
+          entry: "@voyant-travel/auth-react/admin",
+          export: "createSelectedAuthTeamAdminExtension",
+        },
+        routes: [{ path: "/settings/team" }],
+        copy: [{ namespace: "auth.admin.team" }],
+      },
     })
   })
 
