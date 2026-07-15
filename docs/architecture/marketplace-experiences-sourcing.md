@@ -51,7 +51,6 @@ Voyant has much of the foundation:
 - `packages/products` has product, option, unit, content, media, location, destination, and public catalog surfaces.
 - `packages/availability` has local slots, recurrence, cutoff, pickup, and capacity tracking.
 - `packages/bookings` has hold, confirm, cancel, expire, allocation, fulfillment, and redemption concepts.
-- `packages/octo` exposes an external projection over products, availability, and bookings.
 
 The main blocker is that the products runtime still assumes owned inventory:
 

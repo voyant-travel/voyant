@@ -71,7 +71,6 @@ Publishable workspace package names at this point:
 - `@voyant-travel/legal`
 - `@voyant-travel/notifications-react`
 - `@voyant-travel/notifications`
-- `@voyant-travel/octo`
 - `@voyant-travel/operations-react`
 - `@voyant-travel/operations`
 - `@voyant-travel/plugin-netopia`
