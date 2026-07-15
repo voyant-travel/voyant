@@ -190,10 +190,12 @@ export {
   type AdminNavigationPreferences,
   type AdminNavigationPreferencesClient,
   type AdminNavigationPreferencesContribution,
+  AdminNavigationPreferencesMemberProvider,
   type AdminNavigationPreferencesSnapshot,
   type AdminNavigationVisibilityMap,
   type ResolveAdminNavigationPreferencesOptions,
   resolveAdminNavigationPreferences,
+  useAdminNavigationPreferencesMemberKey,
 } from "./navigation/preferences.js"
 export {
   AdminExtensionsProvider,

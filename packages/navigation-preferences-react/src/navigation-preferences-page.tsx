@@ -1,11 +1,11 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useAdminNavigationPreferencesMemberKey } from "@voyant-travel/admin"
 import {
   createOperatorAdminNavigation,
   resolveOperatorAdminNavigation,
 } from "@voyant-travel/admin/navigation/operator-navigation"
-import { useAdminNavigationPreferencesMemberKey } from "@voyant-travel/admin/navigation/preferences"
 import { useAdminExtensions } from "@voyant-travel/admin/providers/admin-extensions"
 import { useOperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
 import type { NavItem } from "@voyant-travel/admin/types"

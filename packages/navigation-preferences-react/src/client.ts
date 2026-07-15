@@ -1,7 +1,7 @@
 import type {
   AdminNavigationPreferencesClient,
   AdminNavigationPreferencesSnapshot,
-} from "@voyant-travel/admin/navigation/preferences"
+} from "@voyant-travel/admin"
 import { navigationPreferencesSnapshotSchema } from "@voyant-travel/navigation-preferences/contracts"
 
 export const navigationPreferencesQueryRoot = ["navigation-preferences"] as const
