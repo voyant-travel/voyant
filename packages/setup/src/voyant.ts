@@ -5,6 +5,19 @@ const setupRuntime = {
   export: "createSetupVoyantRuntime",
 } as const
 
+const setupLifecycleChangedEventPayloadSchema = {
+  type: "object",
+  properties: {
+    change: {
+      type: "string",
+      enum: ["initialized", "step_completed", "step_skipped"],
+    },
+    stepId: { type: ["string", "null"] },
+  },
+  required: ["change", "stepId"],
+  additionalProperties: false,
+} as const
+
 export const setupVoyantModule = defineModule({
   id: "@voyant-travel/setup",
   packageName: "@voyant-travel/setup",
@@ -48,6 +61,16 @@ export const setupVoyantModule = defineModule({
       },
     ],
   },
+  events: [
+    {
+      id: "@voyant-travel/setup#event.lifecycle-changed",
+      eventType: "setup.lifecycle.changed",
+      version: "1.0.0",
+      payloadSchema: setupLifecycleChangedEventPayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "setup", category: "internal" },
+    },
+  ],
   admin: {
     compositionOrder: -1000,
     runtime: {

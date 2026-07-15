@@ -1,3 +1,4 @@
+import type { EventBus } from "@voyant-travel/core"
 import type { VoyantDb } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
 
@@ -19,7 +20,7 @@ export interface SetupStore {
   transaction<T>(run: (store: SetupStore) => Promise<T>): Promise<T>
   createOrganization(input: OrganizationSetup): Promise<boolean>
   getOrganization(): Promise<OrganizationSetup | null>
-  ensureStep(stepId: string, firstSeenAt: Date): Promise<void>
+  ensureStep(stepId: string, firstSeenAt: Date): Promise<boolean>
   listSteps(): Promise<OrganizationSetupStep[]>
   markCompleted(stepId: string, at: Date): Promise<OrganizationSetupStep>
   markSkipped(stepId: string, at: Date): Promise<OrganizationSetupStep>
@@ -27,6 +28,18 @@ export interface SetupStore {
 
 export interface InitializeSetupResult extends SetupState {
   shouldRedirect: boolean
+}
+
+export const SETUP_LIFECYCLE_CHANGED_EVENT = "setup.lifecycle.changed" as const
+
+export interface SetupLifecycleChangedEventPayload {
+  change: "initialized" | "step_completed" | "step_skipped"
+  stepId: string | null
+}
+
+export interface SetupMutationOptions {
+  eventBus?: EventBus
+  now?: Date
 }
 
 export class SetupSelectionError extends Error {
@@ -41,24 +54,35 @@ export async function initializeSetup(
   input: InitializeSetupInput,
   selectedSteps: readonly SetupStepDefinition[],
   prefill: Readonly<Record<string, unknown>> = {},
-  now = new Date(),
+  options: SetupMutationOptions = {},
 ): Promise<InitializeSetupResult> {
   assertSelectedStepIds(input.stepIds, selectedSteps)
-  return store.transaction(async (transaction) => {
+  const now = options.now ?? new Date()
+  const outcome = await store.transaction(async (transaction) => {
     const created = await transaction.createOrganization({
       id: ORGANIZATION_SETUP_ID,
       startedAt: now,
       firstRunOpenedAt: input.fresh ? now : null,
     })
-    for (const step of selectedSteps) await transaction.ensureStep(step.id, now)
+    let addedStep = false
+    for (const step of selectedSteps) {
+      addedStep = (await transaction.ensureStep(step.id, now)) || addedStep
+    }
 
     const organization = await transaction.getOrganization()
     if (!organization) throw new Error("Setup initialization did not persist organization state.")
     return {
-      ...serializeState(organization, await transaction.listSteps(), selectedSteps, prefill),
-      shouldRedirect: created && input.fresh,
+      changed: created || addedStep,
+      result: {
+        ...serializeState(organization, await transaction.listSteps(), selectedSteps, prefill),
+        shouldRedirect: created && input.fresh,
+      },
     }
   })
+  if (outcome.changed) {
+    await emitSetupLifecycleChanged(options, { change: "initialized", stepId: null })
+  }
+  return outcome.result
 }
 
 export async function getSetupState(
@@ -76,23 +100,37 @@ export async function completeSetupStep(
   store: SetupStore,
   selectedSteps: readonly SetupStepDefinition[],
   stepId: string,
-  now = new Date(),
+  options: SetupMutationOptions = {},
 ): Promise<SetupStepState> {
   requireSelectedStep(selectedSteps, stepId)
-  return serializeStep(await store.markCompleted(stepId, now))
+  const result = serializeStep(await store.markCompleted(stepId, options.now ?? new Date()))
+  await emitSetupLifecycleChanged(options, { change: "step_completed", stepId })
+  return result
 }
 
 export async function skipSetupStep(
   store: SetupStore,
   selectedSteps: readonly SetupStepDefinition[],
   stepId: string,
-  now = new Date(),
+  options: SetupMutationOptions = {},
 ): Promise<SetupStepState> {
   const step = requireSelectedStep(selectedSteps, stepId)
   if (!step.skippable) {
     throw new SetupSelectionError(`Setup step "${stepId}" cannot be skipped.`)
   }
-  return serializeStep(await store.markSkipped(stepId, now))
+  const result = serializeStep(await store.markSkipped(stepId, options.now ?? new Date()))
+  await emitSetupLifecycleChanged(options, { change: "step_skipped", stepId })
+  return result
+}
+
+async function emitSetupLifecycleChanged(
+  options: SetupMutationOptions,
+  payload: SetupLifecycleChangedEventPayload,
+): Promise<void> {
+  await options.eventBus?.emit(SETUP_LIFECYCLE_CHANGED_EVENT, payload, {
+    category: "internal",
+    source: "service",
+  })
 }
 
 export function createDrizzleSetupStore(db: VoyantDb): SetupStore {
@@ -119,7 +157,12 @@ export function createDrizzleSetupStore(db: VoyantDb): SetupStore {
       return row ?? null
     },
     async ensureStep(stepId, firstSeenAt) {
-      await db.insert(organizationSetupSteps).values({ stepId, firstSeenAt }).onConflictDoNothing()
+      const rows = await db
+        .insert(organizationSetupSteps)
+        .values({ stepId, firstSeenAt })
+        .onConflictDoNothing()
+        .returning()
+      return rows.length > 0
     },
     async listSteps() {
       return db.select().from(organizationSetupSteps).orderBy(organizationSetupSteps.firstSeenAt)

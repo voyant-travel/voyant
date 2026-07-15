@@ -13,7 +13,7 @@ const store = {
     startedAt: new Date("2026-07-15T08:00:00.000Z"),
     firstRunOpenedAt: null,
   })),
-  ensureStep: vi.fn(async () => undefined),
+  ensureStep: vi.fn(async () => true),
   listSteps: vi.fn(async () => []),
   markCompleted: vi.fn(),
   markSkipped: vi.fn(),

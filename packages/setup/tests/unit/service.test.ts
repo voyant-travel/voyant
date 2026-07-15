@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest"
+import type { EventBus } from "@voyant-travel/core"
+import { describe, expect, it, vi } from "vitest"
 import type { OrganizationSetup, OrganizationSetupStep } from "../../src/schema.js"
 import {
   completeSetupStep,
   getSetupState,
   initializeSetup,
+  SETUP_LIFECYCLE_CHANGED_EVENT,
   type SetupStore,
   skipSetupStep,
 } from "../../src/service.js"
@@ -33,9 +35,9 @@ class MemorySetupStore implements SetupStore {
     return this.organization ? { ...this.organization } : null
   }
   async ensureStep(stepId: string, firstSeenAt: Date) {
-    if (!this.steps.has(stepId)) {
-      this.steps.set(stepId, { stepId, firstSeenAt, completedAt: null, skippedAt: null })
-    }
+    if (this.steps.has(stepId)) return false
+    this.steps.set(stepId, { stepId, firstSeenAt, completedAt: null, skippedAt: null })
+    return true
   }
   async listSteps() {
     return [...this.steps.values()].map((step) => ({ ...step }))
@@ -72,14 +74,14 @@ describe("organization setup state", () => {
       { stepIds: ["acme.profile"], fresh: true },
       [profileStep],
       {},
-      first,
+      { now: first },
     )
     const repeated = await initializeSetup(
       store,
       { stepIds: ["acme.profile"], fresh: true },
       [profileStep],
       {},
-      later,
+      { now: later },
     )
 
     expect(initial).toMatchObject({
@@ -105,14 +107,42 @@ describe("organization setup state", () => {
 
   it("records completion and skip independently", async () => {
     const store = new MemorySetupStore()
-    await initializeSetup(store, { stepIds: ["acme.profile"], fresh: false }, [profileStep])
+    const emit = vi.fn(async () => undefined)
+    const runtime = { eventBus: { emit } as EventBus }
+    await initializeSetup(
+      store,
+      { stepIds: ["acme.profile"], fresh: false },
+      [profileStep],
+      {},
+      runtime,
+    )
     const skippedAt = new Date("2026-07-15T08:10:00.000Z")
     const completedAt = new Date("2026-07-15T08:20:00.000Z")
-    await skipSetupStep(store, [profileStep], "acme.profile", skippedAt)
-    const completed = await completeSetupStep(store, [profileStep], "acme.profile", completedAt)
+    await skipSetupStep(store, [profileStep], "acme.profile", { ...runtime, now: skippedAt })
+    const completed = await completeSetupStep(store, [profileStep], "acme.profile", {
+      ...runtime,
+      now: completedAt,
+    })
 
     expect(completed.skippedAt).toBe(skippedAt.toISOString())
     expect(completed.completedAt).toBe(completedAt.toISOString())
+    expect(emit.mock.calls).toEqual([
+      [
+        SETUP_LIFECYCLE_CHANGED_EVENT,
+        { change: "initialized", stepId: null },
+        { category: "internal", source: "service" },
+      ],
+      [
+        SETUP_LIFECYCLE_CHANGED_EVENT,
+        { change: "step_skipped", stepId: "acme.profile" },
+        { category: "internal", source: "service" },
+      ],
+      [
+        SETUP_LIFECYCLE_CHANGED_EVENT,
+        { change: "step_completed", stepId: "acme.profile" },
+        { category: "internal", source: "service" },
+      ],
+    ])
   })
 
   it("retains unknown steps and surfaces newly selected steps as incomplete", async () => {
@@ -169,23 +199,40 @@ describe("organization setup state", () => {
     class FailingStore extends MemorySetupStore {
       fail = true
       override async ensureStep(stepId: string, firstSeenAt: Date) {
-        await super.ensureStep(stepId, firstSeenAt)
+        const created = await super.ensureStep(stepId, firstSeenAt)
         if (this.fail) {
           this.fail = false
           throw new Error("step insert failed")
         }
+        return created
       }
     }
     const store = new FailingStore()
+    const emit = vi.fn(async () => undefined)
+    const runtime = { eventBus: { emit } as EventBus }
 
     await expect(
-      initializeSetup(store, { stepIds: [profileStep.id], fresh: true }, [profileStep]),
+      initializeSetup(
+        store,
+        { stepIds: [profileStep.id], fresh: true },
+        [profileStep],
+        {},
+        runtime,
+      ),
     ).rejects.toThrow("step insert failed")
     expect(store.organization).toBeNull()
     expect(store.steps.size).toBe(0)
+    expect(emit).not.toHaveBeenCalled()
 
     await expect(
-      initializeSetup(store, { stepIds: [profileStep.id], fresh: true }, [profileStep]),
+      initializeSetup(
+        store,
+        { stepIds: [profileStep.id], fresh: true },
+        [profileStep],
+        {},
+        runtime,
+      ),
     ).resolves.toMatchObject({ shouldRedirect: true })
+    expect(emit).toHaveBeenCalledOnce()
   })
 })

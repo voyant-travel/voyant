@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import type { EventBus } from "@voyant-travel/core"
 import {
   ForbiddenApiError,
   openApiValidationHook,
@@ -29,7 +30,7 @@ import {
 const apiId = "@voyant-travel/setup#api.admin"
 type Env = {
   Bindings: Record<string, unknown>
-  Variables: { db: VoyantDb; userId?: string; scopes?: string[] }
+  Variables: { db: VoyantDb; eventBus?: EventBus; userId?: string; scopes?: string[] }
 }
 
 export interface CreateSetupRoutesOptions {
@@ -130,7 +131,9 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
     return c.json(
       {
         data: await selectionRequest(() =>
-          initializeSetup(store(c.get("db")), input, steps, prefill),
+          initializeSetup(store(c.get("db")), input, steps, prefill, {
+            eventBus: c.get("eventBus"),
+          }),
         ),
       },
       200,
@@ -142,7 +145,9 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
     return c.json(
       {
         data: await selectionRequest(() =>
-          completeSetupStep(store(c.get("db")), steps, c.req.valid("param").stepId),
+          completeSetupStep(store(c.get("db")), steps, c.req.valid("param").stepId, {
+            eventBus: c.get("eventBus"),
+          }),
         ),
       },
       200,
@@ -154,7 +159,9 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
     return c.json(
       {
         data: await selectionRequest(() =>
-          skipSetupStep(store(c.get("db")), steps, c.req.valid("param").stepId),
+          skipSetupStep(store(c.get("db")), steps, c.req.valid("param").stepId, {
+            eventBus: c.get("eventBus"),
+          }),
         ),
       },
       200,
