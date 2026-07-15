@@ -148,18 +148,19 @@ export async function sendNotification(
   dispatcher: NotificationService,
   input: SendNotificationInput,
 ) {
-  const idempotencyFingerprint = input.idempotencyKey
+  const idempotencyKey = input.idempotencyKey
+  const idempotencyFingerprint = idempotencyKey
     ? `sha256:${await sha256({ ...input, idempotencyKey: null })}`
     : null
-  if (input.idempotencyKey) {
+  if (idempotencyKey) {
     const replay = await db.transaction(async (tx) => {
       await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtext(${`notifications.send:${input.idempotencyKey}`}))`,
+        sql`select pg_advisory_xact_lock(hashtext(${`notifications.send:${idempotencyKey}`}))`,
       )
       const [request] = await tx
         .select()
         .from(notificationDeliveryRequests)
-        .where(eq(notificationDeliveryRequests.idempotencyKey, input.idempotencyKey))
+        .where(eq(notificationDeliveryRequests.idempotencyKey, idempotencyKey))
         .limit(1)
       if (!request) return null
       if (request.requestFingerprint !== idempotencyFingerprint) {
@@ -249,15 +250,15 @@ export async function sendNotification(
     failedAt: null,
   }
 
-  const prepared = input.idempotencyKey
+  const prepared = idempotencyKey
     ? await db.transaction(async (tx) => {
         await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtext(${`notifications.send:${input.idempotencyKey}`}))`,
+          sql`select pg_advisory_xact_lock(hashtext(${`notifications.send:${idempotencyKey}`}))`,
         )
         const [existingRequest] = await tx
           .select()
           .from(notificationDeliveryRequests)
-          .where(eq(notificationDeliveryRequests.idempotencyKey, input.idempotencyKey))
+          .where(eq(notificationDeliveryRequests.idempotencyKey, idempotencyKey))
           .limit(1)
         if (existingRequest) {
           if (existingRequest.requestFingerprint !== idempotencyFingerprint) {
@@ -274,7 +275,7 @@ export async function sendNotification(
         const [created] = await tx.insert(notificationDeliveries).values(pendingValues).returning()
         if (created) {
           await tx.insert(notificationDeliveryRequests).values({
-            idempotencyKey: input.idempotencyKey,
+            idempotencyKey,
             requestFingerprint: idempotencyFingerprint!,
             deliveryId: created.id,
           })
