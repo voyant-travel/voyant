@@ -19,11 +19,12 @@ const store = {
   markSkipped: vi.fn(),
 } satisfies SetupStore
 
-function app(userId?: string) {
+function app(userId?: string, scopes = userId ? ["*"] : undefined) {
   const app = new OpenAPIHono()
   app.use("*", async (c, next) => {
     c.set("db", {} as VoyantDb)
     if (userId) c.set("userId", userId)
+    if (scopes) c.set("scopes", scopes)
     await next()
   })
   app.route(
@@ -56,6 +57,49 @@ describe("setup routes", () => {
     })
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ data: { shouldRedirect: true } })
+  })
+
+  it("allows an exact setup manager scope to read and initialize", async () => {
+    const scopedApp = app("user_1", ["setup:write"])
+    const stateResponse = await scopedApp.request("/v1/admin/setup")
+    expect(stateResponse.status).toBe(200)
+    expect(await stateResponse.json()).toMatchObject({ data: { canManage: true } })
+
+    const initializeResponse = await scopedApp.request("/v1/admin/setup/initialize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ stepIds: ["acme.profile", "acme.required"], fresh: true }),
+    })
+    expect(initializeResponse.status).toBe(200)
+  })
+
+  it.each([
+    ["editor", ["bookings:read", "bookings:write"]],
+    ["viewer", ["*:read", "*:search"]],
+  ])("lets %s scopes read setup without allowing initialization", async (_role, scopes) => {
+    const scopedApp = app("user_1", scopes)
+    const stateResponse = await scopedApp.request("/v1/admin/setup")
+    expect(stateResponse.status).toBe(200)
+    expect(await stateResponse.json()).toMatchObject({ data: { canManage: false } })
+
+    const initializeResponse = await scopedApp.request("/v1/admin/setup/initialize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ stepIds: ["acme.profile", "acme.required"], fresh: true }),
+    })
+    expect(initializeResponse.status).toBe(403)
+    const completeResponse = await scopedApp.request(
+      "/v1/admin/setup/steps/acme.profile/complete",
+      { method: "POST" },
+    )
+    const skipResponse = await scopedApp.request("/v1/admin/setup/steps/acme.profile/skip", {
+      method: "POST",
+    })
+    expect(completeResponse.status).toBe(403)
+    expect(skipResponse.status).toBe(403)
+    expect(store.createOrganization).not.toHaveBeenCalled()
+    expect(store.markCompleted).not.toHaveBeenCalled()
+    expect(store.markSkipped).not.toHaveBeenCalled()
   })
 
   it("rejects initialization ids that differ from the selected graph", async () => {

@@ -6,7 +6,12 @@ import {
 } from "@voyant-travel/admin"
 import { describe, expect, it, vi } from "vitest"
 
-import { createSelectedSetupAdminExtension, initializeSelectedSetup } from "../src/admin.js"
+import {
+  canInitializeSelectedSetup,
+  createSelectedSetupAdminExtension,
+  initializeSelectedSetup,
+  loadSelectedSetupState,
+} from "../src/admin.js"
 
 describe("selected setup admin extension", () => {
   it("owns the setup route and flow controller", () => {
@@ -14,6 +19,22 @@ describe("selected setup admin extension", () => {
     expect(extension.routes?.[0]?.path).toBe("/setup")
     expect(extension.routes?.[0]?.title).toBe("Configurare")
     expect(extension.setupFlow?.id).toBe("@voyant-travel/setup#flow.organization-setup")
+    expect(extension.setupFlow?.canInitialize).toBe(canInitializeSelectedSetup)
+  })
+
+  it.each([
+    "editor",
+    "viewer",
+  ])("loads persisted setup for a %s without posting initialization", async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({ data: { state: setupState(), canManage: false } }),
+    )
+
+    await expect(
+      loadSelectedSetupState({ baseUrl: "/api", fetcher }, ["acme.step"]),
+    ).resolves.toEqual({ state: setupState(), canManage: false })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(fetcher).toHaveBeenCalledWith("/api/v1/admin/setup", { method: "GET" })
   })
 
   it("redirects only when the persisted initialize response requests it", async () => {
@@ -44,6 +65,28 @@ describe("selected setup admin extension", () => {
       { stepIds: ["acme.step"], fresh: false },
     )
     expect(fetcher.mock.calls[0]?.[0]).toBe("/api/v1/admin/setup/initialize")
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      method: "POST",
+      body: JSON.stringify({ stepIds: ["acme.step"], fresh: false }),
+    })
+  })
+
+  it("initializes a manager with the exact selected graph step ids", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ data: { state: setupState(), canManage: true } }))
+      .mockResolvedValueOnce(Response.json(response(false)))
+
+    await loadSelectedSetupState({ baseUrl: "/api", fetcher }, ["selected.one", "selected.two"])
+
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(fetcher.mock.calls[1]?.[0]).toBe("/api/v1/admin/setup/initialize")
+    expect(fetcher.mock.calls[1]?.[1]).toMatchObject({
+      body: JSON.stringify({
+        stepIds: ["selected.one", "selected.two"],
+        fresh: false,
+      }),
+    })
   })
 
   it("hands opaque prefill to an href-backed package form without putting it in the URL", () => {
@@ -73,12 +116,15 @@ describe("selected setup admin extension", () => {
 
 function response(shouldRedirect: boolean) {
   return {
-    data: {
-      startedAt: "2026-07-15T08:00:00.000Z",
-      firstRunOpenedAt: null,
-      steps: [],
-      prefill: {},
-      shouldRedirect,
-    },
+    data: { ...setupState(), shouldRedirect },
+  }
+}
+
+function setupState() {
+  return {
+    startedAt: "2026-07-15T08:00:00.000Z",
+    firstRunOpenedAt: null,
+    steps: [],
+    prefill: {},
   }
 }

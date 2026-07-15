@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
   type AdminSetupStepContribution,
   adminRoutePageModule,
   createAdminSetupPrefillHref,
@@ -29,7 +30,7 @@ import {
 import { ArrowLeft, Check, ClipboardCheck, ExternalLink, Loader2, Minus } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
-import { initializeSetupClient, updateSetupStepClient } from "./client.js"
+import { getSetupStateClient, initializeSetupClient, updateSetupStepClient } from "./client.js"
 import { resolveSetupMessages } from "./i18n/index.js"
 
 const setupQueryKey = (stepIds: readonly string[]) => ["organization-setup", ...stepIds] as const
@@ -45,6 +46,22 @@ export async function initializeSelectedSetup(
   return state.shouldRedirect ? { redirectTo: "/setup" } : {}
 }
 
+export async function canInitializeSelectedSetup(context: AdminRouteLoaderContext) {
+  return (await getSetupStateClient(context.runtime)).canManage
+}
+
+export async function loadSelectedSetupState(
+  runtime: AdminRouteRuntime,
+  stepIds: readonly string[],
+) {
+  const snapshot = await getSetupStateClient(runtime)
+  if (!snapshot.canManage) return snapshot
+  return {
+    state: await initializeSetupClient(runtime, { stepIds: [...stepIds], fresh: false }),
+    canManage: true,
+  }
+}
+
 export function createSelectedSetupAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
@@ -53,6 +70,7 @@ export function createSelectedSetupAdminExtension({
     id: "setup",
     setupFlow: {
       id: "@voyant-travel/setup#flow.organization-setup",
+      canInitialize: canInitializeSelectedSetup,
       initialize: initializeSelectedSetup,
     },
     navigation: [
@@ -86,12 +104,13 @@ export function SetupPage() {
   const checked = useRef(new Set<string>())
   const query = useQuery({
     queryKey: setupQueryKey(stepIds),
-    queryFn: () => initializeSetupClient(runtime, { stepIds, fresh: false }),
+    queryFn: () => loadSelectedSetupState(runtime, stepIds),
+    refetchOnMount: "always",
   })
 
   useEffect(() => {
-    if (!query.data) return
-    const states = new Map(query.data.steps.map((state) => [state.stepId, state]))
+    if (query.isFetching || !query.data?.canManage || !query.data.state) return
+    const states = new Map(query.data.state.steps.map((state) => [state.stepId, state]))
     const pending = steps.filter((step) => {
       const state = states.get(step.id)
       return !state?.completedAt && !checked.current.has(step.id)
@@ -112,7 +131,7 @@ export function SetupPage() {
         if (results.some(Boolean)) void query.refetch()
       })
       .catch(() => setPredicateError(true))
-  }, [query.data, query.refetch, queryClient, runtime, steps])
+  }, [query.data, query.isFetching, query.refetch, queryClient, runtime, steps])
 
   if (query.isPending) {
     return (
@@ -126,7 +145,9 @@ export function SetupPage() {
     return <div className="p-6 text-sm text-destructive">{messages.loadFailed}</div>
   }
 
-  const states = new Map(query.data.steps.map((state) => [state.stepId, state]))
+  const state = query.data.state
+  const canManage = query.data.canManage && !query.isFetching
+  const states = new Map(state?.steps.map((step) => [step.stepId, step]) ?? [])
   const completed = steps.filter((step) => states.get(step.id)?.completedAt).length
   const terminal = steps.filter((step) => {
     const state = states.get(step.id)
@@ -170,8 +191,9 @@ export function SetupPage() {
             key={step.id}
             step={step}
             state={states.get(step.id)}
-            prefill={query.data.prefill[step.id]}
+            prefill={state?.prefill[step.id]}
             locale={resolvedLocale}
+            canManage={canManage}
             onSkip={async () => {
               await updateSetupStepClient(runtime, step.id, "skip")
               await query.refetch()
@@ -195,12 +217,14 @@ function SetupStepCard({
   state,
   prefill,
   locale,
+  canManage,
   onSkip,
 }: {
   step: AdminSetupStepContribution
   state?: { completedAt: string | null; skippedAt: string | null }
   prefill: unknown
   locale: string | null | undefined
+  canManage: boolean
   onSkip: () => Promise<void>
 }) {
   const shell = resolveSetupMessages(locale)
@@ -236,7 +260,7 @@ function SetupStepCard({
             <ExternalLink className="size-4" />
           </a>
         ) : null}
-        {!complete && !skipped && step.skippable ? (
+        {canManage && !complete && !skipped && step.skippable ? (
           <Button
             type="button"
             variant="ghost"

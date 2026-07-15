@@ -1,11 +1,13 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
+  ForbiddenApiError,
   openApiValidationHook,
   parseJsonBody,
   RequestValidationError,
   requireUserId,
   type VoyantDb,
 } from "@voyant-travel/hono"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 
 import {
   initializeSetupInputSchema,
@@ -25,7 +27,10 @@ import {
 } from "./service.js"
 
 const apiId = "@voyant-travel/setup#api.admin"
-type Env = { Bindings: Record<string, unknown>; Variables: { db: VoyantDb; userId?: string } }
+type Env = {
+  Bindings: Record<string, unknown>
+  Variables: { db: VoyantDb; userId?: string; scopes?: string[] }
+}
 
 export interface CreateSetupRoutesOptions {
   prefill?: Readonly<Record<string, unknown>>
@@ -108,10 +113,19 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
 
   app.openapi(getStateRoute, async (c) => {
     requireUserId(c)
-    return c.json({ data: await getSetupState(store(c.get("db")), steps, prefill) }, 200)
+    return c.json(
+      {
+        data: {
+          state: await getSetupState(store(c.get("db")), steps, prefill),
+          canManage: canManageSetup(c.get("scopes")),
+        },
+      },
+      200,
+    )
   })
   app.openapi(initializeRoute, async (c) => {
     requireUserId(c)
+    requireSetupWrite(c.get("scopes"))
     const input = await parseJsonBody(c, initializeSetupInputSchema)
     return c.json(
       {
@@ -124,6 +138,7 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
   })
   app.openapi(completeRoute, async (c) => {
     requireUserId(c)
+    requireSetupWrite(c.get("scopes"))
     return c.json(
       {
         data: await selectionRequest(() =>
@@ -135,6 +150,7 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
   })
   app.openapi(skipRoute, async (c) => {
     requireUserId(c)
+    requireSetupWrite(c.get("scopes"))
     return c.json(
       {
         data: await selectionRequest(() =>
@@ -145,4 +161,12 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
     )
   })
   return app
+}
+
+function canManageSetup(scopes: string[] | undefined): boolean {
+  return hasApiKeyPermission(permissionStringsToPermissions(scopes ?? []), "setup", "write")
+}
+
+function requireSetupWrite(scopes: string[] | undefined): void {
+  if (!canManageSetup(scopes)) throw new ForbiddenApiError()
 }

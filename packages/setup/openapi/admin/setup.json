@@ -23,53 +23,62 @@
                   "properties": {
                     "data": {
                       "type": "object",
-                      "nullable": true,
                       "properties": {
-                        "startedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "firstRunOpenedAt": {
-                          "type": "string",
+                        "state": {
+                          "type": "object",
                           "nullable": true,
-                          "format": "date-time"
-                        },
-                        "steps": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "stepId": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 200
-                              },
-                              "firstSeenAt": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "completedAt": {
-                                "type": "string",
-                                "nullable": true,
-                                "format": "date-time"
-                              },
-                              "skippedAt": {
-                                "type": "string",
-                                "nullable": true,
-                                "format": "date-time"
+                          "properties": {
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "firstRunOpenedAt": {
+                              "type": "string",
+                              "nullable": true,
+                              "format": "date-time"
+                            },
+                            "steps": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "stepId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  },
+                                  "firstSeenAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "completedAt": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "format": "date-time"
+                                  },
+                                  "skippedAt": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "format": "date-time"
+                                  }
+                                },
+                                "required": ["stepId", "firstSeenAt", "completedAt", "skippedAt"]
                               }
                             },
-                            "required": ["stepId", "firstSeenAt", "completedAt", "skippedAt"]
-                          }
+                            "prefill": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "nullable": true
+                              }
+                            }
+                          },
+                          "required": ["startedAt", "firstRunOpenedAt", "steps", "prefill"]
                         },
-                        "prefill": {
-                          "type": "object",
-                          "additionalProperties": {
-                            "nullable": true
-                          }
+                        "canManage": {
+                          "type": "boolean"
                         }
                       },
-                      "required": ["startedAt", "firstRunOpenedAt", "steps", "prefill"]
+                      "required": ["state", "canManage"]
                     }
                   },
                   "required": ["data"]

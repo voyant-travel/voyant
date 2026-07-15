@@ -15,6 +15,7 @@ export const setupVoyantModule = defineModule({
       surface: "admin",
       mount: "setup",
       resource: "setup",
+      authorization: "route",
       openapi: { document: "setup" },
       runtime: setupRuntime,
     },

@@ -30,10 +30,16 @@ export const initializeSetupResponseSchema = z.object({
   data: setupStateSchema.extend({ shouldRedirect: z.boolean() }),
 })
 
-export const setupStateResponseSchema = z.object({ data: setupStateSchema.nullable() })
+export const setupStateSnapshotSchema = z.object({
+  state: setupStateSchema.nullable(),
+  canManage: z.boolean(),
+})
+
+export const setupStateResponseSchema = z.object({ data: setupStateSnapshotSchema })
 export const setupStepResponseSchema = z.object({ data: setupStepStateSchema })
 
 export type InitializeSetupInput = z.infer<typeof initializeSetupInputSchema>
 export type SetupStepDefinition = z.infer<typeof setupStepDefinitionSchema>
 export type SetupStepState = z.infer<typeof setupStepStateSchema>
 export type SetupState = z.infer<typeof setupStateSchema>
+export type SetupStateSnapshot = z.infer<typeof setupStateSnapshotSchema>

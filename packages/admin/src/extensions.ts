@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: admin; extension contribution contracts and registry resolution remain co-located until a dedicated contract-module split preserves the public API.
 import type { QueryClient } from "@tanstack/react-query"
 import type * as React from "react"
 
@@ -332,6 +333,8 @@ export interface AdminSetupInitializeResult {
 /** Package-owned setup persistence/controller attached to the selected admin graph. */
 export interface AdminSetupFlowContribution {
   id: string
+  /** Resolve whether the current actor may persist setup state. */
+  canInitialize: (context: AdminRouteLoaderContext) => Promise<boolean>
   initialize: (
     context: AdminRouteLoaderContext,
     input: AdminSetupInitializeInput,

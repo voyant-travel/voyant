@@ -8,6 +8,7 @@ describe("setup package manifest", () => {
     expect(setupVoyantModule.schema).toHaveLength(1)
     expect(setupVoyantModule.migrations).toHaveLength(1)
     expect(setupVoyantModule.access?.resources[0]?.resource).toBe("setup")
+    expect(setupVoyantModule.api?.[0]?.authorization).toBe("route")
     expect(setupVoyantModule.admin?.routes?.[0]?.path).toBe("/setup")
   })
 })

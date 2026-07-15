@@ -145,10 +145,12 @@ export async function loadAdminDashboard(
     products.data.total === 0 &&
     suppliers.data.total === 0 &&
     finance.data.total === 0
-  const result = await setup.flow.initialize(
-    { queryClient, runtime, params: {} },
-    { stepIds: (setup.steps ?? []).map((step) => step.id), fresh },
-  )
+  const setupContext = { queryClient, runtime, params: {} }
+  if (!(await setup.flow.canInitialize(setupContext))) return
+  const result = await setup.flow.initialize(setupContext, {
+    stepIds: (setup.steps ?? []).map((step) => step.id),
+    fresh,
+  })
   if (result.redirectTo) throw redirect({ to: result.redirectTo })
 }
 

@@ -122,11 +122,19 @@ describe("admin extensions", () => {
       resolveAdminSetupFlow([
         defineAdminExtension({
           id: "one",
-          setupFlow: { id: "one", initialize: async () => ({}) },
+          setupFlow: {
+            id: "one",
+            canInitialize: async () => true,
+            initialize: async () => ({}),
+          },
         }),
         defineAdminExtension({
           id: "two",
-          setupFlow: { id: "two", initialize: async () => ({}) },
+          setupFlow: {
+            id: "two",
+            canInitialize: async () => true,
+            initialize: async () => ({}),
+          },
         }),
       ]),
     ).toThrow(/Expected one setup flow/)

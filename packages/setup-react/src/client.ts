@@ -1,8 +1,19 @@
 import type { AdminRouteRuntime } from "@voyant-travel/admin"
-import type { InitializeSetupInput, SetupState, SetupStepState } from "@voyant-travel/setup"
+import type {
+  InitializeSetupInput,
+  SetupState,
+  SetupStateSnapshot,
+  SetupStepState,
+} from "@voyant-travel/setup"
 
 export interface SetupInitializeResponse extends SetupState {
   shouldRedirect: boolean
+}
+
+export async function getSetupStateClient(runtime: AdminRouteRuntime): Promise<SetupStateSnapshot> {
+  return setupRequest<{ data: SetupStateSnapshot }>(runtime, "/v1/admin/setup", {
+    method: "GET",
+  }).then(({ data }) => data)
 }
 
 export async function initializeSetupClient(
