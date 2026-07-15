@@ -71,8 +71,8 @@ describe("inventory tools", () => {
     const manifest = makeRegistry().list()
     expect(manifest.map((t) => t.name).sort()).toEqual([
       "archive_product",
-      "create_product",
       "compose_product",
+      "create_product",
       "get_product",
       "get_product_content",
       "list_products",
@@ -105,8 +105,8 @@ describe("inventory tools", () => {
       },
       ctxWith(
         {
-          async composeProduct(_spec, options) {
-            expect(options.idempotencyKey).toBe("compose-cairo-v1")
+          async composeProduct(input) {
+            expect(input.idempotencyKey).toBe("compose-cairo-v1")
             return {
               status: "created",
               productId: "prod_1",
