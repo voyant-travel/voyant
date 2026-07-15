@@ -41,6 +41,7 @@ describe("requireAuth API keys", () => {
       c.json({
         callerType: c.get("callerType"),
         actor: c.get("actor"),
+        audience: c.get("audience"),
         scopes: c.get("scopes"),
         isInternalRequest: c.get("isInternalRequest"),
       }),
@@ -62,8 +63,41 @@ describe("requireAuth API keys", () => {
     expect(await response.json()).toEqual({
       callerType: "internal",
       actor: "staff",
+      audience: "staff",
       scopes: ["products:read", "bookings:write"],
       isInternalRequest: true,
+    })
+  })
+
+  it("defaults a custom resolver audience to its authenticated actor", async () => {
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never, {
+        auth: {
+          resolve: () => ({ userId: "user_123", actor: "partner" }),
+        },
+      }),
+    )
+    app.get("/secure", (c) =>
+      c.json({
+        userId: c.get("userId"),
+        actor: c.get("actor"),
+        audience: c.get("audience"),
+      }),
+    )
+
+    const response = await app.fetch(
+      new Request("http://example.com/secure"),
+      TEST_ENV,
+      mockExecutionCtx(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      userId: "user_123",
+      actor: "partner",
+      audience: "partner",
     })
   })
 

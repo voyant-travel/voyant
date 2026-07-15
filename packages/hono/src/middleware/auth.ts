@@ -136,7 +136,14 @@ function applyAuthContext(
   if (auth.organizationId !== undefined) c.set("organizationId", auth.organizationId ?? undefined)
   if (auth.callerType) c.set("callerType", auth.callerType)
   if (auth.actor) c.set("actor", auth.actor)
-  if (auth.audience) c.set("audience", auth.audience)
+  if (auth.audience !== undefined) {
+    c.set("audience", auth.audience)
+  } else if (auth.actor) {
+    // VoyantAuthContext defines an omitted grant audience as the authenticated
+    // actor. Normalize once here so every downstream surface, including MCP,
+    // receives the same complete authorization context.
+    c.set("audience", auth.actor)
+  }
   if (auth.scopes !== undefined) c.set("scopes", auth.scopes)
   if (auth.isInternalRequest !== undefined) c.set("isInternalRequest", auth.isInternalRequest)
   if (auth.apiTokenId) c.set("apiTokenId", auth.apiTokenId)

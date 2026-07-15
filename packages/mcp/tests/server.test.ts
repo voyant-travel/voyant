@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises"
+import { requireAuth } from "@voyant-travel/hono/middleware/auth"
 import {
   createToolRegistry,
   defineTool,
@@ -82,6 +83,13 @@ function rpc(method: string, params: unknown, id: number | string = 1) {
     method: "POST",
     headers: MCP_HEADERS,
     body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
+  }
+}
+
+function testExecutionContext(): ExecutionContext {
+  return {
+    waitUntil() {},
+    passThroughOnException() {},
   }
 }
 
@@ -661,6 +669,33 @@ describe("createMcpHonoApp", () => {
     app.route("/", routes)
 
     expect((await app.request("/manifest")).status).toBe(500)
+  })
+
+  it("lets an internal API key reach selected MCP routes with actor-derived audience", async () => {
+    const routes = await selectedRuntimeRoutes()
+    const app = new Hono()
+    app.use(
+      "*",
+      requireAuth(() => ({}) as never),
+    )
+    app.route("/", routes)
+
+    const response = await app.fetch(
+      new Request("http://example.test/manifest", {
+        headers: { Authorization: "Bearer internal-test-key" },
+      }),
+      {
+        DATABASE_URL: "postgres://test",
+        INTERNAL_API_KEY: "internal-test-key",
+        INTERNAL_API_KEY_SCOPES: "catalog:read",
+      },
+      testExecutionContext(),
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      tools: [expect.objectContaining({ name: "echo" })],
+    })
   })
 
   it("exposes selected action invocation metadata and gates before domain dispatch", async () => {

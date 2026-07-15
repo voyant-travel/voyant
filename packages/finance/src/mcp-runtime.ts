@@ -171,6 +171,29 @@ export const voyantToolContextContribution = defineToolContextContribution({
               replayed: authorization.replayed,
             }
           }
+          if (authorization.status === "already_executed") {
+            const creditNote = await financeService.getCreditNoteById(
+              db,
+              authorization.creditNoteId,
+            )
+            if (!creditNote) {
+              throw new ToolError("The previously issued credit note was not found.", "NOT_FOUND", {
+                creditNoteId: authorization.creditNoteId,
+              })
+            }
+            if (creditNote.invoiceId !== input.invoiceId || creditNote.status !== "issued") {
+              throw new ToolError(
+                "The previous refund result does not match this issued invoice credit note.",
+                "INVALID_INPUT",
+                { creditNoteId: authorization.creditNoteId, invoiceId: input.invoiceId },
+              )
+            }
+            return {
+              status: "issued" as const,
+              creditNote: toJsonValue(creditNote),
+              replayed: true,
+            }
+          }
           if (authorization.status !== "authorized") {
             throw financeRefundAuthorizationError(authorization)
           }
@@ -201,6 +224,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
           return {
             status: "issued" as const,
             creditNote: toJsonValue(creditNote),
+            replayed: false,
           }
         },
       },
@@ -229,7 +253,7 @@ function financeToolActionLedgerContext(c: Context<Env>): ActionLedgerRequestCon
 function financeRefundAuthorizationError(
   result: Exclude<
     Awaited<ReturnType<typeof authorizeFinanceRefund>>,
-    { status: "authorized" | "approval_required" }
+    { status: "authorized" | "approval_required" | "already_executed" }
   >,
 ) {
   switch (result.status) {

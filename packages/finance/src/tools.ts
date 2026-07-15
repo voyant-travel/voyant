@@ -179,7 +179,7 @@ const pendingFinanceApprovalSchema = z.object({
 
 export const issueInvoiceRefundOutputSchema = z.union([
   pendingFinanceApprovalSchema,
-  z.object({ status: z.literal("issued"), creditNote: creditNoteSchema }),
+  z.object({ status: z.literal("issued"), creditNote: creditNoteSchema, replayed: z.boolean() }),
 ])
 
 export const issueInvoiceRefundTool = defineTool<

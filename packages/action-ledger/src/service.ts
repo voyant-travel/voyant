@@ -336,26 +336,6 @@ export const actionLedgerService = {
       }
     }
 
-    const existingExecution = await actionLedgerService.listEntries(db, {
-      actionName: input.actionName,
-      actionKind: input.executionActionKind,
-      targetType: input.targetType,
-      targetId: input.targetId,
-      causationActionId: requestedAction.id,
-      approvalId: result.approval.id,
-      status: input.executionStatus ?? "succeeded",
-      limit: 1,
-    })
-    if (existingExecution.entries.length > 0) {
-      return {
-        ok: false,
-        reason: "already_executed",
-        approval: result.approval,
-        requestedAction,
-        existingActionId: existingExecution.entries[0]?.id,
-      }
-    }
-
     if (!requestedAction.idempotencyFingerprint) {
       return {
         ok: false,
@@ -385,6 +365,26 @@ export const actionLedgerService = {
         reason: "principal_mismatch",
         approval: result.approval,
         requestedAction,
+      }
+    }
+
+    const existingExecution = await actionLedgerService.listEntries(db, {
+      actionName: input.actionName,
+      actionKind: input.executionActionKind,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      causationActionId: requestedAction.id,
+      approvalId: result.approval.id,
+      status: input.executionStatus ?? "succeeded",
+      limit: 1,
+    })
+    if (existingExecution.entries.length > 0) {
+      return {
+        ok: false,
+        reason: "already_executed",
+        approval: result.approval,
+        requestedAction,
+        existingActionId: existingExecution.entries[0]?.id,
       }
     }
 
