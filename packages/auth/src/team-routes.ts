@@ -160,22 +160,21 @@ export function createTeamAdminRoutes(runtime: TeamManagementRuntimeProvider) {
     return result instanceof Response ? result : c.json({ data: result }, 201)
   })
   routes.openapi(revokeInvitationRoute, async (c) => {
-    const result = await run(c, (context) =>
-      runtime.revokeInvitation(context, c.req.valid("param").invitationId),
-    )
+    const { invitationId } = c.req.param()
+    const result = await run(c, (context) => runtime.revokeInvitation(context, invitationId))
     return result instanceof Response ? result : c.body(null, 204)
   })
   routes.openapi(updateRoleRoute, async (c) => {
+    const { memberId } = c.req.param()
     const input = await parseJsonBody(c, roleSchema)
     const result = await run(c, (context) =>
-      runtime.updateMemberRole(context, c.req.valid("param").memberId, input.roleId),
+      runtime.updateMemberRole(context, memberId, input.roleId),
     )
     return result instanceof Response ? result : c.json({ data: result })
   })
   routes.openapi(deactivateMemberRoute, async (c) => {
-    const result = await run(c, (context) =>
-      runtime.deactivateMember(context, c.req.valid("param").memberId),
-    )
+    const { memberId } = c.req.param()
+    const result = await run(c, (context) => runtime.deactivateMember(context, memberId))
     return result instanceof Response ? result : c.json({ data: result })
   })
 
