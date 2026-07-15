@@ -26,9 +26,17 @@ function serializeSettings(
   settings: Awaited<ReturnType<typeof getOperatorSettings>>,
 ): OperatorSettingsValue | null {
   if (!settings) return null
+  const { createdAt, updatedAt, ...value } = settings
   return {
-    ...settings,
-    ...(settings.createdAt ? { createdAt: settings.createdAt.toISOString() } : {}),
-    ...(settings.updatedAt ? { updatedAt: settings.updatedAt.toISOString() } : {}),
+    ...value,
+    bankTransferBeneficiary: settings.bankTransferBeneficiary ?? null,
+    iban: settings.iban ?? null,
+    bank: settings.bank ?? null,
+    notes: settings.notes ?? null,
+    customerPaymentPolicy: settings.customerPaymentPolicy ?? null,
+    bookingCheckoutUrlTemplate: settings.bookingCheckoutUrlTemplate ?? null,
+    invoicePayUrlTemplate: settings.invoicePayUrlTemplate ?? null,
+    ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
+    ...(updatedAt ? { updatedAt: updatedAt.toISOString() } : {}),
   }
 }
