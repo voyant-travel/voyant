@@ -48,3 +48,20 @@ and search subscribers:
 Each event carries `{ id }`, where `id` is the local cruise id. Treat the
 payload as an invalidation trigger and re-read current cruise state before
 updating downstream indexes.
+
+## Agent Tools
+
+Selecting the module contributes provider-neutral Tools for indexed cruise
+search, cruise/sailing/ship detail, cabin quotes, and the core cruise, sailing,
+and ship lifecycle. The Tools call the module's services and selected
+`CruiseAdapter` implementations; provider-specific calls, search projection
+maintenance, price-row replacement, and cabin/deck/itinerary mechanics are not
+exposed.
+
+Read and quote Tools require `cruises:read` and are available to staff and
+customer actors. Local lifecycle writes require `cruises:write`, are staff
+only, and are ledgered. `create_cruise_booking` additionally requires
+`bookings:write`; because the external path commits upstream before local
+persistence, it is critical-risk, confirmation-gated, approval-required,
+ledger-required, and declared irreversible. Archive/delete and party booking
+operations remain outside the Tool surface.
