@@ -353,7 +353,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       },
       requiredScopes: ["bookings:read"],
       context: ["catalog"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/catalog#booking-engine#tool.get-catalog-order",
@@ -364,7 +364,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
       },
       requiredScopes: ["bookings:read"],
       context: ["catalog"],
-      risk: "medium",
+      risk: "high",
     },
   ],
   actions: [
