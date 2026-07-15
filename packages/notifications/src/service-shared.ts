@@ -87,6 +87,13 @@ export class NotificationError extends Error {
   }
 }
 
+export class NotificationIdempotencyConflictError extends NotificationError {
+  constructor() {
+    super("Notification idempotency key was already used for a different command")
+    this.name = "NotificationIdempotencyConflictError"
+  }
+}
+
 export interface NotificationService {
   send(payload: NotificationPayload): Promise<NotificationResult>
   sendWith(providerName: string, payload: NotificationPayload): Promise<NotificationResult>

@@ -200,6 +200,30 @@ describe("quotes deployment manifests", () => {
       ),
     ).toMatchObject({ risk: "high", approval: "required" })
   })
+
+  it("owns the cross-module proposal snapshot and notification action", () => {
+    expect(quotesProposalVoyantPlugin).toMatchObject({
+      runtimePorts: [{ id: "quotes.proposal-runtime" }, { id: "quotes.notifications.runtime" }],
+      tools: [
+        {
+          id: "@voyant-travel/quotes#proposal-extension.tool.snapshot-and-send-quote",
+          name: "snapshot_and_send_quote",
+          requiredScopes: ["quotes:write", "notifications:send"],
+          context: ["quoteDelivery"],
+          risk: "high",
+        },
+      ],
+      actions: [
+        {
+          id: "@voyant-travel/quotes#proposal-extension.action.snapshot-and-send-quote",
+          ledger: "required",
+          approval: "required",
+          reversible: false,
+          allowedActorTypes: ["staff"],
+        },
+      ],
+    })
+  })
 })
 
 function readApiIds(routes: OpenApiDocumentSource): unknown[] {

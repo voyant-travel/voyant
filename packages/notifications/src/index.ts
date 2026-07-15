@@ -76,6 +76,7 @@ export {
   createDefaultBookingDocumentAttachment,
   createNotificationService,
   NotificationError,
+  NotificationIdempotencyConflictError,
   notificationsService,
   previewNotificationTemplate,
   renderNotificationTemplate,

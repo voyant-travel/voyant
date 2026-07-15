@@ -171,6 +171,20 @@ export const notificationDeliveries = pgTable(
 export type NotificationDelivery = typeof notificationDeliveries.$inferSelect
 export type NewNotificationDelivery = typeof notificationDeliveries.$inferInsert
 
+/** Internal exact-replay record; request fingerprints never leave Notifications. */
+export const notificationDeliveryRequests = pgTable(
+  "notification_delivery_requests",
+  {
+    idempotencyKey: text("idempotency_key").primaryKey(),
+    requestFingerprint: text("request_fingerprint").notNull(),
+    deliveryId: typeIdRef("delivery_id")
+      .notNull()
+      .references(() => notificationDeliveries.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("uidx_notification_delivery_requests_delivery").on(table.deliveryId)],
+)
+
 export const notificationReminderRules = pgTable(
   "notification_reminder_rules",
   {

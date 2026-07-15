@@ -8,6 +8,7 @@ import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runt
 import { tripsRoutesRuntimePort } from "@voyant-travel/trips/runtime-port"
 import {
   quotesProposalRuntimePort,
+  quotesNotificationsRuntimePort,
   quotesRuntimePort,
   quotesSnapshotRuntimePort,
 } from "./runtime-port.js"
@@ -328,7 +329,42 @@ export const quotesProposalVoyantPlugin = defineExtension({
   packageName: "@voyant-travel/quotes",
   localId: "quotes.proposal-extension",
   provides: { ports: [providePort(quotesProposalRuntimePort)] },
-  runtimePorts: [requirePort(quotesProposalRuntimePort)],
+  runtimePorts: [
+    requirePort(quotesProposalRuntimePort),
+    requirePort(quotesNotificationsRuntimePort),
+  ],
+  tools: [
+    {
+      id: "@voyant-travel/quotes#proposal-extension.tool.snapshot-and-send-quote",
+      name: "snapshot_and_send_quote",
+      runtime: {
+        entry: "@voyant-travel/quotes/tools",
+        export: "snapshotAndSendQuoteTool",
+      },
+      requiredScopes: ["quotes:write", "notifications:send"],
+      context: ["quoteDelivery"],
+      risk: "high",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/quotes#proposal-extension.action.snapshot-and-send-quote",
+      version: "v1",
+      kind: "execute",
+      targetType: "quote",
+      resource: "quotes",
+      action: "write",
+      requiredScopes: ["quotes:write", "notifications:send"],
+      risk: "high",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: ["@voyant-travel/quotes#proposal-extension.tool.snapshot-and-send-quote"],
+      },
+    },
+  ],
   events: [
     {
       id: "@voyant-travel/quotes#event.proposal-feedback-requested",

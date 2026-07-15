@@ -31,11 +31,15 @@ export const createQuotesVoyantRuntime = defineGraphRuntimeFactory(async ({ getP
 )
 
 export type {
+  QuoteProposalNotificationDelivery,
+  QuoteProposalNotificationInput,
+  QuotesNotificationsRuntime,
   QuotesProposalRuntime,
   QuotesRuntime,
   QuotesSnapshotRuntime,
 } from "./runtime-port.js"
 export {
+  quotesNotificationsRuntimePort,
   quotesProposalRuntimePort,
   quotesRuntimePort,
   quotesSnapshotRuntimePort,
@@ -109,10 +113,14 @@ export {
 export type { AcceptQuoteVersionResult } from "./service/index.js"
 export {
   pipelinesService,
+  QuoteDeliveryFailedError,
+  QuoteDeliveryIdempotencyConflictError,
   QuoteVersionConflictError,
   quoteRecordsService,
   quotesService,
   quoteVersionsService,
+  snapshotAndSendQuote,
+  snapshotAndSendQuoteInputSchema,
 } from "./service/index.js"
 export {
   acceptQuoteVersionSchema,

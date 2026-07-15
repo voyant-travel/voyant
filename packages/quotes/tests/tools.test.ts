@@ -1,12 +1,17 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type QuotesToolServices, quotesTools } from "../src/tools.js"
+import {
+  type QuoteDeliveryToolServices,
+  type QuotesToolServices,
+  quotesTools,
+} from "../src/tools.js"
 
 function ctx(
   services?: Partial<QuotesToolServices>,
   actor: ToolContext["actor"] = "staff",
-): ToolContext & { quotes?: QuotesToolServices } {
+  delivery?: QuoteDeliveryToolServices,
+): ToolContext & { quotes?: QuotesToolServices; quoteDelivery?: QuoteDeliveryToolServices } {
   return {
     db: {},
     actor,
@@ -14,6 +19,7 @@ function ctx(
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: actor, market: "default", actor },
     quotes: services as QuotesToolServices | undefined,
+    quoteDelivery: delivery,
   }
 }
 
@@ -77,6 +83,7 @@ describe("quotes Tools", () => {
       "get_quote",
       "list_quotes",
       "send_quote_version",
+      "snapshot_and_send_quote",
       "snapshot_quote_version",
     ])
     for (const tool of list) {
@@ -114,6 +121,50 @@ describe("quotes Tools", () => {
     expect(list.find((tool) => tool.name === "decline_quote_version")?.aliases).toEqual([
       "quote_version_decline",
     ])
+  })
+
+  it("composes a snapshot and vetted-template delivery through one exact-idempotent service", async () => {
+    const registry = createToolRegistry()
+    registry.registerAll(quotesTools)
+    const delivery: QuoteDeliveryToolServices = {
+      async snapshotAndSendQuote(input) {
+        expect(input).toMatchObject({
+          quoteId: quote.id,
+          templateSlug: "quote-proposal",
+          idempotencyKey: "quote-send-1",
+        })
+        return {
+          quoteVersion: { ...version, status: "sent", sentAt: timestamp },
+          proposalUrl: `/proposal/${version.id}`,
+          delivery: {
+            id: "ndel_1",
+            status: "sent",
+            channel: "email",
+            provider: "local",
+            providerMessageId: "message_1",
+            toAddress: "traveler@example.test",
+          },
+          reused: false,
+        }
+      },
+    }
+
+    const result = await registry.dispatch<Record<string, unknown>>(
+      "snapshot_and_send_quote",
+      {
+        quoteId: quote.id,
+        to: "traveler@example.test",
+        templateSlug: "quote-proposal",
+        idempotencyKey: "quote-send-1",
+      },
+      ctx(undefined, "staff", delivery),
+    )
+
+    expect(result).toMatchObject({
+      proposalUrl: `/proposal/${version.id}`,
+      delivery: { id: "ndel_1", status: "sent" },
+      reused: false,
+    })
   })
 
   it("dispatches the full lifecycle through domain services and serializes dates", async () => {

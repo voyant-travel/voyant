@@ -6,6 +6,7 @@ import {
 } from "@voyant-travel/core/project"
 import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront/runtime-port"
+import { quotesNotificationsRuntimePort } from "@voyant-travel/quotes/runtime-port"
 import {
   bookingDocumentsSentEventPayloadSchema,
   bookingFullyPaidEventPayloadSchema,
@@ -26,6 +27,7 @@ export const notificationsVoyantModule = defineModule({
       providePort(storefrontVerificationRuntimePort),
       providePort(financeNotificationsRuntimePort),
       providePort(notificationsRuntimePort),
+      providePort(quotesNotificationsRuntimePort),
     ],
   },
   api: [

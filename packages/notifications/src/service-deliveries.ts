@@ -1,9 +1,10 @@
+import { sha256 } from "@voyant-travel/action-ledger/fingerprint"
 import { bookings } from "@voyant-travel/bookings/schema"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { notificationDeliveries } from "./schema.js"
+import { notificationDeliveries, notificationDeliveryRequests } from "./schema.js"
 import {
   attachmentsFromMetadata,
   metadataWithoutFailureLog,
@@ -23,6 +24,7 @@ import {
   listBookingNotificationItems,
   listBookingNotificationParticipants,
   NotificationError,
+  NotificationIdempotencyConflictError,
   paginate,
   renderNotificationTemplate,
   resolveReminderRecipient,
@@ -146,6 +148,33 @@ export async function sendNotification(
   dispatcher: NotificationService,
   input: SendNotificationInput,
 ) {
+  const idempotencyFingerprint = input.idempotencyKey
+    ? `sha256:${await sha256({ ...input, idempotencyKey: null })}`
+    : null
+  if (input.idempotencyKey) {
+    const replay = await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${`notifications.send:${input.idempotencyKey}`}))`,
+      )
+      const [request] = await tx
+        .select()
+        .from(notificationDeliveryRequests)
+        .where(eq(notificationDeliveryRequests.idempotencyKey, input.idempotencyKey))
+        .limit(1)
+      if (!request) return null
+      if (request.requestFingerprint !== idempotencyFingerprint) {
+        throw new NotificationIdempotencyConflictError()
+      }
+      const [delivery] = await tx
+        .select()
+        .from(notificationDeliveries)
+        .where(eq(notificationDeliveries.id, request.deliveryId))
+        .limit(1)
+      if (!delivery) throw new NotificationError("Idempotent notification lost its delivery")
+      return delivery
+    })
+    if (replay) return replay
+  }
   let template = null
   if (input.templateId) {
     template = await getTemplateById(db, input.templateId)
@@ -186,46 +215,83 @@ export async function sendNotification(
     templateFrom: template?.fromAddress,
   })
 
-  const [pending] = await db
-    .insert(notificationDeliveries)
-    .values({
-      templateId: template?.id ?? null,
-      templateSlug: template?.slug ?? input.templateSlug ?? null,
-      targetType: input.targetType,
-      targetId: input.targetId ?? null,
-      personId: input.personId ?? null,
-      organizationId: input.organizationId ?? null,
-      bookingId: input.bookingId ?? null,
-      invoiceId: input.invoiceId ?? null,
-      paymentSessionId: input.paymentSessionId ?? null,
-      channel,
-      provider,
-      providerMessageId: null,
-      status: "pending",
-      toAddress: input.to,
-      fromAddress,
-      subject: subject ?? null,
-      htmlBody: html ?? null,
-      textBody: text ?? null,
-      payloadData: data,
-      metadata:
-        (input.metadata ?? null) || attachmentSummary.length > 0
-          ? {
-              ...(input.metadata ?? {}),
-              attachmentCount: attachmentSummary.length,
-              attachments: attachmentSummary,
-            }
-          : null,
-      errorMessage: null,
-      scheduledFor: toTimestamp(input.scheduledFor),
-      sentAt: null,
-      failedAt: null,
-    })
-    .returning()
+  const pendingValues: typeof notificationDeliveries.$inferInsert = {
+    templateId: template?.id ?? null,
+    templateSlug: template?.slug ?? input.templateSlug ?? null,
+    targetType: input.targetType,
+    targetId: input.targetId ?? null,
+    personId: input.personId ?? null,
+    organizationId: input.organizationId ?? null,
+    bookingId: input.bookingId ?? null,
+    invoiceId: input.invoiceId ?? null,
+    paymentSessionId: input.paymentSessionId ?? null,
+    channel,
+    provider,
+    providerMessageId: null,
+    status: "pending",
+    toAddress: input.to,
+    fromAddress,
+    subject: subject ?? null,
+    htmlBody: html ?? null,
+    textBody: text ?? null,
+    payloadData: data,
+    metadata:
+      (input.metadata ?? null) || attachmentSummary.length > 0
+        ? {
+            ...(input.metadata ?? {}),
+            attachmentCount: attachmentSummary.length,
+            attachments: attachmentSummary,
+          }
+        : null,
+    errorMessage: null,
+    scheduledFor: toTimestamp(input.scheduledFor),
+    sentAt: null,
+    failedAt: null,
+  }
+
+  const prepared = input.idempotencyKey
+    ? await db.transaction(async (tx) => {
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${`notifications.send:${input.idempotencyKey}`}))`,
+        )
+        const [existingRequest] = await tx
+          .select()
+          .from(notificationDeliveryRequests)
+          .where(eq(notificationDeliveryRequests.idempotencyKey, input.idempotencyKey))
+          .limit(1)
+        if (existingRequest) {
+          if (existingRequest.requestFingerprint !== idempotencyFingerprint) {
+            throw new NotificationIdempotencyConflictError()
+          }
+          const [existing] = await tx
+            .select()
+            .from(notificationDeliveries)
+            .where(eq(notificationDeliveries.id, existingRequest.deliveryId))
+            .limit(1)
+          if (!existing) throw new NotificationError("Idempotent notification lost its delivery")
+          return { row: existing, fresh: false }
+        }
+        const [created] = await tx.insert(notificationDeliveries).values(pendingValues).returning()
+        if (created) {
+          await tx.insert(notificationDeliveryRequests).values({
+            idempotencyKey: input.idempotencyKey,
+            requestFingerprint: idempotencyFingerprint!,
+            deliveryId: created.id,
+          })
+        }
+        return { row: created, fresh: true }
+      })
+    : {
+        row: (await db.insert(notificationDeliveries).values(pendingValues).returning())[0],
+        fresh: true,
+      }
+  const pending = prepared.row
 
   if (!pending) {
     throw new NotificationError("Failed to create notification delivery")
   }
+
+  if (!prepared.fresh) return pending
 
   try {
     const result =

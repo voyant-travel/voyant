@@ -1,5 +1,6 @@
 import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront/runtime-port"
+import { quotesNotificationsRuntimePort } from "@voyant-travel/quotes/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
@@ -27,6 +28,7 @@ describe("notifications deployment manifest", () => {
           { id: storefrontVerificationRuntimePort.id },
           { id: financeNotificationsRuntimePort.id },
           { id: "notifications.runtime" },
+          { id: quotesNotificationsRuntimePort.id },
         ],
       },
       runtimePorts: [{ id: "notifications.runtime" }],

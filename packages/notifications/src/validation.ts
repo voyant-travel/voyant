@@ -375,6 +375,7 @@ export const sendInvoiceNotificationSchema = transportNotificationCoreSchema.ref
 
 export const sendNotificationSchema = z
   .object({
+    idempotencyKey: z.string().trim().min(8).max(255).optional(),
     templateId: z.string().optional().nullable(),
     templateSlug: z.string().optional().nullable(),
     channel: notificationChannelSchema.optional(),

@@ -13,6 +13,7 @@ import {
   quoteSchema,
   quoteVersionSchema,
 } from "./routes/openapi-schemas.js"
+import { snapshotAndSendQuoteInputSchema } from "./service/quote-delivery.js"
 import { quoteListQuerySchema, sendQuoteVersionSchema } from "./validation.js"
 
 const OWNER = "@voyant-travel/quotes"
@@ -36,13 +37,27 @@ export interface QuotesToolServices {
   declineQuoteVersion(quoteVersionId: string): Promise<unknown>
 }
 
-export type QuotesToolContext = ToolContext & { quotes?: QuotesToolServices }
+export interface QuoteDeliveryToolServices {
+  snapshotAndSendQuote(input: z.infer<typeof snapshotAndSendQuoteInputSchema>): Promise<unknown>
+}
+
+export type QuotesToolContext = ToolContext & {
+  quotes?: QuotesToolServices
+  quoteDelivery?: QuoteDeliveryToolServices
+}
 
 function quotes(ctx: QuotesToolContext): QuotesToolServices {
   if (ctx.actor !== "staff" || ctx.audience !== "staff") {
     throw new ToolError("Quote lifecycle Tools require a staff grant.", "AUTHORIZATION_DENIED")
   }
   return requireService(ctx.quotes, "quotes")
+}
+
+function quoteDelivery(ctx: QuotesToolContext): QuoteDeliveryToolServices {
+  if (ctx.actor !== "staff" || ctx.audience !== "staff") {
+    throw new ToolError("Quote delivery Tools require a staff grant.", "AUTHORIZATION_DENIED")
+  }
+  return requireService(ctx.quoteDelivery, "quoteDelivery")
 }
 
 const readMetadata = {
@@ -62,6 +77,22 @@ const quoteWriteRisk = {
   confirmationRequired: true,
   sideEffects: ["data-write"] as const,
 }
+
+const quoteProposalDeliverySchema = z.object({
+  id: z.string(),
+  status: z.enum(["pending", "sent", "failed", "cancelled"]),
+  channel: z.enum(["email", "sms"]),
+  provider: z.string(),
+  providerMessageId: z.string().nullable(),
+  toAddress: z.string(),
+})
+
+export const snapshotAndSendQuoteOutputSchema = z.object({
+  quoteVersion: quoteVersionSchema,
+  proposalUrl: z.string().min(1),
+  delivery: quoteProposalDeliverySchema,
+  reused: z.boolean(),
+})
 
 export const listQuotesTool = defineTool({
   ...readMetadata,
@@ -133,6 +164,37 @@ export const sendQuoteVersionTool = defineTool({
   },
 })
 
+export const snapshotAndSendQuoteTool = defineTool({
+  owner: OWNER,
+  capabilityId: `${OWNER}#proposal-extension.tool.snapshot-and-send-quote`,
+  capabilityVersion: VERSION,
+  name: "snapshot_and_send_quote",
+  aliases: ["quote_snapshot_send"],
+  description:
+    "Atomically prepare a new proposal snapshot, deliver its public link through a vetted " +
+    "notification template, and mark that exact version sent. Exact retries require the same " +
+    "idempotency key and command.",
+  inputSchema: snapshotAndSendQuoteInputSchema,
+  outputSchema: snapshotAndSendQuoteOutputSchema,
+  requiredScopes: ["quotes:write", "notifications:send"],
+  audience: STAFF_AUDIENCE,
+  tier: "destructive",
+  riskPolicy: {
+    destructive: true,
+    reversible: false,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write", "email", "sms"],
+  },
+  annotations: { idempotentHint: true },
+  async handler(input, ctx: QuotesToolContext) {
+    return parseJsonResult(
+      snapshotAndSendQuoteOutputSchema,
+      await quoteDelivery(ctx).snapshotAndSendQuote(input),
+    )
+  },
+})
+
 export const acceptQuoteVersionTool = defineTool({
   owner: OWNER,
   capabilityId: `${OWNER}#tool.accept-quote-version`,
@@ -183,6 +245,7 @@ export const quotesTools = [
   getQuoteTool,
   snapshotQuoteVersionTool,
   sendQuoteVersionTool,
+  snapshotAndSendQuoteTool,
   acceptQuoteVersionTool,
   declineQuoteVersionTool,
 ] as const

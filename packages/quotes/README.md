@@ -33,7 +33,8 @@ const app = createApp({
 | `./validation` | Quote lifecycle validation schemas |
 | `./routes` | Hono routes for pipelines, stages, quotes, and quote versions |
 | `./booking-extension` | Booking quote details extension |
-| `./tools` | Typed quote reads and guarded proposal snapshot/decision lifecycle Tools |
+| `./runtime-port` | Narrow Notifications delivery contract used by the proposal composer |
+| `./tools` | Typed quote reads and guarded proposal snapshot/delivery/decision Tools |
 
 ## Agent Tools
 
@@ -44,10 +45,16 @@ records. Snapshot, send, accept, and decline require confirmation and action-led
 acceptance additionally requires graph approval because it wins the quote and closes competing
 versions.
 
+The proposal extension additionally owns `snapshot_and_send_quote`: one confirmation- and
+approval-gated command snapshots the current quote, renders a public proposal link through a
+vetted Notifications template, delivers it, then marks that exact version sent. A required
+idempotency key fingerprints the complete command; exact retries reuse both the prepared version
+and the notification delivery, while command drift fails closed.
+
 The compatibility aliases `quote_version_snapshot`, `quote_version_send`,
 `quote_version_accept`, and `quote_version_decline` preserve the existing hosted invocation names
-while consumers migrate to stable capability IDs. Sending records proposal lifecycle state only;
-delivery remains owned by the notification/proposal flow.
+while consumers migrate to stable capability IDs. `send_quote_version` remains the state-only
+primitive; `snapshot_and_send_quote` is the composed customer-delivery flow.
 
 ## License
 

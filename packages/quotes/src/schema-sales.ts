@@ -228,6 +228,28 @@ export const quoteVersionLines = pgTable(
   ],
 )
 
+/** Durable prepare record for the exactly-idempotent snapshot-and-deliver workflow. */
+export const quoteProposalDeliveryRequests = pgTable(
+  "quote_proposal_delivery_requests",
+  {
+    idempotencyKey: text("idempotency_key").primaryKey(),
+    requestFingerprint: text("request_fingerprint").notNull(),
+    quoteId: typeIdRef("quote_id")
+      .notNull()
+      .references(() => quotes.id, { onDelete: "cascade" }),
+    quoteVersionId: typeIdRef("quote_version_id")
+      .notNull()
+      .references(() => quoteVersions.id, { onDelete: "cascade" }),
+    proposalUrl: text("proposal_url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("idx_quote_proposal_delivery_requests_quote").on(table.quoteId, table.createdAt),
+    uniqueIndex("uidx_quote_proposal_delivery_requests_version").on(table.quoteVersionId),
+  ],
+)
+
 /**
  * Quote-level media (images / videos / documents) shown on the client
  * proposal. Attached to the quote so it carries across proposal versions.

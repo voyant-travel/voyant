@@ -6,6 +6,7 @@ Notifications module for Voyant. It includes:
 - first-party providers for local development and Voyant Cloud (email + SMS)
 - database-backed notification templates
 - database-backed delivery logs
+- exact-idempotent delivery attempts with command-drift detection
 - notification reminder rules and reminder runs
 - finance-aware send flows for invoices and payment sessions
 - booking document bundle/list + send flows for contract and invoice/proforma
@@ -13,6 +14,11 @@ Notifications module for Voyant. It includes:
 - routes for template management, delivery listing, reminder management, and sending
 
 CRM communication history should remain a business-facing log. This module owns transport templates, delivery attempts, provider message ids, and reminder-oriented operational sends.
+
+Package composers can depend on narrow delivery ports without reading or writing Notifications
+tables. The Quotes proposal composer uses `quotes.notifications.runtime`; Notifications implements
+that port with vetted-template delivery and a durable unique idempotency key. Replays return the
+original delivery, including failed or in-flight attempts, so retries never create a second send.
 
 ## Install
 
