@@ -17,6 +17,7 @@ export {
   type MigrationStatement,
   type PlannedMigration,
   planMigrations,
+  VOYANT_MIGRATION_JOURNAL_LINEAGE,
 } from "./collector.js"
 export { type Cutline, loadCutline } from "./cutline.js"
 export {

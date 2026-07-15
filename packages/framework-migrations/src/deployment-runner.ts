@@ -16,7 +16,7 @@
  */
 
 import type { MigrationClient, MigrationSource } from "./collector.js"
-import { applyMigrations, planMigrations } from "./collector.js"
+import { applyMigrations, planMigrations, VOYANT_MIGRATION_JOURNAL_LINEAGE } from "./collector.js"
 import type { Cutline } from "./cutline.js"
 
 export interface RunResult {
@@ -48,15 +48,12 @@ async function ledgerRowCount(
  * `drizzle.__drizzle_migrations` table. Else FRESH.
  */
 export async function detectExisting(client: MigrationClient): Promise<boolean> {
-  const frameworkRows = await ledgerRowCount(
-    client,
-    `"drizzle"."_voyant_migrations"`,
-    `"source" = 'framework'`,
-  )
+  const ledger = `"${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema}"."${VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable}"`
+  const frameworkRows = await ledgerRowCount(client, ledger, `"source" = 'framework'`)
   if (frameworkRows > 0) return true
   const graphSchemaRows = await ledgerRowCount(
     client,
-    `"drizzle"."_voyant_migrations"`,
+    ledger,
     `"source" LIKE 'schema:%#migrations'`,
   )
   if (graphSchemaRows > 0) return true

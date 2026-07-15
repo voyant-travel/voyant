@@ -13,6 +13,15 @@
 
 import { createHash } from "node:crypto"
 
+/** Stable journal identity shared by managed Cloud and self-hosted Node deployments. */
+export const VOYANT_MIGRATION_JOURNAL_LINEAGE = {
+  schemaVersion: "voyant.migration-journal-lineage.v1",
+  ledgerSchema: "drizzle",
+  ledgerTable: "_voyant_migrations",
+  identityColumns: ["source", "tag"],
+  contentHashColumn: "content_hash",
+} as const
+
 /** One migration: a tag unique within its source + raw SQL. */
 export interface MigrationStatement {
   /** Unique-within-source tag, e.g. `0001_init`. */
@@ -198,8 +207,8 @@ export function planMigrations(sources: MigrationSource[]): PlannedMigration[] {
 }
 
 function qualifiedLedger(options?: ApplyMigrationsOptions): string {
-  const schema = options?.ledgerSchema ?? "drizzle"
-  const table = options?.ledgerTable ?? "_voyant_migrations"
+  const schema = options?.ledgerSchema ?? VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema
+  const table = options?.ledgerTable ?? VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerTable
   return `"${schema}"."${table}"`
 }
 
@@ -209,7 +218,7 @@ async function ensureLedger(
   options?: ApplyMigrationsOptions,
 ): Promise<string> {
   const ledger = qualifiedLedger(options)
-  const schema = options?.ledgerSchema ?? "drizzle"
+  const schema = options?.ledgerSchema ?? VOYANT_MIGRATION_JOURNAL_LINEAGE.ledgerSchema
   await client.query(`CREATE SCHEMA IF NOT EXISTS "${schema}"`)
   await client.query(
     `CREATE TABLE IF NOT EXISTS ${ledger} (
