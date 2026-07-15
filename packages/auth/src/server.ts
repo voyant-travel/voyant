@@ -14,6 +14,11 @@ import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
 import type { AnyPgTable } from "drizzle-orm/pg-core"
 
+import {
+  createLocalMemberAccessPlugin,
+  isLocalMemberDeactivated,
+  isLocalMemberEmailDeactivated,
+} from "./local-member-access.js"
 import { expandTrustedOrigins, getTrustedOrigins } from "./trusted-origins.js"
 import { isFirstAuthUser, provisionCurrentUserProfile } from "./workspace.js"
 
@@ -61,7 +66,11 @@ type ResolvedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]
   changeEmail: ResolvedBetterAuthChangeEmail<UserOptions>
 }
 
-type VoyantBetterAuthPlugins = [ReturnType<typeof apiKey>, ReturnType<typeof emailOTP>]
+type VoyantBetterAuthPlugins = [
+  ReturnType<typeof apiKey>,
+  ReturnType<typeof emailOTP>,
+  ReturnType<typeof createLocalMemberAccessPlugin>,
+]
 
 type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
   Plugins extends BetterAuthPlugin[]
@@ -365,6 +374,10 @@ export function createBetterAuth<
         changeEmail: {
           enabled: true,
         },
+      }),
+      createLocalMemberAccessPlugin({
+        isEmailDeactivated: (email) => isLocalMemberEmailDeactivated(db, email),
+        isUserDeactivated: (userId) => isLocalMemberDeactivated(db, userId),
       }),
       ...extraPlugins,
     ] as ResolvedBetterAuthPlugins<Plugins>,

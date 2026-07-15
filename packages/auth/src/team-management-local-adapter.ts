@@ -8,9 +8,10 @@ import {
   userProfilesTable,
 } from "@voyant-travel/db/schema/iam"
 import { scopesForRole } from "@voyant-travel/types/member-roles"
-import { desc, eq } from "drizzle-orm"
+import { desc, eq, sql } from "drizzle-orm"
 
 import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
+import { isDeactivatedProviderId, localProviderIdForStatus } from "./local-member-access.js"
 import { type TeamManagementAdapter, TeamManagementError } from "./team-management-policy.js"
 import type {
   CreatedTeamInvitationDto,
@@ -30,21 +31,21 @@ const LOCAL_ROLES: TeamRoleDto[] = [
 ]
 
 const ROLE_LEVELS: Record<string, number> = { owner: 40, admin: 30, editor: 20, viewer: 10 }
-const DEACTIVATED_PROVIDER_PREFIX = "voyant-deactivated:"
 
-export function localProviderIdForStatus(
-  providerId: string,
-  status: TeamMemberDto["status"],
-): string {
-  if (status === "deactivated") {
-    return providerId.startsWith(DEACTIVATED_PROVIDER_PREFIX)
-      ? providerId
-      : `${DEACTIVATED_PROVIDER_PREFIX}${providerId}`
-  }
-  return providerId.startsWith(DEACTIVATED_PROVIDER_PREFIX)
-    ? providerId.slice(DEACTIVATED_PROVIDER_PREFIX.length)
-    : providerId
+type TransactionDb<TDb> = TDb extends {
+  transaction<TResult>(
+    callback: (transaction: infer TTransaction) => Promise<TResult>,
+  ): Promise<TResult>
 }
+  ? TTransaction
+  : never
+
+type LocalTeamDb =
+  | TeamManagementRequestContext["db"]
+  | TransactionDb<TeamManagementRequestContext["db"]>
+type LocalTeamRequestContext = Omit<TeamManagementRequestContext, "db"> & { db: LocalTeamDb }
+
+export { localProviderIdForStatus } from "./local-member-access.js"
 
 function roleName(roleId: string): string {
   return LOCAL_ROLES.find((role) => role.id === roleId)?.name ?? roleId
@@ -97,7 +98,7 @@ async function sha256Hex(input: string): Promise<string> {
     .join("")
 }
 
-async function listLocalMembers(context: TeamManagementRequestContext): Promise<TeamMemberDto[]> {
+async function listLocalMembers(context: LocalTeamRequestContext): Promise<TeamMemberDto[]> {
   const [rows, accounts] = await Promise.all([
     context.db
       .select({
@@ -119,7 +120,7 @@ async function listLocalMembers(context: TeamManagementRequestContext): Promise<
   ])
   const activeUserIds = new Set(
     accounts
-      .filter((account) => !account.providerId.startsWith(DEACTIVATED_PROVIDER_PREFIX))
+      .filter((account) => !isDeactivatedProviderId(account.providerId))
       .map((account) => account.userId),
   )
 
@@ -136,6 +137,39 @@ async function listLocalMembers(context: TeamManagementRequestContext): Promise<
       joinedAt: row.createdAt?.toISOString() ?? null,
       lastActivityAt: row.lastActiveAt?.toISOString() ?? null,
     }
+  })
+}
+
+function memberOrThrow(members: TeamMemberDto[], memberId: string): TeamMemberDto {
+  const member = members.find((candidate) => candidate.id === memberId)
+  if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
+  return member
+}
+
+function assertActiveOwnerRemains(members: TeamMemberDto[], target: TeamMemberDto): void {
+  if (target.status !== "active" || target.roleId !== "owner") return
+  const activeOwnerCount = members.filter(
+    (member) => member.status === "active" && member.roleId === "owner",
+  ).length
+  if (activeOwnerCount <= 1) {
+    throw new TeamManagementError(
+      "last_owner",
+      "The last active owner cannot be demoted or deactivated.",
+      409,
+    )
+  }
+}
+
+async function withLockedLocalTeam<T>(
+  context: TeamManagementRequestContext,
+  operation: (transactionContext: LocalTeamRequestContext) => Promise<T>,
+): Promise<T> {
+  return context.db.transaction(async (transaction) => {
+    // agent-quality: raw-sql reviewed -- owner: auth; table identifiers are static Drizzle schema objects.
+    await transaction.execute(
+      sql`SELECT ${authUser.id} FROM ${authUser} ORDER BY ${authUser.id} FOR UPDATE`,
+    )
+    return operation({ ...context, db: transaction })
   })
 }
 
@@ -243,66 +277,65 @@ export function createLocalTeamManagementAdapter(
       await context.db.delete(userInvitationsTable).where(eq(userInvitationsTable.id, invitationId))
     },
     async updateMemberRole(context, memberId, roleId) {
-      await context.db
-        .update(userProfilesTable)
-        .set({
-          isSuperAdmin: roleId === "owner",
-          permissions: permissionsForRole(roleId),
-          updatedAt: new Date(),
-        })
-        .where(eq(userProfilesTable.id, memberId))
-      const member = (await listLocalMembers(context)).find(
-        (candidate) => candidate.id === memberId,
-      )
-      if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
-      return member
+      return withLockedLocalTeam(context, async (transactionContext) => {
+        const members = await listLocalMembers(transactionContext)
+        const target = memberOrThrow(members, memberId)
+        if (roleId !== "owner") assertActiveOwnerRemains(members, target)
+
+        await transactionContext.db
+          .update(userProfilesTable)
+          .set({
+            isSuperAdmin: roleId === "owner",
+            permissions: permissionsForRole(roleId),
+            updatedAt: new Date(),
+          })
+          .where(eq(userProfilesTable.id, memberId))
+        return memberOrThrow(await listLocalMembers(transactionContext), memberId)
+      })
     },
     async deactivateMember(context, memberId) {
-      await context.db.delete(authSession).where(eq(authSession.userId, memberId))
-      await context.db.delete(apikeyTable).where(eq(apikeyTable.referenceId, memberId))
-      const accounts = await context.db
-        .select({ id: authAccount.id, providerId: authAccount.providerId })
-        .from(authAccount)
-        .where(eq(authAccount.userId, memberId))
-      await Promise.all(
-        accounts.map((account) =>
-          context.db
+      return withLockedLocalTeam(context, async (transactionContext) => {
+        const members = await listLocalMembers(transactionContext)
+        assertActiveOwnerRemains(members, memberOrThrow(members, memberId))
+
+        await transactionContext.db.delete(authSession).where(eq(authSession.userId, memberId))
+        await transactionContext.db.delete(apikeyTable).where(eq(apikeyTable.referenceId, memberId))
+        const accounts = await transactionContext.db
+          .select({ id: authAccount.id, providerId: authAccount.providerId })
+          .from(authAccount)
+          .where(eq(authAccount.userId, memberId))
+        for (const account of accounts) {
+          await transactionContext.db
             .update(authAccount)
             .set({ providerId: localProviderIdForStatus(account.providerId, "deactivated") })
-            .where(eq(authAccount.id, account.id)),
-        ),
-      )
-      const member = (await listLocalMembers(context)).find(
-        (candidate) => candidate.id === memberId,
-      )
-      if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
-      return member
+            .where(eq(authAccount.id, account.id))
+        }
+        return memberOrThrow(await listLocalMembers(transactionContext), memberId)
+      })
     },
     async activateMember(context, memberId) {
-      const accounts = await context.db
-        .select({ id: authAccount.id, providerId: authAccount.providerId })
-        .from(authAccount)
-        .where(eq(authAccount.userId, memberId))
-      await Promise.all(
-        accounts.map((account) =>
-          context.db
+      return withLockedLocalTeam(context, async (transactionContext) => {
+        memberOrThrow(await listLocalMembers(transactionContext), memberId)
+        const accounts = await transactionContext.db
+          .select({ id: authAccount.id, providerId: authAccount.providerId })
+          .from(authAccount)
+          .where(eq(authAccount.userId, memberId))
+        for (const account of accounts) {
+          await transactionContext.db
             .update(authAccount)
             .set({ providerId: localProviderIdForStatus(account.providerId, "active") })
-            .where(eq(authAccount.id, account.id)),
-        ),
-      )
-      const member = (await listLocalMembers(context)).find(
-        (candidate) => candidate.id === memberId,
-      )
-      if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
-      if (member.status !== "active") {
-        throw new TeamManagementError(
-          "activation_unavailable",
-          "This local member has no sign-in account to reactivate.",
-          409,
-        )
-      }
-      return member
+            .where(eq(authAccount.id, account.id))
+        }
+        const member = memberOrThrow(await listLocalMembers(transactionContext), memberId)
+        if (member.status !== "active") {
+          throw new TeamManagementError(
+            "activation_unavailable",
+            "This local member has no sign-in account to reactivate.",
+            409,
+          )
+        }
+        return member
+      })
     },
     roleLevel(roleId) {
       return ROLE_LEVELS[roleId] ?? 0
