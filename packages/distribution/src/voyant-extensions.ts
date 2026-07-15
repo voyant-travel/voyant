@@ -1,8 +1,8 @@
-import { defineExtension, requirePort } from "@voyant-travel/core/project"
+import { requirePort } from "@voyant-travel/core/project"
 
 import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
 
-export const distributionBookingVoyantPlugin = defineExtension({
+export const distributionBookingVoyantExtensionDefinition = {
   id: "@voyant-travel/distribution#extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution",
@@ -19,9 +19,9 @@ export const distributionBookingVoyantPlugin = defineExtension({
     },
   ],
   meta: { ownership: "package" },
-})
+} as const
 
-export const distributionChannelPushVoyantPlugin = defineExtension({
+export const distributionChannelPushVoyantExtensionDefinition = {
   id: "@voyant-travel/distribution#channel-push-extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution.channel-push-extension",
@@ -169,4 +169,4 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
     },
   ],
   meta: { ownership: "package" },
-})
+} as const

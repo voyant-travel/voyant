@@ -40,7 +40,7 @@ describe("cruise tools", () => {
       destructive: false,
       reversible: false,
       confirmationRequired: true,
-      sideEffects: ["data-write", "external-call"],
+      sideEffects: ["data-write", "external-booking"],
     })
     for (const tool of cruisesTools.filter(
       ({ requiredScopes }) => requiredScopes[0] === "cruises:write" && requiredScopes.length === 1,

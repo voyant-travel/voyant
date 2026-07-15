@@ -46,7 +46,7 @@ const COMMIT_RISK = {
   reversible: false,
   confirmationRequired: true,
   dryRunSupported: false,
-  sideEffects: ["data-write", "external-call"],
+  sideEffects: ["data-write", "external-booking"],
 } as const
 const sourceRefSchema = z
   .object({ externalId: z.string().min(1), connectionId: z.string().optional() })

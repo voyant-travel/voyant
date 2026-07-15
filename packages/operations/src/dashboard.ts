@@ -1,11 +1,10 @@
 export {
-  getOperatorDashboardSummaryTool,
   type OperatorDashboardToolContext,
-  operationsDashboardTools,
   operatorDashboardSummaryInputSchema,
   operatorDashboardSummaryOutputSchema,
   resolveOperatorDashboardWindow,
 } from "./dashboard-tool.js"
+export { getOperatorDashboardSummaryTool, operationsDashboardTools } from "./tools.js"
 export {
   operationsDashboardVoyantModule,
   operationsDashboardVoyantModule as default,

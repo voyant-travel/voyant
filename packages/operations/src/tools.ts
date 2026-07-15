@@ -11,16 +11,15 @@ import {
   availabilitySlotStatusSchema,
   availabilityStartTimeListQuerySchema,
 } from "./availability/validation.js"
+import { getOperatorDashboardSummaryDefinition } from "./dashboard-tool.js"
 import type { OperationsToolContext, OperationsToolServices } from "./tool-services.js"
 
 export {
-  getOperatorDashboardSummaryTool,
   type OperatorDashboardBookingsServices,
   type OperatorDashboardDistributionServices,
   type OperatorDashboardFinanceServices,
   type OperatorDashboardInventoryServices,
   type OperatorDashboardToolContext,
-  operationsDashboardTools,
   operatorDashboardSummaryInputSchema,
   operatorDashboardSummaryOutputSchema,
   resolveOperatorDashboardWindow,
@@ -31,6 +30,11 @@ const OWNER = "@voyant-travel/operations"
 const VERSION = "v1"
 const REQUIRED_SCOPES = ["operations:read"] as const
 const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
+
+export const getOperatorDashboardSummaryTool = defineTool(
+  getOperatorDashboardSummaryDefinition,
+)
+export const operationsDashboardTools = [getOperatorDashboardSummaryTool] as const
 
 const idArgsSchema = z.object({ id: z.string().min(1) })
 const zonedDateTimeSchema = z.string().datetime({ offset: true })
