@@ -84,8 +84,16 @@ assert(documentCount > 0, "expected package-owned OpenAPI documents")
 const manifestClaims = readManifestOpenApiClaims(
   readdirSync(path.join(root, "packages"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(root, "packages", entry.name, "src/voyant.ts"))
-    .filter(existsSync),
+    .flatMap((entry) => {
+      const sourceRoot = path.join(root, "packages", entry.name, "src")
+      if (!existsSync(sourceRoot)) return []
+      return readdirSync(sourceRoot, { withFileTypes: true })
+        .filter(
+          (sourceEntry) =>
+            sourceEntry.isFile() && /^voyant(?:-[a-z0-9-]+)?\.ts$/.test(sourceEntry.name),
+        )
+        .map((sourceEntry) => path.join(sourceRoot, sourceEntry.name))
+    }),
 )
 for (const document of manifestClaims) {
   assert(artifacts.has(document), `selected graph manifest document ${document} has no artifact`)
