@@ -26,7 +26,7 @@ const depositRuleSchema = z.object({
   amountCents: z.number().int().min(0).optional(),
 })
 
-const paymentPolicySchema = z.object({
+export const paymentPolicySchema = z.object({
   deposit: depositRuleSchema,
   minDaysBeforeDepartureForDeposit: z.number().int().min(0),
   balanceDueDaysBeforeDeparture: z.number().int().min(0),

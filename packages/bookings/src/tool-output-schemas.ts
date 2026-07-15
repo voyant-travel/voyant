@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { bookingCustomerPaymentPolicySchema } from "@voyant-travel/bookings-contracts/validation"
+
 import { bookingSourceTypeSchema, bookingStatusSchema } from "./validation.js"
 
 const isoTimestamp = z.string()
@@ -40,7 +42,7 @@ export const bookingToolSchema = z.object({
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
   internalNotes: z.string().nullable(),
-  customerPaymentPolicy: z.unknown().nullable(),
+  customerPaymentPolicy: bookingCustomerPaymentPolicySchema.nullable(),
   priceOverride: jsonObject.nullable(),
   customFields: jsonObject,
   holdExpiresAt: isoTimestamp.nullable(),

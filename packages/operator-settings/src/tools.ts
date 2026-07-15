@@ -8,7 +8,7 @@
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
 import { z } from "zod"
 
-import { updateOperatorSettingsSchema } from "./service.js"
+import { paymentPolicySchema, updateOperatorSettingsSchema } from "./service.js"
 
 const nullableText = z.string().nullable()
 
@@ -30,7 +30,7 @@ export const operatorSettingsValueSchema = z.object({
   iban: nullableText,
   bank: nullableText,
   notes: nullableText,
-  customerPaymentPolicy: z.unknown().nullable(),
+  customerPaymentPolicy: paymentPolicySchema.nullable(),
   bookingCheckoutUrlTemplate: nullableText,
   invoicePayUrlTemplate: nullableText,
   createdAt: z.string().datetime().optional(),

@@ -1,8 +1,11 @@
 import { z } from "zod"
 
 import {
+  tripComponentPricingSnapshotSchema,
+  tripComponentTaxLineSchema,
   tripComponentKindSchema,
   tripComponentStatusSchema,
+  tripEnvelopePricingSnapshotSchema,
   tripEnvelopeStatusSchema,
 } from "./validation.js"
 
@@ -20,7 +23,7 @@ export const tripEnvelopeToolSchema = z.object({
   aggregateSubtotalAmountCents: z.number().int().nullable(),
   aggregateTaxAmountCents: z.number().int().nullable(),
   aggregateTotalAmountCents: z.number().int().nullable(),
-  aggregatePricingSnapshot: z.unknown().nullable(),
+  aggregatePricingSnapshot: tripEnvelopePricingSnapshotSchema.nullable(),
   currentPriceExpiresAt: isoTimestamp.nullable(),
   bookingGroupId: z.string().nullable(),
   orderId: z.string().nullable(),
@@ -61,9 +64,19 @@ export const tripComponentToolSchema = z.object({
   componentSubtotalAmountCents: z.number().int().nullable(),
   componentTaxAmountCents: z.number().int().nullable(),
   componentTotalAmountCents: z.number().int().nullable(),
-  pricingSnapshot: z.unknown().nullable(),
-  taxLines: z.array(z.unknown()).nullable(),
-  cancellationSnapshot: z.unknown().nullable(),
+  pricingSnapshot: tripComponentPricingSnapshotSchema.nullable(),
+  taxLines: z.array(tripComponentTaxLineSchema).nullable(),
+  cancellationSnapshot: z
+    .object({
+      action: z.string(),
+      refundAmountCents: z.number().int(),
+      refundCurrency: z.string().nullable(),
+      penaltyAmountCents: z.number().int(),
+      supplierCancellationDeadline: z.string().nullable(),
+      policySummary: z.string().nullable(),
+      snapshot: jsonObject.nullable(),
+    })
+    .nullable(),
   holdToken: z.string().nullable(),
   holdExpiresAt: isoTimestamp.nullable(),
   priceExpiresAt: isoTimestamp.nullable(),
