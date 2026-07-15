@@ -253,6 +253,7 @@ describe("distribution deployment manifests", () => {
         providerSelections: {},
         accessCatalog: { resources: [], presets: [] },
         references: [],
+        setupSteps: [],
         tools: [],
       },
       runtimePorts: {},

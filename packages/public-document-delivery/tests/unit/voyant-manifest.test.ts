@@ -51,6 +51,7 @@ describe("public document delivery deployment manifest", () => {
         providerSelections: {},
         accessCatalog: { resources: [], presets: [] },
         references: [],
+        setupSteps: [],
         tools: [],
       },
       runtimePorts: { [storageObjectRuntimePort.id]: storageResolver },

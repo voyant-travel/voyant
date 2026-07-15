@@ -74,6 +74,7 @@ describe("relationships deployment manifest", () => {
         providerSelections: {},
         accessCatalog: { resources: [], presets: [] },
         references: [],
+        setupSteps: [],
         tools: [],
       },
       runtimePorts: {},
