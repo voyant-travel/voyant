@@ -273,7 +273,8 @@ export function createSelectedInventoryAdminExtension({
 }
 
 function FirstProductSetupAction({ label }: AdminSetupStepActionProps) {
-  const href = useAdminHref("product.list", {})
+  const resolveHref = useAdminHref()
+  const href = resolveHref("product.list", {})
   return (
     <a href={href} className={buttonVariants()}>
       {label}
