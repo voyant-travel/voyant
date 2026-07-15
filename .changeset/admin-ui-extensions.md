@@ -1,5 +1,6 @@
 ---
 "@voyant-travel/admin": minor
+"@voyant-travel/admin-extension-sdk": minor
 ---
 
 Add the versioned admin UI-extension host: a public slot registry
