@@ -46,10 +46,27 @@ vi.mock("../../index.js", () => ({
   }),
 }))
 
+vi.mock("./product-option-price-rule-dialog.js", () => ({
+  OptionPriceRuleDialog: () => null,
+}))
+
+vi.mock("./product-option-pricing-grid.js", () => ({
+  OptionPricingGrid: () => null,
+}))
+
+vi.mock("./product-options-extra-price-rules.js", () => ({
+  ExtraPriceRulesPanel: () => null,
+}))
+
+vi.mock("./product-options-unit-price-matrix.js", () => ({
+  UnitPriceMatrix: () => null,
+}))
+
 import { type ProductDetailApi, ProductDetailHostProvider } from "./host.js"
 import { ProductChannelsSection } from "./product-detail-channel-section.js"
 import { type ProductData, ProductDetailForm } from "./product-detail-form.js"
 import { ActionMenu } from "./product-detail-section-shell.js"
+import { PricingPanel } from "./product-options-pricing-panel.js"
 import { ContentLanguageSwitcher } from "./product-translation-popover.js"
 
 const messages = resolveLocaleMessages<OperatorAdminMessages>({
@@ -97,14 +114,14 @@ afterEach(async () => {
   container.remove()
 })
 
-async function renderWithHost(children: ReactNode) {
+async function renderWithHost(children: ReactNode, hostApi: ProductDetailApi = api) {
   await act(async () => {
     root.render(
       <QueryClientProvider client={new QueryClient()}>
         <ProductDetailHostProvider
           value={{
             messages,
-            api,
+            api: hostApi,
             locale: "en",
             navigate: {
               toProducts: () => undefined,
@@ -207,5 +224,65 @@ describe("product detail accessibility", () => {
       const button = document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
       expect(button?.title).toBe(label)
     }
+  })
+
+  it("names the pricing panel's local action menu for an additional price rule", async () => {
+    const priceRule = {
+      id: "price_rule_2",
+      productId: "product_1",
+      optionId: "option_1",
+      priceCatalogId: "catalog_1",
+      priceScheduleId: null,
+      cancellationPolicyId: null,
+      name: "Flexible rate",
+      code: null,
+      description: null,
+      pricingMode: "per_person" as const,
+      baseSellAmountCents: 12500,
+      baseCostAmountCents: null,
+      minPerBooking: null,
+      maxPerBooking: null,
+      allPricingCategories: true,
+      isDefault: false,
+      active: true,
+      notes: null,
+    }
+    const pricingApi: ProductDetailApi = {
+      ...api,
+      get: async <T,>() =>
+        ({
+          data: [{ ...priceRule, id: "price_rule_1", name: "Default", isDefault: true }, priceRule],
+        }) as T,
+    }
+
+    await renderWithHost(
+      <PricingPanel
+        productId="product_1"
+        optionId="option_1"
+        optionName="Standard"
+        productCurrency="EUR"
+        layout="seats"
+      />,
+      pricingApi,
+    )
+
+    const advancedButton = Array.from(document.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes(messages.products.operations.pricingGrid.advancedToggle),
+    )
+    expect(advancedButton).toBeDefined()
+
+    await act(async () => {
+      advancedButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+      await vi.waitFor(() => {
+        expect(
+          document.querySelector('button[aria-label="Flexible rate: Edit / Delete"]'),
+        ).not.toBeNull()
+      })
+    })
+
+    const menu = document.querySelector<HTMLButtonElement>(
+      'button[aria-label="Flexible rate: Edit / Delete"]',
+    )
+    expect(menu?.title).toBe("Flexible rate: Edit / Delete")
   })
 })
