@@ -1,5 +1,63 @@
 # @voyant-travel/operator-standard
 
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [c1e37f2]
+- Updated dependencies [85bfe2c]
+- Updated dependencies [85bfe2c]
+  - @voyant-travel/admin@0.126.0
+  - @voyant-travel/finance@0.161.0
+  - @voyant-travel/action-ledger@0.109.1
+  - @voyant-travel/action-ledger-react@0.48.0
+  - @voyant-travel/admin-app@0.53.0
+  - @voyant-travel/admin-host@0.11.0
+  - @voyant-travel/auth-react@0.132.0
+  - @voyant-travel/bookings-react@0.161.0
+  - @voyant-travel/catalog-react@0.159.0
+  - @voyant-travel/commerce-react@0.43.0
+  - @voyant-travel/distribution-react@0.151.0
+  - @voyant-travel/event-catalog-react@0.4.0
+  - @voyant-travel/finance-react@0.161.0
+  - @voyant-travel/flights-react@0.161.0
+  - @voyant-travel/inventory-react@0.43.0
+  - @voyant-travel/legal-react@0.161.0
+  - @voyant-travel/mice-react@0.29.0
+  - @voyant-travel/navigation-preferences-react@0.4.0
+  - @voyant-travel/notifications-react@0.129.0
+  - @voyant-travel/operations-react@0.42.0
+  - @voyant-travel/operator-settings-react@0.14.0
+  - @voyant-travel/quotes-react@0.159.0
+  - @voyant-travel/relationships-react@0.161.0
+  - @voyant-travel/setup-react@0.4.0
+  - @voyant-travel/storefront-react@0.163.0
+  - @voyant-travel/trips-react@0.152.0
+  - @voyant-travel/identity-react@0.161.0
+  - @voyant-travel/cruises-react@0.160.0
+  - @voyant-travel/admin-react@0.126.0
+  - @voyant-travel/auth@0.132.0
+  - @voyant-travel/bookings@0.161.0
+  - @voyant-travel/catalog@0.159.0
+  - @voyant-travel/charters@0.159.0
+  - @voyant-travel/cruises@0.160.0
+  - @voyant-travel/distribution@0.151.0
+  - @voyant-travel/flights@0.161.0
+  - @voyant-travel/identity@0.161.0
+  - @voyant-travel/legal@0.161.0
+  - @voyant-travel/notifications@0.129.0
+  - @voyant-travel/navigation-preferences@0.4.0
+  - @voyant-travel/storefront@0.163.0
+  - @voyant-travel/trips@0.152.0
+  - @voyant-travel/accommodations@0.121.0
+  - @voyant-travel/commerce@0.36.1
+  - @voyant-travel/inventory@0.11.1
+  - @voyant-travel/operator-settings@0.4.1
+  - @voyant-travel/mice@0.17.0
+  - @voyant-travel/relationships@0.126.1
+  - @voyant-travel/operations@0.7.1
+  - @voyant-travel/quotes@0.129.1
+
 ## 0.6.1
 
 ### Patch Changes

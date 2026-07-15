@@ -1,5 +1,11 @@
 # @voyant-travel/hono
 
+## 0.127.2
+
+### Patch Changes
+
+- a1842a7: Default an omitted authenticated grant audience to its actor so internal API keys and custom auth resolvers reach audience-gated selected routes with a complete authorization context.
+
 ## 0.127.1
 
 ### Patch Changes
