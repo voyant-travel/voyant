@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { productsBookingExtension } from "./booking-extension.js"
 import { inventoryLinkable, productsCompatibilityLinkable } from "./linkables.js"
@@ -20,12 +20,12 @@ export const inventoryModule: Module = {
 }
 
 /**
- * Compatibility Hono module for the Inventory-owned Product runtime.
+ * Compatibility API module for the Inventory-owned Product runtime.
  *
  * Routes intentionally keep the existing `products` mount name so deployed
  * `/v1/admin/products` and `/v1/public/products` clients do not break.
  */
-export const inventoryHonoModule: HonoModule = {
+export const inventoryApiModule: ApiModule = {
   module: {
     name: "products",
     linkable: productsCompatibilityLinkable,

@@ -65,7 +65,7 @@ than merely *less manual*; ⑤ removes a latent ordering footgun.
 ### 1.1 The two-place registration trap (the main burn)
 
 Neither `Module`/`Extension` (`packages/core/src/module.ts`) nor
-`HonoModule`/`HonoExtension` (`packages/hono/src/module.ts`) has a `schema` field.
+`ApiModule`/`ApiExtension` (`packages/hono/src/module.ts`) has a `schema` field.
 `VoyantAppConfig` in `createApp` (`packages/hono/src/app.ts`) has no `schema`
 field either. So adding an extension means editing **two unrelated places**:
 
@@ -413,7 +413,7 @@ defer runtime derivation (the hard part) to last.
 
 ### Phase 5 — runtime derivation (the hard part) + deterministic ordering
 - Deriving `createApp({ modules, extensions })` from the manifest is **harder than
-  schema derivation**: many Hono modules require **template-specific factory
+  schema derivation**: many API modules require **template-specific factory
   options**, so this needs a carefully designed runtime manifest/registry, not a
   literal array swap. Treat as its own design pass; until then runtime stays
   hand-wired but is *validated* against the manifest by `doctor`.
@@ -446,7 +446,7 @@ defer runtime derivation (the hard part) to last.
   `CREATE TABLE IF NOT EXISTS`, which is the current problem.
 - **Schema derivation first, runtime derivation later.** Deriving the *runtime*
   module/extension composition from the manifest is deferred to its own design
-  pass because many Hono modules need template-specific factory options; until
+  pass because many API modules need template-specific factory options; until
   then runtime stays hand-wired and is *validated* against the manifest.
 - **No new ORM, no rewrite** — this is wiring existing discovery (`resolveSchemas`,
   `package.json#voyant`, the manifest) together and closing three gaps.
@@ -467,7 +467,7 @@ defer runtime derivation (the hard part) to last.
    generated-schema route first, since it gives true drift detection for free.
 4. **Timestamp vs lint for ordering** — start with the duplicate-prefix lint;
    only adopt timestamp prefixes if collisions persist.
-5. **Plugin-shipped schema** — distributable plugins (`HonoBundle`) currently have
+5. **Plugin-shipped schema** — distributable plugins (`ApiBundle`) currently have
    no schema/migration story; align them with the per-package declaration once
    §4.3 lands.
 

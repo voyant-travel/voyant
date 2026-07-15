@@ -19,11 +19,11 @@ import {
   wireWorkflowRuntime,
 } from "./app-workflows.js"
 import {
-  type ExpandedHonoBundles,
-  expandHonoBundles,
-  type HonoBundle,
-  isLazyHonoBundle,
-  type LazyHonoBundle,
+  type ApiBundle,
+  type ExpandedApiBundles,
+  expandApiBundles,
+  isLazyApiBundle,
+  type LazyApiBundle,
 } from "./bundle.js"
 import { type LazyRoutesLoader, mountLazyRoutePaths, mountLazyRoutesAt } from "./lazy-routes.js"
 import { mountAuthForwarding } from "./lib/auth-forward.js"
@@ -208,21 +208,21 @@ export function mountApp<TBindings extends VoyantBindings>(
   }
 
   const pluginInputs = config.plugins ?? []
-  const eagerPlugins: HonoBundle[] = []
-  const lazyPlugins: LazyHonoBundle[] = []
+  const eagerPlugins: ApiBundle[] = []
+  const lazyPlugins: LazyApiBundle[] = []
   const pluginNames = new Set<string>()
   for (const plugin of pluginInputs) {
     if (pluginNames.has(plugin.name)) {
       throw new Error(`Duplicate bundle name: "${plugin.name}"`)
     }
     pluginNames.add(plugin.name)
-    if (isLazyHonoBundle(plugin)) lazyPlugins.push(plugin)
+    if (isLazyApiBundle(plugin)) lazyPlugins.push(plugin)
     else eagerPlugins.push(plugin)
   }
 
   // Expand eager plugins into their constituent modules/extensions before
   // mounting. Lazy plugins keep only their static metadata in the eager closure.
-  const expanded = eagerPlugins.length > 0 ? expandHonoBundles(eagerPlugins) : null
+  const expanded = eagerPlugins.length > 0 ? expandApiBundles(eagerPlugins) : null
   const allModules = [...(config.modules ?? []), ...(expanded?.modules ?? [])]
   const allExtensions = [...(config.extensions ?? []), ...(expanded?.extensions ?? [])]
   const linkDefinitions = [...(config.linkDefinitions ?? []), ...(expanded?.links ?? [])]
@@ -291,7 +291,7 @@ export function mountApp<TBindings extends VoyantBindings>(
       if (mod.module.eventFilters) collectedFilters.push(...mod.module.eventFilters)
     }
   }
-  function collectPluginRuntimeDescriptors(plugins: readonly HonoBundle[]) {
+  function collectPluginRuntimeDescriptors(plugins: readonly ApiBundle[]) {
     for (const plugin of plugins) {
       if (plugin.workflows) collectedWorkflows.push(...plugin.workflows)
       if (plugin.eventFilters) collectedFilters.push(...plugin.eventFilters)
@@ -363,12 +363,12 @@ export function mountApp<TBindings extends VoyantBindings>(
     if (plugin.transactionalPaths) txPrefixes.push(...plugin.transactionalPaths)
   }
 
-  const loadedLazyBundles = new Map<string, HonoBundle>()
-  const lazyBundlePromises = new Map<string, Promise<HonoBundle>>()
+  const loadedLazyBundles = new Map<string, ApiBundle>()
+  const lazyBundlePromises = new Map<string, Promise<ApiBundle>>()
   let lazyPluginExpansionPromise: Promise<void> | undefined
   const expandedLazyBundleNames = new Set<string>()
 
-  function loadLazyBundle(plugin: LazyHonoBundle): Promise<HonoBundle> {
+  function loadLazyBundle(plugin: LazyApiBundle): Promise<ApiBundle> {
     const cached = loadedLazyBundles.get(plugin.name)
     if (cached) return Promise.resolve(cached)
     const pending = lazyBundlePromises.get(plugin.name)
@@ -394,10 +394,10 @@ export function mountApp<TBindings extends VoyantBindings>(
     return promise
   }
 
-  function applyLazyBundleContributions(bundles: readonly HonoBundle[]) {
+  function applyLazyBundleContributions(bundles: readonly ApiBundle[]) {
     const pending = bundles.filter((bundle) => !expandedLazyBundleNames.has(bundle.name))
     if (pending.length === 0) return
-    const lazyExpanded = expandHonoBundles(pending)
+    const lazyExpanded = expandApiBundles(pending)
     for (const bundle of pending) expandedLazyBundleNames.add(bundle.name)
     allModules.push(...lazyExpanded.modules)
     allExtensions.push(...lazyExpanded.extensions)
@@ -806,9 +806,9 @@ export function mountApp<TBindings extends VoyantBindings>(
     }
   }
 
-  function buildBundleRouteApp(bundle: HonoBundle): AnyHono {
+  function buildBundleRouteApp(bundle: ApiBundle): AnyHono {
     const pluginRoutes = new OpenAPIHono()
-    const bundleExpanded: ExpandedHonoBundles = expandHonoBundles([bundle])
+    const bundleExpanded: ExpandedApiBundles = expandApiBundles([bundle])
     for (const mod of bundleExpanded.modules) mountModuleRoutesInto(pluginRoutes, mod)
     for (const ext of bundleExpanded.extensions) mountExtensionRoutesInto(pluginRoutes, ext)
     return pluginRoutes

@@ -1,13 +1,13 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 export const NAVIGATION_PREFERENCES_ROUTE_PATHS = [
   "/v1/admin/navigation-preferences",
   "/v1/admin/navigation-preferences/*",
 ] as const
 
-export function createNavigationPreferencesHonoModule(): HonoModule {
+export function createNavigationPreferencesApiModule(): ApiModule {
   return {
     module: { name: "navigation-preferences" },
     lazyRoutes: {

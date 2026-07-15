@@ -192,8 +192,8 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
         "--input-type=module",
         "--eval",
         [
-          'import { projectApiHonoModule } from "./.voyant/runtime/project-api.generated.ts"',
-          'const response = await projectApiHonoModule.publicRoutes.request("http://local/starter-proof")',
+          'import { projectApiModule } from "./.voyant/runtime/project-api.generated.ts"',
+          'const response = await projectApiModule.publicRoutes.request("http://local/starter-proof")',
           "if (response.status !== 200) throw new Error('Unexpected status: ' + response.status)",
           "const body = await response.json()",
           "if (body.route !== 'public') throw new Error('Unexpected body: ' + JSON.stringify(body))",

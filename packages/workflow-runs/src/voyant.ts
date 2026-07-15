@@ -37,7 +37,7 @@ export const workflowRunsVoyantModule = defineModule({
       resource: "workflows",
       openapi: { document: "workflow-runs" },
       runtime: {
-        entry: "@voyant-travel/workflow-runs/hono-module",
+        entry: "@voyant-travel/workflow-runs/api-runtime",
         export: "createWorkflowRunsVoyantRuntime",
       },
     },

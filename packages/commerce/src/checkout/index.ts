@@ -56,10 +56,10 @@ export type {
 } from "./options.js"
 export {
   type BookingMaintenanceRoutesOptions,
-  createBookingMaintenanceHonoExtension,
+  createBookingMaintenanceApiExtension,
   createBookingMaintenanceRoutes,
   createBookingMaintenanceVoyantRuntime,
-  createCatalogCheckoutHonoExtension,
+  createCatalogCheckoutApiExtension,
   createCatalogCheckoutRoutes,
 } from "./routes.js"
 export {

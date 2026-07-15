@@ -262,8 +262,8 @@ Rules:
   consumed members are async methods. Do not use it for plain properties,
   sync-returning methods, query builders, or mixed service objects; narrow the
   provider contract first.
-- Hono plugin bundles that would import heavy adapter code may use
-  `defineLazyHonoBundle(...)` with eager metadata (`name`, `anonymous`, and
+- API bundles that would import heavy adapter code may use
+  `defineLazyApiBundle(...)` with eager metadata (`name`, `anonymous`, and
   absolute route matchers) plus a lazy `load` factory.
 - Anonymous webhook/callback paths must stay eager metadata on the lazy bundle,
   so the first inbound unauthenticated request is admitted before the bundle is

@@ -1,7 +1,7 @@
 // agent-quality: file-size exception -- owner: notifications; existing schema contract stays co-located until a dedicated split preserves behavior and tests.
 import type { LinkableDefinition, Module } from "@voyant-travel/core"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { relations } from "drizzle-orm"
 import {
   boolean,
@@ -523,4 +523,4 @@ export const notificationsModule: Module = {
 }
 
 // Created in index.ts once routes are available.
-export type NotificationsHonoModule = HonoModule
+export type NotificationsApiModule = ApiModule

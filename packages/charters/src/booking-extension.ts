@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { parseJsonBody } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import {
   char,
@@ -428,14 +428,14 @@ for (const [method, path] of [
   })
 }
 
-// ---------- HonoExtension export ----------
+// ---------- ApiExtension export ----------
 
 const chartersBookingExtensionDef: Extension = {
   name: "charters-booking",
   module: "bookings",
 }
 
-export const chartersBookingExtension: HonoExtension = {
+export const chartersBookingExtension: ApiExtension = {
   extension: chartersBookingExtensionDef,
   adminRoutes: chartersBookingExtensionRoutes,
 }

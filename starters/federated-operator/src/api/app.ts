@@ -1,8 +1,8 @@
 // voyant-route-owner: federated host compatibility until this direct app adopts generated graph composition.
-import { actionLedgerHonoModule } from "@voyant-travel/action-ledger"
+import { actionLedgerApiModule } from "@voyant-travel/action-ledger"
 import { mountApp } from "@voyant-travel/hono/app"
-import { identityHonoModule } from "@voyant-travel/identity"
-import { createRelationshipsHonoModule } from "@voyant-travel/relationships"
+import { identityApiModule } from "@voyant-travel/identity"
+import { createRelationshipsApiModule } from "@voyant-travel/relationships"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 
 import { FEDERATED_OPERATOR_APP_NAME, federatedOperatorReporter } from "@/lib/observability"
@@ -17,7 +17,7 @@ import { sourceConnectionRoutes } from "./routes/source-connections"
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
 export const app = mountApp<CloudflareBindings>({
-  modules: [actionLedgerHonoModule, createRelationshipsHonoModule(), identityHonoModule],
+  modules: [actionLedgerApiModule, createRelationshipsApiModule(), identityApiModule],
   appName: FEDERATED_OPERATOR_APP_NAME,
   reporter: federatedOperatorReporter,
   db: (env) =>

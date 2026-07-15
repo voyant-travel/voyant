@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   bookingExtras,
-  bookingsExtrasHonoModule,
+  bookingsExtrasApiModule,
   bookingsExtrasService,
   extraParticipantSelections,
   slotExtraManifestQuerySchema,
@@ -18,7 +18,7 @@ describe("Bookings extras facade", () => {
   })
 
   it("owns the legacy extras route mount during the compatibility window", () => {
-    expect(bookingsExtrasHonoModule.module.name).toBe("bookings-extras")
+    expect(bookingsExtrasApiModule.module.name).toBe("bookings-extras")
     expect(slotExtraManifestQuerySchema.parse({}).includeInactiveExtras).toBe(false)
   })
 })

@@ -33,7 +33,7 @@ import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { financeService } from "@voyant-travel/finance"
 import { invoices, paymentSessions } from "@voyant-travel/finance/schema"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { and, asc, desc, eq, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -865,7 +865,7 @@ export function createPaymentLinkRoutes(options: PaymentLinkRoutesOptions): Open
 }
 
 /** Package-owned module descriptor; deployments inject provider and projection adapters. */
-export function createPaymentLinkHonoModule(options: PaymentLinkRoutesOptions): HonoModule {
+export function createPaymentLinkApiModule(options: PaymentLinkRoutesOptions): ApiModule {
   return {
     module: { name: "payment-link" },
     publicPath: "/",
@@ -882,7 +882,7 @@ export function createPaymentLinkHonoModule(options: PaymentLinkRoutesOptions): 
 }
 
 export const createPaymentLinkVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
-  return createPaymentLinkHonoModule(await getPort(storefrontPaymentLinkRuntimePort))
+  return createPaymentLinkApiModule(await getPort(storefrontPaymentLinkRuntimePort))
 })
 
 // ─────────────────────────────────────────────────────────────────

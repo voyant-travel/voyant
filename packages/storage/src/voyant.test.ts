@@ -2,7 +2,7 @@ import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 
 import {
-  createMediaHonoModule,
+  createMediaApiModule,
   createMediaRoutes,
   STORAGE_MEDIA_ROUTE_PATHS,
   STORAGE_OPENAPI_API_IDS,
@@ -58,7 +58,7 @@ describe("storage deployment manifest", () => {
       ),
     )
 
-    const module = createMediaHonoModule({
+    const module = createMediaApiModule({
       resolveStorage: () => null,
       signVideoUploadTicket: async () => null,
     })

@@ -6,7 +6,7 @@ import { noDepositPolicy, type PaymentPolicy } from "../../src/payment-policy.js
 import {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
-  createBookingScheduleHonoExtension,
+  createBookingScheduleApiExtension,
   createPaymentPolicyPublicRoutes,
   generatePaymentScheduleForBooking,
 } from "../../src/payment-schedule/routes.js"
@@ -127,9 +127,9 @@ describe("generatePaymentScheduleForBooking", () => {
   })
 })
 
-describe("createBookingScheduleHonoExtension", () => {
+describe("createBookingScheduleApiExtension", () => {
   it("describes both injected booking schedule route surfaces", () => {
-    const extension = createBookingScheduleHonoExtension(baseOptions())
+    const extension = createBookingScheduleApiExtension(baseOptions())
 
     expect(extension).toMatchObject({
       extension: { name: "booking-schedule", module: "bookings" },

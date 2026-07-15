@@ -14,16 +14,16 @@ export {
   verifySession,
 } from "./auth/index.js"
 export type {
-  ExpandedHonoBundles,
-  HonoBundle,
-  HonoBundleInput,
-  LazyHonoBundle,
+  ApiBundle,
+  ApiBundleInput,
+  ExpandedApiBundles,
+  LazyApiBundle,
 } from "./bundle.js"
 export {
-  defineHonoBundle,
-  defineLazyHonoBundle,
-  expandHonoBundles,
-  isLazyHonoBundle,
+  defineApiBundle,
+  defineLazyApiBundle,
+  expandApiBundles,
+  isLazyApiBundle,
 } from "./bundle.js"
 export { type CreateAppConfig, createApp } from "./create-app.js"
 export type {
@@ -43,7 +43,7 @@ export {
 export { type AsyncMethodProvider, lazyProvider } from "./lazy-provider.js"
 export {
   createLazyRouteHandler,
-  type LazyHonoRoutes,
+  type LazyApiRoutes,
   type LazyRoutesLoader,
   mountLazyRoutePaths,
   mountLazyRoutesAt,
@@ -73,7 +73,7 @@ export {
   requireAuth,
   requirePermission,
 } from "./middleware/index.js"
-export type { HonoExtension, HonoModule } from "./module.js"
+export type { ApiExtension, ApiModule } from "./module.js"
 export type { ErrorEvent, Reporter } from "./observability/index.js"
 export {
   consoleReporter,

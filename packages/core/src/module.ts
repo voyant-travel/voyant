@@ -113,8 +113,8 @@ export type BootstrapHandler<TBindings = unknown> = (
 /**
  * A Voyant module provides domain identity and lifecycle hooks.
  *
- * Transport adapters such as Hono or Next.js are layered on top of this
- * contract instead of being part of core.
+ * Server API route composition is layered on top of this contract instead of
+ * being part of core. Hono is the sole server API implementation.
  */
 export interface Module {
   /** Unique module identifier (e.g., "contacts", "bookings") */

@@ -117,11 +117,11 @@ Booking creation UIs can show the same tax line that booking finalization will
 persist by mounting the booking-tax extension:
 
 ```typescript
-import { createBookingTaxHonoExtension } from "@voyant-travel/finance/booking-tax"
+import { createBookingTaxApiExtension } from "@voyant-travel/finance/booking-tax"
 
 createApp({
   extensions: [
-    createBookingTaxHonoExtension({
+    createBookingTaxApiExtension({
       resolveBookingTaxSettings: async (db) => {
         const settings = await getTaxSettings(db)
         return {
@@ -140,7 +140,7 @@ store, while `@voyant-travel/finance` owns the tax policy rule walker, tax-regim
 lookup, product tax-class fallback, and inclusive/exclusive math.
 
 Templates that already mount custom routes can call `mountBookingTaxRoutes(...)`
-from the same entrypoint instead of using the Hono extension.
+from the same entrypoint instead of using the API extension.
 
 Mounting this route registers:
 
@@ -172,11 +172,11 @@ exchange-rate resolver:
 
 ```typescript
 import {
-  createFinanceHonoModule,
+  createFinanceApiModule,
   createVoyantDataFxExchangeRateResolver,
 } from "@voyant-travel/finance"
 
-createFinanceHonoModule({
+createFinanceApiModule({
   invoiceFxSettings: {
     baseCurrency: "RON",
     fxCommissionBps: 200,

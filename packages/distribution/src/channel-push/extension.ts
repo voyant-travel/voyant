@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { BootstrapContext, Extension } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 
 import { createChannelPushAdminRoutes } from "./admin-routes.js"
@@ -27,7 +27,7 @@ export const channelPushExtensionDef: Extension = {
   module: "distribution",
 }
 
-export function createChannelPushExtension(options: ChannelPushExtensionOptions): HonoExtension {
+export function createChannelPushExtension(options: ChannelPushExtensionOptions): ApiExtension {
   const adminRoutes = new OpenAPIHono<ChannelPushExtensionEnv>()
   adminRoutes.use("*", async (c, next) => {
     setChannelPushDeps({

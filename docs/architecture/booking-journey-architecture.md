@@ -740,7 +740,7 @@ section as the current execution map.
 
 - `OwnedBookingHandler` and `OwnedBookingHandlerRegistry` are exported from
   `@voyant-travel/catalog/booking-engine`.
-- `createCatalogBookingRoutes()` and `createCatalogBookingHonoModule()` are
+- `createCatalogBookingRoutes()` and `createCatalogBookingApiModule()` are
   exported from `@voyant-travel/catalog/booking-engine`; the operator starter uses
   the shared route factory for the reusable quote/draft/hold/book family.
 - `BookingDraftV1`, `BookingDraftShapeV1`, `QuoteResponseV1`,

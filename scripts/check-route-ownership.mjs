@@ -2,7 +2,7 @@
  * Enforces route ownership from docs/architecture/api-route-ownership-and-composition.md (Phase 0).
  *
  * Reusable framework route interfaces belong in packages, composed through
- * `HonoModule` / `HonoExtension` registries — not hand-authored under
+ * `ApiModule` / `ApiExtension` registries — not hand-authored under
  * `starters/*​/src/api`. This checker is the guard that stops the second route
  * door (direct `/v1/...` handlers and `additionalRoutes` blocks) from growing
  * while extraction proceeds.
@@ -95,7 +95,7 @@ for (const file of walkApiFiles(STARTERS_DIR)) {
   if (hasAdditionalRoutes && !additionalRoutesAllowed.has(rel)) {
     violations.push({
       rel,
-      message: `new \`additionalRoutes\` block in a starter file. Route families must be composed as a HonoModule/HonoExtension, or annotate the file with \`// voyant-route-owner: <reason>\`.`,
+      message: `new \`additionalRoutes\` block in a starter file. Route families must be composed as a ApiModule/ApiExtension, or annotate the file with \`// voyant-route-owner: <reason>\`.`,
     })
   }
 

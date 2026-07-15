@@ -18,7 +18,7 @@ function validFixture() {
     ],
     [
       "packages/mcp/src/runtime.ts",
-      "defineGraphRuntimeFactory(({ graph, runtimePorts }) => createGraphMcpHonoApp({ graph, runtimePorts, buildMcpBaseContext }))",
+      "defineGraphRuntimeFactory(({ graph, runtimePorts }) => createGraphMcpApiRoutes({ graph, runtimePorts, buildMcpBaseContext }))",
     ],
     [
       "packages/core/src/project.ts",

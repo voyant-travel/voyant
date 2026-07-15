@@ -1,7 +1,7 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { storefrontCustomerPortalRuntimePort } from "../runtime-port.js"
 
 import {
@@ -83,9 +83,9 @@ export const customerPortalModule: Module = {
   name: "customer-portal",
 }
 
-export function createCustomerPortalHonoModule(
+export function createCustomerPortalApiModule(
   options: PublicCustomerPortalRouteOptions = {},
-): HonoModule {
+): ApiModule {
   const module: Module = {
     ...customerPortalModule,
     bootstrap: ({ bindings, container }) => {
@@ -105,10 +105,10 @@ export function createCustomerPortalHonoModule(
   }
 }
 
-export const customerPortalHonoModule: HonoModule = createCustomerPortalHonoModule()
+export const customerPortalApiModule: ApiModule = createCustomerPortalApiModule()
 
 export const createCustomerPortalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
-  return createCustomerPortalHonoModule(await getPort(storefrontCustomerPortalRuntimePort))
+  return createCustomerPortalApiModule(await getPort(storefrontCustomerPortalRuntimePort))
 })
 
 export type {

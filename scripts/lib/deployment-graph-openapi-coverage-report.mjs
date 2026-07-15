@@ -23,7 +23,7 @@ export function buildDeploymentGraphOpenApiCoverageReport(input, relativePath) {
           severity: "error",
           actual: failure.actual,
           minimum: failure.minimum,
-          message: `Selected graph owns ${failure.actual} OpenAPI API bundles; expected at least ${failure.minimum}.`,
+          message: `Selected graph owns ${failure.actual} OpenAPI route bundles; expected at least ${failure.minimum}.`,
         }
       }
       if (failure.kind === "missing-docs") {
@@ -130,7 +130,7 @@ export function buildDeploymentGraphOpenApiCoverageReport(input, relativePath) {
 
 export function formatDeploymentGraphOpenApiCoverageFailure(failure) {
   if (failure.kind === "authority-regression") {
-    return `[deployment-graph-openapi-coverage:authority-regression] selected graph owns ${failure.actual} OpenAPI API bundles; expected at least ${failure.minimum}`
+    return `[deployment-graph-openapi-coverage:authority-regression] selected graph owns ${failure.actual} OpenAPI route bundles; expected at least ${failure.minimum}`
   }
   if (failure.kind === "missing-docs") return formatGap(failure.bundle)
   if (failure.kind === "unknown-docs") {

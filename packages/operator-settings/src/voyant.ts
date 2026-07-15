@@ -3,8 +3,8 @@ import { defineModule, providePort } from "@voyant-travel/core/project"
 import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
 
 const runtime = {
-  entry: "@voyant-travel/operator-settings/hono-module",
-  export: "createOperatorSettingsHonoModule",
+  entry: "@voyant-travel/operator-settings/api-runtime",
+  export: "createOperatorSettingsApiModule",
 } as const
 
 const operatorSettingsAdminRuntime = {

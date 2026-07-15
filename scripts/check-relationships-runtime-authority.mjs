@@ -56,7 +56,7 @@ if (
 ) {
   violations.push("Relationships must adapt its graph runtime factory through its typed port")
 }
-if (packageIndex.includes("relationshipsHonoModule")) {
+if (packageIndex.includes("relationshipsApiModule")) {
   violations.push("Relationships must not retain the preconfigured compatibility module export")
 }
 if (

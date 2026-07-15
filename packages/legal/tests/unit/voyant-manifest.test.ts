@@ -154,7 +154,7 @@ describe("legal deployment manifest", () => {
           openapi: { document: "contract-document" },
           runtime: {
             entry: "@voyant-travel/legal/contract-document-routes",
-            export: "createContractDocumentHonoModule",
+            export: "createContractDocumentApiModule",
           },
         },
       ],

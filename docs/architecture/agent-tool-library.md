@@ -154,7 +154,7 @@ Tools are not forced to add placeholders.
 
 Each package manifest declares its `tools` runtime references, required scopes, risk,
 and context keys. Runtime lowering selects those declarations with the package graph;
-`createGraphMcpHonoApp` loads only those tools and their package-owned context
+`createGraphMcpApiRoutes` loads only those tools and their package-owned context
 contributors. The `@voyant-travel/mcp` manifest owns the admin route and requires the
 `mcp.runtime` port. A deployment binds that port to its request context and resources;
 it does not maintain a tool list or an Operator-local MCP module.

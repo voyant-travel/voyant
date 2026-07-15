@@ -370,7 +370,7 @@ Branch: `tc/11-runtime-adapters`
 
 Scope:
 
-- Mount `createTripsHonoModule(...)` in the operator starter with
+- Mount `createTripsApiModule(...)` in the operator starter with
   request-scoped runtime dependencies.
 - Quote composer components through `quoteEntity` with the same source
   registry, owned handler registry, promotion evaluator, and operator tax

@@ -66,7 +66,7 @@ export const financeVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
-        export: "createFinanceHonoModule",
+        export: "createFinanceApiModule",
       },
     },
     {
@@ -84,7 +84,7 @@ export const financeVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
-        export: "createFinanceHonoModule",
+        export: "createFinanceApiModule",
       },
     },
   ],
@@ -408,7 +408,7 @@ export const financeBookingTaxVoyantPlugin = defineExtension({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
-        export: "createBookingTaxHonoExtension",
+        export: "createBookingTaxApiExtension",
       },
     },
   ],
@@ -493,7 +493,7 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/finance",
-        export: "createBookingScheduleHonoExtension",
+        export: "createBookingScheduleApiExtension",
       },
     },
     {
@@ -504,7 +504,7 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/finance",
-        export: "createBookingScheduleHonoExtension",
+        export: "createBookingScheduleApiExtension",
       },
     },
   ],

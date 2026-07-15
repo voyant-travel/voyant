@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { externalRefsRoutes } from "./routes.js"
 import { externalRefsService } from "./service.js"
@@ -10,7 +10,7 @@ export const externalRefsModule: Module = {
   name: "external-refs",
 }
 
-export const externalRefsHonoModule: HonoModule = {
+export const externalRefsApiModule: ApiModule = {
   module: externalRefsModule,
   adminRoutes: externalRefsRoutes,
 }

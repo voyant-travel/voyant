@@ -26,10 +26,10 @@ export {
 export { createCatalogPromotionEvaluator } from "./promotions/service-catalog-evaluator.js"
 export { createProductPromotionsProjectionExtension } from "./promotions/service-catalog-plane-promotions.js"
 export {
-  type CommerceHonoModulesOptions,
+  type CommerceApiModulesOptions,
   type CommerceRuntimeModuleName,
   commerceRuntimeModuleNames,
-  createCommerceHonoModules,
+  createCommerceApiModules,
   createCommerceStorefrontOfferResolvers,
 } from "./runtime.js"
 export * from "./sellability/index.js"

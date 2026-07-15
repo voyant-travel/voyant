@@ -1,12 +1,11 @@
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
-
-import type { FlightConnectorAdapter } from "./contract/adapter.js"
 import {
   createFlightAdminRoutes,
-  createFlightsHonoModule,
+  createFlightsApiModule,
   type FlightPaymentIntegration,
-} from "./hono.js"
+} from "./api-runtime.js"
+import type { FlightConnectorAdapter } from "./contract/adapter.js"
 
 function stubAdapter(over: Partial<FlightConnectorAdapter> = {}): FlightConnectorAdapter {
   return {
@@ -28,8 +27,8 @@ function mount(adapter: FlightConnectorAdapter, payment?: FlightPaymentIntegrati
 }
 
 describe("flights hono module", () => {
-  it("createFlightsHonoModule exposes adminRoutes on module 'flights'", () => {
-    const mod = createFlightsHonoModule({ resolveAdapter: () => stubAdapter() })
+  it("createFlightsApiModule exposes adminRoutes on module 'flights'", () => {
+    const mod = createFlightsApiModule({ resolveAdapter: () => stubAdapter() })
     expect(mod.module.name).toBe("flights")
     expect(mod.adminRoutes).toBeDefined()
   })

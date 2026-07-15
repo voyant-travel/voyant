@@ -45,7 +45,7 @@ export type LazyRoutesLoader = () => Promise<AnyHono>
  * matchers the framework installs up front (no bundle import until a request
  * matches).
  */
-export interface LazyHonoRoutes {
+export interface LazyApiRoutes {
   paths: readonly string[]
   load: LazyRoutesLoader
 }

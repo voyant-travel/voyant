@@ -1,6 +1,6 @@
 import type { LinkableDefinition, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { chartersAdminRoutes } from "./routes.js"
 import { chartersPublicRoutes } from "./routes-public.js"
@@ -117,21 +117,19 @@ export const chartersModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface CreateChartersHonoModuleOptions {
-  adminRoutes?: HonoModule["adminRoutes"]
-  publicRoutes?: HonoModule["publicRoutes"]
-  lazyAdminRoutes?: HonoModule["lazyAdminRoutes"]
-  lazyPublicRoutes?: HonoModule["lazyPublicRoutes"]
-  anonymous?: HonoModule["anonymous"]
+export interface CreateChartersApiModuleOptions {
+  adminRoutes?: ApiModule["adminRoutes"]
+  publicRoutes?: ApiModule["publicRoutes"]
+  lazyAdminRoutes?: ApiModule["lazyAdminRoutes"]
+  lazyPublicRoutes?: ApiModule["lazyPublicRoutes"]
+  anonymous?: ApiModule["anonymous"]
 }
 
 /**
  * Assemble the charter module while allowing a deployment to retain lazy route
  * bridges or middleware-wrapped bundles.
  */
-export function createChartersHonoModule(
-  options: CreateChartersHonoModuleOptions = {},
-): HonoModule {
+export function createChartersApiModule(options: CreateChartersApiModuleOptions = {}): ApiModule {
   return {
     module: chartersModule,
     ...(options.lazyAdminRoutes
@@ -144,7 +142,7 @@ export function createChartersHonoModule(
   }
 }
 
-export const chartersHonoModule: HonoModule = createChartersHonoModule()
+export const chartersApiModule: ApiModule = createChartersApiModule()
 
 /** Package-owned adapter from selected graph surfaces to the Charters routes. */
 export const createChartersVoyantRuntime = defineGraphRuntimeFactory(({ api }) => ({

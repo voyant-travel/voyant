@@ -1,19 +1,19 @@
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { ApiExtension, ApiModule } from "@voyant-travel/hono/module"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
 
-import { inventoryExtrasHonoModule } from "./extras.js"
-import { inventoryHonoModule } from "./interface.js"
-import { createProductBrochureHonoExtension } from "./routes-brochure.js"
-import { createProductContentHonoExtension } from "./routes-content.js"
+import { inventoryExtrasApiModule } from "./extras.js"
+import { inventoryApiModule } from "./interface.js"
+import { createProductBrochureApiExtension } from "./routes-brochure.js"
+import { createProductContentApiExtension } from "./routes-content.js"
 import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-ports.js"
 
 function selectedModuleSurfaces(
-  configured: HonoModule,
+  configured: ApiModule,
   api: readonly { id: string; surface: string }[],
-): HonoModule {
+): ApiModule {
   const adminApiId = api.find(({ surface }) => surface === "admin")?.id
   const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
@@ -28,9 +28,9 @@ function selectedModuleSurfaces(
 }
 
 function selectedExtensionSurfaces(
-  configured: HonoExtension,
+  configured: ApiExtension,
   api: readonly { id: string; surface: string }[],
-): HonoExtension {
+): ApiExtension {
   const adminApiId = api.find(({ surface }) => surface === "admin")?.id
   const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
@@ -48,15 +48,15 @@ export const createInventoryVoyantRuntime = defineGraphRuntimeFactory(async ({ a
   const runtime = await getPort(inventoryRuntimePort)
   return selectedModuleSurfaces(
     {
-      ...inventoryHonoModule,
-      module: { ...inventoryHonoModule.module, bootstrap: runtime.bootstrap },
+      ...inventoryApiModule,
+      module: { ...inventoryApiModule.module, bootstrap: runtime.bootstrap },
     },
     api,
   )
 })
 
 export const createInventoryExtrasVoyantRuntime = defineGraphRuntimeFactory(async ({ api }) =>
-  selectedModuleSurfaces(inventoryExtrasHonoModule, api),
+  selectedModuleSurfaces(inventoryExtrasApiModule, api),
 )
 
 export const createInventoryContentVoyantRuntime = defineGraphRuntimeFactory(
@@ -64,7 +64,7 @@ export const createInventoryContentVoyantRuntime = defineGraphRuntimeFactory(
     const runtime = await getPort(catalogContentRuntimePort)
     return selectedExtensionSurfaces(
       {
-        ...createProductContentHonoExtension({
+        ...createProductContentApiExtension({
           admin: {
             resolveRegistry: runtime.resolveRegistry,
             defaultAcceptMachineTranslated: false,
@@ -88,7 +88,7 @@ export const createInventoryBrochureVoyantRuntime = defineGraphRuntimeFactory(
       getPort(storageMediaRuntimePort),
     ])
     return selectedExtensionSurfaces(
-      createProductBrochureHonoExtension({
+      createProductBrochureApiExtension({
         ...brochure,
         resolveStorage: storage.resolveStorage,
       }),

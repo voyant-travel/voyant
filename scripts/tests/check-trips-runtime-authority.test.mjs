@@ -60,7 +60,7 @@ describe("check-trips-runtime-authority", () => {
 
   it("rejects package-id binding and the compatibility module export", async () => {
     const root = await createFixture({
-      "trips/src/index.ts": "export const tripsHonoModule = {}\n",
+      "trips/src/index.ts": "export const tripsApiModule = {}\n",
       "runtime/src/deployment-resources.ts":
         'function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\nexport function createVoyantDeploymentResources() {}\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/trips": factory }\n',
     })

@@ -70,7 +70,7 @@ describe("commerce deployment manifest", () => {
           openapi: { document: "pricing" },
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "pricingHonoModule",
+            export: "pricingApiModule",
           },
         },
         {
@@ -79,7 +79,7 @@ describe("commerce deployment manifest", () => {
           openapi: { document: "pricing" },
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "pricingHonoModule",
+            export: "pricingApiModule",
           },
         },
         {
@@ -89,7 +89,7 @@ describe("commerce deployment manifest", () => {
           openapi: { document: "markets" },
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "marketsHonoModule",
+            export: "marketsApiModule",
           },
         },
         {
@@ -100,7 +100,7 @@ describe("commerce deployment manifest", () => {
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "marketsHonoModule",
+            export: "marketsApiModule",
           },
         },
         {
@@ -110,7 +110,7 @@ describe("commerce deployment manifest", () => {
           openapi: { document: "sellability" },
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "sellabilityHonoModule",
+            export: "sellabilityApiModule",
           },
         },
         {
@@ -120,7 +120,7 @@ describe("commerce deployment manifest", () => {
           openapi: { document: "promotions" },
           runtime: {
             entry: "@voyant-travel/commerce",
-            export: "promotionsHonoModule",
+            export: "promotionsApiModule",
           },
         },
       ],
@@ -264,7 +264,7 @@ describe("commerce deployment manifest", () => {
           openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/commerce/checkout",
-            export: "createBookingMaintenanceHonoExtension",
+            export: "createBookingMaintenanceApiExtension",
           },
         },
       ],

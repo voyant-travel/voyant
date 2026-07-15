@@ -2,12 +2,12 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
 import {
-  createFinanceHonoModule,
+  createFinanceApiModule,
   FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "../../src/index.js"
 
-describe("createFinanceHonoModule", () => {
+describe("createFinanceApiModule", () => {
   it("registers finance route runtime during bootstrap", () => {
     const generator = vi.fn()
     const poller = vi.fn()
@@ -30,7 +30,7 @@ describe("createFinanceHonoModule", () => {
     const container = createContainer()
     const bindings = { NETOPIA_SIGNATURE: "sig" }
 
-    const module = createFinanceHonoModule({
+    const module = createFinanceApiModule({
       resolveInvoiceDocumentGenerator,
       resolveInvoiceSettlementPollers,
       resolveEventBus,

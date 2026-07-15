@@ -46,7 +46,7 @@ export interface McpServerInfo {
   version: string
 }
 
-export interface McpHonoAppOptions {
+export interface McpApiRoutesOptions {
   /** The tool registry to expose. */
   registry: ToolRegistry
   /** Build the per-request tool context from the Hono context (db/actor/audience/scope). */
@@ -59,7 +59,7 @@ export interface McpHonoAppOptions {
   requireActionPolicies?: boolean
 }
 
-export interface GraphMcpHonoAppOptions {
+export interface GraphMcpApiRoutesOptions {
   runtime: GraphMcpRuntime
   buildContext(c: Context): ToolContext
   buildResources?(c: Context): Readonly<Record<string, unknown>>
@@ -148,7 +148,7 @@ const callMcpRoute = createRoute({
  * - `GET /manifest` — the tool discovery manifest (contract-versioned), filtered
  *   to what the caller is authorized for.
  */
-export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
+export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
   const { accessCatalog, registry, buildContext } = options
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
   const app = new OpenAPIHono()
@@ -207,7 +207,9 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
 }
 
 /** Compose selected tools and their package-owned context contributors from one graph. */
-export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Promise<OpenAPIHono> {
+export async function createGraphMcpApiRoutes(
+  options: GraphMcpApiRoutesOptions,
+): Promise<OpenAPIHono> {
   const registry = createToolRegistry()
   const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
@@ -282,7 +284,7 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
     throw new Error(`Selected MCP tools have no context contribution for: ${missing.join(", ")}.`)
   }
 
-  return createMcpHonoApp({
+  return createMcpApiRoutes({
     accessCatalog: options.runtime.accessCatalog,
     registry,
     requireActionPolicies: true,
@@ -321,7 +323,7 @@ function indexActionsByTool(
 
 async function buildContributedContext(
   c: Context,
-  options: GraphMcpHonoAppOptions,
+  options: GraphMcpApiRoutesOptions,
   contributions: Iterable<{ contribution: ToolContextContribution; unitId: string }>,
 ): Promise<ToolContext> {
   const base = await options.buildContext(c)

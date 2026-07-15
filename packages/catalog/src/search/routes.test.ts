@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   type CatalogSearchExecuteInput,
-  createCatalogSearchHonoModule,
+  createCatalogSearchApiModule,
   createCatalogSearchRoutes,
 } from "./routes.js"
 
@@ -46,8 +46,8 @@ function routeApp(options: Parameters<typeof createCatalogSearchRoutes>[0]) {
 }
 
 describe("createCatalogSearchRoutes", () => {
-  it("exposes admin and public search routes through the Hono module wrapper", () => {
-    const module = createCatalogSearchHonoModule({
+  it("exposes admin and public search routes through the API module wrapper", () => {
+    const module = createCatalogSearchApiModule({
       resolveRuntime: () => ({
         indexer: createIndexer(),
         defaultScope: { locale: "en-GB", audience: "staff", market: "default" },
@@ -132,7 +132,7 @@ describe("createCatalogSearchRoutes", () => {
     const executeSearch = vi.fn(
       async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults,
     )
-    const module = createCatalogSearchHonoModule({
+    const module = createCatalogSearchApiModule({
       resolveRuntime: () => ({
         indexer: createIndexer(),
         defaultScope: { locale: "en-GB", audience: "staff", market: "default" },
@@ -172,7 +172,7 @@ describe("createCatalogSearchRoutes", () => {
     const executeSearch = vi.fn(
       async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults,
     )
-    const module = createCatalogSearchHonoModule({
+    const module = createCatalogSearchApiModule({
       resolveRuntime: () => ({
         indexer: createIndexer(),
         defaultScope: {
@@ -319,7 +319,7 @@ describe("createCatalogSearchRoutes", () => {
         ],
       }),
     )
-    const module = createCatalogSearchHonoModule({
+    const module = createCatalogSearchApiModule({
       resolveRuntime: () => ({
         indexer: createIndexer(),
         defaultScope: { locale: "en-GB", audience: "staff", market: "default" },

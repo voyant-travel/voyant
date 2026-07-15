@@ -6,30 +6,30 @@ import type {
   WorkflowDescriptor,
 } from "@voyant-travel/core"
 
-import type { HonoExtension, HonoModule } from "./module.js"
+import type { ApiExtension, ApiModule } from "./module.js"
 
 /**
- * Hono-flavoured bundle contribution surface.
+ * Reusable server API contribution surface.
  *
- * `@voyant-travel/hono` is the default HTTP transport adapter for Voyant. The
- * `HonoBundle` describes reusable packages that contribute {@link HonoModule}
- * / {@link HonoExtension} wrappers that can carry HTTP routes.
+ * `@voyant-travel/hono` is Voyant's sole server API runtime implementation.
+ * `ApiBundle` describes packages that contribute {@link ApiModule} /
+ * {@link ApiExtension} wrappers carrying HTTP routes.
  *
  * Registered via `createApp({ plugins: [...] })` — the app factory expands
  * each bundle into the underlying modules, extensions, subscribers, and link
  * definitions before mounting them.
  */
-export interface HonoBundle {
+export interface ApiBundle {
   /** Unique bundle identifier (e.g. "payload-cms", "bokun"). */
   name: string
   /** Optional version tag for diagnostics. */
   version?: string
   /** Optional lazy runtime bootstrap executed once per app/isolate. */
   bootstrap?: BootstrapHandler
-  /** Hono modules (module + routes) contributed by the plugin. */
-  modules?: HonoModule[]
-  /** Hono extensions (extension + routes) contributed by the plugin. */
-  extensions?: HonoExtension[]
+  /** API modules (module + routes) contributed by the plugin. */
+  modules?: ApiModule[]
+  /** API extensions (extension + routes) contributed by the plugin. */
+  extensions?: ApiExtension[]
   /** Event subscribers wired to the caller's event bus, when provided. */
   subscribers?: Subscriber[]
   /** Link definitions contributed by the plugin. */
@@ -58,7 +58,7 @@ export interface HonoBundle {
   eventFilters?: readonly EventFilterDescriptor[]
 }
 
-const LAZY_HONO_BUNDLE = Symbol.for("voyant.hono.lazyBundle")
+const LAZY_API_BUNDLE = Symbol.for("voyant.api.lazyBundle")
 
 /**
  * Lazy bundle declaration. The bundle's heavy runtime graph is imported only
@@ -66,8 +66,8 @@ const LAZY_HONO_BUNDLE = Symbol.for("voyant.hono.lazyBundle")
  * to load it during request/headless bootstrap. `name` and `anonymous` remain
  * eager metadata so duplicate checks and auth allow-lists stay fail-closed.
  */
-export interface LazyHonoBundle {
-  readonly [LAZY_HONO_BUNDLE]: true
+export interface LazyApiBundle {
+  readonly [LAZY_API_BUNDLE]: true
   /** Unique bundle identifier matching the loaded bundle's `name`. */
   name: string
   /** Optional version tag for diagnostics. */
@@ -104,31 +104,31 @@ export interface LazyHonoBundle {
    */
   loadOnBootstrap?: boolean
   /** Loads and constructs the real bundle. Memoized by `mountApp`. */
-  load: () => Promise<HonoBundle>
+  load: () => Promise<ApiBundle>
 }
 
-export type HonoBundleInput = HonoBundle | LazyHonoBundle
+export type ApiBundleInput = ApiBundle | LazyApiBundle
 
 /**
  * Identity helper — returns the bundle unchanged, purely for IDE inference.
  */
-export function defineHonoBundle<P extends HonoBundle>(bundle: P): P {
+export function defineApiBundle<P extends ApiBundle>(bundle: P): P {
   return bundle
 }
 
-export function defineLazyHonoBundle<P extends Omit<LazyHonoBundle, typeof LAZY_HONO_BUNDLE>>(
+export function defineLazyApiBundle<P extends Omit<LazyApiBundle, typeof LAZY_API_BUNDLE>>(
   bundle: P,
-): P & LazyHonoBundle {
-  return { ...bundle, [LAZY_HONO_BUNDLE]: true } as P & LazyHonoBundle
+): P & LazyApiBundle {
+  return { ...bundle, [LAZY_API_BUNDLE]: true } as P & LazyApiBundle
 }
 
-export function isLazyHonoBundle(bundle: HonoBundleInput): bundle is LazyHonoBundle {
-  return (bundle as LazyHonoBundle)[LAZY_HONO_BUNDLE] === true
+export function isLazyApiBundle(bundle: ApiBundleInput): bundle is LazyApiBundle {
+  return (bundle as LazyApiBundle)[LAZY_API_BUNDLE] === true
 }
 
-export interface ExpandedHonoBundles {
-  modules: HonoModule[]
-  extensions: HonoExtension[]
+export interface ExpandedApiBundles {
+  modules: ApiModule[]
+  extensions: ApiExtension[]
   subscribers: Subscriber[]
   links: LinkDefinition[]
   /** Absolute anonymous-access paths declared by bundles (ADR-0008). */
@@ -136,14 +136,14 @@ export interface ExpandedHonoBundles {
 }
 
 /**
- * Flatten a list of {@link HonoBundle} values into their constituent pieces.
+ * Flatten a list of {@link ApiBundle} values into their constituent pieces.
  *
  * Throws if two bundles declare the same `name`.
  */
-export function expandHonoBundles(bundles: ReadonlyArray<HonoBundle>): ExpandedHonoBundles {
+export function expandApiBundles(bundles: ReadonlyArray<ApiBundle>): ExpandedApiBundles {
   const seen = new Set<string>()
-  const modules: HonoModule[] = []
-  const extensions: HonoExtension[] = []
+  const modules: ApiModule[] = []
+  const extensions: ApiExtension[] = []
   const subscribers: Subscriber[] = []
   const links: LinkDefinition[] = []
   const anonymousPaths: string[] = []

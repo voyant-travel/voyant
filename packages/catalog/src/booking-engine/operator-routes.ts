@@ -40,7 +40,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
@@ -511,9 +511,9 @@ export function mountCatalogBookingRoutes(
 }
 
 /** Package-owned descriptor for deployments that inject booking runtime dependencies. */
-export function createCatalogBookingEngineHonoModule(
+export function createCatalogBookingEngineApiModule(
   options: CatalogBookingRouteModuleOptions,
-): HonoModule {
+): ApiModule {
   return {
     module: { name: "catalog-booking" },
     lazyRoutes: {

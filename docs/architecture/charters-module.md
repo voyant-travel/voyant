@@ -110,7 +110,7 @@ packages/charters/
 ├── tsconfig.json
 ├── vitest.config.ts
 ├── src/
-│   ├── index.ts                 # Module + HonoModule + Linkable exports
+│   ├── index.ts                 # Module + ApiModule + Linkable exports
 │   ├── schema.ts                # Re-export rollup
 │   ├── schema-shared.ts         # pgEnums (charterStatus, charterBookingMode, etc.)
 │   ├── schema-core.ts           # charterProducts, charterVoyages
@@ -372,7 +372,7 @@ This wraps `legal.contractsService.createContract` — the contract module alrea
 
 ## 9. Routes
 
-Two Hono apps, mounted by template via `createApp({ modules: [chartersHonoModule] })`.
+Two Hono apps, mounted by template via `createApp({ modules: [chartersApiModule] })`.
 
 ### Admin routes — `/v1/admin/charters/*`
 
@@ -550,12 +550,12 @@ Two registration points in a template (mirroring cruises):
 ```ts
 // starters/operator/src/index.ts (illustrative)
 import { createApp } from "@voyant-travel/hono"
-import { chartersHonoModule, registerCharterAdapter } from "@voyant-travel/charters"
+import { chartersApiModule, registerCharterAdapter } from "@voyant-travel/charters"
 import { createConnectCharterAdapter } from "@voyant-travel/charters-adapter-connect"
 
 registerCharterAdapter(createConnectCharterAdapter({ apiKey: env.VOYANT_CONNECT_API_KEY }))
 
-export const app = createApp({ modules: [chartersHonoModule, ...] })
+export const app = createApp({ modules: [chartersApiModule, ...] })
 ```
 
 ### Where the adapter sits at request time

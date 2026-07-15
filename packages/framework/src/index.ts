@@ -13,8 +13,8 @@
  * framework version".
  *
  * Runtime product selection and factories are owned by package manifests and
- * the generated deployment graph. This package retains generic Hono composition
- * helpers for deployment-local units.
+ * the generated deployment graph. This package retains API composition helpers
+ * for deployment-local units.
  */
 
 export {

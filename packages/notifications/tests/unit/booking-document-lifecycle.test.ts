@@ -3,7 +3,7 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it, vi } from "vitest"
 
-import { createNotificationsHonoModule } from "../../src/index.js"
+import { createNotificationsApiModule } from "../../src/index.js"
 import {
   BOOKING_FULLY_PAID_EVENT,
   type BookingDocumentBundleLifecycleContext,
@@ -272,12 +272,12 @@ describe("bookingDocumentBundleLifecycleService", () => {
   })
 })
 
-describe("createNotificationsHonoModule documentBundleLifecycle", () => {
+describe("createNotificationsApiModule documentBundleLifecycle", () => {
   it("does not register lifecycle subscribers outside the selected graph", async () => {
     const eventBus = createEventBus()
     const subscribeSpy = vi.spyOn(eventBus, "subscribe")
 
-    const module = createNotificationsHonoModule({
+    const module = createNotificationsApiModule({
       resolveDb: () => ({}) as PostgresJsDatabase,
       documentBundleLifecycle: {
         enabled: true,

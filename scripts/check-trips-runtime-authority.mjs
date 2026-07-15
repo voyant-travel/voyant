@@ -77,7 +77,7 @@ if (
 ) {
   violations.push("Trips must compose its routes and transactional lifecycle in its graph factory")
 }
-if (packageIndex.includes("tripsHonoModule")) {
+if (packageIndex.includes("tripsApiModule")) {
   violations.push("Trips must not retain the preconfigured compatibility module export")
 }
 const genericContributorInputs =

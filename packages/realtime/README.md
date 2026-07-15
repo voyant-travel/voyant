@@ -16,7 +16,7 @@ Implements [RFC #1695](https://github.com/voyant-travel/voyant/issues/1695).
 - **Token-mint route** (`createRealtimeRoutes`) — issues short-lived,
   capability-scoped client tokens from the caller's session. Browsers never see
   API keys.
-- **`createRealtimeHonoModule`** — wires all of the above into a `HonoModule`.
+- **`createRealtimeApiModule`** — wires all of the above into a `ApiModule`.
 
 The module owns no schema and is **fully optional**: with no provider
 configured, the token route returns `503` and no subscribers register.
@@ -66,16 +66,16 @@ export function createMyVendorProvider(opts: MyVendorOptions): RealtimeProvider 
 }
 ```
 
-Pass it to `createRealtimeHonoModule({ providers: [createMyVendorProvider(...)] })`
+Pass it to `createRealtimeApiModule({ providers: [createMyVendorProvider(...)] })`
 and the deployment is live on your backend — no framework changes.
 
 ## Wiring it into an app
 
 ```ts
-import { createRealtimeHonoModule } from "@voyant-travel/realtime"
+import { createRealtimeApiModule } from "@voyant-travel/realtime"
 import { createVoyantCloudRealtimeProvider } from "@voyant-travel/realtime/providers/voyant-cloud"
 
-const realtime = createRealtimeHonoModule({
+const realtime = createRealtimeApiModule({
   // Resolve the provider from runtime bindings (e.g. a Cloud client from env).
   resolveProviders: (bindings) => [
     createVoyantCloudRealtimeProvider({ client: getCloudClient(bindings) }),
@@ -102,7 +102,7 @@ const realtime = createRealtimeHonoModule({
   },
 })
 
-// Register `realtime` like any other HonoModule. The token route mounts at
+// Register `realtime` like any other ApiModule. The token route mounts at
 // POST /v1/admin/realtime/token and POST /v1/public/realtime/token.
 ```
 

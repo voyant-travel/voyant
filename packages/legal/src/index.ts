@@ -3,7 +3,7 @@ import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   buildContractsRouteRuntime,
   CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -27,7 +27,7 @@ export const legalModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
+export interface CreateLegalApiModuleOptions extends ContractsRouteOptions {
   /**
    * Required when `autoGenerateContractOnConfirmed.enabled` is true. The
    * `booking.confirmed` subscriber fires outside request scope, so it
@@ -47,7 +47,7 @@ export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {
   autoGenerateContractOnConfirmed?: AutoGenerateContractOptions
 }
 
-export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}): HonoModule {
+export function createLegalApiModule(options: CreateLegalApiModuleOptions = {}): ApiModule {
   // Parents are `OpenAPIHono` so the contracts/policies/terms sub-chains'
   // `.openapi()` operations propagate up into the framework/operator OpenAPI
   // registries (voyant#2114). The shared `openApiValidationHook` is the
@@ -82,11 +82,11 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
   }
 }
 
-export const legalHonoModule: HonoModule = createLegalHonoModule()
+export const legalApiModule: ApiModule = createLegalApiModule()
 
 /** Package-owned adapter from the graph port registry to the public module factory. */
 export const createLegalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createLegalHonoModule(await getPort(legalRuntimePort)),
+  createLegalApiModule(await getPort(legalRuntimePort)),
 )
 
 export {
@@ -94,7 +94,7 @@ export {
   type ContractDocumentDelivery,
   type ContractDocumentRoutesOptions,
   type ContractDocumentStorageLike,
-  createContractDocumentHonoModule,
+  createContractDocumentApiModule,
   createContractDocumentRoutes,
   createContractDocumentVoyantRuntime,
 } from "./contract-document-routes.js"

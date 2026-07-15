@@ -3,7 +3,7 @@
  *
  * This subpath is intentionally narrower than `@voyant-travel/distribution`:
  * workflow bundles import it at module evaluation time, so it must not pull in
- * routes, Hono extensions, or app-server wiring. Import this subpath only when
+ * routes, API extensions, or app-server wiring. Import this subpath only when
  * a bundle opts into channel-push workflow registration.
  */
 

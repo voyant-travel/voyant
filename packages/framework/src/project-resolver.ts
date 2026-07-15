@@ -451,7 +451,7 @@ async function materializeProjectApiConventions(
         localId: "project-api",
         api: compilation.graphRoutes.map((route) => ({
           ...route,
-          runtime: { entry: generatedRuntime, export: "projectApiHonoModule" },
+          runtime: { entry: generatedRuntime, export: "projectApiModule" },
         })),
         meta: {
           source: "project-convention",

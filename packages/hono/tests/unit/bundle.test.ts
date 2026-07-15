@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from "vitest"
 
 import { mountApp } from "../../src/app.js"
 import {
-  defineHonoBundle,
-  defineLazyHonoBundle,
-  expandHonoBundles,
-  type HonoBundleInput,
+  type ApiBundleInput,
+  defineApiBundle,
+  defineLazyApiBundle,
+  expandApiBundles,
 } from "../../src/bundle.js"
-import type { HonoExtension, HonoModule } from "../../src/module.js"
+import type { ApiExtension, ApiModule } from "../../src/module.js"
 import type { DbFactory, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -27,7 +27,7 @@ function fakeDb(supportsTransactions: boolean): VoyantDb {
   return handle as VoyantDb
 }
 
-function makeModule(name: string, surface: "admin" | "public"): HonoModule {
+function makeModule(name: string, surface: "admin" | "public"): ApiModule {
   const routes = new Hono().get("/ping", (c) => c.json({ name, surface }))
   return {
     module: { name },
@@ -35,12 +35,12 @@ function makeModule(name: string, surface: "admin" | "public"): HonoModule {
   }
 }
 
-describe("expandHonoBundles", () => {
+describe("expandApiBundles", () => {
   it("collects bundle-declared anonymous absolute paths (ADR-0008)", () => {
-    const result = expandHonoBundles([
-      defineHonoBundle({ name: "netopia", anonymous: ["/v1/finance/providers/netopia/callback"] }),
-      defineHonoBundle({ name: "other", anonymous: ["/v1/foo/webhook"] }),
-      defineHonoBundle({ name: "no-anon", modules: [makeModule("no-anon", "public")] }),
+    const result = expandApiBundles([
+      defineApiBundle({ name: "netopia", anonymous: ["/v1/finance/providers/netopia/callback"] }),
+      defineApiBundle({ name: "other", anonymous: ["/v1/foo/webhook"] }),
+      defineApiBundle({ name: "no-anon", modules: [makeModule("no-anon", "public")] }),
     ])
     expect(result.anonymousPaths).toEqual([
       "/v1/finance/providers/netopia/callback",
@@ -49,7 +49,7 @@ describe("expandHonoBundles", () => {
   })
 
   it("returns empty collections for no bundles", () => {
-    const result = expandHonoBundles([])
+    const result = expandApiBundles([])
     expect(result.modules).toEqual([])
     expect(result.extensions).toEqual([])
     expect(result.subscribers).toEqual([])
@@ -59,26 +59,26 @@ describe("expandHonoBundles", () => {
   it("flattens modules from bundles in order", () => {
     const m1 = makeModule("m1", "admin")
     const m2 = makeModule("m2", "admin")
-    const bundle = defineHonoBundle({ name: "p1", modules: [m1, m2] })
-    const result = expandHonoBundles([bundle])
+    const bundle = defineApiBundle({ name: "p1", modules: [m1, m2] })
+    const result = expandApiBundles([bundle])
     expect(result.modules).toEqual([m1, m2])
   })
 
   it("throws on duplicate bundle names", () => {
-    const p1 = defineHonoBundle({ name: "dup" })
-    const p2 = defineHonoBundle({ name: "dup" })
-    expect(() => expandHonoBundles([p1, p2])).toThrow(/Duplicate bundle name/)
+    const p1 = defineApiBundle({ name: "dup" })
+    const p2 = defineApiBundle({ name: "dup" })
+    expect(() => expandApiBundles([p1, p2])).toThrow(/Duplicate bundle name/)
   })
 
-  it("defineHonoBundle returns the bundle unchanged", () => {
-    const p = defineHonoBundle({ name: "x", version: "1.0.0" })
+  it("defineApiBundle returns the bundle unchanged", () => {
+    const p = defineApiBundle({ name: "x", version: "1.0.0" })
     expect(p.name).toBe("x")
     expect(p.version).toBe("1.0.0")
   })
 })
 
 describe("mountApp with plugins", () => {
-  function build(plugins: HonoBundleInput[], actor: Actor = "staff") {
+  function build(plugins: ApiBundleInput[], actor: Actor = "staff") {
     return mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
@@ -88,7 +88,7 @@ describe("mountApp with plugins", () => {
   }
 
   it("mounts plugin-contributed admin routes", async () => {
-    const plugin = defineHonoBundle({
+    const plugin = defineApiBundle({
       name: "widgets",
       modules: [makeModule("widgets", "admin")],
     })
@@ -101,7 +101,7 @@ describe("mountApp with plugins", () => {
   })
 
   it("mounts plugin-contributed public routes", async () => {
-    const plugin = defineHonoBundle({
+    const plugin = defineApiBundle({
       name: "catalog",
       modules: [makeModule("catalog", "public")],
     })
@@ -116,7 +116,7 @@ describe("mountApp with plugins", () => {
   // no actor) and the fail-closed legacy guard lets the credential-less POST
   // through, while sibling bare paths still fail closed.
   function webhookBundle() {
-    return defineHonoBundle({
+    return defineApiBundle({
       name: "processor",
       extensions: [
         {
@@ -129,7 +129,7 @@ describe("mountApp with plugins", () => {
     })
   }
 
-  function buildUnauthenticated(plugins: HonoBundleInput[]) {
+  function buildUnauthenticated(plugins: ApiBundleInput[]) {
     return mountApp({
       db: () => ({}) as never,
       plugins,
@@ -162,7 +162,7 @@ describe("mountApp with plugins", () => {
 
   it("does not bootstrap package runtimes for rejected requests", async () => {
     const bootstrap = vi.fn()
-    const app = buildUnauthenticated([defineHonoBundle({ name: "private-runtime", bootstrap })])
+    const app = buildUnauthenticated([defineApiBundle({ name: "private-runtime", bootstrap })])
 
     const res = await app.request("/v1/admin/private-runtime/ping", {}, TEST_ENV, TEST_CTX)
 
@@ -173,7 +173,7 @@ describe("mountApp with plugins", () => {
   it("combines top-level modules with plugin modules", async () => {
     const top = makeModule("top", "admin")
     const viaPlugin = makeModule("viaPlugin", "admin")
-    const plugin = defineHonoBundle({ name: "p", modules: [viaPlugin] })
+    const plugin = defineApiBundle({ name: "p", modules: [viaPlugin] })
     const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
       db: () => ({}) as any,
@@ -189,7 +189,7 @@ describe("mountApp with plugins", () => {
 
   it("registers plugin runtime services in the shared container", async () => {
     const spy = { called: false }
-    const mod: HonoModule = {
+    const mod: ApiModule = {
       module: { name: "svc", service: { ping: () => "pong" } },
       adminRoutes: new Hono().get("/check", (c) => {
         const container = c.var.container
@@ -198,7 +198,7 @@ describe("mountApp with plugins", () => {
         return c.json({ result: svc.ping() })
       }),
     }
-    const plugin = defineHonoBundle({ name: "svc-plugin", modules: [mod] })
+    const plugin = defineApiBundle({ name: "svc-plugin", modules: [mod] })
     const app = build([plugin])
     const res = await app.request("/v1/admin/svc/check", {}, TEST_ENV, TEST_CTX)
     expect(res.status).toBe(200)
@@ -208,8 +208,8 @@ describe("mountApp with plugins", () => {
   })
 
   it("throws on duplicate plugin names when passed to mountApp", () => {
-    const p1 = defineHonoBundle({ name: "dup" })
-    const p2 = defineHonoBundle({ name: "dup" })
+    const p1 = defineApiBundle({ name: "dup" })
+    const p2 = defineApiBundle({ name: "dup" })
     expect(() =>
       mountApp({
         // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
@@ -222,12 +222,12 @@ describe("mountApp with plugins", () => {
   it("loads lazy plugin bundles on first request instead of app construction", async () => {
     let loads = 0
     const app = build([
-      defineLazyHonoBundle({
+      defineLazyApiBundle({
         name: "lazy-widgets",
         routes: ["/v1/admin/lazy-widgets/ping"],
         load: async () => {
           loads += 1
-          return defineHonoBundle({
+          return defineApiBundle({
             name: "lazy-widgets",
             modules: [makeModule("lazy-widgets", "admin")],
           })
@@ -251,13 +251,13 @@ describe("mountApp with plugins", () => {
       db: defaultFactory,
       dbTransactional: transactionalFactory,
       plugins: [
-        defineLazyHonoBundle({
+        defineLazyApiBundle({
           name: "lazy-ledger",
           routes: ["/v1/admin/lazy-ledger/commit"],
           transactionalModules: ["lazy-ledger"],
           load: async () => {
             loads += 1
-            return defineHonoBundle({
+            return defineApiBundle({
               name: "lazy-ledger",
               modules: [
                 {
@@ -287,7 +287,7 @@ describe("mountApp with plugins", () => {
 
   it("wires plugin subscribers to the app event bus", async () => {
     const handler = vi.fn()
-    const plugin = defineHonoBundle({
+    const plugin = defineApiBundle({
       name: "events",
       subscribers: [{ event: "booking.created", handler }],
       modules: [
@@ -315,7 +315,7 @@ describe("mountApp with plugins", () => {
 
   it("runs plugin, module, and extension bootstraps once in order", async () => {
     const calls: string[] = []
-    const mod: HonoModule = {
+    const mod: ApiModule = {
       module: {
         name: "boot",
         bootstrap: () => {
@@ -324,7 +324,7 @@ describe("mountApp with plugins", () => {
       },
       adminRoutes: new Hono().get("/ping", (c) => c.json({ ok: true })),
     }
-    const ext: HonoExtension = {
+    const ext: ApiExtension = {
       extension: {
         name: "boot-ext",
         module: "boot",
@@ -333,7 +333,7 @@ describe("mountApp with plugins", () => {
         },
       },
     }
-    const plugin = defineHonoBundle({
+    const plugin = defineApiBundle({
       name: "boot-plugin",
       bootstrap: () => {
         calls.push("plugin")
@@ -358,7 +358,7 @@ describe("mountApp with plugins", () => {
 
   it("isolates bootstrap failures — a throwing plugin must not break unrelated routes", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined)
-    const goodModule: HonoModule = {
+    const goodModule: ApiModule = {
       module: {
         name: "good",
         bootstrap: ({ container }) => {
@@ -370,7 +370,7 @@ describe("mountApp with plugins", () => {
         return c.json(runtime)
       }),
     }
-    const throwingPlugin = defineHonoBundle({
+    const throwingPlugin = defineApiBundle({
       name: "throwing",
       bootstrap: () => {
         throw new Error("missing env NETOPIA_URL")

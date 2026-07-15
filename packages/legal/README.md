@@ -11,11 +11,11 @@ pnpm add @voyant-travel/legal
 ## Usage
 
 ```typescript
-import { legalHonoModule } from "@voyant-travel/legal"
+import { legalApiModule } from "@voyant-travel/legal"
 import { createApp } from "@voyant-travel/hono"
 
 const app = createApp({
-  modules: [legalHonoModule],
+  modules: [legalApiModule],
   // ...
 })
 ```

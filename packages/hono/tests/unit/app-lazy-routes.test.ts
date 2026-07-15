@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { mountApp } from "../../src/app.js"
-import type { HonoExtension, HonoModule } from "../../src/module.js"
+import type { ApiExtension, ApiModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -48,7 +48,7 @@ describe("mountApp lazy route mounting", () => {
         c.json({ surface: "lazy-admin", db: (c.get("db") as { name: string }).name }),
       ),
     )
-    const mod: HonoModule = { module: { name: "flights" }, lazyAdminRoutes: load }
+    const mod: ApiModule = { module: { name: "flights" }, lazyAdminRoutes: load }
 
     const app = mountApp({
       // biome-ignore lint/suspicious/noExplicitAny: structural db client -- owner: hono.
@@ -73,11 +73,11 @@ describe("mountApp lazy route mounting", () => {
     const loadMaintenance = vi.fn(async () =>
       new Hono().post("/:id/rebuild-tax-lines", (c) => c.json({ maintenance: true })),
     )
-    const lazyExtension: HonoExtension = {
+    const lazyExtension: ApiExtension = {
       extension: { name: "booking-maintenance", module: "bookings" },
       lazyAdminRoutes: loadMaintenance,
     }
-    const eagerExtension: HonoExtension = {
+    const eagerExtension: ApiExtension = {
       extension: { name: "mice-booking", module: "bookings" },
       adminRoutes: new Hono().get("/:id/mice-details", (c) => c.json({ mounted: true })),
     }
@@ -112,11 +112,11 @@ describe("mountApp lazy route mounting", () => {
         .get("/:id/notes", (c) => c.json({ notes: c.req.param("id") }))
         .get("/:id/details", (c) => c.json({ fallback: true })),
     )
-    const firstExtension: HonoExtension = {
+    const firstExtension: ApiExtension = {
       extension: { name: "first", module: "bookings" },
       lazyAdminRoutes: firstLoad,
     }
-    const secondExtension: HonoExtension = {
+    const secondExtension: ApiExtension = {
       extension: { name: "second", module: "bookings" },
       lazyAdminRoutes: secondLoad,
     }

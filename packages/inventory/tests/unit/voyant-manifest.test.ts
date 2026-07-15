@@ -10,8 +10,8 @@ import {
   createInventoryContentVoyantRuntime,
   createInventoryVoyantRuntime,
 } from "../../src/graph-runtime.js"
-import { createProductBrochureHonoExtension } from "../../src/routes-brochure.js"
-import { createProductContentHonoExtension } from "../../src/routes-content.js"
+import { createProductBrochureApiExtension } from "../../src/routes-brochure.js"
+import { createProductContentApiExtension } from "../../src/routes-content.js"
 import {
   inventoryAuthoringVoyantPlugin,
   inventoryBookingVoyantPlugin,
@@ -245,11 +245,11 @@ describe("inventory deployment manifests", () => {
     })
 
     const resolveRegistry = () => ({}) as never
-    const content = createProductContentHonoExtension({
+    const content = createProductContentApiExtension({
       admin: { resolveRegistry, defaultAcceptMachineTranslated: false },
       public: { resolveRegistry, defaultAcceptMachineTranslated: true },
     })
-    const brochure = createProductBrochureHonoExtension({ resolveStorage: () => null })
+    const brochure = createProductBrochureApiExtension({ resolveStorage: () => null })
     expect(content.extension).toMatchObject({ name: "content", module: "products" })
     expect(content.adminRoutes).toBeDefined()
     expect(content.publicRoutes).toBeDefined()

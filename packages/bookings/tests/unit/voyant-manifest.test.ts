@@ -38,7 +38,7 @@ describe("bookings deployment manifest", () => {
           surface: "admin",
           openapi: { document: "bookings" },
           resource: "bookings",
-          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsApiModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
@@ -46,7 +46,7 @@ describe("bookings deployment manifest", () => {
           openapi: { document: "bookings" },
           resource: "bookings",
           anonymous: true,
-          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsApiModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/bookings#schema" }],
@@ -155,7 +155,7 @@ describe("bookings deployment manifest", () => {
           openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
-            export: "createBookingRequirementsHonoModule",
+            export: "createBookingRequirementsApiModule",
           },
         },
         {
@@ -166,7 +166,7 @@ describe("bookings deployment manifest", () => {
           openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
-            export: "createBookingRequirementsHonoModule",
+            export: "createBookingRequirementsApiModule",
           },
         },
       ],

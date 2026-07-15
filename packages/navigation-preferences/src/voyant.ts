@@ -1,8 +1,8 @@
 import { defineModule } from "@voyant-travel/core/project"
 
 const runtime = {
-  entry: "@voyant-travel/navigation-preferences/hono-module",
-  export: "createNavigationPreferencesHonoModule",
+  entry: "@voyant-travel/navigation-preferences/api-runtime",
+  export: "createNavigationPreferencesApiModule",
 } as const
 
 const adminRuntime = {

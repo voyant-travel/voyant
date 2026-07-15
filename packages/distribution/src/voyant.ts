@@ -51,7 +51,7 @@ export const distributionVoyantModule = defineModule({
       openapi: { document: "external-refs" },
       runtime: {
         entry: "@voyant-travel/distribution",
-        export: "externalRefsHonoModule",
+        export: "externalRefsApiModule",
       },
     },
     {
@@ -61,7 +61,7 @@ export const distributionVoyantModule = defineModule({
       openapi: { document: "distribution" },
       runtime: {
         entry: "@voyant-travel/distribution",
-        export: "distributionHonoModule",
+        export: "distributionApiModule",
       },
     },
     {
@@ -71,7 +71,7 @@ export const distributionVoyantModule = defineModule({
       openapi: { document: "suppliers" },
       runtime: {
         entry: "@voyant-travel/distribution",
-        export: "suppliersHonoModule",
+        export: "suppliersApiModule",
       },
     },
   ],

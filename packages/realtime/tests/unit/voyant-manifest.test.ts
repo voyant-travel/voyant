@@ -3,7 +3,7 @@ import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import {
   ADMIN_INVALIDATION_PUBLICATION_RUNTIME_KEY,
-  createRealtimeHonoModule,
+  createRealtimeApiModule,
   REALTIME_OPENAPI_API_IDS,
   realtimeRuntimePort,
   realtimeTransportRuntimePort,
@@ -89,7 +89,7 @@ describe("realtime deployment manifest", () => {
   })
 
   it("publishes distinct admin and public OpenAPI registries", () => {
-    const module = createRealtimeHonoModule()
+    const module = createRealtimeApiModule()
     const adminDocument = openApiDocument(module.adminRoutes)
     const publicDocument = openApiDocument(module.publicRoutes)
 
@@ -127,7 +127,7 @@ describe("realtime deployment manifest", () => {
 
   it("keeps provider resolution injectable through the manifest runtime factory", async () => {
     const resolveProviders = vi.fn(() => [])
-    const module = createRealtimeHonoModule({ resolveProviders, bridgeRoutes: {} })
+    const module = createRealtimeApiModule({ resolveProviders, bridgeRoutes: {} })
 
     await module.module.bootstrap?.({
       bindings: { REALTIME_API_KEY: "test" },
@@ -140,7 +140,7 @@ describe("realtime deployment manifest", () => {
 
   it("binds admin invalidation publication without activating bridge routes", async () => {
     const container = createContainer()
-    const module = createRealtimeHonoModule({
+    const module = createRealtimeApiModule({
       resolveProviders: () => [createLocalRealtimeProvider()],
     })
 

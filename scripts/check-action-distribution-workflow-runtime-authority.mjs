@@ -23,7 +23,7 @@ const sources = {
   distributionRuntime: read("packages/distribution/src/runtime.ts"),
   runtime: read("packages/runtime/src/index.ts"),
   workflowContributor: read("packages/workflow-runs/src/runtime-contributor.ts"),
-  workflowHonoModule: read("packages/workflow-runs/src/hono-module.ts"),
+  workflowApiModule: read("packages/workflow-runs/src/api-runtime.ts"),
   workflowManifest: read("packages/workflow-runs/src/voyant.ts"),
   workflowRunner: read("packages/workflow-runs/src/runner.ts"),
 }
@@ -81,8 +81,8 @@ if (existsSync(path.join(root, "packages/distribution-node"))) {
 }
 if (
   !sources.workflowContributor.includes("new WorkflowRunnerRegistry()") ||
-  !sources.workflowHonoModule.includes("defineGraphRuntimeFactory") ||
-  !sources.workflowHonoModule.includes("getPort(workflowRunnerRegistryRuntimePort)") ||
+  !sources.workflowApiModule.includes("defineGraphRuntimeFactory") ||
+  !sources.workflowApiModule.includes("getPort(workflowRunnerRegistryRuntimePort)") ||
   !sources.workflowManifest.includes("requirePort(workflowRunnerRegistryRuntimePort)") ||
   !sources.workflowRunner.includes("activeWorkflowRunnerRegistry = this")
 ) {

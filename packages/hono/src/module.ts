@@ -1,9 +1,9 @@
 import type { Extension, Module } from "@voyant-travel/core"
 import type { Hono } from "hono"
 
-import type { LazyHonoRoutes, LazyRoutesLoader } from "./lazy-routes.js"
+import type { LazyApiRoutes, LazyRoutesLoader } from "./lazy-routes.js"
 
-export interface HonoModule {
+export interface ApiModule {
   module: Module
   /** Staff-facing routes — mounted at `/v1/admin/{module.name}`. */
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
@@ -40,7 +40,7 @@ export interface HonoModule {
    * returns ABSOLUTE routes; the framework mounts + caches them with the request
    * context bridged in. Context-preserving replacement for `mountLazyRouteApp`.
    */
-  lazyRoutes?: LazyHonoRoutes
+  lazyRoutes?: LazyApiRoutes
   /**
    * Optional override for the public mount path relative to `/v1/public`.
    *
@@ -75,7 +75,7 @@ export interface HonoModule {
   transactionalPaths?: readonly string[]
 }
 
-export interface HonoExtension {
+export interface ApiExtension {
   extension: Extension
   /** Staff-facing routes — mounted at `/v1/admin/{extension.module}`. */
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
@@ -85,16 +85,16 @@ export interface HonoExtension {
   publicRoutes?: Hono<any>
   /**
    * Inbound webhook routes — mounted at `/v1/{extension.module}`, concrete paths
-   * auto-added to the anonymous allow-list (ADR-0008). See `HonoModule.webhookRoutes`.
+   * auto-added to the anonymous allow-list (ADR-0008). See `ApiModule.webhookRoutes`.
    */
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; existing suppression is intentional pending typed cleanup.
   webhookRoutes?: Hono<any>
-  /** Lazy variant of `adminRoutes` — mounted at `/v1/admin/{extension.module}` (see HonoModule). */
+  /** Lazy variant of `adminRoutes` — mounted at `/v1/admin/{extension.module}` (see ApiModule). */
   lazyAdminRoutes?: LazyRoutesLoader
   /** Lazy variant of `publicRoutes` — mounted at `/v1/public/{publicPath ?? extension.module}`. */
   lazyPublicRoutes?: LazyRoutesLoader
-  /** Deployment-local lazy family at explicit absolute paths (see HonoModule). */
-  lazyRoutes?: LazyHonoRoutes
+  /** Deployment-local lazy family at explicit absolute paths (see ApiModule). */
+  lazyRoutes?: LazyApiRoutes
   /**
    * Optional override for the public mount path relative to `/v1/public`.
    *
@@ -104,13 +104,13 @@ export interface HonoExtension {
   publicPath?: string
   /**
    * Declares which of this extension's PUBLIC routes are reachable without a
-   * session (ADR-0008). Same semantics as {@link HonoModule.anonymous}, relative
+   * session (ADR-0008). Same semantics as {@link ApiModule.anonymous}, relative
    * to the extension's public mount.
    */
   anonymous?: boolean | readonly string[]
   /**
    * Absolute transactional path prefixes — same semantics as
-   * {@link HonoModule.transactionalPaths}.
+   * {@link ApiModule.transactionalPaths}.
    */
   transactionalPaths?: readonly string[]
 }

@@ -8,7 +8,7 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./tools": "./src/mcp-runtime.ts",
-    "./hono-module": "./src/hono-module.ts",
+    "./api-runtime": "./src/api-runtime.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
@@ -71,10 +71,10 @@
         "import": "./dist/mcp-runtime.js",
         "default": "./dist/mcp-runtime.js"
       },
-      "./hono-module": {
-        "types": "./dist/hono-module.d.ts",
-        "import": "./dist/hono-module.js",
-        "default": "./dist/hono-module.js"
+      "./api-runtime": {
+        "types": "./dist/api-runtime.d.ts",
+        "import": "./dist/api-runtime.js",
+        "default": "./dist/api-runtime.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

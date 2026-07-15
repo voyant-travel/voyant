@@ -108,8 +108,8 @@ export const STORAGE_OPENAPI_API_IDS = {
   media: "@voyant-travel/storage#api.admin.media",
 } as const
 
-/** Structural module shape kept local so storage does not depend on the Hono adapter package. */
-export interface MediaHonoModule {
+/** Structural module shape kept local so storage does not depend on the server API runtime package. */
+export interface MediaApiModule {
   module: { name: "media" }
   lazyRoutes: {
     paths: typeof STORAGE_MEDIA_ROUTE_PATHS
@@ -121,7 +121,7 @@ export interface MediaHonoModule {
  * Package-owned media module. Deployments inject storage and video signing;
  * inventory brochure generation composes as a separate extension.
  */
-export function createMediaHonoModule(options: MediaRoutesOptions): MediaHonoModule {
+export function createMediaApiModule(options: MediaRoutesOptions): MediaApiModule {
   return {
     module: { name: "media" },
     lazyRoutes: {
@@ -133,7 +133,7 @@ export function createMediaHonoModule(options: MediaRoutesOptions): MediaHonoMod
 
 /** Package-owned adapter from the graph port registry to the public route factory. */
 export const createStorageVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createMediaHonoModule(await getPort(storageMediaRuntimePort)),
+  createMediaApiModule(await getPort(storageMediaRuntimePort)),
 )
 
 // ─────────────────────────────────────────────────────────────────

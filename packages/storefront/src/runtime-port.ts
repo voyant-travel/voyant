@@ -1,7 +1,7 @@
 import { definePort } from "@voyant-travel/core/project"
 
 import type { PublicCustomerPortalRouteOptions } from "./customer-portal/routes-public.js"
-import type { StorefrontHonoModuleOptions } from "./index.js"
+import type { StorefrontApiModuleOptions } from "./index.js"
 import type { PaymentLinkRoutesOptions } from "./payment-link/routes.js"
 import type { StorefrontOfferResolvers } from "./service.js"
 import type { StorefrontIntakePersistence } from "./service-intake.js"
@@ -19,7 +19,7 @@ function optionsPort<T extends object>(id: string) {
 }
 
 export type StorefrontBookingIntentsRuntime = NonNullable<
-  NonNullable<StorefrontHonoModuleOptions>["bookingIntents"]
+  NonNullable<StorefrontApiModuleOptions>["bookingIntents"]
 >
 
 export const storefrontOffersRuntimePort = optionsPort<StorefrontOfferResolvers>(

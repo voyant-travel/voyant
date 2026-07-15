@@ -1,12 +1,12 @@
 import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
-import type { FlightConnectorAdapter } from "./contract/adapter.js"
 import {
-  createFlightsHonoModule,
+  createFlightsApiModule,
   createFlightsVoyantRuntime,
   FLIGHTS_OPENAPI_API_ID,
   flightsRuntimePort,
-} from "./hono.js"
+} from "./api-runtime.js"
+import type { FlightConnectorAdapter } from "./contract/adapter.js"
 import { flightsVoyantModule } from "./voyant.js"
 
 describe("flights deployment manifest", () => {
@@ -25,7 +25,7 @@ describe("flights deployment manifest", () => {
           mount: "flights",
           openapi: { document: "flights" },
           runtime: {
-            entry: "@voyant-travel/flights/hono",
+            entry: "@voyant-travel/flights/api-runtime",
             export: "createFlightsVoyantRuntime",
           },
         },
@@ -97,13 +97,13 @@ describe("flights deployment manifest", () => {
         mount: "flights",
         openapi: { document: "flights" },
         runtime: {
-          entry: "@voyant-travel/flights/hono",
+          entry: "@voyant-travel/flights/api-runtime",
           export: "createFlightsVoyantRuntime",
         },
       },
     ])
 
-    const runtime = createFlightsHonoModule({
+    const runtime = createFlightsApiModule({
       resolveAdapter: () => {
         throw new Error("not used by the manifest test")
       },

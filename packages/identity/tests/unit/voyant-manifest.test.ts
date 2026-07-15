@@ -13,7 +13,7 @@ describe("identity deployment manifest", () => {
           surface: "admin",
           resource: "identity",
           openapi: { document: "identity" },
-          runtime: { entry: "@voyant-travel/identity", export: "identityHonoModule" },
+          runtime: { entry: "@voyant-travel/identity", export: "identityApiModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/identity#schema" }],

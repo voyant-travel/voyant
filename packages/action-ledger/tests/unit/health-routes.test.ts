@@ -6,7 +6,7 @@ import type { RunActionLedgerCanaryResult } from "../../src/canary.js"
 import {
   type ActionLedgerDriftCheckResult,
   type ActionLedgerHealthResponse,
-  createActionLedgerHealthHonoExtension,
+  createActionLedgerHealthApiExtension,
   createActionLedgerHealthRoutes,
   runActionLedgerHealthCheck,
 } from "../../src/health-routes.js"
@@ -36,7 +36,7 @@ const okCanary: RunActionLedgerCanaryResult = {
 describe("action-ledger health runtime", () => {
   it("publishes a package-owned extension descriptor", () => {
     const checkDrift = vi.fn().mockResolvedValue(okBookingDrift)
-    const extension = createActionLedgerHealthHonoExtension({
+    const extension = createActionLedgerHealthApiExtension({
       checkBookingDrift: checkDrift,
       checkFinanceDrift: checkDrift,
       checkProductDrift: checkDrift,

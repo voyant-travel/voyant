@@ -1,5 +1,5 @@
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   TOOL_GRAPH_ACTIONS_RESOURCE,
   TOOL_GRAPH_SETUP_STEPS_RESOURCE,
@@ -10,14 +10,14 @@ import {
   type Visibility,
 } from "@voyant-travel/tools"
 import type { Context } from "hono"
-import { createGraphMcpHonoApp } from "./server.js"
+import { createGraphMcpApiRoutes } from "./server.js"
 
 /** Compose the package-selected MCP route from the selected graph runtime. */
 export const createMcpVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ getUnitProjectConfig, graph, runtimePorts }): Promise<HonoModule> => ({
+  async ({ getUnitProjectConfig, graph, runtimePorts }): Promise<ApiModule> => ({
     module: { name: "mcp" },
     lazyAdminRoutes: () =>
-      createGraphMcpHonoApp({
+      createGraphMcpApiRoutes({
         runtime: graph,
         buildContext: buildMcpBaseContext,
         buildResources: () => ({

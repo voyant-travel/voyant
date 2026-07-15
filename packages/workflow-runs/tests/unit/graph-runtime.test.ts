@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
-import { createWorkflowRunsVoyantRuntime } from "../../src/hono-module.js"
+import { createWorkflowRunsVoyantRuntime } from "../../src/api-runtime.js"
 import { WorkflowRunnerRegistry } from "../../src/runner.js"
 import { workflowRunnerRegistryRuntimePort } from "../../src/runtime-port.js"
 

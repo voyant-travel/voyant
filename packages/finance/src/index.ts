@@ -4,7 +4,7 @@ import { registerBookingFinancialLifecycle } from "@voyant-travel/bookings"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { financeBookingLifecycle } from "./booking-lifecycle.js"
 import { type BookingTaxRouteOptions, createBookingTaxRoutes } from "./booking-tax.js"
 import {
@@ -142,13 +142,13 @@ export const financeModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface FinanceHonoModuleOptions
+export interface FinanceApiModuleOptions
   extends FinanceRuntimeOptions,
     PublicFinanceRouteOptions,
     CheckoutRoutesOptions,
     BookingTaxRouteOptions {}
 
-export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
+export function createFinanceApiModule(options: FinanceApiModuleOptions = {}): ApiModule {
   const adminRoutes = stampOpenApiRegistryApiId(
     new OpenAPIHono()
       .route("/", financeRoutes)
@@ -193,11 +193,11 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
   }
 }
 
-export const financeHonoModule: HonoModule = createFinanceHonoModule()
+export const financeApiModule: ApiModule = createFinanceApiModule()
 
 export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort, getPorts, hasPort }) => {
-    const configured = createFinanceHonoModule(
+    const configured = createFinanceApiModule(
       createFinanceRuntime(
         await getPort(financeHostRuntimePort),
         await getPort(financeNotificationsRuntimePort),
@@ -208,7 +208,7 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
       ),
     )
     const bootstrap = configured.module.bootstrap
-    const selected: HonoModule = {
+    const selected: ApiModule = {
       module: {
         ...configured.module,
         bootstrap: async (context) => {
@@ -238,7 +238,7 @@ export {
   type BookingTaxRouteOptions,
   type BookingTaxSettings,
   computeBookingItemTaxLine,
-  createBookingTaxHonoExtension,
+  createBookingTaxApiExtension,
   createBookingTaxRoutes,
   createBookingTaxVoyantRuntime,
   loadProductTaxFacts,
@@ -266,7 +266,7 @@ export {
   type StoredDocumentReference,
 } from "./document-download.js"
 export {
-  createInvoiceFxHonoExtension,
+  createInvoiceFxApiExtension,
   createInvoiceFxRoutes,
   createVoyantDataFxExchangeRateResolver,
   type InvoiceExchangeRateResolution,
@@ -323,7 +323,7 @@ export {
 export {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
-  createBookingScheduleHonoExtension,
+  createBookingScheduleApiExtension,
   createBookingScheduleVoyantRuntime,
   createPaymentPolicyPublicRoutes,
   generatePaymentScheduleForBooking,

@@ -33,11 +33,11 @@ describe("standard package manifests", () => {
       api: [
         {
           id: "@voyant-travel/bookings#api.admin",
-          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsApiModule" },
         },
         {
           id: "@voyant-travel/bookings#api.public",
-          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsHonoModule" },
+          runtime: { entry: "@voyant-travel/bookings", export: "createBookingsApiModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/bookings#schema" }],

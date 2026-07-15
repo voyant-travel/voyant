@@ -19,7 +19,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { handleApiError, openApiValidationHook, RequestValidationError } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import type { Context } from "hono"
 
@@ -434,7 +434,7 @@ function asRouteResponse(response: Promise<Response>): Promise<any> {
   return response
 }
 
-export function createCatalogBookingHonoModule(options: CatalogBookingRoutesOptions): HonoModule {
+export function createCatalogBookingApiModule(options: CatalogBookingRoutesOptions): ApiModule {
   return {
     module: { name: "catalog" },
     adminRoutes: createCatalogBookingRoutes(options),

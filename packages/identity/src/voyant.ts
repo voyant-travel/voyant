@@ -14,7 +14,7 @@ export const identityVoyantModule = defineModule({
       openapi: { document: "identity" },
       runtime: {
         entry: "@voyant-travel/identity",
-        export: "identityHonoModule",
+        export: "identityApiModule",
       },
     },
   ],

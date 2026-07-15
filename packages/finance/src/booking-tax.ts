@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { ApiHttpError, openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
@@ -467,7 +467,7 @@ export function mountBookingTaxRoutes(hono: Hono, options: BookingTaxRouteOption
   hono.route("/v1/admin/bookings", createBookingTaxRoutes(options))
 }
 
-export function createBookingTaxHonoExtension(options: BookingTaxRouteOptions = {}): HonoExtension {
+export function createBookingTaxApiExtension(options: BookingTaxRouteOptions = {}): ApiExtension {
   const extension: Extension = {
     name: "booking-tax",
     module: "bookings",
@@ -480,7 +480,7 @@ export function createBookingTaxHonoExtension(options: BookingTaxRouteOptions = 
 }
 
 export const createBookingTaxVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
-  return createBookingTaxHonoExtension(
+  return createBookingTaxApiExtension(
     createFinanceBookingTaxRuntime(await getPort(financeOperatorSettingsRuntimePort)),
   )
 })

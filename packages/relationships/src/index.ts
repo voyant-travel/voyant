@@ -1,6 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated } from "./events.js"
 import { relationshipsLinkable } from "./linkables.js"
 import {
@@ -21,16 +21,16 @@ export const relationshipsModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface RelationshipsHonoModuleOptions extends RelationshipsRouteRuntimeOptions {}
+export interface RelationshipsApiModuleOptions extends RelationshipsRouteRuntimeOptions {}
 
 /**
- * Configurable factory for the Relationships Hono module. Use this when the
+ * Configurable factory for the Relationships API module. Use this when the
  * deployment needs a non-default KMS resolver (e.g. Voyant Cloud Vault) so
  * admin PII routes can decrypt person documents on demand.
  */
-export function createRelationshipsHonoModule(
-  options: RelationshipsHonoModuleOptions = {},
-): HonoModule {
+export function createRelationshipsApiModule(
+  options: RelationshipsApiModuleOptions = {},
+): ApiModule {
   const module: Module = {
     ...relationshipsModule,
     bootstrap: ({ bindings, container }) => {
@@ -48,7 +48,7 @@ export function createRelationshipsHonoModule(
 
 /** Package-owned adapter from the graph port registry to the Relationships route factory. */
 export const createRelationshipsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createRelationshipsHonoModule(await getPort(relationshipsRouteRuntimePort)),
+  createRelationshipsApiModule(await getPort(relationshipsRouteRuntimePort)),
 )
 
 export type {

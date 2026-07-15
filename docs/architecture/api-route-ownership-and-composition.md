@@ -31,17 +31,15 @@ interfaces. Reusable route interfaces belong with the module, extension, or
 adapter that owns the capability. Deployments should compose those route
 interfaces, provide runtime adapters, and declare deployment policy.
 
-Hono should be treated as Voyant's first-class HTTP route interface. Package
-authors should export Hono route factories, `HonoModule`s, or `HonoExtension`s
-rather than framework-specific route handlers. Hono is small, runtime-portable,
-and can be mounted by common application hosts, so keeping Hono first-class gives
-Voyant one package route interface without forcing every deployment to use the
-same app shell.
+Voyant has one server API route interface: package authors export route factories,
+`ApiModule`s, or `ApiExtension`s. Hono is the sole implementation of that
+interface. It is not an adapter seam and packages must not imply that another
+server router can replace it.
 
 The framework does not just have the target shape available — it already runs
 it for most of the surface:
 
-- `HonoModule` and `HonoExtension` expose `adminRoutes` and `publicRoutes`.
+- `ApiModule` and `ApiExtension` expose `adminRoutes` and `publicRoutes`.
 - `createApp` mounts them under `/v1/admin/{name}` and `/v1/public/{name}`.
 - modules can override public mounting with `publicPath` when the URL contract
   is clearer without the package name segment.
@@ -75,7 +73,7 @@ The clean target is:
 1. Package route interfaces live in packages.
 2. Deployment-specific runtime adapters live in starters/apps.
 3. Every route-bearing thing enters through one contribution path:
-   `HonoModule` or `HonoExtension`, including deployment-local routes.
+   `ApiModule` or `ApiExtension`, including deployment-local routes.
 4. Runtime composition is manifest-driven, but manifest entries and runtime
    factories are co-located so the two lists cannot drift silently.
 5. Public access and transactional DB policy are declared near the owned route
@@ -94,7 +92,7 @@ The current repo has two route-authoring patterns:
 
 - Package-owned routes, such as `@voyant-travel/bookings`,
   `@voyant-travel/finance`, `@voyant-travel/inventory`, and
-  `@voyant-travel/storefront`, export route-bearing `HonoModule`s.
+  `@voyant-travel/storefront`, export route-bearing `ApiModule`s.
 - Operator-owned routes under `starters/operator/src/api` mount either local
   handlers or package route factories through `additionalRoutes`.
 
@@ -131,12 +129,12 @@ package-owned interface through adapters.
 The long-term problem is not only that some routes are in the starter. It is
 that there are two doors into the app:
 
-- composed `HonoModule` / `HonoExtension` route contributions.
+- composed `ApiModule` / `ApiExtension` route contributions.
 - arbitrary `additionalRoutes` mutations.
 
 The second door is how route families became local implementation detail. Long
 term, even deployment-local diagnostics and product-specific routes should be
-wrapped as deployment-local `HonoModule`s or `HonoExtension`s in the composition
+wrapped as deployment-local `ApiModule`s or `ApiExtension`s in the composition
 registry. `additionalRoutes` should become a migration compatibility escape
 hatch, not a normal route authoring surface.
 
@@ -202,7 +200,7 @@ Module-owned route interfaces include:
 The module should expose a small interface:
 
 ```ts
-export function createFlightsHonoModule(options: FlightsHonoModuleOptions): HonoModule
+export function createFlightsApiModule(options: FlightsApiModuleOptions): ApiModule
 ```
 
 The implementation behind that interface can remain large. The point is depth:
@@ -222,7 +220,7 @@ Examples:
 - proposal lifecycle routes if the route interface is primarily an extension of
   quote versions rather than a standalone proposal module.
 
-The extension should expose `HonoExtension` with `adminRoutes` and/or
+The extension should expose `ApiExtension` with `adminRoutes` and/or
 `publicRoutes`, and it should depend only on the adapters it needs.
 
 ### Adapters own vendor-specific route interfaces
@@ -268,7 +266,7 @@ merely because those handlers need deployment adapters.
 
 Deployment-owned routes should still use the same contribution path as package
 routes. If a route is genuinely local, wrap it in a small deployment-local
-`HonoModule` or `HonoExtension`, mark it in the route ownership inventory, and
+`ApiModule` or `ApiExtension`, mark it in the route ownership inventory, and
 compose it through the registry. Do not add new product route families through
 `additionalRoutes`.
 
@@ -283,23 +281,23 @@ This respects ADR-0001: tenancy remains a deployment concern. Package route
 interfaces should not add in-process tenant scoping or thread organization
 filters through domain queries.
 
-## Hono As The First-Class Route Interface
+## The Server API Route Interface
 
-Voyant should standardize on Hono at the package route seam.
+Voyant standardizes on one Hono-backed package route interface.
 
 That means:
 
-- packages expose Hono route factories, `HonoModule`s, or `HonoExtension`s.
+- packages expose route factories, `ApiModule`s, or `ApiExtension`s.
 - routes stay relative inside packages and are mounted by `createApp`.
 - package tests mount the Hono route interface directly and through
   `createApp`.
-- deployments adapt Hono to the host runtime instead of packages adapting to
-  each framework.
+- the framework hosts the composed Hono application on Node; there is no
+  alternate server-router adapter seam.
 - SDK descriptors, OpenAPI exports, and framework-specific wrappers are derived
   or layered on top; they are not the primary route interface.
 
-This avoids a false abstraction. Voyant does not need a new route DSL over
-Hono. The Hono app is already the useful interface: it carries middleware
+This avoids a false abstraction. Voyant does not need a route DSL over Hono or
+a hypothetical router adapter. The Hono app carries middleware
 composition, route matching, typed context, request/response primitives, and a
 portable fetch handler. The framework-specific concern is where the Hono app is
 hosted, not how each package defines its route family.
@@ -309,13 +307,13 @@ The rule for package authors:
 ```ts
 export function createCatalogBookingRoutes(options: CatalogBookingRoutesOptions): Hono
 
-export function createCatalogBookingHonoModule(
+export function createCatalogBookingApiModule(
   options: CatalogBookingRoutesOptions,
-): HonoModule
+): ApiModule
 ```
 
 The lower-level route factory is useful for tests and advanced composition. The
-`HonoModule` or `HonoExtension` is the normal deployment interface.
+`ApiModule` or `ApiExtension` is the normal deployment interface.
 
 ## Decision Rules
 
@@ -334,7 +332,7 @@ Use these rules when adding or moving a route:
    module services it needs.
 6. If a route exists only because this deployment has a local operational knob,
    diagnostic, or one-off integration, it can stay in the deployment, but it
-   still enters as a deployment-local `HonoModule` or `HonoExtension`.
+   still enters as a deployment-local `ApiModule` or `ApiExtension`.
 7. If the only reason a route is deployment-owned is access to env vars,
    storage, payment providers, or base URLs, that is a sign to move the route
    into a package and inject those values through options.
@@ -364,7 +362,7 @@ import { composeFromManifest } from "@voyant-travel/hono/composition"
 
 export const operatorRuntimeUnits = [
   defineRuntimeModule("@voyant-travel/flights", ({ capabilities }) =>
-    createFlightsHonoModule(createOperatorFlightsOptions(capabilities)),
+    createFlightsApiModule(createOperatorFlightsOptions(capabilities)),
   ),
 ] satisfies RuntimeCompositionUnit[]
 
@@ -404,7 +402,7 @@ The runtime unit still maps to an explicit package factory:
 export const operatorComposition = {
   modules: {
     "@voyant-travel/flights": ({ capabilities }) =>
-      createFlightsHonoModule(createOperatorFlightsOptions(capabilities)),
+      createFlightsApiModule(createOperatorFlightsOptions(capabilities)),
   },
 }
 ```
@@ -436,7 +434,7 @@ reach into it directly. The clean contract for a second deployment is the
 package option interface:
 
 ```ts
-export interface FlightsHonoModuleOptions {
+export interface FlightsApiModuleOptions {
   resolveFlightAdapter: ResolveFlightAdapter
   resolveReferenceProvider: ResolveFlightReferenceProvider
   resolvePaymentStarter: ResolveFlightPaymentStarter
@@ -459,7 +457,7 @@ before calling the package:
 ```ts
 function createOperatorFlightsOptions(
   capabilities: OperatorCapabilities,
-): FlightsHonoModuleOptions {
+): FlightsApiModuleOptions {
   return {
     resolveFlightAdapter: capabilities.resolveFlightAdapter,
     resolveReferenceProvider: capabilities.resolveFlightReferenceProvider,
@@ -480,7 +478,7 @@ Rules:
 
 ## Route Policy Metadata
 
-The existing `HonoModule` and `HonoExtension` interface has route mounts but not
+The existing `ApiModule` and `ApiExtension` interface has route mounts but not
 enough route policy metadata to eliminate all deployment path lists. We should
 extend the model incrementally, but the first version must avoid two traps:
 
@@ -506,24 +504,24 @@ interface RoutePolicy {
   requiresTransactionalDb?: readonly string[]
 }
 
-interface HonoRouteContribution {
+interface ApiRouteContribution {
   routes?: Hono
-  lazy?: LazyHonoRoutes
+  lazy?: LazyApiRoutes
   paths?: readonly string[]
   policy?: RoutePolicy
 }
 
-interface HonoModule {
-  adminContribution?: HonoRouteContribution
-  publicContribution?: HonoRouteContribution
+interface ApiModule {
+  adminContribution?: ApiRouteContribution
+  publicContribution?: ApiRouteContribution
   /** Existing compatibility surface. */
   adminRoutes?: Hono
   publicRoutes?: Hono
 }
 
-interface HonoExtension {
-  adminContribution?: HonoRouteContribution
-  publicContribution?: HonoRouteContribution
+interface ApiExtension {
+  adminContribution?: ApiRouteContribution
+  publicContribution?: ApiRouteContribution
   /** Existing compatibility surface. */
   adminRoutes?: Hono
   publicRoutes?: Hono
@@ -562,7 +560,7 @@ unless the whole route contribution genuinely calls interactive transactions.
 ## Built-In Lazy Loading And Performance
 
 **Status: shipped (minimal form).** `@voyant-travel/hono` now exposes
-`lazyAdminRoutes` / `lazyPublicRoutes` on `HonoModule` and `HonoExtension`: a
+`lazyAdminRoutes` / `lazyPublicRoutes` on `ApiModule` and `ApiExtension`: a
 loader `() => Promise<Hono>` returning the same relative routes an eager
 `adminRoutes` / `publicRoutes` would. `createApp` mounts each at the surface
 prefix (`/v1/admin/{name}`, `/v1/public/{publicPath ?? name}`), dynamically
@@ -603,27 +601,27 @@ The minimal form intentionally omits per-route policy metadata. A later
 extension could carry path/policy/preload hints alongside the loader:
 
 ```ts
-interface LazyHonoRoutes {
+interface LazyApiRoutes {
   paths: readonly string[]
   load: () => Promise<Hono>
   preload?: "startup" | "ready" | "first-request"
 }
 
-interface HonoRouteContribution {
+interface ApiRouteContribution {
   paths: readonly string[]
   routes?: Hono
-  lazy?: LazyHonoRoutes
+  lazy?: LazyApiRoutes
   policy?: RoutePolicy
 }
 
-interface HonoModule {
-  adminContribution?: HonoRouteContribution
-  publicContribution?: HonoRouteContribution
+interface ApiModule {
+  adminContribution?: ApiRouteContribution
+  publicContribution?: ApiRouteContribution
 }
 
-interface HonoExtension {
-  adminContribution?: HonoRouteContribution
-  publicContribution?: HonoRouteContribution
+interface ApiExtension {
+  adminContribution?: ApiRouteContribution
+  publicContribution?: ApiRouteContribution
 }
 ```
 
@@ -706,7 +704,7 @@ before the first heavy extraction.
 
 The first implementation should:
 
-- add route contribution fields to `HonoModule` and `HonoExtension`.
+- add route contribution fields to `ApiModule` and `ApiExtension`.
 - mount lazy admin/public routes under the same surface prefixes as eager
   routes.
 - cache successful route loads.
@@ -752,7 +750,7 @@ Candidates:
 
 - `catalog-booking.ts`: the shared quote/draft/hold/book route factory already
   exists in `@voyant-travel/catalog/booking-engine`. Move the reusable
-  `createCatalogBookingHonoModule(...)` entry into `operatorComposition`; keep
+  `createCatalogBookingApiModule(...)` entry into `operatorComposition`; keep
   slots, order management, and snapshot enrichment local until classified.
 - `booking-tax-preview.ts`: `@voyant-travel/finance` already exports
   `mountBookingTaxRoutes(...)`, which mounts under `/v1/admin/bookings` — finance
@@ -764,7 +762,7 @@ Candidates:
   plus `distributionBookingExtension`), so fold this in as one more distribution
   extension entry rather than introducing a new owner.
 - `catalog-content.ts`: product, cruise, and accommodation content route
-  factories already exist. Promote each vertical to export a Hono module or
+  factories already exist. Promote each vertical to export a API module or
   extension so the operator does not manually route each vertical.
 
 This phase should mostly delete manual mounts without redesigning route bodies.
@@ -896,8 +894,8 @@ Recommended package test pattern:
 This proposal is complete when:
 
 - New reusable route interfaces are added to packages, not starters.
-- Route-bearing deployment-local code enters through `HonoModule` or
-  `HonoExtension`, not `additionalRoutes`.
+- Route-bearing deployment-local code enters through `ApiModule` or
+  `ApiExtension`, not `additionalRoutes`.
 - The operator starter's `additionalRoutes` contains only temporary migration
   bridges with deletion targets, or disappears entirely.
 - A second deployment can install a module, add it to the manifest, supply the
@@ -941,7 +939,7 @@ Keep `adminRoutes` and `publicRoutes` as compatibility shorthands that
 Do not add `lazyAdminRoutes` and `lazyPublicRoutes` as the long-term shape.
 Those names solve only loading mode, while the real interface also needs route
 matchers, policy metadata, preload behavior, and diagnostics. A single
-`HonoRouteContribution` keeps eager routes, lazy routes, route policy, and
+`ApiRouteContribution` keeps eager routes, lazy routes, route policy, and
 tooling metadata at the same seam.
 
 ### Admin mount paths
@@ -1022,7 +1020,7 @@ Recommended JSON shape:
   "starters/operator/src/api/flights.ts": {
     "owner": "candidate-package",
     "target": "@voyant-travel/flights",
-    "notes": "Extract through lazy Hono route contribution."
+    "notes": "Extract through lazy API route contribution."
   }
 }
 ```
@@ -1059,7 +1057,7 @@ portable product meaning, such as local dev toggles or diagnostics.
    - Classification of every file lives in
      [Route Ownership Inventory](./route-ownership-inventory.md).
 
-2. Add first-class lazy Hono route contributions.
+2. Add first-class lazy API route contributions.
    - Implement `adminContribution` and `publicContribution` in
      `@voyant-travel/hono`, with `adminRoutes` / `publicRoutes` normalized as
      compatibility shorthands.

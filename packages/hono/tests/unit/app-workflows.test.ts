@@ -18,7 +18,7 @@ import { createInMemoryDriver } from "@voyant-travel/workflows-orchestrator"
 import { afterEach, describe, expect, test } from "vitest"
 
 import { mountApp } from "../../src/app.js"
-import type { HonoModule } from "../../src/module.js"
+import type { ApiModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -28,7 +28,7 @@ afterEach(() => {
   __resetEventFilterRegistry()
 })
 
-function buildPromotionsLikeModule(): HonoModule {
+function buildPromotionsLikeModule(): ApiModule {
   // Workflow: returns its input so we can assert on driver.admin.getRun.
   const bulkReindex = workflow<{ kind: string }, { received: { kind: string } }>({
     id: "test-bulk-reindex",

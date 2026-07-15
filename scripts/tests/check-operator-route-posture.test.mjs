@@ -57,7 +57,7 @@ describe("check-operator-route-posture", () => {
 
   it("rejects retired hosts, legacy lists, and package-specific route overrides", async () => {
     const root = await createFixture({
-      "host.ts": `${validApp}\nconst extra = "/v1/public/products"\ndefineLazyHonoBundle({ load: netopiaHonoBundle })\n`,
+      "host.ts": `${validApp}\nconst extra = "/v1/public/products"\ndefineLazyApiBundle({ load: netopiaApiBundle })\n`,
       "retired-app.ts": "export {}\n",
       "retired-adapter.ts": "export {}\n",
       "public-paths.ts": "export const OPERATOR_PUBLIC_PATHS = []\n",

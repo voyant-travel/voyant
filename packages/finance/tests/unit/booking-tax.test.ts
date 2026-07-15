@@ -7,7 +7,7 @@ import {
   createBookingTaxRoutes,
   matchesTaxPolicyCondition,
 } from "../../src/booking-tax.js"
-import { createFinanceHonoModule } from "../../src/index.js"
+import { createFinanceApiModule } from "../../src/index.js"
 
 describe("booking tax helpers", () => {
   it("computes exclusive tax lines", () => {
@@ -201,7 +201,7 @@ describe("booking tax helpers", () => {
 
   it("serves booking tax settings through the finance admin mount without hitting booking detail", async () => {
     const db = {} as PostgresJsDatabase
-    const finance = createFinanceHonoModule({
+    const finance = createFinanceApiModule({
       resolveBookingTaxSettings: () => ({
         taxPriceMode: "inclusive",
         taxPolicyProfileId: "profile_1",

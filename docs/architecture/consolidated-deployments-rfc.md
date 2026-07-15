@@ -169,7 +169,7 @@ A custom client must be able to do all of the following **without editing a fram
 | Need | Seam | Status |
 | --- | --- | --- |
 | Custom domain/entity | custom module in `src/modules`, auto-discovered + auto-migrated | **done** — `src/modules/<name>` discovery (`modulesFromGlob`) + deployment-source migrations (`db:generate:deployment`); see `custom-modules.md` |
-| Custom route on an existing module | `HonoExtension` in `src/extensions`, auto-discovered + auto-migrated | **done** — `src/extensions/<name>` discovery (`extensionsFromGlob`) + deployment-source migrations; see `custom-modules.md` |
+| Custom route on an existing module | `ApiExtension` in `src/extensions`, auto-discovered + auto-migrated | **done** — `src/extensions/<name>` discovery (`extensionsFromGlob`) + deployment-source migrations; see `custom-modules.md` |
 | Custom association | `defineLink` in `src/links` | exists |
 | Extra admin page / widget | `src/admin/<name>` discovery → `AdminExtension` (page + widget + nav) | **done** — `adminExtensionsFromGlob` + `buildAdminExtensionRoutes`; see `custom-modules.md` |
 | Override a packaged admin page | declarative page-override seam (`detailPageComponent`, `extraPages`) | exists but undiscoverable; document + standardize |

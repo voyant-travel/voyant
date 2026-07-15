@@ -46,7 +46,7 @@ describe("storefront deployment manifest", () => {
           openapi: { document: "storefront" },
           runtime: {
             entry: "@voyant-travel/storefront",
-            export: "createStorefrontHonoModule",
+            export: "createStorefrontApiModule",
           },
         },
         {
@@ -58,7 +58,7 @@ describe("storefront deployment manifest", () => {
           anonymous: ["/leads", "/newsletter", "/offers"],
           runtime: {
             entry: "@voyant-travel/storefront",
-            export: "createStorefrontHonoModule",
+            export: "createStorefrontApiModule",
           },
         },
       ],
@@ -180,7 +180,7 @@ describe("storefront deployment manifest", () => {
             anonymous: ["/contact-exists"],
             runtime: {
               entry: "@voyant-travel/storefront/customer-portal",
-              export: "createCustomerPortalHonoModule",
+              export: "createCustomerPortalApiModule",
             },
           },
         ],
@@ -204,7 +204,7 @@ describe("storefront deployment manifest", () => {
             anonymous: true,
             runtime: {
               entry: "@voyant-travel/storefront/verification",
-              export: "createStorefrontVerificationHonoModule",
+              export: "createStorefrontVerificationApiModule",
             },
           },
         ],
@@ -236,7 +236,7 @@ describe("storefront deployment manifest", () => {
           anonymous: ["payment-link-config", "payment-link"],
           runtime: {
             entry: "@voyant-travel/storefront/payment-link",
-            export: "createPaymentLinkHonoModule",
+            export: "createPaymentLinkApiModule",
           },
         },
       ],

@@ -1,7 +1,7 @@
 import { resolveWorkflowEnvironment } from "@voyant-travel/db/outbox-workflow"
 import { createDbClient } from "@voyant-travel/db/runtime"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { BookingRequirementsHonoModuleOptions } from "./requirements/index.js"
+import type { BookingRequirementsApiModuleOptions } from "./requirements/index.js"
 import type {
   BookingsAccommodationRuntime,
   BookingsConfigurationRuntime,
@@ -70,7 +70,7 @@ export function createBookingsRuntime(
 /** Compose booking-requirements defaults from Inventory's domain provider. */
 export function createBookingRequirementsRuntime(
   inventory: BookingsInventoryRuntime,
-): BookingRequirementsHonoModuleOptions {
+): BookingRequirementsApiModuleOptions {
   return {
     publicRoutes: { resolveProductSnapshot: inventory.resolveProductSnapshot },
   }

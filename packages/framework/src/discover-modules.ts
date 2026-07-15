@@ -8,7 +8,7 @@
  * composition:
  *
  *   - `src/modules/<name>/index.ts`    → a new module (own routes + schema)
- *   - `src/extensions/<name>/index.ts` → a {@link HonoExtension} adding routes to
+ *   - `src/extensions/<name>/index.ts` → a {@link ApiExtension} adding routes to
  *                                        an EXISTING module's surface
  *
  * Discovery is **build-time**: the deployment feeds a Vite
@@ -38,22 +38,20 @@
  */
 
 import type { ExtensionFactory, ModuleFactory } from "@voyant-travel/hono/composition"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { ApiExtension, ApiModule } from "@voyant-travel/hono/module"
 
 /** A deployment module declaration: a ready unit, or a factory that builds one. */
 export type DeploymentModuleDeclaration<TProviders> =
-  | HonoModule
-  | HonoModule[]
+  | ApiModule
+  | ApiModule[]
   | ModuleFactory<TProviders>
 
 /** A deployment extension declaration: a ready unit, or a factory that builds one. */
-export type DeploymentExtensionDeclaration<TProviders> =
-  | HonoExtension
-  | ExtensionFactory<TProviders>
+export type DeploymentExtensionDeclaration<TProviders> = ApiExtension | ExtensionFactory<TProviders>
 
 /**
  * Normalize a deployment-local module declaration into a {@link ModuleFactory}.
- * Accepts a ready {@link HonoModule} (or array) or a factory; returns a factory
+ * Accepts a ready {@link ApiModule} (or array) or a factory; returns a factory
  * either way. Use it as the `export default` of a `src/modules/<name>/index.ts`.
  */
 export function defineDeploymentModule<TProviders = unknown>(
@@ -64,7 +62,7 @@ export function defineDeploymentModule<TProviders = unknown>(
 
 /**
  * Normalize a deployment-local extension declaration into an
- * {@link ExtensionFactory}. Accepts a ready {@link HonoExtension} or a factory.
+ * {@link ExtensionFactory}. Accepts a ready {@link ApiExtension} or a factory.
  * Use it as the `export default` of a `src/extensions/<name>/index.ts`.
  */
 export function defineDeploymentExtension<TProviders = unknown>(
@@ -79,7 +77,7 @@ export type EagerModuleGlob = Record<string, unknown>
 /**
  * Build a deployment-local **module** registry from a Vite `import.meta.glob`
  * (eager) of `src/modules/<name>/index.ts` files. Each entry's `default` export
- * is a {@link HonoModule} or {@link ModuleFactory} (wrap with
+ * is a {@link ApiModule} or {@link ModuleFactory} (wrap with
  * {@link defineDeploymentModule}); the registry key is the `<name>` directory
  * segment, which becomes the module's composition specifier.
  *
@@ -96,7 +94,7 @@ export function modulesFromGlob<TProviders = unknown>(
 /**
  * Build a deployment-local **extension** registry from a Vite `import.meta.glob`
  * (eager) of `src/extensions/<name>/index.ts` files. Each entry's `default`
- * export is a {@link HonoExtension} or {@link ExtensionFactory} (wrap with
+ * export is a {@link ApiExtension} or {@link ExtensionFactory} (wrap with
  * {@link defineDeploymentExtension}); the registry key is the `<name>` directory
  * segment.
  *

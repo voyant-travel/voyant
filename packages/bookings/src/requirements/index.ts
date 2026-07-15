@@ -1,6 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { createBookingRequirementsRuntime } from "../runtime.js"
 import { bookingsInventoryRuntimePort } from "../runtime-port.js"
 import { bookingRequirementsRoutes } from "./routes.js"
@@ -18,19 +18,19 @@ export const bookingRequirementsModule: Module = {
   name: "booking-requirements",
 }
 
-export const bookingRequirementsHonoModule: HonoModule = {
+export const bookingRequirementsApiModule: ApiModule = {
   module: bookingRequirementsModule,
   adminRoutes: bookingRequirementsRoutes,
   publicRoutes: publicBookingRequirementsRoutes,
 }
 
-export interface BookingRequirementsHonoModuleOptions {
+export interface BookingRequirementsApiModuleOptions {
   publicRoutes?: PublicBookingRequirementsRoutesOptions
 }
 
-export function createBookingRequirementsHonoModule(
-  options: BookingRequirementsHonoModuleOptions = {},
-): HonoModule {
+export function createBookingRequirementsApiModule(
+  options: BookingRequirementsApiModuleOptions = {},
+): ApiModule {
   return {
     module: bookingRequirementsModule,
     adminRoutes: bookingRequirementsRoutes,
@@ -42,10 +42,10 @@ export function createBookingRequirementsHonoModule(
 
 export const createBookingRequirementsVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
-    const configured = createBookingRequirementsHonoModule(
+    const configured = createBookingRequirementsApiModule(
       createBookingRequirementsRuntime(await getPort(bookingsInventoryRuntimePort)),
     )
-    const selected: HonoModule = { module: configured.module }
+    const selected: ApiModule = { module: configured.module }
     if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
       selected.adminRoutes = configured.adminRoutes
     }

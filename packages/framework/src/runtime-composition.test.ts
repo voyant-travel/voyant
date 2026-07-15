@@ -629,7 +629,7 @@ describe("graph runtime composition", () => {
       graphHash: "sha256:project-api-public-route",
       entries: {
         "./.voyant/runtime/project-api.generated.js": async () => ({
-          projectApiHonoModule: {
+          projectApiModule: {
             module: { name: "project-api" },
             publicRoutes,
             publicPath: "/",
@@ -648,7 +648,7 @@ describe("graph runtime composition", () => {
               "project/api",
               "project.api.public.foo",
               "./.voyant/runtime/project-api.generated.js",
-              "projectApiHonoModule",
+              "projectApiModule",
             ),
           ],
           selectedIds: { ...EMPTY_SELECTED_IDS, routes: ["project.api.public.foo"] },
@@ -660,7 +660,7 @@ describe("graph runtime composition", () => {
                 mount: "/foo",
                 runtime: {
                   entry: "./.voyant/runtime/project-api.generated.js",
-                  export: "projectApiHonoModule",
+                  export: "projectApiModule",
                 },
               },
               importEntry: "./.voyant/runtime/project-api.generated.js",
@@ -1093,7 +1093,7 @@ describe("graph runtime composition", () => {
     })
 
     await expect(composeVoyantGraphRuntime({ runtime, capabilities: {} })).rejects.toThrow(
-      /plugin "@acme\/audit" must resolve to HonoModule or HonoExtension/,
+      /plugin "@acme\/audit" must resolve to ApiModule or ApiExtension/,
     )
   })
 })

@@ -22,7 +22,7 @@ src/modules/loyalty/
 ## index.ts — mounting
 
 Default-export the module via `defineDeploymentModule` (accepts a ready
-`HonoModule` or a factory):
+`ApiModule` or a factory):
 
 ```ts
 import { defineDeploymentModule } from "@voyant-travel/framework"

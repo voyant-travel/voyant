@@ -18,7 +18,7 @@ import { quoteEntitiesBatch, quoteEntity } from "./quote.js"
 import { createSourceAdapterRegistry } from "./registry.js"
 import {
   type CatalogBookingRoutesOptions,
-  createCatalogBookingHonoModule,
+  createCatalogBookingApiModule,
   createCatalogBookingRoutes,
 } from "./routes.js"
 
@@ -83,8 +83,8 @@ describe("createCatalogBookingRoutes", () => {
     vi.mocked(updateBookingDraft).mockReset()
   })
 
-  it("exposes both admin and public routes through the Hono module wrapper", () => {
-    const module = createCatalogBookingHonoModule({
+  it("exposes both admin and public routes through the API module wrapper", () => {
+    const module = createCatalogBookingApiModule({
       resolveDb: () => db,
       resolveSourceRegistry: () => registry,
     })

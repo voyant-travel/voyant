@@ -535,7 +535,7 @@ export type BookingCreateOutcome =
  * from `@voyant-travel/bookings` (invoices-from-bookings, travel credit service, payment
  * schedules all sit here), so this is the one place that can compose the
  * three packages without creating a new workspace dep cycle. The route wires
- * it under `/v1/admin/bookings/create` via a HonoExtension whose
+ * it under `/v1/admin/bookings/create` via a ApiExtension whose
  * `module` targets `"bookings"`.
  */
 /**

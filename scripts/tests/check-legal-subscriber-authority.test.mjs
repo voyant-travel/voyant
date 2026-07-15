@@ -20,7 +20,7 @@ runtime: { export: "createLegalBookingContractVoyantRuntime" }
 runtimePorts: [requirePort(legalBookingContractSubscriberRuntimePort)]
 subscribers: [{ runtime: { export: "legalBookingContractConfirmedSubscriber" } }]
 `,
-    "packages/legal/src/index.ts": "export function createLegalHonoModule() {}\n",
+    "packages/legal/src/index.ts": "export function createLegalApiModule() {}\n",
     "packages/legal/src/runtime-contributor.ts": `
 const ports = {
   [legalRuntimePort.id]: {},
@@ -83,7 +83,7 @@ legalBookingContractConfirmedSubscriber.register(context)
     const root = await createFixture({
       "packages/runtime/src/deployment-resources.ts": `
 const ports = {}
-const bindings = { "@voyant-travel/legal": createLegalHonoModule }
+const bindings = { "@voyant-travel/legal": createLegalApiModule }
 `,
     })
     await assert.rejects(runChecker(root), /must not bind Legal by package id/)

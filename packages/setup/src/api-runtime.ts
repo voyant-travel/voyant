@@ -1,18 +1,18 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { type SetupStepDefinition, setupStepDefinitionSchema } from "./contracts.js"
 
 export const SETUP_ROUTE_PATHS = ["/v1/admin/setup", "/v1/admin/setup/*"] as const
 
-export interface SetupHonoModuleOptions {
+export interface SetupApiModuleOptions {
   prefill?: Readonly<Record<string, unknown>>
   steps?: readonly SetupStepDefinition[]
 }
 
-export function createSetupHonoModule(options: SetupHonoModuleOptions = {}): HonoModule {
+export function createSetupApiModule(options: SetupApiModuleOptions = {}): ApiModule {
   return {
     module: { name: "setup" },
     lazyRoutes: {
@@ -31,7 +31,7 @@ export function createSetupHonoModule(options: SetupHonoModuleOptions = {}): Hon
 }
 
 export const createSetupVoyantRuntime = defineGraphRuntimeFactory(({ projectConfig, graph }) =>
-  createSetupHonoModule({
+  createSetupApiModule({
     prefill: readSetupPrefill(projectConfig.prefill),
     steps: readSetupSteps(graph.setupSteps),
   }),

@@ -1,10 +1,10 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
-import { externalRefsHonoModule } from "./external-refs/index.js"
+import { externalRefsApiModule } from "./external-refs/index.js"
 import { distributionRoutes } from "./routes.js"
 import { distributionService } from "./service.js"
-import { suppliersHonoModule } from "./suppliers/index.js"
+import { suppliersApiModule } from "./suppliers/index.js"
 
 export type { DistributionRoutes } from "./routes.js"
 
@@ -12,15 +12,15 @@ export const distributionModule: Module = {
   name: "distribution",
 }
 
-export const distributionHonoModule: HonoModule = {
+export const distributionApiModule: ApiModule = {
   module: distributionModule,
   adminRoutes: distributionRoutes,
 }
 
-export const distributionHonoModules = [
-  externalRefsHonoModule,
-  distributionHonoModule,
-  suppliersHonoModule,
+export const distributionApiModules = [
+  externalRefsApiModule,
+  distributionApiModule,
+  suppliersApiModule,
 ] as const
 
 export * from "./booking-extension.js"

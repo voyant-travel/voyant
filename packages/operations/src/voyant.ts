@@ -42,7 +42,7 @@ export const operationsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/operations",
-        export: "operationsHonoModule",
+        export: "operationsApiModule",
       },
     },
   ],

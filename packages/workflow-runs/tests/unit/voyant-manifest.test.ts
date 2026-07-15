@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  createWorkflowRunsHonoModule,
+  createWorkflowRunsApiModule,
   WORKFLOW_RUNS_ADMIN_ROUTE_PATHS,
-} from "../../src/hono-module.js"
+} from "../../src/api-runtime.js"
 import { workflowRunnerRegistryRuntimePort } from "../../src/runtime-port.js"
 import { workflowRunsVoyantModule } from "../../src/voyant.js"
 
@@ -23,7 +23,7 @@ describe("workflow-runs deployment manifest", () => {
           resource: "workflows",
           openapi: { document: "workflow-runs" },
           runtime: {
-            entry: "@voyant-travel/workflow-runs/hono-module",
+            entry: "@voyant-travel/workflow-runs/api-runtime",
             export: "createWorkflowRunsVoyantRuntime",
           },
         },
@@ -118,7 +118,7 @@ describe("workflow-runs deployment manifest", () => {
   })
 
   it("exports a runtime factory for the existing absolute admin routes", () => {
-    const runtime = createWorkflowRunsHonoModule()
+    const runtime = createWorkflowRunsApiModule()
 
     expect(runtime.module.name).toBe("workflow-runs")
     expect(runtime.adminRoutes).toBeUndefined()

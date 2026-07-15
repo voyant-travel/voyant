@@ -213,8 +213,8 @@ describe("quote proposal routes", () => {
   })
 
   it("describes the package-owned proposal and snapshot extensions", () => {
-    const proposal = proposalRoutes.createQuoteProposalHonoExtension(options as never)
-    const snapshot = proposalRoutes.createQuoteVersionSnapshotHonoExtension(options)
+    const proposal = proposalRoutes.createQuoteProposalApiExtension(options as never)
+    const snapshot = proposalRoutes.createQuoteVersionSnapshotApiExtension(options)
 
     expect(proposal).toMatchObject({
       extension: { name: "proposal", module: "quote-versions" },

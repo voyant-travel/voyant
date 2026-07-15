@@ -7,11 +7,10 @@ export interface RegistryOptions {
 }
 
 /**
- * Register module and extension hooks without binding to any specific
- * transport framework.
+ * Register module and extension hooks without binding them to the server API
+ * runtime.
  *
- * Transport adapters are expected to consume the returned modules and
- * extensions separately.
+ * The API runtime consumes the returned modules and extensions separately.
  */
 export function createRegistry(options: RegistryOptions = {}) {
   const modules = options.modules ?? []

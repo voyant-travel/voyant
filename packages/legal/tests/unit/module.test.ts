@@ -1,9 +1,9 @@
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
-import { CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY, createLegalHonoModule } from "../../src/index.js"
+import { CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY, createLegalApiModule } from "../../src/index.js"
 
-describe("createLegalHonoModule", () => {
+describe("createLegalApiModule", () => {
   it("registers contracts route runtime during bootstrap", () => {
     const generator = vi.fn()
     const eventBus = createEventBus()
@@ -12,7 +12,7 @@ describe("createLegalHonoModule", () => {
     const container = createContainer()
     const bindings = { PDF_TOKEN: "token" }
 
-    const module = createLegalHonoModule({
+    const module = createLegalApiModule({
       resolveDocumentGenerator,
       resolveEventBus,
     }).module
@@ -31,7 +31,7 @@ describe("createLegalHonoModule", () => {
     const eventBus = createEventBus()
     const container = createContainer()
 
-    const module = createLegalHonoModule().module
+    const module = createLegalApiModule().module
 
     module.bootstrap?.({ bindings: {}, container, eventBus })
 
@@ -44,7 +44,7 @@ describe("createLegalHonoModule", () => {
     const eventBus = createEventBus()
     const subscribe = vi.spyOn(eventBus, "subscribe")
     const container = createContainer()
-    const module = createLegalHonoModule({
+    const module = createLegalApiModule({
       resolveDb: () => ({}) as never,
       resolveDocumentGenerator: () => vi.fn(),
       autoGenerateContractOnConfirmed: {

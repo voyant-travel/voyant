@@ -8,7 +8,7 @@
  * operator-settings batch). The legs are authored as `createRoute(...).openapi(...)`
  * on a child `OpenAPIHono<Env>` chain (carrying the shared `openApiValidationHook`),
  * composed onto the supplied mount target via `.route("/", child)`. The module is
- * mounted lazily (see `hono-module.ts`), which builds an `OpenAPIHono` so the
+ * mounted lazily (see `api-runtime.ts`), which builds an `OpenAPIHono` so the
  * build-time `mergeLazyOpenApiPaths` replay reads these `.openapi()` operations
  * and surfaces them in the operator spec.
  *

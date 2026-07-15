@@ -10,7 +10,7 @@ import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
-import { createGraphMcpHonoApp, createMcpHonoApp } from "../src/index.js"
+import { createGraphMcpApiRoutes, createMcpApiRoutes } from "../src/index.js"
 import { createMcpVoyantRuntime } from "../src/runtime.js"
 import { mcpVoyantModule } from "../src/voyant.js"
 
@@ -194,7 +194,7 @@ function appWithScopes(scopes: string[], audience: ToolContext["audience"] = "st
   registry.register(sendNotificationTool)
   registry.register(updateRecordTool)
   registry.register(getSensitiveRecordTool)
-  const mcp = createMcpHonoApp({
+  const mcp = createMcpApiRoutes({
     accessCatalog,
     registry,
     buildContext: () => buildContext(audience),
@@ -243,7 +243,7 @@ async function selectedRuntimeRoutes() {
   return routes
 }
 
-describe("createMcpHonoApp", () => {
+describe("createMcpApiRoutes", () => {
   it("owns its concrete HTTP operations and OpenAPI document", async () => {
     expect(mcpVoyantModule.api).toEqual([
       expect.objectContaining({
@@ -259,7 +259,7 @@ describe("createMcpHonoApp", () => {
       await readFile(new URL("../openapi/admin/mcp.json", import.meta.url), "utf8"),
     ) as { paths: Record<string, Record<string, Record<string, unknown>>> }
     const claims = operationClaims(document.paths)
-    const app = createMcpHonoApp({ accessCatalog, registry: createToolRegistry(), buildContext })
+    const app = createMcpApiRoutes({ accessCatalog, registry: createToolRegistry(), buildContext })
     const liveDocument = app.getOpenAPI31Document({
       openapi: "3.1.0",
       info: { title: "test", version: "1.0.0" },
@@ -388,7 +388,7 @@ describe("createMcpHonoApp", () => {
         from: { tools: ["@voyant-travel/catalog#tool.echo"] },
       },
     ]
-    const graphApp = await createGraphMcpHonoApp({
+    const graphApp = await createGraphMcpApiRoutes({
       runtime: {
         accessCatalog,
         tools: [runtimeTool],
@@ -414,14 +414,14 @@ describe("createMcpHonoApp", () => {
     })
 
     await expect(
-      createGraphMcpHonoApp({
+      createGraphMcpApiRoutes({
         runtime: { accessCatalog, tools: [runtimeTool], actions, references },
         buildContext: () => buildContext(),
       }),
     ).rejects.toThrow(/toolActionPolicy/)
 
     await expect(
-      createGraphMcpHonoApp({
+      createGraphMcpApiRoutes({
         runtime: {
           accessCatalog,
           tools: [{ ...runtimeTool, name: "drifted_echo" }],
@@ -443,7 +443,7 @@ describe("createMcpHonoApp", () => {
     ).rejects.toThrow(/name "echo" does not match graph binding "drifted_echo"/)
 
     await expect(
-      createGraphMcpHonoApp({
+      createGraphMcpApiRoutes({
         runtime: {
           accessCatalog,
           tools: [{ ...runtimeTool, risk: "high" }],
@@ -739,7 +739,7 @@ describe("createMcpHonoApp", () => {
       },
     )
     const gateCalls: unknown[] = []
-    const mcp = createMcpHonoApp({
+    const mcp = createMcpApiRoutes({
       accessCatalog,
       registry,
       requireActionPolicies: true,
@@ -855,7 +855,7 @@ describe("createMcpHonoApp", () => {
         },
       },
     )
-    const mcp = createMcpHonoApp({
+    const mcp = createMcpApiRoutes({
       accessCatalog,
       registry,
       requireActionPolicies: true,

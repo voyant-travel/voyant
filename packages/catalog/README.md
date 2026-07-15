@@ -190,7 +190,7 @@ schemas and types from `@voyant-travel/catalog-contracts/adapter/schemas` and
 
 ## BookingJourney HTTP routes
 
-`@voyant-travel/catalog` exports `createCatalogBookingHonoModule(...)` and
+`@voyant-travel/catalog` exports `createCatalogBookingApiModule(...)` and
 `createCatalogBookingRoutes(...)` for the BookingJourney server contract. The
 same functions remain available from `@voyant-travel/catalog/booking-engine` for
 consumers that prefer the narrower subpath. The module mounts the shared quote,
@@ -203,9 +203,9 @@ Templates provide the runtime dependencies instead of the package importing
 deployment code:
 
 ```typescript
-import { createCatalogBookingHonoModule } from "@voyant-travel/catalog"
+import { createCatalogBookingApiModule } from "@voyant-travel/catalog"
 
-export const catalogBookingModule = createCatalogBookingHonoModule({
+export const catalogBookingModule = createCatalogBookingApiModule({
   resolveDb: (c) => c.get("db"),
   resolveSourceRegistry: (c) => getBookingEngineRegistryFromContext(c),
   resolveOwnedHandlers: (c) => getOwnedBookingHandlerRegistryFromContext(c),
@@ -219,7 +219,7 @@ template.
 
 ## Catalog search HTTP routes
 
-`@voyant-travel/catalog` also exports `createCatalogSearchHonoModule(...)`,
+`@voyant-travel/catalog` also exports `createCatalogSearchApiModule(...)`,
 `createCatalogSearchRoutes(...)`, and `mountCatalogSearchRoutes(...)` for the
 plain JSON catalog search endpoint used by admin and storefront UIs:
 
@@ -233,12 +233,12 @@ request:
 
 ```typescript
 import {
-  createCatalogSearchHonoModule,
+  createCatalogSearchApiModule,
   executeSemanticSearch,
   type EmbeddingProvider,
 } from "@voyant-travel/catalog"
 
-export const catalogSearchModule = createCatalogSearchHonoModule({
+export const catalogSearchModule = createCatalogSearchApiModule({
   resolveRuntime: (c) => buildCatalogSearchRuntime(c),
   executeSearch: ({ adapter, embeddings, slice, request }) =>
     executeSemanticSearch({

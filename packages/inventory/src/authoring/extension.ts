@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus, Extension } from "@voyant-travel/core"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { productStatusEnum, productVisibilityEnum } from "../schema.js"
 import { recordProductAuthoring } from "./audit.js"
@@ -10,7 +10,7 @@ import { composeProduct } from "./service.js"
 import { productGraphSpecSchema } from "./spec.js"
 
 /**
- * Inventory authoring rides on the `products` admin prefix as a HonoExtension, so
+ * Inventory authoring rides on the `products` admin prefix as a ApiExtension, so
  * its routes land at `/v1/admin/products/...` while the implementation lives
  * with the optional Inventory package. Same mechanism as
  * `bookingsSupplierExtension`.
@@ -175,14 +175,14 @@ const inventoryAuthoringExtensionDef: Extension = {
   requiresTransactionalDb: true,
 }
 
-export const inventoryAuthoringExtension: HonoExtension = {
+export const inventoryAuthoringExtension: ApiExtension = {
   extension: inventoryAuthoringExtensionDef,
   adminRoutes: inventoryAuthoringRoutes,
 }
 
 export const catalogAuthoringRoutes = inventoryAuthoringRoutes
 
-export const catalogAuthoringExtension: HonoExtension = {
+export const catalogAuthoringExtension: ApiExtension = {
   extension: {
     ...inventoryAuthoringExtensionDef,
     name: "catalog-authoring",

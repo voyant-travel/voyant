@@ -46,7 +46,7 @@ honest.
 | `catalog-checkout.ts` | mixed | 1 | lazy | catalog/trips (composite) | Thin adapter to `startCatalogCheckout`; the service (event bus, runtime resolution) is not yet extracted. Explicitly deferred to Phase 4+. |
 | `catalog-offers.ts` | mixed | 6 | lazy | `@voyant-travel/catalog` + connect | Connect-sourced offer/search/pricing (`@voyant-travel/connect-sdk`); operator search enrichment (Typesense, geo-resolver) stays as adapters. Split reusable contract from enrichment. |
 | `contract-document-routes.ts` | package-owned-manual | 2 | lazy | `@voyant-travel/legal` / document delivery | Contract generation + private document serving. Needs storage + generator adapters. |
-| `flights.ts` | package-owned-manual | 11 | lazy | `@voyant-travel/flights` | Package exists but ships **no HonoModule** — `createFlightsHonoModule` is net-new. The proving slice for lazy extraction (Phase 4). Connector integrations remain project-selected. |
+| `flights.ts` | package-owned-manual | 11 | lazy | `@voyant-travel/flights` | Package exists but ships **no ApiModule** — `createFlightsApiModule` is net-new. The proving slice for lazy extraction (Phase 4). Connector integrations remain project-selected. |
 | `invitations.ts` | package-owned-reusable | 0 | graph | `@voyant-travel/auth` | Moved with team management into auth-owned graph units; deployment config and notification delivery enter through a typed runtime port. |
 | `lazy-additional-routes.ts` | package-owned-manual | 7 | lazy | `@voyant-travel/finance` (checkout) | Public payment-link / checkout-status routes. Finance already receives the checkout options → public route contribution on the existing finance module. |
 | `mcp.ts` | deployment-owned | 1 | lazy | deployment / agent tooling | Agent tool dispatch over trips MCP tools. Keep local unless agents become supported framework surface. |
@@ -85,7 +85,7 @@ follow-up where a second deployment would reuse them.
   `OPERATOR_RUNTIME_MANIFEST` / `operatorComposition`. This inventory only covers
   the `additionalRoutes` stragglers.
 - **Phase 3 (mount-only moves) — DONE:** `channel-push` (distribution
-  extension), `booking-tax` (finance `createBookingTaxHonoExtension`),
+  extension), `booking-tax` (finance `createBookingTaxApiExtension`),
   `booking-schedule` (bookings extension + `payment-policy` public path), and
   `quote-version-snapshot` (trips extension) now compose through the registry;
   `booking-tax-preview.ts` deleted. `catalog-booking.ts` remains (it is lazy —

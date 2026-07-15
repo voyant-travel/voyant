@@ -1,4 +1,4 @@
-import type { HonoExtension, HonoModule } from "./module.js"
+import type { ApiExtension, ApiModule } from "./module.js"
 
 /**
  * Manifest-driven runtime composition.
@@ -34,10 +34,10 @@ export interface CompositionContext<TCapabilities> {
 
 export type ModuleFactory<TCapabilities> = (
   ctx: CompositionContext<TCapabilities>,
-) => HonoModule | HonoModule[]
+) => ApiModule | ApiModule[]
 export type ExtensionFactory<TCapabilities> = (
   ctx: CompositionContext<TCapabilities>,
-) => HonoExtension
+) => ApiExtension
 
 /**
  * Maps manifest specifiers to the factory that builds the runtime unit. Keys
@@ -49,8 +49,8 @@ export interface CompositionRegistry<TCapabilities> {
 }
 
 export interface ComposedApp {
-  modules: HonoModule[]
-  extensions: HonoExtension[]
+  modules: ApiModule[]
+  extensions: ApiExtension[]
 }
 
 function normalizeEntry(entry: CompositionEntry): {

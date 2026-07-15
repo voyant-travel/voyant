@@ -11,7 +11,7 @@ import {
   type VoyantGraphRuntimeFactoryContext,
   type VoyantPort,
 } from "@voyant-travel/core/project"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { ApiExtension, ApiModule } from "@voyant-travel/hono/module"
 
 import type { VoyantGraphRuntime, VoyantGraphRuntimeUnitLoader } from "./runtime-lowering.js"
 
@@ -24,14 +24,12 @@ export interface VoyantGraphRuntimeBindingContext<TCapabilities> {
 export type VoyantGraphRuntimeBinding<TCapabilities> = (
   context: VoyantGraphRuntimeBindingContext<TCapabilities>,
 ) =>
-  | HonoModule
-  | readonly HonoModule[]
-  | HonoExtension
-  | readonly HonoExtension[]
+  | ApiModule
+  | readonly ApiModule[]
+  | ApiExtension
+  | readonly ApiExtension[]
   | undefined
-  | Promise<
-      HonoModule | readonly HonoModule[] | HonoExtension | readonly HonoExtension[] | undefined
-    >
+  | Promise<ApiModule | readonly ApiModule[] | ApiExtension | readonly ApiExtension[] | undefined>
 
 export type VoyantGraphRuntimeBindings<TCapabilities> = Readonly<
   Record<string, VoyantGraphRuntimeBinding<TCapabilities>>
@@ -219,8 +217,8 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
 }
 
 export interface VoyantGraphRuntimeComposition {
-  modules: HonoModule[]
-  extensions: HonoExtension[]
+  modules: ApiModule[]
+  extensions: ApiExtension[]
   accessResources: {
     path: string
     resource: string
@@ -239,15 +237,15 @@ export interface VoyantGraphRuntimeRoutePosture {
 export async function composeVoyantGraphRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
   ports?: VoyantGraphRuntimePorts,
-): Promise<HonoModule[]> {
+): Promise<ApiModule[]> {
   return composeRuntimeFacetModules(runtime, createRuntimeFactoryContexts(runtime, ports))
 }
 
 async function composeRuntimeFacetModules(
   runtime: VoyantGraphRuntime,
   factoryContexts: ReadonlyMap<VoyantGraphRuntimeUnitLoader, VoyantGraphRuntimeFactoryContext>,
-): Promise<HonoModule[]> {
-  const modules: HonoModule[] = []
+): Promise<ApiModule[]> {
+  const modules: ApiModule[] = []
   for (const unit of [...runtime.modules, ...runtime.extensions, ...runtime.plugins]) {
     const module = await resolveRuntimeFacetModule(
       unit,
@@ -266,8 +264,8 @@ async function composeRuntimeFacetModules(
 export async function composeVoyantGraphRuntime<TCapabilities>(
   input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
 ): Promise<VoyantGraphRuntimeComposition> {
-  const modules: HonoModule[] = []
-  const extensions: HonoExtension[] = []
+  const modules: ApiModule[] = []
+  const extensions: ApiExtension[] = []
   const factoryContexts = createRuntimeFactoryContexts(input.runtime, input.ports)
 
   for (const unit of input.runtime.modules) {
@@ -279,8 +277,8 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     assertWebhookRoutePosture(input.runtime, unit, outputs)
     const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
-      if (!isHonoModule(output)) {
-        throw invalidRuntimeOutput(unit, "HonoModule", output)
+      if (!isApiModule(output)) {
+        throw invalidRuntimeOutput(unit, "ApiModule", output)
       }
       modules.push(applyModuleRoutePosture(output, routePosture))
     }
@@ -295,8 +293,8 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     assertWebhookRoutePosture(input.runtime, unit, outputs)
     const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
-      if (!isHonoExtension(output)) {
-        throw invalidRuntimeOutput(unit, "HonoExtension", output)
+      if (!isApiExtension(output)) {
+        throw invalidRuntimeOutput(unit, "ApiExtension", output)
       }
       extensions.push(applyExtensionRoutePosture(output, routePosture))
     }
@@ -311,12 +309,12 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
     assertWebhookRoutePosture(input.runtime, unit, outputs)
     const routePosture = deriveUnitRoutePosture(unit)
     for (const output of outputs) {
-      if (isHonoModule(output)) {
+      if (isApiModule(output)) {
         modules.push(applyModuleRoutePosture(output, routePosture))
-      } else if (isHonoExtension(output)) {
+      } else if (isApiExtension(output)) {
         extensions.push(applyExtensionRoutePosture(output, routePosture))
       } else {
-        throw invalidRuntimeOutput(unit, "HonoModule or HonoExtension", output)
+        throw invalidRuntimeOutput(unit, "ApiModule or ApiExtension", output)
       }
     }
   }
@@ -429,7 +427,7 @@ function anonymousForPublicMount(
   return relative.length > 0 ? relative : undefined
 }
 
-function applyModuleRoutePosture(output: HonoModule, posture: UnitRoutePosture): HonoModule {
+function applyModuleRoutePosture(output: ApiModule, posture: UnitRoutePosture): ApiModule {
   return {
     ...output,
     ...(output.publicPath === undefined && posture.publicMount
@@ -447,10 +445,7 @@ function applyModuleRoutePosture(output: HonoModule, posture: UnitRoutePosture):
   }
 }
 
-function applyExtensionRoutePosture(
-  output: HonoExtension,
-  posture: UnitRoutePosture,
-): HonoExtension {
+function applyExtensionRoutePosture(output: ApiExtension, posture: UnitRoutePosture): ApiExtension {
   return {
     ...output,
     ...(output.publicPath === undefined && posture.publicMount
@@ -495,7 +490,7 @@ function sortedUnique(values: readonly string[]): string[] {
 
 function createGraphOutboundWebhookModule<TCapabilities>(
   input: ComposeVoyantGraphRuntimeInput<TCapabilities>,
-): HonoModule | undefined {
+): ApiModule | undefined {
   const enqueue = input.outboundWebhooks?.enqueue
   if (!enqueue || input.runtime.webhooks.outbound.length === 0) return undefined
 
@@ -553,7 +548,7 @@ function assertWebhookRoutePosture(
 async function resolveRuntimeFacetModule(
   unit: VoyantGraphRuntimeUnitLoader,
   factoryContext: VoyantGraphRuntimeFactoryContext,
-): Promise<HonoModule | undefined> {
+): Promise<ApiModule | undefined> {
   const workflows =
     unit.workflows.length > 0
       ? await Promise.all(unit.workflows.map((workflow) => workflow.load<WorkflowDescriptor>()))
@@ -776,11 +771,11 @@ function normalizeRuntimeOutputs(output: unknown): unknown[] {
   return Array.isArray(output) ? output : [output]
 }
 
-function isHonoModule(value: unknown): value is HonoModule {
+function isApiModule(value: unknown): value is ApiModule {
   return isRecord(value) && isRecord(value.module) && isNonEmptyString(value.module.name)
 }
 
-function isHonoExtension(value: unknown): value is HonoExtension {
+function isApiExtension(value: unknown): value is ApiExtension {
   return (
     isRecord(value) &&
     isRecord(value.extension) &&
@@ -809,7 +804,7 @@ function isEventFilterDescriptor(value: unknown): value is EventFilterDescriptor
 
 function invalidRuntimeOutput(
   unit: VoyantGraphRuntimeUnitLoader,
-  expected: "HonoModule" | "HonoExtension" | "HonoModule or HonoExtension",
+  expected: "ApiModule" | "ApiExtension" | "ApiModule or ApiExtension",
   output: unknown,
 ): Error {
   return new Error(

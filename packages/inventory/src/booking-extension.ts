@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -321,7 +321,7 @@ const productsBookingExtensionDef: Extension = {
   module: "bookings",
 }
 
-export const productsBookingExtension: HonoExtension = {
+export const productsBookingExtension: ApiExtension = {
   extension: productsBookingExtensionDef,
   adminRoutes: bookingProductExtensionRoutes,
 }

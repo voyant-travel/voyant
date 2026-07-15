@@ -1,4 +1,4 @@
-import { suppliersHonoModule } from "@voyant-travel/distribution"
+import { suppliersApiModule } from "@voyant-travel/distribution"
 import { handleApiError } from "@voyant-travel/hono"
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest"
 function makeApp() {
   const app = new Hono()
   app.onError(handleApiError)
-  app.route("/", suppliersHonoModule.adminRoutes)
+  app.route("/", suppliersApiModule.adminRoutes)
   return app
 }
 

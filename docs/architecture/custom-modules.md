@@ -98,7 +98,7 @@ the module directory name.
 ## Mounting (`index.ts`)
 
 Default-export the module with `defineDeploymentModule`, which accepts a ready
-`HonoModule` **or** a `ModuleFactory` (a `(ctx) => HonoModule` that receives the
+`ApiModule` **or** a `ModuleFactory` (a `(ctx) => ApiModule` that receives the
 deployment's injected capabilities):
 
 ```ts
@@ -306,7 +306,7 @@ inspection or emission, but is not a separate deployment prerequisite.
 
 ## Custom routes on an *existing* module (extensions)
 
-A `HonoExtension` adds routes to an **existing** module's surface (e.g. a
+A `ApiExtension` adds routes to an **existing** module's surface (e.g. a
 `/v1/admin/bookings/notes` endpoint on the standard `bookings` module) — as
 opposed to a module, which is a whole new domain. Drop it in `src/extensions/`
 and it's discovered + mounted the same way:

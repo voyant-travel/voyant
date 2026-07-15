@@ -29,7 +29,7 @@ import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
 import { bookingActivityLog, bookings } from "@voyant-travel/bookings/schema"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -503,9 +503,9 @@ export function createPaymentPolicyPublicRoutes(options: BookingScheduleRoutesOp
 }
 
 /** Package-owned extension descriptor; deployments inject the policy cascade readers. */
-export function createBookingScheduleHonoExtension(
+export function createBookingScheduleApiExtension(
   options: BookingScheduleRoutesOptions,
-): HonoExtension {
+): ApiExtension {
   return {
     extension: { name: "booking-schedule", module: "bookings" },
     lazyAdminRoutes: async () => createBookingScheduleAdminRoutes(options),
@@ -525,8 +525,8 @@ export const createBookingScheduleVoyantRuntime = defineGraphRuntimeFactory(
       await getPort(financeCruisesPaymentPolicyRuntimePort),
       await getPort(financeInventoryPaymentPolicyRuntimePort),
     )
-    const configured = createBookingScheduleHonoExtension(provider.options)
-    const selected: HonoExtension = {
+    const configured = createBookingScheduleApiExtension(provider.options)
+    const selected: ApiExtension = {
       extension: {
         ...configured.extension,
         bootstrap: async ({ container }) => {

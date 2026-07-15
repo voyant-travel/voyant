@@ -15,7 +15,7 @@
     "./reference/fixtures": "./src/reference/fixtures.ts",
     "./reference/local-postgres": "./src/reference/local-postgres.ts",
     "./reference/static-bundle": "./src/reference/static-bundle.ts",
-    "./hono": "./src/hono.ts",
+    "./api-runtime": "./src/api-runtime.ts",
     "./payment-integration": "./src/payment-integration.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./tools": "./src/tools.ts",
@@ -121,10 +121,10 @@
         "import": "./dist/reference/static-bundle.js",
         "default": "./dist/reference/static-bundle.js"
       },
-      "./hono": {
-        "types": "./dist/hono.d.ts",
-        "import": "./dist/hono.js",
-        "default": "./dist/hono.js"
+      "./api-runtime": {
+        "types": "./dist/api-runtime.d.ts",
+        "import": "./dist/api-runtime.js",
+        "default": "./dist/api-runtime.js"
       },
       "./payment-integration": {
         "types": "./dist/payment-integration.d.ts",

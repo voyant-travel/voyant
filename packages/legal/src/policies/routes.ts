@@ -1,5 +1,5 @@
 /**
- * Policy admin + public routes. The combined `legalHonoModule` mounts these
+ * Policy admin + public routes. The combined `legalApiModule` mounts these
  * under `/v1/admin/legal/policies/*` and `/v1/public/legal/policies/*`.
  *
  * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114).

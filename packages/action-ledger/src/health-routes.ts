@@ -17,7 +17,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 
 import {
   type RunActionLedgerCanaryInput,
@@ -274,9 +274,9 @@ export function createActionLedgerHealthRoutes(options: ActionLedgerHealthRoutes
 }
 
 /** Package-owned descriptor; domain-specific drift checks remain injected. */
-export function createActionLedgerHealthHonoExtension(
+export function createActionLedgerHealthApiExtension(
   options: ActionLedgerHealthRoutesOptions,
-): HonoExtension {
+): ApiExtension {
   return {
     extension: { name: "action-ledger-health", module: "action-ledger" },
     adminRoutes: createActionLedgerHealthRoutes(options),

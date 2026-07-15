@@ -1,24 +1,24 @@
 import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import {
-  createBookingMaintenanceHonoExtension,
+  createBookingMaintenanceApiExtension,
+  createCatalogCheckoutApiExtension,
   createCatalogCheckoutGraphExtension,
-  createCatalogCheckoutHonoExtension,
 } from "./checkout/index.js"
 import {
   commerceRuntimeModuleNames,
-  createCommerceHonoModules,
+  createCommerceApiModules,
   createCommerceStorefrontOfferResolvers,
 } from "./index.js"
-import { marketsHonoModule } from "./markets/index.js"
-import { pricingHonoModule } from "./pricing/index.js"
-import { promotionsHonoModule } from "./promotions/index.js"
-import { sellabilityHonoModule } from "./sellability/index.js"
+import { marketsApiModule } from "./markets/index.js"
+import { pricingApiModule } from "./pricing/index.js"
+import { promotionsApiModule } from "./promotions/index.js"
+import { sellabilityApiModule } from "./sellability/index.js"
 
 describe("commerce runtime", () => {
   it("publishes checkout and booking maintenance extension descriptors", () => {
-    const checkout = createCatalogCheckoutHonoExtension({} as never)
-    const maintenance = createBookingMaintenanceHonoExtension({} as never)
+    const checkout = createCatalogCheckoutApiExtension({} as never)
+    const maintenance = createBookingMaintenanceApiExtension({} as never)
 
     expect(checkout.extension).toMatchObject({ name: "catalog-checkout", module: "catalog" })
     expect(checkout.publicRoutes).toBeDefined()
@@ -28,14 +28,14 @@ describe("commerce runtime", () => {
   })
 
   it("expands to the commercial runtime modules in stable order", () => {
-    const modules = createCommerceHonoModules()
+    const modules = createCommerceApiModules()
 
     expect(modules.map((mod) => mod.module.name)).toEqual([...commerceRuntimeModuleNames])
     expect(modules).toEqual([
-      pricingHonoModule,
-      marketsHonoModule,
-      sellabilityHonoModule,
-      promotionsHonoModule,
+      pricingApiModule,
+      marketsApiModule,
+      sellabilityApiModule,
+      promotionsApiModule,
     ])
   })
 

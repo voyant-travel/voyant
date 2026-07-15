@@ -1,6 +1,6 @@
 /**
  * Admin routes for booking extras — a separately, independently mounted module
- * (`bookingsExtrasHonoModule`). Covers two resource sub-chains: booking-extras
+ * (`bookingsExtrasApiModule`). Covers two resource sub-chains: booking-extras
  * CRUD and the slot extra manifest (read + selection/collection mutations).
  *
  * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114).

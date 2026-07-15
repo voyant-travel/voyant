@@ -5,11 +5,11 @@ import {
   cruisesBookingExtensionRoutes,
 } from "../../src/booking-extension.js"
 import { createCruisesContentVoyantRuntime } from "../../src/graph-runtime.js"
-import { createCruisesHonoModule, createCruisesVoyantRuntime } from "../../src/index.js"
+import { createCruisesApiModule, createCruisesVoyantRuntime } from "../../src/index.js"
 import { cruiseAdminRoutes } from "../../src/routes.js"
 import {
   CRUISE_CONTENT_OPENAPI_API_IDS,
-  createCruiseContentHonoExtension,
+  createCruiseContentApiExtension,
 } from "../../src/routes-content.js"
 import { CRUISES_OPENAPI_API_IDS } from "../../src/routes-openapi.js"
 import { cruisePublicRoutes } from "../../src/routes-public.js"
@@ -127,7 +127,7 @@ describe("cruises deployment manifest", () => {
     })
 
     const resolveRegistry = () => ({}) as never
-    const extension = createCruiseContentHonoExtension({
+    const extension = createCruiseContentApiExtension({
       admin: { resolveRegistry, defaultAcceptMachineTranslated: false, allowOwnedKeys: true },
       public: { resolveRegistry, defaultAcceptMachineTranslated: true, allowOwnedKeys: true },
     })
@@ -214,7 +214,7 @@ describe("cruises deployment manifest", () => {
   it("preserves deployment-injected lazy route bridges", () => {
     const lazyAdminRoutes = async () => ({}) as never
     const lazyPublicRoutes = async () => ({}) as never
-    const module = createCruisesHonoModule({ lazyAdminRoutes, lazyPublicRoutes, anonymous: true })
+    const module = createCruisesApiModule({ lazyAdminRoutes, lazyPublicRoutes, anonymous: true })
     expect(module).toMatchObject({ lazyAdminRoutes, lazyPublicRoutes, anonymous: true })
     expect(module.adminRoutes).toBeUndefined()
     expect(module.publicRoutes).toBeUndefined()

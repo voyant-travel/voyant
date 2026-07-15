@@ -9,7 +9,7 @@ import type {
   FinanceDistributionPaymentPolicyRuntime,
   FinanceInventoryPaymentPolicyRuntime,
 } from "@voyant-travel/finance/runtime-port"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import type { CheckoutInquiryRuntime } from "@voyant-travel/quotes-contracts/checkout-inquiry"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -19,12 +19,12 @@ import type {
   CatalogCheckoutContractPdfRuntime,
   CatalogCheckoutDatabaseRuntime,
 } from "./checkout/runtime-ports.js"
-import { marketsHonoModule } from "./markets/index.js"
-import { pricingHonoModule } from "./pricing/index.js"
+import { marketsApiModule } from "./markets/index.js"
+import { pricingApiModule } from "./pricing/index.js"
 import {
-  createPromotionsHonoModule,
+  createPromotionsApiModule,
   type PromotionsRoutesOptions,
-  promotionsHonoModule,
+  promotionsApiModule,
 } from "./promotions/index.js"
 import type {
   PromotionRedemptionDatabaseRuntime,
@@ -38,9 +38,9 @@ import type {
   CommerceOperatorSettingsRuntime,
 } from "./runtime-port.js"
 import {
-  createSellabilityHonoModule,
+  createSellabilityApiModule,
   type SellabilityRoutesOptions,
-  sellabilityHonoModule,
+  sellabilityApiModule,
 } from "./sellability/index.js"
 
 export const commerceRuntimeModuleNames = [
@@ -52,18 +52,18 @@ export const commerceRuntimeModuleNames = [
 
 export type CommerceRuntimeModuleName = (typeof commerceRuntimeModuleNames)[number]
 
-export interface CommerceHonoModulesOptions {
+export interface CommerceApiModulesOptions {
   promotions?: PromotionsRoutesOptions
   sellability?: SellabilityRoutesOptions
 }
 
 /** Build the HTTP modules represented by the consolidated Commerce manifest. */
-export function createCommerceHonoModules(options: CommerceHonoModulesOptions = {}): HonoModule[] {
+export function createCommerceApiModules(options: CommerceApiModulesOptions = {}): ApiModule[] {
   return [
-    pricingHonoModule,
-    marketsHonoModule,
-    options.sellability ? createSellabilityHonoModule(options.sellability) : sellabilityHonoModule,
-    options.promotions ? createPromotionsHonoModule(options.promotions) : promotionsHonoModule,
+    pricingApiModule,
+    marketsApiModule,
+    options.sellability ? createSellabilityApiModule(options.sellability) : sellabilityApiModule,
+    options.promotions ? createPromotionsApiModule(options.promotions) : promotionsApiModule,
   ]
 }
 

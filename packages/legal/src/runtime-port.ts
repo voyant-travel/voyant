@@ -1,9 +1,9 @@
 import { definePort } from "@voyant-travel/core/project"
 
-import type { CreateLegalHonoModuleOptions } from "./index.js"
+import type { CreateLegalApiModuleOptions } from "./index.js"
 
 /** Deployment options consumed by the package-owned Legal graph runtime. */
-export const legalRuntimePort = definePort<CreateLegalHonoModuleOptions>({
+export const legalRuntimePort = definePort<CreateLegalApiModuleOptions>({
   id: "legal.runtime",
   test(provider) {
     if (provider === null || typeof provider !== "object") {

@@ -4,7 +4,7 @@ import {
   CHARTERS_BOOKING_OPENAPI_API_ID,
   chartersBookingExtensionRoutes,
 } from "../../src/booking-extension.js"
-import { createChartersHonoModule, createChartersVoyantRuntime } from "../../src/index.js"
+import { createChartersApiModule, createChartersVoyantRuntime } from "../../src/index.js"
 import { CHARTERS_PUBLIC_OPENAPI_API_ID } from "../../src/routes-openapi.js"
 import { chartersPublicRoutes } from "../../src/routes-public.js"
 import { chartersBookingVoyantPlugin, chartersVoyantModule } from "../../src/voyant.js"
@@ -63,7 +63,7 @@ describe("charters deployment manifest", () => {
 
     const lazyAdminRoutes = async () => ({}) as never
     const lazyPublicRoutes = async () => ({}) as never
-    const module = createChartersHonoModule({ lazyAdminRoutes, lazyPublicRoutes, anonymous: true })
+    const module = createChartersApiModule({ lazyAdminRoutes, lazyPublicRoutes, anonymous: true })
     expect(module).toMatchObject({ lazyAdminRoutes, lazyPublicRoutes, anonymous: true })
     expect(module.adminRoutes).toBeUndefined()
     expect(module.publicRoutes).toBeUndefined()

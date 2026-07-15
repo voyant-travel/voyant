@@ -59,7 +59,7 @@ Storefront can accept public CRM intake at the public root:
 - `POST /leads`
 - `POST /newsletter/subscribe`
 
-When mounted through `createStorefrontHonoModule`, these become
+When mounted through `createStorefrontApiModule`, these become
 `/v1/public/leads` and `/v1/public/newsletter/subscribe`.
 
 Both routes create a CRM person and a CRM customer signal. Lead intake accepts
@@ -69,9 +69,9 @@ uses `sourceSubmissionId` for idempotency; when omitted, the email address is
 used to derive a stable newsletter submission key.
 
 ```ts
-import { createStorefrontHonoModule } from "@voyant-travel/storefront"
+import { createStorefrontApiModule } from "@voyant-travel/storefront"
 
-createStorefrontHonoModule({
+createStorefrontApiModule({
   intake: {
     guard({ body, context }) {
       // Install host-owned rate-limit, captcha, signature, or abuse checks.
@@ -97,9 +97,9 @@ Storefront owns public email and SMS verification challenges for customer-facing
 checkout and account flows.
 
 ```ts
-import { createStorefrontVerificationHonoModule } from "@voyant-travel/storefront/verification"
+import { createStorefrontVerificationApiModule } from "@voyant-travel/storefront/verification"
 
-const storefrontVerification = createStorefrontVerificationHonoModule({
+const storefrontVerification = createStorefrontVerificationApiModule({
   resolveProviders: (bindings) => [
     // return notification-compatible providers for email and/or sms
   ],

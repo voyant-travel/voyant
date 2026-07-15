@@ -1,7 +1,7 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { storefrontVerificationRuntimePort } from "../runtime-port.js"
 import {
   buildStorefrontVerificationSenders,
@@ -71,9 +71,9 @@ export {
   storefrontVerificationStatusSchema,
 } from "./validation.js"
 
-export function createStorefrontVerificationHonoModule(
+export function createStorefrontVerificationApiModule(
   options?: StorefrontVerificationRoutesOptions,
-): HonoModule {
+): ApiModule {
   const module: Module = {
     ...storefrontVerificationModule,
     bootstrap: ({ bindings, container }) => {
@@ -95,5 +95,5 @@ export function createStorefrontVerificationHonoModule(
 
 export const createStorefrontVerificationVoyantRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) =>
-    createStorefrontVerificationHonoModule(await getPort(storefrontVerificationRuntimePort)),
+    createStorefrontVerificationApiModule(await getPort(storefrontVerificationRuntimePort)),
 )

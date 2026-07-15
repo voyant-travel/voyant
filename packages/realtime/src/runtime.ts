@@ -1,5 +1,5 @@
 import { createAdminInvalidationSubscriberRuntime } from "./admin-invalidation-subscriber.js"
-import type { CreateRealtimeHonoModuleOptions } from "./index.js"
+import type { CreateRealtimeApiModuleOptions } from "./index.js"
 import type { RealtimeProvider, RealtimeRouteResult, RealtimeRoutes } from "./types.js"
 
 function adminHint(entity: string, id: string | undefined): RealtimeRouteResult {
@@ -137,7 +137,7 @@ export const realtimeAvailabilitySlotChangedInvalidationSubscriber = invalidatio
 /** Build deterministic route options from the deployment-selected transport. */
 export function createRealtimeRuntime(
   provider: RealtimeProvider | null,
-): CreateRealtimeHonoModuleOptions {
+): CreateRealtimeApiModuleOptions {
   return {
     resolveProviders: () => (provider ? [provider] : []),
   }

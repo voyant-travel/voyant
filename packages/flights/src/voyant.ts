@@ -16,7 +16,7 @@ export const flightsVoyantModule = defineModule({
       mount: "flights",
       openapi: { document: "flights" },
       runtime: {
-        entry: "@voyant-travel/flights/hono",
+        entry: "@voyant-travel/flights/api-runtime",
         export: "createFlightsVoyantRuntime",
       },
     },

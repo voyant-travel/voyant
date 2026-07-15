@@ -2,7 +2,7 @@
  * Travel Composer ("trips") routes — the dynamic-packaging envelope/component/
  * requirement lifecycle. The `createTripsRoutes` factory is mounted on BOTH the
  * admin (`/v1/admin/...`) and public (`/v1/public/...`) surfaces by
- * `createTripsHonoModule`; admin-only operations return 403 on the public
+ * `createTripsApiModule`; admin-only operations return 403 on the public
  * surface but are still documented on both (intentional — the same factory
  * produces both specs).
  *

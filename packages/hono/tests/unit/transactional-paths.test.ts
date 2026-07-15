@@ -3,7 +3,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { mountApp } from "../../src/app.js"
-import type { HonoModule } from "../../src/module.js"
+import type { ApiModule } from "../../src/module.js"
 import type { DbFactory, VoyantBindings, VoyantDb } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -26,7 +26,7 @@ describe("mountApp — module transactionalPaths (ADR-0008)", () => {
     const transactionalFactory = vi.fn<DbFactory>(() => fakeDb(true))
     // Declares ONE absolute transactional path — a subset of its routes, mounted
     // outside the name-based surface (no `requiresTransactionalDb` flag).
-    const widget: HonoModule = {
+    const widget: ApiModule = {
       module: { name: "widget" },
       adminRoutes: new Hono()
         .post("/commit", (c) => c.json({ ok: true }))

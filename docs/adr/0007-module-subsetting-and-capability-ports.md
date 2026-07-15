@@ -127,7 +127,7 @@ goal. See Alternatives.
   module's tables as *expected-absent-from-use*, not drift. (Re-selecting the
   module later "just works" with no migration.)
 - **Excluding a module auto-drops its augmenting extensions** (voyant#2104,
-  shipped). An extension's mount prefix (`HonoExtension.extension.module`) is a
+  shipped). An extension's mount prefix (`ApiExtension.extension.module`) is a
   *path*, not a foreign key to a mounted module's `name` — the standard set
   legitimately contains, e.g., a `proposal` extension that mounts under
   `quote-versions` with no module of that name — so a name-match "orphan" check is

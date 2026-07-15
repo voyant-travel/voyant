@@ -5,7 +5,7 @@ import {
   type CatalogOffersConnectClient,
   type CatalogOffersRouteModuleOptions,
   createCatalogOffersAdminRoutes,
-  createCatalogOffersHonoExtension,
+  createCatalogOffersApiExtension,
 } from "./operator-routes.js"
 
 // A db stub whose `.select().from().where().limit()` chain resolves to the
@@ -62,7 +62,7 @@ const validOffersBody = {
 
 describe("createCatalogOffersAdminRoutes", () => {
   it("publishes a package-owned extension descriptor", () => {
-    const extension = createCatalogOffersHonoExtension(makeOptions())
+    const extension = createCatalogOffersApiExtension(makeOptions())
 
     expect(extension.extension).toEqual({ name: "catalog-offers", module: "catalog" })
     expect(extension.adminRoutes).toBeDefined()

@@ -69,7 +69,7 @@ describe("project API conventions", () => {
     expect(compilation.generatedFile.path).toBe("runtime/project-api.generated.ts")
     expect(compilation.generatedFile.contents).toBe(
       [
-        'import { Hono, type HonoModule, type VoyantBindings, type VoyantVariables } from "@voyant-travel/framework/project-runtime"',
+        'import { Hono, type ApiModule, type VoyantBindings, type VoyantVariables } from "@voyant-travel/framework/project-runtime"',
         'import * as route0 from "../../src/api/admin/orders/[orderId]/route.js"',
         'import * as route1 from "../../src/api/public/catalog/(sales)/[...slug]/route.js"',
         "",
@@ -80,12 +80,12 @@ describe("project API conventions", () => {
         "const publicRoutes = new Hono<ProjectApiEnv>()",
         'publicRoutes.on("OPTIONS", "/catalog/*slug", route1.OPTIONS)',
         "",
-        "export const projectApiHonoModule = {",
+        "export const projectApiModule = {",
         '  module: { name: "project-api" },',
         "  adminRoutes,",
         "  publicRoutes,",
         '  publicPath: "/",',
-        "} satisfies HonoModule",
+        "} satisfies ApiModule",
         "",
       ].join("\n"),
     )
