@@ -275,28 +275,28 @@ export const updateProductTool = defineTool({
   },
 })
 
-export const publishProductTool = defineProductLifecycleTool({
+export const publishProductTool = defineTool(productLifecycleToolDefinition({
   capabilityId: `${OWNER}#tool.publish-product`,
   name: "publish_product",
   description:
     "Publish a product to the public catalog. Inventory enforces scheduled-product departure readiness before committing.",
   patch: { status: "active", visibility: "public", activated: true },
-})
+}))
 
-export const unpublishProductTool = defineProductLifecycleTool({
+export const unpublishProductTool = defineTool(productLifecycleToolDefinition({
   capabilityId: `${OWNER}#tool.unpublish-product`,
   name: "unpublish_product",
   description:
     "Remove a product from the public catalog without deleting authored product history.",
   patch: { activated: false },
-})
+}))
 
-export const archiveProductTool = defineProductLifecycleTool({
+export const archiveProductTool = defineTool(productLifecycleToolDefinition({
   capabilityId: `${OWNER}#tool.archive-product`,
   name: "archive_product",
   description: "Archive and deactivate a product while preserving its history and owned records.",
   patch: { status: "archived", activated: false },
-})
+}))
 
 export const listProductExtrasTool = defineTool(listProductExtrasDefinition)
 export const getProductExtraTool = defineTool(getProductExtraDefinition)
@@ -319,13 +319,13 @@ export const inventoryTools = [
   archiveProductTool,
 ] as const
 
-function defineProductLifecycleTool(input: {
+function productLifecycleToolDefinition(input: {
   capabilityId: string
   name: string
   description: string
   patch: z.output<typeof updateProductSchema>
 }) {
-  return defineTool({
+  return {
     capabilityId: input.capabilityId,
     capabilityVersion: VERSION,
     name: input.name,
@@ -337,13 +337,13 @@ function defineProductLifecycleTool(input: {
     tier: "write",
     riskPolicy: PRODUCT_LIFECYCLE_RISK,
     annotations: { idempotentHint: true },
-    async handler({ id }, ctx: InventoryToolContext) {
+    async handler({ id }: z.infer<typeof productIdArgs>, ctx: InventoryToolContext) {
       return parseJsonResult(
         productToolSchema.nullable(),
         await inventory(ctx).updateProduct(id, input.patch),
       )
     },
-  })
+  } as const
 }
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
