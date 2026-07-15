@@ -211,7 +211,10 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
   for (const tool of options.runtime.tools) {
     const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
     const actionPolicy = tool.id ? actionsByTool.get(tool.id) : undefined
-    if (!tool.id || !actionPolicy) {
+    if (!tool.id) {
+      throw new Error(`Selected MCP Tool "${tool.name ?? "unknown"}" has no stable capability id.`)
+    }
+    if (!actionPolicy && tool.risk !== "low") {
       throw new Error(
         `Selected MCP Tool "${tool.name ?? tool.id ?? "unknown"}" has no selected graph action policy.`,
       )
@@ -223,9 +226,9 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
       ...(tool.name ? { name: tool.name } : {}),
       ...(tool.requiredScopes ? { requiredScopes: tool.requiredScopes } : {}),
       ...(tool.risk ? { deploymentRisk: tool.risk } : {}),
-      actionPolicy,
+      ...(actionPolicy ? { actionPolicy } : {}),
     })
-    if (definition.actionPolicyEnforcement !== "handler") {
+    if (actionPolicy && definition.actionPolicyEnforcement !== "handler") {
       requiredContext.add("toolActionPolicy")
     }
     for (const key of tool.context ?? []) requiredContext.add(key)
@@ -525,7 +528,7 @@ async function dispatchToResult(
     const { commandInput, invocation } = entry.actionPolicy
       ? splitInvocation(args)
       : { commandInput: args, invocation: {} }
-    if (requireActionPolicy && !entry.actionPolicy) {
+    if (requireActionPolicy && !entry.actionPolicy && entry.deploymentRisk !== "low") {
       throw new ToolError(
         `Tool "${entry.name}" has no selected graph action policy.`,
         "ACTION_POLICY_REQUIRED",
