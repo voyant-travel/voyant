@@ -37,6 +37,13 @@ const app = createApp({
 | `./routes` | Hono routes |
 | `./suppliers` | Supplier identity, services, rates, notes, routes, validation, and schema owner path |
 | `./external-refs` | External reference routes, service, validation, and schema owner path |
+| `./tools` | Guarded supplier, channel, and external-reference Tool definitions |
+| `./mcp-runtime` | Tool definitions plus the package-owned runtime context contributor |
+
+The Tool surface provides staff-scoped list, detail, create, and update
+capabilities for supplier profiles, distribution channels, and external
+references. Destructive deletes remain outside the Tool surface until a
+deployment selects an explicit destructive-action policy.
 
 Set `VOYANT_DISTRIBUTION_CHANNEL_PUSH_ENABLED=true` in workflow build/runtime
 environments that should publish the scheduled availability and content
