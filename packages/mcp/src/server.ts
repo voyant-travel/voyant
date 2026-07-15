@@ -12,6 +12,9 @@
  * Authorization (D2): each tool's `requiredScopes` are checked against the
  * caller's granted scopes with **AND** semantics. Unauthorized tools are neither
  * listed nor registered on the per-request server, so they cannot be called.
+ *
+ * agent-quality: file-size exception -- intentional while the HTTP transport,
+ * graph composition, and action-policy gate remain one reviewable security boundary (#3370).
  */
 import { StreamableHTTPTransport } from "@hono/mcp"
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
@@ -206,10 +209,7 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
 /** Compose selected tools and their package-owned context contributors from one graph. */
 export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Promise<OpenAPIHono> {
   const registry = createToolRegistry()
-  const contributions = new Map<
-    string,
-    { contribution: ToolContextContribution; unitId: string }
-  >()
+  const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
   const actionsByTool = indexActionsByTool(options.runtime.actions ?? [])
 
@@ -243,11 +243,11 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
     const toolUnitId = tool.unitId ?? ""
     const existingContribution = contributions.get(reference.importEntry)
     if (existingContribution) {
-      if (existingContribution.unitId !== toolUnitId) {
-        throw new Error(
-          `Selected MCP runtime "${reference.importEntry}" contributes tools for multiple owning units.`,
-        )
-      }
+      // A package may expose Tools from both its module and one or more extensions
+      // through the same runtime entry. In that case the contribution remains shared,
+      // as it was before unit-scoped resources existed; only uniquely-owned runtime
+      // entries receive project configuration for their owning unit.
+      if (existingContribution.unitId !== toolUnitId) existingContribution.unitId = ""
       continue
     }
     const namespace = await reference.loadModule()
