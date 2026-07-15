@@ -1,12 +1,6 @@
 import type { MiddlewareHandler } from "hono"
 
-import type { VoyantVariables } from "../types.js"
-
-/**
- * Structural shape of a Workers Analytics Engine dataset binding —
- * declared locally so `@voyant-travel/hono` needs no `@cloudflare/workers-types`
- * dependency.
- */
+/** Structural sink contract for request metrics. */
 export interface AnalyticsEngineDatasetLike {
   writeDataPoint(point: { blobs?: string[]; doubles?: number[]; indexes?: string[] }): void
 }
@@ -19,12 +13,8 @@ export interface RequestDbMetrics {
 export const DB_METRICS_CONTEXT_KEY = "__voyantDbMetrics"
 
 export interface MetricsMiddlewareOptions {
-  /**
-   * Resolve the Analytics Engine dataset from bindings. Defaults to
-   * `env.METRICS`. Returning undefined makes the middleware a no-op for
-   * that request (deployments without the binding pay ~nothing).
-   */
-  dataset?: (env: unknown) => AnalyticsEngineDatasetLike | undefined
+  /** Resolve the metrics sink for a request. Returning undefined is a no-op. */
+  dataset: (env: unknown) => AnalyticsEngineDatasetLike | undefined
 }
 
 function surfaceOf(path: string): string {
@@ -35,11 +25,7 @@ function surfaceOf(path: string): string {
 }
 
 /**
- * Per-request metrics → Workers Analytics Engine (RFC voyant#1687 Phase
- * 3.4, the in-worker half — the platform dispatcher's DISPATCH_METRICS
- * dataset already records hostname/plan/cache/duration per dispatch;
- * this adds what only the worker can see: the matched route pattern,
- * the db query count, and in-worker cache hits).
+ * Per-request metrics for an explicitly supplied deployment sink.
  *
  * One data point per request:
  * - blobs:   [method, routePattern, surface, cacheStatus]
@@ -49,12 +35,10 @@ function surfaceOf(path: string): string {
  * `writeDataPoint` is fire-and-forget and never throws into the
  * request; a missing binding short-circuits before timing overhead.
  */
-export function metrics(options: MetricsMiddlewareOptions = {}): MiddlewareHandler<{
-  Variables: Pick<VoyantVariables, typeof DB_METRICS_CONTEXT_KEY>
-}> {
-  const resolveDataset =
-    options.dataset ??
-    ((env: unknown) => (env as { METRICS?: AnalyticsEngineDatasetLike } | undefined)?.METRICS)
+export function metrics(
+  options: MetricsMiddlewareOptions,
+): MiddlewareHandler<{ Variables: { [DB_METRICS_CONTEXT_KEY]?: RequestDbMetrics } }> {
+  const resolveDataset = options.dataset
 
   return async (c, next) => {
     const dataset = resolveDataset(c.env)

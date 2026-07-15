@@ -93,8 +93,8 @@ function checkPolicyDoc() {
 
 function checkKvCacheBindings() {
   // The operator is Node-only (voyant#2966): public-cache/rate-limit stores
-  // are concrete Node providers in `src/server.ts`, while consumers still type
-  // against the KVStore-compatible CACHE/RATE_LIMIT env members.
+  // are concrete Node providers in `src/server.ts`, while consumers type
+  // against the KVStore-compatible CACHE member and RateLimitStore.
   requireContains(
     "packages/operator-standard/src/index.ts",
     'cache: "postgres"',
@@ -113,8 +113,8 @@ function checkKvCacheBindings() {
   requireContains("packages/hono/src/types.ts", "CACHE?: KVStore", "operator CACHE binding type")
   requireContains(
     "packages/hono/src/types.ts",
-    "RATE_LIMIT?: KVStore",
-    "operator RATE_LIMIT binding type",
+    "RATE_LIMIT_STORE?:",
+    "operator RateLimitStore binding type",
   )
 }
 

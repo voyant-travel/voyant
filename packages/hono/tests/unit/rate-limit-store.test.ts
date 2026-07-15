@@ -15,17 +15,11 @@ describe("clientIpKey", () => {
 })
 
 describe("resolveRateLimitStore", () => {
-  it("prefers an injected RateLimitStore ahead of KV and memory", async () => {
+  it("uses an injected RateLimitStore", async () => {
     const store: RateLimitStore = {
       limit: vi.fn(async () => ({ allowed: true, remaining: 1 })),
     }
-    const kv = {
-      get: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-    }
-
-    const resolved = resolveRateLimitStore({ env: { RATE_LIMIT_STORE: store, RATE_LIMIT: kv } })
+    const resolved = resolveRateLimitStore({ env: { RATE_LIMIT_STORE: store } })
     expect(resolved).toBe(store)
     await resolved.limit("k", { max: 1, windowSeconds: 60 })
     expect(store.limit).toHaveBeenCalledOnce()

@@ -249,7 +249,7 @@ Session cookie cache defaults on with a 5-min TTL; cloud-mode membership re-chec
 
 ### L3 — Guest booking overview has no rate limit; secure-cookie flag is env-fragile
 **`packages/bookings/src/routes-public.ts:362-385`, `packages/auth/src/server.ts:717`**
-`GET /overview?bookingId&email` is unthrottled (the POST path's limiter no-ops without the `RATE_LIMIT` KV binding, which the operator does not bind) — an attacker who knows a victim email can brute-force booking numbers to enumerate financials (email compare is constant-time, which helps). Separately, `useSecureCookies: process.env.NODE_ENV === "production"` is fragile on Workers where `NODE_ENV` may be undefined for non-Vite consumers. **Fix:** rate-limit `/overview`; make the KV binding mandatory; derive `Secure` from request scheme.
+`GET /overview?bookingId&email` is unthrottled when no rate-limit provider is injected — an attacker who knows a victim email can brute-force booking numbers to enumerate financials (email compare is constant-time, which helps). **Fix:** rate-limit `/overview`; require the deployment rate-limit provider; derive `Secure` from request scheme.
 
 ### L4 — CSV export does not neutralize formula-injection prefixes
 **`packages/relationships/src/service/accounts-people.ts:494`**
