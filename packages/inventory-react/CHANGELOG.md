@@ -1,5 +1,33 @@
 # @voyant-travel/inventory-react
 
+## 0.41.0
+
+### Minor Changes
+
+- 82ffd12: Add persisted organization-level first-run setup guidance composed from the
+  selected admin graph. Standard Operator deployments now collect package-owned
+  business profile, storefront, market, fiscal, navigation, team, and first-product
+  steps while keeping domain mutations in their existing package surfaces.
+
+### Patch Changes
+
+- 766d24b: Associate admin form controls with visible labels and validation messages, and add accessible names to phone, channel, product translation, tag, action-menu, and channel-assignment helpers.
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [82ffd12]
+- Updated dependencies [9c85101]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/catalog-contracts@0.111.1
+  - @voyant-travel/finance@0.159.0
+  - @voyant-travel/inventory@0.10.4
+  - @voyant-travel/finance-react@0.159.0
+  - @voyant-travel/storefront-react@0.161.0
+  - @voyant-travel/catalog-react@0.157.0
+
 ## 0.40.0
 
 ### Patch Changes

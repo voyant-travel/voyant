@@ -1,5 +1,25 @@
 # @voyant-travel/operations
 
+## 0.6.14
+
+### Patch Changes
+
+- 49f55d0: Keep catalog booking and checkout as a two-phase flow, and atomically convert
+  owned-product availability holds into on-hold booking allocations without
+  consuming capacity twice. Hold placement and release are now idempotent across
+  retries and duplicate tokens, converted holds retain an audit link to their
+  booking allocation, and checkout-only intents receive structured validation
+  errors from the reservation route.
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [9c85101]
+  - @voyant-travel/core@0.123.0
+  - @voyant-travel/hono@0.127.0
+  - @voyant-travel/availability@0.2.12
+  - @voyant-travel/catalog@0.157.0
+  - @voyant-travel/db@0.114.6
+  - @voyant-travel/identity@0.159.0
+
 ## 0.6.13
 
 ### Patch Changes

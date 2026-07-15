@@ -1,5 +1,32 @@
 # @voyant-travel/finance
 
+## 0.159.0
+
+### Patch Changes
+
+- 49f55d0: Keep catalog booking and checkout as a two-phase flow, and atomically convert
+  owned-product availability holds into on-hold booking allocations without
+  consuming capacity twice. Hold placement and release are now idempotent across
+  retries and duplicate tokens, converted holds retain an audit link to their
+  booking allocation, and checkout-only intents receive structured validation
+  errors from the reservation route.
+- 9c85101: Compile one canonical event catalog from selected package manifests and expose it through
+  generated deployment artifacts, graph runtimes, a package-owned admin API, and an admin event
+  reference page. Reject duplicate event type authorities while preserving legitimate emitters,
+  and ratchet persistence mutation coverage in the phase-5 authority checker.
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [552acbf]
+- Updated dependencies [9c85101]
+  - @voyant-travel/core@0.123.0
+  - @voyant-travel/hono@0.127.0
+  - @voyant-travel/bookings@0.159.0
+  - @voyant-travel/tools@0.2.2
+  - @voyant-travel/action-ledger@0.108.6
+  - @voyant-travel/db@0.114.6
+  - @voyant-travel/public-document-delivery@0.3.6
+  - @voyant-travel/storage@0.110.1
+
 ## 0.158.0
 
 ### Patch Changes
