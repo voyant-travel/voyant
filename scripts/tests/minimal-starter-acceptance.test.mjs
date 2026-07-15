@@ -46,7 +46,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       ["-xzf", join(out, "voyant-starter-operator-0.0.0-test.tar.gz"), "-C", app],
       repoRoot,
     )
-    useInstalledToolingArtifacts(app, publishedPackages)
+    const releasePeerFixtures = useInstalledToolingArtifacts(app, publishedPackages)
     exec(
       "pnpm",
       [
@@ -58,9 +58,7 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       ],
       app,
     )
-    for (const dependency of ["@voyant-travel/admin", "@voyant-travel/admin-app"]) {
-      removeReleasePeerFixture(app, dependency)
-    }
+    removeReleasePeerFixtures(app, releasePeerFixtures)
     assertNonHoistedConsumerLayout(app)
     assertPublishedPackageLayout(app)
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
@@ -248,7 +246,7 @@ async function assertVoyantServerMode(app, mode, t) {
       if (!/<html[\s>]/i.test(ssr.body)) {
         failures.push("SSR route did not return an HTML document")
       }
-      if (!/No OpenAPI specs are available/.test(ssr.body)) {
+      if (!/(?:Voyant API|No OpenAPI specs are available)/.test(ssr.body)) {
         failures.push("SSR route did not render the expected project docs content")
       }
     }
@@ -305,6 +303,7 @@ async function readResponse(url, init) {
 function useInstalledToolingArtifacts(app, publishedPackages) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  const authoredDependencies = new Set(Object.keys(packageJson.dependencies))
   for (const dependency of frontendSingletonRoots) {
     assert.equal(
       typeof packageJson.dependencies[dependency],
@@ -315,17 +314,11 @@ function useInstalledToolingArtifacts(app, publishedPackages) {
     // direct frontend singleton ownership became part of the starter contract.
     delete packageJson.dependencies[dependency]
   }
-  packageJson.dependencies["@voyant-travel/operator-standard"] =
-    `file:${publishedPackages.get("@voyant-travel/operator-standard")}`
-  packageJson.dependencies["@voyant-travel/framework"] =
-    `file:${publishedPackages.get("@voyant-travel/framework")}`
-  packageJson.dependencies["@voyant-travel/runtime"] =
-    `file:${publishedPackages.get("@voyant-travel/runtime")}`
-  // Changesets publishes Admin and its consumers together. Pin both local
-  // tarballs during this pre-release install so pnpm cannot combine either one
-  // with a same-version, pre-change registry package.
-  for (const dependency of ["@voyant-travel/admin", "@voyant-travel/admin-app"]) {
-    packageJson.dependencies[dependency] = `file:${publishedPackages.get(dependency)}`
+  // A Changesets PR references versions that do not exist on npm yet. Admit
+  // the complete local candidate closure for install-time peer resolution,
+  // then remove synthetic manifest declarations before topology assertions.
+  for (const [dependency, archive] of publishedPackages) {
+    packageJson.dependencies[dependency] = `file:${archive}`
   }
   packageJson.pnpm = {
     ...packageJson.pnpm,
@@ -347,14 +340,17 @@ function useInstalledToolingArtifacts(app, publishedPackages) {
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+  return [...publishedPackages.keys()].filter((dependency) => !authoredDependencies.has(dependency))
 }
 
-function removeReleasePeerFixture(app, dependency) {
+function removeReleasePeerFixtures(app, dependencies) {
   const packageJsonPath = join(app, "package.json")
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
-  delete packageJson.dependencies[dependency]
+  for (const dependency of dependencies) delete packageJson.dependencies[dependency]
+  for (const dependency of ["@voyant-travel/admin", "@voyant-travel/admin-app"]) {
+    rmSync(join(app, "node_modules", ...dependency.split("/")), { force: true })
+  }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
-  rmSync(join(app, "node_modules", ...dependency.split("/")), { force: true })
 }
 
 function assertNonHoistedConsumerLayout(app) {
@@ -416,6 +412,8 @@ async function packPublishedPackages(root) {
         "@voyant-travel/runtime...",
         "--filter-prod",
         "@voyant-travel/operator-standard...",
+        "--filter-prod",
+        "operator...",
         "list",
         "--depth",
         "-1",
