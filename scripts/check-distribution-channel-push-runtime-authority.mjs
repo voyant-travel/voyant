@@ -30,6 +30,10 @@ function readRequired(path) {
 }
 
 const manifest = readRequired(join(distributionRoot, "src/voyant.ts"))
+const manifestExtensionsPath = join(distributionRoot, "src/voyant-extensions.ts")
+const manifestExtensions = existsSync(manifestExtensionsPath)
+  ? readFileSync(manifestExtensionsPath, "utf8")
+  : manifest
 const extension = readRequired(join(distributionRoot, "src/channel-push/extension.ts"))
 const runtimePort = readRequired(join(distributionRoot, "src/channel-push/runtime-port.ts"))
 const domainPackage = readRequired(join(distributionRoot, "package.json"))
@@ -51,8 +55,8 @@ if (existsSync(join(operatorRoot, "src/api/runtime/runtime-adapter.ts"))) {
 }
 
 if (
-  !manifest.includes("runtimePorts: [requirePort(channelPushRuntimePort)]") ||
-  !manifest.includes('export: "createChannelPushVoyantRuntime"')
+  !manifestExtensions.includes("runtimePorts: [requirePort(channelPushRuntimePort)]") ||
+  !manifestExtensions.includes('export: "createChannelPushVoyantRuntime"')
 ) {
   violations.push("Distribution manifest must declare the channel-push runtime port and factory")
 }
