@@ -54,9 +54,14 @@ export const quotesVoyantModule = defineModule({
     },
   ],
   links: [
-    { id: "@voyant-travel/quotes#linkable.quote", source: "@voyant-travel/quotes/linkables" },
+    {
+      id: "@voyant-travel/quotes#linkable.quote",
+      kind: "linkable",
+      source: "@voyant-travel/quotes/linkables",
+    },
     {
       id: "@voyant-travel/quotes#linkable.quoteVersion",
+      kind: "linkable",
       source: "@voyant-travel/quotes/linkables",
     },
   ],

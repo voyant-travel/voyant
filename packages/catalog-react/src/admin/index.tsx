@@ -348,16 +348,18 @@ export const standardCatalogAdminScope = {
 export function createSelectedCatalogAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const labels = {
+    catalog: navMessages.catalog ?? "Catalog",
+    products: navMessages.catalogProducts ?? "Products",
+    excursions: navMessages.catalogExcursions ?? "Excursions",
+    tours: navMessages.catalogTours ?? "Tours",
+    cruises: navMessages.catalogCruises ?? "Cruises",
+    accommodations: navMessages.catalogAccommodations ?? "Accommodations",
+  }
   const extension = withAdminRouteMessagesProvider(
     createCatalogAdminExtension({
       ...standardCatalogAdminScope,
-      labels: {
-        products: navMessages.catalogProducts,
-        excursions: navMessages.catalogExcursions,
-        tours: navMessages.catalogTours,
-        cruises: navMessages.catalogCruises,
-        accommodations: navMessages.catalogAccommodations,
-      },
+      labels,
     }),
     () =>
       import("../i18n/index.js").then((module) => ({ default: module.CatalogUiMessagesProvider })),
@@ -371,25 +373,25 @@ export function createSelectedCatalogAdminExtension({
         items: [
           {
             id: "catalog",
-            title: navMessages.catalog,
+            title: labels.catalog,
             url: "/catalog/products",
             icon: Library,
             items: [
               {
                 id: "catalog-products",
-                title: navMessages.catalogProducts,
+                title: labels.products,
                 url: "/catalog/products",
               },
               {
                 id: "catalog-excursions",
-                title: navMessages.catalogExcursions,
+                title: labels.excursions,
                 url: "/catalog/excursions",
               },
-              { id: "catalog-tours", title: navMessages.catalogTours, url: "/catalog/tours" },
-              { id: "catalog-cruises", title: navMessages.catalogCruises, url: "/catalog/cruises" },
+              { id: "catalog-tours", title: labels.tours, url: "/catalog/tours" },
+              { id: "catalog-cruises", title: labels.cruises, url: "/catalog/cruises" },
               {
                 id: "catalog-accommodations",
-                title: navMessages.catalogAccommodations,
+                title: labels.accommodations,
                 url: "/catalog/accommodations",
               },
             ],

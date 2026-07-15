@@ -313,13 +313,12 @@ const operationsRouteMessagesProvider = composeAdminRouteMessagesProviders(
 export function createSelectedOperationsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const labels = {
+    availability: navMessages.availability ?? "Availability",
+    resources: navMessages.resources ?? "Resources",
+  }
   const extension = withAdminRouteMessagesProvider(
-    createOperationsAdminExtension({
-      labels: {
-        availability: navMessages.availability,
-        resources: navMessages.resources,
-      },
-    }),
+    createOperationsAdminExtension({ labels }),
     operationsRouteMessagesProvider,
   )
 
@@ -331,7 +330,7 @@ export function createSelectedOperationsAdminExtension({
         items: [
           {
             id: "availability",
-            title: navMessages.availability,
+            title: labels.availability,
             url: "/operations/availability",
             icon: CalendarDays,
           },
@@ -342,7 +341,7 @@ export function createSelectedOperationsAdminExtension({
         items: [
           {
             id: "resources",
-            title: navMessages.resources,
+            title: labels.resources,
             url: "/operations/resources",
             icon: Wrench,
           },

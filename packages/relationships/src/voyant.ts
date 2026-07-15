@@ -71,7 +71,7 @@ export const relationshipsVoyantModule = defineModule({
   localId: "relationships",
   provides: {
     ports: [
-      providePort(storefrontIntakeRuntimePortReference),
+      storefrontIntakeRuntimePortReference,
       providePort(relationshipsMiceRuntimePort),
       providePort(bookingsRelationshipsRuntimePort),
       providePort(relationshipsRouteRuntimePort),
@@ -107,10 +107,12 @@ export const relationshipsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/relationships#linkable.organization",
+      kind: "linkable",
       source: "@voyant-travel/relationships/linkables",
     },
     {
       id: "@voyant-travel/relationships#linkable.person",
+      kind: "linkable",
       source: "@voyant-travel/relationships/linkables",
     },
   ],

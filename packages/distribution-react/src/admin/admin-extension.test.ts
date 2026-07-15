@@ -69,6 +69,13 @@ describe("createDistributionAdminExtension", () => {
     expect(routes[1]?.destination).toBe("supplier.detail")
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const base = createSelectedDistributionAdminExtension({ navMessages: {} })
+    const channelPush = createSelectedDistributionChannelPushAdminExtension({ navMessages: {} })
+    expect(base.navigation?.[0]?.items[0]?.title).toBe("Suppliers")
+    expect(channelPush.navigation?.[0]?.items[0]?.title).toBe("Channel sync")
+  })
+
   it("keeps channel push routes and navigation extension-owned", () => {
     const extension = createDistributionChannelPushAdminExtension({
       basePath: "/sincronizare",

@@ -76,8 +76,9 @@ const suppliersRouteMessagesProvider = composeAdminRouteMessagesProviders(
 export function createSelectedDistributionAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const suppliersLabel = navMessages.suppliers ?? "Suppliers"
   const extension = withAdminRouteMessagesProvider(
-    createDistributionAdminExtension({ labels: { suppliers: navMessages.suppliers } }),
+    createDistributionAdminExtension({ labels: { suppliers: suppliersLabel } }),
     suppliersRouteMessagesProvider,
   )
 
@@ -86,9 +87,7 @@ export function createSelectedDistributionAdminExtension({
     navigation: [
       {
         order: -80,
-        items: [
-          { id: "suppliers", title: navMessages.suppliers, url: "/suppliers", icon: Building2 },
-        ],
+        items: [{ id: "suppliers", title: suppliersLabel, url: "/suppliers", icon: Building2 }],
       },
     ],
   }
@@ -97,8 +96,9 @@ export function createSelectedDistributionAdminExtension({
 export function createSelectedDistributionChannelPushAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const channelSyncLabel = navMessages.channelSync ?? "Channel sync"
   const extension = withAdminRouteMessagesProvider(
-    createDistributionChannelPushAdminExtension({ label: navMessages.channelSync }),
+    createDistributionChannelPushAdminExtension({ label: channelSyncLabel }),
     () =>
       import("../i18n/index.js").then((module) => ({
         default: module.DistributionUiMessagesProvider,
@@ -113,7 +113,7 @@ export function createSelectedDistributionChannelPushAdminExtension({
         items: [
           {
             id: "channel-sync",
-            title: navMessages.channelSync,
+            title: channelSyncLabel,
             url: "/channel-sync",
             icon: Radio,
           },

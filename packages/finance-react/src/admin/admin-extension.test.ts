@@ -71,6 +71,20 @@ describe("createFinanceAdminExtension", () => {
     expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedFinanceAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Finance",
+      items: [
+        { title: "Invoices" },
+        { title: "Invoice number series" },
+        { title: "Payments" },
+        { title: "Supplier invoices" },
+        { title: "Profitability" },
+      ],
+    })
+  })
+
   it("describes the finance routes with unique ids and paths", () => {
     const extension = createFinanceAdminExtension()
     const routes = extension.routes ?? []

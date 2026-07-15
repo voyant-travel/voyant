@@ -184,16 +184,18 @@ export function createNotificationsAdminExtension(
 export function createSelectedNotificationsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const labels = {
+    notifications: navMessages.notifications ?? "Notifications",
+    templates: navMessages.notificationTemplates ?? "Templates",
+    reminderRules: navMessages.notificationReminderRules ?? "Reminder rules",
+    deliveries: navMessages.notificationDeliveries ?? "Deliveries",
+    reminderRuns: navMessages.notificationReminderRuns ?? "Reminder runs",
+    preview: navMessages.notificationPreview ?? "Preview",
+    settings: navMessages.notificationSettings ?? "Settings",
+  }
   const extension = withAdminRouteMessagesProvider(
     createNotificationsAdminExtension({
-      labels: {
-        templates: navMessages.notificationTemplates,
-        reminderRules: navMessages.notificationReminderRules,
-        deliveries: navMessages.notificationDeliveries,
-        reminderRuns: navMessages.notificationReminderRuns,
-        preview: navMessages.notificationPreview,
-        settings: navMessages.notificationSettings,
-      },
+      labels,
     }),
     () =>
       import("../i18n/index.js").then((module) => ({
@@ -209,38 +211,38 @@ export function createSelectedNotificationsAdminExtension({
         items: [
           {
             id: "notifications",
-            title: navMessages.notifications,
+            title: labels.notifications,
             url: "/notifications/templates",
             icon: Mail,
             items: [
               {
                 id: "notification-templates",
-                title: navMessages.notificationTemplates,
+                title: labels.templates,
                 url: "/notifications/templates",
               },
               {
                 id: "notification-reminder-rules",
-                title: navMessages.notificationReminderRules,
+                title: labels.reminderRules,
                 url: "/notifications/reminder-rules",
               },
               {
                 id: "notification-deliveries",
-                title: navMessages.notificationDeliveries,
+                title: labels.deliveries,
                 url: "/notifications/deliveries",
               },
               {
                 id: "notification-reminder-runs",
-                title: navMessages.notificationReminderRuns,
+                title: labels.reminderRuns,
                 url: "/notifications/reminder-runs",
               },
               {
                 id: "notification-preview",
-                title: navMessages.notificationPreview,
+                title: labels.preview,
                 url: "/notifications/preview",
               },
               {
                 id: "notification-settings",
-                title: navMessages.notificationSettings,
+                title: labels.settings,
                 url: "/notifications/settings",
               },
             ],

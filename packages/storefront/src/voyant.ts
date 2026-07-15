@@ -69,6 +69,7 @@ export const storefrontVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/storefront#linkable.storefrontVerificationChallenge",
+      kind: "linkable",
       source: "@voyant-travel/storefront/verification",
       export: "storefrontVerificationLinkable",
     },

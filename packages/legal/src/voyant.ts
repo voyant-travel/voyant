@@ -74,61 +74,73 @@ export const legalVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/legal#linkable.contract",
+      kind: "linkable",
       source: linkableSource,
       export: "contractLinkable",
     },
     {
       id: "@voyant-travel/legal#linkable.contractTemplate",
+      kind: "linkable",
       source: linkableSource,
       export: "contractTemplateLinkable",
     },
     {
       id: "@voyant-travel/legal#linkable.policy",
+      kind: "linkable",
       source: linkableSource,
       export: "policyLinkable",
     },
     {
       id: "@voyant-travel/legal#linkable.policyVersion",
+      kind: "linkable",
       source: linkableSource,
       export: "policyVersionLinkable",
     },
     {
       id: "@voyant-travel/legal#linkable.policyAcceptance",
+      kind: "linkable",
       source: linkableSource,
       export: "policyAcceptanceLinkable",
     },
     {
       id: "@voyant-travel/legal#linkable.term",
+      kind: "linkable",
       source: linkableSource,
       export: "legalTermLinkable",
     },
     {
       id: "@voyant-travel/legal#link.contract-booking",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractBookingLink",
     },
     {
       id: "@voyant-travel/legal#link.contract-organization",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractOrganizationLink",
     },
     {
       id: "@voyant-travel/legal#link.contract-person",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractPersonLink",
     },
     {
       id: "@voyant-travel/legal#link.contract-supplier",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractSupplierLink",
     },
     {
       id: "@voyant-travel/legal#link.policy-acceptance-booking",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "policyAcceptanceBookingLink",
     },
     {
       id: "@voyant-travel/legal#link.policy-product",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "policyProductLink",
     },
@@ -339,6 +351,7 @@ export const legalStandardProductLinksVoyantExtension = defineExtension({
   links: [
     {
       id: "@voyant-travel/legal#link.contract-invoice",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractInvoiceLink",
     },

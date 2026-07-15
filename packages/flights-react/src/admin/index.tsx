@@ -219,8 +219,13 @@ export function createFlightsAdminExtension(
 export function createSelectedFlightsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const labels = {
+    flights: navMessages.flights ?? "Flights",
+    search: navMessages.flightsSearch ?? "Search",
+    orders: navMessages.flightOrders ?? "Orders",
+  }
   const extension = withAdminRouteMessagesProvider(
-    createFlightsAdminExtension({ labels: { flights: navMessages.flights } }),
+    createFlightsAdminExtension({ labels: { flights: labels.flights } }),
     () =>
       import("../i18n/index.js").then((module) => ({ default: module.FlightsUiMessagesProvider })),
   )
@@ -233,12 +238,12 @@ export function createSelectedFlightsAdminExtension({
         items: [
           {
             id: "flights",
-            title: navMessages.flights,
+            title: labels.flights,
             url: "/flights",
             icon: Plane,
             items: [
-              { id: "flights-search", title: navMessages.flightsSearch, url: "/flights" },
-              { id: "flights-orders", title: navMessages.flightOrders, url: "/flights/orders" },
+              { id: "flights-search", title: labels.search, url: "/flights" },
+              { id: "flights-orders", title: labels.orders, url: "/flights/orders" },
             ],
           },
         ],

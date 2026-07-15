@@ -72,6 +72,23 @@ function normalizeIdFilter(
 
 type ReadOnlyResolver = NonNullable<LinkDefinition["readOnly"]>
 
+type LinkDefinitionIdentity = Pick<LinkDefinition, "tableName" | "leftColumn" | "rightColumn">
+
+const LINK_DEFINITION_IDENTITY_FIELDS = ["tableName", "leftColumn", "rightColumn"] as const
+
+function isNonEmptyStringProperty(
+  value: unknown,
+  property: (typeof LINK_DEFINITION_IDENTITY_FIELDS)[number],
+): boolean {
+  if (value === null || typeof value !== "object") return false
+  const propertyValue = Reflect.get(value, property)
+  return typeof propertyValue === "string" && propertyValue.length > 0
+}
+
+function hasLinkDefinitionIdentity(value: unknown): value is LinkDefinitionIdentity {
+  return LINK_DEFINITION_IDENTITY_FIELDS.every((field) => isNonEmptyStringProperty(value, field))
+}
+
 /**
  * Resolve a (possibly batched) list filter against a read-only link.
  *
@@ -123,7 +140,17 @@ function prepareLinkDefinitions(definitions: readonly LinkDefinition[]): {
 } {
   const prepared = [...definitions]
   const byKey = new Map<string, LinkDefinition>()
-  for (const def of prepared) {
+  for (const [index, def] of prepared.entries()) {
+    if (!hasLinkDefinitionIdentity(def)) {
+      const missingFields = LINK_DEFINITION_IDENTITY_FIELDS.filter(
+        (field) => !isNonEmptyStringProperty(def, field),
+      )
+      throw new Error(
+        `createLinkService: invalid link definition at index ${index}; missing ${missingFields.join(
+          ", ",
+        )}`,
+      )
+    }
     if (byKey.has(def.tableName)) {
       throw new Error(`createLinkService: duplicate link definition for table "${def.tableName}"`)
     }

@@ -47,6 +47,19 @@ describe("createLegalAdminExtension", () => {
     expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedLegalAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Legal",
+      items: [
+        { title: "Contracts" },
+        { title: "Contract templates" },
+        { title: "Policies" },
+        { title: "Number series" },
+      ],
+    })
+  })
+
   it("describes the legal routes with unique ids and paths", () => {
     const extension = createLegalAdminExtension()
     const routes = extension.routes ?? []

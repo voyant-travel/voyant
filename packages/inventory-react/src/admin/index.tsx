@@ -215,11 +215,12 @@ export function createInventoryAdminExtension(
 export function createSelectedInventoryAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  const extension = withAdminRouteMessagesProvider(
-    createInventoryAdminExtension({
-      labels: { products: navMessages.products, categories: navMessages.categories },
-    }),
-    () => import("../i18n.js").then((module) => ({ default: module.ProductsUiMessagesProvider })),
+  const labels = {
+    products: navMessages.products ?? "Products",
+    categories: navMessages.categories ?? "Categories",
+  }
+  const extension = withAdminRouteMessagesProvider(createInventoryAdminExtension({ labels }), () =>
+    import("../i18n.js").then((module) => ({ default: module.ProductsUiMessagesProvider })),
   )
 
   return {
@@ -230,13 +231,13 @@ export function createSelectedInventoryAdminExtension({
         items: [
           {
             id: "products",
-            title: navMessages.products,
+            title: labels.products,
             url: "/products",
             icon: Package,
             items: [
               {
                 id: "product-categories",
-                title: navMessages.categories,
+                title: labels.categories,
                 url: "/products/categories",
               },
             ],

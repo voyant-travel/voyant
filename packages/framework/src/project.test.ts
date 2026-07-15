@@ -181,6 +181,46 @@ describe("framework project resolver", () => {
     expect(migrationSource).toContain("runVoyantMigrations")
   })
 
+  it("lowers only executable link definitions from selected package manifests", async () => {
+    const root = projectRoot()
+    writePackage(root, {
+      name: "@acme/links",
+      manifest: `export default ${JSON.stringify({
+        ...moduleManifest("@acme/links"),
+        links: [
+          {
+            id: "@acme/links#linkable.customer",
+            kind: "linkable",
+            source: "@acme/links/links",
+            export: "customerLinkable",
+          },
+          {
+            id: "@acme/links#link.customer-order",
+            kind: "definition",
+            source: "@acme/links/links",
+            export: "customerOrderLink",
+          },
+        ],
+      })}\n`,
+      extraExports: { "./links": "./links.mjs" },
+    })
+    writeFileSync(
+      path.join(root, "node_modules/@acme/links/links.mjs"),
+      [
+        'export const customerLinkable = { module: "customers", entity: "customer", table: "customers" }',
+        'export const customerOrderLink = { tableName: "customer_orders" }',
+      ].join("\n"),
+    )
+
+    const resolution = await resolve(root, defineProject({ modules: ["@acme/links"] }))
+    const linksSource = resolution.artifacts.files.find(
+      ({ path }) => path === "runtime/project-links.generated.ts",
+    )?.contents
+
+    expect(linksSource).toContain("customerOrderLink as link0")
+    expect(linksSource).not.toContain("customerLinkable")
+  })
+
   it("orders setup migrations after every schema migration and emits admitted static loaders", async () => {
     const root = projectRoot()
     writePackage(root, {
@@ -917,7 +957,9 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
       ],
       links: [
         {
+          export: "default",
           id: "project.link.health-owner",
+          kind: "definition",
           source: "src/links/health-owner.ts",
         },
       ],

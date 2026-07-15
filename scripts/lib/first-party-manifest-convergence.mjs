@@ -121,6 +121,14 @@ function inspectUnit(unit, kind, failures) {
       failures.push(`${provider.id}: first-party provider must declare an explicit selection`)
     }
   }
+  for (const link of unit.links ?? []) {
+    if (link.kind !== "linkable" && link.kind !== "definition") {
+      failures.push(`${link.id}: first-party link must declare its contribution kind`)
+    }
+    if (link.kind === "definition" && !nonEmpty(link.export)) {
+      failures.push(`${link.id}: executable link definition must declare its named export`)
+    }
+  }
   for (const event of unit.events ?? []) {
     if (!isConcreteEventPayloadSchema(event.payloadSchema)) {
       failures.push(`${event.id}: first-party event must declare a concrete payload schema`)
@@ -232,7 +240,9 @@ function inspectRuntimeContributorAuthority(name, pkg, sources, failures) {
   const provided = providedPortSymbols(manifest)
   for (const output of outputs) {
     if (!provided.has(output)) {
-      failures.push(`${name}: runtime contributor output ${output}.id is absent from provides.ports`)
+      failures.push(
+        `${name}: runtime contributor output ${output}.id is absent from provides.ports`,
+      )
     }
   }
 }

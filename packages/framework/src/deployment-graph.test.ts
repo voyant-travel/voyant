@@ -80,6 +80,38 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("rejects ambiguous and malformed graph link declarations", () => {
+    const diagnostics = validateGraphUnitManifest({
+      schemaVersion: "voyant.module.v1",
+      id: "@acme/voyant-links",
+      links: [
+        {
+          id: "@acme/voyant-links#linkable.customer",
+          source: "@acme/voyant-links/linkables",
+          export: "customerLinkable",
+        },
+        {
+          id: "@acme/voyant-links#link.customer-order",
+          kind: "definition",
+          source: "@acme/voyant-links/links",
+        },
+      ],
+    })
+
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "links[0].kind",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "links[1].export",
+        }),
+      ]),
+    )
+  })
+
   it("normalizes legacy v1 projects without an extension lane", async () => {
     const plugin = definePlugin({ id: "@acme/voyant-fiscal#smartbill" })
     const project = defineProject({ modules: [], plugins: [plugin] })

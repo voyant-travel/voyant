@@ -56,36 +56,43 @@ export const notificationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/notifications#linkable.notification-template",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationTemplateLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-delivery",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationDeliveryLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-rule",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationReminderRuleLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-run",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationReminderRunLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-rule-stage",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationReminderRuleStageLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-stage-channel",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationReminderStageChannelLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-settings",
+      kind: "linkable",
       source: schemaSource,
       export: "notificationSettingsLinkable",
     },

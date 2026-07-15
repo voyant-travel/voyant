@@ -317,14 +317,16 @@ export function createLegalAdminExtension(
 export function createSelectedLegalAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const labels = {
+    legal: navMessages.legal ?? "Legal",
+    contracts: navMessages.contracts ?? "Contracts",
+    contractTemplates: navMessages.contractTemplates ?? "Contract templates",
+    policies: navMessages.policies ?? "Policies",
+    numberSeries: navMessages.contractNumberSeries ?? "Number series",
+  }
   const extension = withAdminRouteMessagesProvider(
     createLegalAdminExtension({
-      labels: {
-        contracts: navMessages.contracts,
-        contractTemplates: navMessages.contractTemplates,
-        policies: navMessages.policies,
-        numberSeries: navMessages.contractNumberSeries,
-      },
+      labels,
     }),
     () =>
       import("../i18n/index.js").then((module) => ({ default: module.LegalUiMessagesProvider })),
@@ -338,20 +340,20 @@ export function createSelectedLegalAdminExtension({
         items: [
           {
             id: "legal",
-            title: navMessages.legal,
+            title: labels.legal,
             url: "/legal/contracts",
             icon: Scale,
             items: [
-              { id: "contracts", title: navMessages.contracts, url: "/legal/contracts" },
+              { id: "contracts", title: labels.contracts, url: "/legal/contracts" },
               {
                 id: "contract-templates",
-                title: navMessages.contractTemplates,
+                title: labels.contractTemplates,
                 url: "/legal/templates",
               },
-              { id: "policies", title: navMessages.policies, url: "/legal/policies" },
+              { id: "policies", title: labels.policies, url: "/legal/policies" },
               {
                 id: "number-series",
-                title: navMessages.contractNumberSeries,
+                title: labels.numberSeries,
                 url: "/legal/number-series",
               },
             ],

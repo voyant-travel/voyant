@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { defineConfig } from "./index.js"
+import { defineConfig, STANDARD_OPERATOR_DISTRIBUTION } from "./index.js"
 
 describe("framework project config", () => {
   it("expands an empty authored config to the standard distribution", () => {
     const project = defineConfig()
 
-    expect(project.modules).toHaveLength(38)
+    expect(project.modules).toHaveLength(STANDARD_OPERATOR_DISTRIBUTION.modules.length)
+    expect(project.modules.map((unit) => unit.id)).toContain("@voyant-travel/bookings#extras")
     expect(project.extensions).toHaveLength(24)
     expect(project.plugins).toEqual([])
     expect(project.productBom).toEqual({
@@ -35,7 +36,7 @@ describe("framework project config", () => {
       },
     })
 
-    expect(project.modules).toHaveLength(39)
+    expect(project.modules).toHaveLength(STANDARD_OPERATOR_DISTRIBUTION.modules.length + 1)
     expect(project.extensions).toHaveLength(25)
     expect(project.plugins).toHaveLength(1)
     expect(project.modules.at(-1)).toMatchObject({

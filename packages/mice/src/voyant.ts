@@ -55,47 +55,75 @@ export const miceVoyantModule = defineModule({
     },
   ],
   links: [
-    { id: "@voyant-travel/mice#linkable.program", source: "@voyant-travel/mice/linkables" },
-    { id: "@voyant-travel/mice#linkable.session", source: "@voyant-travel/mice/linkables" },
-    { id: "@voyant-travel/mice#linkable.delegate", source: "@voyant-travel/mice/linkables" },
     {
-      id: "@voyant-travel/mice#linkable.roomingAssignment",
+      id: "@voyant-travel/mice#linkable.program",
+      kind: "linkable",
       source: "@voyant-travel/mice/linkables",
     },
-    { id: "@voyant-travel/mice#linkable.rfp", source: "@voyant-travel/mice/linkables" },
-    { id: "@voyant-travel/mice#linkable.bid", source: "@voyant-travel/mice/linkables" },
+    {
+      id: "@voyant-travel/mice#linkable.session",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.delegate",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.roomingAssignment",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.rfp",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.bid",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
     {
       id: "@voyant-travel/mice#link.bid-supplier",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "bidSupplierLink",
     },
     {
       id: "@voyant-travel/mice#link.delegate-booking",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "delegateBookingLink",
     },
     {
       id: "@voyant-travel/mice#link.delegate-person",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "delegatePersonLink",
     },
     {
       id: "@voyant-travel/mice#link.organization-program",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "organizationProgramLink",
     },
     {
       id: "@voyant-travel/mice#link.program-space-block",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "programSpaceBlockLink",
     },
     {
       id: "@voyant-travel/mice#link.rooming-room-block",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "roomingRoomBlockLink",
     },
     {
       id: "@voyant-travel/mice#link.session-function-space",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "sessionFunctionSpaceLink",
     },
@@ -209,6 +237,7 @@ export const miceStandardProductLinksVoyantExtension = defineExtension({
   links: [
     {
       id: "@voyant-travel/mice#link.quote-program",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "quoteProgramLink",
     },

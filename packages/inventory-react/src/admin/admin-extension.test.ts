@@ -35,6 +35,14 @@ describe("createInventoryAdminExtension", () => {
     )
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedInventoryAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Products",
+      items: [{ title: "Categories" }],
+    })
+  })
+
   it("keeps the package-owned deployment facets aligned with the admin extension", () => {
     const extension = createInventoryAdminExtension()
     expect(inventoryVoyantModule.admin?.routes?.map((route) => route.path)).toEqual(

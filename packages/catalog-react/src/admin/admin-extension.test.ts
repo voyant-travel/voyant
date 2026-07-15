@@ -62,6 +62,20 @@ describe("createCatalogAdminExtension", () => {
     expect(extension.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedCatalogAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Catalog",
+      items: [
+        { title: "Products" },
+        { title: "Excursions" },
+        { title: "Tours" },
+        { title: "Cruises" },
+        { title: "Accommodations" },
+      ],
+    })
+  })
+
   it("leaves standard navigation to the graph-selected factory", () => {
     const extension = createCatalogAdminExtension()
     expect(extension.id).toBe("catalog")

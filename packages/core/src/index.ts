@@ -93,6 +93,7 @@ export type {
   VoyantGraphFacetEntity,
   VoyantGraphJsonObject,
   VoyantGraphJsonValue,
+  VoyantGraphLinkDeclaration,
   VoyantGraphPortDeclaration,
   VoyantGraphProject,
   VoyantGraphProjectSelection,

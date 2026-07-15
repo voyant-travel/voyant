@@ -89,6 +89,7 @@ export const bookingsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/bookings#linkable.booking",
+      kind: "linkable",
       source: "@voyant-travel/bookings/linkables",
     },
   ],

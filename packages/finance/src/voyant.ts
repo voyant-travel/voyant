@@ -104,18 +104,22 @@ export const financeVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/finance#linkable.creditNote",
+      kind: "linkable",
       source: "@voyant-travel/finance/linkables",
     },
     {
       id: "@voyant-travel/finance#linkable.invoice",
+      kind: "linkable",
       source: "@voyant-travel/finance/linkables",
     },
     {
       id: "@voyant-travel/finance#linkable.invoiceTemplate",
+      kind: "linkable",
       source: "@voyant-travel/finance/linkables",
     },
     {
       id: "@voyant-travel/finance#linkable.supplierInvoice",
+      kind: "linkable",
       source: "@voyant-travel/finance/linkables",
     },
   ],

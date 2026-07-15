@@ -424,15 +424,17 @@ export function createFinanceAdminExtension(
 export function createSelectedFinanceAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const labels = {
+    finance: navMessages.finance ?? "Finance",
+    invoices: navMessages.invoices ?? "Invoices",
+    invoiceNumberSeries: navMessages.invoiceNumberSeries ?? "Invoice number series",
+    payments: navMessages.payments ?? "Payments",
+    supplierInvoices: navMessages.supplierInvoices ?? "Supplier invoices",
+    profitability: navMessages.profitability ?? "Profitability",
+  }
   const extension = withAdminRouteMessagesProvider(
     createFinanceAdminExtension({
-      labels: {
-        invoices: navMessages.invoices,
-        invoiceNumberSeries: navMessages.invoiceNumberSeries,
-        payments: navMessages.payments,
-        supplierInvoices: navMessages.supplierInvoices,
-        profitability: navMessages.profitability,
-      },
+      labels,
     }),
     () =>
       import("../i18n/index.js").then((module) => ({
@@ -448,25 +450,25 @@ export function createSelectedFinanceAdminExtension({
         items: [
           {
             id: "finance",
-            title: navMessages.finance,
+            title: labels.finance,
             url: "/finance/invoices",
             icon: DollarSign,
             items: [
-              { id: "invoices", title: navMessages.invoices, url: "/finance/invoices" },
+              { id: "invoices", title: labels.invoices, url: "/finance/invoices" },
               {
                 id: "invoice-number-series",
-                title: navMessages.invoiceNumberSeries,
+                title: labels.invoiceNumberSeries,
                 url: "/finance/invoice-number-series",
               },
-              { id: "payments", title: navMessages.payments, url: "/finance/payments" },
+              { id: "payments", title: labels.payments, url: "/finance/payments" },
               {
                 id: "supplier-invoices",
-                title: navMessages.supplierInvoices,
+                title: labels.supplierInvoices,
                 url: "/finance/supplier-invoices",
               },
               {
                 id: "profitability",
-                title: navMessages.profitability,
+                title: labels.profitability,
                 url: "/finance/profitability",
               },
             ],

@@ -20,6 +20,7 @@
 "@voyant-travel/catalog-react": patch
 "@voyant-travel/charters": patch
 "@voyant-travel/commerce": patch
+"@voyant-travel/commerce-react": patch
 "@voyant-travel/core": patch
 "@voyant-travel/cruises": patch
 "@voyant-travel/db": patch
@@ -46,6 +47,7 @@
 "@voyant-travel/relationships-react": patch
 "@voyant-travel/storefront": patch
 "@voyant-travel/trips": patch
+"@voyant-travel/trips-react": patch
 "@voyant-travel/types": patch
 "@voyant-travel/workflow-runs": patch
 ---
@@ -54,5 +56,7 @@ Standardize first-party packages on package-owned deployment manifests, provider
 access metadata, concrete event contracts, selected admin navigation, and published runtime
 references. Add Bookings Extras as an independently selected graph unit and remove the central
 admin navigation catalog.
+Link facets now distinguish entity `linkable` metadata from executable `definition` exports, and
+generated Node registries reject malformed definitions before service registration.
 Provider-owned required config and secrets now apply only when that provider is selected, so
 local and in-memory deployments do not require credentials for inactive remote providers.

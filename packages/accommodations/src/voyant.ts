@@ -49,20 +49,24 @@ export const accommodationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/accommodations#linkable.roomBlock",
+      kind: "linkable",
       source: "@voyant-travel/accommodations/linkables",
     },
     {
       id: "@voyant-travel/accommodations#link.program-room-block",
+      kind: "definition",
       source: "@voyant-travel/accommodations/standard-links",
       export: "programRoomBlockLink",
     },
     {
       id: "@voyant-travel/accommodations#link.room-block-property",
+      kind: "definition",
       source: "@voyant-travel/accommodations/standard-links",
       export: "roomBlockPropertyLink",
     },
     {
       id: "@voyant-travel/accommodations#link.room-block-supplier",
+      kind: "definition",
       source: "@voyant-travel/accommodations/standard-links",
       export: "roomBlockSupplierLink",
     },

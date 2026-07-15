@@ -236,6 +236,11 @@ export interface VoyantGraphFacetEntity {
   export?: string
 }
 
+/** Distinguishes entity metadata from executable cross-module link definitions. */
+export interface VoyantGraphLinkDeclaration extends VoyantGraphFacetEntity {
+  kind: "linkable" | "definition"
+}
+
 export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
   eventType?: string
   /** Semantic version of the emitted payload contract. Required with payloadSchema. */
@@ -313,7 +318,7 @@ export interface VoyantGraphUnitManifest {
   api?: readonly VoyantGraphRouteBundle[]
   schema?: readonly VoyantGraphFacetEntity[]
   migrations?: readonly VoyantGraphFacetEntity[]
-  links?: readonly VoyantGraphFacetEntity[]
+  links?: readonly VoyantGraphLinkDeclaration[]
   subscribers?: readonly VoyantGraphSubscriber[]
   events?: readonly VoyantGraphEvent[]
   workflows?: readonly VoyantGraphWorkflow[]

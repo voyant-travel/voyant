@@ -19,6 +19,7 @@ import {
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
   type VoyantGraphLifecycleDeclaration,
+  type VoyantGraphLinkDeclaration,
   type VoyantGraphMessageReference,
   type VoyantGraphPortDeclaration,
   type VoyantGraphPresentationDeclaration,
@@ -346,7 +347,7 @@ export interface ResolvedVoyantGraphUnit {
   api: readonly VoyantGraphRouteBundle[]
   schema: readonly VoyantGraphFacetEntity[]
   migrations: readonly VoyantGraphFacetEntity[]
-  links: readonly VoyantGraphFacetEntity[]
+  links: readonly VoyantGraphLinkDeclaration[]
   subscribers: readonly VoyantGraphSubscriber[]
   events: readonly VoyantGraphEvent[]
   workflows: readonly VoyantGraphWorkflow[]
@@ -617,7 +618,7 @@ export function validateGraphUnitManifest(
   diagnostics.push(...validateRouteBundles(input.api, source))
   diagnostics.push(...validateFacetEntities(input.schema, "schema", source))
   diagnostics.push(...validateFacetEntities(input.migrations, "migrations", source))
-  diagnostics.push(...validateFacetEntities(input.links, "links", source))
+  diagnostics.push(...validateLinks(input.links, source))
   diagnostics.push(...validateSubscribers(input.subscribers, source))
   diagnostics.push(...validateEvents(input.events, source))
   diagnostics.push(...validateWorkflows(input.workflows, source))
@@ -1424,6 +1425,25 @@ function validateEvents(value: unknown, source: string | undefined): VoyantGraph
           "Event audit category must be domain or internal.",
         )
       }
+    }
+  })
+  return diagnostics
+}
+
+function validateLinks(value: unknown, source: string | undefined): VoyantGraphDiagnostic[] {
+  const diagnostics = validateFacetEntities(value, "links", source)
+  validateEntityArray(value, "links", source, diagnostics, (entry, facet) => {
+    if (entry.kind !== "linkable" && entry.kind !== "definition") {
+      invalidFacet(
+        `${facet}.kind`,
+        source,
+        diagnostics,
+        'Links must declare kind "linkable" or "definition".',
+      )
+    }
+    requireNonEmptyString(entry.source, `${facet}.source`, source, diagnostics)
+    if (entry.kind === "definition") {
+      requireNonEmptyString(entry.export, `${facet}.export`, source, diagnostics)
     }
   })
   return diagnostics

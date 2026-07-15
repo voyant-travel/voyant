@@ -66,9 +66,10 @@ export function createCommerceAdminExtension(
 export function createSelectedCommerceAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const promotionsLabel = navMessages.promotions ?? "Promotions"
   return withAdminRouteMessagesProvider(
     createCommerceAdminExtension({
-      labels: { promotions: navMessages.promotions },
+      labels: { promotions: promotionsLabel },
       icon: Tag,
       order: 50,
     }),

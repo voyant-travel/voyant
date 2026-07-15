@@ -145,6 +145,12 @@ describe("createBookingsAdminExtension", () => {
     expect(bookingsListHeaderActionsSlot).toBe("bookings.list.header-actions")
     expect(bookingDetailPaymentControllerSlot).toBe("booking.details.payment-controller")
   })
+
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedBookingsAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]?.title).toBe("Bookings")
+    expect(extension.routes?.find((route) => route.id === "bookings-index")?.title).toBe("Bookings")
+  })
 })
 
 describe("bookings list search contract", () => {

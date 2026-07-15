@@ -182,6 +182,7 @@ export const distributionVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/distribution#linkable.supplier",
+      kind: "linkable",
       source: "@voyant-travel/distribution/linkables",
     },
   ],

@@ -12,38 +12,10 @@ import {
 import { financeInventoryPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-ports.js"
-
-const productIdentityEventPayloadSchema = {
-  type: "object",
-  required: ["id"],
-  properties: { id: { type: "string" } },
-  additionalProperties: false,
-} as const
-
-const productContentChangedPayloadSchema = {
-  type: "object",
-  required: ["id"],
-  properties: {
-    id: { type: "string" },
-    axis: {
-      enum: [
-        "product",
-        "itinerary",
-        "option",
-        "day",
-        "media",
-        "feature",
-        "faq",
-        "location",
-        "destination",
-        "category",
-        "tag",
-        "translation",
-      ],
-    },
-  },
-  additionalProperties: false,
-} as const
+import {
+  productContentChangedPayloadSchema,
+  productIdentityEventPayloadSchema,
+} from "./voyant-event-schemas.js"
 
 /** Import-cheap deployment declarations owned by the inventory package. */
 export const inventoryVoyantModule = defineModule({
@@ -100,15 +72,18 @@ export const inventoryVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/inventory#linkable.product",
+      kind: "linkable",
       source: "@voyant-travel/inventory/linkables",
     },
     {
       id: "@voyant-travel/inventory#link.organization-product",
+      kind: "definition",
       source: "@voyant-travel/inventory/standard-links",
       export: "organizationProductLink",
     },
     {
       id: "@voyant-travel/inventory#link.person-product",
+      kind: "definition",
       source: "@voyant-travel/inventory/standard-links",
       export: "personProductLink",
     },

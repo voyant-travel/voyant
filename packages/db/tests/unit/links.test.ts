@@ -1,4 +1,9 @@
-import { defineLink, type LinkableDefinition, type LinkRow } from "@voyant-travel/core"
+import {
+  defineLink,
+  type LinkableDefinition,
+  type LinkDefinition,
+  type LinkRow,
+} from "@voyant-travel/core"
 import type { SQL } from "drizzle-orm"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, it, vi } from "vitest"
@@ -61,6 +66,17 @@ function makeRawRow(
 }
 
 describe("createLinkServiceFactory", () => {
+  it("rejects a malformed selected link definition", () => {
+    const malformedLink: LinkDefinition = {
+      ...defineLink(person, product),
+      tableName: "",
+    }
+
+    expect(() => createLinkServiceFactory([malformedLink])).toThrow(
+      "invalid link definition at index 0; missing tableName",
+    )
+  })
+
   it("validates duplicate table names when the factory is created", () => {
     const link = defineLink(person, product)
 

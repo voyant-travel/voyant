@@ -47,14 +47,17 @@ export const chartersVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/charters#linkable.charter_product",
+      kind: "linkable",
       source: "@voyant-travel/charters",
     },
     {
       id: "@voyant-travel/charters#linkable.charter_voyage",
+      kind: "linkable",
       source: "@voyant-travel/charters",
     },
     {
       id: "@voyant-travel/charters#linkable.charter_yacht",
+      kind: "linkable",
       source: "@voyant-travel/charters",
     },
   ],

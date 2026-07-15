@@ -31,4 +31,15 @@ describe("createSelectedOperationsAdminExtension", () => {
     ])
     expect(extension.navigation?.every(({ items }) => items[0]?.icon)).toBe(true)
   })
+
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedOperationsAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.map(({ items }) => items[0]?.title)).toEqual([
+      "Availability",
+      "Resources",
+    ])
+    expect(new Set(extension.routes?.map((route) => route.title))).toEqual(
+      new Set(["Availability", "Resources"]),
+    )
+  })
 })

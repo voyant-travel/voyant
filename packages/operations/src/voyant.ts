@@ -58,22 +58,27 @@ export const operationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/operations#linkable.departure",
+      kind: "linkable",
       source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.facility",
+      kind: "linkable",
       source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.functionSpace",
+      kind: "linkable",
       source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.property",
+      kind: "linkable",
       source: "@voyant-travel/operations/linkables",
     },
     {
       id: "@voyant-travel/operations#linkable.spaceBlock",
+      kind: "linkable",
       source: "@voyant-travel/operations/linkables",
     },
   ],

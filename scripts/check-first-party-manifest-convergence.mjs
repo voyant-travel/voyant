@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -10,7 +10,9 @@ import {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const graphPath = path.join(root, "starters/operator/.voyant/deployment-graph.generated.json")
 if (!existsSync(graphPath)) {
-  throw new Error("generated Operator graph is missing; run `pnpm --filter operator prepare:verify`")
+  throw new Error(
+    "generated Operator graph is missing; run `pnpm --filter operator prepare:verify`",
+  )
 }
 
 const policySource = read("packages/operator-standard/src/index.ts")
@@ -69,6 +71,7 @@ function collectSources(directory, result) {
     if (["dist", "node_modules", "coverage"].includes(entry.name)) continue
     const child = path.join(directory, entry.name)
     if (entry.isDirectory()) collectSources(child, result)
-    else if (/\.(?:ts|tsx|json)$/.test(entry.name)) result.set(relativePath(child), readFileSync(child, "utf8"))
+    else if (/\.(?:ts|tsx|json)$/.test(entry.name))
+      result.set(relativePath(child), readFileSync(child, "utf8"))
   }
 }

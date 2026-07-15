@@ -62,6 +62,21 @@ describe("createNotificationsAdminExtension", () => {
     expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedNotificationsAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Notifications",
+      items: [
+        { title: "Templates" },
+        { title: "Reminder rules" },
+        { title: "Deliveries" },
+        { title: "Reminder runs" },
+        { title: "Preview" },
+        { title: "Settings" },
+      ],
+    })
+  })
+
   it("describes the notifications routes with unique ids and paths", () => {
     const extension = createNotificationsAdminExtension()
     const routes = extension.routes ?? []

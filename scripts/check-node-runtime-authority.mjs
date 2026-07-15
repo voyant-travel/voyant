@@ -55,7 +55,6 @@ for (const required of [
   "runtimePorts: deploymentResources.ports",
   "outboundWebhooks: deploymentResources.outboundWebhooks",
   "resolveVoyantNodeProviderPlan(generated.deployment.providers)",
-  "createVoyantNodeStorageResolver",
   "validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)",
   "createVoyantNodeEnv(rawEnv, providerPlan)",
   "resolveSelectedGraphProviderPorts",
@@ -84,7 +83,13 @@ if (operatorRuntime.includes("enqueuePostgresWebhookEvent")) {
     "runtime must resolve outbound webhook providers through the package-owned adapter",
   )
 }
-if (!operatorRuntime.includes("...options.host,\n    env,\n    storage,")) {
+if (
+  !operatorRuntime.includes('providerPlan.storage === "custom"') ||
+  !operatorRuntime.includes(': providerPorts["storage.object"]') ||
+  !operatorRuntime.includes(
+    'const runtimeProviderPorts = { ...providerPorts, "storage.object": storage }',
+  )
+) {
   violations.push("graph-selected storage must override incidental host storage configuration")
 }
 

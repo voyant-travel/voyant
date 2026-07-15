@@ -144,6 +144,12 @@ Executable code is referenced through symbolic package exports and remains
 behind lazy imports. Importing `./voyant` must not load route trees, schemas, UI,
 workflow implementations, or infrastructure clients.
 
+Link declarations are closed metadata: `kind: "linkable"` advertises an entity
+that can participate in links, while `kind: "definition"` identifies an
+executable `LinkDefinition` and requires a package `source` plus named `export`.
+The runtime lowering stage must never infer executable definitions merely from
+the presence of an export.
+
 ### Uniform first-party declarations
 
 First-party modules use the same public declaration contract that reusable

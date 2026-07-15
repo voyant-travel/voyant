@@ -482,8 +482,9 @@ export function createBookingsAdminExtension(
 export function createSelectedBookingsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const bookingsLabel = navMessages.bookings ?? "Bookings"
   const extension = withAdminRouteMessagesProvider(
-    createBookingsAdminExtension({ labels: { bookings: navMessages.bookings } }),
+    createBookingsAdminExtension({ labels: { bookings: bookingsLabel } }),
     () =>
       import("../i18n/index.js").then((module) => ({
         default: module.BookingsUiMessagesProvider,
@@ -498,7 +499,7 @@ export function createSelectedBookingsAdminExtension({
         items: [
           {
             id: "bookings",
-            title: navMessages.bookings,
+            title: bookingsLabel,
             url: "/bookings",
             icon: CalendarCheck,
           },

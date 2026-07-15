@@ -60,6 +60,14 @@ describe("createFlightsAdminExtension", () => {
     expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedFlightsAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Flights",
+      items: [{ title: "Search" }, { title: "Orders" }],
+    })
+  })
+
   it("describes the search page, wizard, and orders surfaces as flat siblings", () => {
     // The old file-based tree escaped the wizard out of the /flights section
     // chrome (`flights_.book.$offerId`); the code-assembled tree reproduces

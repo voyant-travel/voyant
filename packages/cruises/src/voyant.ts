@@ -106,16 +106,26 @@ export const cruisesVoyantModule = defineModule({
     ],
   },
   links: [
-    { id: "@voyant-travel/cruises#linkable.cruise", source: "@voyant-travel/cruises" },
+    {
+      id: "@voyant-travel/cruises#linkable.cruise",
+      kind: "linkable",
+      source: "@voyant-travel/cruises",
+    },
     {
       id: "@voyant-travel/cruises#linkable.cruise_voyage_group",
+      kind: "linkable",
       source: "@voyant-travel/cruises",
     },
     {
       id: "@voyant-travel/cruises#linkable.cruise_sailing",
+      kind: "linkable",
       source: "@voyant-travel/cruises",
     },
-    { id: "@voyant-travel/cruises#linkable.cruise_ship", source: "@voyant-travel/cruises" },
+    {
+      id: "@voyant-travel/cruises#linkable.cruise_ship",
+      kind: "linkable",
+      source: "@voyant-travel/cruises",
+    },
   ],
   events: [
     {
