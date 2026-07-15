@@ -101,8 +101,8 @@ describe("self-host projection", () => {
     expect(projection.sourceGraphHash).toBe(bundle.graphHash)
     expect(projection.project.modules).toEqual([
       {
-        id: "@acme/voyant-loyalty",
-        resolve: "@acme/voyant-loyalty",
+        id: "@acme/voyant-loyalty#rewards",
+        resolve: "@acme/voyant-loyalty/rewards",
         packageName: "@acme/voyant-loyalty",
         version: "1.2.3",
         config: { tier: "gold" },
@@ -228,12 +228,13 @@ async function exportBundle(
   options: { sourceKind?: VoyantGraphPackageSourceKind } = {},
 ): Promise<VoyantSelfHostExportBundle> {
   const manifest = defineModule({
-    id: "@acme/voyant-loyalty",
+    id: "@acme/voyant-loyalty#rewards",
+    packageName: "@acme/voyant-loyalty",
     migrations: [{ id: "@acme/voyant-loyalty#migrations", source: "./migrations" }],
   })
   const project = defineProject({
     productBom: BOM,
-    modules: [{ resolve: "@acme/voyant-loyalty", config: { tier: "gold" } }],
+    modules: [{ resolve: "@acme/voyant-loyalty/rewards", config: { tier: "gold" } }],
     deployment: {
       target: "node",
       mode: "managed-cloud",

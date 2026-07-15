@@ -771,11 +771,19 @@ function projectSelections(
 ): VoyantSelfHostProjectSelection[] {
   return units.map((unit) => ({
     id: unit.id,
-    resolve: unit.id,
+    resolve: specifierForResolvedUnit(unit),
     packageName: unit.packageName,
     ...(versions.get(unit.packageName) ? { version: versions.get(unit.packageName) } : {}),
     ...(unit.projectConfig ? { config: unit.projectConfig as VoyantGraphJsonObject } : {}),
   }))
+}
+
+function specifierForResolvedUnit(unit: ResolvedVoyantGraphUnit): string {
+  if (unit.id === unit.packageName) return unit.packageName
+  const localIdPrefix = `${unit.packageName}#`
+  return unit.id.startsWith(localIdPrefix)
+    ? `${unit.packageName}/${unit.id.slice(localIdPrefix.length)}`
+    : unit.id
 }
 
 function portablePath(value: unknown): value is string {
