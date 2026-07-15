@@ -40,6 +40,32 @@ describe("operator-settings deployment manifest", () => {
       schema: [{ id: "@voyant-travel/operator-settings#schema" }],
       migrations: [{ id: "@voyant-travel/operator-settings#migrations" }],
       resources: [{ id: "@voyant-travel/operator-settings#resource.database", kind: "database" }],
+      tools: [
+        {
+          id: "@voyant-travel/operator-settings#tool.get-operator-settings",
+          name: "get_operator_settings",
+          requiredScopes: ["settings:read"],
+          context: ["operatorSettings"],
+          risk: "low",
+        },
+        {
+          id: "@voyant-travel/operator-settings#tool.update-operator-settings",
+          name: "update_operator_settings",
+          requiredScopes: ["settings:write"],
+          context: ["operatorSettings"],
+          risk: "high",
+        },
+      ],
+      actions: [
+        {
+          id: "@voyant-travel/operator-settings#action.update-operator-settings",
+          resource: "settings",
+          action: "write",
+          ledger: "required",
+          approval: "required",
+          from: { tools: ["@voyant-travel/operator-settings#tool.update-operator-settings"] },
+        },
+      ],
       admin: {
         compositionOrder: 10,
         runtime: {

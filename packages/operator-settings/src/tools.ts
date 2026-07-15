@@ -1,0 +1,102 @@
+/**
+ * Operator Settings agent tools on the framework Tool contract.
+ *
+ * The tools expose the combined operator profile/payment-settings aggregate,
+ * not the underlying storage tables. A deployment injects the service through
+ * the Tool context so this surface stays transport-neutral.
+ */
+import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import { z } from "zod"
+
+import { updateOperatorSettingsSchema } from "./service.js"
+
+const nullableText = z.string().nullable()
+
+export const operatorSettingsValueSchema = z.object({
+  id: z.string().optional(),
+  name: nullableText.optional(),
+  legalName: nullableText.optional(),
+  vatId: nullableText.optional(),
+  registrationNumber: nullableText.optional(),
+  address: nullableText.optional(),
+  phone: nullableText.optional(),
+  email: nullableText.optional(),
+  website: nullableText.optional(),
+  license: nullableText.optional(),
+  licenseAuthority: nullableText.optional(),
+  signatoryName: nullableText.optional(),
+  signatoryRole: nullableText.optional(),
+  bankTransferBeneficiary: nullableText,
+  iban: nullableText,
+  bank: nullableText,
+  notes: nullableText,
+  customerPaymentPolicy: z.unknown().nullable(),
+  bookingCheckoutUrlTemplate: nullableText,
+  invoicePayUrlTemplate: nullableText,
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
+})
+
+export type OperatorSettingsValue = z.infer<typeof operatorSettingsValueSchema>
+export type UpdateOperatorSettingsToolInput = z.infer<typeof updateOperatorSettingsSchema>
+
+const operatorSettingsResultSchema = z.object({
+  settings: operatorSettingsValueSchema.nullable(),
+})
+
+export interface OperatorSettingsToolServices {
+  getSettings(): Promise<OperatorSettingsValue | null>
+  updateSettings(input: UpdateOperatorSettingsToolInput): Promise<OperatorSettingsValue | null>
+}
+
+export type OperatorSettingsToolContext = ToolContext & {
+  operatorSettings?: OperatorSettingsToolServices
+}
+
+function operatorSettings(ctx: OperatorSettingsToolContext): OperatorSettingsToolServices {
+  return requireService(ctx.operatorSettings, "operatorSettings")
+}
+
+export const getOperatorSettingsTool = defineTool<
+  Record<string, never>,
+  { settings: OperatorSettingsValue | null },
+  OperatorSettingsToolContext
+>({
+  name: "get_operator_settings",
+  description:
+    "Read the operator profile, payment instructions, and payment defaults as one settings aggregate. Read-only.",
+  inputSchema: z.object({}),
+  outputSchema: operatorSettingsResultSchema,
+  requiredScopes: ["settings:read"],
+  tier: "read",
+  riskPolicy: READ_ONLY_RISK,
+  async handler(_input, ctx) {
+    return { settings: await operatorSettings(ctx).getSettings() }
+  },
+})
+
+export const updateOperatorSettingsTool = defineTool<
+  UpdateOperatorSettingsToolInput,
+  { settings: OperatorSettingsValue | null },
+  OperatorSettingsToolContext
+>({
+  name: "update_operator_settings",
+  description:
+    "Update operator identity/contact details, bank-transfer instructions, or payment defaults. Requires confirmation because payment defaults affect future bookings and invoices.",
+  inputSchema: updateOperatorSettingsSchema,
+  outputSchema: operatorSettingsResultSchema,
+  requiredScopes: ["settings:write"],
+  tier: "sensitive",
+  riskPolicy: {
+    destructive: false,
+    reversible: true,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write"],
+  },
+  async handler(input, ctx) {
+    return { settings: await operatorSettings(ctx).updateSettings(input) }
+  },
+})
+
+export const operatorSettingsTools = [getOperatorSettingsTool, updateOperatorSettingsTool] as const

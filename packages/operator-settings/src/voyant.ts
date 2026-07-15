@@ -96,6 +96,46 @@ export const operatorSettingsVoyantModule = defineModule({
       },
     ],
   },
+  tools: [
+    {
+      id: "@voyant-travel/operator-settings#tool.get-operator-settings",
+      name: "get_operator_settings",
+      runtime: {
+        entry: "@voyant-travel/operator-settings/tools",
+        export: "getOperatorSettingsTool",
+      },
+      requiredScopes: ["settings:read"],
+      context: ["operatorSettings"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operator-settings#tool.update-operator-settings",
+      name: "update_operator_settings",
+      runtime: {
+        entry: "@voyant-travel/operator-settings/tools",
+        export: "updateOperatorSettingsTool",
+      },
+      requiredScopes: ["settings:write"],
+      context: ["operatorSettings"],
+      risk: "high",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/operator-settings#action.update-operator-settings",
+      version: "v1",
+      kind: "execute",
+      targetType: "operator-settings",
+      resource: "settings",
+      action: "write",
+      requiredScopes: ["settings:write"],
+      risk: "high",
+      ledger: "required",
+      approval: "required",
+      reversible: true,
+      from: { tools: ["@voyant-travel/operator-settings#tool.update-operator-settings"] },
+    },
+  ],
   admin: {
     compositionOrder: 10,
     runtime: operatorSettingsAdminRuntime,
@@ -112,11 +152,6 @@ export const operatorSettingsVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
-    agentTools: {
-      posture: "planned",
-      rationale: "Operator profile and settings capabilities need guarded module-owned Tools.",
-      issue: "#3370",
-    },
   },
 })
 
