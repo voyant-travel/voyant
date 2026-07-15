@@ -10,6 +10,16 @@
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
 import { z } from "zod"
 
+import {
+  createOptionExtraConfigTool as createOptionExtraConfigDefinition,
+  createProductExtraTool as createProductExtraDefinition,
+  getOptionExtraConfigTool as getOptionExtraConfigDefinition,
+  getProductExtraTool as getProductExtraDefinition,
+  listOptionExtraConfigsTool as listOptionExtraConfigsDefinition,
+  listProductExtrasTool as listProductExtrasDefinition,
+  updateOptionExtraConfigTool as updateOptionExtraConfigDefinition,
+  updateProductExtraTool as updateProductExtraDefinition,
+} from "./extras-tools.js"
 import { productListQuerySchema } from "./validation.js"
 
 type ProductListQuery = z.infer<typeof productListQuerySchema>
@@ -88,5 +98,17 @@ export const getProductTool = defineTool<
   },
 })
 
+export const listProductExtrasTool = defineTool(listProductExtrasDefinition)
+export const getProductExtraTool = defineTool(getProductExtraDefinition)
+export const createProductExtraTool = defineTool(createProductExtraDefinition)
+export const updateProductExtraTool = defineTool(updateProductExtraDefinition)
+export const listOptionExtraConfigsTool = defineTool(listOptionExtraConfigsDefinition)
+export const getOptionExtraConfigTool = defineTool(getOptionExtraConfigDefinition)
+export const createOptionExtraConfigTool = defineTool(createOptionExtraConfigDefinition)
+export const updateOptionExtraConfigTool = defineTool(updateOptionExtraConfigDefinition)
+
 /** All inventory agent tools, ready to register on a `ToolRegistry`. */
-export const inventoryTools = [listProductsTool, getProductTool] as const
+export const inventoryTools = [
+  listProductsTool,
+  getProductTool,
+] as const
