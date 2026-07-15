@@ -108,7 +108,4 @@ export const createOptionExtraConfigTool = defineTool(createOptionExtraConfigDef
 export const updateOptionExtraConfigTool = defineTool(updateOptionExtraConfigDefinition)
 
 /** All inventory agent tools, ready to register on a `ToolRegistry`. */
-export const inventoryTools = [
-  listProductsTool,
-  getProductTool,
-] as const
+export const inventoryTools = [listProductsTool, getProductTool] as const

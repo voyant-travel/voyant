@@ -23,10 +23,9 @@ export const availabilityVoyantModule = defineModule({
   meta: {
     ownership: "package",
     agentTools: {
-      posture: "planned",
+      posture: "not-applicable",
       rationale:
-        "Availability and departure queries and guarded mutations need module-owned Tools.",
-      issue: "#3370",
+        "This package owns shared availability schemas only; executable availability and departure services are owned and Tool-backed by Operations.",
     },
   },
 })
