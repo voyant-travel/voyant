@@ -11,7 +11,9 @@ import { act, type ReactNode } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true
+;(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true
 
 vi.mock("@voyant-travel/ui/components/rich-text-editor", () => ({
   RichTextEditor: ({
@@ -164,7 +166,7 @@ describe("product detail accessibility", () => {
     for (const [controlId, errorId] of [
       ["product-detail-name", "product-detail-name-error"],
       ["product-detail-sell-currency", "product-detail-sell-currency-error"],
-    ]) {
+    ] as const) {
       const control = document.getElementById(controlId)
       expect(control?.getAttribute("aria-invalid")).toBe("true")
       expect(control?.getAttribute("aria-describedby")).toBe(errorId)

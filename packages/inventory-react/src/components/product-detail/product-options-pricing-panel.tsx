@@ -45,12 +45,18 @@ function getRulePricingModeLabel(
   }
 }
 
-function ActionMenu({ children }: { children: React.ReactNode }) {
+function ActionMenu({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={label}
+          title={label}
+          className="h-8 w-8 text-muted-foreground"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">{children}</DropdownMenuContent>
