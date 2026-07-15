@@ -45,9 +45,9 @@ Handles package releases:
 
 Notes:
 
-- the push flow publishes packages whose local version is ahead of npm, then creates Changesets release PRs without building the package graph
+- the push flow creates or updates the Changesets release PR whenever releasable changesets exist
 - the publish path builds and verifies only the pending package set and their build dependencies
-- pending package publication and release PR creation can happen in the same run, so unpublished versions are not blocked by newly landed changesets
+- pending package publication runs only after the release PR is merged and no releasable changesets remain; this prevents placeholder versions for new packages from being published before their changesets are applied
 - starter GitHub Releases are separate from npm package publication; run the manual dispatch with `release_assets=true` and an explicit `release_version` to create or refresh starter archives
 - package publishing may still create package tags, but GitHub Releases are intended for starter assets rather than every npm package release
 
