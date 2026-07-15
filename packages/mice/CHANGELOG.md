@@ -1,5 +1,38 @@
 # @voyant-travel/mice
 
+## 0.16.0
+
+### Minor Changes
+
+- 4f66e89: Add guarded MCP Tools for the MICE program lifecycle.
+
+### Patch Changes
+
+- Updated dependencies [5617f37]
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [372f4f4]
+- Updated dependencies [6c8d46a]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [90e8d6d]
+- Updated dependencies [f819273]
+- Updated dependencies [bf19d5a]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/accommodations@0.120.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/operations@0.7.0
+  - @voyant-travel/quotes@0.129.0
+  - @voyant-travel/distribution@0.150.0
+  - @voyant-travel/relationships@0.126.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.15.0
 
 ### Patch Changes

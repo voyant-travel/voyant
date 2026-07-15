@@ -1,5 +1,55 @@
 # @voyant-travel/mcp
 
+## 0.3.0
+
+### Minor Changes
+
+- b8cef4c: Carry stable capability identity, owner, version, aliases, deprecation, audience, deployment
+  risk, input/output schemas, and MCP annotations through the Tool registry and standard MCP
+  discovery. Graph bindings now check runtime metadata parity, while legacy invocation aliases
+  remain callable and exact capability-version lookup fails closed for unsupported versions.
+- db5adce: Fail closed before selected graph Tool dispatch by binding each capability to its action-ledger
+  policy. Advertise invocation controls in discovery, enforce confirmation, target, idempotency,
+  fingerprint, approval, and principal semantics, and record required-ledger execution outcomes.
+
+  Keep the existing package-owned booking cancellation and invoice refund approval workflows as
+  explicit handler-enforced policies so their domain-state fingerprints and atomic ledgers are not
+  double-gated.
+
+- c9b6144: Add graph-composed, module-owned Tools for navigation preferences and organization setup,
+  including exact action policies and owner-scoped project configuration for MCP context wiring.
+
+### Patch Changes
+
+- cabf662: Add the provider-neutral, staff-only action-ledger Tool surface for audit
+  entries, target timelines, approvals, delegations, and relay inspection. Add
+  guarded approval request/decision Tools whose capability, risk, and policy are
+  derived from selected graph actions and whose writes fail closed for missing,
+  conditional, expired, misassigned, or no-longer-selected authority. Publish
+  selected graph actions to package Tool context contributions. Reversal remains
+  inspection-only until a provider-neutral runtime can execute and attest the
+  underlying domain reversal command.
+- 0979758: Preserve complete Zod input contracts through standard MCP discovery and invocation, keep
+  structured output envelopes aligned with their advertised schemas, and reject requests whose
+  authenticated actor or audience grant claims are missing.
+- ff87f68: Add staff-only workflow-run Tools for typed run inspection, registered workflow
+  triggering, and rerun/resume retries. Writes require strict explicit scopes,
+  confirmation, approval, action-ledger recording, and a graph-selected
+  self-hosted workflow provider. Pass selected provider roles to package Tool
+  context contributions so management operations fail closed when deployment
+  authority is absent. Trigger and retry use a worst-case critical risk because
+  the runner port has no per-workflow side-effect descriptors. Cancellation
+  remains unavailable until the
+  provider-neutral runner port exposes a real cancellation capability.
+- Updated dependencies [cabf662]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/hono@0.127.1
+
 ## 0.2.6
 
 ### Patch Changes

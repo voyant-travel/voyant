@@ -1,5 +1,33 @@
 # @voyant-travel/framework
 
+## 0.46.1
+
+### Patch Changes
+
+- c9b6144: Add graph-composed, module-owned Tools for navigation preferences and organization setup,
+  including exact action policies and owner-scoped project configuration for MCP context wiring.
+- Updated dependencies [cabf662]
+- Updated dependencies [848b581]
+- Updated dependencies [372f4f4]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [0979758]
+- Updated dependencies [c9b6144]
+- Updated dependencies [0297ef5]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/mcp@0.3.0
+  - @voyant-travel/auth@0.131.0
+  - @voyant-travel/operator-standard@0.6.1
+  - @voyant-travel/cruises@0.159.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+  - @voyant-travel/storage@0.110.2
+  - @voyant-travel/workflows@0.121.0
+  - @voyant-travel/workflows-orchestrator@0.121.0
+
 ## 0.46.0
 
 ### Minor Changes

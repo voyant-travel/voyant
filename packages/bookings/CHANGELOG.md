@@ -1,5 +1,48 @@
 # @voyant-travel/bookings
 
+## 0.160.0
+
+### Minor Changes
+
+- 701ccc4: Add approval-gated agent Tools for booking cancellation and invoice refunds issued as credit notes, with exact command fingerprint validation and linked action-ledger execution records.
+- 5f15e2e: Add typed, provider-neutral Tools for booking extras, departure extra manifests
+  and selections, booking requirements and questions, triggers, and traveler
+  answers. Scope staff and customer discovery explicitly, keep booking PII behind
+  its dedicated grant, bind sensitive reads and writes to selected graph actions,
+  and omit destructive operations until a deployment selects a delete policy.
+
+### Patch Changes
+
+- 372f4f4: Add a separately selectable Operations-owned dashboard Tool that composes the real aggregate
+  services from Bookings, Finance, Inventory, Distribution, and Operations without crossing domain
+  persistence boundaries. Require every underlying read scope and return structural source
+  projections, KPIs, and bounded alerts.
+
+  Complete the Quotes proposal lifecycle Tool surface with snapshot, send, accept, and decline
+  capabilities, structural JSON-safe outputs, compatibility aliases, staff-only grants,
+  confirmation, and graph-ledger/approval policy.
+
+- db5adce: Fail closed before selected graph Tool dispatch by binding each capability to its action-ledger
+  policy. Advertise invocation controls in discovery, enforce confirmation, target, idempotency,
+  fingerprint, approval, and principal semantics, and record required-ledger execution outcomes.
+
+  Keep the existing package-owned booking cancellation and invoice refund approval workflows as
+  explicit handler-enforced policies so their domain-state fingerprints and atomic ledgers are not
+  double-gated.
+
+- 6604f9e: Expose structural output schemas for every first-party Tool that previously used an opaque runtime-only schema.
+- Updated dependencies [cabf662]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+  - @voyant-travel/workflows@0.121.0
+
 ## 0.159.0
 
 ### Patch Changes

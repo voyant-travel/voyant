@@ -1,5 +1,57 @@
 # @voyant-travel/inventory
 
+## 0.11.0
+
+### Minor Changes
+
+- a2fd806: Add package-owned MCP Tools for atomic product composition, composed booking creation,
+  and approval-gated invoice/proforma issue from bookings. Reuse the existing domain
+  orchestrators, structural schemas, mutation ledgers, and post-commit events, and make
+  approved invoice execution exactly idempotent.
+- 7e4ab07: Add guarded MCP Tools for product extras and option-level extra configuration.
+
+### Patch Changes
+
+- 372f4f4: Add a separately selectable Operations-owned dashboard Tool that composes the real aggregate
+  services from Bookings, Finance, Inventory, Distribution, and Operations without crossing domain
+  persistence boundaries. Require every underlying read scope and return structural source
+  projections, KPIs, and bounded alerts.
+
+  Complete the Quotes proposal lifecycle Tool surface with snapshot, send, accept, and decline
+  capabilities, structural JSON-safe outputs, compatibility aliases, staff-only grants,
+  confirmation, and graph-ledger/approval policy.
+
+- 497dff2: Add governed product authoring, lifecycle, and composed-content read Tools plus provider-neutral trip requirement, candidate sourcing, selection, and re-shop Tools.
+- 6604f9e: Expose structural output schemas for every first-party Tool that previously used an opaque runtime-only schema.
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [a2fd806]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [90e8d6d]
+- Updated dependencies [54be000]
+- Updated dependencies [bf19d5a]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/catalog@0.158.0
+  - @voyant-travel/commerce@0.36.0
+  - @voyant-travel/operations@0.7.0
+  - @voyant-travel/operator-settings@0.4.0
+  - @voyant-travel/relationships@0.126.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+  - @voyant-travel/storage@0.110.2
+  - @voyant-travel/workflows@0.121.0
+
 ## 0.10.4
 
 ### Patch Changes

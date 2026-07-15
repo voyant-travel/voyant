@@ -1,5 +1,110 @@
 # @voyant-travel/operator-standard
 
+## 0.6.1
+
+### Patch Changes
+
+- 372f4f4: Add a separately selectable Operations-owned dashboard Tool that composes the real aggregate
+  services from Bookings, Finance, Inventory, Distribution, and Operations without crossing domain
+  persistence boundaries. Require every underlying read scope and return structural source
+  projections, KPIs, and bounded alerts.
+
+  Complete the Quotes proposal lifecycle Tool surface with snapshot, send, accept, and decline
+  capabilities, structural JSON-safe outputs, compatibility aliases, staff-only grants,
+  confirmation, and graph-ledger/approval policy.
+
+- Updated dependencies [5617f37]
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [848b581]
+- Updated dependencies [5617f37]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [0ad9ecb]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [6c8d46a]
+- Updated dependencies [a2fd806]
+- Updated dependencies [0079873]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [d9e8984]
+- Updated dependencies [7e4ab07]
+- Updated dependencies [497dff2]
+- Updated dependencies [33cc782]
+- Updated dependencies [db5adce]
+- Updated dependencies [0979758]
+- Updated dependencies [4f66e89]
+- Updated dependencies [90e8d6d]
+- Updated dependencies [54be000]
+- Updated dependencies [f819273]
+- Updated dependencies [bf19d5a]
+- Updated dependencies [c9b6144]
+- Updated dependencies [eae32f8]
+- Updated dependencies [6604f9e]
+- Updated dependencies [0297ef5]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/accommodations@0.120.0
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/mcp@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/auth@0.131.0
+  - @voyant-travel/availability@0.2.13
+  - @voyant-travel/catalog-authoring@0.107.13
+  - @voyant-travel/catalog@0.158.0
+  - @voyant-travel/commerce@0.36.0
+  - @voyant-travel/operations@0.7.0
+  - @voyant-travel/quotes@0.129.0
+  - @voyant-travel/inventory@0.11.0
+  - @voyant-travel/distribution@0.150.0
+  - @voyant-travel/flights@0.160.0
+  - @voyant-travel/identity@0.160.0
+  - @voyant-travel/trips@0.151.0
+  - @voyant-travel/legal@0.160.0
+  - @voyant-travel/mice@0.16.0
+  - @voyant-travel/operator-settings@0.4.0
+  - @voyant-travel/notifications@0.128.1
+  - @voyant-travel/relationships@0.126.0
+  - @voyant-travel/navigation-preferences@0.3.0
+  - @voyant-travel/setup@0.3.0
+  - @voyant-travel/storefront@0.162.0
+  - @voyant-travel/charters@0.158.0
+  - @voyant-travel/cruises@0.159.0
+  - @voyant-travel/workflow-runs@0.121.0
+  - @voyant-travel/bookings-react@0.160.0
+  - @voyant-travel/storefront-react@0.162.0
+  - @voyant-travel/action-ledger-react@0.47.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/event-catalog@0.2.1
+  - @voyant-travel/event-catalog-react@0.3.0
+  - @voyant-travel/public-document-delivery@0.3.7
+  - @voyant-travel/realtime@0.5.2
+  - @voyant-travel/storage@0.110.2
+  - @voyant-travel/finance-react@0.160.0
+  - @voyant-travel/flights-react@0.160.0
+  - @voyant-travel/inventory-react@0.42.0
+  - @voyant-travel/operator-settings-react@0.13.0
+  - @voyant-travel/trips-react@0.151.0
+  - @voyant-travel/auth-react@0.131.0
+  - @voyant-travel/commerce-react@0.42.0
+  - @voyant-travel/operations-react@0.41.0
+  - @voyant-travel/quotes-react@0.158.0
+  - @voyant-travel/distribution-react@0.150.0
+  - @voyant-travel/identity-react@0.160.0
+  - @voyant-travel/legal-react@0.160.0
+  - @voyant-travel/mice-react@0.28.0
+  - @voyant-travel/relationships-react@0.160.0
+  - @voyant-travel/navigation-preferences-react@0.3.0
+  - @voyant-travel/setup-react@0.3.0
+  - @voyant-travel/cruises-react@0.159.0
+  - @voyant-travel/admin-app@0.52.0
+  - @voyant-travel/catalog-react@0.158.0
+  - @voyant-travel/admin-host@0.10.0
+  - @voyant-travel/notifications-react@0.128.1
+  - @voyant-travel/workflows@0.121.0
+  - @voyant-travel/workflows-orchestrator@0.121.0
+
 ## 0.6.0
 
 ### Minor Changes

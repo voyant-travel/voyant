@@ -1,5 +1,39 @@
 # @voyant-travel/commerce
 
+## 0.36.0
+
+### Minor Changes
+
+- 7ac40a0: Add provider-neutral catalog booking Tools for live quote, guarded commit, and
+  immutable order reads. Add Commerce Tools for sellability resolution,
+  cancellation-policy and price-catalog management, and promotion lifecycle
+  management, with package-owned runtime bindings and structural result schemas.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [6c8d46a]
+- Updated dependencies [a2fd806]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/catalog@0.158.0
+  - @voyant-travel/distribution@0.150.0
+  - @voyant-travel/workflow-runs@0.121.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+  - @voyant-travel/workflows@0.121.0
+
 ## 0.35.9
 
 ### Patch Changes

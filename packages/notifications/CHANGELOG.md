@@ -1,5 +1,36 @@
 # @voyant-travel/notifications
 
+## 0.128.1
+
+### Patch Changes
+
+- f819273: Add the package-owned, exact-idempotent quote snapshot and vetted-template notification workflow, its guarded Tool/action, and the narrow Quotes-to-Notifications runtime port.
+- 6604f9e: Expose structural output schemas for every first-party Tool that previously used an opaque runtime-only schema.
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [372f4f4]
+- Updated dependencies [a2fd806]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [33cc782]
+- Updated dependencies [db5adce]
+- Updated dependencies [f819273]
+- Updated dependencies [c9b6144]
+- Updated dependencies [eae32f8]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/quotes@0.129.0
+  - @voyant-travel/legal@0.160.0
+  - @voyant-travel/storefront@0.162.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+  - @voyant-travel/workflows@0.121.0
+
 ## 0.128.0
 
 ### Patch Changes

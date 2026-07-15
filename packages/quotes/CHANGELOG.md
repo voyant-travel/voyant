@@ -1,5 +1,40 @@
 # @voyant-travel/crm
 
+## 0.129.0
+
+### Minor Changes
+
+- 372f4f4: Add a separately selectable Operations-owned dashboard Tool that composes the real aggregate
+  services from Bookings, Finance, Inventory, Distribution, and Operations without crossing domain
+  persistence boundaries. Require every underlying read scope and return structural source
+  projections, KPIs, and bounded alerts.
+
+  Complete the Quotes proposal lifecycle Tool surface with snapshot, send, accept, and decline
+  capabilities, structural JSON-safe outputs, compatibility aliases, staff-only grants,
+  confirmation, and graph-ledger/approval policy.
+
+### Patch Changes
+
+- f819273: Add the package-owned, exact-idempotent quote snapshot and vetted-template notification workflow, its guarded Tool/action, and the narrow Quotes-to-Notifications runtime port.
+- 6604f9e: Expose structural output schemas for every first-party Tool that previously used an opaque runtime-only schema.
+- Updated dependencies [cabf662]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [497dff2]
+- Updated dependencies [db5adce]
+- Updated dependencies [54be000]
+- Updated dependencies [bf19d5a]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/trips@0.151.0
+  - @voyant-travel/operator-settings@0.4.0
+  - @voyant-travel/relationships@0.126.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.128.8
 
 ### Patch Changes

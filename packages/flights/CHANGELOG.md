@@ -1,5 +1,30 @@
 # @voyant-travel/flights
 
+## 0.160.0
+
+### Minor Changes
+
+- 0079873: Add guarded MCP Tools for flight search, pricing, order reads, ticketing, and cancellation.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [a2fd806]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/catalog@0.158.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.159.0
 
 ### Patch Changes

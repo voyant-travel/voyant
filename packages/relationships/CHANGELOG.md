@@ -1,5 +1,33 @@
 # @voyant-travel/crm
 
+## 0.126.0
+
+### Minor Changes
+
+- bf19d5a: Add staff-only, typed CRM lifecycle Tools for creating and updating people and organizations and
+  for listing, adding, and updating notes, contact methods, and addresses. Add compatibility aliases,
+  request-scoped service wiring, sensitive-data risk metadata, and ledgered graph action bindings.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [372f4f4]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [d9e8984]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/identity@0.160.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.125.4
 
 ### Patch Changes

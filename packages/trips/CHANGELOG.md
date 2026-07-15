@@ -1,5 +1,40 @@
 # @voyant-travel/trips
 
+## 0.151.0
+
+### Patch Changes
+
+- 497dff2: Add governed product authoring, lifecycle, and composed-content read Tools plus provider-neutral trip requirement, candidate sourcing, selection, and re-shop Tools.
+- 6604f9e: Expose structural output schemas for every first-party Tool that previously used an opaque runtime-only schema.
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [a2fd806]
+- Updated dependencies [0079873]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [7e4ab07]
+- Updated dependencies [497dff2]
+- Updated dependencies [db5adce]
+- Updated dependencies [54be000]
+- Updated dependencies [c9b6144]
+- Updated dependencies [eae32f8]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/catalog@0.158.0
+  - @voyant-travel/commerce@0.36.0
+  - @voyant-travel/inventory@0.11.0
+  - @voyant-travel/flights@0.160.0
+  - @voyant-travel/operator-settings@0.4.0
+  - @voyant-travel/storefront@0.162.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.150.0
 
 ### Patch Changes

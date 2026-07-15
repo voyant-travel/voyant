@@ -1,5 +1,37 @@
 # @voyant-travel/action-ledger
 
+## 0.109.0
+
+### Minor Changes
+
+- cabf662: Add the provider-neutral, staff-only action-ledger Tool surface for audit
+  entries, target timelines, approvals, delegations, and relay inspection. Add
+  guarded approval request/decision Tools whose capability, risk, and policy are
+  derived from selected graph actions and whose writes fail closed for missing,
+  conditional, expired, misassigned, or no-longer-selected authority. Publish
+  selected graph actions to package Tool context contributions. Reversal remains
+  inspection-only until a provider-neutral runtime can execute and attest the
+  underlying domain reversal command.
+- db5adce: Fail closed before selected graph Tool dispatch by binding each capability to its action-ledger
+  policy. Advertise invocation controls in discovery, enforce confirmation, target, idempotency,
+  fingerprint, approval, and principal semantics, and record required-ledger execution outcomes.
+
+  Keep the existing package-owned booking cancellation and invoice refund approval workflows as
+  explicit handler-enforced policies so their domain-state fingerprints and atomic ledgers are not
+  double-gated.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.108.6
 
 ### Patch Changes
