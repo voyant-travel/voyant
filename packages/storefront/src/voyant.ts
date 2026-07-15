@@ -137,6 +137,11 @@ export const storefrontVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "The storefront root composes customer HTTP surfaces; submodules own agent capabilities.",
+    },
   },
 })
 
@@ -167,6 +172,12 @@ export const storefrontCustomerPortalVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Customer-scoped portal reads and guarded self-service actions need audience-aware Tools.",
+      issue: "#3370",
+    },
   },
 })
 
@@ -195,6 +206,11 @@ export const storefrontVerificationVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Customer verification workflows need audience-aware, guarded Tools.",
+      issue: "#3370",
+    },
   },
 })
 
@@ -224,6 +240,11 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Payment-link creation and inspection need guarded composed Tools.",
+      issue: "#3370",
+    },
   },
 })
 

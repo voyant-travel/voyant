@@ -90,6 +90,11 @@ export const dbVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "The database module owns persistence plumbing; domain modules expose agent capabilities.",
+    },
   },
 })
 

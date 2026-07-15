@@ -289,6 +289,12 @@ export const commerceVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Pricing, adjustments, promotion, and policy capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

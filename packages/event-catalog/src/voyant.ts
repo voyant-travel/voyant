@@ -72,7 +72,14 @@ export const eventCatalogVoyantModule = defineModule({
       },
     ],
   },
-  meta: { ownership: "package" },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "The event catalog is runtime contract metadata; domain Tools expose actionable behavior.",
+    },
+  },
 })
 
 export default eventCatalogVoyantModule

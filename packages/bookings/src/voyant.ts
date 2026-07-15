@@ -277,6 +277,11 @@ export const bookingRequirementsVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Booking requirement and traveler input operations need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 
@@ -301,6 +306,11 @@ export const bookingsExtrasVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Booking extra selection and lifecycle operations need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

@@ -94,6 +94,11 @@ export const chartersVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Charter search, quotation, and lifecycle capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

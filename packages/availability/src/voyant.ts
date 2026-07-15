@@ -22,6 +22,12 @@ export const availabilityVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Availability and departure queries and guarded mutations need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

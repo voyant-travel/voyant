@@ -205,6 +205,11 @@ export const miceVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "MICE program, proposal, and lifecycle capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

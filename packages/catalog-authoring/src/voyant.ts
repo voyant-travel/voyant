@@ -22,6 +22,11 @@ export const catalogAuthoringVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Catalog authoring, content, and localization operations need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

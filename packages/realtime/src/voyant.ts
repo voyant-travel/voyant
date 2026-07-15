@@ -156,6 +156,11 @@ export const realtimeVoyantModule = defineModule({
   })),
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "Realtime is a transport and invalidation module, not an agent-callable domain surface.",
+    },
   },
 })
 

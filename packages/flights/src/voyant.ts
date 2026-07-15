@@ -123,6 +123,11 @@ export const flightsVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Flight search, pricing, orders, ticketing, and cancellation need guarded Tools.",
+      issue: "#3370",
+    },
   },
 })
 

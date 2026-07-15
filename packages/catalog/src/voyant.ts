@@ -317,6 +317,11 @@ export const catalogBookingEngineVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Sellability, pricing, hold, and booking-engine capabilities need guarded Tools.",
+      issue: "#3370",
+    },
   },
 })
 

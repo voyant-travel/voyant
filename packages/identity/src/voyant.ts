@@ -63,6 +63,12 @@ export const identityVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Identity contact, address, and named-contact capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

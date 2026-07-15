@@ -1,0 +1,19 @@
+[
+  {
+    "packageName": "@voyant-travel/availability",
+    "unitId": "@voyant-travel/availability",
+    "tools": []
+  },
+  {
+    "packageName": "@voyant-travel/operations",
+    "unitId": "@voyant-travel/operations",
+    "tools": [],
+    "agentTools": { "posture": "later", "rationale": "" }
+  },
+  {
+    "packageName": "@voyant-travel/catalog",
+    "unitId": "@voyant-travel/catalog",
+    "tools": [{ "id": "@voyant-travel/catalog#tool.search" }],
+    "agentTools": { "posture": "not-applicable", "rationale": "Contradictory." }
+  }
+]

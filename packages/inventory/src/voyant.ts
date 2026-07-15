@@ -369,6 +369,11 @@ export const inventoryExtrasVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Product extra authoring and lifecycle capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

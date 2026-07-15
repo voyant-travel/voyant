@@ -287,6 +287,11 @@ export const legalVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Contract templates and lifecycle capabilities need guarded module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 
@@ -314,6 +319,11 @@ export const legalContractDocumentVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Contract document generation and delivery need composed, guarded Tools.",
+      issue: "#3370",
+    },
   },
 })
 

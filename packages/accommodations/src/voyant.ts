@@ -98,6 +98,12 @@ export const accommodationsVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Accommodation search, availability, and lifecycle capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

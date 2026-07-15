@@ -44,7 +44,14 @@ export const authInvitationsVoyantModule = defineModule({
       },
     },
   ],
-  meta: { ownership: "package" },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Invitation lifecycle capabilities need guarded module-owned Tools.",
+      issue: "#3370",
+    },
+  },
 })
 
 export const authTeamVoyantModule = defineModule({
@@ -123,5 +130,12 @@ export const authTeamVoyantModule = defineModule({
       },
     ],
   },
-  meta: { ownership: "package" },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Team membership, roles, and access management need guarded module-owned Tools.",
+      issue: "#3370",
+    },
+  },
 })

@@ -176,6 +176,12 @@ export const cruisesVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Cruise search, itinerary, and booking lifecycle capabilities need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

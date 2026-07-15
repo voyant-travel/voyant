@@ -103,6 +103,12 @@ export const actionLedgerVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale:
+        "Agents need guarded timeline, approval, reversal, and audit inspection capabilities.",
+      issue: "#3370",
+    },
   },
 })
 

@@ -75,6 +75,44 @@ Rules:
   but the manifest labels their schema quality so coverage checks and clients do not
   treat them as strong contracts.
 
+## Coverage posture
+
+Every first-party `voyant.module.v1` module and `voyant.plugin.v1` plugin unit must make
+its agent posture reviewable. A unit with one or more `tools` declarations satisfies
+this rule automatically; the Tool IDs and owning unit are derived from the package
+manifest and must not be copied into a second catalog.
+
+A module without Tools declares one of these postures in its package-owned manifest
+metadata:
+
+```ts
+meta: {
+  ownership: "package",
+  agentTools: {
+    posture: "planned",
+    rationale: "Availability reads and guarded mutations need module-owned Tools.",
+    issue: "#3370",
+  },
+}
+```
+
+- `planned` means the module owns agent-relevant capabilities that are not exposed yet.
+  It requires a non-empty rationale and tracking issue.
+- `not-applicable` means exposing the module would create a shallow or unsafe agent
+  interface. It requires a non-empty rationale identifying the deeper owning module or
+  transport/adapter responsibility.
+
+The MCP module has one narrow checker-owned exclusion: it is the transport adapter
+that exposes selected package Tools and does not itself own domain capabilities. Other
+schema-only, transport-only, or adapter modules still declare `not-applicable`
+explicitly in their own manifests.
+
+`pnpm report:agent-tool-coverage` prints the deterministic module/Tool inventory and
+all no-Tool declarations. `pnpm verify:agent-tool-coverage` tests the policy and fails
+when a first-party module or plugin lacks either a Tool surface or a valid posture.
+Extensions that declare Tools are included in the inventory, but extensions without
+Tools are not forced to add placeholders.
+
 ## Deployment wiring
 
 Each package manifest declares its `tools` runtime references, required scopes, risk,
@@ -118,10 +156,10 @@ capability. Consumers resolve capabilities by `capabilityId` plus an exact suppo
 
 ## Migration status
 
-Migrated: `trips` (composed/destructive) and `inventory`/products (read-only leaf).
-Remaining domains follow the identical pattern and are tracked in voyant#2800: catalog
-(read/search), availability, pricing, bookings (+PII), finance (refund/void),
-notifications (send), quotes.
+The initial migrated surface covers 23 Tools across eight module units. Remaining
+module-owned and composed coverage is tracked in voyant#3370 and is visible through
+the coverage report. A `planned` declaration records an uncovered surface; it is not a
+substitute for implementing the Tool.
 
 ## Reconciliation
 

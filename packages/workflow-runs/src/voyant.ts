@@ -98,6 +98,11 @@ export const workflowRunsVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Workflow run inspection, trigger, cancellation, and retry need guarded Tools.",
+      issue: "#3370",
+    },
   },
 })
 

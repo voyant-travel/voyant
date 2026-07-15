@@ -112,6 +112,11 @@ export const operatorSettingsVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Operator profile and settings capabilities need guarded module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 

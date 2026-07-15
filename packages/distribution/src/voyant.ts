@@ -277,6 +277,11 @@ export const distributionVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "planned",
+      rationale: "Supplier and distribution-channel operations need module-owned Tools.",
+      issue: "#3370",
+    },
   },
 })
 
