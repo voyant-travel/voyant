@@ -165,6 +165,8 @@ export interface VoyantGraphRuntimeFactoryGraph {
     readonly context?: readonly string[]
     load<T = unknown>(): Promise<T>
   }[]
+  /** Action/approval policies admitted by the selected graph. */
+  readonly actions?: readonly VoyantGraphActionDeclaration[]
   readonly references: readonly {
     readonly id: string
     readonly importEntry: string

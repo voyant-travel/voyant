@@ -13,6 +13,7 @@ export {
   defineToolContextContribution,
   type ResolverScope,
   TOOL_CONTEXT_CONTRIBUTION_EXPORT,
+  TOOL_GRAPH_ACTIONS_RESOURCE,
   TOOL_PROVIDER_SELECTIONS_RESOURCE,
   type ToolContext,
   type ToolContextContribution,
