@@ -21,6 +21,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "bookings",
       "catalog",
       "inventory",
+      "auth-team",
       "operations",
       "operator-settings",
       "relationships",

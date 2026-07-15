@@ -80,9 +80,6 @@
       "@voyant-travel/admin/components/operator-admin-user-menu": [
         "../admin/dist/components/operator-admin-user-menu.d.ts"
       ],
-      "@voyant-travel/admin/components/team-settings-page": [
-        "../admin/dist/components/team-settings-page.d.ts"
-      ],
       "@voyant-travel/admin/dashboard": ["../admin/dist/dashboard/dashboard-page.d.ts"],
       "@voyant-travel/admin/dashboard/query-options": [
         "../admin/dist/dashboard/dashboard-query-options.d.ts"
@@ -122,6 +119,7 @@
       "@voyant-travel/auth": ["../auth/dist/index.d.ts"],
       "@voyant-travel/auth-react": ["../auth-react/dist/index.d.ts"],
       "@voyant-travel/auth-react/account": ["../auth-react/dist/components/account-page.d.ts"],
+      "@voyant-travel/auth-react/admin": ["../auth-react/dist/admin.d.ts"],
       "@voyant-travel/auth-react/client": ["../auth-react/dist/client.d.ts"],
       "@voyant-travel/auth-react/components/*": ["../auth-react/dist/components/*.d.ts"],
       "@voyant-travel/auth-react/hooks": ["../auth-react/dist/hooks/index.d.ts"],
@@ -134,6 +132,9 @@
       ],
       "@voyant-travel/auth-react/provider": ["../auth-react/dist/provider.d.ts"],
       "@voyant-travel/auth-react/query-keys": ["../auth-react/dist/query-keys.d.ts"],
+      "@voyant-travel/auth-react/team-management": [
+        "../auth-react/dist/components/team-management-page.d.ts"
+      ],
       "@voyant-travel/auth-react/ui": ["../auth-react/dist/ui.d.ts"],
       "@voyant-travel/auth/backend": ["../auth/dist/backend.d.ts"],
       "@voyant-travel/auth/cloud-admin-session": ["../auth/dist/cloud-admin-session-public.d.ts"],
@@ -149,6 +150,9 @@
       "@voyant-travel/auth/permissions": ["../auth/dist/permissions.d.ts"],
       "@voyant-travel/auth/runtime-contributor": ["../auth/dist/runtime-contributor.d.ts"],
       "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
+      "@voyant-travel/auth/team-management-runtime-port": [
+        "../auth/dist/team-management-runtime-port.d.ts"
+      ],
       "@voyant-travel/auth/voyant": ["../auth/dist/voyant.d.ts"],
       "@voyant-travel/auth/workspace": ["../auth/dist/workspace.d.ts"],
       "@voyant-travel/availability": ["../availability/dist/index.d.ts"],

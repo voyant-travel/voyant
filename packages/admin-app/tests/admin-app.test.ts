@@ -1,3 +1,5 @@
+import type { AnyRoute } from "@tanstack/react-router"
+import { createSelectedAuthTeamAdminExtension } from "@voyant-travel/auth-react/admin"
 import { describe, expect, it } from "vitest"
 
 import { createAdminCoreExtension as createAdminCoreExtensionShim } from "../src/core-extension/index.js"
@@ -24,7 +26,9 @@ describe("@voyant-travel/admin-app compatibility exports", () => {
 })
 
 describe("createAdminCoreExtension", async () => {
-  const { adminExtensionChildRoutes } = await import("@voyant-travel/admin/app/extension-routes")
+  const { adminExtensionChildRoutes, buildAdminExtensionRoutes } = await import(
+    "@voyant-travel/admin/app/extension-routes"
+  )
   const { createRootRoute } = await import("@tanstack/react-router")
 
   it("ships dashboard, account, and the settings tree by default", () => {
@@ -40,7 +44,6 @@ describe("createAdminCoreExtension", async () => {
     expect(settings?.path).toBe("/settings")
     expect(settings?.children?.map((child) => child.id)).toEqual([
       "core-settings-index",
-      "core-settings-team",
       "core-settings-api-tokens",
       "core-settings-channels",
       "core-settings-taxes",
@@ -67,7 +70,7 @@ describe("createAdminCoreExtension", async () => {
     expect(settings?.children?.some((child) => child.id === "core-settings-product-tags")).toBe(
       false,
     )
-    expect(settings?.children?.[0]?.redirectTo).toBe("/settings/team")
+    expect(settings?.children?.[0]?.redirectTo).toBe("/settings/api-tokens")
   })
 
   it("binds app-supplied extra settings pages as child contributions", () => {
@@ -97,7 +100,6 @@ describe("createAdminCoreExtension", async () => {
       {
         exclude: [
           "/",
-          "/team",
           "/api-tokens",
           "/channels",
           "/taxes",
@@ -112,5 +114,30 @@ describe("createAdminCoreExtension", async () => {
     expect(childRoutes.map((route) => (route.options as { path?: string }).path)).toEqual([
       "/operator",
     ])
+  })
+
+  it("composes exactly one final team settings route", () => {
+    const authTeam = createSelectedAuthTeamAdminExtension()
+    const core = createAdminCoreExtensionShim({
+      settings: { extraPages: authTeam.settingsPages },
+    })
+    const rootRoute = createRootRoute()
+    const finalRoutes = buildAdminExtensionRoutes([core, authTeam], () => rootRoute, {
+      baseUrl: "/api",
+    })
+    rootRoute.addChildren(finalRoutes)
+
+    const routePaths: string[] = []
+    const collect = (routes: ReadonlyArray<AnyRoute>, parentPath = "") => {
+      for (const route of routes ?? []) {
+        const routePath = (route.options as { path?: string }).path ?? ""
+        const path = `${parentPath}${routePath === "/" ? "" : routePath}` || "/"
+        routePaths.push(path)
+        collect(Array.isArray(route.children) ? (route.children as AnyRoute[]) : [], path)
+      }
+    }
+    collect(finalRoutes)
+
+    expect(routePaths.filter((path) => path === "/settings/team")).toHaveLength(1)
   })
 })

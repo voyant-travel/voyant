@@ -6,6 +6,7 @@ export {
   type VoyantFetcher,
   withQueryParams,
 } from "./client.js"
+export * from "./components/team-management-page.js"
 export * from "./hooks/index.js"
 export {
   useVoyantAuthContext,

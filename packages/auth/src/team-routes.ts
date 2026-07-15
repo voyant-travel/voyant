@@ -1,38 +1,25 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import { cloudAuthUserLinks } from "@voyant-travel/db/schema/iam"
 import { openApiValidationHook, parseJsonBody, type VoyantDb } from "@voyant-travel/hono"
-import { eq } from "drizzle-orm"
 import type { Context } from "hono"
 
-import {
-  type CloudAdminMembersConfig,
-  CloudAdminMembersError,
-  inviteCloudAdminMember,
-  listCloudAdminInvitations,
-  listCloudAdminMemberRoles,
-  listCloudAdminMembers,
-  revokeCloudAdminInvitation,
-  setCloudAdminMemberAccess,
-  setCloudAdminMemberPermissions,
-} from "./cloud-broker.js"
-import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
+import { TeamManagementError } from "./team-management-policy.js"
+import type {
+  TeamManagementRequestContext,
+  TeamManagementRuntimeProvider,
+} from "./team-management-runtime-port.js"
 
-type IdentityAccessEnv = {
+type TeamEnv = {
   Bindings: Record<string, unknown>
   Variables: { userId?: string; db: VoyantDb }
 }
-type TeamContext = { config: CloudAdminMembersConfig; actingWorkosUserId: string }
-type TeamRouteContext = Context<IdentityAccessEnv>
+type TeamRouteContext = Context<TeamEnv>
 
 const inviteSchema = z.object({
   email: z.string().email(),
-  roleSlug: z.string().trim().min(1).max(120).optional().nullable(),
+  roleId: z.string().trim().min(1).max(120),
   expiresInDays: z.number().int().min(1).max(30).optional(),
 })
-const accessSchema = z.object({ hasAccess: z.boolean() })
-const permissionsSchema = z.object({
-  permissions: z.array(z.string().trim().min(1).max(120)).max(200),
-})
+const roleSchema = z.object({ roleId: z.string().trim().min(1).max(120) })
 
 const teamAdminApiId = "@voyant-travel/auth#team.api.admin"
 const jsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
@@ -57,176 +44,150 @@ const teamRoute = <M extends "get" | "post" | "put" | "delete", P extends string
     responses: responses(...config.statuses),
   })
 
+const capabilitiesRoute = teamRoute({
+  method: "get",
+  path: "/capabilities",
+  operationId: "getTeamManagementCapabilities",
+  statuses: [200, 401, 403, 501],
+})
 const listMembersRoute = teamRoute({
   method: "get",
   path: "/members",
   operationId: "listTeamMembers",
-  statuses: [200, 401, 403, 404, 501],
+  statuses: [200, 401, 403, 501],
 })
 const listRolesRoute = teamRoute({
   method: "get",
   path: "/roles",
   operationId: "listTeamRoles",
-  statuses: [200, 401, 403, 404, 501],
+  statuses: [200, 401, 403, 501],
 })
-const listTeamInvitationsRoute = teamRoute({
+const listInvitationsRoute = teamRoute({
   method: "get",
   path: "/invitations",
   operationId: "listTeamInvitations",
-  statuses: [200, 401, 403, 404, 501],
+  statuses: [200, 401, 403, 501],
 })
-const createTeamInvitationRoute = teamRoute({
+const createInvitationRoute = teamRoute({
   method: "post",
   path: "/invitations",
   operationId: "createTeamInvitation",
   request: { body: jsonBody(inviteSchema) },
-  statuses: [201, 400, 401, 403, 404, 501],
+  statuses: [201, 400, 401, 403, 404, 409, 501],
 })
-const revokeTeamInvitationRoute = teamRoute({
+const revokeInvitationRoute = teamRoute({
   method: "delete",
   path: "/invitations/{invitationId}",
   operationId: "revokeTeamInvitation",
   request: { params: z.object({ invitationId: z.string() }) },
   statuses: [204, 401, 403, 404, 501],
 })
-const setTeamMemberAccessRoute = teamRoute({
+const updateRoleRoute = teamRoute({
   method: "put",
-  path: "/members/{membershipId}/access",
-  operationId: "setTeamMemberAccess",
+  path: "/members/{memberId}/role",
+  operationId: "updateTeamMemberRole",
   request: {
-    params: z.object({ membershipId: z.string() }),
-    body: jsonBody(accessSchema),
+    params: z.object({ memberId: z.string() }),
+    body: jsonBody(roleSchema),
   },
-  statuses: [200, 400, 401, 403, 404, 501],
+  statuses: [200, 400, 401, 403, 404, 409, 501],
 })
-const setTeamMemberPermissionsRoute = teamRoute({
+const deactivateMemberRoute = teamRoute({
+  method: "delete",
+  path: "/members/{memberId}",
+  operationId: "deactivateTeamMember",
+  request: { params: z.object({ memberId: z.string() }) },
+  statuses: [200, 401, 403, 404, 409, 501],
+})
+const activateMemberRoute = teamRoute({
   method: "put",
-  path: "/members/{membershipId}/permissions",
-  operationId: "setTeamMemberPermissions",
-  request: {
-    params: z.object({ membershipId: z.string() }),
-    body: jsonBody(permissionsSchema),
-  },
-  statuses: [200, 400, 401, 403, 404, 501],
+  path: "/members/{memberId}/activation",
+  operationId: "activateTeamMember",
+  request: { params: z.object({ memberId: z.string() }) },
+  statuses: [200, 401, 403, 404, 409, 501],
 })
 
-async function resolveActingWorkosUserId(db: VoyantDb, userId: string): Promise<string | null> {
-  const [link] = await db
-    .select({ providerAccountId: cloudAuthUserLinks.providerAccountId })
-    .from(cloudAuthUserLinks)
-    .where(eq(cloudAuthUserLinks.userId, userId))
-    .limit(1)
-  return link?.providerAccountId ?? null
+function requestContext(c: TeamRouteContext): TeamManagementRequestContext | Response {
+  const userId = c.get("userId")
+  if (!userId) return c.json({ error: "Unauthorized" }, 401)
+  return { bindings: c.env, db: c.get("db"), userId }
 }
 
-export function createTeamAdminRoutes(runtime: IdentityAccessRuntimeProvider) {
-  const routes = new OpenAPIHono<IdentityAccessEnv>({ defaultHook: openApiValidationHook })
-
-  const resolveContext = async (c: TeamRouteContext): Promise<TeamContext | Response> => {
-    const deployment = runtime.resolveDeployment(c.env)
-    if (deployment.authMode !== "voyant-cloud") return c.json({ error: "Not found" }, 404)
-
-    const userId = c.get("userId")
-    if (!userId) return c.json({ error: "Unauthorized" }, 401)
-    if (!deployment.cloudAdminMembers) {
-      return c.json({ error: "Voyant Cloud member management is not configured" }, 501)
-    }
-
-    const actingWorkosUserId = await resolveActingWorkosUserId(c.get("db"), userId)
-    if (!actingWorkosUserId) {
-      return c.json({ error: "No Voyant Cloud identity for this session" }, 403)
-    }
-    return { config: deployment.cloudAdminMembers, actingWorkosUserId }
+function handleError(c: TeamRouteContext, error: unknown): Response {
+  if (error instanceof TeamManagementError) {
+    return c.json({ error: error.message, code: error.code }, error.status)
   }
-
-  const handleError = (c: TeamRouteContext, error: unknown): Response => {
-    if (error instanceof CloudAdminMembersError) {
-      return c.json({ error: error.reason ?? error.message }, error.status as 403)
-    }
-    throw error
+  if (
+    error instanceof Error &&
+    "status" in error &&
+    typeof error.status === "number" &&
+    error.status >= 400 &&
+    error.status <= 599
+  ) {
+    return c.json({ error: error.message }, error.status as 400)
   }
+  throw error
+}
 
-  routes.openapi(listMembersRoute, async (c) => {
-    const context = await resolveContext(c)
+export function createTeamAdminRoutes(runtime: TeamManagementRuntimeProvider) {
+  const routes = new OpenAPIHono<TeamEnv>({ defaultHook: openApiValidationHook })
+
+  const run = async <T>(
+    c: TeamRouteContext,
+    operation: (context: TeamManagementRequestContext) => Promise<T>,
+  ): Promise<T | Response> => {
+    const context = requestContext(c)
     if (context instanceof Response) return context
     try {
-      return c.json({ data: await listCloudAdminMembers(context) })
+      return await operation(context)
     } catch (error) {
       return handleError(c, error)
     }
+  }
+
+  routes.openapi(capabilitiesRoute, async (c) => {
+    const result = await run(c, (context) => runtime.getCapabilities(context))
+    return result instanceof Response ? result : c.json({ data: result })
+  })
+  routes.openapi(listMembersRoute, async (c) => {
+    const result = await run(c, (context) => runtime.listMembers(context))
+    return result instanceof Response ? result : c.json({ data: result })
   })
   routes.openapi(listRolesRoute, async (c) => {
-    const context = await resolveContext(c)
-    if (context instanceof Response) return context
-    try {
-      return c.json({ data: await listCloudAdminMemberRoles(context) })
-    } catch (error) {
-      return handleError(c, error)
-    }
+    const result = await run(c, (context) => runtime.listRoles(context))
+    return result instanceof Response ? result : c.json({ data: result })
   })
-  routes.openapi(listTeamInvitationsRoute, async (c) => {
-    const context = await resolveContext(c)
-    if (context instanceof Response) return context
-    try {
-      return c.json({ data: await listCloudAdminInvitations(context) })
-    } catch (error) {
-      return handleError(c, error)
-    }
+  routes.openapi(listInvitationsRoute, async (c) => {
+    const result = await run(c, (context) => runtime.listInvitations(context))
+    return result instanceof Response ? result : c.json({ data: result })
   })
-  routes.openapi(createTeamInvitationRoute, async (c) => {
-    const context = await resolveContext(c)
-    if (context instanceof Response) return context
+  routes.openapi(createInvitationRoute, async (c) => {
     const input = await parseJsonBody(c, inviteSchema)
-    try {
-      return c.json({ data: await inviteCloudAdminMember({ ...context, input }) }, 201)
-    } catch (error) {
-      return handleError(c, error)
-    }
+    const result = await run(c, (context) => runtime.inviteMember(context, input))
+    return result instanceof Response ? result : c.json({ data: result }, 201)
   })
-  routes.openapi(revokeTeamInvitationRoute, async (c) => {
-    const context = await resolveContext(c)
-    if (context instanceof Response) return context
-    try {
-      await revokeCloudAdminInvitation({
-        ...context,
-        invitationId: c.req.param("invitationId"),
-      })
-      return c.body(null, 204)
-    } catch (error) {
-      return handleError(c, error)
-    }
+  routes.openapi(revokeInvitationRoute, async (c) => {
+    const { invitationId } = c.req.param()
+    const result = await run(c, (context) => runtime.revokeInvitation(context, invitationId))
+    return result instanceof Response ? result : c.body(null, 204)
   })
-  routes.openapi(setTeamMemberAccessRoute, async (c) => {
-    const context = await resolveContext(c)
-    if (context instanceof Response) return context
-    const input = await parseJsonBody(c, accessSchema)
-    try {
-      return c.json({
-        data: await setCloudAdminMemberAccess({
-          ...context,
-          membershipId: c.req.param("membershipId"),
-          hasAccess: input.hasAccess,
-        }),
-      })
-    } catch (error) {
-      return handleError(c, error)
-    }
+  routes.openapi(updateRoleRoute, async (c) => {
+    const { memberId } = c.req.param()
+    const input = await parseJsonBody(c, roleSchema)
+    const result = await run(c, (context) =>
+      runtime.updateMemberRole(context, memberId, input.roleId),
+    )
+    return result instanceof Response ? result : c.json({ data: result })
   })
-  routes.openapi(setTeamMemberPermissionsRoute, async (c) => {
-    const context = await resolveContext(c)
-    if (context instanceof Response) return context
-    const input = await parseJsonBody(c, permissionsSchema)
-    try {
-      return c.json({
-        data: await setCloudAdminMemberPermissions({
-          ...context,
-          membershipId: c.req.param("membershipId"),
-          permissions: input.permissions,
-        }),
-      })
-    } catch (error) {
-      return handleError(c, error)
-    }
+  routes.openapi(deactivateMemberRoute, async (c) => {
+    const { memberId } = c.req.param()
+    const result = await run(c, (context) => runtime.deactivateMember(context, memberId))
+    return result instanceof Response ? result : c.json({ data: result })
+  })
+  routes.openapi(activateMemberRoute, async (c) => {
+    const { memberId } = c.req.param()
+    const result = await run(c, (context) => runtime.activateMember(context, memberId))
+    return result instanceof Response ? result : c.json({ data: result })
   })
 
   return routes

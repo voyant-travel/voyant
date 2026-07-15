@@ -8,6 +8,7 @@ import {
   listCloudAdminMembers,
   revokeCloudAdminInvitation,
   setCloudAdminMemberAccess,
+  setCloudAdminMemberRole,
 } from "../../src/cloud-broker.js"
 
 const config = {
@@ -102,6 +103,24 @@ describe("cloud member requests", () => {
     expect(calls[0]?.url).toBe(`${config.baseUrl}/members/om_1/access`)
     expect(calls[0]?.init?.method).toBe("PUT")
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({ hasAccess: true })
+  })
+
+  it("assigns a provider role without exposing provider fields to the route contract", async () => {
+    const { calls, fetch } = recordingFetch(() =>
+      Response.json({ data: { membershipId: "om_1", roleSlug: "editor" } }),
+    )
+
+    await setCloudAdminMemberRole({
+      config,
+      actingWorkosUserId: "user_acting",
+      fetch,
+      membershipId: "om_1",
+      roleSlug: "editor",
+    })
+
+    expect(calls[0]?.url).toBe(`${config.baseUrl}/members/om_1/role`)
+    expect(calls[0]?.init?.method).toBe("PUT")
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({ roleSlug: "editor" })
   })
 
   it("resolves void on a 204 revoke", async () => {

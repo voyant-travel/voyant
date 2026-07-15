@@ -25,9 +25,12 @@ export type CloudAdminMember = {
   membershipId: string
   externalUserId: string
   email: string | null
+  name?: string | null
   roleSlug: string | null
   roleName: string | null
   status: string
+  createdAt?: string | null
+  lastActivityAt?: string | null
   /** Full platform access (owner/admin) — reaches every deployment. */
   hasFullPlatformAccess: boolean
   /** Whether the member can currently sign into this deployment. */
@@ -47,6 +50,8 @@ export type CloudAdminMemberRole = {
 export type CloudAdminInvitation = {
   id: string
   email: string
+  roleSlug?: string | null
+  roleName?: string | null
   state: "pending" | "accepted" | "expired" | "revoked"
   acceptedAt: string | null
   revokedAt: string | null
@@ -222,6 +227,22 @@ export function setCloudAdminMemberAccess(
     path: `/members/${encodeURIComponent(input.membershipId)}/access`,
     method: "PUT",
     body: { hasAccess: input.hasAccess },
+  })
+}
+
+export function setCloudAdminMemberRole(
+  input: CloudAdminMembersRequest & {
+    membershipId: string
+    roleSlug: string
+  },
+): Promise<CloudAdminMember> {
+  return request<CloudAdminMember>({
+    config: input.config,
+    actingWorkosUserId: input.actingWorkosUserId,
+    fetch: input.fetch,
+    path: `/members/${encodeURIComponent(input.membershipId)}/role`,
+    method: "PUT",
+    body: { roleSlug: input.roleSlug },
   })
 }
 

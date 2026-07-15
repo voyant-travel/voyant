@@ -80,11 +80,6 @@ export {
   OperatorAdminUserMenu,
   type OperatorAdminUserMenuProps,
 } from "./components/operator-admin-user-menu.js"
-export {
-  TeamSettingsPage,
-  type TeamSettingsPageApi,
-  type TeamSettingsPageProps,
-} from "./components/team-settings-page.js"
 export type {
   DashboardEmptyAction,
   DashboardEmptyStateConfig,

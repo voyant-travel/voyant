@@ -176,6 +176,62 @@ export type PartialOrganizationMembersPageMessages = Partial<
   date?: Partial<OrganizationMembersPageMessages["date"]>
 }
 
+export interface TeamManagementPageMessages {
+  title: string
+  description: string
+  loadFailed: string
+  invite: {
+    title: string
+    description: string
+    emailLabel: string
+    emailPlaceholder: string
+    roleLabel: string
+    submit: string
+    submitting: string
+    acceptUrlLabel: string
+    acceptUrlDescription: string
+    copyUrl: string
+    copied: string
+    copyFailed: string
+  }
+  members: {
+    title: string
+    description: string
+    memberColumn: string
+    roleColumn: string
+    statusColumn: string
+    lastActivityColumn: string
+    actionsColumn: string
+    empty: string
+    activate: string
+    activateLabel: (name: string) => string
+    deactivate: string
+    deactivateLabel: (name: string) => string
+    deactivateConfirm: (name: string) => string
+  }
+  invitations: {
+    title: string
+    description: string
+    emailColumn: string
+    roleColumn: string
+    expiresColumn: string
+    actionsColumn: string
+    empty: string
+    revoke: string
+    revokeLabel: (email: string) => string
+  }
+  statuses: {
+    active: string
+    deactivated: string
+    pending: string
+    accepted: string
+    expired: string
+    revoked: string
+  }
+  dateUnknown: string
+  actionFailed: string
+}
+
 export interface ForgotPasswordPageMessages {
   title: string
   description: string
@@ -300,6 +356,7 @@ export type AuthUiMessages = {
   accountPage: AccountPageMessages
   forgotPasswordPage: ForgotPasswordPageMessages
   organizationMembersPage: OrganizationMembersPageMessages
+  teamManagementPage: TeamManagementPageMessages
   onboardingPage: OnboardingPageMessages
   resetPasswordPage: ResetPasswordPageMessages
   signInPage: SignInPageMessages

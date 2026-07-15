@@ -49,8 +49,8 @@ export type {
  *   children (the first nested contributions — hosts bind them via
  *   `adminExtensionRouteOptions` for the statically known children plus
  *   `adminExtensionChildRoutes` for app-supplied {@link
- *   AdminCoreSettingsOptions.extraPages}): an index redirect and the nine
- *   built-in pages (team, API tokens, channels, taxes, cost categories,
+ *   AdminCoreSettingsOptions.extraPages}): an index redirect and eight
+ *   built-in pages (API tokens, channels, taxes, cost categories,
  *   pricing categories, price catalogs, product types, product tags).
  *
  * EJECTION/DISABLING: pass `false` for a surface (`dashboard`, `account`,
@@ -230,17 +230,6 @@ function createBuiltInSettingsPage(
   const base = { id: `core-settings-${id}`, path: entry.path, title: entry.defaultTitle }
 
   switch (id) {
-    case "team":
-      return {
-        ...base,
-        page: () =>
-          import("@voyant-travel/admin/components/team-settings-page").then((module) => {
-            function TeamSettingsPage() {
-              return <module.TeamSettingsPage accessCatalog={accessCatalog} />
-            }
-            return adminRoutePageModule(TeamSettingsPage)
-          }),
-      }
     case "api-tokens":
       return {
         ...base,

@@ -5,6 +5,7 @@ import {
   createInvitationsAdminRoutes,
   createInvitationsPublicRoutes,
 } from "./invitations-routes.js"
+import { teamManagementRuntimePort } from "./team-management-runtime-port.js"
 import { createTeamAdminRoutes } from "./team-routes.js"
 
 export const createInvitationsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
@@ -18,5 +19,5 @@ export const createInvitationsVoyantRuntime = defineGraphRuntimeFactory(async ({
 
 export const createTeamVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => ({
   module: { name: "team" },
-  adminRoutes: createTeamAdminRoutes(await getPort(identityAccessRuntimePort)),
+  adminRoutes: createTeamAdminRoutes(await getPort(teamManagementRuntimePort)),
 }))

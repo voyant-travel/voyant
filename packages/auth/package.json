@@ -56,6 +56,10 @@
       "types": "./src/identity-access-graph-runtime.ts",
       "default": "./src/identity-access-graph-runtime.ts"
     },
+    "./team-management-runtime-port": {
+      "types": "./src/team-management-runtime-port.ts",
+      "default": "./src/team-management-runtime-port.ts"
+    },
     "./runtime-contributor": {
       "types": "./src/runtime-contributor.ts",
       "default": "./src/runtime-contributor.ts"
@@ -127,6 +131,11 @@
         "types": "./dist/identity-access-graph-runtime.d.ts",
         "import": "./dist/identity-access-graph-runtime.js",
         "default": "./dist/identity-access-graph-runtime.js"
+      },
+      "./team-management-runtime-port": {
+        "types": "./dist/team-management-runtime-port.d.ts",
+        "import": "./dist/team-management-runtime-port.js",
+        "default": "./dist/team-management-runtime-port.js"
       },
       "./runtime-contributor": {
         "types": "./dist/runtime-contributor.d.ts",
