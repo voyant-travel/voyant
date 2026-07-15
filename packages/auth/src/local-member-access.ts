@@ -1,4 +1,4 @@
-import { authAccount, authUser } from "@voyant-travel/db/schema/iam"
+import { authAccount, authSession, authUser } from "@voyant-travel/db/schema/iam"
 import type { VoyantDb } from "@voyant-travel/hono"
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api"
 import { deleteSessionCookie } from "better-auth/cookies"
@@ -48,8 +48,22 @@ export async function isLocalMemberEmailDeactivated(db: VoyantDb, email: string)
   )
 }
 
+export async function isLocalMemberSessionActive(
+  db: VoyantDb,
+  sessionId: string,
+  userId: string,
+): Promise<boolean> {
+  const sessions = await db
+    .select({ id: authSession.id })
+    .from(authSession)
+    .where(and(eq(authSession.id, sessionId), eq(authSession.userId, userId)))
+    .limit(1)
+  return sessions.length > 0
+}
+
 export interface LocalMemberAccessResolver {
   isEmailDeactivated(email: string): Promise<boolean>
+  isSessionActive(sessionId: string, userId: string): Promise<boolean>
   isUserDeactivated(userId: string): Promise<boolean>
 }
 
@@ -108,10 +122,16 @@ export function createLocalMemberAccessPlugin(
           matcher: () => true,
           handler: createAuthMiddleware(async (context) => {
             const session = await getSessionFromCtx(context)
-            if (session && (await resolver.isUserDeactivated(session.user.id))) {
-              deleteSessionCookie(context)
-              if (context.path === "/get-session") return context.json(null)
-              denyAccess()
+            if (session) {
+              const [isDeactivated, isSessionActive] = await Promise.all([
+                resolver.isUserDeactivated(session.user.id),
+                resolver.isSessionActive(session.session.id, session.user.id),
+              ])
+              if (isDeactivated || !isSessionActive) {
+                deleteSessionCookie(context)
+                if (context.path === "/get-session") return context.json(null)
+                denyAccess()
+              }
             }
 
             const email = requestEmail(context)

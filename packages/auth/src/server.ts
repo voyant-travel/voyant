@@ -18,6 +18,7 @@ import {
   createLocalMemberAccessPlugin,
   isLocalMemberDeactivated,
   isLocalMemberEmailDeactivated,
+  isLocalMemberSessionActive,
 } from "./local-member-access.js"
 import { expandTrustedOrigins, getTrustedOrigins } from "./trusted-origins.js"
 import { isFirstAuthUser, provisionCurrentUserProfile } from "./workspace.js"
@@ -230,11 +231,10 @@ export interface CreateBetterAuthOptions<
   sendVerificationOTP?: (data: { email: string; otp: string; type: string }) => Promise<void>
   /**
    * Better Auth session cookie cache: session data rides in a short-lived
-   * signed cookie so `getSession` skips the Postgres lookup on most
-   * requests. Enabled by default with a 5-minute TTL — the trade-off is
-   * that a revoked/expired session can stay usable for up to `maxAge`
-   * seconds. Pass `false` for revocation-sensitive deployments, or tune
-   * `maxAge` (seconds).
+   * signed cookie. Enabled by default with a 5-minute TTL. Voyant still
+   * validates local membership and session existence against Postgres so a
+   * deleted session cannot be revived from the cookie cache. Pass `false` to
+   * disable payload caching, or tune `maxAge` (seconds).
    */
   sessionCookieCache?: false | { maxAge?: number }
   /** Better Auth secondary storage, typically Redis/KV, used for distributed rate limits. */
@@ -311,9 +311,6 @@ export function createBetterAuth<
           session: {
             cookieCache: {
               enabled: true,
-              // Caps how long a revoked session stays usable from the
-              // cookie alone; within the window getSession answers from
-              // the signed cookie with zero DB roundtrips.
               maxAge: options.sessionCookieCache?.maxAge ?? 300,
             },
           },
@@ -377,6 +374,7 @@ export function createBetterAuth<
       }),
       createLocalMemberAccessPlugin({
         isEmailDeactivated: (email) => isLocalMemberEmailDeactivated(db, email),
+        isSessionActive: (sessionId, userId) => isLocalMemberSessionActive(db, sessionId, userId),
         isUserDeactivated: (userId) => isLocalMemberDeactivated(db, userId),
       }),
       ...extraPlugins,

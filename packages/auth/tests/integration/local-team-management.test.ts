@@ -172,6 +172,10 @@ describe.skipIf(!TEST_DATABASE_URL)("local team management integration", () => {
 
     await adapter.activateMember(context("owner"), memberId)
 
+    const deniedReactivatedSession = await auth.handler(request("/get-session", undefined, cookie))
+    expect(deniedReactivatedSession.status).toBe(200)
+    expect(await deniedReactivatedSession.json()).toBeNull()
+
     const restoredPassword = await auth.handler(
       request("/sign-in/email", { email: "member@example.com", password: PASSWORD }),
     )

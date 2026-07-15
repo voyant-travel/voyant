@@ -30,6 +30,7 @@ function request(path: string, body?: Record<string, unknown>, cookie?: string):
 function authFixture() {
   const deactivatedUserIds = new Set<string>()
   const deactivatedEmails = new Set<string>()
+  const revokedSessionIds = new Set<string>()
   const sentOtps = new Map<string, string>()
   const sendVerificationOTP = vi.fn(
     async ({ email, otp }: { email: string; otp: string; type: string }) => {
@@ -46,6 +47,7 @@ function authFixture() {
       emailOTP({ sendVerificationOTP }),
       createLocalMemberAccessPlugin({
         isEmailDeactivated: async (email) => deactivatedEmails.has(email),
+        isSessionActive: async (sessionId) => !revokedSessionIds.has(sessionId),
         isUserDeactivated: async (userId) => deactivatedUserIds.has(userId),
       }),
     ],
@@ -60,6 +62,9 @@ function authFixture() {
     reactivate(user: { id: string; email: string }) {
       deactivatedUserIds.delete(user.id)
       deactivatedEmails.delete(user.email)
+    },
+    revokeSession(sessionId: string) {
+      revokedSessionIds.add(sessionId)
     },
     sendVerificationOTP,
     sentOtps,
@@ -90,9 +95,14 @@ describe("local member access Better Auth pipeline", () => {
     const activeSession = await fixture.auth.handler(
       request("/get-session", undefined, member.cookie),
     )
-    expect(await activeSession.json()).toMatchObject({ user: { id: member.user.id } })
+    const activeSessionBody = (await activeSession.json()) as {
+      session: { id: string }
+      user: { id: string }
+    }
+    expect(activeSessionBody).toMatchObject({ user: { id: member.user.id } })
 
     fixture.deactivate(member.user)
+    fixture.revokeSession(activeSessionBody.session.id)
 
     const deniedCachedSession = await fixture.auth.handler(
       request("/get-session", undefined, member.cookie),
@@ -109,6 +119,12 @@ describe("local member access Better Auth pipeline", () => {
     expect(deniedSignIn.status).toBe(403)
 
     fixture.reactivate(member.user)
+
+    const deniedReactivatedCachedSession = await fixture.auth.handler(
+      request("/get-session", undefined, member.cookie),
+    )
+    expect(deniedReactivatedCachedSession.status).toBe(200)
+    expect(await deniedReactivatedCachedSession.json()).toBeNull()
 
     const restoredSignIn = await fixture.auth.handler(
       request("/sign-in/email", {
