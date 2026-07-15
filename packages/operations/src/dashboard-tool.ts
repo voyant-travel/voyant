@@ -1,4 +1,9 @@
-import { READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  type ToolDefinition,
+} from "@voyant-travel/tools"
 import { z } from "zod"
 
 import { availabilitySlotStatusSchema } from "./availability/validation.js"
@@ -297,7 +302,11 @@ export const getOperatorDashboardSummaryDefinition = {
       },
     })
   },
-} as const
+} as const satisfies ToolDefinition<
+  z.output<typeof operatorDashboardSummaryInputSchema>,
+  z.output<typeof operatorDashboardSummaryOutputSchema>,
+  OperatorDashboardToolContext
+>
 
 export function resolveOperatorDashboardWindow(
   range: z.infer<typeof operatorDashboardRangeSchema>,
