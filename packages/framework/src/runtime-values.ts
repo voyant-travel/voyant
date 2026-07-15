@@ -169,7 +169,6 @@ async function validateRuntimeValue(
   issues: VoyantGraphRuntimeValueIssue[],
   required: boolean,
 ): Promise<unknown> {
-  const { declaration } = definition
   if (!hasRuntimeValue(candidate)) {
     if (required) issues.push(valueIssue(definition, facet, "required"))
     return undefined

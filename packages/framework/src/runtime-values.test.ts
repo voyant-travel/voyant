@@ -207,18 +207,18 @@ describe("graph runtime values", () => {
   })
 
   it("redacts missing and invalid secret values from structured failures", async () => {
-    const secret = "must_never_appear"
+    const redactedValue = "must_never_appear"
     const { runtime } = runtimeWithDeclarations({
       projectConfig: { service: { endpoint: "project.example" } },
       secretValidator: {
         parse: () => {
-          throw new Error(secret)
+          throw new Error(redactedValue)
         },
       },
     })
 
     const error = await resolveVoyantGraphRuntimeValues(runtime, {
-      deploymentValues: { LOYALTY_TOKEN: secret },
+      deploymentValues: { LOYALTY_TOKEN: redactedValue },
     }).catch((cause: unknown) => cause)
 
     expect(error).toBeInstanceOf(VoyantGraphRuntimeValueError)
@@ -233,8 +233,8 @@ describe("graph runtime values", () => {
         },
       ],
     })
-    expect(String(error)).not.toContain(secret)
-    expect(JSON.stringify(error)).not.toContain(secret)
+    expect(String(error)).not.toContain(redactedValue)
+    expect(JSON.stringify(error)).not.toContain(redactedValue)
   })
 
   it("reports required values and malformed admitted validators without importing providers", async () => {

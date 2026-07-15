@@ -54,3 +54,5 @@ Standardize first-party packages on package-owned deployment manifests, provider
 access metadata, concrete event contracts, selected admin navigation, and published runtime
 references. Add Bookings Extras as an independently selected graph unit and remove the central
 admin navigation catalog.
+Provider-owned required config and secrets now apply only when that provider is selected, so
+local and in-memory deployments do not require credentials for inactive remote providers.
