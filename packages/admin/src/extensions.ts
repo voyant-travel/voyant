@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import type * as React from "react"
 
 import type { AdminDestinationKey, AdminDestinations } from "./navigation/destinations.js"
+import type { AdminNavigationPreferencesContribution } from "./navigation/preferences.js"
 import type { OperatorAdminMessages } from "./providers/operator-admin-messages.js"
 import type { NavItem } from "./types.js"
 
@@ -255,6 +256,8 @@ export const adminWorkspaceHeaderActionsSlot = "workspace.header.actions" satisf
 export interface AdminExtension {
   id: string
   navigation?: ReadonlyArray<AdminNavigationContribution>
+  /** Final navigation-visibility source, evaluated after selected contributions merge. */
+  navigationPreferences?: AdminNavigationPreferencesContribution
   routes?: ReadonlyArray<AdminUiRouteContribution>
   settingsPages?: ReadonlyArray<AdminSettingsPageContribution>
   widgets?: ReadonlyArray<AnyAdminWidgetContribution>

@@ -190,6 +190,7 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/storefront/payment-link" },
     { resolve: "@voyant-travel/trips" },
     { resolve: "@voyant-travel/flights" },
+    { resolve: "@voyant-travel/navigation-preferences", required: true },
     { resolve: "@voyant-travel/operator-settings" },
     { resolve: "@voyant-travel/charters" },
     { resolve: "@voyant-travel/cruises" },

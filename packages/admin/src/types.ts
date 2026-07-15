@@ -25,8 +25,8 @@ export type NavItemStatus = typeof COMING_SOON | typeof BETA
  * or elsewhere) so starters control the icon set.
  */
 export interface NavItem {
-  /** Stable identifier for extension merging and UI keys. */
-  id?: string
+  /** Stable identifier for extension merging and persisted preferences. */
+  id: string
   title: string
   url: string
   icon?: React.ComponentType<{ className?: string }>
@@ -35,10 +35,13 @@ export interface NavItem {
   target?: "_self" | "_blank"
   /** Collapsible sub-items. */
   items?: ReadonlyArray<NavSubItem>
+  /** Retained only as a non-navigable container for visible descendants. */
+  structural?: boolean
 }
 
 export interface NavSubItem {
-  id?: string
+  /** Stable identifier for persisted preferences. */
+  id: string
   title: string
   url: string
   icon?: React.ComponentType<{ className?: string }>

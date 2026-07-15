@@ -2027,6 +2027,21 @@ function validateRouteBundles(value: unknown, source: string | undefined): Voyan
       )
     }
 
+    if (
+      route.authorization !== undefined &&
+      route.authorization !== "coarse" &&
+      route.authorization !== "route"
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          source,
+          facet: `${facet}.authorization`,
+          message: `Route bundle "${route.id ?? index}" authorization must be coarse or route.`,
+        }),
+      )
+    }
+
     if (route.requiredScopes !== undefined) {
       if (!Array.isArray(route.requiredScopes)) {
         diagnostics.push(

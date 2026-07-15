@@ -105,6 +105,8 @@
     "@voyant-travel/mcp": "workspace:*",
     "@voyant-travel/mice": "workspace:*",
     "@voyant-travel/mice-react": "workspace:*",
+    "@voyant-travel/navigation-preferences": "workspace:*",
+    "@voyant-travel/navigation-preferences-react": "workspace:*",
     "@voyant-travel/notifications": "workspace:*",
     "@voyant-travel/notifications-react": "workspace:*",
     "@voyant-travel/operations": "workspace:*",

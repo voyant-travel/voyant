@@ -109,6 +109,28 @@ describe("OperatorAdminWorkspaceLayout", () => {
     await waitFor(() => expect(document.title).toBe("Invoices · Voyant"))
   })
 
+  it("renders a hidden parent as a non-link container for visible children", () => {
+    renderWithAdminProviders(
+      <OperatorAdminWorkspaceLayout
+        currentPath="/elsewhere"
+        navItems={[
+          {
+            id: "finance",
+            title: "Finance",
+            url: "/finance",
+            items: [{ id: "invoices", title: "Invoices", url: "/finance/invoices" }],
+          },
+        ]}
+        navigationPreferences={{ organization: { finance: false }, member: {} }}
+      >
+        <section>Content</section>
+      </OperatorAdminWorkspaceLayout>,
+    )
+
+    expect(screen.queryByRole("link", { name: "Finance" })).toBeNull()
+    expect(screen.getByRole("link", { name: "Invoices" })).not.toBeNull()
+  })
+
   it("allows workspace consumers to disable automatic page metadata", async () => {
     document.title = "Consumer owned"
 

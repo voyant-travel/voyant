@@ -1,4 +1,6 @@
+import { useQuery } from "@tanstack/react-query"
 import { Link, redirect, useRouter, useRouterState } from "@tanstack/react-router"
+import { useVoyantReactContext } from "@voyant-travel/react"
 import { Loader2 } from "lucide-react"
 import { forwardRef, type ReactNode, useCallback, useMemo } from "react"
 import type { AdminNavLinkComponent, AdminNavLinkProps } from "../components/admin-nav-link.js"
@@ -257,12 +259,27 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   children: ReactNode
 }) {
   const router = useRouter()
+  const api = useVoyantReactContext()
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const messages = useOperatorAdminMessages()
   const resolvedExtensions = useMemo(
     () => (typeof extensions === "function" ? extensions(messages) : extensions),
     [extensions, messages],
   )
+  const navigationPreferencesContribution = useMemo(
+    () =>
+      resolvedExtensions?.find((extension) => extension.navigationPreferences)
+        ?.navigationPreferences,
+    [resolvedExtensions],
+  )
+  const navigationPreferencesQuery = useQuery({
+    queryKey: navigationPreferencesContribution?.queryKey ?? [
+      "admin-navigation-preferences",
+      "disabled",
+    ],
+    queryFn: () => navigationPreferencesContribution!.load(api),
+    enabled: navigationPreferencesContribution !== undefined,
+  })
   const hasHeaderActionWidgets = useMemo(
     () =>
       resolveAdminWidgets({
@@ -304,6 +321,7 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
       }
       icons={icons}
       linkComponent={linkComponent}
+      navigationPreferences={navigationPreferencesQuery.data}
       onSignOut={onSignOut}
       user={mapUser(user)}
     >

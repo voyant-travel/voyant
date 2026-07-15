@@ -1,5 +1,6 @@
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
 import { financeVoyantModule } from "@voyant-travel/finance/voyant"
+import navigationPreferencesVoyantModule from "@voyant-travel/navigation-preferences/voyant"
 import { storefrontVoyantModule } from "@voyant-travel/storefront/voyant"
 import { describe, expect, it } from "vitest"
 import {
@@ -7,7 +8,10 @@ import {
   resolveDeploymentGraph,
   validateGraphUnitManifest,
 } from "../../framework/src/deployment-graph.js"
-import { STANDARD_OPERATOR_DEPLOYMENT } from "../src/index.js"
+import {
+  STANDARD_OPERATOR_DEPLOYMENT,
+  STANDARD_OPERATOR_DISTRIBUTION_POLICY,
+} from "../src/index.js"
 
 describe("standard package manifests", () => {
   it("selects durable Postgres outbound webhook enqueueing explicitly", () => {
@@ -71,5 +75,14 @@ describe("standard package manifests", () => {
       mode: "self-hosted",
       providers: { workflows: "self-hosted" },
     })
+  })
+
+  it("requires navigation preferences in the standard operator graph", () => {
+    expect(validateGraphUnitManifest(navigationPreferencesVoyantModule, "module")).toEqual([])
+    expect(
+      STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.find(
+        (selection) => selection.resolve === "@voyant-travel/navigation-preferences",
+      ),
+    ).toEqual({ resolve: "@voyant-travel/navigation-preferences", required: true })
   })
 })

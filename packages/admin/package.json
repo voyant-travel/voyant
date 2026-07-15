@@ -27,6 +27,7 @@
     "./extensions": "./src/extensions.ts",
     "./navigation/destinations": "./src/navigation/destinations.tsx",
     "./navigation/operator-navigation": "./src/navigation/operator-navigation.ts",
+    "./navigation/preferences": "./src/navigation/preferences.ts",
     "./providers/admin-extensions": "./src/providers/admin-extensions.tsx",
     "./providers/locale-preferences": "./src/providers/locale-preferences.tsx",
     "./providers/operator-admin-shell": "./src/providers/operator-admin-shell.tsx",
@@ -191,6 +192,11 @@
         "types": "./dist/navigation/operator-navigation.d.ts",
         "import": "./dist/navigation/operator-navigation.js",
         "default": "./dist/navigation/operator-navigation.js"
+      },
+      "./navigation/preferences": {
+        "types": "./dist/navigation/preferences.d.ts",
+        "import": "./dist/navigation/preferences.js",
+        "default": "./dist/navigation/preferences.js"
       },
       "./providers/admin-extensions": {
         "types": "./dist/providers/admin-extensions.d.ts",
