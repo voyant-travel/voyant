@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   getNavigationPreferencesTool,
+  type NavigationPreferencesToolContext,
   setMyNavigationPreferencesTool,
   setOrganizationNavigationPreferencesTool,
-  type NavigationPreferencesToolContext,
 } from "../../src/tools.js"
 
 const baseContext: ToolContext = {

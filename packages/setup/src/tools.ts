@@ -5,10 +5,10 @@ import {
   type InitializeSetupInput,
   initializeSetupInputSchema,
   type SetupState,
-  setupStateSchema,
   type SetupStepDefinition,
-  setupStepDefinitionSchema,
   type SetupStepState,
+  setupStateSchema,
+  setupStepDefinitionSchema,
   setupStepIdSchema,
   setupStepStateSchema,
 } from "./contracts.js"
@@ -110,11 +110,7 @@ export const completeSetupStepTool = defineTool<
   },
 })
 
-export const skipSetupStepTool = defineTool<
-  { stepId: string },
-  SetupStepState,
-  SetupToolContext
->({
+export const skipSetupStepTool = defineTool<{ stepId: string }, SetupStepState, SetupToolContext>({
   name: "skip_setup_step",
   aliases: ["mark_setup_step_skipped"],
   description: "Skip one graph-selected organization setup step when that step is skippable.",

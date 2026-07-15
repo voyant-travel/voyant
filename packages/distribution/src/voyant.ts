@@ -2,7 +2,12 @@ import {
   catalogDistributionRuntimeExtensionPort,
   catalogRuntimeServicesPort,
 } from "@voyant-travel/catalog/ports"
-import { defineExtension, defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import { financeDistributionPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
 import {
@@ -15,18 +20,14 @@ import {
   distributionChannelPushVoyantExtensionDefinition,
 } from "./voyant-extensions.js"
 
-export const distributionBookingVoyantPlugin = defineExtension(
-  {
-    ...distributionBookingVoyantExtensionDefinition,
-    id: "@voyant-travel/distribution#extension",
-  },
-)
-export const distributionChannelPushVoyantPlugin = defineExtension(
-  {
-    ...distributionChannelPushVoyantExtensionDefinition,
-    id: "@voyant-travel/distribution#channel-push-extension",
-  },
-)
+export const distributionBookingVoyantPlugin = defineExtension({
+  ...distributionBookingVoyantExtensionDefinition,
+  id: "@voyant-travel/distribution#extension",
+})
+export const distributionChannelPushVoyantPlugin = defineExtension({
+  ...distributionChannelPushVoyantExtensionDefinition,
+  id: "@voyant-travel/distribution#channel-push-extension",
+})
 
 /** Import-cheap deployment declarations owned by the distribution package. */
 export const distributionVoyantModule = defineModule({

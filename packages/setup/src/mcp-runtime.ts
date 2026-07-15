@@ -2,8 +2,8 @@ import type { EventBus } from "@voyant-travel/core"
 import {
   defineToolContextContribution,
   TOOL_GRAPH_SETUP_STEPS_RESOURCE,
-  ToolError,
   TOOL_UNIT_PROJECT_CONFIG_RESOURCE,
+  ToolError,
 } from "@voyant-travel/tools"
 import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 
@@ -54,7 +54,9 @@ export function createSetupToolServices(input: CreateSetupToolServicesInput): Se
         completeSetupStep(input.store, input.selectedSteps, stepId, mutationOptions),
       ),
     skip: (stepId) =>
-      selectionRequest(() => skipSetupStep(input.store, input.selectedSteps, stepId, mutationOptions)),
+      selectionRequest(() =>
+        skipSetupStep(input.store, input.selectedSteps, stepId, mutationOptions),
+      ),
   }
 }
 
@@ -70,9 +72,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
       : []
     return {
       setup: createSetupToolServices({
-        store: createDrizzleSetupStore(
-          context.db as Parameters<typeof createDrizzleSetupStore>[0],
-        ),
+        store: createDrizzleSetupStore(context.db as Parameters<typeof createDrizzleSetupStore>[0]),
         selectedSteps: readSetupSteps(resources[TOOL_GRAPH_SETUP_STEPS_RESOURCE]),
         prefill: readSetupPrefill(projectConfig?.prefill),
         eventBus: variables?.eventBus,

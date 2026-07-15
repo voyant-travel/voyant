@@ -1,11 +1,7 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import {
-  type FinanceToolServices,
-  financeBookingsCreateTools,
-  financeTools,
-} from "../src/tools.js"
+import { type FinanceToolServices, financeBookingsCreateTools, financeTools } from "../src/tools.js"
 
 function ctx(
   services?: Partial<FinanceToolServices>,
@@ -42,9 +38,7 @@ describe("finance tools", () => {
       requiredScopes: ["finance:refund"],
       riskPolicy: { destructive: true, reversible: false, confirmationRequired: true },
     })
-    for (const t of list.filter((x) =>
-      ["get_invoice", "list_invoices"].includes(x.name),
-    )) {
+    for (const t of list.filter((x) => ["get_invoice", "list_invoices"].includes(x.name))) {
       expect(t.tier).toBe("read")
       expect(t.requiredScopes).toEqual(["finance:read"])
     }

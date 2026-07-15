@@ -4,12 +4,12 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
 import { buildQuoteVersionProposalUrl } from "../proposal-routes.js"
-import { quoteProposalDeliveryRequests, quoteVersions } from "../schema.js"
-import type { QuoteVersion } from "../schema.js"
 import type {
   QuoteProposalNotificationDelivery,
   QuotesNotificationsRuntime,
 } from "../runtime-port.js"
+import type { QuoteVersion } from "../schema.js"
+import { quoteProposalDeliveryRequests, quoteVersions } from "../schema.js"
 import { QuoteVersionConflictError, quoteVersionsService } from "./quote-versions.js"
 
 export const snapshotAndSendQuoteInputSchema = z.object({

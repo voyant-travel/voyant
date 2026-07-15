@@ -1,6 +1,5 @@
-import { z } from "zod"
-
 import { bookingCustomerPaymentPolicySchema } from "@voyant-travel/bookings-contracts/validation"
+import { z } from "zod"
 
 import { bookingSourceTypeSchema, bookingStatusSchema } from "./validation.js"
 

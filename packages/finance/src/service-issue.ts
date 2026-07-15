@@ -161,7 +161,11 @@ export async function issueInvoiceFromBookingCommand(
   input: CreateInvoiceFromBookingInput,
   runtime: InvoiceIssueRuntime = {},
 ): Promise<InvoiceFromBookingCommandOutcome> {
-  const [booking] = await db.select().from(bookings).where(eq(bookings.id, input.bookingId)).limit(1)
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, input.bookingId))
+    .limit(1)
   if (!booking) return { status: "booking_not_found" }
 
   const items = await db

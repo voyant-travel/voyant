@@ -3,8 +3,8 @@ import { z } from "zod"
 
 import {
   type NavigationPreferencesSnapshot,
-  navigationPreferencesSnapshotSchema,
   type NavigationVisibilityMap,
+  navigationPreferencesSnapshotSchema,
   navigationVisibilityMapSchema,
   updateNavigationPreferencesSchema,
 } from "./contracts.js"
@@ -80,8 +80,7 @@ export const setMyNavigationPreferencesTool = defineTool<
 >({
   name: "set_my_navigation_preferences",
   aliases: ["update_my_navigation_preferences"],
-  description:
-    "Replace admin navigation visibility overrides for the authenticated member only.",
+  description: "Replace admin navigation visibility overrides for the authenticated member only.",
   inputSchema: updateNavigationPreferencesSchema,
   outputSchema: visibilityResultSchema,
   requiredScopes: ["admin-navigation:write"],

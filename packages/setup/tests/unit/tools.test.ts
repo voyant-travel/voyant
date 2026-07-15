@@ -19,11 +19,13 @@ const baseContext: ToolContext = {
 
 describe("setup Tools", () => {
   it("declares structural graph-aware contracts, aliases, audience, and risk", () => {
-    expect(getSetupStateTool.outputSchema.safeParse({
-      state: null,
-      selectedSteps: [{ id: "profile", skippable: true }],
-      canManage: true,
-    }).success).toBe(true)
+    expect(
+      getSetupStateTool.outputSchema.safeParse({
+        state: null,
+        selectedSteps: [{ id: "profile", skippable: true }],
+        canManage: true,
+      }).success,
+    ).toBe(true)
     expect(getSetupStateTool.aliases).toEqual(["read_setup_state"])
     expect(getSetupStateTool.audience?.allowed).toEqual(["staff"])
     expect(initializeSetupTool.tier).toBe("write")

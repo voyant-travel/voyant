@@ -7,8 +7,8 @@ import {
 import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runtime-port"
 import { tripsRoutesRuntimePort } from "@voyant-travel/trips/runtime-port"
 import {
-  quotesProposalRuntimePort,
   quotesNotificationsRuntimePort,
+  quotesProposalRuntimePort,
   quotesRuntimePort,
   quotesSnapshotRuntimePort,
 } from "./runtime-port.js"

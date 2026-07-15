@@ -31,9 +31,7 @@ const VERSION = "v1"
 const REQUIRED_SCOPES = ["operations:read"] as const
 const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
 
-export const getOperatorDashboardSummaryTool = defineTool(
-  getOperatorDashboardSummaryDefinition,
-)
+export const getOperatorDashboardSummaryTool = defineTool(getOperatorDashboardSummaryDefinition)
 export const operationsDashboardTools = [getOperatorDashboardSummaryTool] as const
 
 const idArgsSchema = z.object({ id: z.string().min(1) })

@@ -98,12 +98,9 @@ const getProductContentArgs = z.object({
 })
 
 const createProductToolSchema = z.object(
-  (({
-    status: _status,
-    visibility: _visibility,
-    activated: _activated,
-    ...shape
-  }) => shape)(insertProductSchema.shape),
+  (({ status: _status, visibility: _visibility, activated: _activated, ...shape }) => shape)(
+    insertProductSchema.shape,
+  ),
 )
 const updateProductToolSchema = z.object({
   id: z.string().min(1),
@@ -294,10 +291,7 @@ export const createProductTool = defineTool({
       visibility: "private",
       activated: false,
     })
-    return parseJsonResult(
-      productToolSchema,
-      await inventory(ctx).createProduct(draft),
-    )
+    return parseJsonResult(productToolSchema, await inventory(ctx).createProduct(draft))
   },
 })
 
@@ -326,28 +320,34 @@ export const updateProductTool = defineTool({
   },
 })
 
-export const publishProductTool = defineTool(productLifecycleToolDefinition({
-  capabilityId: `${OWNER}#tool.publish-product`,
-  name: "publish_product",
-  description:
-    "Publish a product to the public catalog. Inventory enforces scheduled-product departure readiness before committing.",
-  patch: { status: "active", visibility: "public", activated: true },
-}))
+export const publishProductTool = defineTool(
+  productLifecycleToolDefinition({
+    capabilityId: `${OWNER}#tool.publish-product`,
+    name: "publish_product",
+    description:
+      "Publish a product to the public catalog. Inventory enforces scheduled-product departure readiness before committing.",
+    patch: { status: "active", visibility: "public", activated: true },
+  }),
+)
 
-export const unpublishProductTool = defineTool(productLifecycleToolDefinition({
-  capabilityId: `${OWNER}#tool.unpublish-product`,
-  name: "unpublish_product",
-  description:
-    "Remove a product from the public catalog without deleting authored product history.",
-  patch: { activated: false },
-}))
+export const unpublishProductTool = defineTool(
+  productLifecycleToolDefinition({
+    capabilityId: `${OWNER}#tool.unpublish-product`,
+    name: "unpublish_product",
+    description:
+      "Remove a product from the public catalog without deleting authored product history.",
+    patch: { activated: false },
+  }),
+)
 
-export const archiveProductTool = defineTool(productLifecycleToolDefinition({
-  capabilityId: `${OWNER}#tool.archive-product`,
-  name: "archive_product",
-  description: "Archive and deactivate a product while preserving its history and owned records.",
-  patch: { status: "archived", activated: false },
-}))
+export const archiveProductTool = defineTool(
+  productLifecycleToolDefinition({
+    capabilityId: `${OWNER}#tool.archive-product`,
+    name: "archive_product",
+    description: "Archive and deactivate a product while preserving its history and owned records.",
+    patch: { status: "archived", activated: false },
+  }),
+)
 
 export const composeProductTool = defineTool({
   capabilityId: `${OWNER}#authoring.tool.compose-product`,
@@ -370,9 +370,7 @@ export const composeProductTool = defineTool({
   },
   annotations: { idempotentHint: true },
   async handler(input, ctx: InventoryToolContext) {
-    return composeProductToolOutputSchema.parse(
-      await inventoryAuthoring(ctx).composeProduct(input),
-    )
+    return composeProductToolOutputSchema.parse(await inventoryAuthoring(ctx).composeProduct(input))
   },
 })
 

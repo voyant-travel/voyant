@@ -8,8 +8,8 @@ import {
   defineTool,
   READ_ONLY_RISK,
   requireService,
-  ToolError,
   type ToolContext,
+  ToolError,
 } from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
@@ -20,7 +20,7 @@ import {
   invoiceListItemSchema,
   invoiceSchema,
 } from "./routes-invoice-schemas.js"
-import { bookingCreateSchema, type BookingCreateOutcome } from "./service-booking-create.js"
+import { type BookingCreateOutcome, bookingCreateSchema } from "./service-booking-create.js"
 import {
   insertCreditNoteSchema,
   invoiceFromBookingSchema,
