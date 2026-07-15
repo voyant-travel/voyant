@@ -156,10 +156,12 @@ capability. Consumers resolve capabilities by `capabilityId` plus an exact suppo
 
 ## Migration status
 
-The initial migrated surface covers 23 Tools across eight module units. Remaining
-module-owned and composed coverage is tracked in voyant#3370 and is visible through
-the coverage report. A `planned` declaration records an uncovered surface; it is not a
-substitute for implementing the Tool.
+The migrated surface covers 59 Tools across 12 module units. Of the 41 governed
+module units, 20 still declare planned module-owned or composed coverage, eight are
+explicitly not applicable, and the MCP transport is excluded because it does not own
+domain capabilities. Remaining coverage is tracked in voyant#3370 and is visible
+through the coverage report. A `planned` declaration records an uncovered surface;
+it is not a substitute for implementing the Tool.
 
 ## Reconciliation
 
