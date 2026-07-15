@@ -24,6 +24,230 @@ import {
   bookingStatusOverriddenPayloadSchema,
 } from "./voyant-event-schemas.js"
 
+type BookingExtensionToolSpec = readonly [
+  slug: string,
+  name: string,
+  exportName: string,
+  targetType: string,
+  requiredScopes: readonly string[],
+  risk: "low" | "medium" | "high",
+  allowedActorTypes?: readonly ("staff" | "customer")[],
+]
+
+function declareBookingExtensionTools(
+  owner: string,
+  context: string,
+  specs: readonly BookingExtensionToolSpec[],
+) {
+  return specs.map(([slug, name, exportName, _targetType, requiredScopes, risk]) => ({
+    id: `${owner}.tool.${slug}`,
+    name,
+    runtime: { entry: "@voyant-travel/bookings/tools", export: exportName },
+    requiredScopes: [...requiredScopes],
+    context: [context],
+    risk,
+  }))
+}
+
+function declareBookingExtensionActions(owner: string, specs: readonly BookingExtensionToolSpec[]) {
+  return specs.map(
+    ([slug, _name, _exportName, targetType, requiredScopes, risk, allowedActorTypes]) => {
+      const write = requiredScopes.some((scope) => scope.endsWith(":write"))
+      return {
+        id: `${owner}.action.${slug}`,
+        version: "v1" as const,
+        kind: write
+          ? ("execute" as const)
+          : risk === "high"
+            ? ("sensitive-read" as const)
+            : ("read" as const),
+        targetType,
+        requiredScopes: [...requiredScopes],
+        risk,
+        ledger: write || risk === "high" ? ("required" as const) : ("optional" as const),
+        approval: write && risk === "high" ? ("conditional" as const) : ("never" as const),
+        reversible: write,
+        allowedActorTypes: allowedActorTypes ? [...allowedActorTypes] : (["staff"] as const),
+        from: { tools: [`${owner}.tool.${slug}`] },
+      }
+    },
+  )
+}
+
+const BOOKING_REQUIREMENTS_OWNER = "@voyant-travel/bookings#requirements"
+const BOOKING_REQUIREMENTS_TOOL_SPECS = [
+  [
+    "get-public-transport-requirements",
+    "get_public_transport_requirements",
+    "getPublicTransportRequirementsTool",
+    "product-transport-requirements",
+    ["bookings:read"],
+    "low",
+    ["staff", "customer"],
+  ],
+  ...(
+    [
+      ["product-contact-requirements", "ProductContactRequirement", "product-contact-requirement"],
+      ["product-booking-questions", "ProductBookingQuestion", "product-booking-question"],
+      ["option-booking-questions", "OptionBookingQuestion", "option-booking-question"],
+      ["booking-question-options", "BookingQuestionOption", "booking-question-option"],
+      [
+        "booking-question-unit-triggers",
+        "BookingQuestionUnitTrigger",
+        "booking-question-unit-trigger",
+      ],
+      [
+        "booking-question-option-triggers",
+        "BookingQuestionOptionTrigger",
+        "booking-question-option-trigger",
+      ],
+      [
+        "booking-question-extra-triggers",
+        "BookingQuestionExtraTrigger",
+        "booking-question-extra-trigger",
+      ],
+    ] as const
+  ).flatMap(([pluralSlug, exportStem, targetType]) => {
+    const singularSlug = pluralSlug.replace(/s$/, "")
+    const singularName = singularSlug.replaceAll("-", "_")
+    const pluralName = pluralSlug.replaceAll("-", "_")
+    return [
+      [
+        `list-${pluralSlug}`,
+        `list_${pluralName}`,
+        `list${exportStem}sTool`,
+        targetType,
+        ["bookings:read"],
+        "low",
+      ],
+      [
+        `get-${singularSlug}`,
+        `get_${singularName}`,
+        `get${exportStem}Tool`,
+        targetType,
+        ["bookings:read"],
+        "low",
+      ],
+      [
+        `create-${singularSlug}`,
+        `create_${singularName}`,
+        `create${exportStem}Tool`,
+        targetType,
+        ["bookings:write"],
+        "medium",
+      ],
+      [
+        `update-${singularSlug}`,
+        `update_${singularName}`,
+        `update${exportStem}Tool`,
+        targetType,
+        ["bookings:write"],
+        "medium",
+      ],
+    ] as const
+  }),
+  [
+    "list-booking-answers",
+    "list_booking_answers",
+    "listBookingAnswersTool",
+    "booking-answer",
+    ["bookings:read", "bookings-pii:read"],
+    "high",
+  ],
+  [
+    "get-booking-answer",
+    "get_booking_answer",
+    "getBookingAnswerTool",
+    "booking-answer",
+    ["bookings:read", "bookings-pii:read"],
+    "high",
+  ],
+  [
+    "create-booking-answer",
+    "create_booking_answer",
+    "createBookingAnswerTool",
+    "booking-answer",
+    ["bookings:write"],
+    "medium",
+  ],
+  [
+    "update-booking-answer",
+    "update_booking_answer",
+    "updateBookingAnswerTool",
+    "booking-answer",
+    ["bookings:write"],
+    "medium",
+  ],
+] as const satisfies readonly BookingExtensionToolSpec[]
+
+const BOOKING_EXTRAS_OWNER = "@voyant-travel/bookings#extras"
+const BOOKING_EXTRAS_TOOL_SPECS = [
+  [
+    "list-booking-extras",
+    "list_booking_extras",
+    "listBookingExtrasTool",
+    "booking-extra",
+    ["bookings:read"],
+    "low",
+  ],
+  [
+    "get-booking-extra",
+    "get_booking_extra",
+    "getBookingExtraTool",
+    "booking-extra",
+    ["bookings:read"],
+    "low",
+  ],
+  [
+    "create-booking-extra",
+    "create_booking_extra",
+    "createBookingExtraTool",
+    "booking-extra",
+    ["bookings:write"],
+    "medium",
+  ],
+  [
+    "update-booking-extra",
+    "update_booking_extra",
+    "updateBookingExtraTool",
+    "booking-extra",
+    ["bookings:write"],
+    "high",
+  ],
+  [
+    "get-slot-extra-manifest",
+    "get_slot_extra_manifest",
+    "getSlotExtraManifestTool",
+    "departure-extra-manifest",
+    ["bookings:read", "bookings-pii:read"],
+    "high",
+  ],
+  [
+    "set-slot-extra-selection",
+    "set_slot_extra_selection",
+    "setSlotExtraSelectionTool",
+    "departure-extra-selection",
+    ["bookings:write"],
+    "high",
+  ],
+  [
+    "bulk-set-slot-extra-selections",
+    "bulk_set_slot_extra_selections",
+    "bulkSetSlotExtraSelectionsTool",
+    "departure-extra-selection",
+    ["bookings:write"],
+    "high",
+  ],
+  [
+    "bulk-update-slot-extra-collections",
+    "bulk_update_slot_extra_collections",
+    "bulkUpdateSlotExtraCollectionsTool",
+    "departure-extra-collection",
+    ["bookings:write"],
+    "high",
+  ],
+] as const satisfies readonly BookingExtensionToolSpec[]
+
 /**
  * Import-cheap deployment declaration owned by the bookings package.
  * Executable package surfaces stay behind symbolic package export references.
@@ -275,13 +499,17 @@ export const bookingRequirementsVoyantModule = defineModule({
       },
     },
   ],
+  tools: declareBookingExtensionTools(
+    BOOKING_REQUIREMENTS_OWNER,
+    "bookingRequirements",
+    BOOKING_REQUIREMENTS_TOOL_SPECS,
+  ),
+  actions: declareBookingExtensionActions(
+    BOOKING_REQUIREMENTS_OWNER,
+    BOOKING_REQUIREMENTS_TOOL_SPECS,
+  ),
   meta: {
     ownership: "package",
-    agentTools: {
-      posture: "planned",
-      rationale: "Booking requirement and traveler input operations need module-owned Tools.",
-      issue: "#3370",
-    },
   },
 })
 
@@ -304,13 +532,14 @@ export const bookingsExtrasVoyantModule = defineModule({
       },
     },
   ],
+  tools: declareBookingExtensionTools(
+    BOOKING_EXTRAS_OWNER,
+    "bookingsExtras",
+    BOOKING_EXTRAS_TOOL_SPECS,
+  ),
+  actions: declareBookingExtensionActions(BOOKING_EXTRAS_OWNER, BOOKING_EXTRAS_TOOL_SPECS),
   meta: {
     ownership: "package",
-    agentTools: {
-      posture: "planned",
-      rationale: "Booking extra selection and lifecycle operations need module-owned Tools.",
-      issue: "#3370",
-    },
   },
 })
 
