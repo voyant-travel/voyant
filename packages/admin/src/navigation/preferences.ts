@@ -72,10 +72,10 @@ function resolveItem(
   organization: AdminNavigationVisibilityMap,
   member: AdminNavigationVisibilityMap,
 ): NavItem[] {
+  const visible = resolveVisibility(item.id, organization, member, true)
   const children = item.items?.flatMap((child) =>
-    isVisible(child.id, organization, member) ? [child] : [],
+    resolveVisibility(child.id, organization, member, visible) ? [child] : [],
   )
-  const visible = isVisible(item.id, organization, member)
 
   if (!visible && !children?.length) return []
 
@@ -88,12 +88,13 @@ function resolveItem(
   ]
 }
 
-function isVisible(
+function resolveVisibility(
   id: NavItem["id"] | NavSubItem["id"],
   organization: AdminNavigationVisibilityMap,
   member: AdminNavigationVisibilityMap,
+  inherited: boolean,
 ): boolean {
   if (Object.hasOwn(member, id)) return member[id] !== false
   if (Object.hasOwn(organization, id)) return organization[id] !== false
-  return true
+  return inherited
 }

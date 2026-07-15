@@ -52,9 +52,22 @@ export function createAdminHostExtensions({
   discovered = [],
 }: CreateAdminHostExtensionsOptions): ReadonlyArray<AdminExtension> {
   const selectedExtensions = uniqueExtensionsById(selected({ navMessages }))
-  const settingsPages = selectedExtensions.flatMap((extension) => extension.settingsPages ?? [])
+  const settingsPages = uniqueSettingsPages(
+    selectedExtensions.flatMap((extension) => extension.settingsPages ?? []),
+  )
 
   return createAdminExtensionRegistry(core(settingsPages), ...selectedExtensions, ...discovered)
+}
+
+function uniqueSettingsPages(
+  pages: ReadonlyArray<AdminSettingsPageContribution>,
+): ReadonlyArray<AdminSettingsPageContribution> {
+  const unique = new Map<string, AdminSettingsPageContribution>()
+  for (const page of pages) {
+    const key = `${page.id}\0${page.path}`
+    if (!unique.has(key)) unique.set(key, page)
+  }
+  return [...unique.values()]
 }
 
 function uniqueExtensionsById(

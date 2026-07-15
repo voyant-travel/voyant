@@ -119,7 +119,9 @@ describe("createAdminCoreExtension", async () => {
   it("composes exactly one final team settings route", () => {
     const authTeam = createSelectedAuthTeamAdminExtension()
     const core = createAdminCoreExtensionShim({
-      settings: { extraPages: authTeam.settingsPages },
+      settings: {
+        extraPages: [...(authTeam.settingsPages ?? []), ...(authTeam.settingsPages ?? [])],
+      },
     })
     const rootRoute = createRootRoute()
     const finalRoutes = buildAdminExtensionRoutes([core, authTeam], () => rootRoute, {

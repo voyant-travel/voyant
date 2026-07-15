@@ -31,21 +31,24 @@ describe("resolveAdminNavigationPreferences", () => {
         title: "Finance",
         url: "/finance/invoices",
         structural: true,
-        items: [
-          { id: "invoices", title: "Invoices", url: "/finance/invoices" },
-          { id: "payments", title: "Payments", url: "/finance/payments" },
-        ],
+        items: [{ id: "invoices", title: "Invoices", url: "/finance/invoices" }],
       },
     ])
   })
 
-  it("keeps hidden parents as structural containers for visible children", () => {
-    const [finance] = resolveAdminNavigationPreferences({
+  it("hides a parent's subtree unless a child is explicitly re-enabled", () => {
+    const hidden = resolveAdminNavigationPreferences({
       items: navigation,
       organization: { dashboard: false, finance: false, payments: false },
       member: {},
     })
+    const [finance] = resolveAdminNavigationPreferences({
+      items: navigation,
+      organization: { dashboard: false, finance: false },
+      member: { invoices: true },
+    })
 
+    expect(hidden).toEqual([])
     expect(finance).toMatchObject({ id: "finance", structural: true })
     expect(finance?.items?.map((item) => item.id)).toEqual(["invoices"])
   })
