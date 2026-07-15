@@ -86,11 +86,26 @@ describe("navigation preference routes", () => {
       {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: '{"visibility":{"bookings":false}}',
+        body: '{"memberId":"user_2","visibility":{"bookings":false}}',
       },
     )
 
     expect(response.status).toBe(200)
     expect(service.setMember).toHaveBeenCalledWith({}, "user_1", { bookings: false })
+  })
+
+  it("rejects a member-layer write without an authenticated member", async () => {
+    const service = createService()
+    const response = await createApp(service, ["admin-navigation:write"]).request(
+      "/v1/admin/navigation-preferences/me",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: '{"visibility":{"bookings":false}}',
+      },
+    )
+
+    expect(response.status).toBe(401)
+    expect(service.setMember).not.toHaveBeenCalled()
   })
 })
