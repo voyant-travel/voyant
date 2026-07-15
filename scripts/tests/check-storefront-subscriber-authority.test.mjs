@@ -21,7 +21,7 @@ runtimePorts: [
   requirePort(storefrontBookingIntentsRuntimePort),
   requirePort(storefrontIntakeRuntimePort),
 ],
-subscribers: [{ runtime: { entry: "./booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" } }]
+subscribers: [{ runtime: { entry: "@voyant-travel/storefront/booking-bootstrap-subscriber", export: "storefrontBookingBootstrapSubscriber" } }]
 `,
     "packages/storefront/src/booking-bootstrap-subscriber-runtime.ts": `
 export const storefrontBookingBootstrapSubscriber: SubscriberRuntimeDescriptor = {

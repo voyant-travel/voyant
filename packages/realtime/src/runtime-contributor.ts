@@ -1,10 +1,8 @@
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { createRealtimeRuntime } from "./runtime.js"
 import { realtimeRuntimePort, realtimeTransportRuntimePort } from "./runtime-port.js"
 import type { RealtimeProvider } from "./types.js"
 
 export interface RealtimeRuntimeContributorHost {
-  primitives: VoyantRuntimeHostPrimitives
   hasRuntimePort?(port: { id: string }): boolean
   getRuntimePort<T>(port: { id: string }): T | Promise<T>
 }

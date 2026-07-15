@@ -29,6 +29,7 @@
 "@voyant-travel/flights": patch
 "@voyant-travel/flights-react": patch
 "@voyant-travel/identity": patch
+"@voyant-travel/identity-react": patch
 "@voyant-travel/inventory": patch
 "@voyant-travel/inventory-react": patch
 "@voyant-travel/legal": patch
@@ -49,7 +50,9 @@
 "@voyant-travel/trips": patch
 "@voyant-travel/trips-react": patch
 "@voyant-travel/types": patch
+"@voyant-travel/voyant-typescript-config": patch
 "@voyant-travel/workflow-runs": patch
+"@voyant-travel/workflows": patch
 ---
 
 Standardize first-party packages on package-owned deployment manifests, provider selection,

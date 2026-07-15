@@ -21,21 +21,19 @@ function provider(name = "selected"): RealtimeProvider {
 describe("realtime runtime contributor", () => {
   it("keeps realtime inert when deployment selection supplies no transport", () => {
     const contribution = createRealtimeRuntimePortContribution({
-      primitives: {} as never,
       hasRuntimePort: () => false,
       getRuntimePort: () => {
         throw new Error("unexpected transport lookup")
       },
     })
 
-    expect(runtimeOptions(contribution).resolveProviders({})).toEqual([])
+    expect(runtimeOptions(contribution).resolveProviders({ deployment: "local" })).toEqual([])
   })
 
   it("resolves exactly the selected or explicitly hosted transport", () => {
     const selected = provider()
     const getRuntimePort = vi.fn(() => selected)
     const contribution = createRealtimeRuntimePortContribution({
-      primitives: {} as never,
       hasRuntimePort: (port) => port.id === realtimeTransportRuntimePort.id,
       getRuntimePort,
     })

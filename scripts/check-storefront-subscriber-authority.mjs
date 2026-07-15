@@ -44,7 +44,7 @@ const rejectMatch = (source, pattern, message) => {
 
 requireMatch(
   sources.manifest,
-  /entry:\s*["']\.\/booking-bootstrap-subscriber["'][\s\S]*export:\s*["']storefrontBookingBootstrapSubscriber["']/,
+  /entry:\s*["']@voyant-travel\/storefront\/booking-bootstrap-subscriber["'][\s\S]*export:\s*["']storefrontBookingBootstrapSubscriber["']/,
   "Storefront manifest must own the booking-bootstrap subscriber runtime reference",
 )
 requireMatch(

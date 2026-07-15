@@ -14,7 +14,7 @@ const checker = path.join(repoRoot, "scripts/check-trips-subscriber-authority.mj
 async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-trips-subscriber-authority-"))
   const files = {
-    "packages/trips/src/voyant.ts": `subscribers: [{ runtime: { entry: "./payment-subscribers", export: "tripsPaymentCompletedSubscriber" } }]`,
+    "packages/trips/src/voyant.ts": `subscribers: [{ runtime: { entry: "@voyant-travel/trips/payment-subscribers", export: "tripsPaymentCompletedSubscriber" } }]`,
     "packages/trips/src/index.ts": `
 const runtime = { withDb: (operation) => databaseRuntime.withDb(context.bindings, operation) }
 container.register(TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY, runtime)

@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process"
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import ts from "typescript"
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..")
 const files = ["packages/typescript-config/dep-paths.json"]
@@ -17,6 +18,36 @@ for (const e of readdirSync(join(ROOT, "packages"), { withFileTypes: true })) {
   }
 }
 const before = files.map((f) => readFileSync(join(ROOT, f), "utf8"))
+
+const unsafeBuildGraphs = []
+for (const entry of readdirSync(join(ROOT, "packages"), { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue
+  const turboPath = join(ROOT, "packages", entry.name, "turbo.json")
+  const buildConfigPath = join(ROOT, "packages", entry.name, "tsconfig.build.json")
+  if (!existsSync(turboPath) || !existsSync(buildConfigPath)) continue
+
+  const turboSource = readFileSync(turboPath, "utf8")
+  const parsed = ts.parseConfigFileTextToJson(turboPath, turboSource)
+  if (parsed.error) {
+    throw new Error(`Unable to parse ${turboPath}: ${parsed.error.messageText}`)
+  }
+  const buildConfig = readFileSync(buildConfigPath, "utf8")
+  const usesDistDeclarations = buildConfig.includes("/dist/") || buildConfig.includes("dep-paths")
+  const dependencies = parsed.config?.tasks?.build?.dependsOn
+  if (usesDistDeclarations && Array.isArray(dependencies) && dependencies.length === 0) {
+    unsafeBuildGraphs.push(`packages/${entry.name}/turbo.json`)
+  }
+}
+
+if (unsafeBuildGraphs.length > 0) {
+  console.error(
+    `Package build graphs disable dependencies while consuming dist declarations:\n  ${unsafeBuildGraphs.join(
+      "\n  ",
+    )}`,
+  )
+  process.exit(1)
+}
+
 execFileSync("node", ["scripts/gen-package-dist-configs.mjs"], { cwd: ROOT, stdio: "ignore" })
 const after = files.map((f) => readFileSync(join(ROOT, f), "utf8"))
 const stale = files.filter((_f, i) => before[i] !== after[i])

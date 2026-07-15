@@ -69,7 +69,8 @@ for (const [index, [packageName, ports]] of Object.entries(packagePorts).entries
       !contributor.includes(`[${port}.id]`) &&
       !(
         port === "cruisesRoutesRuntimePort" &&
-        contributor.includes("CRUISES_ROUTES_RUNTIME_PORT_ID")
+        (contributor.includes("CRUISES_ROUTES_RUNTIME_PORT_ID") ||
+          contributor.includes("[cruisesRoutesRuntimePortReference.id]"))
       )
     ) {
       violations.push(`${packageName} runtime contributor must own ${port}`)

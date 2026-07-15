@@ -12,6 +12,8 @@ const deploymentResources = read("packages/runtime/src/deployment-resources.ts")
 const contributor = read("packages/realtime/src/runtime-contributor.ts")
 const runtime = read("packages/realtime/src/runtime.ts")
 const manifest = read("packages/realtime/src/voyant.ts")
+const localProvider = read("packages/realtime/src/providers/local.ts")
+const cloudProvider = read("packages/realtime/src/providers/voyant-cloud.ts")
 const packageJson = JSON.parse(read("packages/realtime/package.json"))
 const retiredAdapterPath = "starters/operator/src/api/runtime/runtime-adapter.ts"
 if (existsSync(path.join(root, retiredAdapterPath))) {
@@ -32,34 +34,44 @@ if (
 ) {
   failures.push("Operator deployment resources must not load package-specific Realtime runtime")
 }
-if (!contributor.includes("primitives: VoyantRuntimeHostPrimitives")) {
-  failures.push("Realtime contributor must consume generic VoyantRuntimeHostPrimitives")
-}
 if (/capabilities|loadRealtimeRuntime/.test(contributor)) {
   failures.push("Realtime contributor must not depend on a package-specific host capability")
 }
 if (
-  !contributor.includes("createRealtimeRuntime(host.primitives)") ||
-  !runtime.includes(
-    "resolveProviders: (bindings) => resolveRealtimeProviders(primitives.env(bindings))",
-  )
+  !contributor.includes("realtimeTransportRuntimePort") ||
+  !contributor.includes("host.getRuntimePort<RealtimeProvider>(realtimeTransportRuntimePort)") ||
+  !contributor.includes("createRealtimeRuntime(transport)") ||
+  !runtime.includes("resolveProviders: () => (provider ? [provider] : [])")
 ) {
-  failures.push("Realtime runtime must derive bindings through generic env primitives")
+  failures.push("Realtime runtime must consume only the graph-selected transport port")
+}
+
+if (/VOYANT_|createVoyantCloudRealtimeProvider|createLocalRealtimeProvider/.test(runtime)) {
+  failures.push("Realtime runtime must not rediscover or construct deployment providers")
 }
 
 for (const token of [
-  "VOYANT_ADMIN_AUTH_MODE",
-  "voyant-cloud",
-  "VOYANT_API_KEY",
-  "VOYANT_CLOUD_API_KEY",
-  "VOYANT_CLOUD_API_URL",
-  "VOYANT_CLOUD_USER_AGENT",
-  "local-dev",
+  'selection: { role: "realtime", value: "local" }',
+  'selection: { role: "realtime", value: "voyant-cloud" }',
+  'export: "createLocalGraphRealtimeProvider"',
+  'export: "createVoyantCloudGraphRealtimeProvider"',
+  "@voyant-travel/realtime#secret.voyant-cloud-api-key",
 ]) {
-  if (!runtime.includes(token)) failures.push(`Realtime provider policy must preserve ${token}`)
+  if (!manifest.includes(token)) failures.push(`Realtime manifest must preserve ${token}`)
 }
-if (!runtime.includes("return []") || !runtime.includes("createVoyantCloudRealtimeProvider")) {
-  failures.push("Realtime provider policy must remain inert unless Voyant Cloud is configured")
+if (!localProvider.includes("createLocalGraphRealtimeProvider")) {
+  failures.push("Realtime local provider must expose its graph-selected factory")
+}
+for (const token of [
+  "createVoyantCloudGraphRealtimeProvider",
+  "context.getSecret(REALTIME_VOYANT_CLOUD_API_KEY_SECRET_ID)",
+  "context.getConfig(REALTIME_VOYANT_CLOUD_BASE_URL_CONFIG_ID)",
+  "context.getConfig(REALTIME_VOYANT_CLOUD_USER_AGENT_CONFIG_ID)",
+  "createVoyantCloudClient",
+]) {
+  if (!cloudProvider.includes(token)) {
+    failures.push(`Realtime cloud provider must preserve ${token}`)
+  }
 }
 if (runtime.includes("bridgeRoutes:")) {
   failures.push("Realtime runtime must use selected subscriber descriptors, not bridgeRoutes")
