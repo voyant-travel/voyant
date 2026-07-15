@@ -21,6 +21,7 @@ export type Env = {
     organizationId?: string | null
     callerType?: "session" | "api_key" | "internal" | "agent" | "workflow"
     actor?: string
+    scopes?: string[] | null
     apiTokenId?: string
     apiKeyId?: string
     workflowRunId?: string

@@ -65,7 +65,7 @@ export const BOOKING_ACTION_DECLARATIONS = {
       ...bookingWriteCapability,
       id: "bookings:status:cancel",
       action: "cancel",
-      risk: "high",
+      risk: "critical",
       approvalPolicy: "conditional",
       graph: { ...bookingWriteCapability.graph, id: "booking.status.cancel" },
     },

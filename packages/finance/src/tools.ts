@@ -1,18 +1,20 @@
 /**
- * Finance agent tools on the framework tool contract. Thin, read-only wrappers
- * over the existing finance service; the service is injected on the tool context
+ * Finance agent tools on the framework tool contract. Thin wrappers over the
+ * existing finance service; the service is injected on the tool context
  * by intersection so this module stays deployment-agnostic.
+ * Refunds are issued through the credit-note service after action approval.
  */
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
 import {
+  creditNoteSchema,
   invoiceDetailSchema,
   invoiceListItemSchema,
   invoiceSchema,
 } from "./routes-invoice-schemas.js"
-import { invoiceListQuerySchema } from "./validation.js"
+import { insertCreditNoteSchema, invoiceListQuerySchema } from "./validation.js"
 
 const voidInvoiceResultSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("not_found") }),
@@ -34,6 +36,19 @@ export interface FinanceToolServices {
     outstandingTopLimit?: number
   }): Promise<unknown>
   voidInvoice(id: string, input: { reason?: string }): Promise<unknown>
+  issueInvoiceRefund(input: {
+    invoiceId: string
+    creditNoteNumber: string
+    amountCents: number
+    currency: string
+    baseCurrency?: string | null
+    baseAmountCents?: number | null
+    fxRateSetId?: string | null
+    reason: string
+    notes?: string | null
+    idempotencyKey: string
+    approvalId?: string
+  }): Promise<unknown>
 }
 
 export type FinanceToolContext = ToolContext & { finance?: FinanceToolServices }
@@ -109,7 +124,84 @@ export const voidInvoiceTool = defineTool<
   },
 })
 
-export const financeTools = [listInvoicesTool, getInvoiceTool, voidInvoiceTool] as const
+export const issueInvoiceRefundInputSchema = insertCreditNoteSchema.omit({ status: true }).extend({
+  invoiceId: z.string().min(1).describe("Invoice that receives the issued credit note."),
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("Stable key used when requesting approval and replaying the command."),
+  approvalId: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe("Approval id returned after the prior request is approved."),
+})
+
+const pendingInvoiceRefundSchema = z.object({
+  status: z.literal("approval_required"),
+  requestedAction: z.object({
+    id: z.string(),
+    status: z.string(),
+    actionName: z.string(),
+    targetType: z.string(),
+    targetId: z.string(),
+  }),
+  approval: z.object({
+    id: z.string(),
+    status: z.string(),
+    requestedActionId: z.string(),
+    policyName: z.string(),
+    policyVersion: z.string(),
+    riskSnapshot: z.string(),
+    reasonCode: z.string(),
+    expiresAt: z.string().datetime().nullable(),
+    createdAt: z.string().datetime(),
+  }),
+  replayed: z.boolean(),
+})
+
+export const issueInvoiceRefundOutputSchema = z.union([
+  pendingInvoiceRefundSchema,
+  z.object({ status: z.literal("issued"), creditNote: creditNoteSchema }),
+])
+
+export const issueInvoiceRefundTool = defineTool<
+  z.infer<typeof issueInvoiceRefundInputSchema>,
+  z.infer<typeof issueInvoiceRefundOutputSchema>,
+  FinanceToolContext
+>({
+  owner: "@voyant-travel/finance",
+  capabilityId: "@voyant-travel/finance#tool.issue-invoice-refund",
+  capabilityVersion: "v1",
+  name: "issue_invoice_refund",
+  description:
+    "Request approval to refund an invoice by issuing a credit note, or execute the exact approved request.",
+  inputSchema: issueInvoiceRefundInputSchema,
+  outputSchema: issueInvoiceRefundOutputSchema,
+  requiredScopes: ["finance:refund"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "destructive",
+  riskPolicy: {
+    destructive: true,
+    reversible: false,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["refund", "data-write"],
+  },
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return issueInvoiceRefundOutputSchema.parse(await finance(ctx).issueInvoiceRefund(input))
+  },
+})
+
+export const financeTools = [
+  listInvoicesTool,
+  getInvoiceTool,
+  voidInvoiceTool,
+  issueInvoiceRefundTool,
+] as const
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
   return schema.parse(toJsonValue(value))

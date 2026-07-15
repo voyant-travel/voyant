@@ -147,6 +147,18 @@ export const financeInvoiceCreditNoteService = {
             },
             {
               authorizationSource: runtime.actionLedgerAuthorizationSource,
+              actionName: runtime.actionLedgerActionName,
+              routeOrToolName: runtime.actionLedgerRouteOrToolName,
+              targetType: runtime.actionLedgerTargetType,
+              targetId: runtime.actionLedgerTargetId,
+              capabilityId: runtime.actionLedgerCapabilityId,
+              capabilityVersion: runtime.actionLedgerCapabilityVersion,
+              evaluatedRisk: runtime.actionLedgerEvaluatedRisk,
+              causationActionId: runtime.actionLedgerCausationActionId,
+              approvalId: runtime.actionLedgerApprovalId,
+              idempotencyScope: runtime.actionLedgerIdempotencyScope,
+              idempotencyKey: runtime.actionLedgerIdempotencyKey,
+              idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint,
             },
           ),
         )

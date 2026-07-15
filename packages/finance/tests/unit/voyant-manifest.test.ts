@@ -89,7 +89,19 @@ describe("finance deployment manifest", () => {
         expect.objectContaining({ name: "list_invoices", risk: "low" }),
         expect.objectContaining({ name: "get_invoice", risk: "low" }),
         expect.objectContaining({ name: "void_invoice", risk: "critical" }),
+        expect.objectContaining({ name: "issue_invoice_refund", risk: "critical" }),
       ]),
+    )
+    expect(financeVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/finance#action.issue-invoice-refund",
+        requiredScopes: ["finance:refund"],
+        risk: "critical",
+        ledger: "required",
+        approval: "required",
+        reversible: false,
+        from: { tools: ["@voyant-travel/finance#tool.issue-invoice-refund"] },
+      }),
     )
     expect(financeVoyantModule.actions).toContainEqual(
       expect.objectContaining({

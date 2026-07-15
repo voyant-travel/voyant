@@ -8,20 +8,15 @@ import {
   type ActionLedgerCapabilityAccessResult,
   type ActionLedgerEntry,
   type ActionLedgerEntryResponse,
-  ActionLedgerIdempotencyConflictError,
   type ActionLedgerRequestContextValues,
   actionLedgerService,
   appendActionLedgerMutation,
   appendActionLedgerSensitiveRead,
   type BuildActionLedgerApprovedExecutionFieldsInput,
-  buildActionApprovalCommandFingerprint,
   buildActionLedgerApprovedExecutionFields,
   decideActionLedgerApproval,
-  evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
   ledgerSensitiveRead,
-  mapActionLedgerRequestContext,
-  requestActionLedgerApproval,
 } from "@voyant-travel/action-ledger"
 import { validateCustomFields } from "@voyant-travel/core/custom-fields"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
@@ -70,6 +65,10 @@ import { bookingPiiAccessLog } from "./schema.js"
 import { bookingsService } from "./service.js"
 import { bookingGroupsService } from "./service-groups.js"
 import { publicBookingsService, resolveSessionPricingSnapshot } from "./service-public.js"
+import {
+  authorizeBookingStatusMutation as authorizeBookingStatusMutationCore,
+  type BookingStatusAuthorizationResult,
+} from "./status-authorization.js"
 import {
   bookingAggregatesQuerySchema,
   bookingAllocationStatusSchema,
@@ -138,7 +137,6 @@ const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
 const BOOKING_PII_READ_ACTION_VERSION = "v1"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
-const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
 const BOOKING_TRAVELER_LEDGER_ACTION_VERSION = "v1"
 const BOOKING_ITEM_LEDGER_ACTION_VERSION = "v1"
 const BOOKING_NOTE_LEDGER_ACTION_VERSION = "v1"
@@ -167,25 +165,6 @@ type BookingTravelerMutationLedgerInput = {
   evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
   summary?: string
 }
-type BookingStatusApprovalTargetState =
-  | {
-      exists: false
-    }
-  | {
-      exists: true
-      status: string
-      sellCurrency: string
-      sellAmountCents: number | null
-      costAmountCents: number | null
-      customerPaymentPolicy: unknown
-      holdExpiresAt: string | null
-      confirmedAt: string | null
-      awaitingPaymentAt: string | null
-      paidAt: string | null
-      cancelledAt: string | null
-      completedAt: string | null
-      expiredAt: string | null
-    }
 type TravelerTravelDetails = Awaited<
   ReturnType<ReturnType<typeof createBookingPiiService>["getTravelerTravelDetails"]>
 >
@@ -562,101 +541,35 @@ async function authorizeBookingStatusMutation(
     commandInput?: unknown
   },
 ) {
-  const capability = BOOKING_STATUS_CAPABILITIES[input.key]
-  const access = evaluateActionLedgerCapabilityAccess({
-    definition: capability,
+  const result = await authorizeBookingStatusMutationCore({
+    db: c.get("db"),
+    ...input,
     actor: c.get("actor"),
     callerType: c.get("callerType"),
     scopes: c.get("scopes"),
     isInternalRequest: c.get("isInternalRequest"),
+    requestContext: getActionLedgerRequestContext(c),
+    conditionalApprovalRequired: requiresBookingStatusApproval(c, input.key),
+    approvalReasonCode: bookingStatusApprovalReason(c, input.key),
+    approvalId: c.req.header(ACTION_LEDGER_APPROVAL_ID_HEADER) ?? null,
+    idempotencyKey: c.req.header("idempotency-key") ?? null,
   })
 
-  if (access.allowed) {
-    const approvalRequirement = evaluateActionLedgerApprovalRequirement({
-      access,
-      conditionalApprovalRequired: requiresBookingStatusApproval(c, input.key),
-      reasonCode: bookingStatusApprovalReason(c, input.key),
-    })
+  return bookingStatusAuthorizationRouteResult(c, result)
+}
 
-    if (approvalRequirement.required) {
-      const approvedAction = await resolveApprovedBookingStatusAction(
-        c,
-        input,
-        access,
-        approvalRequirement,
-      )
-      if (approvedAction) {
-        if (!approvedAction.allowed) return approvedAction
-        return { allowed: true as const, access, approvedAction: approvedAction.action }
+function bookingStatusAuthorizationRouteResult(
+  c: Context<Env>,
+  result: BookingStatusAuthorizationResult,
+) {
+  switch (result.status) {
+    case "authorized":
+      return {
+        allowed: true as const,
+        access: result.access,
+        approvedAction: result.approvedAction,
       }
-
-      const idempotencyKey = c.req.header("idempotency-key") ?? null
-      if (!idempotencyKey) {
-        return {
-          allowed: false as const,
-          response: c.json(
-            {
-              error: "Approval-required booking status actions require an Idempotency-Key",
-            },
-            400,
-          ),
-        }
-      }
-
-      const idempotencyScope = `${input.routeOrToolName}:${input.bookingId}`
-      const idempotencyFingerprint = await buildBookingStatusApprovalFingerprint(
-        input,
-        await loadBookingStatusApprovalTargetState(c, input.bookingId),
-        access,
-        approvalRequirement,
-      )
-
-      const requestInput = {
-        context: getActionLedgerRequestContext(c),
-        actionName: input.actionName,
-        actionVersion: capability.version,
-        actionKind: "update",
-        evaluatedRisk: approvalRequirement.evaluatedRisk,
-        targetType: "booking",
-        targetId: input.bookingId,
-        routeOrToolName: input.routeOrToolName,
-        capabilityId: access.capabilityId,
-        capabilityVersion: access.capabilityVersion,
-        authorizationSource: access.authorizationSource,
-        idempotencyScope,
-        idempotencyKey,
-        idempotencyFingerprint,
-        mutationDetail: {
-          summary: `Booking status ${capability.action} awaiting approval: ${approvalRequirement.reasonCode}`,
-          reversalKind: "none",
-        },
-        approval: {
-          policyName: BOOKING_STATUS_APPROVAL_POLICY,
-          policyVersion: capability.version,
-          riskSnapshot: approvalRequirement.evaluatedRisk,
-          reasonCode: approvalRequirement.reasonCode,
-        },
-      } as const
-
-      let result: Awaited<ReturnType<typeof requestActionLedgerApproval>>
-      try {
-        result = await requestActionLedgerApproval(c.get("db"), requestInput)
-      } catch (error) {
-        if (error instanceof ActionLedgerIdempotencyConflictError) {
-          return {
-            allowed: false as const,
-            response: c.json(
-              {
-                error: error.message,
-                existingActionId: error.existingActionId,
-              },
-              409,
-            ),
-          }
-        }
-        throw error
-      }
-
+    case "approval_required":
       return {
         allowed: false as const,
         response: c.json(
@@ -689,151 +602,30 @@ async function authorizeBookingStatusMutation(
           202,
         ),
       }
-    }
-
-    return { allowed: true as const, access }
+    case "denied":
+      return {
+        allowed: false as const,
+        response: handleApiError(new ForbiddenApiError(), c),
+      }
+    case "missing_idempotency_key":
+      return {
+        allowed: false as const,
+        response: c.json(
+          { error: "Approval-required booking status actions require an Idempotency-Key" },
+          400,
+        ),
+      }
+    case "idempotency_conflict":
+      return {
+        allowed: false as const,
+        response: c.json({ error: result.message, existingActionId: result.existingActionId }, 409),
+      }
+    case "invalid_approval":
+      return {
+        allowed: false as const,
+        response: actionApprovalValidationResponse(c, result.validation),
+      }
   }
-
-  await appendActionLedgerMutation(c.get("db"), {
-    context: getActionLedgerRequestContext(c),
-    actionName: input.actionName,
-    actionVersion: capability.version,
-    actionKind: "update",
-    status: "denied",
-    evaluatedRisk: access.evaluatedRisk,
-    targetType: "booking",
-    targetId: input.bookingId,
-    routeOrToolName: input.routeOrToolName,
-    capabilityId: access.capabilityId,
-    capabilityVersion: access.capabilityVersion,
-    authorizationSource: access.authorizationSource,
-    mutationDetail: {
-      summary: `Booking status ${capability.action} denied: ${access.reason}`,
-      reversalKind: "none",
-    },
-  })
-
-  return {
-    allowed: false as const,
-    response: handleApiError(new ForbiddenApiError(), c),
-  }
-}
-
-async function resolveApprovedBookingStatusAction(
-  c: Context<Env>,
-  input: BookingStatusCapabilityRoute & {
-    bookingId: string
-    commandInput?: unknown
-  },
-  access: ActionLedgerCapabilityAccessResult,
-  approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
-): Promise<
-  | {
-      allowed: true
-      action: ApprovedBookingStatusAction
-    }
-  | {
-      allowed: false
-      response: Response
-    }
-  | null
-> {
-  const approvalId = c.req.header(ACTION_LEDGER_APPROVAL_ID_HEADER)
-  if (!approvalId) return null
-
-  const executionFingerprint = await buildBookingStatusApprovalFingerprint(
-    input,
-    await loadBookingStatusApprovalTargetState(c, input.bookingId),
-    access,
-    approvalRequirement,
-  )
-
-  const actorFields = mapActionLedgerRequestContext(getActionLedgerRequestContext(c))
-  const validation = await actionLedgerService.validateApprovedAction(c.get("db"), {
-    approvalId,
-    actionName: input.actionName,
-    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
-    requestedActionKind: "update",
-    requestedActionStatus: "awaiting_approval",
-    targetType: "booking",
-    targetId: input.bookingId,
-    routeOrToolName: input.routeOrToolName,
-    principalType: actorFields.principalType,
-    principalId: actorFields.principalId,
-    idempotencyFingerprint: executionFingerprint,
-    executionActionKind: "update",
-    executionStatus: "succeeded",
-  })
-  if (!validation.ok) {
-    return {
-      allowed: false,
-      response: actionApprovalValidationResponse(c, validation),
-    }
-  }
-
-  return {
-    allowed: true,
-    action: {
-      requestedActionId: validation.requestedAction.id,
-      approvalId: validation.approval.id,
-      idempotencyFingerprint: validation.idempotencyFingerprint,
-    },
-  }
-}
-
-function buildBookingStatusApprovalFingerprint(
-  input: BookingStatusCapabilityRoute & {
-    bookingId: string
-    commandInput?: unknown
-  },
-  targetState: BookingStatusApprovalTargetState,
-  access: ActionLedgerCapabilityAccessResult,
-  approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
-) {
-  return buildActionApprovalCommandFingerprint({
-    actionName: input.actionName,
-    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
-    targetType: "booking",
-    targetId: input.bookingId,
-    commandInput: {
-      command: input.commandInput ?? null,
-      targetState,
-    },
-    approvalPolicy: approvalRequirement.approvalPolicy,
-    capabilityId: access.capabilityId,
-    capabilityVersion: access.capabilityVersion,
-    evaluatedRisk: approvalRequirement.evaluatedRisk,
-    reasonCode: approvalRequirement.reasonCode,
-  })
-}
-
-async function loadBookingStatusApprovalTargetState(
-  c: Context<Env>,
-  bookingId: string,
-): Promise<BookingStatusApprovalTargetState> {
-  const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
-  if (!booking) return { exists: false }
-
-  return {
-    exists: true,
-    status: booking.status,
-    sellCurrency: booking.sellCurrency,
-    sellAmountCents: booking.sellAmountCents,
-    costAmountCents: booking.costAmountCents,
-    customerPaymentPolicy: booking.customerPaymentPolicy,
-    holdExpiresAt: serializeBookingApprovalDate(booking.holdExpiresAt),
-    confirmedAt: serializeBookingApprovalDate(booking.confirmedAt),
-    awaitingPaymentAt: serializeBookingApprovalDate(booking.awaitingPaymentAt),
-    paidAt: serializeBookingApprovalDate(booking.paidAt),
-    cancelledAt: serializeBookingApprovalDate(booking.cancelledAt),
-    completedAt: serializeBookingApprovalDate(booking.completedAt),
-    expiredAt: serializeBookingApprovalDate(booking.expiredAt),
-  }
-}
-
-function serializeBookingApprovalDate(value: Date | string | null): string | null {
-  if (!value) return null
-  return value instanceof Date ? value.toISOString() : value
 }
 
 function actionApprovalValidationResponse(

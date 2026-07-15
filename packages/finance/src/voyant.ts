@@ -268,8 +268,8 @@ export const financeVoyantModule = defineModule({
           },
           {
             action: "refund",
-            label: "Refund payments",
-            description: "Issue financial refunds against eligible payments.",
+            label: "Issue invoice refunds",
+            description: "Issue a credit note against an eligible invoice.",
             sensitive: true,
           },
           {
@@ -307,6 +307,14 @@ export const financeVoyantModule = defineModule({
       context: ["finance"],
       risk: "critical",
     },
+    {
+      id: "@voyant-travel/finance#tool.issue-invoice-refund",
+      name: "issue_invoice_refund",
+      runtime: { entry: "@voyant-travel/finance/tools", export: "issueInvoiceRefundTool" },
+      requiredScopes: ["finance:refund"],
+      context: ["finance"],
+      risk: "critical",
+    },
   ],
   actions: [
     {
@@ -322,6 +330,22 @@ export const financeVoyantModule = defineModule({
       approval: "required",
       reversible: false,
       from: { tools: ["@voyant-travel/finance#tool.void-invoice"] },
+    },
+    {
+      id: "@voyant-travel/finance#action.issue-invoice-refund",
+      capabilityId: "finance:refund",
+      version: "v1",
+      kind: "execute",
+      targetType: "invoice",
+      resource: "finance",
+      action: "refund",
+      requiredScopes: ["finance:refund"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      allowedActorTypes: ["staff", "system"],
+      from: { tools: ["@voyant-travel/finance#tool.issue-invoice-refund"] },
     },
   ],
   admin: financeVoyantAdmin,

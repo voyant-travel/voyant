@@ -2,6 +2,16 @@
 
 Finance module for Voyant. Invoices, payments, credit notes, supplier payments, and finance notes.
 
+## Agent Tools
+
+`issue_invoice_refund` defines a refund as issuing an `issued` credit note
+against an invoice through the existing credit-note domain service. Agent
+callers cannot issue it directly: the first call creates a pending action-ledger
+approval, and execution requires the approved id plus an exact match on the
+principal, command, current invoice snapshot, and fingerprint. Successful
+execution is recorded as `finance.credit_note.issue_refund`, linked to the
+requested action and approval, and requires `finance:refund`.
+
 ## Install
 
 ```bash

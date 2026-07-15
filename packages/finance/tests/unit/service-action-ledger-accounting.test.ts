@@ -233,6 +233,53 @@ describe("finance accounting action ledger builders", () => {
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
   })
 
+  it("links an approved refund execution to the exact requested action", async () => {
+    const ledgerInput = await ledger.buildCreditNoteCreationActionLedgerInput(
+      { agentId: "agent_123", callerType: "agent", actor: "staff" },
+      {
+        invoice: { id: "inv_123", bookingId: "book_123" } as never,
+        creditNote: {
+          id: "cn_123",
+          creditNoteNumber: "CN-2026-002",
+          amountCents: 5000,
+          currency: "EUR",
+          status: "issued",
+          reason: "Approved operator refund",
+        } as never,
+      },
+      {
+        actionName: "finance.credit_note.issue_refund",
+        routeOrToolName: "finance.issue_invoice_refund",
+        targetType: "invoice",
+        targetId: "inv_123",
+        capabilityId: "finance:refund",
+        capabilityVersion: "v1",
+        evaluatedRisk: "critical",
+        authorizationSource: "scope:finance:refund",
+        causationActionId: "action_requested",
+        approvalId: "approval_123",
+        idempotencyScope: "approval_123:execution",
+        idempotencyKey: "approval_123",
+        idempotencyFingerprint: "sha256:approved-command",
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.credit_note.issue_refund",
+      routeOrToolName: "finance.issue_invoice_refund",
+      targetType: "invoice",
+      targetId: "inv_123",
+      capabilityId: "finance:refund",
+      capabilityVersion: "v1",
+      evaluatedRisk: "critical",
+      causationActionId: "action_requested",
+      approvalId: "approval_123",
+      idempotencyScope: "approval_123:execution",
+      idempotencyKey: "approval_123",
+      idempotencyFingerprint: "sha256:approved-command",
+    })
+  })
+
   it("builds booking-targeted action ledger input for credit note updates", () => {
     const ledgerInput = ledger.buildCreditNoteUpdateActionLedgerInput(
       {

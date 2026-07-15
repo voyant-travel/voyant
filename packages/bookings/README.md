@@ -64,6 +64,11 @@ entries consistently link back to the requested action and approval.
 The selected deployment graph exposes package-owned Tools from
 `@voyant-travel/bookings/tools`:
 
+- `cancel_booking` always enters the action-ledger approval flow for agent
+  callers. Its first call returns a pending approval; execution requires the
+  approved id and the same command, principal, target snapshot, and
+  idempotency fingerprint. The successful cancellation ledger entry links to
+  that requested action and approval, including financial-settlement hooks.
 - `@voyant-travel/bookings#extras` owns booking-extra reads and non-destructive
   lifecycle writes plus staff-only departure manifests, traveler selections,
   and collection-state updates. Manifest reads require both `bookings:read` and

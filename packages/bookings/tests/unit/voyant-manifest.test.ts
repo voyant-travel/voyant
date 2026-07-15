@@ -91,7 +91,19 @@ describe("bookings deployment manifest", () => {
       expect.arrayContaining([
         expect.objectContaining({ name: "list_bookings", risk: "low" }),
         expect.objectContaining({ name: "get_booking", risk: "low" }),
+        expect.objectContaining({ name: "cancel_booking", risk: "critical" }),
       ]),
+    )
+    expect(bookingsVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/bookings#action.cancel-booking",
+        requiredScopes: ["bookings:write"],
+        risk: "critical",
+        ledger: "required",
+        approval: "required",
+        reversible: false,
+        from: { tools: ["@voyant-travel/bookings#tool.cancel-booking"] },
+      }),
     )
     expect(bookingsVoyantModule.admin?.routes).toEqual(
       expect.arrayContaining([
