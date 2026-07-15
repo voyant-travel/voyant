@@ -92,6 +92,7 @@ describe("relationships deployment manifest", () => {
     const module = await createRelationshipsVoyantRuntime({
       unitId: relationshipsVoyantModule.id,
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: relationshipsVoyantModule.api ?? [],
       graph: {
         providerSelections: {},

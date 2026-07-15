@@ -79,6 +79,7 @@ function runtimeContext(api: readonly { id: string; surface: "admin" }[]) {
   return {
     unitId: "@voyant-travel/bookings#extras",
     projectConfig: {},
+    getUnitProjectConfig: () => undefined,
     api,
     graph: {
       providerSelections: {},

@@ -128,6 +128,7 @@ describe("finance deployment manifest", () => {
     const runtime = await createFinanceVoyantRuntime({
       unitId: "@voyant-travel/finance",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: [{ id: "finance.admin", surface: "admin" }],
       hasPort: () => true,
       getPort: async <TProvider>(port: { id: string }) => {

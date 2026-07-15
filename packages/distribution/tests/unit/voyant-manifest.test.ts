@@ -248,6 +248,7 @@ describe("distribution deployment manifests", () => {
     const extension = await createChannelPushVoyantRuntime({
       unitId: distributionChannelPushVoyantPlugin.id,
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: distributionChannelPushVoyantPlugin.api ?? [],
       graph: {
         providerSelections: {},

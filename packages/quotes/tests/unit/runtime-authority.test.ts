@@ -25,6 +25,7 @@ function factoryContext<T>(
   return {
     unitId: "quotes-test",
     projectConfig: {},
+    getUnitProjectConfig: () => undefined,
     api,
     graph: {
       providerSelections: {},

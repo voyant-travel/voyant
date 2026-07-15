@@ -151,6 +151,7 @@ describe("flights deployment manifest", () => {
     const runtime = await createFlightsVoyantRuntime({
       unitId: "@voyant-travel/flights",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: flightsVoyantModule.api ?? [],
       graph: {
         providerSelections: {},

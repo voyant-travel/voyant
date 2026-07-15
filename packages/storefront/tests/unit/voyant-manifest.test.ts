@@ -107,6 +107,7 @@ describe("storefront deployment manifest", () => {
     const runtime = await createStorefrontVoyantRuntime({
       unitId: "@voyant-travel/storefront",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: [{ id: "storefront.public", surface: "public" }],
       graph: {
         providerSelections: {},

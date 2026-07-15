@@ -194,6 +194,7 @@ describe("trips deployment manifest", () => {
     const module = await createTripsVoyantRuntime({
       unitId: tripsVoyantModule.id,
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: tripsVoyantModule.api!.filter(({ surface }) =>
         selection === "both" ? true : surface === selection,
       ),

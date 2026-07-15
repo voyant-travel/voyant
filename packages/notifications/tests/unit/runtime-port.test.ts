@@ -32,6 +32,7 @@ function provider(): NotificationsRuntimeProvider {
 function runtimeFactoryContext(value = provider()) {
   return {
     unitId: "@voyant-travel/notifications",
+    getUnitProjectConfig: () => undefined,
     hasPort: (port: { id: string }) => port.id === notificationsRuntimePort.id,
     getPort: async () => value,
   } as never
