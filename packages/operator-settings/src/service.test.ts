@@ -32,7 +32,12 @@ describe("toPublicOperatorProfile", () => {
   it("maps profile + payment defaults into the public DTO", () => {
     const dto = toPublicOperatorProfile(profileRow(), {
       id: "opdp_test",
-      customerPaymentPolicy: { deposit: { kind: "none" } },
+      customerPaymentPolicy: {
+        deposit: { kind: "none" },
+        minDaysBeforeDepartureForDeposit: 0,
+        balanceDueDaysBeforeDeparture: 0,
+        balanceDueMinDaysFromNow: 0,
+      },
       bookingCheckoutUrlTemplate: "https://pay.acme.test/{booking}",
       invoicePayUrlTemplate: null,
       createdAt: new Date(0),
@@ -43,7 +48,12 @@ describe("toPublicOperatorProfile", () => {
     expect(dto.email).toBe("hello@acme.test")
     expect(dto.bookingCheckoutUrlTemplate).toBe("https://pay.acme.test/{booking}")
     expect(dto.invoicePayUrlTemplate).toBeNull()
-    expect(dto.customerPaymentPolicy).toEqual({ deposit: { kind: "none" } })
+    expect(dto.customerPaymentPolicy).toEqual({
+      deposit: { kind: "none" },
+      minDaysBeforeDepartureForDeposit: 0,
+      balanceDueDaysBeforeDeparture: 0,
+      balanceDueMinDaysFromNow: 0,
+    })
   })
 
   it("coalesces missing identity fields to empty strings and policy to null", () => {
@@ -56,6 +66,19 @@ describe("toPublicOperatorProfile", () => {
     expect(dto.license).toBe("")
     expect(dto.customerPaymentPolicy).toBeNull()
     expect(dto.bookingCheckoutUrlTemplate).toBeNull()
+  })
+
+  it("rejects malformed stored payment policies at the service boundary", () => {
+    expect(() =>
+      toPublicOperatorProfile(profileRow(), {
+        id: "opdp_invalid",
+        customerPaymentPolicy: { deposit: { kind: "none" } },
+        bookingCheckoutUrlTemplate: null,
+        invoicePayUrlTemplate: null,
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
+      } as Parameters<typeof toPublicOperatorProfile>[1]),
+    ).toThrow()
   })
 })
 
