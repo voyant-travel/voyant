@@ -18,5 +18,13 @@ export const legalContractDocumentRuntimePort = definePort<ContractDocumentRoute
         throw new Error(`legal.contract-document.runtime ${method} must be a function.`)
       }
     }
+    if (
+      provider.resolveGeneratedDocument !== undefined &&
+      typeof provider.resolveGeneratedDocument !== "function"
+    ) {
+      throw new Error(
+        "legal.contract-document.runtime resolveGeneratedDocument must be a function.",
+      )
+    }
   },
 })

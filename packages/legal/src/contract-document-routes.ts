@@ -30,6 +30,12 @@ export interface ContractDocumentStorageLike {
   get(key: string): Promise<ArrayBuffer | null>
 }
 
+export interface ContractDocumentDelivery {
+  url: string
+  filename: string
+  contentType: string | null
+}
+
 /**
  * Deployment-supplied dependencies for the contract-document routes. Generic /
  * structural types keep the legal package free of operator types and
@@ -58,6 +64,12 @@ export interface ContractDocumentRoutesOptions {
     db: unknown,
     bookingId: string,
   ): Promise<{ html: string; templateName: string; templateLanguage: string } | null>
+  /** Resolve a deployment-authorized download URL for a generated attachment. */
+  resolveGeneratedDocument?(
+    env: unknown,
+    db: unknown,
+    attachmentId: string,
+  ): Promise<ContractDocumentDelivery | null>
   /**
    * Resolve the private document storage backend from the request env. Returns
    * `null` when storage isn't configured (→ 503).

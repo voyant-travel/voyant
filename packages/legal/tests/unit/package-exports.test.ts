@@ -13,6 +13,15 @@ const packageJson = JSON.parse(
 ) as PackageJson
 
 describe("@voyant-travel/legal package exports", () => {
+  it("publishes the package-owned Tool runtime", () => {
+    expect(packageJson.exports["./tools"]).toBe("./src/mcp-runtime.ts")
+    expect(packageJson.publishConfig.exports["./tools"]).toEqual({
+      types: "./dist/mcp-runtime.d.ts",
+      import: "./dist/mcp-runtime.js",
+      default: "./dist/mcp-runtime.js",
+    })
+  })
+
   it("publishes the booking-contract subscriber runtime subpath", () => {
     expect(packageJson.exports["./booking-contract-subscriber"]).toBe(
       "./src/contracts/booking-contract-subscriber-runtime.ts",

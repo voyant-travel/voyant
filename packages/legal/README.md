@@ -83,6 +83,23 @@ to `stageHistory` and emits a domain event when an event bus is configured:
 relationship IDs, stage names, and timestamps only; rendered bodies, variables,
 metadata, and signature details stay out of the event payload.
 
+## Agent Tools
+
+The selected module publishes staff-only, typed Tools from `@voyant-travel/legal/tools` for:
+
+- contract, template, policy, term, and attachment inspection;
+- draft creation and guarded contract-template authoring;
+- approved issue, send, and execute lifecycle transitions; and
+- booking-contract preview, generation, and provider-authorized document delivery.
+
+Lifecycle Tools never create signature evidence and do not expose void/delete operations. Signing
+remains with the authoritative customer/provider workflow, while destructive lifecycle operations
+remain unavailable until a deployment selects an explicit destructive-action policy. Generated
+document delivery returns only an authorized URL and never exposes private storage keys.
+Regeneration is separate from ordinary generation because it replaces the previous document record;
+the graph marks it critical, irreversible, ledger-required, and approval-required under the named
+`legal.contract-document.regeneration.v1` policy.
+
 ### Policies
 
 - **Policies** (`pol`) — policy definitions by kind (cancellation, payment, T&C, etc.)
@@ -106,6 +123,7 @@ metadata, and signature details stay out of the event payload.
 | `./policies/validation` | Zod schemas for policies |
 | `./policies/routes` | Hono routes for policies (admin + public) |
 | `./policies/service` | Policy service functions |
+| `./tools` | Tool definitions and per-request legal/document service contribution |
 
 ## License
 

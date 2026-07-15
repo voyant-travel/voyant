@@ -1,0 +1,404 @@
+import type { EventBus } from "@voyant-travel/core"
+import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
+
+import type { ContractDocumentRoutesOptions } from "./contract-document-routes.js"
+import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
+import type { ContractLifecycleRuntimeOptions } from "./contracts/lifecycle.js"
+import { buildContractsRouteRuntime } from "./contracts/route-runtime.js"
+import type {
+  ContractAttachment,
+  ContractTemplate,
+  Contract as LegalContract,
+} from "./contracts/schema.js"
+import { contractsService } from "./contracts/service.js"
+import type { Policy, PolicyRule, PolicyVersion } from "./policies/schema.js"
+import { policiesService } from "./policies/service.js"
+import { legalRuntimePort } from "./runtime-port.js"
+import type { LegalTerm } from "./terms/schema.js"
+import { legalTermsService } from "./terms/service.js"
+import type {
+  ContractAttachmentDto,
+  ContractTemplateDetail,
+  ContractTemplateSummary,
+  LegalContractDetail,
+  LegalContractDocumentToolServices,
+  LegalContractSummary,
+  LegalTermDto,
+  LegalToolServices,
+  PolicyDetail,
+  PolicySummary,
+} from "./tools.js"
+
+export * from "./tools.js"
+
+type LegalMcpContext = Context<{
+  Bindings: Record<string, unknown>
+  Variables: { db?: PostgresJsDatabase; eventBus?: EventBus }
+}>
+
+export const voyantToolContextContribution = defineToolContextContribution({
+  context: ["legal", "legalContractDocument"],
+  async contribute({ request, context, resources }) {
+    const c = request as LegalMcpContext
+    const db = requireService((c.get("db") ?? context.db) as PostgresJsDatabase | undefined, "db")
+    const legalOptions = resources[legalRuntimePort.id] as
+      | Parameters<typeof buildContractsRouteRuntime>[1]
+      | undefined
+    const lifecycleRuntime = buildContractsRouteRuntime(c.env, legalOptions)
+    lifecycleRuntime.eventBus ??= c.get("eventBus")
+
+    const documentRuntime = resources[legalContractDocumentRuntimePort.id] as
+      | ContractDocumentRoutesOptions
+      | undefined
+
+    return {
+      legal: createLegalToolServices(db, lifecycleRuntime),
+      ...(documentRuntime
+        ? {
+            legalContractDocument: createLegalContractDocumentToolServices({
+              runtime: documentRuntime,
+              env: c.env,
+              db,
+              eventBus: c.get("eventBus"),
+            }),
+          }
+        : {}),
+    }
+  },
+})
+
+export function createLegalToolServices(
+  db: PostgresJsDatabase,
+  lifecycleRuntime?: ContractLifecycleRuntimeOptions,
+): LegalToolServices {
+  return {
+    async listContracts(query) {
+      const result = await contractsService.listContracts(db, query)
+      return { data: result.data.map(contractSummary), meta: result.meta }
+    },
+    async getContract(id) {
+      const row = await contractsService.getContractById(db, id)
+      return row ? contractDetail(row) : null
+    },
+    async createDraft(input) {
+      const row = await contractsService.createContract(db, {
+        ...input,
+        status: "draft",
+        bookingId: input.bookingId ?? null,
+        personId: input.personId ?? null,
+        organizationId: input.organizationId ?? null,
+        supplierId: input.supplierId ?? null,
+        templateVersionId: input.templateVersionId ?? null,
+        seriesId: input.seriesId ?? null,
+        expiresAt: input.expiresAt ?? null,
+        variables: input.variables ?? null,
+        metadata: input.metadata ?? null,
+      })
+      if (!row) throw new Error("Contract draft creation did not return a row")
+      return contractDetail(row)
+    },
+    async listTemplates(query) {
+      const result = await contractsService.listTemplates(db, query)
+      return { data: result.data.map(templateSummary), meta: result.meta }
+    },
+    async getTemplate(id) {
+      const row = await contractsService.getTemplateById(db, id)
+      return row ? templateDetail(row) : null
+    },
+    async previewTemplate({ templateId, variables }) {
+      const row = await contractsService.getTemplateById(db, templateId)
+      if (!row) {
+        throw new ToolError(`Contract template "${templateId}" was not found.`, "NOT_FOUND", {
+          templateId,
+        })
+      }
+      return { rendered: contractsService.renderPreview({ body: row.body, variables }) }
+    },
+    async createTemplate(input) {
+      const row = await contractsService.createTemplate(db, input)
+      if (!row) throw new Error("Contract template creation did not return a row")
+      return templateDetail(row)
+    },
+    async updateTemplate({ id, ...input }) {
+      const row = await contractsService.updateTemplate(db, id, input)
+      return row ? templateDetail(row) : null
+    },
+    async listPolicies(query) {
+      const result = await policiesService.listPolicies(db, query)
+      return { data: result.data.map(policySummary), meta: result.meta }
+    },
+    async getPolicy(id) {
+      const policy = await policiesService.getPolicyById(db, id)
+      return policy ? policyDetail(db, policy) : null
+    },
+    async resolvePolicy(query) {
+      const result = await policiesService.resolvePolicy(db, query)
+      if (!result) return null
+      return {
+        policy: policySummary(result.policy),
+        currentVersion: result.version ? policyVersion(result.version) : null,
+        currentRules: result.rules.map(policyRule),
+      }
+    },
+    async evaluateCancellation({ policyId, ...query }) {
+      return policiesService.evaluateCancellation(db, policyId, query)
+    },
+    async listTerms(query) {
+      const result = await legalTermsService.listTerms(db, query)
+      return { data: result.data.map(termDto), meta: result.meta }
+    },
+    async getTerm(id) {
+      const row = await legalTermsService.getTermById(db, id)
+      return row ? termDto(row) : null
+    },
+    async listAttachments(contractId) {
+      return (await contractsService.listAttachments(db, contractId)).map(attachmentDto)
+    },
+    async issueContract(contractId) {
+      const result = await contractsService.issueContract(db, contractId, lifecycleRuntime)
+      if (result.status === "not_found") {
+        throw new ToolError(`Contract "${contractId}" was not found.`, "NOT_FOUND", { contractId })
+      }
+      if (result.status !== "issued" || !result.contract) {
+        throw new ToolError("Only draft contracts can be issued.", "INVALID_INPUT", { contractId })
+      }
+      return contractDetail(result.contract)
+    },
+    async sendContract({ contractId, ...delivery }) {
+      const result = await contractsService.sendContract(db, contractId, lifecycleRuntime, delivery)
+      if (result.status === "not_found") {
+        throw new ToolError(`Contract "${contractId}" was not found.`, "NOT_FOUND", { contractId })
+      }
+      if (result.status !== "sent" || !result.contract) {
+        throw new ToolError("Only issued or already-sent contracts can be sent.", "INVALID_INPUT", {
+          contractId,
+        })
+      }
+      return contractDetail(result.contract)
+    },
+    async executeContract(contractId) {
+      const result = await contractsService.executeContract(db, contractId, lifecycleRuntime)
+      if (result.status === "not_found") {
+        throw new ToolError(`Contract "${contractId}" was not found.`, "NOT_FOUND", { contractId })
+      }
+      if (result.status !== "executed" || !result.contract) {
+        throw new ToolError(
+          "Only authoritatively signed contracts can be executed.",
+          "INVALID_INPUT",
+          {
+            contractId,
+          },
+        )
+      }
+      return contractDetail(result.contract)
+    },
+  }
+}
+
+export function createLegalContractDocumentToolServices(input: {
+  runtime: ContractDocumentRoutesOptions
+  env: unknown
+  db: unknown
+  eventBus: unknown
+}): LegalContractDocumentToolServices {
+  return {
+    previewBookingContract({ bookingId }) {
+      return input.runtime.previewContract(input.env, input.db, bookingId)
+    },
+    async generateBookingContract({ bookingId, force, includeDelivery }) {
+      if (includeDelivery && !input.runtime.resolveGeneratedDocument) {
+        throw new ToolError(
+          "The selected contract-document provider does not support authorized delivery resolution.",
+          "MISSING_SERVICE",
+        )
+      }
+      const generated = await input.runtime.generateContract(
+        input.env,
+        input.db,
+        input.eventBus,
+        bookingId,
+        { force },
+      )
+      if (!generated) return null
+      const delivery = includeDelivery
+        ? ((await input.runtime.resolveGeneratedDocument?.(
+            input.env,
+            input.db,
+            generated.attachmentId,
+          )) ?? null)
+        : null
+      return { ...generated, delivery }
+    },
+    async resolveDelivery({ attachmentId }) {
+      if (!input.runtime.resolveGeneratedDocument) {
+        throw new ToolError(
+          "The selected contract-document provider does not support authorized delivery resolution.",
+          "MISSING_SERVICE",
+        )
+      }
+      return input.runtime.resolveGeneratedDocument(input.env, input.db, attachmentId)
+    },
+  }
+}
+
+function iso(value: Date): string {
+  return value.toISOString()
+}
+function nullableIso(value: Date | null): string | null {
+  return value ? iso(value) : null
+}
+function contractSummary(row: LegalContract): LegalContractSummary {
+  return {
+    id: row.id,
+    contractNumber: row.contractNumber,
+    scope: row.scope,
+    status: row.status,
+    title: row.title,
+    bookingId: row.bookingId,
+    personId: row.personId,
+    organizationId: row.organizationId,
+    supplierId: row.supplierId,
+    language: row.language,
+    issuedAt: nullableIso(row.issuedAt),
+    sentAt: nullableIso(row.sentAt),
+    executedAt: nullableIso(row.executedAt),
+    expiresAt: nullableIso(row.expiresAt),
+    voidedAt: nullableIso(row.voidedAt),
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  }
+}
+function contractDetail(row: LegalContract): LegalContractDetail {
+  return {
+    ...contractSummary(row),
+    templateVersionId: row.templateVersionId,
+    seriesId: row.seriesId,
+    channelId: row.channelId,
+    targetKind: row.targetKind,
+    targetId: row.targetId,
+    targetProvider: row.targetProvider,
+    targetSourceRef: row.targetSourceRef,
+    renderedBodyFormat: row.renderedBodyFormat,
+    renderedBody: row.renderedBody,
+    variables: row.variables as LegalContractDetail["variables"],
+    metadata: row.metadata as LegalContractDetail["metadata"],
+    stageHistory: row.stageHistory,
+  }
+}
+function templateSummary(row: ContractTemplate): ContractTemplateSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    scope: row.scope,
+    language: row.language,
+    description: row.description,
+    currentVersionId: row.currentVersionId,
+    channelId: row.channelId,
+    isDefault: row.isDefault,
+    active: row.active,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  }
+}
+function templateDetail(row: ContractTemplate): ContractTemplateDetail {
+  return {
+    ...templateSummary(row),
+    body: row.body,
+    variableSchema: row.variableSchema as ContractTemplateDetail["variableSchema"],
+  }
+}
+function policySummary(row: Policy): PolicySummary {
+  return {
+    id: row.id,
+    kind: row.kind,
+    name: row.name,
+    slug: row.slug,
+    description: row.description,
+    language: row.language,
+    currentVersionId: row.currentVersionId,
+    metadata: row.metadata as PolicySummary["metadata"],
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  }
+}
+function policyVersion(row: PolicyVersion): NonNullable<PolicyDetail["currentVersion"]> {
+  return {
+    id: row.id,
+    policyId: row.policyId,
+    version: row.version,
+    status: row.status,
+    title: row.title,
+    body: row.body,
+    publishedAt: nullableIso(row.publishedAt),
+    retiredAt: nullableIso(row.retiredAt),
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  }
+}
+function policyRule(row: PolicyRule): PolicyDetail["currentRules"][number] {
+  return {
+    id: row.id,
+    policyVersionId: row.policyVersionId,
+    ruleType: row.ruleType,
+    label: row.label,
+    daysBeforeDeparture: row.daysBeforeDeparture,
+    refundPercent: row.refundPercent,
+    refundType: row.refundType,
+    flatAmountCents: row.flatAmountCents,
+    currency: row.currency,
+    validFrom: row.validFrom,
+    validTo: row.validTo,
+    conditions: row.conditions as PolicyDetail["currentRules"][number]["conditions"],
+    sortOrder: row.sortOrder,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  }
+}
+async function policyDetail(db: PostgresJsDatabase, row: Policy): Promise<PolicyDetail> {
+  const currentVersion = row.currentVersionId
+    ? await policiesService.getPolicyVersionById(db, row.currentVersionId)
+    : null
+  const rules = currentVersion ? await policiesService.listPolicyRules(db, currentVersion.id) : []
+  return {
+    policy: policySummary(row),
+    currentVersion: currentVersion ? policyVersion(currentVersion) : null,
+    currentRules: rules.map(policyRule),
+  }
+}
+function termDto(row: LegalTerm): LegalTermDto {
+  return {
+    id: row.id,
+    contractId: row.contractId,
+    policyVersionId: row.policyVersionId,
+    targetKind: row.targetKind,
+    targetId: row.targetId,
+    termType: row.termType,
+    title: row.title,
+    body: row.body,
+    language: row.language,
+    required: row.required,
+    sortOrder: row.sortOrder,
+    acceptanceStatus: row.acceptanceStatus,
+    acceptedAt: nullableIso(row.acceptedAt),
+    acceptedBy: row.acceptedBy,
+    metadata: row.metadata as LegalTermDto["metadata"],
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+  }
+}
+function attachmentDto(row: ContractAttachment): ContractAttachmentDto {
+  return {
+    id: row.id,
+    contractId: row.contractId,
+    kind: row.kind,
+    name: row.name,
+    mimeType: row.mimeType,
+    fileSize: row.fileSize,
+    checksum: row.checksum,
+    storageAvailable: Boolean(row.storageKey),
+    createdAt: iso(row.createdAt),
+  }
+}

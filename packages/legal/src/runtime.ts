@@ -15,6 +15,7 @@ import type {
 } from "./contracts/booking-contract-subscriber-runtime.js"
 import { createContractDocumentService } from "./contracts/contract-document-service.js"
 import { buildContractVariableBindings } from "./contracts/contract-variables.js"
+import { contractsService } from "./contracts/service.js"
 import type { CreateLegalHonoModuleOptions } from "./index.js"
 import {
   type AutoGenerateContractOptions,
@@ -140,6 +141,20 @@ function createContractDocumentRoutesOptions(
         db as PostgresJsDatabase,
         bookingId,
       ),
+    resolveGeneratedDocument: async (bindings, db, attachmentId) => {
+      const attachment = await contractsService.getAttachmentById(
+        db as PostgresJsDatabase,
+        attachmentId,
+      )
+      if (!attachment?.storageKey) return null
+      const url = await primitives.storage.downloadUrl(bindings, attachment.storageKey)
+      if (!url) return null
+      return {
+        url,
+        filename: attachment.name,
+        contentType: attachment.mimeType,
+      }
+    },
     resolveStorage: (bindings) => resolveStorage(primitives, bindings),
     guessMimeType,
   }

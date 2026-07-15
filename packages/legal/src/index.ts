@@ -91,6 +91,7 @@ export const createLegalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPo
 
 export {
   CONTRACT_DOCUMENT_ROUTE_PATHS,
+  type ContractDocumentDelivery,
   type ContractDocumentRoutesOptions,
   type ContractDocumentStorageLike,
   createContractDocumentHonoModule,
