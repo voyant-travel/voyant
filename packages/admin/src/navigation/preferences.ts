@@ -1,5 +1,3 @@
-import { createContext, createElement, type ReactNode, useContext } from "react"
-
 import type { NavItem, NavSubItem } from "../types.js"
 
 export type AdminNavigationVisibilityMap = Readonly<Record<string, boolean>>
@@ -22,32 +20,6 @@ export interface AdminNavigationPreferencesClient {
 export interface AdminNavigationPreferencesContribution {
   queryKey: (memberKey: string) => ReadonlyArray<unknown>
   load: (client: AdminNavigationPreferencesClient) => Promise<AdminNavigationPreferencesSnapshot>
-}
-
-const AdminNavigationPreferencesMemberContext = createContext<string | null>(null)
-
-export function AdminNavigationPreferencesMemberProvider({
-  memberKey,
-  children,
-}: {
-  memberKey: string
-  children: ReactNode
-}) {
-  return createElement(
-    AdminNavigationPreferencesMemberContext.Provider,
-    { value: memberKey },
-    children,
-  )
-}
-
-export function useAdminNavigationPreferencesMemberKey(): string {
-  const memberKey = useContext(AdminNavigationPreferencesMemberContext)
-  if (memberKey === null) {
-    throw new Error(
-      "useAdminNavigationPreferencesMemberKey must be used inside AdminWorkspaceShell",
-    )
-  }
-  return memberKey
 }
 
 export interface ResolveAdminNavigationPreferencesOptions extends AdminNavigationPreferences {

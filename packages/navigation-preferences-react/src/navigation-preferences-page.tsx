@@ -1,7 +1,6 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useAdminNavigationPreferencesMemberKey } from "@voyant-travel/admin"
 import {
   createOperatorAdminNavigation,
   resolveOperatorAdminNavigation,
@@ -9,6 +8,7 @@ import {
 import { useAdminExtensions } from "@voyant-travel/admin/providers/admin-extensions"
 import { useOperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
 import type { NavItem } from "@voyant-travel/admin/types"
+import { useCurrentUser } from "@voyant-travel/auth-react"
 import type { NavigationVisibilityMap } from "@voyant-travel/navigation-preferences/contracts"
 import { useVoyantReactContext } from "@voyant-travel/react"
 import {
@@ -37,7 +37,8 @@ type PreferenceMode = "inherit" | "show" | "hide"
 
 export function NavigationPreferencesPage() {
   const client = useVoyantReactContext()
-  const memberKey = useAdminNavigationPreferencesMemberKey()
+  const currentUser = useCurrentUser()
+  const memberKey = currentUser.data?.id ?? "pending-member"
   const queryClient = useQueryClient()
   const messages = useNavigationPreferencesMessages()
   const adminMessages = useOperatorAdminMessages()
@@ -54,6 +55,7 @@ export function NavigationPreferencesPage() {
   const query = useQuery({
     queryKey: navigationPreferencesQueryKey(memberKey),
     queryFn: () => loadNavigationPreferences(client),
+    enabled: currentUser.isSuccess,
   })
   const [organization, setOrganization] = useState<NavigationVisibilityMap>({})
   const [member, setMember] = useState<NavigationVisibilityMap>({})
@@ -91,7 +93,7 @@ export function NavigationPreferencesPage() {
     },
   })
 
-  if (query.isPending) {
+  if (currentUser.isPending || query.isPending) {
     return (
       <div className="flex h-full items-center justify-center" role="status">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -100,7 +102,7 @@ export function NavigationPreferencesPage() {
     )
   }
 
-  if (query.isError) {
+  if (currentUser.isError || query.isError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-6">
         <p className="text-sm text-destructive" role="alert">

@@ -3068,6 +3068,9 @@ importers:
       '@voyant-travel/admin':
         specifier: workspace:^
         version: link:../admin
+      '@voyant-travel/auth-react':
+        specifier: workspace:^
+        version: link:../auth-react
       '@voyant-travel/navigation-preferences':
         specifier: workspace:^
         version: link:../navigation-preferences

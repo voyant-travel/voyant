@@ -14,10 +14,9 @@ import {
   AdminNavigationProvider,
 } from "../navigation/destinations.js"
 import type { OperatorAdminNavigationIcons } from "../navigation/operator-navigation.js"
-import {
-  type AdminNavigationPreferencesContribution,
-  AdminNavigationPreferencesMemberProvider,
-  type AdminNavigationPreferencesSnapshot,
+import type {
+  AdminNavigationPreferencesContribution,
+  AdminNavigationPreferencesSnapshot,
 } from "../navigation/preferences.js"
 import { AdminLocalePreferenceSync } from "../providers/locale-preferences.js"
 import {
@@ -377,9 +376,5 @@ function SelectedNavigationPreferences({
     queryFn: () => contribution.load(api),
   })
 
-  return (
-    <AdminNavigationPreferencesMemberProvider memberKey={memberKey}>
-      {children(query.data)}
-    </AdminNavigationPreferencesMemberProvider>
-  )
+  return children(query.data)
 }

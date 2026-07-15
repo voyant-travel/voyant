@@ -21,6 +21,7 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/navigation-preferences": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "lucide-react": "^0.475.0 || ^1.0.0",
@@ -37,6 +38,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/navigation-preferences": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
     "@voyant-travel/voyant-typescript-config": "workspace:^",

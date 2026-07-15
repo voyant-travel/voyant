@@ -24,6 +24,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "auth-team",
       "operations",
       "operator-settings",
+      "navigation-preferences",
       "relationships",
       "distribution",
       "finance",
