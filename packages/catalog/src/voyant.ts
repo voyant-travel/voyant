@@ -371,7 +371,7 @@ export const catalogBookingEngineVoyantModule = defineModule({
     {
       id: "@voyant-travel/catalog#booking-engine#action.quote-catalog-entity",
       version: "v1",
-      kind: "create",
+      kind: "execute",
       targetType: "catalog-quote",
       resource: "catalog",
       action: "quote",
