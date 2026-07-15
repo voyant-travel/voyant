@@ -5,6 +5,7 @@ import {
   createOperatorAdminNavigation,
   resolveOperatorAdminNavigation,
 } from "@voyant-travel/admin/navigation/operator-navigation"
+import { useAdminNavigationPreferencesMemberKey } from "@voyant-travel/admin/navigation/preferences"
 import { useAdminExtensions } from "@voyant-travel/admin/providers/admin-extensions"
 import { useOperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
 import type { NavItem } from "@voyant-travel/admin/types"
@@ -25,13 +26,18 @@ import type * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { loadNavigationPreferences, navigationPreferencesQueryKey } from "./client.js"
+import {
+  loadNavigationPreferences,
+  navigationPreferencesQueryKey,
+  navigationPreferencesQueryRoot,
+} from "./client.js"
 import { useNavigationPreferencesMessages } from "./i18n/provider.js"
 
 type PreferenceMode = "inherit" | "show" | "hide"
 
 export function NavigationPreferencesPage() {
   const client = useVoyantReactContext()
+  const memberKey = useAdminNavigationPreferencesMemberKey()
   const queryClient = useQueryClient()
   const messages = useNavigationPreferencesMessages()
   const adminMessages = useOperatorAdminMessages()
@@ -46,7 +52,7 @@ export function NavigationPreferencesPage() {
   )
   const rows = useMemo(() => flattenNavigation(navigation), [navigation])
   const query = useQuery({
-    queryKey: navigationPreferencesQueryKey,
+    queryKey: navigationPreferencesQueryKey(memberKey),
     queryFn: () => loadNavigationPreferences(client),
   })
   const [organization, setOrganization] = useState<NavigationVisibilityMap>({})
@@ -77,7 +83,7 @@ export function NavigationPreferencesPage() {
       if (!response.ok) throw new Error(`${messages.saveFailed} (${response.status})`)
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: navigationPreferencesQueryKey })
+      await queryClient.invalidateQueries({ queryKey: navigationPreferencesQueryRoot })
       toast.success(messages.saved)
     },
     onError: (error) => {

@@ -4,7 +4,11 @@ import type {
 } from "@voyant-travel/admin/navigation/preferences"
 import { navigationPreferencesSnapshotSchema } from "@voyant-travel/navigation-preferences/contracts"
 
-export const navigationPreferencesQueryKey = ["navigation-preferences"] as const
+export const navigationPreferencesQueryRoot = ["navigation-preferences"] as const
+
+export function navigationPreferencesQueryKey(memberKey: string) {
+  return [...navigationPreferencesQueryRoot, memberKey] as const
+}
 
 export async function loadNavigationPreferences(
   client: AdminNavigationPreferencesClient,

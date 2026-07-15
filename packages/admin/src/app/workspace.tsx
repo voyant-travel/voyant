@@ -14,6 +14,11 @@ import {
   AdminNavigationProvider,
 } from "../navigation/destinations.js"
 import type { OperatorAdminNavigationIcons } from "../navigation/operator-navigation.js"
+import {
+  type AdminNavigationPreferencesContribution,
+  AdminNavigationPreferencesMemberProvider,
+  type AdminNavigationPreferencesSnapshot,
+} from "../navigation/preferences.js"
 import { AdminLocalePreferenceSync } from "../providers/locale-preferences.js"
 import {
   getOperatorAdminMessageOverridesFromUiPrefs,
@@ -127,6 +132,7 @@ export function AdminWorkspacePendingFallback({ label }: { label?: string }) {
 
 /** Structural slice of the loaded user the shell itself needs. */
 export interface AdminWorkspaceShellUser {
+  id?: string | null
   firstName?: string | null
   lastName?: string | null
   email?: string | null
@@ -259,7 +265,6 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   children: ReactNode
 }) {
   const router = useRouter()
-  const api = useVoyantReactContext()
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const messages = useOperatorAdminMessages()
   const resolvedExtensions = useMemo(
@@ -272,14 +277,6 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
         ?.navigationPreferences,
     [resolvedExtensions],
   )
-  const navigationPreferencesQuery = useQuery({
-    queryKey: navigationPreferencesContribution?.queryKey ?? [
-      "admin-navigation-preferences",
-      "disabled",
-    ],
-    queryFn: () => navigationPreferencesContribution!.load(api),
-    enabled: navigationPreferencesContribution !== undefined,
-  })
   const hasHeaderActionWidgets = useMemo(
     () =>
       resolveAdminWidgets({
@@ -301,41 +298,88 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
     [router],
   )
 
-  const layout = (
-    <OperatorAdminWorkspaceLayout
-      currentPath={currentPath}
-      extensions={resolvedExtensions}
-      headerSlot={headerSlot}
-      headerSlotRight={
-        hasHeaderSlotRight || hasHeaderActionWidgets ? (
-          <>
-            {headerSlotRight}
-            {hasHeaderActionWidgets ? (
-              <AdminWidgetSlotRenderer
-                extensions={resolvedExtensions}
-                slot={adminWorkspaceHeaderActionsSlot}
-              />
-            ) : null}
-          </>
-        ) : undefined
-      }
-      icons={icons}
-      linkComponent={linkComponent}
-      navigationPreferences={navigationPreferencesQuery.data}
-      onSignOut={onSignOut}
-      user={mapUser(user)}
+  return (
+    <OptionalNavigationPreferences
+      contribution={navigationPreferencesContribution}
+      memberKey={user.id ?? user.email ?? "unknown-member"}
     >
-      {children}
-    </OperatorAdminWorkspaceLayout>
-  )
+      {(navigationPreferences) => {
+        const layout = (
+          <OperatorAdminWorkspaceLayout
+            currentPath={currentPath}
+            extensions={resolvedExtensions}
+            headerSlot={headerSlot}
+            headerSlotRight={
+              hasHeaderSlotRight || hasHeaderActionWidgets ? (
+                <>
+                  {headerSlotRight}
+                  {hasHeaderActionWidgets ? (
+                    <AdminWidgetSlotRenderer
+                      extensions={resolvedExtensions}
+                      slot={adminWorkspaceHeaderActionsSlot}
+                    />
+                  ) : null}
+                </>
+              ) : undefined
+            }
+            icons={icons}
+            linkComponent={linkComponent}
+            navigationPreferences={navigationPreferences}
+            onSignOut={onSignOut}
+            user={mapUser(user)}
+          >
+            {children}
+          </OperatorAdminWorkspaceLayout>
+        )
 
-  if (!destinations) {
-    return layout
-  }
+        if (!destinations) return layout
+
+        return (
+          <AdminNavigationProvider resolvers={destinations} navigate={navigateToHref}>
+            {layout}
+          </AdminNavigationProvider>
+        )
+      }}
+    </OptionalNavigationPreferences>
+  )
+}
+
+function OptionalNavigationPreferences({
+  contribution,
+  memberKey,
+  children,
+}: {
+  contribution: AdminNavigationPreferencesContribution | undefined
+  memberKey: string
+  children: (preferences: AdminNavigationPreferencesSnapshot | undefined) => ReactNode
+}) {
+  if (!contribution) return children(undefined)
 
   return (
-    <AdminNavigationProvider resolvers={destinations} navigate={navigateToHref}>
-      {layout}
-    </AdminNavigationProvider>
+    <SelectedNavigationPreferences contribution={contribution} memberKey={memberKey}>
+      {children}
+    </SelectedNavigationPreferences>
+  )
+}
+
+function SelectedNavigationPreferences({
+  contribution,
+  memberKey,
+  children,
+}: {
+  contribution: AdminNavigationPreferencesContribution
+  memberKey: string
+  children: (preferences: AdminNavigationPreferencesSnapshot | undefined) => ReactNode
+}) {
+  const api = useVoyantReactContext()
+  const query = useQuery({
+    queryKey: contribution.queryKey(memberKey),
+    queryFn: () => contribution.load(api),
+  })
+
+  return (
+    <AdminNavigationPreferencesMemberProvider memberKey={memberKey}>
+      {children(query.data)}
+    </AdminNavigationPreferencesMemberProvider>
   )
 }
