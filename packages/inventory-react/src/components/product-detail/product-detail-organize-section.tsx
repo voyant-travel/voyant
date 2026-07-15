@@ -30,7 +30,7 @@ export function ProductOrganizeSection({
     <Section
       title={productMessages.organizeTitle}
       actions={
-        <ActionMenu>
+        <ActionMenu label={`${productMessages.organizeTitle}: ${productMessages.edit}`}>
           <DropdownMenuItem onClick={onEdit}>
             <Pencil className="h-4 w-4" />
             {productMessages.edit}

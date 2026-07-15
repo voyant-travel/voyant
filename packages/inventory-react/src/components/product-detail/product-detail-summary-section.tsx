@@ -129,7 +129,7 @@ export function ProductDetailsSection({
               ))}
             </ToggleGroup>
           ) : null}
-          <ActionMenu>
+          <ActionMenu label={`${productMessages.detailsTitle}: ${productMessages.edit}`}>
             <DropdownMenuItem onClick={onEdit}>
               <Pencil className="h-4 w-4" />
               {productMessages.edit}

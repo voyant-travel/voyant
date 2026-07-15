@@ -125,8 +125,14 @@ export function ChannelsPage({ className, pageSize = PAGE_SIZE }: ChannelsPagePr
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${page.edit} / ${page.delete}: ${channel.name}`}
+                        title={`${page.edit} / ${page.delete}: ${channel.name}`}
+                        className="h-8 w-8 text-muted-foreground"
+                      >
+                        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -284,25 +290,38 @@ function ChannelSheet({
         <form onSubmit={onSubmit} className="flex flex-1 flex-col overflow-hidden">
           <SheetBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>{page.nameLabel}</Label>
+              <Label htmlFor="channel-name">{page.nameLabel}</Label>
               <Input
+                id="channel-name"
                 value={values.name}
                 onChange={(event) => setValue("name", event.target.value)}
                 placeholder={page.namePlaceholder}
+                aria-invalid={errors.name ? true : undefined}
+                aria-describedby={errors.name ? "channel-name-error" : undefined}
                 autoFocus
               />
-              {errors.name ? <p className="text-xs text-destructive">{errors.name}</p> : null}
+              {errors.name ? (
+                <p id="channel-name-error" className="text-xs text-destructive">
+                  {errors.name}
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>{page.kindLabel}</Label>
+                <Label id="channel-kind-label" htmlFor="channel-kind">
+                  {page.kindLabel}
+                </Label>
                 <Select
                   items={channelKinds}
                   value={values.kind}
                   onValueChange={(value) => setValue("kind", value as ChannelRow["kind"])}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    id="channel-kind"
+                    aria-labelledby="channel-kind-label"
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,12 +335,18 @@ function ChannelSheet({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>{page.statusLabel}</Label>
+                <Label id="channel-status-label" htmlFor="channel-status">
+                  {page.statusLabel}
+                </Label>
                 <Select
                   value={values.status}
                   onValueChange={(value) => setValue("status", value as ChannelRow["status"])}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger
+                    id="channel-status"
+                    aria-labelledby="channel-status-label"
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -336,33 +361,46 @@ function ChannelSheet({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>{page.websiteLabel}</Label>
+              <Label htmlFor="channel-website">{page.websiteLabel}</Label>
               <Input
+                id="channel-website"
                 value={values.website}
                 onChange={(event) => setValue("website", event.target.value)}
                 placeholder={page.websitePlaceholder}
+                aria-invalid={errors.website ? true : undefined}
+                aria-describedby={errors.website ? "channel-website-error" : undefined}
               />
-              {errors.website ? <p className="text-xs text-destructive">{errors.website}</p> : null}
+              {errors.website ? (
+                <p id="channel-website-error" className="text-xs text-destructive">
+                  {errors.website}
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>{page.primaryContactLabel}</Label>
+                <Label htmlFor="channel-contact-name">{page.primaryContactLabel}</Label>
                 <Input
+                  id="channel-contact-name"
                   value={values.contactName}
                   onChange={(event) => setValue("contactName", event.target.value)}
                   placeholder={page.primaryContactPlaceholder}
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>{page.contactEmailLabel}</Label>
+                <Label htmlFor="channel-contact-email">{page.contactEmailLabel}</Label>
                 <Input
+                  id="channel-contact-email"
                   value={values.contactEmail}
                   onChange={(event) => setValue("contactEmail", event.target.value)}
                   placeholder={page.contactEmailPlaceholder}
+                  aria-invalid={errors.contactEmail ? true : undefined}
+                  aria-describedby={errors.contactEmail ? "channel-contact-email-error" : undefined}
                 />
                 {errors.contactEmail ? (
-                  <p className="text-xs text-destructive">{errors.contactEmail}</p>
+                  <p id="channel-contact-email-error" className="text-xs text-destructive">
+                    {errors.contactEmail}
+                  </p>
                 ) : null}
               </div>
             </div>

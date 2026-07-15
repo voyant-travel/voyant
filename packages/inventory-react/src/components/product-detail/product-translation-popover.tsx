@@ -368,6 +368,10 @@ function LanguageChip({
   onRemove?: () => void
   removeLabel?: string
 }) {
+  const removeAccessibleLabel = removeLabel
+    ? `${removeLabel}: ${languageLabel(languageTag)}`
+    : languageLabel(languageTag)
+
   return (
     <div
       className={cn(
@@ -390,7 +394,8 @@ function LanguageChip({
         <button
           type="button"
           onClick={onRemove}
-          aria-label={removeLabel}
+          aria-label={removeAccessibleLabel}
+          title={removeAccessibleLabel}
           className="text-muted-foreground hover:text-destructive"
         >
           <X className="size-3" />
@@ -401,6 +406,7 @@ function LanguageChip({
 }
 
 export interface TranslatableFieldProps {
+  id: string
   label: string
   type: "text" | "richtext"
   field: TranslatableField
@@ -422,6 +428,7 @@ export interface TranslatableFieldProps {
  * informational indicator (green when the field has any non-default translation).
  */
 export function TranslatableField({
+  id,
   label,
   type,
   field,
@@ -450,15 +457,23 @@ export function TranslatableField({
   const translatedLanguages = translations.drafts
     .filter((draft) => draft.languageTag !== defaultLanguageTag && fieldHasContent(draft, field))
     .map((draft) => draft.languageTag)
+  const labelId = `${id}-label`
+  const errorId = `${id}-error`
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-1.5">
-        <Label>{label}</Label>
+        <Label id={labelId} htmlFor={id}>
+          {label}
+        </Label>
         <TranslationIndicator languages={translatedLanguages} messages={messages} />
       </div>
       {type === "richtext" ? (
         <RichTextEditor
+          id={id}
+          aria-labelledby={labelId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           value={value}
           onChange={handleChange}
           placeholder={placeholder}
@@ -466,13 +481,20 @@ export function TranslatableField({
         />
       ) : (
         <Input
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           value={value}
           onChange={(event) => handleChange(event.target.value)}
           placeholder={placeholder}
           autoFocus={autoFocus}
         />
       )}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? (
+        <p id={errorId} className="text-xs text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -485,13 +507,21 @@ export function TranslationIndicator({
   messages: ProductCoreMessages
 }) {
   const isTranslated = translatedLanguages.length > 0
+  const indicatorLabel = isTranslated
+    ? `${messages.fieldTranslated}: ${translatedLanguages.map((tag) => tag.toUpperCase()).join(", ")}`
+    : messages.fieldNotTranslated
 
   return (
     <TooltipProvider delay={150}>
       <Tooltip>
         <TooltipTrigger
           render={
-            <button type="button" className="inline-flex cursor-help items-center">
+            <button
+              type="button"
+              aria-label={indicatorLabel}
+              title={indicatorLabel}
+              className="inline-flex cursor-help items-center"
+            >
               <Globe
                 className={cn(
                   "size-3.5",
@@ -501,25 +531,21 @@ export function TranslationIndicator({
             </button>
           }
         />
-        <TooltipContent>
-          {isTranslated
-            ? `${messages.fieldTranslated}: ${translatedLanguages
-                .map((tag) => tag.toUpperCase())
-                .join(", ")}`
-            : messages.fieldNotTranslated}
-        </TooltipContent>
+        <TooltipContent>{indicatorLabel}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )
 }
 
 export function LanguageCombobox({
+  id,
   value,
   onValueChange,
   exclude = [],
   placeholder,
   emptyLabel,
 }: {
+  id?: string
   value: string
   onValueChange: (languageTag: string) => void
   exclude?: string[]
@@ -549,7 +575,12 @@ export function LanguageCombobox({
         return labelForCode(codeValue).toLowerCase().includes(needle) || codeValue.includes(needle)
       }}
     >
-      <ComboboxInput placeholder={placeholder} className="w-full" />
+      <ComboboxInput
+        id={id}
+        aria-label={id ? undefined : placeholder}
+        placeholder={placeholder}
+        className="w-full"
+      />
       <ComboboxContent>
         <ComboboxList>
           <ComboboxCollection>
