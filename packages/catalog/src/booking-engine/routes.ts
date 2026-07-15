@@ -1068,7 +1068,7 @@ function deepMergeRecords(
   return merged
 }
 
-function engineParametersFromDraft(
+export function engineParametersFromDraft(
   parameters: Record<string, unknown> | undefined,
   draftPayload: unknown,
   context: {

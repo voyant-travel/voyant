@@ -8,6 +8,7 @@ import {
   type CatalogBookingBookBody,
   type CatalogBookingProvenance,
   type CatalogBookingRouteModuleOptions,
+  engineParametersFromDraft,
   getOrderById,
   listOrders,
   OWNED_SOURCE_KIND,
@@ -48,7 +49,11 @@ export function createCatalogBookingToolServices(
             market: body.scope?.market ?? "default",
             currency: body.scope?.currency,
           },
-          parameters: body.parameters,
+          parameters: engineParametersFromDraft(body.parameters, body.draft, {
+            entityModule: body.entityModule,
+            sourceKind: provenance.sourceKind,
+            sourceProvider: provenance.sourceProvider,
+          }),
           ttlMs: body.ttlMs,
           adapterContext: resolveAdapterContext(
             c,
