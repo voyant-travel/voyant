@@ -59,6 +59,7 @@ export interface ProductListResult {
 export interface InventoryToolServices {
   listProducts(query: z.infer<typeof productListQuerySchema>): Promise<ProductListResult>
   getProductById(id: string): Promise<unknown | null>
+  getProductAggregates(query: { from?: string; to?: string }): Promise<unknown>
 }
 
 /** Tool context with the inventory service injected. */

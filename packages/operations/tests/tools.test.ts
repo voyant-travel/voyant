@@ -1,7 +1,12 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type OperationsToolServices, operationsTools } from "../src/tools.js"
+import {
+  getOperatorDashboardSummaryTool,
+  type OperationsToolServices,
+  operationsTools,
+  resolveOperatorDashboardWindow,
+} from "../src/tools.js"
 
 function contextWith(overrides: Partial<OperationsToolServices>): ToolContext & {
   operations: OperationsToolServices
@@ -204,5 +209,174 @@ describe("Operations tools", () => {
       }),
     )
     expect(result).toMatchObject({ total: 3, upcomingSlots: 2, upcomingPax: 31 })
+  })
+})
+
+describe("Operations dashboard Tool", () => {
+  it("publishes a structural, staff-only composed read with the hosted alias", () => {
+    const registry = createToolRegistry()
+    registry.register(getOperatorDashboardSummaryTool)
+    expect(registry.list()[0]).toMatchObject({
+      capabilityId: "@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary",
+      owner: "@voyant-travel/operations#dashboard",
+      name: "get_operator_dashboard_summary",
+      aliases: ["dashboard_summary"],
+      audience: { source: "grant", allowed: ["staff"] },
+      requiredScopes: [
+        "operations:read",
+        "bookings:read",
+        "finance:read",
+        "products:read",
+        "suppliers:read",
+      ],
+      tier: "read",
+    })
+    expect(registry.list()[0]?.outputSchema).not.toHaveProperty("x-voyant-schema-quality")
+  })
+
+  it("composes domain-owned aggregates and derives bounded KPIs and alerts", async () => {
+    const calls: Array<{ service: string; query: unknown }> = []
+    const registry = createToolRegistry()
+    registry.register(getOperatorDashboardSummaryTool)
+    const result = await registry.dispatch<{
+      kpis: Record<string, unknown>
+      alerts: unknown[]
+    }>(
+      "dashboard_summary",
+      { range: "this-month" },
+      {
+        ...contextWith({
+          async getAvailabilityAggregates(query) {
+            calls.push({ service: "operations", query })
+            return {
+              total: 4,
+              countsByStatus: [
+                { status: "open", count: 3 },
+                { status: "closed", count: 1 },
+                { status: "sold_out", count: 0 },
+                { status: "cancelled", count: 0 },
+              ],
+              upcomingSlots: 3,
+              upcomingPax: 42,
+              monthlyDepartures: [{ yearMonth: "2026-07", count: 4 }],
+            }
+          },
+        }),
+        bookings: {
+          async getBookingAggregates(query: unknown) {
+            calls.push({ service: "bookings", query })
+            return {
+              total: 7,
+              totalPax: 18,
+              countsByStatus: [
+                { status: "confirmed", count: 2 },
+                { status: "in_progress", count: 1 },
+                { status: "cancelled", count: 1 },
+              ],
+              monthlyCounts: [{ yearMonth: "2026-07", count: 7 }],
+              monthlyRevenue: [{ yearMonth: "2026-07", currency: "EUR", sellAmountCents: 250_000 }],
+              upcomingDepartures: { count: 1, items: [] },
+            }
+          },
+        },
+        inventory: {
+          async getProductAggregates(query: unknown) {
+            calls.push({ service: "inventory", query })
+            return {
+              total: 9,
+              countsByStatus: [
+                { status: "draft", count: 2 },
+                { status: "active", count: 7 },
+                { status: "archived", count: 0 },
+              ],
+              active: 7,
+              publicActive: 6,
+              monthlyCreatedCounts: [{ yearMonth: "2026-07", count: 2 }],
+            }
+          },
+        },
+        distribution: {
+          async getSupplierAggregates(query: unknown) {
+            calls.push({ service: "distribution", query })
+            return {
+              total: 5,
+              countsByStatus: [{ status: "active", count: 4 }],
+              countsByType: [{ type: "hotel", count: 3 }],
+              active: 4,
+            }
+          },
+        },
+        finance: {
+          async getFinanceAggregates(query: unknown) {
+            calls.push({ service: "finance", query })
+            return {
+              total: 3,
+              countsByStatus: [{ status: "issued", count: 2 }],
+              counts: {
+                invoices: { issued: 2, paid: 1, void: 0, overdue: 1 },
+                proformas: { issued: 0, converted: 0, void: 0 },
+                paymentSessions: { pending: 0, paid: 1, failed: 0 },
+              },
+              totals: [
+                {
+                  currency: "EUR",
+                  invoiced: 210_000,
+                  collected: 150_000,
+                  outstanding: 60_000,
+                  refunded: 0,
+                },
+              ],
+              monthlyRevenue: [
+                { yearMonth: "2026-06", currency: "EUR", totalCents: 90_000 },
+                { yearMonth: "2026-07", currency: "EUR", totalCents: 120_000 },
+              ],
+              monthlyInvoiceCounts: [{ yearMonth: "2026-07", count: 2 }],
+              outstanding: [{ currency: "EUR", balanceDueCents: 60_000, count: 1 }],
+              overdue: [{ currency: "EUR", balanceDueCents: 20_000, count: 1 }],
+              outstandingTopN: [],
+            }
+          },
+        },
+      },
+    )
+
+    expect(calls.map(({ service }) => service).sort()).toEqual([
+      "bookings",
+      "distribution",
+      "finance",
+      "inventory",
+      "operations",
+    ])
+    expect(calls.find(({ service }) => service === "finance")?.query).toMatchObject({
+      range: "custom",
+      outstandingTopLimit: 5,
+    })
+    expect(result.kpis).toMatchObject({
+      bookings: { total: 7, active: 3, travelers: 18 },
+      products: { total: 9, active: 7, publicActive: 6 },
+      suppliers: { total: 5, active: 4 },
+      availability: { upcomingDepartures: 3, upcomingPax: 42 },
+      revenue: [{ currency: "EUR", amountCents: 210_000 }],
+      outstanding: [{ currency: "EUR", amountCents: 60_000, count: 1 }],
+    })
+    expect(result.alerts).toEqual([
+      {
+        kind: "overdue-invoices",
+        severity: "critical",
+        count: 1,
+        currency: "EUR",
+        amountCents: 20_000,
+      },
+    ])
+  })
+
+  it("resolves hosted date ranges in UTC", () => {
+    const now = new Date("2026-07-15T12:30:00.000Z")
+    expect(resolveOperatorDashboardWindow("today", now).from).toBe("2026-07-15T00:00:00.000Z")
+    expect(resolveOperatorDashboardWindow("this-week", now).from).toBe("2026-07-13T00:00:00.000Z")
+    expect(resolveOperatorDashboardWindow("this-month", now).from).toBe("2026-07-01T00:00:00.000Z")
+    expect(resolveOperatorDashboardWindow("last-30-days", now).from).toBe(
+      "2026-06-15T12:30:00.000Z",
+    )
   })
 })

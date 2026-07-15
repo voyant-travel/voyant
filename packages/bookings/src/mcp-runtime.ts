@@ -33,6 +33,9 @@ export const voyantToolContextContribution = defineToolContextContribution({
             const row = await bookingsService.getBookingById(db, id)
             return reveal ? row : redactBookingRow(row)
           },
+          getBookingAggregates: (
+            query: Parameters<typeof bookingsService.getBookingAggregates>[1],
+          ) => bookingsService.getBookingAggregates(db, query),
         },
       },
       contributeBookingsExtrasToolContext(input),

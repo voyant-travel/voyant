@@ -50,7 +50,7 @@ export const financeVoyantModule = defineModule({
     }),
   ],
   provides: {
-    capabilities: ["finance.payment-sessions"],
+    capabilities: ["finance.data-owner", "finance.payment-sessions"],
     ports: [
       providePort(actionLedgerFinanceDriftRuntimePort),
       providePort(bookingsFinanceRuntimePort),

@@ -12,6 +12,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listInvoices: (query: Parameters<typeof financeService.listInvoices>[1]) =>
           financeService.listInvoices(db, query),
         getInvoiceById: (id: string) => financeService.getInvoiceById(db, id),
+        getFinanceAggregates: (query: Parameters<typeof financeService.getFinanceAggregates>[1]) =>
+          financeService.getFinanceAggregates(db, query),
         voidInvoice: (id: string, input: { reason?: string }) =>
           financeService.voidInvoice(db, id, input),
       },

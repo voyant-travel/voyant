@@ -1,83 +1,154 @@
-/**
- * Quotes agent tools on the framework tool contract. Thin, read-only wrappers
- * over the existing quotes service; the service is injected on the tool context
- * by intersection so this module stays deployment-agnostic.
- */
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  ToolError,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
-import { acceptQuoteVersionResultSchema, quoteSchema } from "./routes/openapi-schemas.js"
-import { quoteListQuerySchema } from "./validation.js"
+import {
+  acceptQuoteVersionResultSchema,
+  quoteSchema,
+  quoteVersionSchema,
+} from "./routes/openapi-schemas.js"
+import { quoteListQuerySchema, sendQuoteVersionSchema } from "./validation.js"
+
+const OWNER = "@voyant-travel/quotes"
+const VERSION = "v1"
+const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
+const READ_SCOPES = ["quotes:read"] as const
+const WRITE_SCOPES = ["quotes:write"] as const
+const quoteVersionIdSchema = z.string().min(1).describe("The quote version id.")
+const quoteIdSchema = z.string().min(1).describe("The quote id.")
+const quoteListOutputSchema = listResponseSchema(quoteSchema)
 
 export interface QuotesToolServices {
   listQuotes(query: z.infer<typeof quoteListQuerySchema>): Promise<unknown>
   getQuoteById(id: string): Promise<unknown>
+  snapshotQuoteVersion(quoteId: string): Promise<unknown>
+  sendQuoteVersion(
+    quoteVersionId: string,
+    input: z.infer<typeof sendQuoteVersionSchema>,
+  ): Promise<unknown>
   acceptQuoteVersion(quoteVersionId: string): Promise<unknown>
+  declineQuoteVersion(quoteVersionId: string): Promise<unknown>
 }
 
 export type QuotesToolContext = ToolContext & { quotes?: QuotesToolServices }
 
 function quotes(ctx: QuotesToolContext): QuotesToolServices {
+  if (ctx.actor !== "staff" || ctx.audience !== "staff") {
+    throw new ToolError("Quote lifecycle Tools require a staff grant.", "AUTHORIZATION_DENIED")
+  }
   return requireService(ctx.quotes, "quotes")
 }
 
-export const listQuotesTool = defineTool<
-  z.infer<typeof quoteListQuerySchema>,
-  unknown,
-  QuotesToolContext
->({
-  name: "list_quotes",
-  description: "List quotes with filters and pagination. Read-only.",
-  inputSchema: quoteListQuerySchema,
-  outputSchema: listResponseSchema(quoteSchema),
-  requiredScopes: ["quotes:read"],
-  tier: "read",
+const readMetadata = {
+  owner: OWNER,
+  capabilityVersion: VERSION,
+  requiredScopes: READ_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "read" as const,
   riskPolicy: READ_ONLY_RISK,
-  async handler(query, ctx) {
-    return parseJsonResult(listResponseSchema(quoteSchema), await quotes(ctx).listQuotes(query))
+  annotations: { readOnlyHint: true, idempotentHint: true },
+}
+
+const quoteWriteRisk = {
+  destructive: false,
+  reversible: false,
+  dryRunSupported: false,
+  confirmationRequired: true,
+  sideEffects: ["data-write"] as const,
+}
+
+export const listQuotesTool = defineTool({
+  ...readMetadata,
+  capabilityId: `${OWNER}#tool.list-quotes`,
+  name: "list_quotes",
+  description: "List quotes with bounded filters and pagination. Staff-only and read-only.",
+  inputSchema: quoteListQuerySchema,
+  outputSchema: quoteListOutputSchema,
+  async handler(query, ctx: QuotesToolContext) {
+    return parseJsonResult(quoteListOutputSchema, await quotes(ctx).listQuotes(query))
   },
 })
 
-const getQuoteArgs = z.object({ id: z.string().min(1).describe("The quote id.") })
-
-export const getQuoteTool = defineTool<z.infer<typeof getQuoteArgs>, unknown, QuotesToolContext>({
+export const getQuoteTool = defineTool({
+  ...readMetadata,
+  capabilityId: `${OWNER}#tool.get-quote`,
   name: "get_quote",
-  description: "Read a single quote (with its versions) by id. Read-only.",
-  inputSchema: getQuoteArgs,
+  description: "Read one quote by id. Returns null when not found. Staff-only and read-only.",
+  inputSchema: z.object({ id: quoteIdSchema }),
   outputSchema: quoteSchema.nullable(),
-  requiredScopes: ["quotes:read"],
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
-  async handler({ id }, ctx) {
+  async handler({ id }, ctx: QuotesToolContext) {
     return parseJsonResult(quoteSchema.nullable(), await quotes(ctx).getQuoteById(id))
   },
 })
 
-const acceptQuoteVersionArgs = z.object({
-  quoteVersionId: z.string().min(1).describe("The quote version id to accept."),
+export const snapshotQuoteVersionTool = defineTool({
+  owner: OWNER,
+  capabilityId: `${OWNER}#tool.snapshot-quote-version`,
+  capabilityVersion: VERSION,
+  name: "snapshot_quote_version",
+  aliases: ["quote_version_snapshot"],
+  description:
+    "Freeze a quote's current line items into a new immutable draft proposal version. " +
+    "The quote service expires prior draft or sent versions atomically.",
+  inputSchema: z.object({ quoteId: quoteIdSchema }),
+  outputSchema: quoteVersionSchema.nullable(),
+  requiredScopes: WRITE_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: quoteWriteRisk,
+  async handler({ quoteId }, ctx: QuotesToolContext) {
+    return parseJsonResult(
+      quoteVersionSchema.nullable(),
+      await quotes(ctx).snapshotQuoteVersion(quoteId),
+    )
+  },
 })
 
-export const acceptQuoteVersionTool = defineTool<
-  z.infer<typeof acceptQuoteVersionArgs>,
-  unknown,
-  QuotesToolContext
->({
-  name: "accept_quote_version",
+export const sendQuoteVersionTool = defineTool({
+  owner: OWNER,
+  capabilityId: `${OWNER}#tool.send-quote-version`,
+  capabilityVersion: VERSION,
+  name: "send_quote_version",
+  aliases: ["quote_version_send"],
   description:
-    "Accept a sent quote version, moving the quote toward commitment. Returns null when the " +
-    "version is not found.",
-  inputSchema: acceptQuoteVersionArgs,
-  outputSchema: acceptQuoteVersionResultSchema.nullable(),
-  requiredScopes: ["quotes:write"],
+    "Mark a draft proposal version as sent and immutable, with an optional validity date. " +
+    "This records proposal lifecycle state; customer delivery remains notification-owned.",
+  inputSchema: sendQuoteVersionSchema.extend({ quoteVersionId: quoteVersionIdSchema }),
+  outputSchema: quoteVersionSchema.nullable(),
+  requiredScopes: WRITE_SCOPES,
+  audience: STAFF_AUDIENCE,
   tier: "write",
-  riskPolicy: {
-    destructive: false,
-    reversible: false,
-    dryRunSupported: false,
-    confirmationRequired: true,
+  riskPolicy: quoteWriteRisk,
+  async handler({ quoteVersionId, ...input }, ctx: QuotesToolContext) {
+    return parseJsonResult(
+      quoteVersionSchema.nullable(),
+      await quotes(ctx).sendQuoteVersion(quoteVersionId, input),
+    )
   },
-  async handler({ quoteVersionId }, ctx) {
+})
+
+export const acceptQuoteVersionTool = defineTool({
+  owner: OWNER,
+  capabilityId: `${OWNER}#tool.accept-quote-version`,
+  capabilityVersion: VERSION,
+  name: "accept_quote_version",
+  aliases: ["quote_version_accept"],
+  description:
+    "Record acceptance of a sent proposal. This wins the quote, pins the accepted version, " +
+    "and closes competing draft or sent versions atomically.",
+  inputSchema: z.object({ quoteVersionId: quoteVersionIdSchema }),
+  outputSchema: acceptQuoteVersionResultSchema.nullable(),
+  requiredScopes: WRITE_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: quoteWriteRisk,
+  async handler({ quoteVersionId }, ctx: QuotesToolContext) {
     return parseJsonResult(
       acceptQuoteVersionResultSchema.nullable(),
       await quotes(ctx).acceptQuoteVersion(quoteVersionId),
@@ -85,7 +156,36 @@ export const acceptQuoteVersionTool = defineTool<
   },
 })
 
-export const quotesTools = [listQuotesTool, getQuoteTool, acceptQuoteVersionTool] as const
+export const declineQuoteVersionTool = defineTool({
+  owner: OWNER,
+  capabilityId: `${OWNER}#tool.decline-quote-version`,
+  capabilityVersion: VERSION,
+  name: "decline_quote_version",
+  aliases: ["quote_version_decline"],
+  description:
+    "Record decline of a sent proposal version. The quote remains open for a revised snapshot.",
+  inputSchema: z.object({ quoteVersionId: quoteVersionIdSchema }),
+  outputSchema: quoteVersionSchema.nullable(),
+  requiredScopes: WRITE_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: quoteWriteRisk,
+  async handler({ quoteVersionId }, ctx: QuotesToolContext) {
+    return parseJsonResult(
+      quoteVersionSchema.nullable(),
+      await quotes(ctx).declineQuoteVersion(quoteVersionId),
+    )
+  },
+})
+
+export const quotesTools = [
+  listQuotesTool,
+  getQuoteTool,
+  snapshotQuoteVersionTool,
+  sendQuoteVersionTool,
+  acceptQuoteVersionTool,
+  declineQuoteVersionTool,
+] as const
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
   return schema.parse(toJsonValue(value))

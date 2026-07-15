@@ -27,6 +27,12 @@ const voidInvoiceResultSchema = z.discriminatedUnion("status", [
 export interface FinanceToolServices {
   listInvoices(query: z.infer<typeof invoiceListQuerySchema>): Promise<unknown>
   getInvoiceById(id: string): Promise<unknown>
+  getFinanceAggregates(query: {
+    range?: "this_month" | "last_month" | "year_to_date" | "all_time" | "custom"
+    from?: string
+    to?: string
+    outstandingTopLimit?: number
+  }): Promise<unknown>
   voidInvoice(id: string, input: { reason?: string }): Promise<unknown>
 }
 

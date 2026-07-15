@@ -13,6 +13,8 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listProducts: (query: Parameters<typeof productsService.listProducts>[1]) =>
           productsService.listProducts(db, query),
         getProductById: (id: string) => productsService.getProductById(db, id),
+        getProductAggregates: (query: Parameters<typeof productsService.getProductAggregates>[1]) =>
+          productsService.getProductAggregates(db, query),
       },
       inventoryExtras: {
         listProductExtras: (

@@ -52,6 +52,7 @@ export const distributionVoyantModule = defineModule({
   packageName: "@voyant-travel/distribution",
   localId: "distribution",
   provides: {
+    capabilities: ["distribution.data-owner"],
     ports: [
       providePort(channelPushRuntimePort),
       providePort(catalogDistributionRuntimeExtensionPort),

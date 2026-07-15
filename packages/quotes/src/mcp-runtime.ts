@@ -12,7 +12,14 @@ export const voyantToolContextContribution = defineToolContextContribution({
         listQuotes: (query: Parameters<typeof quotesService.listQuotes>[1]) =>
           quotesService.listQuotes(db, query),
         getQuoteById: (id: string) => quotesService.getQuoteById(db, id),
+        snapshotQuoteVersion: (quoteId: string) =>
+          quotesService.createVersionSnapshotFromQuote(db, quoteId),
+        sendQuoteVersion: (
+          id: string,
+          input: Parameters<typeof quotesService.sendQuoteVersion>[2],
+        ) => quotesService.sendQuoteVersion(db, id, input),
         acceptQuoteVersion: (id: string) => quotesService.acceptQuoteVersion(db, id),
+        declineQuoteVersion: (id: string) => quotesService.declineQuoteVersion(db, id),
       },
     }
   },

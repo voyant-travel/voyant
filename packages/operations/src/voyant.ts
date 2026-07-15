@@ -29,7 +29,10 @@ export const operationsVoyantModule = defineModule({
   id: "@voyant-travel/operations",
   packageName: "@voyant-travel/operations",
   localId: "operations",
-  provides: { ports: [providePort(catalogOperationsRuntimeExtensionPort)] },
+  provides: {
+    capabilities: ["operations.data-owner"],
+    ports: [providePort(catalogOperationsRuntimeExtensionPort)],
+  },
   api: [
     {
       id: "@voyant-travel/operations#api.admin",
@@ -363,6 +366,64 @@ export const operationsVoyantModule = defineModule({
   meta: {
     ownership: "package",
   },
+})
+
+export const operationsDashboardVoyantModule = defineModule({
+  id: "@voyant-travel/operations#dashboard",
+  packageName: "@voyant-travel/operations",
+  localId: "operations.dashboard",
+  requires: {
+    capabilities: [
+      "operations.data-owner",
+      "bookings.data-owner",
+      "finance.data-owner",
+      "inventory.data-owner",
+      "distribution.data-owner",
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary",
+      name: "get_operator_dashboard_summary",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "getOperatorDashboardSummaryTool",
+      },
+      requiredScopes: [
+        "operations:read",
+        "bookings:read",
+        "finance:read",
+        "products:read",
+        "suppliers:read",
+      ],
+      context: ["operations", "bookings", "finance", "inventory", "distribution"],
+      risk: "low",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/operations#dashboard#action.get-operator-dashboard-summary",
+      version: "v1",
+      kind: "read",
+      targetType: "operator-dashboard-summary",
+      resource: "operations",
+      action: "read",
+      requiredScopes: [
+        "operations:read",
+        "bookings:read",
+        "finance:read",
+        "products:read",
+        "suppliers:read",
+      ],
+      risk: "low",
+      ledger: "optional",
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: ["@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary"],
+      },
+    },
+  ],
+  meta: { ownership: "package" },
 })
 
 export default operationsVoyantModule

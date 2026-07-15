@@ -42,6 +42,9 @@ describe("finance tools", () => {
       async getInvoiceById(id) {
         return { id }
       },
+      async getFinanceAggregates() {
+        return { total: 0 }
+      },
       async voidInvoice(id, input) {
         return { id, status: "voided", reason: input.reason ?? null }
       },

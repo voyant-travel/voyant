@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { operationsVoyantModule } from "../../src/voyant.js"
+import { operationsDashboardVoyantModule, operationsVoyantModule } from "../../src/voyant.js"
 
 describe("operations deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -134,5 +134,46 @@ describe("operations deployment manifest", () => {
         ledger: "optional",
       })
     }
+  })
+
+  it("owns the separately selectable cross-module dashboard projection", () => {
+    expect(operationsDashboardVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/operations#dashboard",
+      packageName: "@voyant-travel/operations",
+      requires: {
+        capabilities: [
+          "operations.data-owner",
+          "bookings.data-owner",
+          "finance.data-owner",
+          "inventory.data-owner",
+          "distribution.data-owner",
+        ],
+      },
+      tools: [
+        {
+          id: "@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary",
+          name: "get_operator_dashboard_summary",
+          requiredScopes: [
+            "operations:read",
+            "bookings:read",
+            "finance:read",
+            "products:read",
+            "suppliers:read",
+          ],
+          context: ["operations", "bookings", "finance", "inventory", "distribution"],
+          risk: "low",
+        },
+      ],
+      actions: [
+        {
+          kind: "read",
+          resource: "operations",
+          action: "read",
+          ledger: "optional",
+          allowedActorTypes: ["staff"],
+        },
+      ],
+    })
   })
 })

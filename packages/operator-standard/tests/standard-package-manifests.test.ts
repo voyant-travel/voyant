@@ -7,7 +7,11 @@ import {
   resolveDeploymentGraph,
   validateGraphUnitManifest,
 } from "../../framework/src/deployment-graph.js"
-import { STANDARD_OPERATOR_DEPLOYMENT } from "../src/index.js"
+import {
+  STANDARD_OPERATOR_ACCESS,
+  STANDARD_OPERATOR_DEPLOYMENT,
+  STANDARD_OPERATOR_DISTRIBUTION_POLICY,
+} from "../src/index.js"
 
 describe("standard package manifests", () => {
   it("selects durable Postgres outbound webhook enqueueing explicitly", () => {
@@ -70,6 +74,22 @@ describe("standard package manifests", () => {
     expect(STANDARD_OPERATOR_DEPLOYMENT).toMatchObject({
       mode: "self-hosted",
       providers: { workflows: "self-hosted" },
+    })
+  })
+
+  it("selects the composed dashboard with a staff preset that satisfies every source scope", () => {
+    expect(STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules).toContainEqual({
+      resolve: "@voyant-travel/operations/dashboard",
+    })
+    expect(STANDARD_OPERATOR_ACCESS.presets.find(({ id }) => id === "agent-staff")).toMatchObject({
+      audience: "staff",
+      grants: expect.arrayContaining([
+        "operations:read",
+        "bookings:read",
+        "finance:read",
+        "products:read",
+        "suppliers:read",
+      ]),
     })
   })
 })

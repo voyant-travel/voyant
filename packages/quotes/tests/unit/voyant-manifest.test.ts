@@ -167,6 +167,39 @@ describe("quotes deployment manifests", () => {
       QUOTE_VERSION_SNAPSHOT_OPENAPI_API_ID,
     ])
   })
+
+  it("binds the complete proposal lifecycle to guarded staff actions", () => {
+    expect(quotesVoyantModule.tools?.map(({ name }) => name)).toEqual([
+      "list_quotes",
+      "get_quote",
+      "snapshot_quote_version",
+      "send_quote_version",
+      "accept_quote_version",
+      "decline_quote_version",
+    ])
+    for (const name of [
+      "snapshot-quote-version",
+      "send-quote-version",
+      "accept-quote-version",
+      "decline-quote-version",
+    ]) {
+      expect(
+        quotesVoyantModule.actions?.find(({ id }) => id === `@voyant-travel/quotes#action.${name}`),
+      ).toMatchObject({
+        kind: "execute",
+        resource: "quotes",
+        action: "write",
+        ledger: "required",
+        reversible: false,
+        allowedActorTypes: ["staff"],
+      })
+    }
+    expect(
+      quotesVoyantModule.actions?.find(
+        ({ id }) => id === "@voyant-travel/quotes#action.accept-quote-version",
+      ),
+    ).toMatchObject({ risk: "high", approval: "required" })
+  })
 })
 
 function readApiIds(routes: OpenApiDocumentSource): unknown[] {

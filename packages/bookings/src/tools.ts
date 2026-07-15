@@ -62,6 +62,11 @@ import { bookingListQuerySchema } from "./validation.js"
 export interface BookingsToolServices {
   listBookings(query: z.infer<typeof bookingListQuerySchema>): Promise<unknown>
   getBookingById(id: string): Promise<unknown>
+  getBookingAggregates(query: {
+    from?: string
+    to?: string
+    upcomingLimit?: number
+  }): Promise<unknown>
 }
 
 export type BookingsToolContext = ToolContext & { bookings?: BookingsToolServices }

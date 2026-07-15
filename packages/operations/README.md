@@ -14,5 +14,11 @@ v1 workspace package surface.
 their request-scoped service context. The surface covers overview and KPI aggregates,
 recurrence-rule list/detail, start-time list, departure list/detail, and closeout list. Write
 operations remain intentionally absent until their action-ledger and argument-dependent risk
-policies are designed. Revenue/bookings dashboard summaries are cross-module projections and do
-not belong to Operations' availability service.
+policies are designed.
+
+`@voyant-travel/operations/dashboard` is a separately selectable composed module. Its
+`get_operator_dashboard_summary` Tool (legacy alias `dashboard_summary`) coordinates the
+provider-neutral aggregate services injected by Bookings, Finance, Inventory, Distribution, and
+Operations. The Tool requires every underlying read scope with AND semantics; it does not query
+another module's tables or move aggregate authority into Operations. Its output carries the
+resolved UTC range, structural source projections, compact KPIs, and bounded operational alerts.
