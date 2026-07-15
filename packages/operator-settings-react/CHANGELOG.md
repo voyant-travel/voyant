@@ -1,5 +1,29 @@
 # @voyant-travel/operator-settings-react
 
+## 0.12.0
+
+### Minor Changes
+
+- 82ffd12: Add persisted organization-level first-run setup guidance composed from the
+  selected admin graph. Standard Operator deployments now collect package-owned
+  business profile, storefront, market, fiscal, navigation, team, and first-product
+  steps while keeping domain mutations in their existing package surfaces.
+
+### Patch Changes
+
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [82ffd12]
+- Updated dependencies [9c85101]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/admin-app@0.51.0
+  - @voyant-travel/finance@0.159.0
+  - @voyant-travel/finance-react@0.159.0
+
 ## 0.11.0
 
 ### Patch Changes

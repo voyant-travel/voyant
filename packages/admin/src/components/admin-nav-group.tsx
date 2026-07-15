@@ -81,31 +81,43 @@ export function AdminNavGroup({
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => {
-          const key = item.id ?? item.url ?? item.title
+          const key = item.id
           const icon = item.icon ? React.createElement(item.icon, { className: "h-4 w-4" }) : null
 
           if (item.items?.length) {
             const parentActive = isActivePath(currentPath, item.url)
             const anyChildActive = item.items.some((sub) => isActivePath(currentPath, sub.url))
-            const expanded = parentActive || anyChildActive
+            const expanded = item.structural || parentActive || anyChildActive
 
             return (
               <SidebarMenuItem key={key}>
-                <SidebarMenuButton asChild tooltip={item.title} isActive={parentActive}>
-                  <LinkComponent
-                    href={item.url}
-                    onClick={handleLinkClick}
-                    target={item.target ?? "_self"}
-                  >
-                    {icon}
-                    <span>{item.title}</span>
-                    {renderBadge(item.status)}
-                  </LinkComponent>
+                <SidebarMenuButton
+                  asChild={!item.structural}
+                  tooltip={item.title}
+                  isActive={!item.structural && parentActive}
+                >
+                  {item.structural ? (
+                    <span>
+                      {icon}
+                      <span>{item.title}</span>
+                      {renderBadge(item.status)}
+                    </span>
+                  ) : (
+                    <LinkComponent
+                      href={item.url}
+                      onClick={handleLinkClick}
+                      target={item.target ?? "_self"}
+                    >
+                      {icon}
+                      <span>{item.title}</span>
+                      {renderBadge(item.status)}
+                    </LinkComponent>
+                  )}
                 </SidebarMenuButton>
                 {expanded && (
                   <SidebarMenuSub>
                     {item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.id ?? subItem.url ?? subItem.title}>
+                      <SidebarMenuSubItem key={subItem.id}>
                         {subItem.status === COMING_SOON ? (
                           <SidebarMenuSubButton
                             className={cn(subItem.status === COMING_SOON && "opacity-50")}

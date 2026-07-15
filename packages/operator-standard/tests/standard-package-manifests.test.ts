@@ -1,5 +1,6 @@
 import { bookingsVoyantModule } from "@voyant-travel/bookings/voyant"
 import { financeVoyantModule } from "@voyant-travel/finance/voyant"
+import navigationPreferencesVoyantModule from "@voyant-travel/navigation-preferences/voyant"
 import { storefrontVoyantModule } from "@voyant-travel/storefront/voyant"
 import { describe, expect, it } from "vitest"
 import {
@@ -91,5 +92,19 @@ describe("standard package manifests", () => {
         "suppliers:read",
       ]),
     })
+  })
+
+  it("requires navigation preferences in the standard operator graph", () => {
+    expect(validateGraphUnitManifest(navigationPreferencesVoyantModule, "module")).toEqual([])
+    expect(
+      STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.find(
+        (selection) => selection.resolve === "@voyant-travel/navigation-preferences",
+      ),
+    ).toEqual({ resolve: "@voyant-travel/navigation-preferences", required: true })
+    expect(
+      STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.find(
+        (selection) => selection.resolve === "@voyant-travel/setup",
+      ),
+    ).toEqual({ resolve: "@voyant-travel/setup", required: true })
   })
 })

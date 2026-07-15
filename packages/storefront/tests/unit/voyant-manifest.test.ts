@@ -112,6 +112,7 @@ describe("storefront deployment manifest", () => {
         providerSelections: {},
         accessCatalog: { resources: [], presets: [] },
         references: [],
+        setupSteps: [],
         tools: [],
       },
       runtimePorts: {},
@@ -139,7 +140,17 @@ describe("storefront deployment manifest", () => {
       properties: { intentId: { type: "string" } },
       additionalProperties: false,
     })
-    expect(storefrontVoyantModule.admin).toBeUndefined()
+  })
+
+  it("declares its package-owned branding setup contribution", () => {
+    expect(storefrontVoyantModule.admin).toEqual({
+      compositionOrder: 30,
+      setupSteps: [{ id: "@voyant-travel/storefront#setup.branding", skippable: true }],
+      runtime: {
+        entry: "@voyant-travel/storefront-react/admin",
+        export: "createSelectedStorefrontAdminExtension",
+      },
+    })
   })
 
   it("owns package-namespaced storefront fragments", () => {

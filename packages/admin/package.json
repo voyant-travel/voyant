@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/admin",
-  "version": "0.124.0",
+  "version": "0.125.0",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -27,6 +27,7 @@
     "./extensions": "./src/extensions.ts",
     "./navigation/destinations": "./src/navigation/destinations.tsx",
     "./navigation/operator-navigation": "./src/navigation/operator-navigation.ts",
+    "./navigation/preferences": "./src/navigation/preferences.ts",
     "./providers/admin-extensions": "./src/providers/admin-extensions.tsx",
     "./providers/locale-preferences": "./src/providers/locale-preferences.tsx",
     "./providers/operator-admin-shell": "./src/providers/operator-admin-shell.tsx",
@@ -51,7 +52,7 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-router": "^1.0.0",
     "@voyant-travel/ui": "workspace:^",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^0.475.0 || ^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.0.0"
@@ -191,6 +192,11 @@
         "types": "./dist/navigation/operator-navigation.d.ts",
         "import": "./dist/navigation/operator-navigation.js",
         "default": "./dist/navigation/operator-navigation.js"
+      },
+      "./navigation/preferences": {
+        "types": "./dist/navigation/preferences.d.ts",
+        "import": "./dist/navigation/preferences.js",
+        "default": "./dist/navigation/preferences.js"
       },
       "./providers/admin-extensions": {
         "types": "./dist/providers/admin-extensions.d.ts",

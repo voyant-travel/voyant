@@ -1,5 +1,11 @@
 # @voyant-travel/ui
 
+## 0.109.2
+
+### Patch Changes
+
+- 766d24b: Associate admin form controls with visible labels and validation messages, and add accessible names to phone, channel, product translation, tag, action-menu, and channel-assignment helpers.
+
 ## 0.109.1
 
 ### Patch Changes

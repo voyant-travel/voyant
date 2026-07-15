@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/commerce-react",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -75,7 +75,7 @@
     "@voyant-travel/distribution-react": "workspace:^",
     "@voyant-travel/inventory-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^0.475.0 || ^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.80.0",

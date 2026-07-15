@@ -135,6 +135,12 @@ export {
   type AdminSettingsNavGroup,
   type AdminSettingsNavIcon,
   type AdminSettingsPageContribution,
+  type AdminSetupFlowContribution,
+  type AdminSetupInitializeInput,
+  type AdminSetupInitializeResult,
+  type AdminSetupStepActionProps,
+  type AdminSetupStepContribution,
+  type AdminSetupStepMessages,
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
@@ -143,7 +149,9 @@ export {
   adminRoutePageModule,
   adminWorkspaceHeaderActionsSlot,
   type BindableAdminRoute,
+  consumeAdminSetupPrefill,
   createAdminExtensionRegistry,
+  createAdminSetupPrefillHref,
   defineAdminExtension,
   findAdminRouteContribution,
   type ImplementedAdminRoute,
@@ -152,9 +160,12 @@ export {
   requireAdminRoute,
   requireImplementedAdminRoute,
   resolveAdminNavigation,
+  resolveAdminSetupFlow,
+  resolveAdminSetupSteps,
   resolveAdminWidgets,
   type SelectedAdminExtensionFactory,
   type SelectedAdminExtensionFactoryContext,
+  storeAdminSetupPrefill,
 } from "./extensions.js"
 export {
   composeLocaleMessageDefinitions,
@@ -186,6 +197,15 @@ export {
   type OperatorAdminNavigationIconName,
   type OperatorAdminNavigationIcons,
 } from "./navigation/operator-navigation.js"
+export {
+  type AdminNavigationPreferences,
+  type AdminNavigationPreferencesClient,
+  type AdminNavigationPreferencesContribution,
+  type AdminNavigationPreferencesSnapshot,
+  type AdminNavigationVisibilityMap,
+  type ResolveAdminNavigationPreferencesOptions,
+  resolveAdminNavigationPreferences,
+} from "./navigation/preferences.js"
 export {
   AdminExtensionsProvider,
   type AdminExtensionsProviderProps,

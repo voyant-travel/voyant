@@ -1,5 +1,24 @@
 # @voyant-travel/auth
 
+## 0.130.0
+
+### Minor Changes
+
+- 6147b93: Add a package-owned `/settings/team` surface backed by a graph-selected,
+  provider-neutral team-management runtime port. Better Auth and Voyant Cloud now
+  adapt roster, invitation, role, deactivation, capability, and nullable activity
+  data behind the same server-enforced contract. Move the team route, page, copy,
+  and icon from the admin shell into Auth and Auth React.
+
+### Patch Changes
+
+- a98ec27: Enforce local member deactivation across every Better Auth sign-in path and serialize owner mutations so concurrent requests cannot remove the final active owner.
+- Updated dependencies [7e9f77a]
+- Updated dependencies [9c85101]
+  - @voyant-travel/core@0.123.0
+  - @voyant-travel/hono@0.127.0
+  - @voyant-travel/db@0.114.6
+
 ## 0.129.0
 
 ### Minor Changes

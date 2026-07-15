@@ -68,6 +68,13 @@ describe("voyantGeneratedRoutes", () => {
         "export const Route = true\n",
       )
       expect(existsSync(join(root, "src/routes"))).toBe(false)
+
+      writeFileSync(join(generated.routesDirectory, "stale.tsx"), "stale\n")
+      voyantGeneratedRoutes({
+        appRootUrl: pathToFileURL(join(root, "vite.config.ts")).href,
+        files: [{ path: "(auth)/sign-in.tsx", source: "export const Route = true" }],
+      })
+      expect(existsSync(join(generated.routesDirectory, "stale.tsx"))).toBe(false)
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

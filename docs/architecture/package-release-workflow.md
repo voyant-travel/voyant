@@ -14,6 +14,10 @@ the package names represent one installable module surface.
 - Use `workspace:^` for internal `@voyant-travel/*` dependencies. Patch releases
   should not force compatible dependents to publish; minor and major releases
   still propagate when they leave the dependent's range.
+- Treat externally maintained provider packages as optional peers when a module
+  can be installed without selecting that provider. Keep the provider in
+  `devDependencies` for local compilation, and mark the peer optional so a
+  generic package install does not inherit a frozen provider dependency graph.
 - Build and verify only the package set that will be published, plus the build
   dependencies Turbo needs for those packages.
 - Starter GitHub Releases are separate from npm package publication. Refresh
@@ -26,7 +30,8 @@ On pushes to `main`, the release workflow plans work before building:
 
 1. If package versions are ahead of npm, build the pending package set with
    Turbo filters.
-2. Verify exports and publish tarballs for the same pending package set.
+2. Verify exports and publish tarballs for the same pending package set, then
+   resolve those packed packages together in a clean npm project.
 3. Publish those pending packages through Changesets.
 4. If releasable changesets exist, create or update the Changesets release PR
    without building the package graph.

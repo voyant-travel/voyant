@@ -23,6 +23,7 @@ import {
   type OperatorAdminNavigationIcons,
   resolveOperatorAdminNavigation,
 } from "../navigation/operator-navigation.js"
+import type { AdminNavigationPreferences } from "../navigation/preferences.js"
 import { AdminExtensionsProvider } from "../providers/admin-extensions.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import type { AdminUser, NavItem, NavSubItem } from "../types.js"
@@ -47,6 +48,7 @@ export interface OperatorAdminSidebarProps
   icons?: OperatorAdminNavigationIcons
   linkComponent?: AdminNavLinkComponent
   navItems?: ReadonlyArray<NavItem>
+  navigationPreferences?: AdminNavigationPreferences
   onSignOut?: () => void | Promise<void>
   user?: AdminUser | null
 }
@@ -92,6 +94,7 @@ export function OperatorAdminSidebar({
   icons,
   linkComponent,
   navItems,
+  navigationPreferences,
   onSignOut,
   user,
   variant = "inset",
@@ -99,7 +102,11 @@ export function OperatorAdminSidebar({
 }: OperatorAdminSidebarProps) {
   const messages = useOperatorAdminMessages()
   const baseItems = navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
-  const resolvedItems = resolveOperatorAdminNavigation({ baseItems, extensions })
+  const resolvedItems = resolveOperatorAdminNavigation({
+    baseItems,
+    extensions,
+    preferences: navigationPreferences,
+  })
   const resolvedBrand = brand ?? <DefaultOperatorAdminBrand linkComponent={linkComponent} />
   const LinkComponent = linkComponent ?? DefaultAdminNavLink
   const SettingsIcon = icons?.settings ?? DefaultSettingsIcon
@@ -160,6 +167,7 @@ export interface OperatorAdminWorkspaceLayoutProps {
   linkComponent?: AdminNavLinkComponent
   mainClassName?: string
   navItems?: ReadonlyArray<NavItem>
+  navigationPreferences?: AdminNavigationPreferences
   onSignOut?: () => void | Promise<void>
   pageHead?: (AdminPageHeadOptions & { titleOverride?: string | null }) | false
   side?: React.ComponentProps<typeof Sidebar>["side"]
@@ -227,6 +235,7 @@ export function OperatorAdminWorkspaceLayout({
   linkComponent,
   mainClassName = "flex-1",
   navItems,
+  navigationPreferences,
   onSignOut,
   pageHead,
   side,
@@ -247,6 +256,7 @@ export function OperatorAdminWorkspaceLayout({
   const resolvedItems = resolveOperatorAdminNavigation({
     baseItems,
     extensions: sidebarExtensions ?? extensions,
+    preferences: navigationPreferences,
   })
   const resolvedSide = sidebarSide ?? side
   let pageTitle: string | null = null

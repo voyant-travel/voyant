@@ -1,5 +1,103 @@
 # @voyant-travel/operator-standard
 
+## 0.6.0
+
+### Minor Changes
+
+- 7e9f77a: Add organization defaults and member overrides for stable admin navigation IDs. Apply visibility
+  after selected navigation composition without exposing ineligible routes, inherit hidden parent
+  state through navigation subtrees, and retain structural parents only when a child is explicitly
+  re-enabled. Ship the persistence, admin API, provisioning seam, and settings UI in standard Operator
+  deployments, with duplicate settings contributions normalized at the host and core boundaries.
+- 82ffd12: Add persisted organization-level first-run setup guidance composed from the
+  selected admin graph. Standard Operator deployments now collect package-owned
+  business profile, storefront, market, fiscal, navigation, team, and first-product
+  steps while keeping domain mutations in their existing package surfaces.
+- 9c85101: Compile one canonical event catalog from selected package manifests and expose it through
+  generated deployment artifacts, graph runtimes, a package-owned admin API, and an admin event
+  reference page. Reject duplicate event type authorities while preserving legitimate emitters,
+  and ratchet persistence mutation coverage in the phase-5 authority checker.
+
+### Patch Changes
+
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [b459761]
+- Updated dependencies [49f55d0]
+- Updated dependencies [82ffd12]
+- Updated dependencies [a98ec27]
+- Updated dependencies [552acbf]
+- Updated dependencies [9c85101]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/distribution-react@0.149.0
+  - @voyant-travel/inventory-react@0.41.0
+  - @voyant-travel/vite-config@0.3.4
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/admin-app@0.51.0
+  - @voyant-travel/admin-host@0.9.0
+  - @voyant-travel/core@0.123.0
+  - @voyant-travel/navigation-preferences@0.2.0
+  - @voyant-travel/navigation-preferences-react@0.2.0
+  - @voyant-travel/flights@0.159.0
+  - @voyant-travel/trips@0.150.0
+  - @voyant-travel/availability@0.2.12
+  - @voyant-travel/bookings@0.159.0
+  - @voyant-travel/bookings-react@0.159.0
+  - @voyant-travel/catalog@0.157.0
+  - @voyant-travel/finance@0.159.0
+  - @voyant-travel/inventory@0.10.4
+  - @voyant-travel/operations@0.6.14
+  - @voyant-travel/auth-react@0.130.0
+  - @voyant-travel/commerce-react@0.41.0
+  - @voyant-travel/finance-react@0.159.0
+  - @voyant-travel/operator-settings-react@0.12.0
+  - @voyant-travel/setup@0.2.0
+  - @voyant-travel/setup-react@0.2.0
+  - @voyant-travel/storefront@0.161.0
+  - @voyant-travel/storefront-react@0.161.0
+  - @voyant-travel/auth@0.130.0
+  - @voyant-travel/tools@0.2.2
+  - @voyant-travel/event-catalog@0.2.0
+  - @voyant-travel/event-catalog-react@0.2.0
+  - @voyant-travel/action-ledger-react@0.46.0
+  - @voyant-travel/mice-react@0.27.0
+  - @voyant-travel/notifications-react@0.128.0
+  - @voyant-travel/operations-react@0.40.0
+  - @voyant-travel/quotes-react@0.157.0
+  - @voyant-travel/trips-react@0.150.0
+  - @voyant-travel/catalog-react@0.157.0
+  - @voyant-travel/identity-react@0.159.0
+  - @voyant-travel/legal-react@0.159.0
+  - @voyant-travel/flights-react@0.159.0
+  - @voyant-travel/relationships-react@0.159.0
+  - @voyant-travel/accommodations@0.119.0
+  - @voyant-travel/action-ledger@0.108.6
+  - @voyant-travel/catalog-authoring@0.107.12
+  - @voyant-travel/charters@0.157.0
+  - @voyant-travel/commerce@0.35.9
+  - @voyant-travel/cruises@0.158.0
+  - @voyant-travel/db@0.114.6
+  - @voyant-travel/distribution@0.149.0
+  - @voyant-travel/identity@0.159.0
+  - @voyant-travel/legal@0.159.0
+  - @voyant-travel/mcp@0.2.6
+  - @voyant-travel/mice@0.15.0
+  - @voyant-travel/notifications@0.128.0
+  - @voyant-travel/operator-settings@0.3.14
+  - @voyant-travel/public-document-delivery@0.3.6
+  - @voyant-travel/quotes@0.128.8
+  - @voyant-travel/realtime@0.5.1
+  - @voyant-travel/relationships@0.125.4
+  - @voyant-travel/storage@0.110.1
+  - @voyant-travel/workflow-runs@0.120.4
+  - @voyant-travel/cruises-react@0.158.0
+  - @voyant-travel/admin-react@0.125.0
+  - @voyant-travel/workflows@0.120.4
+  - @voyant-travel/workflows-orchestrator@0.120.4
+
 ## 0.5.0
 
 ### Minor Changes

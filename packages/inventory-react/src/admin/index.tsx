@@ -3,13 +3,16 @@ import {
   type AdminRouteLoaderContext,
   type AdminRoutePageProps,
   type AdminRouteRuntime,
+  type AdminSetupStepActionProps,
   adminRoutePageModule,
   defineAdminExtension,
   type SelectedAdminExtensionFactoryContext,
+  useAdminHref,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import type {} from "@voyant-travel/catalog-react/admin"
-import { Package } from "lucide-react"
+import { buttonVariants } from "@voyant-travel/ui/components"
+import { ExternalLink, Package } from "lucide-react"
 
 // Lean statics only: the client module (fetcher) and the skeletons (their
 // own modules, no page imports). Query options + the REST api adapter
@@ -225,6 +228,27 @@ export function createSelectedInventoryAdminExtension({
 
   return {
     ...extension,
+    setupSteps: [
+      {
+        id: "@voyant-travel/inventory#setup.first-product",
+        order: 70,
+        skippable: true,
+        actionComponent: FirstProductSetupAction,
+        messages: {
+          en: {
+            title: "Create your first product",
+            description: "Continue in Products to create the first sellable travel product.",
+            action: "Open products",
+          },
+          ro: {
+            title: "Creeaza primul produs",
+            description: "Continua in Produse pentru a crea primul produs de calatorie vandabil.",
+            action: "Deschide produsele",
+          },
+        },
+        isComplete: hasInventoryProduct,
+      },
+    ],
     navigation: [
       {
         order: -120,
@@ -246,6 +270,25 @@ export function createSelectedInventoryAdminExtension({
       },
     ],
   }
+}
+
+function FirstProductSetupAction({ label }: AdminSetupStepActionProps) {
+  const resolveHref = useAdminHref()
+  const href = resolveHref("product.list", {})
+  return (
+    <a href={href} className={buttonVariants()}>
+      {label}
+      <ExternalLink className="size-4" />
+    </a>
+  )
+}
+
+async function hasInventoryProduct({ runtime }: AdminRouteLoaderContext): Promise<boolean> {
+  const response = await (runtime.fetcher ?? fetch)(
+    `${runtime.baseUrl}/v1/admin/products/aggregates`,
+  )
+  if (!response.ok) return false
+  return (((await response.json()) as { data?: { total?: number } }).data?.total ?? 0) > 0
 }
 
 /**

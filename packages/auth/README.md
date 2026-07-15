@@ -45,6 +45,20 @@ return auth.handler(request)
 Auth provider wiring is starter-owned — core Voyant packages only depend on
 the normalized `{ userId, actor }` contract, not on Better Auth specifically.
 
+## Local Team Access
+
+Local team deactivation is durable auth state. It revokes the member's current
+sessions and API keys, blocks cached-session reuse and new Better Auth sessions,
+and suppresses email OTP flows for the deactivated address. Reactivation
+restores the member's sign-in providers so new password, social, or OTP sessions
+can be created; previously revoked sessions and API keys remain revoked.
+
+Local role changes, activation, and deactivation require an interactive
+transaction. Owner-removing mutations serialize and recheck the active-owner
+count inside that transaction, so concurrent requests cannot remove the last
+active owner. Deployments mounting the team API must therefore select a
+transaction-capable database adapter.
+
 `createBetterAuth` forwards Better Auth's `user` options, including
 `user.additionalFields`, while preserving Voyant's default change-email support.
 When using additional user fields with the Drizzle adapter, the consuming app is

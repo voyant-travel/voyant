@@ -1,5 +1,45 @@
 # @voyant-travel/bookings-react
 
+## 0.159.0
+
+### Patch Changes
+
+- 49f55d0: Keep catalog booking and checkout as a two-phase flow, and atomically convert
+  owned-product availability holds into on-hold booking allocations without
+  consuming capacity twice. Hold placement and release are now idempotent across
+  retries and duplicate tokens, converted holds retain an audit link to their
+  booking allocation, and checkout-only intents receive structured validation
+  errors from the reservation route.
+- b459761: Accept current Lucide releases in public peer ranges so the standard Operator package closure
+  resolves for external npm consumers.
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [82ffd12]
+- Updated dependencies [552acbf]
+- Updated dependencies [9c85101]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/distribution-react@0.149.0
+  - @voyant-travel/inventory-react@0.41.0
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/bookings@0.159.0
+  - @voyant-travel/catalog@0.157.0
+  - @voyant-travel/catalog-contracts@0.111.1
+  - @voyant-travel/finance@0.159.0
+  - @voyant-travel/inventory@0.10.4
+  - @voyant-travel/commerce-react@0.41.0
+  - @voyant-travel/finance-react@0.159.0
+  - @voyant-travel/storefront-react@0.161.0
+  - @voyant-travel/operations-react@0.40.0
+  - @voyant-travel/catalog-react@0.157.0
+  - @voyant-travel/identity-react@0.159.0
+  - @voyant-travel/legal-react@0.159.0
+  - @voyant-travel/relationships-react@0.159.0
+  - @voyant-travel/accommodations@0.119.0
+  - @voyant-travel/cruises@0.158.0
+
 ## 0.158.0
 
 ### Patch Changes

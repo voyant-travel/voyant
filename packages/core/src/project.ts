@@ -172,6 +172,10 @@ export interface VoyantGraphRuntimeFactoryGraph {
     readonly importEntry: string
     loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
   }[]
+  readonly setupSteps: readonly {
+    readonly id: string
+    readonly skippable: boolean
+  }[]
 }
 
 export interface VoyantGraphRuntimeFactoryContext {
@@ -220,6 +224,8 @@ export interface VoyantGraphRouteBundle {
   mount?: string
   openapi?: VoyantGraphRouteOpenApi
   resource?: string
+  /** Delegate capability checks to handlers while retaining surface authentication. */
+  authorization?: "coarse" | "route"
   requiredScopes?: readonly string[]
   /** Anonymous public access for the whole public mount or route-relative path subsets. */
   anonymous?: boolean | readonly string[]

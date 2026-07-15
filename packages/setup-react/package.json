@@ -1,0 +1,79 @@
+{
+  "name": "@voyant-travel/setup-react",
+  "version": "0.2.0",
+  "description": "Composable first-run setup UI for Voyant admin.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.tsx",
+    "./client": "./src/client.ts",
+    "./i18n": "./src/i18n/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "lint": "biome check src/ tests/",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/setup": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "lucide-react": "^0.475.0 || ^1.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.101.2",
+    "@types/react": "^19.2.17",
+    "@voyant-travel/admin": "workspace:^",
+    "@voyant-travel/react": "workspace:^",
+    "@voyant-travel/setup": "workspace:^",
+    "@voyant-travel/ui": "workspace:^",
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "lucide-react": "^1.23.0",
+    "react": "^19.2.7",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js",
+        "default": "./dist/admin.js"
+      },
+      "./client": {
+        "types": "./dist/client.d.ts",
+        "import": "./dist/client.js",
+        "default": "./dist/client.js"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/setup-react"
+  }
+}

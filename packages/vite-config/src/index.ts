@@ -1,6 +1,15 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import { createRequire } from "node:module"
-import { dirname, resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL, URL } from "node:url"
 import type { Alias, Plugin, PluginOption, ResolverFunction, UserConfig } from "vite"
 
@@ -89,6 +98,33 @@ export interface VoyantGeneratedRouteFile {
   readonly source: string
 }
 
+let generatedRouteWriteSequence = 0
+
+function generatedRouteFiles(root: string): string[] {
+  if (!existsSync(root)) return []
+  return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(root, entry.name)
+    return entry.isDirectory() ? generatedRouteFiles(path) : [path]
+  })
+}
+
+function removeEmptyGeneratedRouteDirectories(root: string, preserveRoot = true): void {
+  if (!existsSync(root)) return
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      removeEmptyGeneratedRouteDirectories(join(root, entry.name), false)
+    }
+  }
+  if (!preserveRoot) {
+    try {
+      rmdirSync(root)
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code !== "ENOENT" && code !== "ENOTEMPTY") throw error
+    }
+  }
+}
+
 /**
  * Materialize package-owned route registrations into the ignored project graph.
  * TanStack's file router still receives physical files, while applications do
@@ -103,15 +139,35 @@ export function voyantGeneratedRoutes(options: {
   const generatedRouteTree = resolve(appRoot, ".voyant/routeTree.gen.ts")
 
   const generate = () => {
-    rmSync(routesDirectory, { recursive: true, force: true })
+    const expected = new Map<string, string>()
     for (const file of options.files) {
       if (file.path.startsWith("/") || file.path.includes("..")) {
         throw new Error(`Invalid generated route path: ${file.path}`)
       }
-      const target = resolve(routesDirectory, file.path)
-      mkdirSync(dirname(target), { recursive: true })
-      writeFileSync(target, `${file.source.trim()}\n`)
+      expected.set(resolve(routesDirectory, file.path), `${file.source.trim()}\n`)
     }
+
+    mkdirSync(routesDirectory, { recursive: true })
+    for (const [target, source] of expected) {
+      if (existsSync(target) && readFileSync(target, "utf8") === source) continue
+
+      mkdirSync(dirname(target), { recursive: true })
+      const temporary = resolve(
+        appRoot,
+        `.voyant/.route-write-${process.pid}-${generatedRouteWriteSequence++}.tmp`,
+      )
+      try {
+        writeFileSync(temporary, source)
+        renameSync(temporary, target)
+      } finally {
+        rmSync(temporary, { force: true })
+      }
+    }
+
+    for (const path of generatedRouteFiles(routesDirectory)) {
+      if (!expected.has(path)) rmSync(path, { force: true })
+    }
+    removeEmptyGeneratedRouteDirectories(routesDirectory)
   }
 
   generate()

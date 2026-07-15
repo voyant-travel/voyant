@@ -1,5 +1,12 @@
 # @voyant-travel/vite-config
 
+## 0.3.4
+
+### Patch Changes
+
+- 7e9f77a: Reconcile generated route files atomically so concurrent build, test, and architecture checks can
+  share one workspace without deleting routes while another process scans them.
+
 ## 0.3.3
 
 ### Patch Changes

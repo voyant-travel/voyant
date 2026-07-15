@@ -67,6 +67,7 @@ export const authTeamVoyantModule = defineModule({
       mount: "team",
       resource: "team",
       openapi: { document: "team" },
+      transactional: true,
       runtime: {
         entry: "@voyant-travel/auth/identity-access-graph-runtime",
         export: "createTeamVoyantRuntime",
@@ -317,6 +318,7 @@ export const authTeamVoyantModule = defineModule({
   ],
   admin: {
     compositionOrder: 5,
+    setupSteps: [{ id: "@voyant-travel/auth#setup.team", skippable: true }],
     runtime: {
       entry: "@voyant-travel/auth-react/admin",
       export: "createSelectedAuthTeamAdminExtension",

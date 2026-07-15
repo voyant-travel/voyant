@@ -1014,6 +1014,7 @@ describe("deployment graph v1", () => {
             mount: "loyalty",
             openapi: { document: "loyalty" },
             resource: "loyalty.points",
+            authorization: "route",
             requiredScopes: ["loyalty:read", "loyalty-points:write"],
             anonymous: ["/status", "health"],
           },
@@ -1040,6 +1041,7 @@ describe("deployment graph v1", () => {
             mount: "",
             openapi: { document: "Loyalty API" },
             resource: "Loyalty Points",
+            authorization: "handler",
             requiredScopes: ["loyalty.points.read", "loyalty:Read"],
             anonymous: true,
             transactional: ["/commit", "commit"],
@@ -1067,6 +1069,10 @@ describe("deployment graph v1", () => {
         expect.objectContaining({
           code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
           facet: "api[0].resource",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+          facet: "api[0].authorization",
         }),
         expect.objectContaining({
           code: "VOYANT_GRAPH_INVALID_SCOPE",
@@ -1106,6 +1112,25 @@ describe("deployment graph v1", () => {
         expect.objectContaining({ facet: "api[0].transactional" }),
       ]),
     )
+
+    expect(
+      validateGraphUnitManifest({
+        schemaVersion: "voyant.module.v1",
+        id: "@acme/voyant-route-owned",
+        api: [
+          {
+            id: "@acme/voyant-route-owned#api.admin",
+            surface: "admin",
+            authorization: "route",
+          },
+        ],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        code: "VOYANT_GRAPH_INVALID_ROUTE_BUNDLE",
+        facet: "api[0].authorization",
+      }),
+    ])
   })
 
   it("detects duplicate graph ids and missing required capabilities", async () => {

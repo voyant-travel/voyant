@@ -17,6 +17,7 @@ describe("selected-graph Action Ledger admin composition", () => {
         ({ id }) => id,
       ),
     ).toEqual([
+      "setup",
       "distribution-channel-push",
       "bookings",
       "catalog",
@@ -24,8 +25,10 @@ describe("selected-graph Action Ledger admin composition", () => {
       "auth-team",
       "operations",
       "operator-settings",
+      "navigation-preferences",
       "relationships",
       "distribution",
+      "storefront",
       "finance",
       "flights",
       "legal",

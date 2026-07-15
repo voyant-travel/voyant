@@ -6,7 +6,6 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs"
 import { tmpdir } from "node:os"
@@ -21,9 +20,6 @@ const starters = ["operator"]
 const standardNodeStarter = readJson(
   join(repoRoot, "packages", "framework", "src", "standard-node-starter.json"),
 )
-const operatorStarterPackage = readJson(join(repoRoot, "starters", "operator", "package.json"))
-const catalogVersions = readCatalogVersions()
-const workspaceVersions = readWorkspaceVersions()
 
 mkdirSync(outDir, { recursive: true })
 
@@ -50,17 +46,15 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     mkdirSync(join(stagingTemplate, directory), { recursive: true })
   }
 
-  const dependency = (name) => {
-    if (!name.startsWith("@voyant-travel/")) return requiredStarterRuntimeVersion(name)
-    return localLinks
+  const dependency = (name) =>
+    localLinks && name.startsWith("@voyant-travel/")
       ? `link:${workspacePackageDirectory(name)}`
-      : `^${requiredWorkspaceVersion(name)}`
-  }
+      : standardNodeStarter.runtimeDependencyCoordinates[name]
   const localCliPackage = resolve(repoRoot, "..", "cli", "packages", "cli")
   const cliDependency =
     localLinks && existsSync(join(localCliPackage, "package.json"))
       ? `link:${localCliPackage}`
-      : supportedCliRange()
+      : standardNodeStarter.developmentDependencyCoordinates["@voyant-travel/cli"]
   writeJson(join(stagingTemplate, "package.json"), {
     name: "voyant-app",
     private: true,
@@ -73,7 +67,9 @@ function stageMinimalOperatorStarter(stagingTemplate, localLinks) {
     devDependencies: Object.fromEntries(
       standardNodeStarter.developmentDependencies.map((name) => [
         name,
-        name === "@voyant-travel/cli" ? cliDependency : requiredCatalogVersion(name),
+        name === "@voyant-travel/cli"
+          ? cliDependency
+          : standardNodeStarter.developmentDependencyCoordinates[name],
       ]),
     ),
   })
@@ -103,34 +99,6 @@ export default defineConfig({
   )
 }
 
-function requiredWorkspaceVersion(name) {
-  const value = workspaceVersions.get(name)
-  if (!value) throw new Error(`Missing workspace package for starter dependency: ${name}`)
-  return value
-}
-
-function requiredCatalogVersion(name) {
-  const value = catalogVersions.get(name)
-  if (!value) throw new Error(`Missing catalog version for starter dependency: ${name}`)
-  return value
-}
-
-function requiredStarterRuntimeVersion(name) {
-  const value = operatorStarterPackage.dependencies?.[name]
-  if (typeof value !== "string" || /^(?:catalog|workspace|file|link):/.test(value)) {
-    throw new Error(`Missing concrete operator starter dependency version: ${name}`)
-  }
-  return value.replace(/^[~^]/, "")
-}
-
-function supportedCliRange() {
-  const value = operatorStarterPackage.devDependencies?.["@voyant-travel/cli"]
-  if (typeof value !== "string" || /^(?:workspace|file|link):/.test(value)) {
-    throw new Error("starters/operator must declare a released @voyant-travel/cli range")
-  }
-  return value
-}
-
 function workspacePackageDirectory(name) {
   for (const root of ["packages", join("packages", "plugins"), "apps"]) {
     const rootPath = join(repoRoot, root)
@@ -143,42 +111,6 @@ function workspacePackageDirectory(name) {
     }
   }
   throw new Error(`Missing workspace package directory for ${name}`)
-}
-
-function readCatalogVersions() {
-  const text = readFileSync(join(repoRoot, "pnpm-workspace.yaml"), "utf8")
-  const versions = new Map()
-  let inCatalog = false
-  for (const line of text.split(/\r?\n/)) {
-    if (line.trim() === "catalog:") {
-      inCatalog = true
-      continue
-    }
-    if (!inCatalog) continue
-    if (!line.startsWith("  ")) break
-    const match = line.match(/^\s+"?([^":]+)"?:\s+(.+)$/)
-    if (match) versions.set(match[1], match[2].trim())
-  }
-  return versions
-}
-
-function readWorkspaceVersions() {
-  const versions = new Map()
-  for (const root of ["packages", join("packages", "plugins"), "apps"]) {
-    const rootPath = join(repoRoot, root)
-    if (!existsSync(rootPath)) continue
-    for (const entry of readdirSync(rootPath)) {
-      const packageDir = join(rootPath, entry)
-      if (!statSync(packageDir).isDirectory()) continue
-      const packageJsonPath = join(packageDir, "package.json")
-      if (!existsSync(packageJsonPath)) continue
-      const packageJson = readJson(packageJsonPath)
-      if (packageJson.name && packageJson.version) {
-        versions.set(packageJson.name, packageJson.version)
-      }
-    }
-  }
-  return versions
 }
 
 function readJson(path) {

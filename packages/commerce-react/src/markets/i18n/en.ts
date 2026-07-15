@@ -1,6 +1,12 @@
 import type { MarketsUiMessages } from "./messages.js"
 
 export const marketsUiEn = {
+  settingsPage: {
+    title: "Markets",
+    description: "Manage selling regions, default languages, currencies, and tax context.",
+    empty: "No markets configured yet.",
+    add: "Add market",
+  },
   common: {
     cancel: "Cancel",
     saveChanges: "Save Changes",

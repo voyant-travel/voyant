@@ -1,5 +1,19 @@
 # @voyant-travel/core
 
+## 0.123.0
+
+### Minor Changes
+
+- 7e9f77a: Add organization defaults and member overrides for stable admin navigation IDs. Apply visibility
+  after selected navigation composition without exposing ineligible routes, inherit hidden parent
+  state through navigation subtrees, and retain structural parents only when a child is explicitly
+  re-enabled. Ship the persistence, admin API, provisioning seam, and settings UI in standard Operator
+  deployments, with duplicate settings contributions normalized at the host and core boundaries.
+- 9c85101: Compile one canonical event catalog from selected package manifests and expose it through
+  generated deployment artifacts, graph runtimes, a package-owned admin API, and an admin event
+  reference page. Reject duplicate event type authorities while preserving legitimate emitters,
+  and ratchet persistence mutation coverage in the phase-5 authority checker.
+
 ## 0.122.2
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @voyant-travel/catalog-contracts
 
+## 0.111.1
+
+### Patch Changes
+
+- 49f55d0: Keep catalog booking and checkout as a two-phase flow, and atomically convert
+  owned-product availability holds into on-hold booking allocations without
+  consuming capacity twice. Hold placement and release are now idempotent across
+  retries and duplicate tokens, converted holds retain an audit link to their
+  booking allocation, and checkout-only intents receive structured validation
+  errors from the reservation route.
+
 ## 0.111.0
 
 ### Minor Changes

@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 
 const dependencySections = ["dependencies", "devDependencies", "optionalDependencies"]
+const firstPartyPeerDependencyRanges = new Map([["lucide-react", "^0.475.0 || ^1.0.0"]])
 
 const catalogDependencies = readDefaultCatalogDependencies()
 const packageJsonFiles = listPackageJsonFiles(".")
@@ -34,14 +35,24 @@ for (const packageJsonFile of packageJsonFiles) {
       }
     }
   }
+
+  if (packageJson.name?.startsWith("@voyant-travel/")) {
+    for (const [dependencyName, expectedRange] of firstPartyPeerDependencyRanges) {
+      const requestedRange = packageJson.peerDependencies?.[dependencyName]
+      if (requestedRange && requestedRange !== expectedRange) {
+        violations.push(
+          `${packageJsonFile}: peerDependencies.${dependencyName} must use ${expectedRange} (found ${requestedRange})`,
+        )
+      }
+    }
+  }
 }
 
 if (violations.length > 0) {
   console.error(
     [
       "Dependency version policy violations found.",
-      "Use pnpm workspace catalog entries for shared concrete dependencies.",
-      "Peer dependency ranges are intentionally checked separately from this policy.",
+      "Use pnpm workspace catalog entries for shared concrete dependencies and canonical first-party peer ranges.",
       "",
       ...violations,
     ].join("\n"),
@@ -50,7 +61,7 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `Dependency version policy passed for ${catalogDependencies.size} catalog dependencies across ${packageJsonFiles.length} package manifests.`,
+  `Dependency version policy passed for ${catalogDependencies.size} catalog dependencies and ${firstPartyPeerDependencyRanges.size} first-party peer policies across ${packageJsonFiles.length} package manifests.`,
 )
 
 function readDefaultCatalogDependencies() {

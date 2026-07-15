@@ -48,7 +48,14 @@ describe("auth identity/access deployment manifests", () => {
       packageName: "@voyant-travel/auth",
       provides: { ports: [{ id: teamManagementRuntimePort.id }] },
       runtimePorts: [{ id: teamManagementRuntimePort.id }],
-      api: [{ surface: "admin", mount: "team", openapi: { document: "team" } }],
+      api: [
+        {
+          surface: "admin",
+          mount: "team",
+          openapi: { document: "team" },
+          transactional: true,
+        },
+      ],
       admin: {
         runtime: {
           entry: "@voyant-travel/auth-react/admin",

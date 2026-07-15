@@ -16,6 +16,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { consumeAdminSetupPrefill } from "@voyant-travel/admin/extensions"
 import { useOperatorAdminMessages } from "@voyant-travel/admin/providers/operator-admin-messages"
 import {
   noDepositPolicy,
@@ -39,6 +40,11 @@ import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+
+import {
+  mergeOperatorProfileSetupPrefill,
+  OPERATOR_PROFILE_SETUP_STEP_ID,
+} from "./operator-profile-setup-prefill.js"
 
 interface OperatorProfileForm {
   name?: string | null
@@ -104,6 +110,7 @@ export function OperatorProfileSettingsPage() {
   const queryClient = useQueryClient()
   const { baseUrl, fetcher } = useVoyantReactContext()
   const t = useOperatorAdminMessages().settings.operatorProfilePage
+  const [setupPrefill] = useState(() => consumeAdminSetupPrefill(OPERATOR_PROFILE_SETUP_STEP_ID))
 
   const { data, isPending } = useQuery({
     queryKey: ["operator-profile-settings"],
@@ -144,9 +151,9 @@ export function OperatorProfileSettingsPage() {
 
   useEffect(() => {
     if (data) {
-      setForm({ ...EMPTY_FORM, ...data })
+      setForm(mergeOperatorProfileSetupPrefill({ ...EMPTY_FORM, ...data }, setupPrefill))
     }
-  }, [data])
+  }, [data, setupPrefill])
 
   const save = useMutation({
     mutationFn: async (next: OperatorProfileForm) => {

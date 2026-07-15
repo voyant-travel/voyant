@@ -6,6 +6,7 @@ const financeAdminRuntime = {
 /** Static admin contribution metadata used by the Finance deployment manifest. */
 export const financeVoyantAdmin = {
   compositionOrder: 40,
+  setupSteps: [{ id: "@voyant-travel/finance#setup.fiscal-settings", skippable: true }],
   runtime: {
     entry: "@voyant-travel/finance-react/admin",
     export: "createSelectedFinanceAdminExtension",

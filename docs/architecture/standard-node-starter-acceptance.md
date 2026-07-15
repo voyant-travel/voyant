@@ -32,6 +32,9 @@ The gate requires:
   Node bootstrap implementation details.
 - The project names only the CLI, framework, standard product distribution, and
   runtime as Voyant dependencies.
+- `voyant.node-starter.v3` provides exact, key-complete runtime and development
+  dependency coordinate maps. Self-host generators consume those coordinates
+  directly and must never fall back to mutable registry tags such as `latest`.
 - Packaged starters inherit the supported CLI semver range from the checked-in
   starter; the starter archive version never doubles as the CLI version.
 - `.gitignore` protects `.voyant/`, `dist/`, `node_modules/`, and local env files

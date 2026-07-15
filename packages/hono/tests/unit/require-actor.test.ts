@@ -228,6 +228,56 @@ describe("requireActor", () => {
     expect((await app.request("/v1/admin/person-bookings/person_1")).status).toBe(200)
   })
 
+  it("delegates coarse capability checks for route-authorized graph mounts", async () => {
+    const app = makeApp((c) => {
+      c.set("actor", "staff")
+      c.set("callerType", "session")
+      c.set("scopes", ["bookings:read"])
+    })
+    app.use(
+      "*",
+      requireActor(
+        {
+          resources: [
+            {
+              path: "/v1/admin/navigation-preferences",
+              resource: "admin-navigation",
+              authorization: "route",
+            },
+          ],
+        },
+        "staff",
+      ),
+    )
+    app.put("/v1/admin/navigation-preferences/me", (c) => c.json({ ok: true }))
+
+    const response = await app.request("/v1/admin/navigation-preferences/me", { method: "PUT" })
+    expect(response.status).toBe(200)
+  })
+
+  it("keeps staff authentication mandatory for route-authorized graph mounts", async () => {
+    const app = makeApp(() => {})
+    app.use(
+      "*",
+      requireActor(
+        {
+          resources: [
+            {
+              path: "/v1/admin/navigation-preferences",
+              resource: "admin-navigation",
+              authorization: "route",
+            },
+          ],
+        },
+        "staff",
+      ),
+    )
+    app.put("/v1/admin/navigation-preferences/me", (c) => c.json({ ok: true }))
+
+    const response = await app.request("/v1/admin/navigation-preferences/me", { method: "PUT" })
+    expect(response.status).toBe(401)
+  })
+
   it("keeps path-derived authorization when no graph override matches", async () => {
     const app = makeApp((c) => {
       c.set("callerType", "api_key")

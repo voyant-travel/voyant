@@ -30,6 +30,7 @@ function factoryContext<T>(
       providerSelections: {},
       accessCatalog: { resources: [], presets: [] },
       references: [],
+      setupSteps: [],
       tools: [],
     },
     runtimePorts: {},

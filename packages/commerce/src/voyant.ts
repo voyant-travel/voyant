@@ -412,6 +412,7 @@ export const commerceVoyantModule = defineModule({
   ],
   admin: {
     compositionOrder: 80,
+    setupSteps: [{ id: "@voyant-travel/commerce#setup.market", skippable: true }],
     runtime: {
       entry: "@voyant-travel/commerce-react/admin",
       export: "createSelectedCommerceAdminExtension",
