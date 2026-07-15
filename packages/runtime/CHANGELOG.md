@@ -1,5 +1,13 @@
 # @voyant-travel/runtime
 
+## 0.10.5
+
+### Patch Changes
+
+- f9a2d77: Keep deployment search selection authoritative while allowing custom hosts to
+  supply either a catalog indexer adapter or provider through one shared runtime
+  port.
+
 ## 0.10.4
 
 ### Patch Changes
