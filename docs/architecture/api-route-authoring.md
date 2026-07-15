@@ -43,6 +43,13 @@ Rule:
 Every new package route should declare whether it belongs to the admin or
 public surface.
 
+Selected graph route bundles use coarse method-and-resource authorization by
+default. A bundle may declare `authorization: "route"` only when one mount
+intentionally mixes authorization rules that the coarse guard cannot express,
+such as organization-admin writes and current-member self-service. Surface
+authentication still applies, and every handler in that bundle must enforce
+its own capability or identity rule.
+
 ### Application-local route files
 
 Applications may author deployment-local API routes in these directories:

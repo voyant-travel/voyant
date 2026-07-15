@@ -218,6 +218,8 @@ export interface VoyantGraphRouteBundle {
   mount?: string
   openapi?: VoyantGraphRouteOpenApi
   resource?: string
+  /** Delegate capability checks to handlers while retaining surface authentication. */
+  authorization?: "coarse" | "route"
   requiredScopes?: readonly string[]
   /** Anonymous public access for the whole public mount or route-relative path subsets. */
   anonymous?: boolean | readonly string[]

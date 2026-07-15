@@ -187,6 +187,15 @@ export {
   type OperatorAdminNavigationIcons,
 } from "./navigation/operator-navigation.js"
 export {
+  type AdminNavigationPreferences,
+  type AdminNavigationPreferencesClient,
+  type AdminNavigationPreferencesContribution,
+  type AdminNavigationPreferencesSnapshot,
+  type AdminNavigationVisibilityMap,
+  type ResolveAdminNavigationPreferencesOptions,
+  resolveAdminNavigationPreferences,
+} from "./navigation/preferences.js"
+export {
   AdminExtensionsProvider,
   type AdminExtensionsProviderProps,
   useAdminExtensions,
