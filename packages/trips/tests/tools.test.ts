@@ -1,6 +1,7 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
+import type { TripComponent } from "../src/schema.js"
 import type { Trip } from "../src/service.js"
 import { createTripTool, priceTripTool, type TripsToolServices, tripsTools } from "../src/tools.js"
 
@@ -119,9 +120,9 @@ describe("trips tools", () => {
       "add_trip_requirement",
       "create_trip",
       "price_trip",
+      "reserve_trip",
       "reshop_trip",
       "reshop_trip_requirement",
-      "reserve_trip",
       "revise_trip",
       "select_trip_candidate",
       "source_trip_requirement_candidates",
@@ -161,7 +162,43 @@ describe("trips tools", () => {
         async addComponent(input) {
           const metadata = input.metadata as { manualService?: { name?: string } }
           calls.push(`addComponent:${metadata.manualService?.name}`)
-          return { id: "trcp_123", envelopeId: input.envelopeId } as never
+          const now = new Date("2026-05-18T00:00:00.000Z")
+          return {
+            id: "trcp_123",
+            envelopeId: input.envelopeId,
+            sequence: input.sequence,
+            kind: input.kind,
+            status: "draft",
+            title: metadata.manualService?.name ?? null,
+            description: input.description ?? null,
+            entityModule: null,
+            entityId: null,
+            sourceKind: null,
+            sourceConnectionId: null,
+            sourceRef: null,
+            bookingDraftId: null,
+            catalogQuoteId: null,
+            bookingId: null,
+            bookingGroupId: null,
+            orderId: null,
+            paymentSessionId: null,
+            providerRef: null,
+            supplierRef: null,
+            componentCurrency: null,
+            componentSubtotalAmountCents: null,
+            componentTaxAmountCents: null,
+            componentTotalAmountCents: null,
+            pricingSnapshot: input.estimatedPricing ?? null,
+            taxLines: [],
+            cancellationSnapshot: null,
+            holdToken: null,
+            holdExpiresAt: null,
+            priceExpiresAt: null,
+            warningCodes: [],
+            metadata: input.metadata,
+            createdAt: now,
+            updatedAt: now,
+          } satisfies TripComponent
         },
         priceTrip: async () => {
           throw new Error("not used")
