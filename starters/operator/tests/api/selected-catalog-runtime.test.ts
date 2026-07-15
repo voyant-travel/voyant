@@ -8,39 +8,22 @@ import {
 } from "@voyant-travel/catalog/projection-runtime"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
-import {
-  createVoyantNodeEnv,
-  createVoyantNodeRuntimeHostPrimitives,
-} from "@voyant-travel/framework/node-runtime"
-import { createVoyantDeploymentResources } from "@voyant-travel/runtime/deployment-resources"
-import { WorkflowRunnerRegistry } from "@voyant-travel/workflow-runs"
 import { describe, expect, it, vi } from "vitest"
 
 import {
   createGeneratedGraphRuntime,
-  createGeneratedGraphRuntimePorts,
+  createGeneratedStaticTestDeploymentResources,
+  createGeneratedTestDeploymentResources,
 } from "./generated-project-runtime.js"
 
-const createDeploymentResources = () => {
-  const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })
-  const primitives = createVoyantNodeRuntimeHostPrimitives({
-    env,
-    deliverEvent: async () => undefined,
-  })
-  return createVoyantDeploymentResources({
-    primitives,
-    createRuntimePorts: createGeneratedGraphRuntimePorts,
-  })
-}
-const buildOperatorProviders = () => createDeploymentResources().capabilities
-const buildOperatorRuntimePorts = (_registry?: WorkflowRunnerRegistry) =>
-  createDeploymentResources().ports
+const buildOperatorProviders = () => createGeneratedStaticTestDeploymentResources().capabilities
+const buildOperatorRuntimePorts = () => createGeneratedStaticTestDeploymentResources().ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({
     runtime,
     capabilities: buildOperatorProviders(),
-    ports: buildOperatorRuntimePorts(new WorkflowRunnerRegistry()),
+    ports: (await createGeneratedTestDeploymentResources(runtime)).ports,
   })
 }
 
@@ -93,7 +76,7 @@ describe("selected Operator Catalog subscriber composition", () => {
   it("does not lower or require Catalog subscriber ports when Catalog is deselected", async () => {
     const runtime = createGeneratedGraphRuntime()
     const ports = Object.fromEntries(
-      Object.entries(buildOperatorRuntimePorts(new WorkflowRunnerRegistry())).filter(
+      Object.entries((await createGeneratedTestDeploymentResources(runtime)).ports).filter(
         ([id]) =>
           id !== catalogProjectionRuntimePort.id && id !== catalogBookingSnapshotRuntimePort.id,
       ),

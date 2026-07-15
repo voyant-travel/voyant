@@ -45,7 +45,7 @@ export {
 export { bookingsExtrasRoutes }
 
 export const bookingsExtrasModule: Module = {
-  name: "extras",
+  name: "bookings-extras",
 }
 
 export const bookingsExtrasHonoModule: HonoModule = {

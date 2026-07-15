@@ -42,10 +42,6 @@ import { BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/finance/
 import { flightsRuntimePort } from "@voyant-travel/flights"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
 import {
-  createVoyantNodeEnv,
-  createVoyantNodeRuntimeHostPrimitives,
-} from "@voyant-travel/framework/node-runtime"
-import {
   inventoryBrochureRuntimePort,
   inventoryRuntimePort,
 } from "@voyant-travel/inventory/graph-runtime"
@@ -66,7 +62,6 @@ import {
 } from "@voyant-travel/quotes"
 import { realtimeRuntimePort } from "@voyant-travel/realtime"
 import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
-import { createVoyantDeploymentResources } from "@voyant-travel/runtime/deployment-resources"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import {
   storefrontBookingIntentsRuntimePort,
@@ -87,31 +82,23 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   createGeneratedGraphRuntime,
-  createGeneratedGraphRuntimePorts,
+  createGeneratedStaticTestDeploymentResources,
+  createGeneratedTestDeploymentResources,
   GENERATED_GRAPH_RUNTIME_EXTENSION_IDS,
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } from "./generated-project-runtime.js"
 
-const createDeploymentResources = () => {
-  const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })
-  const primitives = createVoyantNodeRuntimeHostPrimitives({
-    env,
-    deliverEvent: async () => undefined,
-  })
-  return createVoyantDeploymentResources({
-    primitives,
-    createRuntimePorts: createGeneratedGraphRuntimePorts,
-  })
-}
-const buildOperatorProviders = () => createDeploymentResources().capabilities
-const buildOperatorRuntimePorts = () => createDeploymentResources().ports
+const buildOperatorProviders = () => createGeneratedStaticTestDeploymentResources().capabilities
+const buildOperatorRuntimePorts = () => createGeneratedStaticTestDeploymentResources().ports
+const buildSelectedOperatorRuntimePorts = async (runtime = createGeneratedGraphRuntime()) =>
+  (await createGeneratedTestDeploymentResources(runtime)).ports
 
 async function composeOperatorGraph(runtime = createGeneratedGraphRuntime()) {
   return composeVoyantGraphRuntime({
     runtime,
     capabilities: buildOperatorProviders(),
-    ports: buildOperatorRuntimePorts(),
+    ports: await buildSelectedOperatorRuntimePorts(runtime),
   })
 }
 
@@ -134,8 +121,13 @@ describe("selected Operator graph runtime composition", () => {
     expect(extensionNames).toContain("booking-tax")
     expect(moduleNames).not.toContain("smartbill")
     expect(moduleNames).not.toContain("plugin-smartbill.graph-runtime")
-    expect(new Set(moduleNames).size).toBe(moduleNames.length)
-    expect(new Set(extensionNames).size).toBe(extensionNames.length)
+    const duplicateModules = composed.modules
+      .filter(({ module }, index) => moduleNames.indexOf(module.name) !== index)
+      .map(({ id, module }) => ({ id, name: module.name }))
+    expect(duplicateModules).toEqual([])
+    expect(extensionNames.filter((name, index) => extensionNames.indexOf(name) !== index)).toEqual(
+      [],
+    )
   })
 
   it("lowers Bookings route access resources from the selected graph", async () => {
@@ -211,7 +203,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(),
+      ports: await buildSelectedOperatorRuntimePorts(runtime),
     })
 
     expect(
@@ -258,7 +250,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(),
+      ports: await buildSelectedOperatorRuntimePorts(runtime),
     })
 
     expect(
@@ -341,7 +333,7 @@ describe("selected Operator graph runtime composition", () => {
       runtime,
       capabilities: buildOperatorProviders(),
       ports: {
-        ...buildOperatorRuntimePorts(),
+        ...(await buildSelectedOperatorRuntimePorts(runtime)),
         [legalBookingContractSubscriberRuntimePort.id]: {
           createRuntime: () => ({
             options: { enabled: true, templateSlug: "customer-sales-agreement" },
@@ -389,7 +381,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(),
+      ports: await buildSelectedOperatorRuntimePorts(runtime),
     })
 
     expect(
@@ -504,7 +496,7 @@ describe("selected Operator graph runtime composition", () => {
     const checkout = runtime.extensions.find(
       (unit) => unit.id === "@voyant-travel/commerce#catalog-checkout-extension",
     )
-    const ports = buildOperatorRuntimePorts()
+    const ports = await buildSelectedOperatorRuntimePorts(runtime)
     const registry = await ports[workflowRunnerRegistryRuntimePort.id]
     expect(registry).toBeInstanceOf(WorkflowRunnerRegistry)
     if (!(registry instanceof WorkflowRunnerRegistry)) {
@@ -596,14 +588,15 @@ describe("selected Operator graph runtime composition", () => {
   })
 
   it("fails composition when selected Commerce promotions omit a required host port", async () => {
-    const ports = buildOperatorRuntimePorts()
+    const runtime = createGeneratedGraphRuntime()
+    const ports = await buildSelectedOperatorRuntimePorts(runtime)
     const missingDatabase = Object.fromEntries(
       Object.entries(ports).filter(([id]) => id !== promotionRedemptionDatabaseRuntimePort.id),
     )
 
     await expect(
       composeVoyantGraphRuntime({
-        runtime: createGeneratedGraphRuntime(),
+        runtime,
         capabilities: buildOperatorProviders(),
         ports: missingDatabase,
       }),
@@ -620,7 +613,7 @@ describe("selected Operator graph runtime composition", () => {
         ),
       },
       capabilities: buildOperatorProviders(),
-      ports: buildOperatorRuntimePorts(),
+      ports: await buildSelectedOperatorRuntimePorts(runtime),
     })
 
     expect(
@@ -634,13 +627,7 @@ describe("selected Operator graph runtime composition", () => {
   })
 
   it("resolves package-owned checkout services without a host registry", async () => {
-    await expect(
-      composeVoyantGraphRuntime({
-        runtime: createGeneratedGraphRuntime(),
-        capabilities: buildOperatorProviders(),
-        ports: buildOperatorRuntimePorts(),
-      }),
-    ).resolves.toBeDefined()
+    await expect(composeOperatorGraph()).resolves.toBeDefined()
   })
 
   it("selects package-owned bridge units and discovered project modules directly", () => {

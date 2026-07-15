@@ -93,7 +93,7 @@ export async function createSelfHostDeps(
   await assertReadableFile(entryAbs, "workflow entry")
   await loadEntryFile(entryAbs, { cacheBust: opts.cacheBustEntry })
 
-  const _handlerMod = await import("@voyant-travel/workflows/handler")
+  await import("@voyant-travel/workflows/handler")
   const workflowDefinitions = wfMod.__listRegisteredWorkflows()
   const workflowsById = new Map(workflowDefinitions.map((workflow) => [workflow.id, workflow]))
   const workflowResolver: WorkflowResolver = {

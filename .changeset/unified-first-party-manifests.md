@@ -53,6 +53,7 @@
 "@voyant-travel/voyant-typescript-config": patch
 "@voyant-travel/workflow-runs": patch
 "@voyant-travel/workflows": patch
+"@voyant-travel/workflows-orchestrator": patch
 ---
 
 Standardize first-party packages on package-owned deployment manifests, provider selection,
