@@ -8,6 +8,7 @@ function runtimeWithDeclarations(options: {
   configValidator?: unknown
   secretValidator?: unknown
   projectConfig?: VoyantGraphJsonObject
+  providerSelection?: "local" | "remote"
 }) {
   const importValidators = vi.fn(async () => ({
     configSchema:
@@ -33,6 +34,7 @@ function runtimeWithDeclarations(options: {
   const unitId = "@acme/loyalty"
   const runtime = createVoyantGraphRuntime({
     graphHash: "sha256:test",
+    providerSelections: { ledger: options.providerSelection ?? "remote" },
     entries: {
       "@acme/loyalty/validators": importValidators,
       "@acme/loyalty/provider": importProvider,
@@ -119,8 +121,13 @@ function runtimeWithDeclarations(options: {
             declaration: {
               id: "provider.ledger",
               port: "loyalty.ledger",
+              selection: { role: "ledger", value: "remote" },
               runtime: { entry: "./provider", export: "createProvider" },
               config: { mode: "remote" },
+              uses: {
+                config: ["config.endpoint"],
+                secrets: ["secret.token"],
+              },
             },
             referenceId: "provider-runtime",
           },
@@ -264,5 +271,19 @@ describe("graph runtime values", () => {
         }),
       ],
     })
+  })
+
+  it("does not require values owned only by an unselected provider", async () => {
+    const { importProvider, importValidators, runtime } = runtimeWithDeclarations({
+      providerSelection: "local",
+    })
+
+    const values = await resolveVoyantGraphRuntimeValues(runtime)
+
+    expect(values.getConfig("config.endpoint")).toBeUndefined()
+    expect(values.getConfig("config.timeout")).toBe(5000)
+    expect(values.getSecret("secret.token")).toBeUndefined()
+    expect(importValidators).not.toHaveBeenCalled()
+    expect(importProvider).not.toHaveBeenCalled()
   })
 })

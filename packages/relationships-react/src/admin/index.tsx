@@ -230,11 +230,13 @@ const relationshipsRouteMessagesProvider = () =>
 export function createSelectedRelationshipsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const peopleLabel = navMessages.people ?? "People"
+  const organizationsLabel = navMessages.organizations ?? "Organizations"
   const extension = withAdminRouteMessagesProvider(
     createRelationshipsAdminExtension({
       labels: {
-        people: navMessages.people,
-        organizations: navMessages.organizations,
+        people: peopleLabel,
+        organizations: organizationsLabel,
       },
     }),
     relationshipsRouteMessagesProvider,
@@ -246,10 +248,10 @@ export function createSelectedRelationshipsAdminExtension({
       {
         order: -70,
         items: [
-          { id: "people", title: navMessages.people, url: "/people", icon: Users },
+          { id: "people", title: peopleLabel, url: "/people", icon: Users },
           {
             id: "organizations",
-            title: navMessages.organizations,
+            title: organizationsLabel,
             url: "/organizations",
             icon: Building,
           },

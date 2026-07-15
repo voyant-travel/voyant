@@ -33,6 +33,21 @@ describe("createRelationshipsAdminExtension", () => {
     expect(selected.navigation?.[0]?.items.every((item) => item.icon)).toBe(true)
   })
 
+  it("uses stable labels when selected navigation messages are absent", () => {
+    const selected = createSelectedRelationshipsAdminExtension({ navMessages: {} })
+
+    expect(selected.navigation?.[0]?.items).toMatchObject([
+      { id: "people", title: "People" },
+      { id: "organizations", title: "Organizations" },
+    ])
+    expect(selected.routes?.map((route) => route.title)).toEqual([
+      "People",
+      "People",
+      "Organizations",
+      "Organizations",
+    ])
+  })
+
   it("describes the people and organization routes with unique ids and paths", () => {
     const extension = createRelationshipsAdminExtension()
     const routes = extension.routes ?? []
