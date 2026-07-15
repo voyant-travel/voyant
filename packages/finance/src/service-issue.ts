@@ -37,6 +37,11 @@ import {
 
 export interface InvoiceIssueRuntime extends FinanceServiceRuntime {}
 
+export type InvoiceFromBookingCommandOutcome =
+  | { status: "issued"; invoice: typeof invoices.$inferSelect }
+  | { status: "booking_not_found" }
+  | { status: "payment_schedule_not_found" }
+
 interface ExistingConvertedInvoicePointer {
   id: string
   invoiceNumber: string
@@ -147,6 +152,95 @@ export interface InvoiceProformaConvertedEvent extends InvoiceIssuedEvent {
 }
 
 /**
+ * Package-owned invoice-from-booking composer shared by HTTP routes and Tools.
+ * It owns the cross-module projection read so transport adapters never reach
+ * into booking or finance tables themselves.
+ */
+export async function issueInvoiceFromBookingCommand(
+  db: PostgresJsDatabase,
+  input: CreateInvoiceFromBookingInput,
+  runtime: InvoiceIssueRuntime = {},
+): Promise<InvoiceFromBookingCommandOutcome> {
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, input.bookingId))
+    .limit(1)
+  if (!booking) return { status: "booking_not_found" }
+
+  const items = await db
+    .select()
+    .from(bookingItems)
+    .where(eq(bookingItems.bookingId, booking.id))
+    .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id))
+  const [paymentSchedule] = input.bookingPaymentScheduleId
+    ? await db
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(
+          and(
+            eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
+            eq(bookingPaymentSchedules.bookingId, booking.id),
+          ),
+        )
+        .limit(1)
+    : []
+  if (input.bookingPaymentScheduleId && !paymentSchedule) {
+    return { status: "payment_schedule_not_found" }
+  }
+
+  const bookingData: InvoiceFromBookingData = {
+    booking: {
+      id: booking.id,
+      bookingNumber: booking.bookingNumber,
+      personId: booking.personId,
+      organizationId: booking.organizationId,
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      sellCurrency: booking.sellCurrency,
+      baseCurrency: booking.baseCurrency,
+      fxRateSetId: booking.fxRateSetId,
+      sellAmountCents: booking.sellAmountCents,
+      baseSellAmountCents: booking.baseSellAmountCents,
+    },
+    paymentSchedule: paymentSchedule
+      ? {
+          id: paymentSchedule.id,
+          bookingId: paymentSchedule.bookingId,
+          bookingItemId: paymentSchedule.bookingItemId,
+          scheduleType: paymentSchedule.scheduleType,
+          dueDate: paymentSchedule.dueDate,
+          currency: paymentSchedule.currency,
+          amountCents: paymentSchedule.amountCents,
+        }
+      : null,
+    items: items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      productId: item.productId,
+      productName: item.productNameSnapshot,
+      productNameSnapshot: item.productNameSnapshot,
+      optionNameSnapshot: item.optionNameSnapshot,
+      unitNameSnapshot: item.unitNameSnapshot,
+      departureLabelSnapshot: item.departureLabelSnapshot,
+      startDate: item.serviceDate ?? item.startsAt,
+      serviceDate: item.serviceDate,
+      startsAt: item.startsAt,
+      endDate: item.endsAt ?? item.serviceDate,
+      endsAt: item.endsAt,
+      quantity: item.quantity,
+      unitSellAmountCents: item.unitSellAmountCents,
+      totalSellAmountCents: item.totalSellAmountCents,
+    })),
+  }
+  const issuer =
+    input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
+  const invoice = await issuer(db, input, bookingData, runtime)
+  if (!invoice) return { status: "booking_not_found" }
+  return { status: "issued", invoice }
+}
+
+/**
  * Create + emit an invoice from a booking. Returns the persisted row
  * after flipping the status from `draft` to `issued`. Drafts shouldn't
  * trigger SmartBill sync.
@@ -180,7 +274,7 @@ export async function issueInvoiceFromBooking(
             await buildInvoiceIssuedActionLedgerInput(
               actionLedgerContext,
               { invoice: row },
-              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+              invoiceIssueLedgerOptions(runtime),
             ),
           )
         }
@@ -232,7 +326,7 @@ export async function issueProformaFromBooking(
             await buildInvoiceIssuedActionLedgerInput(
               actionLedgerContext,
               { invoice: row },
-              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+              invoiceIssueLedgerOptions(runtime),
             ),
           )
         }
@@ -249,6 +343,22 @@ export async function issueProformaFromBooking(
     skipExternalSync: input.skipExternalSync,
   })
   return row
+}
+
+function invoiceIssueLedgerOptions(runtime: InvoiceIssueRuntime) {
+  return {
+    authorizationSource: runtime.actionLedgerAuthorizationSource,
+    actionName: runtime.actionLedgerActionName,
+    routeOrToolName: runtime.actionLedgerRouteOrToolName,
+    capabilityId: runtime.actionLedgerCapabilityId,
+    capabilityVersion: runtime.actionLedgerCapabilityVersion,
+    evaluatedRisk: runtime.actionLedgerEvaluatedRisk,
+    causationActionId: runtime.actionLedgerCausationActionId,
+    approvalId: runtime.actionLedgerApprovalId,
+    idempotencyScope: runtime.actionLedgerIdempotencyScope,
+    idempotencyKey: runtime.actionLedgerIdempotencyKey,
+    idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint,
+  }
 }
 
 async function emitIssued(

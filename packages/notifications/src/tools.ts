@@ -12,8 +12,10 @@
  * `notifications:send` is never granted by a wildcard — see the api-key taxonomy.
  */
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
+import { notificationDeliverySchema } from "./response-schemas.js"
 import { notificationChannelSchema, notificationDeliveryListQuerySchema } from "./validation.js"
 
 /** Template-only send payload — no arbitrary subject/html/text is accepted from an agent. */
@@ -48,12 +50,15 @@ export const listDeliveriesTool = defineTool<
   name: "list_notification_deliveries",
   description: "List notification deliveries with filters and pagination. Read-only.",
   inputSchema: notificationDeliveryListQuerySchema,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: listResponseSchema(notificationDeliverySchema),
   requiredScopes: ["notifications:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(query, ctx) {
-    return notifications(ctx).listDeliveries(query)
+    return parseJsonResult(
+      listResponseSchema(notificationDeliverySchema),
+      await notifications(ctx).listDeliveries(query),
+    )
   },
 })
 
@@ -69,12 +74,15 @@ export const getDeliveryTool = defineTool<
   name: "get_notification_delivery",
   description: "Read a single notification delivery by id. Read-only.",
   inputSchema: getDeliveryArgs,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: notificationDeliverySchema.nullable(),
   requiredScopes: ["notifications:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler({ id }, ctx) {
-    return notifications(ctx).getDeliveryById(id)
+    return parseJsonResult(
+      notificationDeliverySchema.nullable(),
+      await notifications(ctx).getDeliveryById(id),
+    )
   },
 })
 
@@ -110,7 +118,7 @@ export const sendNotificationTool = defineTool<
     "email/SMS cannot be unsent). Only template sends are allowed — arbitrary subject/html/text is " +
     "not accepted. Requires the notifications:send grant and explicit confirmation.",
   inputSchema: sendNotificationArgs,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: notificationDeliverySchema,
   requiredScopes: ["notifications:send"],
   tier: "destructive",
   riskPolicy: {
@@ -121,7 +129,10 @@ export const sendNotificationTool = defineTool<
     sideEffects: ["email", "sms"],
   },
   async handler(input, ctx) {
-    return notifications(ctx).sendTemplated(input)
+    return parseJsonResult(
+      notificationDeliverySchema,
+      await notifications(ctx).sendTemplated(input),
+    )
   },
 })
 
@@ -130,3 +141,18 @@ export const notificationsTools = [
   getDeliveryTool,
   sendNotificationTool,
 ] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}

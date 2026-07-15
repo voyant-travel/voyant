@@ -1047,6 +1047,18 @@ export interface FinanceServiceRuntime extends InvoiceFxOptions {
   eventBus?: EventBus
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
+  actionLedgerActionName?: string | null
+  actionLedgerRouteOrToolName?: string | null
+  actionLedgerTargetType?: string | null
+  actionLedgerTargetId?: string | null
+  actionLedgerCapabilityId?: string | null
+  actionLedgerCapabilityVersion?: string | null
+  actionLedgerEvaluatedRisk?: "low" | "medium" | "high" | "critical" | null
+  actionLedgerCausationActionId?: string | null
+  actionLedgerApprovalId?: string | null
+  actionLedgerIdempotencyScope?: string | null
+  actionLedgerIdempotencyKey?: string | null
+  actionLedgerIdempotencyFingerprint?: string | null
   descriptionResolver?: InvoiceLineDescriptionResolver
   invoiceDueDateResolver?: InvoiceDueDateResolver
   paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat

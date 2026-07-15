@@ -1,12 +1,23 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
-import { type InventoryToolServices, inventoryTools } from "../src/tools.js"
+import {
+  type InventoryAuthoringToolServices,
+  type InventoryContentToolServices,
+  type InventoryToolServices,
+  inventoryTools,
+} from "../src/tools.js"
 
 function ctxWith(
-  services?: Partial<InventoryToolServices>,
+  services?: Partial<
+    InventoryToolServices & InventoryContentToolServices & InventoryAuthoringToolServices
+  >,
   overrides: Partial<ToolContext> = {},
-): ToolContext & { inventory?: InventoryToolServices } {
+): ToolContext & {
+  inventory?: InventoryToolServices
+  inventoryContent?: InventoryContentToolServices
+  inventoryAuthoring?: InventoryAuthoringToolServices
+} {
   const actor = overrides.actor ?? "customer"
   const audience = overrides.audience ?? actor
   return {
@@ -23,6 +34,8 @@ function ctxWith(
     },
     ...overrides,
     inventory: services as InventoryToolServices | undefined,
+    inventoryContent: services as InventoryContentToolServices | undefined,
+    inventoryAuthoring: services as InventoryAuthoringToolServices | undefined,
   }
 }
 
@@ -32,15 +45,80 @@ function makeRegistry() {
   return registry
 }
 
+function product(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "prod_1",
+    name: "Cairo discovery",
+    status: "draft",
+    bookingMode: "date",
+    capacityMode: "limited",
+    visibility: "private",
+    activated: false,
+    sellCurrency: "EUR",
+    sellAmountCents: 10000,
+    startDate: "2026-09-01",
+    endDate: "2026-09-07",
+    pax: 2,
+    productTypeId: null,
+    createdAt: new Date("2026-07-15T10:00:00.000Z"),
+    updatedAt: new Date("2026-07-15T10:00:00.000Z"),
+    ...overrides,
+  }
+}
+
 describe("inventory tools", () => {
-  it("registers read-only products tools gated on products:read", () => {
+  it("registers product reads, authoring, and lifecycle tools with exact posture", () => {
     const manifest = makeRegistry().list()
-    expect(manifest.map((t) => t.name).sort()).toEqual(["get_product", "list_products"])
-    for (const tool of manifest) {
-      expect(tool.tier).toBe("read")
+    expect(manifest.map((t) => t.name).sort()).toEqual([
+      "archive_product",
+      "compose_product",
+      "create_product",
+      "get_product",
+      "get_product_content",
+      "list_products",
+      "publish_product",
+      "unpublish_product",
+      "update_product",
+    ])
+    for (const tool of manifest.filter(({ tier }) => tier === "read")) {
       expect(tool.requiredScopes).toEqual(["products:read"])
-      expect(tool.riskPolicy.destructive).toBe(false)
     }
+    for (const tool of manifest.filter(({ tier }) => tier === "write")) {
+      expect(tool.requiredScopes).toEqual(["products:write"])
+      expect(tool.audience.allowed).toEqual(["staff"])
+    }
+    expect(manifest.find(({ name }) => name === "publish_product")?.riskPolicy).toMatchObject({
+      confirmationRequired: true,
+      reversible: true,
+    })
+  })
+
+  it("composes an atomic product graph through the authoring service", async () => {
+    const result = await makeRegistry().dispatch(
+      "compose_product",
+      {
+        spec: {
+          product: { name: "Cairo discovery", sellCurrency: "EUR" },
+          options: [{ ref: "standard", name: "Standard" }],
+        },
+        idempotencyKey: "compose-cairo-v1",
+      },
+      ctxWith(
+        {
+          async composeProduct(input) {
+            expect(input.idempotencyKey).toBe("compose-cairo-v1")
+            return {
+              status: "created",
+              productId: "prod_1",
+              options: [{ ref: "standard", id: "opt_1", units: [] }],
+              reused: false,
+            }
+          },
+        },
+        { actor: "staff", audience: "staff" },
+      ),
+    )
+    expect(result).toMatchObject({ status: "created", productId: "prod_1", reused: false })
   })
 
   it("lists products through the injected service", async () => {
@@ -50,7 +128,12 @@ describe("inventory tools", () => {
       { limit: 10 },
       ctxWith({
         async listProducts() {
-          return { data: [{ id: "prod_1" }, { id: "prod_2" }], total: 2, limit: 10, offset: 0 }
+          return {
+            data: [product(), product({ id: "prod_2" })],
+            total: 2,
+            limit: 10,
+            offset: 0,
+          }
         },
         async getProductById() {
           return null
@@ -141,5 +224,61 @@ describe("inventory tools", () => {
     await expect(
       registry.dispatch("list_products", { limit: 10 }, ctxWith(undefined)),
     ).rejects.toMatchObject({ code: "MISSING_SERVICE" })
+  })
+
+  it("creates a private draft before any publication operation", async () => {
+    let forwarded: unknown
+    const result = await makeRegistry().dispatch<{ status: string; visibility: string }>(
+      "create_product",
+      { name: "Cairo discovery", sellCurrency: "EUR" },
+      ctxWith(
+        {
+          async createProduct(input) {
+            forwarded = input
+            return product(input)
+          },
+        },
+        { actor: "staff", audience: "staff" },
+      ),
+    )
+    expect(forwarded).toMatchObject({ status: "draft", visibility: "private", activated: false })
+    expect(result).toMatchObject({ status: "draft", visibility: "private" })
+  })
+
+  it("publishes only through the readiness-enforcing update service", async () => {
+    let forwarded: unknown
+    await makeRegistry().dispatch(
+      "publish_product",
+      { id: "prod_1" },
+      ctxWith(
+        {
+          async updateProduct(_id, input) {
+            forwarded = input
+            return product(input)
+          },
+        },
+        { actor: "staff", audience: "staff" },
+      ),
+    )
+    expect(forwarded).toEqual({ status: "active", visibility: "public", activated: true })
+  })
+
+  it("defaults composed content resolution to the grant locale and market", async () => {
+    let forwarded: unknown
+    const content = await makeRegistry().dispatch(
+      "get_product_content",
+      { id: "prod_1" },
+      ctxWith(
+        {
+          async getProductContent(input) {
+            forwarded = input
+            return null
+          },
+        },
+        { resolverScope: { locale: "ro-RO", market: "RO" } as never },
+      ),
+    )
+    expect(forwarded).toMatchObject({ preferredLocales: ["ro-RO"], market: "RO" })
+    expect(content).toBeNull()
   })
 })

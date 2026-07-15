@@ -138,6 +138,7 @@ describe("Legal booking-contract subscriber runtime", () => {
     const output = await createLegalBookingContractVoyantRuntime({
       unitId: "@voyant-travel/legal#booking-contract-extension",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: [],
       graph: {
         providerSelections: {},

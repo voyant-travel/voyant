@@ -10,6 +10,7 @@
     "./schema": "./src/schema.ts",
     "./checkout": "./src/checkout/index.ts",
     "./validation": "./src/validation.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./promotion-redemption-subscriber": "./src/promotions/subscriber-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
@@ -44,6 +45,7 @@
     "@voyant-travel/distribution": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/products-contracts": "workspace:^",
     "@voyant-travel/quotes-contracts": "workspace:^",
     "@voyant-travel/workflow-runs": "workspace:^",
@@ -97,6 +99,11 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./promotion-redemption-subscriber": {
         "types": "./dist/promotions/subscriber-runtime.d.ts",

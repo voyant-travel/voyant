@@ -1,0 +1,423 @@
+import { buildPaymentLinkUrl, financeService } from "@voyant-travel/finance"
+import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
+
+import { buildPublicCustomerPortalRouteRuntime } from "./customer-portal/route-runtime.js"
+import type { PublicCustomerPortalRouteOptions } from "./customer-portal/routes-public.js"
+import { publicCustomerPortalService } from "./customer-portal/service-public.js"
+import type { PaymentLinkRoutesOptions } from "./payment-link/routes.js"
+import {
+  storefrontCustomerPortalRuntimePort,
+  storefrontPaymentLinkRuntimePort,
+  storefrontVerificationRuntimePort,
+} from "./runtime-port.js"
+import type {
+  StorefrontCustomerPortalToolServices,
+  StorefrontPaymentLinkToolServices,
+  StorefrontVerificationToolServices,
+} from "./tools.js"
+import {
+  buildStorefrontVerificationSenders,
+  enforceVerificationStartLimits,
+  type StorefrontVerificationRoutesOptions,
+} from "./verification/routes-public.js"
+import {
+  createStorefrontVerificationService,
+  StorefrontVerificationError,
+} from "./verification/service.js"
+
+export * from "./tools.js"
+
+type StorefrontMcpContext = Context<{
+  Bindings: Record<string, unknown>
+  Variables: { db?: PostgresJsDatabase; userId?: string }
+}>
+
+export const voyantToolContextContribution = defineToolContextContribution({
+  context: ["storefrontCustomerPortal", "storefrontPaymentLink", "storefrontVerification"],
+  async contribute({ request, context, resources }) {
+    const c = request as StorefrontMcpContext
+    const db = requireService((c.get("db") ?? context.db) as PostgresJsDatabase | undefined, "db")
+    const customerPortalOptions = resources[storefrontCustomerPortalRuntimePort.id] as
+      | PublicCustomerPortalRouteOptions
+      | undefined
+    const paymentLinkOptions = resources[storefrontPaymentLinkRuntimePort.id] as
+      | PaymentLinkRoutesOptions
+      | undefined
+    const verificationOptions = resources[storefrontVerificationRuntimePort.id] as
+      | StorefrontVerificationRoutesOptions
+      | undefined
+    const portalRuntime = buildPublicCustomerPortalRouteRuntime(c.env, customerPortalOptions)
+
+    return {
+      storefrontCustomerPortal: createCustomerPortalToolServices({
+        db,
+        userId: () => requireCustomerUserId(c),
+        runtime: portalRuntime,
+      }),
+      ...(paymentLinkOptions
+        ? {
+            storefrontPaymentLink: createPaymentLinkToolServices({
+              db,
+              request: c,
+              runtime: paymentLinkOptions,
+            }),
+          }
+        : {}),
+      ...(verificationOptions
+        ? {
+            storefrontVerification: createVerificationToolServices({
+              db,
+              request: c,
+              userId: () => requireCustomerUserId(c),
+              options: verificationOptions,
+            }),
+          }
+        : {}),
+    }
+  },
+})
+
+function requireCustomerUserId(c: StorefrontMcpContext): string {
+  const userId = c.get("userId")?.trim()
+  if (!userId) {
+    throw new ToolError(
+      "Customer self-service Tools require an authenticated user identity from the grant.",
+      "AUTHORIZATION_DENIED",
+    )
+  }
+  return userId
+}
+
+export function createCustomerPortalToolServices(input: {
+  db: PostgresJsDatabase
+  userId: () => string
+  runtime: ReturnType<typeof buildPublicCustomerPortalRouteRuntime>
+}): StorefrontCustomerPortalToolServices {
+  const options = {
+    kms: input.runtime.getOptionalKmsProvider(),
+    resolveDocumentDownloadUrl: input.runtime.resolveDocumentDownloadUrl,
+  }
+
+  return {
+    async getProfile() {
+      const profile = await publicCustomerPortalService.getProfileWithOptions(
+        input.db,
+        input.userId(),
+        options,
+      )
+      if (!profile) throw new ToolError("Customer profile was not found.", "NOT_FOUND")
+      return profile
+    },
+    async updateProfile(update) {
+      const result = await publicCustomerPortalService.updateProfileWithOptions(
+        input.db,
+        input.userId(),
+        update,
+        options,
+      )
+      if ("error" in result) {
+        throw new ToolError(
+          result.error === "not_found"
+            ? "Customer profile was not found."
+            : "A linked customer record is required for this profile update.",
+          result.error === "not_found" ? "NOT_FOUND" : "INVALID_INPUT",
+        )
+      }
+      return result.profile
+    },
+    async bootstrap(command) {
+      const result = await publicCustomerPortalService.bootstrap(input.db, input.userId(), command)
+      if ("error" in result) {
+        const notFound =
+          result.error === "not_found" || result.error === "customer_record_not_found"
+        throw new ToolError(
+          result.error === "customer_record_claimed"
+            ? "The selected customer record is already linked to another account."
+            : "Customer profile or selected customer record was not found.",
+          notFound ? "NOT_FOUND" : "AUTHORIZATION_DENIED",
+        )
+      }
+      return result
+    },
+    async listBookings() {
+      const rows = await publicCustomerPortalService.listBookings(input.db, input.userId())
+      if (!rows) throw new ToolError("Customer profile was not found.", "NOT_FOUND")
+      return rows
+    },
+    async getBooking(bookingId) {
+      const booking = await publicCustomerPortalService.getBooking(
+        input.db,
+        input.userId(),
+        bookingId,
+        options,
+      )
+      if (!booking) {
+        throw new ToolError(
+          "Booking was not found or is not owned by this customer.",
+          "NOT_FOUND",
+          {
+            bookingId,
+          },
+        )
+      }
+      return booking
+    },
+    listCompanions() {
+      return publicCustomerPortalService.listCompanions(input.db, input.userId())
+    },
+    async createCompanion(command) {
+      const row = await publicCustomerPortalService.createCompanion(
+        input.db,
+        input.userId(),
+        command,
+      )
+      if (!row) {
+        throw new ToolError(
+          "A linked customer record is required to create companions.",
+          "INVALID_INPUT",
+        )
+      }
+      return row
+    },
+    async updateCompanion(companionId, command) {
+      const row = await publicCustomerPortalService.updateCompanion(
+        input.db,
+        input.userId(),
+        companionId,
+        command,
+      )
+      if (row === "forbidden") {
+        throw new ToolError("Companion does not belong to this customer.", "AUTHORIZATION_DENIED", {
+          companionId,
+        })
+      }
+      if (!row) throw new ToolError("Companion was not found.", "NOT_FOUND", { companionId })
+      return row
+    },
+    async importBookingTravelers(command) {
+      const result = await publicCustomerPortalService.importBookingTravelersAsCompanions(
+        input.db,
+        input.userId(),
+        command,
+      )
+      if (!result) {
+        throw new ToolError(
+          "A linked customer record is required to import companions.",
+          "INVALID_INPUT",
+        )
+      }
+      return result
+    },
+    listDocuments() {
+      return publicCustomerPortalService.listMyDocuments(input.db, input.userId(), options)
+    },
+    async createDocument(command) {
+      const row = await publicCustomerPortalService.createMyDocument(
+        input.db,
+        input.userId(),
+        command,
+        options,
+      )
+      if (!row) throw new ToolError("Customer profile was not found.", "NOT_FOUND")
+      return row
+    },
+    async updateDocument(documentId, command) {
+      const row = await publicCustomerPortalService.updateMyDocument(
+        input.db,
+        input.userId(),
+        documentId,
+        command,
+        options,
+      )
+      if (!row) {
+        throw new ToolError(
+          "Identity document was not found or is not owned by this customer.",
+          "NOT_FOUND",
+          {
+            documentId,
+          },
+        )
+      }
+      return row
+    },
+    async setPrimaryDocument(documentId) {
+      const row = await publicCustomerPortalService.setPrimaryMyDocument(
+        input.db,
+        input.userId(),
+        documentId,
+        options,
+      )
+      if (!row) {
+        throw new ToolError(
+          "Identity document was not found or is not owned by this customer.",
+          "NOT_FOUND",
+          {
+            documentId,
+          },
+        )
+      }
+      return row
+    },
+  }
+}
+
+export function createPaymentLinkToolServices(input: {
+  db: PostgresJsDatabase
+  request: Context
+  runtime: PaymentLinkRoutesOptions
+}): StorefrontPaymentLinkToolServices {
+  const toDto = (row: Awaited<ReturnType<typeof financeService.getPaymentSessionById>>) => {
+    if (!row) throw new ToolError("Payment link was not found.", "NOT_FOUND")
+    return {
+      id: row.id,
+      status: row.status,
+      invoiceId: row.invoiceId,
+      bookingId: row.bookingId,
+      currency: row.currency,
+      amountCents: row.amountCents,
+      paymentMethod: row.paymentMethod,
+      provider: row.provider,
+      redirectUrl: row.redirectUrl,
+      expiresAt: row.expiresAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      paymentUrl: buildPaymentLinkUrl(row.id, {
+        baseUrl: input.runtime.resolvePublicCheckoutBaseUrl(input.request),
+      }),
+    }
+  }
+
+  return {
+    async createFromInvoice({ invoiceId, ...command }) {
+      const row = await financeService.createPaymentSessionFromInvoice(input.db, invoiceId, command)
+      if (!row)
+        throw new ToolError(`Invoice "${invoiceId}" was not found.`, "NOT_FOUND", { invoiceId })
+      return toDto(row)
+    },
+    async get(sessionId) {
+      return toDto(await financeService.getPaymentSessionById(input.db, sessionId))
+    },
+  }
+}
+
+export function createVerificationToolServices(input: {
+  db: PostgresJsDatabase
+  request: StorefrontMcpContext
+  userId: () => string
+  options: StorefrontVerificationRoutesOptions
+}): StorefrontVerificationToolServices {
+  const service = createStorefrontVerificationService(input.options)
+  const senders = buildStorefrontVerificationSenders(input.request.env, input.options)
+  const destination = async (channel: "email" | "sms") => {
+    const profile = await publicCustomerPortalService.getProfile(input.db, input.userId())
+    const value = channel === "email" ? profile?.email : profile?.phoneNumber
+    if (!value) {
+      throw new ToolError(
+        `The authenticated customer has no ${channel === "email" ? "email" : "phone"} destination.`,
+        "INVALID_INPUT",
+      )
+    }
+    return value
+  }
+  const wire = (record: {
+    id: string
+    channel: "email" | "sms"
+    destination: string
+    purpose: string
+    status: "pending" | "verified" | "expired" | "failed" | "cancelled"
+    expiresAt: Date
+    verifiedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+  }) => ({
+    ...record,
+    expiresAt: record.expiresAt.toISOString(),
+    verifiedAt: record.verifiedAt?.toISOString() ?? null,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  })
+  const enforceStartLimit = async (channel: "email" | "sms", value: string) => {
+    const limited = await enforceVerificationStartLimits(input.request as never, channel, value)
+    if (limited) {
+      throw new ToolError("Verification challenge rate limit exceeded.", "PROVIDER_ERROR", {
+        retryAfter: limited.headers.get("retry-after"),
+      })
+    }
+  }
+  const mapVerificationError = (error: unknown): never => {
+    if (error instanceof ToolError) throw error
+    if (error instanceof StorefrontVerificationError) {
+      const code =
+        error.code === "sender_not_configured"
+          ? "MISSING_SERVICE"
+          : error.code === "challenge_not_found"
+            ? "NOT_FOUND"
+            : "INVALID_INPUT"
+      throw new ToolError(error.message, code, { verificationCode: error.code })
+    }
+    throw error
+  }
+
+  return {
+    async startEmail({ locale }) {
+      try {
+        const email = await destination("email")
+        await enforceStartLimit("email", email)
+        return wire(
+          await service.startEmailChallenge(
+            input.db,
+            { email, purpose: "contact_confirmation", locale },
+            senders,
+          ),
+        )
+      } catch (error) {
+        return mapVerificationError(error)
+      }
+    },
+    async confirmEmail({ code }) {
+      try {
+        const email = await destination("email")
+        return wire(
+          await service.confirmEmailChallenge(input.db, {
+            email,
+            code,
+            purpose: "contact_confirmation",
+          }),
+        )
+      } catch (error) {
+        return mapVerificationError(error)
+      }
+    },
+    async startSms({ locale }) {
+      try {
+        const phone = await destination("sms")
+        await enforceStartLimit("sms", phone)
+        return wire(
+          await service.startSmsChallenge(
+            input.db,
+            { phone, purpose: "contact_confirmation", locale },
+            senders,
+          ),
+        )
+      } catch (error) {
+        return mapVerificationError(error)
+      }
+    },
+    async confirmSms({ code }) {
+      try {
+        const phone = await destination("sms")
+        return wire(
+          await service.confirmSmsChallenge(input.db, {
+            phone,
+            code,
+            purpose: "contact_confirmation",
+          }),
+        )
+      } catch (error) {
+        return mapVerificationError(error)
+      }
+    },
+  }
+}

@@ -42,6 +42,11 @@ export const publicDocumentDeliveryVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "This module only serves authorized public documents; legal domains own document Tools.",
+    },
   },
 })
 

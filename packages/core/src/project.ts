@@ -165,6 +165,8 @@ export interface VoyantGraphRuntimeFactoryGraph {
     readonly context?: readonly string[]
     load<T = unknown>(): Promise<T>
   }[]
+  /** Action/approval policies admitted by the selected graph. */
+  readonly actions?: readonly VoyantGraphActionDeclaration[]
   readonly references: readonly {
     readonly id: string
     readonly importEntry: string
@@ -180,6 +182,8 @@ export interface VoyantGraphRuntimeFactoryContext {
   readonly unitId: string
   /** Validated JSON config authored on this package-scoped project selection. */
   readonly projectConfig: Readonly<VoyantGraphJsonObject>
+  /** Read validated config for another explicitly selected unit by exact graph id. */
+  getUnitProjectConfig(unitId: string): Readonly<VoyantGraphJsonObject> | undefined
   /** API facets selected for this runtime unit in the resolved graph. */
   readonly api: readonly Readonly<Pick<VoyantGraphRouteBundle, "id" | "surface">>[]
   /** Import-capable selected graph view for generic graph consumers such as MCP. */

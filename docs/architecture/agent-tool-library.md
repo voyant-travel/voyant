@@ -13,7 +13,7 @@ for the decision record.
 
 ```
 @voyant-travel/tools      pure contract (zod only): defineTool, ToolContext,
-        ▲                 ToolRegistry, RiskTier/RiskPolicy, ToolManifestEntry
+        ▲                 ToolRegistry, stable identity, schemas, audience + risk
         │
    ┌────┴───────────────┐
 domain packages           @voyant-travel/mcp        transport adapter:
@@ -39,7 +39,7 @@ export const listProductsTool = defineTool({
   name: "list_products",
   description: "List products with filters and pagination. Read-only.",
   inputSchema: productListQuerySchema,     // reuse the domain's zod schema
-  outputSchema: z.custom<ProductListResult>(), // start loose; tighten over time
+  outputSchema: listResponseSchema(productToolSchema), // structural and MCP-serializable
   requiredScopes: ["products:read"],        // resource:action, AND-enforced
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
@@ -60,10 +60,95 @@ Rules:
 - **Declare risk as data** (`tier` + `riskPolicy`) so remote consumers can gate
   destructive tools (e.g. a `reserve`-style tool: `tier: "destructive"`,
   `riskPolicy.confirmationRequired`) without executing the handler.
-- **Cross-module / composed tools** (spanning several domains) live in the composing
-  layer — `trips` — not in a leaf domain package.
+- **Cross-module / composed tools** (spanning several domains) live in the package that
+  already owns the real orchestration service. For example, Trips owns candidate
+  composition while Finance owns booking creation across Bookings and Finance. A Tool
+  must not create a second composition layer or persist directly into foreign tables.
 - Keep `inputSchema` serialization-friendly (avoid top-level `.transform()`/`.refine()`)
   so `z.toJSONSchema` emits a faithful manifest.
+- Treat the package Tool id as the stable capability identity. `name` is the canonical
+  MCP invocation label and `aliases` are temporary compatibility labels. Graph-driven
+  registration supplies `capabilityId` and `owner`; standalone registries should declare
+  them on the Tool. Capability versions default to `v1` only for legacy compatibility.
+- Graph-driven registration checks duplicated invocation name, required scopes, and
+  deployment risk against the loaded runtime definition. Drift fails registration
+  instead of producing a misleading manifest.
+- Prefer serializable output schemas. Runtime-only/permissive schemas remain callable,
+  but first-party manifest Tool runtimes must expose structural output schemas. The
+  architecture checker rejects `z.custom()` and opaque top-level output schemas in
+  canonical Tool runtime modules.
+
+## Domain completeness notes
+
+Inventory owns guarded core authoring and lifecycle Tools (`create_product`,
+`update_product`, `publish_product`, `unpublish_product`, and `archive_product`) over
+the real product service. Publication continues to use that service's readiness gate;
+the Tool does not reproduce the rule. `get_product_content` composes owned and sourced
+content through the selected Catalog content runtime, preserving provider authority.
+`compose_product` accepts the structural `productGraphSpecSchema` and delegates to the
+atomic authoring composer. The runtime records the same mutation ledger entry and
+`product.content.changed` event as the authoring HTTP surface.
+
+There is intentionally no monolithic `update_product_content` Tool. The unified
+product-content service is a read resolver; authored options, itineraries, media,
+translations, merchandising, and availability are separate aggregate services with
+different invariants. A single record-shaped write wrapper would bypass those service
+boundaries and expose shallow storage mechanics. Future content mutation Tools must be
+workflow-shaped and delegate to the appropriate Inventory aggregate service.
+
+Trips owns cross-module candidate composition. A guarded requirement-creation Tool is
+the workflow entry point; requirement sourcing and re-shop Tools resolve the
+deployment-selected provider-neutral availability fan-out, while candidate selection
+delegates to the Trips invariant service that pins a draft component. Tool outputs
+omit provider replay/economics payloads even though Trips retains them internally for
+later reservation.
+
+Finance owns two composed operator commands. `create_booking` delegates to the atomic
+booking-create service for product/slot conversion, travelers, room and item lines,
+payment schedules, optional credits, groups, invoice documents, ledger entries, and
+post-commit events. `issue_invoice_from_booking` delegates to the reusable invoice
+composer extracted from the HTTP route. Invoice/proforma issue requires an exact action
+approval: the command fingerprint is stable across request and execution, successful
+execution carries the approval/causation fields into the ledger, and a replay resolves
+the previously issued invoice instead of creating another.
+
+## Coverage posture
+
+Every first-party `voyant.module.v1` module and `voyant.plugin.v1` plugin unit must make
+its agent posture reviewable. A unit with one or more `tools` declarations satisfies
+this rule automatically; the Tool IDs and owning unit are derived from the package
+manifest and must not be copied into a second catalog.
+
+A module without Tools declares one of these postures in its package-owned manifest
+metadata:
+
+```ts
+meta: {
+  ownership: "package",
+  agentTools: {
+    posture: "planned",
+    rationale: "Availability reads and guarded mutations need module-owned Tools.",
+    issue: "#3370",
+  },
+}
+```
+
+- `planned` means the module owns agent-relevant capabilities that are not exposed yet.
+  It requires a non-empty rationale and tracking issue.
+- `not-applicable` means exposing the module would create a shallow or unsafe agent
+  interface. It requires a non-empty rationale identifying the deeper owning module or
+  transport/adapter responsibility.
+
+The MCP module has one narrow checker-owned exclusion: it is the transport adapter
+that exposes selected package Tools and does not itself own domain capabilities. Other
+schema-only, transport-only, or adapter modules still declare `not-applicable`
+explicitly in their own manifests.
+
+`pnpm report:agent-tool-coverage` prints the deterministic module/Tool inventory and
+all no-Tool declarations. `pnpm verify:agent-tool-coverage` tests the policy and fails
+when a first-party module or plugin lacks either a Tool surface or a valid posture.
+Extensions that declare Tools are included in the inventory, but extensions without
+Tools are not forced to add placeholders.
 
 ## Deployment wiring
 
@@ -88,6 +173,8 @@ bindings and outbound webhook plans. Separate `tools.json`, `actions.json`, and
 - **Audience (D3):** carried on the API-key grant metadata (`API_KEY_GRANT_PRESETS` bundle
   a scope subset + audience), resolved into the catalog `ResolverScope`. PII-sensitive
   resources (`bookings-pii`) are never satisfied by the `*` wildcard.
+  A Tool may additionally narrow its `audience.allowed` set; both discovery and
+  invocation fail closed for other grant audiences.
 
 ## Transport
 
@@ -97,12 +184,19 @@ bindings and outbound webhook plans. Separate `tools.json`, `actions.json`, and
 separate MCP service or Durable Object is required. `GET /v1/admin/mcp/manifest`
 serves a contract-versioned discovery manifest for remote agents.
 
+Standard `tools/list` is also a complete discovery surface. It includes input and
+structured-output schemas, derived standard MCP annotations, and exact framework
+metadata under `_meta["voyant.travel/tool"]`. Aliases are registered as callable MCP
+names with `aliasFor` metadata, while the canonical manifest contains one entry per
+capability. Consumers resolve capabilities by `capabilityId` plus an exact supported
+`capabilityVersion`; an unknown version is unsupported rather than silently coerced.
+
 ## Migration status
 
-Migrated: `trips` (composed/destructive) and `inventory`/products (read-only leaf).
-Remaining domains follow the identical pattern and are tracked in voyant#2800: catalog
-(read/search), availability, pricing, bookings (+PII), finance (refund/void),
-notifications (send), quotes.
+The deterministic coverage report is the source of truth for current Tool and module
+counts. Remaining coverage is tracked in voyant#3370 and is visible through
+`pnpm report:agent-tool-coverage`. A `planned` declaration records an uncovered
+surface; it is not a substitute for implementing the Tool.
 
 ## Reconciliation
 

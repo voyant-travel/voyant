@@ -1,0 +1,26 @@
+[
+  {
+    "packageName": "@voyant-travel/inventory",
+    "unitId": "@voyant-travel/inventory",
+    "tools": [{ "id": "@voyant-travel/inventory#tool.list-products" }]
+  },
+  {
+    "packageName": "@voyant-travel/storage",
+    "unitId": "@voyant-travel/storage",
+    "tools": [],
+    "agentTools": {
+      "posture": "not-applicable",
+      "rationale": "Storage is an adapter; domain modules own attachment Tools."
+    }
+  },
+  {
+    "packageName": "@voyant-travel/operations",
+    "unitId": "@voyant-travel/operations",
+    "tools": [],
+    "agentTools": {
+      "posture": "planned",
+      "rationale": "Operations projections need an agent surface.",
+      "issue": "#3370"
+    }
+  }
+]

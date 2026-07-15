@@ -68,6 +68,92 @@ export const navigationPreferencesVoyantModule = defineModule({
       },
     ],
   },
+  tools: [
+    {
+      id: "@voyant-travel/navigation-preferences#tool.get-navigation-preferences",
+      name: "get_navigation_preferences",
+      runtime: {
+        entry: "@voyant-travel/navigation-preferences/tools",
+        export: "getNavigationPreferencesTool",
+      },
+      requiredScopes: ["admin-navigation:read"],
+      context: ["navigationPreferences"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/navigation-preferences#tool.set-organization-navigation-preferences",
+      name: "set_organization_navigation_preferences",
+      runtime: {
+        entry: "@voyant-travel/navigation-preferences/tools",
+        export: "setOrganizationNavigationPreferencesTool",
+      },
+      requiredScopes: ["admin-navigation:write"],
+      context: ["navigationPreferences"],
+      risk: "high",
+    },
+    {
+      id: "@voyant-travel/navigation-preferences#tool.set-my-navigation-preferences",
+      name: "set_my_navigation_preferences",
+      runtime: {
+        entry: "@voyant-travel/navigation-preferences/tools",
+        export: "setMyNavigationPreferencesTool",
+      },
+      requiredScopes: ["admin-navigation:write"],
+      context: ["navigationPreferences"],
+      risk: "medium",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/navigation-preferences#action.get-navigation-preferences",
+      version: "v1",
+      kind: "read",
+      targetType: "navigation-preferences",
+      requiredScopes: ["admin-navigation:read"],
+      risk: "low",
+      ledger: "optional",
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: ["@voyant-travel/navigation-preferences#tool.get-navigation-preferences"],
+      },
+    },
+    {
+      id: "@voyant-travel/navigation-preferences#action.set-organization-navigation-preferences",
+      version: "v1",
+      kind: "execute",
+      targetType: "organization-navigation-preferences",
+      resource: "admin-navigation",
+      action: "write",
+      requiredScopes: ["admin-navigation:write"],
+      risk: "high",
+      ledger: "required",
+      approval: "required",
+      reversible: true,
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: [
+          "@voyant-travel/navigation-preferences#tool.set-organization-navigation-preferences",
+        ],
+      },
+    },
+    {
+      id: "@voyant-travel/navigation-preferences#action.set-my-navigation-preferences",
+      version: "v1",
+      kind: "execute",
+      targetType: "member-navigation-preferences",
+      resource: "admin-navigation",
+      action: "write",
+      requiredScopes: ["admin-navigation:write"],
+      risk: "medium",
+      ledger: "required",
+      approval: "never",
+      reversible: true,
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: ["@voyant-travel/navigation-preferences#tool.set-my-navigation-preferences"],
+      },
+    },
+  ],
   admin: {
     compositionOrder: 15,
     setupSteps: [

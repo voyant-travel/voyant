@@ -1,4 +1,5 @@
 import { definePort } from "@voyant-travel/core/project"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type {
   QuoteProposalRoutesOptions,
   QuoteVersionSnapshotRoutesOptions,
@@ -15,6 +16,38 @@ export type QuotesProposalRuntime = QuoteProposalRoutesOptions
 
 /** Deployment behavior required by the quote-version snapshot extension. */
 export type QuotesSnapshotRuntime = QuoteVersionSnapshotRoutesOptions
+
+export interface QuoteProposalNotificationInput {
+  idempotencyKey: string
+  templateSlug: string
+  to: string
+  channel: "email" | "sms"
+  data: Record<string, unknown>
+  quoteId: string
+  quoteVersionId: string
+}
+
+export interface QuoteProposalNotificationDelivery {
+  id: string
+  status: "pending" | "sent" | "failed" | "cancelled"
+  channel: "email" | "sms"
+  provider: string
+  providerMessageId: string | null
+  toAddress: string
+}
+
+/** Notifications-owned delivery behavior consumed by the Quotes proposal composer. */
+export interface QuotesNotificationsRuntime {
+  /**
+   * Deliver one vetted-template proposal notification. Reusing a key with the
+   * same command must replay the prior delivery; command drift must conflict.
+   */
+  sendQuoteProposal(
+    db: PostgresJsDatabase,
+    bindings: Record<string, unknown>,
+    input: QuoteProposalNotificationInput,
+  ): Promise<QuoteProposalNotificationDelivery>
+}
 
 function requireFunctions(id: string, provider: object, methods: readonly string[]): void {
   const candidate = provider as Record<string, unknown>
@@ -65,5 +98,13 @@ export const quotesSnapshotRuntimePort = definePort<QuotesSnapshotRuntime>({
   test(provider) {
     requireObject("quotes.snapshot-runtime", provider)
     requireFunctions("quotes.snapshot-runtime", provider, ["resolveDb"])
+  },
+})
+
+export const quotesNotificationsRuntimePort = definePort<QuotesNotificationsRuntime>({
+  id: "quotes.notifications.runtime",
+  test(provider) {
+    requireObject("quotes.notifications.runtime", provider)
+    requireFunctions("quotes.notifications.runtime", provider, ["sendQuoteProposal"])
   },
 })

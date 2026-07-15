@@ -83,4 +83,35 @@ describe("action-ledger deployment manifest", () => {
     })
     expect(isGraphRuntimeFactory(createActionLedgerHealthVoyantRuntime)).toBe(true)
   })
+
+  it("binds every sensitive Tool to staff-only graph actions", () => {
+    expect(actionLedgerVoyantModule.tools?.map(({ name }) => name).sort()).toEqual([
+      "approve_action_approval",
+      "deny_action_approval",
+      "get_action_approval",
+      "get_action_delegation",
+      "get_action_ledger_entry",
+      "get_action_target_timeline",
+      "list_action_approvals",
+      "list_action_delegations",
+      "list_action_ledger_entries",
+      "list_action_relay_outbox",
+      "request_action_approval",
+    ])
+    expect(actionLedgerVoyantModule.meta?.agentTools).toBeUndefined()
+
+    const boundTools = new Set(
+      actionLedgerVoyantModule.actions?.flatMap(({ from }) => from?.tools ?? []) ?? [],
+    )
+    expect(boundTools).toEqual(new Set(actionLedgerVoyantModule.tools?.map(({ id }) => id) ?? []))
+    expect(
+      actionLedgerVoyantModule.actions?.every(
+        ({ ledger, approval, allowedActorTypes }) =>
+          ledger === "required" && approval === "never" && allowedActorTypes?.join() === "staff",
+      ),
+    ).toBe(true)
+    expect(actionLedgerVoyantModule.access?.resources[0]).toMatchObject({
+      wildcard: "explicit-resource",
+    })
+  })
 })

@@ -14,3 +14,19 @@ See [docs/architecture/charters-module.md](../../docs/architecture/charters-modu
 ## Status
 
 Phase 1 — schema + core service + pricing math.
+
+## Agent Tools
+
+Selecting the module contributes provider-neutral Tools for charter browse and
+detail, per-suite and whole-yacht quotes, and the core product, voyage, and
+yacht lifecycle. These Tools use the same local services and selected
+`CharterAdapter` implementations as the HTTP surfaces; adapter-specific
+mechanics are not exposed.
+
+Read and quote Tools require `charters:read` and are available to staff and
+customer actors. Local lifecycle writes require `charters:write`, are staff
+only, and are ledgered. `create_charter_booking` additionally requires
+`bookings:write`; because an external booking can commit to a supplier, it is
+critical-risk, confirmation-gated, approval-required, ledger-required, and
+declared irreversible. Archive/delete and low-level suite/schedule mutations
+remain outside the Tool surface.

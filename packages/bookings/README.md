@@ -59,6 +59,32 @@ request before it mutates the booking. Approved execution ledger fields are
 stamped through `buildActionLedgerApprovedExecutionFields(...)` so execution
 entries consistently link back to the requested action and approval.
 
+## Agent Tools
+
+The selected deployment graph exposes package-owned Tools from
+`@voyant-travel/bookings/tools`:
+
+- `cancel_booking` always enters the action-ledger approval flow for agent
+  callers. Its first call returns a pending approval; execution requires the
+  approved id and the same command, principal, target snapshot, and
+  idempotency fingerprint. The successful cancellation ledger entry links to
+  that requested action and approval, including financial-settlement hooks.
+- `@voyant-travel/bookings#extras` owns booking-extra reads and non-destructive
+  lifecycle writes plus staff-only departure manifests, traveler selections,
+  and collection-state updates. Manifest reads require both `bookings:read` and
+  `bookings-pii:read`; high-risk writes require explicit confirmation and are
+  ledgered by their selected graph actions.
+- `@voyant-travel/bookings#requirements` owns product/option requirement,
+  question, choice, trigger, and booking-answer reads and non-destructive
+  writes. Booking-answer reads require the explicit booking PII scope.
+- `get_public_transport_requirements` is the public-safe requirements summary
+  for staff or customer grants. It resolves the selected Inventory runtime port
+  instead of importing or selecting a deployment provider directly.
+
+Delete operations remain API-only until a deployment selects a destructive
+Tool policy. Every Tool uses the request-scoped database/service contribution;
+missing services or runtime ports fail closed.
+
 ## Entities
 
 - **Bookings** (`book`)
@@ -78,6 +104,7 @@ entries consistently link back to the requested action and approval.
 | `./validation` | Zod schemas |
 | `./routes` | Hono routes |
 | `./requirements` | Booking requirements service and routes |
+| `./tools` | Selected base, extras, and requirements Tool runtime |
 
 ## License
 

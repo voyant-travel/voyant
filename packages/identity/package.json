@@ -8,6 +8,7 @@
     "./service": "./src/service.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./routes": "./src/routes.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/identity.json"
@@ -27,6 +28,7 @@
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/identity-contracts": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -65,6 +67,11 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

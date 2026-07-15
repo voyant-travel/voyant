@@ -22,6 +22,7 @@ describe("MICE deployment authority", () => {
     const runtime = await createMiceVoyantRuntime({
       unitId: miceVoyantModule.id,
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: miceVoyantModule.api ?? [],
       graph: {
         providerSelections: {},

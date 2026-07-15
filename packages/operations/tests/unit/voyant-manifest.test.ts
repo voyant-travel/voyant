@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { operationsVoyantModule } from "../../src/voyant.js"
+import { operationsDashboardVoyantModule, operationsVoyantModule } from "../../src/voyant.js"
 
 describe("operations deployment manifest", () => {
   it("owns the package deployment surfaces", () => {
@@ -111,6 +111,69 @@ describe("operations deployment manifest", () => {
         "source",
       ],
       additionalProperties: false,
+    })
+  })
+
+  it("binds every read-only Operations tool to a read action", () => {
+    const tools = operationsVoyantModule.tools ?? []
+    const actions = operationsVoyantModule.actions ?? []
+    expect(tools).toHaveLength(8)
+    expect(actions).toHaveLength(8)
+    for (const tool of tools) {
+      expect(tool).toMatchObject({
+        requiredScopes: ["operations:read"],
+        context: ["operations"],
+        risk: "low",
+      })
+      const action = actions.find((candidate) => candidate.from?.tools?.includes(tool.id))
+      expect(action).toMatchObject({
+        version: "v1",
+        kind: "read",
+        requiredScopes: ["operations:read"],
+        risk: "low",
+        ledger: "optional",
+      })
+    }
+  })
+
+  it("owns the separately selectable cross-module dashboard projection", () => {
+    expect(operationsDashboardVoyantModule).toMatchObject({
+      schemaVersion: "voyant.module.v1",
+      id: "@voyant-travel/operations#dashboard",
+      packageName: "@voyant-travel/operations",
+      requires: {
+        capabilities: [
+          "operations.data-owner",
+          "bookings.data-owner",
+          "finance.data-owner",
+          "inventory.data-owner",
+          "distribution.data-owner",
+        ],
+      },
+      tools: [
+        {
+          id: "@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary",
+          name: "get_operator_dashboard_summary",
+          requiredScopes: [
+            "operations:read",
+            "bookings:read",
+            "finance:read",
+            "products:read",
+            "suppliers:read",
+          ],
+          context: ["operations", "bookings", "finance", "inventory", "distribution"],
+          risk: "low",
+        },
+      ],
+      actions: [
+        {
+          kind: "read",
+          resource: "operations",
+          action: "read",
+          ledger: "optional",
+          allowedActorTypes: ["staff"],
+        },
+      ],
     })
   })
 })

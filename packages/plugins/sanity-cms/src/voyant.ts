@@ -88,6 +88,10 @@ export const sanityCmsVoyantPlugin = definePlugin({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale: "This plugin synchronizes catalog events; catalog modules own agent capabilities.",
+    },
   },
 })
 

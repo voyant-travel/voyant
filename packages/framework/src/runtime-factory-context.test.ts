@@ -274,7 +274,7 @@ describe("graph runtime factory context", () => {
     expect(resolveBinding).not.toHaveBeenCalled()
   })
 
-  it("exposes only the owning unit's project config", async () => {
+  it("exposes owning config directly and selected unit config by exact id", async () => {
     const seen = new Map<string, VoyantGraphRuntimeFactoryContext>()
     const entries: Record<string, () => Promise<unknown>> = {}
     const modules = ["alpha", "beta"].map((name, order) => {
@@ -340,5 +340,9 @@ describe("graph runtime factory context", () => {
     })
     expect(seen.get("alpha")?.projectConfig).toBe(runtime.modules[0]?.projectConfig)
     expect(seen.get("beta")?.projectConfig).toBe(runtime.modules[1]?.projectConfig)
+    expect(seen.get("alpha")?.getUnitProjectConfig("@acme/beta")).toBe(
+      runtime.modules[1]?.projectConfig,
+    )
+    expect(seen.get("alpha")?.getUnitProjectConfig("@acme/not-selected")).toBeUndefined()
   })
 })

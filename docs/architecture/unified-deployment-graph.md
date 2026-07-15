@@ -370,6 +370,11 @@ metadata come from selected graph facets. The host may provide request-scoped
 resources, but it does not enumerate product tools or rebuild an access catalog
 from package names.
 
+The repository coverage checker may read package-owned `meta.agentTools` posture
+declarations for modules that currently have no Tools. These declarations document a
+planned or intentionally absent agent interface; they are not executable eligibility
+metadata and do not replace the selected graph's `tools` facets.
+
 ### Data and lifecycle
 
 Schema, link, and migration ownership follows the package or local module that

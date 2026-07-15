@@ -20,7 +20,7 @@ import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import { openApiValidationHook, parseOptionalJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { notificationDeliverySchema } from "./response-schemas.js"
 import { createNotificationService, notificationsService } from "./service.js"
 import type { BookingDocumentAttachmentResolver } from "./service-booking-documents.js"
 import type { NotificationProvider } from "./types.js"
@@ -35,7 +35,6 @@ import {
   insertNotificationTemplateSchema,
   notificationChannelSchema,
   notificationDeliveryListQuerySchema,
-  notificationDeliveryStatusSchema,
   notificationReminderRuleListQuerySchema,
   notificationReminderRunListQuerySchema,
   notificationReminderRunRecordSchema,
@@ -45,7 +44,6 @@ import {
   notificationReminderStatusSchema,
   notificationReminderTargetTypeSchema,
   notificationStageRecipientKindSchema,
-  notificationTargetTypeSchema,
   notificationTemplateListQuerySchema,
   notificationTemplateStatusSchema,
   previewNotificationTemplateResultSchema,
@@ -169,36 +167,6 @@ const notificationTemplateSchema = z.object({
   fromAddress: z.string().nullable(),
   isSystem: z.boolean(),
   metadata: jsonMetadata.nullable(),
-  createdAt: isoTimestamp,
-  updatedAt: isoTimestamp,
-})
-
-const notificationDeliverySchema = z.object({
-  id: idSchema,
-  templateId: z.string().nullable(),
-  templateSlug: z.string().nullable(),
-  targetType: notificationTargetTypeSchema,
-  targetId: z.string().nullable(),
-  personId: z.string().nullable(),
-  organizationId: z.string().nullable(),
-  bookingId: z.string().nullable(),
-  invoiceId: z.string().nullable(),
-  paymentSessionId: z.string().nullable(),
-  channel: notificationChannelSchema,
-  provider: z.string(),
-  providerMessageId: z.string().nullable(),
-  status: notificationDeliveryStatusSchema,
-  toAddress: z.string(),
-  fromAddress: z.string().nullable(),
-  subject: z.string().nullable(),
-  htmlBody: z.string().nullable(),
-  textBody: z.string().nullable(),
-  payloadData: jsonMetadata.nullable(),
-  metadata: jsonMetadata.nullable(),
-  errorMessage: z.string().nullable(),
-  scheduledFor: isoTimestamp.nullable(),
-  sentAt: isoTimestamp.nullable(),
-  failedAt: isoTimestamp.nullable(),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 })

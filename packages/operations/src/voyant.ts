@@ -29,7 +29,10 @@ export const operationsVoyantModule = defineModule({
   id: "@voyant-travel/operations",
   packageName: "@voyant-travel/operations",
   localId: "operations",
-  provides: { ports: [providePort(catalogOperationsRuntimeExtensionPort)] },
+  provides: {
+    capabilities: ["operations.data-owner"],
+    ports: [providePort(catalogOperationsRuntimeExtensionPort)],
+  },
   api: [
     {
       id: "@voyant-travel/operations#api.admin",
@@ -120,6 +123,178 @@ export const operationsVoyantModule = defineModule({
       },
     ],
   },
+  tools: [
+    {
+      id: "@voyant-travel/operations#tool.get-availability-overview",
+      name: "get_availability_overview",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "getAvailabilityOverviewTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.get-availability-aggregates",
+      name: "get_availability_aggregates",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "getAvailabilityAggregatesTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.list-availability-rules",
+      name: "list_availability_rules",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "listAvailabilityRulesTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.get-availability-rule",
+      name: "get_availability_rule",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "getAvailabilityRuleTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.list-availability-start-times",
+      name: "list_availability_start_times",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "listAvailabilityStartTimesTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.list-departures",
+      name: "list_departures",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "listDeparturesTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.get-departure",
+      name: "get_departure",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "getDepartureTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/operations#tool.list-availability-closeouts",
+      name: "list_availability_closeouts",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "listAvailabilityCloseoutsTool",
+      },
+      requiredScopes: ["operations:read"],
+      context: ["operations"],
+      risk: "low",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/operations#action.get-availability-overview",
+      version: "v1",
+      kind: "read",
+      targetType: "availability-overview",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.get-availability-overview"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.get-availability-aggregates",
+      version: "v1",
+      kind: "read",
+      targetType: "availability-aggregate",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.get-availability-aggregates"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.list-availability-rules",
+      version: "v1",
+      kind: "read",
+      targetType: "availability-rule",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.list-availability-rules"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.get-availability-rule",
+      version: "v1",
+      kind: "read",
+      targetType: "availability-rule",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.get-availability-rule"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.list-availability-start-times",
+      version: "v1",
+      kind: "read",
+      targetType: "availability-start-time",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.list-availability-start-times"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.list-departures",
+      version: "v1",
+      kind: "read",
+      targetType: "departure",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.list-departures"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.get-departure",
+      version: "v1",
+      kind: "read",
+      targetType: "departure",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.get-departure"] },
+    },
+    {
+      id: "@voyant-travel/operations#action.list-availability-closeouts",
+      version: "v1",
+      kind: "read",
+      targetType: "availability-closeout",
+      requiredScopes: ["operations:read"],
+      risk: "low",
+      ledger: "optional",
+      from: { tools: ["@voyant-travel/operations#tool.list-availability-closeouts"] },
+    },
+  ],
   admin: {
     compositionOrder: 10,
     runtime: {
@@ -191,6 +366,64 @@ export const operationsVoyantModule = defineModule({
   meta: {
     ownership: "package",
   },
+})
+
+export const operationsDashboardVoyantModule = defineModule({
+  id: "@voyant-travel/operations#dashboard",
+  packageName: "@voyant-travel/operations",
+  localId: "operations.dashboard",
+  requires: {
+    capabilities: [
+      "operations.data-owner",
+      "bookings.data-owner",
+      "finance.data-owner",
+      "inventory.data-owner",
+      "distribution.data-owner",
+    ],
+  },
+  tools: [
+    {
+      id: "@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary",
+      name: "get_operator_dashboard_summary",
+      runtime: {
+        entry: "@voyant-travel/operations/tools",
+        export: "getOperatorDashboardSummaryTool",
+      },
+      requiredScopes: [
+        "operations:read",
+        "bookings:read",
+        "finance:read",
+        "products:read",
+        "suppliers:read",
+      ],
+      context: ["operations", "bookings", "finance", "inventory", "distribution"],
+      risk: "low",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/operations#dashboard#action.get-operator-dashboard-summary",
+      version: "v1",
+      kind: "read",
+      targetType: "operator-dashboard-summary",
+      resource: "operations",
+      action: "read",
+      requiredScopes: [
+        "operations:read",
+        "bookings:read",
+        "finance:read",
+        "products:read",
+        "suppliers:read",
+      ],
+      risk: "low",
+      ledger: "optional",
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: ["@voyant-travel/operations#dashboard#tool.get-operator-dashboard-summary"],
+      },
+    },
+  ],
+  meta: { ownership: "package" },
 })
 
 export default operationsVoyantModule

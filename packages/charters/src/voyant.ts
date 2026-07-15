@@ -89,6 +89,109 @@ export const chartersVoyantModule = defineModule({
       },
     ],
   },
+  tools: [
+    ...(
+      [
+        ["browse-charters", "browse_charters", "browseChartersTool"],
+        ["get-charter-product", "get_charter_product", "getCharterProductTool"],
+        ["get-charter-voyage", "get_charter_voyage", "getCharterVoyageTool"],
+        ["get-charter-yacht", "get_charter_yacht", "getCharterYachtTool"],
+        ["quote-charter-per-suite", "quote_charter_per_suite", "quoteCharterPerSuiteTool"],
+        ["quote-charter-whole-yacht", "quote_charter_whole_yacht", "quoteCharterWholeYachtTool"],
+      ] as const
+    ).map(([id, name, exportName]) => ({
+      id: `@voyant-travel/charters#tool.${id}`,
+      name,
+      runtime: { entry: "@voyant-travel/charters/tools", export: exportName },
+      requiredScopes: ["charters:read"],
+      context: ["charters"],
+      risk: "low" as const,
+    })),
+    ...(
+      [
+        ["create-charter-product", "create_charter_product", "createCharterProductTool"],
+        ["update-charter-product", "update_charter_product", "updateCharterProductTool"],
+        ["upsert-charter-voyage", "upsert_charter_voyage", "upsertCharterVoyageTool"],
+        ["update-charter-voyage", "update_charter_voyage", "updateCharterVoyageTool"],
+        ["create-charter-yacht", "create_charter_yacht", "createCharterYachtTool"],
+        ["update-charter-yacht", "update_charter_yacht", "updateCharterYachtTool"],
+      ] as const
+    ).map(([id, name, exportName]) => ({
+      id: `@voyant-travel/charters#tool.${id}`,
+      name,
+      runtime: { entry: "@voyant-travel/charters/tools", export: exportName },
+      requiredScopes: ["charters:write"],
+      context: ["charters"],
+      risk: "medium" as const,
+    })),
+    {
+      id: "@voyant-travel/charters#tool.create-charter-booking",
+      name: "create_charter_booking",
+      runtime: { entry: "@voyant-travel/charters/tools", export: "createCharterBookingTool" },
+      requiredScopes: ["charters:write", "bookings:write"],
+      context: ["charters"],
+      risk: "critical",
+    },
+  ],
+  actions: [
+    ...(
+      [
+        "browse-charters",
+        "get-charter-product",
+        "get-charter-voyage",
+        "get-charter-yacht",
+        "quote-charter-per-suite",
+        "quote-charter-whole-yacht",
+      ] as const
+    ).map((id) => ({
+      id: `@voyant-travel/charters#action.${id}`,
+      version: "v1" as const,
+      kind: "read" as const,
+      targetType: "charter",
+      requiredScopes: ["charters:read"],
+      risk: "low" as const,
+      ledger: "optional" as const,
+      approval: "never" as const,
+      reversible: false,
+      allowedActorTypes: ["staff" as const, "customer" as const],
+      from: { tools: [`@voyant-travel/charters#tool.${id}`] },
+    })),
+    ...(
+      [
+        "create-charter-product",
+        "update-charter-product",
+        "upsert-charter-voyage",
+        "update-charter-voyage",
+        "create-charter-yacht",
+        "update-charter-yacht",
+      ] as const
+    ).map((id) => ({
+      id: `@voyant-travel/charters#action.${id}`,
+      version: "v1" as const,
+      kind: "execute" as const,
+      targetType: "charter",
+      requiredScopes: ["charters:write"],
+      risk: "medium" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+      reversible: true,
+      allowedActorTypes: ["staff" as const],
+      from: { tools: [`@voyant-travel/charters#tool.${id}`] },
+    })),
+    {
+      id: "@voyant-travel/charters#action.create-charter-booking",
+      version: "v1",
+      kind: "execute",
+      targetType: "charter-booking",
+      requiredScopes: ["charters:write", "bookings:write"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      from: { tools: ["@voyant-travel/charters#tool.create-charter-booking"] },
+    },
+  ],
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

@@ -3,9 +3,14 @@ import {
   type FinanceNotificationsRuntime,
   financeNotificationsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import {
+  type QuotesNotificationsRuntime,
+  quotesNotificationsRuntimePort,
+} from "@voyant-travel/quotes/runtime-port"
 import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront"
 import type { StorefrontVerificationRoutesOptions } from "@voyant-travel/storefront/verification"
 import { createFinanceNotificationsRuntime } from "./finance-runtime.js"
+import { createQuotesNotificationsRuntime } from "./quotes-runtime.js"
 import { createNotificationsRuntime } from "./runtime.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
 
@@ -30,5 +35,8 @@ export function createNotificationsRuntimePortContribution(
     [financeNotificationsRuntimePort.id]: createFinanceNotificationsRuntime(
       host.primitives,
     ) satisfies FinanceNotificationsRuntime,
+    [quotesNotificationsRuntimePort.id]: createQuotesNotificationsRuntime(
+      host.primitives,
+    ) satisfies QuotesNotificationsRuntime,
   }
 }

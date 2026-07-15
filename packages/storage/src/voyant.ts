@@ -168,6 +168,11 @@ export const storageVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "Storage owns low-level object mechanics; domain modules own attachment and media Tools.",
+    },
   },
 })
 

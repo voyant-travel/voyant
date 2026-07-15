@@ -9,6 +9,7 @@
     "./contracts": "./src/contracts.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./routes": "./src/routes.ts",
     "./hono-module": "./src/hono-module.ts",
     "./voyant": "./src/voyant.ts",
@@ -28,6 +29,7 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -67,6 +69,11 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

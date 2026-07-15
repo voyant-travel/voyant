@@ -1,6 +1,7 @@
 import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
+import type { TripComponent } from "../src/schema.js"
 import type { Trip } from "../src/service.js"
 import { createTripTool, priceTripTool, type TripsToolServices, tripsTools } from "../src/tools.js"
 
@@ -65,20 +66,78 @@ function makeRegistry() {
   return registry
 }
 
+function sourcedCandidates() {
+  const now = new Date("2026-07-15T10:00:00.000Z")
+  return {
+    requirement: {
+      id: "trrq_1",
+      envelopeId: "trip_123",
+      sequence: 0,
+      status: "candidates_ready",
+      title: "Three-night stay",
+      description: null,
+      vertical: "accommodations",
+      criteria: { nights: 3 },
+      criteriaVersion: "v1",
+      required: true,
+      selectedCandidateId: null,
+      resolvedComponentId: null,
+      lastSourcedAt: now,
+      metadata: {},
+      createdAt: now,
+      updatedAt: now,
+    },
+    candidates: [
+      {
+        id: "trcd_1",
+        requirementId: "trrq_1",
+        envelopeId: "trip_123",
+        rank: 0,
+        status: "ranked",
+        candidateRef: "provider-result-1",
+        entityModule: "accommodations",
+        entityId: "hotel_1",
+        sourceKind: "sourced",
+        sourceConnectionId: "conn_1",
+        sourceModule: null,
+        selection: { room: "double" },
+        priceCurrency: "EUR",
+        priceAmount: "450.00",
+        expiresAt: new Date("2026-07-15T10:30:00.000Z"),
+        providerData: { confidentialNetRate: "250.00" },
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+  }
+}
+
 describe("trips tools", () => {
-  it("registers all four trips tools with their scopes and tiers", () => {
+  it("registers trip composition and candidate workflow tools with exact posture", () => {
     const registry = makeRegistry()
     const manifest = registry.list()
     expect(manifest.map((t) => t.name).sort()).toEqual([
+      "add_trip_requirement",
       "create_trip",
       "price_trip",
       "reserve_trip",
+      "reshop_trip",
+      "reshop_trip_requirement",
       "revise_trip",
+      "select_trip_candidate",
+      "source_trip_requirement_candidates",
     ])
     const reserve = manifest.find((t) => t.name === "reserve_trip")
     expect(reserve?.tier).toBe("destructive")
     expect(reserve?.requiredScopes).toEqual(["trips:write"])
     expect(reserve?.riskPolicy.destructive).toBe(true)
+    const reshop = manifest.find((t) => t.name === "reshop_trip")
+    expect(reshop).toMatchObject({ tier: "destructive", audience: { allowed: ["staff"] } })
+    expect(reshop?.riskPolicy).toMatchObject({
+      destructive: true,
+      reversible: true,
+      confirmationRequired: true,
+    })
   })
 
   it("creates a deterministic trip and adds components, returning pure data", async () => {
@@ -103,7 +162,43 @@ describe("trips tools", () => {
         async addComponent(input) {
           const metadata = input.metadata as { manualService?: { name?: string } }
           calls.push(`addComponent:${metadata.manualService?.name}`)
-          return { id: "trcp_123", envelopeId: input.envelopeId } as never
+          const now = new Date("2026-05-18T00:00:00.000Z")
+          return {
+            id: "trcp_123",
+            envelopeId: input.envelopeId,
+            sequence: input.sequence,
+            kind: input.kind,
+            status: "draft",
+            title: metadata.manualService?.name ?? null,
+            description: input.description ?? null,
+            entityModule: null,
+            entityId: null,
+            sourceKind: null,
+            sourceConnectionId: null,
+            sourceRef: null,
+            bookingDraftId: null,
+            catalogQuoteId: null,
+            bookingId: null,
+            bookingGroupId: null,
+            orderId: null,
+            paymentSessionId: null,
+            providerRef: null,
+            supplierRef: null,
+            componentCurrency: null,
+            componentSubtotalAmountCents: null,
+            componentTaxAmountCents: null,
+            componentTotalAmountCents: null,
+            pricingSnapshot: input.estimatedPricing ?? null,
+            taxLines: [],
+            cancellationSnapshot: null,
+            holdToken: null,
+            holdExpiresAt: null,
+            priceExpiresAt: null,
+            warningCodes: [],
+            metadata: input.metadata,
+            createdAt: now,
+            updatedAt: now,
+          } satisfies TripComponent
         },
         priceTrip: async () => {
           throw new Error("not used")
@@ -196,5 +291,48 @@ describe("trips tools", () => {
   it("exposes tool handlers directly for unit reuse", () => {
     expect(createTripTool.name).toBe("create_trip")
     expect(priceTripTool.tier).toBe("read")
+  })
+
+  it("sources requirement candidates through the injected provider-neutral service", async () => {
+    let forwarded: unknown
+    const result = await makeRegistry().dispatch<{
+      candidates: Array<Record<string, unknown>>
+    }>(
+      "source_trip_requirement_candidates",
+      {
+        requirementId: "trrq_1",
+        scope: { locale: "en-GB", audience: "staff", market: "RO" },
+        limit: 10,
+      },
+      ctxWith({
+        async sourceRequirementCandidates(input) {
+          forwarded = input
+          return sourcedCandidates()
+        },
+      }),
+    )
+    expect(forwarded).toMatchObject({ requirementId: "trrq_1", limit: 10 })
+    expect(result.candidates[0]).not.toHaveProperty("providerData")
+    expect(result.candidates[0]).toMatchObject({ entityModule: "accommodations" })
+  })
+
+  it("rejects candidate sourcing across a non-staff grant audience", async () => {
+    await expect(
+      makeRegistry().dispatch(
+        "source_trip_requirement_candidates",
+        {
+          requirementId: "trrq_1",
+          scope: { locale: "en-GB", audience: "staff", market: "RO" },
+        },
+        ctxWith(
+          {
+            async sourceRequirementCandidates() {
+              return sourcedCandidates()
+            },
+          },
+          { actor: "customer", audience: "customer" },
+        ),
+      ),
+    ).rejects.toMatchObject({ code: "AUTHORIZATION_DENIED" })
   })
 })

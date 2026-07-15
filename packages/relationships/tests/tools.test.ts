@@ -4,66 +4,347 @@ import { describe, expect, it } from "vitest"
 import { type RelationshipsToolServices, relationshipsTools } from "../src/tools.js"
 
 function ctx(
-  services?: Partial<RelationshipsToolServices>,
-): ToolContext & { relationships?: RelationshipsToolServices } {
+  overrides: Partial<RelationshipsToolServices> = {},
+): ToolContext & { relationships: RelationshipsToolServices } {
+  const unavailable = async () => {
+    throw new Error("Unexpected Relationships tool service call")
+  }
   return {
     db: {},
     actor: "staff",
     audience: "staff",
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
-    relationships: services as RelationshipsToolServices | undefined,
+    relationships: {
+      listPeople: unavailable,
+      getPersonById: unavailable,
+      createPerson: unavailable,
+      updatePerson: unavailable,
+      listOrganizations: unavailable,
+      getOrganizationById: unavailable,
+      createOrganization: unavailable,
+      updateOrganization: unavailable,
+      listNotes: unavailable,
+      addNote: unavailable,
+      updateNote: unavailable,
+      listContactMethods: unavailable,
+      addContactMethod: unavailable,
+      updateContactMethod: unavailable,
+      listAddresses: unavailable,
+      addAddress: unavailable,
+      updateAddress: unavailable,
+      ...overrides,
+    },
+  }
+}
+
+function registry() {
+  const registry = createToolRegistry()
+  registry.registerAll(relationshipsTools)
+  return registry
+}
+
+const timestamp = new Date("2026-07-15T08:00:00.000Z")
+
+function person(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "pers_1",
+    organizationId: null,
+    firstName: "Ana",
+    middleName: null,
+    lastName: "Popescu",
+    gender: null,
+    jobTitle: null,
+    relation: "client",
+    preferredLanguage: "ro",
+    preferredCurrency: "RON",
+    ownerId: null,
+    status: "active",
+    source: null,
+    sourceRef: null,
+    tags: ["repeat"],
+    customFields: {},
+    dateOfBirth: null,
+    notes: null,
+    accessibilityEncrypted: { ciphertext: "must-not-leak" },
+    dietaryEncrypted: null,
+    loyaltyEncrypted: null,
+    insuranceEncrypted: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    archivedAt: null,
+    email: "ana@example.com",
+    phone: null,
+    website: null,
+    ...overrides,
+  }
+}
+
+function organization(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "org_1",
+    name: "Example Travel",
+    legalName: null,
+    website: null,
+    taxId: "RO123",
+    industry: null,
+    relation: "client",
+    ownerId: null,
+    defaultCurrency: "RON",
+    preferredLanguage: "ro",
+    paymentTerms: null,
+    status: "active",
+    source: null,
+    sourceRef: null,
+    tags: [],
+    customFields: {},
+    notes: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    archivedAt: null,
+    ...overrides,
+  }
+}
+
+function note(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "pnot_1",
+    personId: "pers_1",
+    authorId: "user_1",
+    content: "Prefers aisle seats",
+    createdAt: timestamp,
+    ...overrides,
+  }
+}
+
+function contactMethod(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "idcp_1",
+    entityType: "person",
+    entityId: "pers_1",
+    kind: "email",
+    label: "primary",
+    value: "ana@example.com",
+    normalizedValue: "ana@example.com",
+    isPrimary: true,
+    notes: null,
+    metadata: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...overrides,
+  }
+}
+
+function address(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "iadr_1",
+    entityType: "organization",
+    entityId: "org_1",
+    label: "billing",
+    fullText: null,
+    line1: "Calea Victoriei 1",
+    line2: null,
+    city: "Sector 1",
+    region: "Bucuresti",
+    postalCode: null,
+    country: "RO",
+    latitude: null,
+    longitude: null,
+    timezone: null,
+    isPrimary: true,
+    notes: null,
+    metadata: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...overrides,
   }
 }
 
 describe("relationships (crm) tools", () => {
-  it("registers people + organization read tools gated on crm:read", () => {
-    const registry = createToolRegistry()
-    registry.registerAll(relationshipsTools)
-    const list = registry.list()
-    expect(list.map((t) => t.name).sort()).toEqual([
+  it("registers 17 stable staff-only lifecycle capabilities with typed output schemas", () => {
+    const manifest = registry().list()
+    expect(manifest.map((tool) => tool.name).sort()).toEqual([
+      "add_relationship_address",
+      "add_relationship_contact_method",
+      "add_relationship_note",
+      "create_organization",
+      "create_person",
       "get_organization",
       "get_person",
       "list_organizations",
       "list_people",
+      "list_relationship_addresses",
+      "list_relationship_contact_methods",
+      "list_relationship_notes",
+      "update_organization",
+      "update_person",
+      "update_relationship_address",
+      "update_relationship_contact_method",
+      "update_relationship_note",
     ])
-    for (const t of list) {
-      expect(t.tier).toBe("read")
-      expect(t.requiredScopes).toEqual(["crm:read"])
+    for (const tool of manifest) {
+      expect(tool.capabilityId).toBe(
+        `@voyant-travel/relationships#tool.${tool.name.replaceAll("_", "-")}`,
+      )
+      expect(tool.owner).toBe("@voyant-travel/relationships")
+      expect(tool.capabilityVersion).toBe("v1")
+      expect(tool.audience).toEqual({ source: "grant", allowed: ["staff"] })
+      expect(tool.outputSchema).not.toHaveProperty("x-voyant-schema-quality")
     }
+    expect(manifest.find((tool) => tool.name === "create_organization")).toMatchObject({
+      tier: "write",
+      deploymentRisk: "medium",
+      aliases: ["crm_organization_create"],
+    })
+    expect(manifest.find((tool) => tool.name === "list_relationship_addresses")).toMatchObject({
+      tier: "sensitive",
+      deploymentRisk: "high",
+      requiredScopes: ["crm:read"],
+      aliases: ["crm_addresses_list"],
+    })
   })
 
-  it("dispatches people + organization reads through the injected service", async () => {
-    const registry = createToolRegistry()
-    registry.registerAll(relationshipsTools)
-    const services: RelationshipsToolServices = {
-      async listPeople() {
-        return { data: [{ id: "per_1" }] }
-      },
-      async getPersonById(id) {
-        return { id }
-      },
-      async listOrganizations() {
-        return { data: [] }
-      },
-      async getOrganizationById(id) {
-        return { id }
-      },
-    }
-    expect(await registry.dispatch("get_person", { id: "per_1" }, ctx(services))).toMatchObject({
-      id: "per_1",
+  it("normalizes typed person reads and strips encrypted profile envelopes", async () => {
+    const result = await registry().dispatch<{ data: Array<Record<string, unknown>> }>(
+      "crm_people_list",
+      { search: "Popescu" },
+      ctx({
+        async listPeople(query) {
+          return { data: [person()], total: 1, limit: query.limit, offset: query.offset }
+        },
+      }),
+    )
+    expect(result.data[0]).toMatchObject({
+      id: "pers_1",
+      createdAt: timestamp.toISOString(),
+      email: "ana@example.com",
     })
+    expect(result.data[0]).not.toHaveProperty("accessibilityEncrypted")
+  })
+
+  it("requires a real contact and dispatches duplicate-aware person creation", async () => {
+    await expect(
+      registry().dispatch("create_person", { firstName: "Ana", lastName: "Popescu" }, ctx()),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" })
+
+    let forwarded: unknown
+    const result = await registry().dispatch(
+      "crm_person_create",
+      { firstName: "Ana", lastName: "Popescu", email: "ana@example.com" },
+      ctx({
+        async createPerson(input) {
+          forwarded = input
+          return { person: person(), alreadyExists: true }
+        },
+      }),
+    )
+    expect(forwarded).toMatchObject({
+      firstName: "Ana",
+      lastName: "Popescu",
+      email: "ana@example.com",
+      allowDuplicateName: false,
+      status: "active",
+      tags: [],
+    })
+    expect(result).toMatchObject({ alreadyExists: true, person: { id: "pers_1" } })
+  })
+
+  it("supports organization creation with a billing address and lifecycle updates", async () => {
+    let listed: unknown
+    await registry().dispatch(
+      "crm_organizations_list",
+      { vatNumber: "RO123" },
+      ctx({
+        async listOrganizations(query) {
+          listed = query
+          return { data: [organization()], total: 1, limit: query.limit, offset: query.offset }
+        },
+      }),
+    )
+    expect(listed).toMatchObject({ taxId: "RO123", limit: 50, offset: 0 })
+
+    let created: unknown
+    const createResult = await registry().dispatch(
+      "crm_organization_create",
+      {
+        name: "Example Travel",
+        vatNumber: "RO123",
+        billingAddress: { label: "billing", line1: "Calea Victoriei 1", country: "RO" },
+      },
+      ctx({
+        async createOrganization(input) {
+          created = input
+          return { organization: organization(), billingAddress: address() }
+        },
+      }),
+    )
+    expect(created).toMatchObject({ name: "Example Travel", vatNumber: "RO123" })
+    expect(createResult).toMatchObject({
+      organization: { id: "org_1" },
+      billingAddress: { id: "iadr_1" },
+    })
+
+    let updated: unknown
+    await registry().dispatch(
+      "crm_organization_update",
+      { id: "org_1", status: "inactive", tags: ["former-client"] },
+      ctx({
+        async updateOrganization(input) {
+          updated = input
+          return organization({ status: "inactive", tags: ["former-client"] })
+        },
+      }),
+    )
+    expect(updated).toMatchObject({ id: "org_1", status: "inactive", tags: ["former-client"] })
+  })
+
+  it("routes notes, contact methods, and addresses by entity without delete capabilities", async () => {
+    const calls: string[] = []
+    const services = ctx({
+      async listNotes(input) {
+        calls.push(`notes:${input.entityType}:${input.entityId}`)
+        return [note()]
+      },
+      async addContactMethod(input) {
+        calls.push(`contact:${input.entityType}:${input.entityId}`)
+        return contactMethod()
+      },
+      async updateAddress(input) {
+        calls.push(`address:${input.id}`)
+        return address({ line1: "Calea Victoriei 2" })
+      },
+    })
+    await registry().dispatch(
+      "crm_notes_list",
+      { entityType: "person", entityId: "pers_1" },
+      services,
+    )
+    await registry().dispatch(
+      "crm_contact_method_add",
+      {
+        entityType: "person",
+        entityId: "pers_1",
+        kind: "email",
+        value: "ana@example.com",
+      },
+      services,
+    )
+    await registry().dispatch(
+      "crm_address_update",
+      { id: "iadr_1", line1: "Calea Victoriei 2" },
+      services,
+    )
+    expect(calls).toEqual(["notes:person:pers_1", "contact:person:pers_1", "address:iadr_1"])
     expect(
-      await registry.dispatch("get_organization", { id: "org_1" }, ctx(services)),
-    ).toMatchObject({
-      id: "org_1",
-    })
+      registry()
+        .list()
+        .some((tool) => tool.name.includes("delete")),
+    ).toBe(false)
   })
 
   it("throws MISSING_SERVICE when unwired", async () => {
-    const registry = createToolRegistry()
-    registry.registerAll(relationshipsTools)
-    await expect(registry.dispatch("list_people", {}, ctx(undefined))).rejects.toMatchObject({
+    const missing = { ...ctx(), relationships: undefined }
+    await expect(registry().dispatch("list_people", {}, missing)).rejects.toMatchObject({
       code: "MISSING_SERVICE",
     })
   })

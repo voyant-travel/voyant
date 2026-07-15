@@ -30,7 +30,13 @@ const app = createApp({
 | `./service` | Identity sync/hydration service |
 | `./schema` | Drizzle tables (contact points, addresses, named contacts) |
 | `./validation` | Zod schemas |
+| `./tools` | Guarded MCP Tools for contact points, addresses, and named contacts |
 | `./routes` | Hono routes |
+
+The Tool surface is staff-only. Reads and writes are classified as sensitive because
+the records contain personal contact and location data; every capability requires an
+explicit `identity:read` or `identity:write` grant and action-ledger binding. Destructive
+deletes remain available only through explicitly authorized administrative routes.
 
 ## License
 

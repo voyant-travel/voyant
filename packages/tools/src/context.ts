@@ -28,9 +28,46 @@ export interface ToolContext {
   resolverScope: ResolverScope
   /** Optional runtime hook to keep the isolate alive for background work. */
   waitUntil?(promise: Promise<unknown>): void
+  /** Request-scoped selected-graph action gate supplied by the action-ledger package. */
+  toolActionPolicy?: ToolActionPolicyGate
+}
+
+export interface ToolActionInvocationControl {
+  confirmed?: boolean
+  targetId?: string
+  idempotencyKey?: string
+  approvalId?: string
+  idempotencyFingerprint?: string
+  reasonCode?: string
+}
+
+export interface ToolActionPolicyExecutionInput {
+  capabilityId: string
+  capabilityVersion: string
+  canonicalName: string
+  actionPolicy: import("./binding.js").ToolActionPolicyManifest
+  commandInput: unknown
+  invocation: ToolActionInvocationControl
+}
+
+/** Transport-neutral gate: the implementation owns policy checks and audited dispatch. */
+export interface ToolActionPolicyGate {
+  execute<T>(input: ToolActionPolicyExecutionInput, dispatch: () => Promise<T>): Promise<T>
 }
 
 export const TOOL_CONTEXT_CONTRIBUTION_EXPORT = "voyantToolContextContribution" as const
+
+/** Generic MCP resource containing the selected deployment providers by graph role. */
+export const TOOL_PROVIDER_SELECTIONS_RESOURCE = "voyant.graph.provider-selections" as const
+
+/** Generic MCP resource containing the action policies admitted by the selected graph. */
+export const TOOL_GRAPH_ACTIONS_RESOURCE = "voyant.graph.actions" as const
+
+/** Generic MCP resource containing setup steps admitted by the selected graph. */
+export const TOOL_GRAPH_SETUP_STEPS_RESOURCE = "voyant.graph.setup-steps" as const
+
+/** MCP resource scoped to the Tool-owning unit's selected project configuration. */
+export const TOOL_UNIT_PROJECT_CONFIG_RESOURCE = "voyant.graph.unit-project-config" as const
 
 export interface ToolContextContributionInput {
   /** Transport request context. Contributors narrow this at their package boundary. */

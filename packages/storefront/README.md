@@ -3,6 +3,19 @@
 Public storefront routes and service helpers for checkout-adjacent product, departure,
 offer, and eligibility flows.
 
+## MCP Tools
+
+`@voyant-travel/storefront/tools` publishes graph-selected, provider-neutral Tools for the
+customer portal, payment links, and account verification. Customer self-service capabilities
+derive the customer identity and verification destination from the authenticated grant; their
+inputs cannot select another user, destination, or verification purpose. Payment-link creation
+derives amount and currency from the invoice and requires an idempotency key.
+
+Customer-portal reads and writes retain the same ownership checks, document encryption runtime,
+and claim-conflict protections as the public routes. Verification sends retain the route rate
+limits and configured notification providers. Sensitive reads and all writes are action-ledger
+bound; verification sends and payment-link creation are confirmation-gated.
+
 ## Composite Price Preview
 
 `POST /departures/:departureId/price` preserves the original quote fields

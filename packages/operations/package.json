@@ -5,10 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./dashboard": "./src/dashboard.ts",
     "./linkables": "./src/linkables.ts",
     "./scheduling": "./src/availability/slot-timezone.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./routes": "./src/routes.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/operations.json",
@@ -34,6 +36,7 @@
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/identity": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
@@ -58,6 +61,11 @@
         "import": "./dist/index.js",
         "default": "./dist/index.js"
       },
+      "./dashboard": {
+        "types": "./dist/dashboard.d.ts",
+        "import": "./dist/dashboard.js",
+        "default": "./dist/dashboard.js"
+      },
       "./scheduling": {
         "types": "./dist/availability/slot-timezone.d.ts",
         "import": "./dist/availability/slot-timezone.js",
@@ -77,6 +85,11 @@
         "types": "./dist/validation.d.ts",
         "import": "./dist/validation.js",
         "default": "./dist/validation.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

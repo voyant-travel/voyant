@@ -265,41 +265,59 @@ export async function buildInvoiceIssuedActionLedgerInput(
   input: InvoiceIssuedLedgerInput,
   options: {
     authorizationSource?: string | null
+    actionName?: string | null
+    routeOrToolName?: string | null
+    capabilityId?: string | null
+    capabilityVersion?: string | null
+    evaluatedRisk?: "low" | "medium" | "high" | "critical" | null
+    causationActionId?: string | null
+    approvalId?: string | null
+    idempotencyScope?: string | null
+    idempotencyKey?: string | null
+    idempotencyFingerprint?: string | null
   } = {},
 ): Promise<BuildActionLedgerMutationInput> {
   const target = getInvoiceLedgerTarget(input.invoice)
   const invoiceTypeLabel = input.invoice.invoiceType === "proforma" ? "Proforma" : "Invoice"
+  const actionName = options.actionName ?? "finance.invoice.issue_from_booking"
 
   return {
     context,
-    actionName: "finance.invoice.issue_from_booking",
+    actionName,
     actionVersion: "v1",
     actionKind: "create",
     status: "succeeded",
-    evaluatedRisk: "high",
+    evaluatedRisk: options.evaluatedRisk ?? "high",
     targetType: target.type,
     targetId: target.id,
-    routeOrToolName: "finance.invoice.issue_from_booking",
+    routeOrToolName: options.routeOrToolName ?? "finance.invoice.issue_from_booking",
+    capabilityId: options.capabilityId,
+    capabilityVersion: options.capabilityVersion,
     authorizationSource: options.authorizationSource ?? "finance.invoice.from_booking.route",
-    idempotencyScope: `finance.booking:${input.invoice.bookingId}:invoice_issue`,
-    idempotencyKey: input.invoice.invoiceNumber,
-    idempotencyFingerprint: await buildIdempotencyFingerprint({
-      actionName: "finance.invoice.issue_from_booking",
-      actionVersion: "v1",
-      targetType: target.type,
-      targetId: target.id,
-      commandInput: {
-        invoiceId: input.invoice.id,
-        invoiceNumber: input.invoice.invoiceNumber,
-        invoiceType: input.invoice.invoiceType,
-        bookingId: input.invoice.bookingId,
-        totalCents: input.invoice.totalCents,
-        currency: input.invoice.currency,
-        status: input.invoice.status,
-        issueDate: input.invoice.issueDate,
-        dueDate: input.invoice.dueDate,
-      },
-    }),
+    causationActionId: options.causationActionId,
+    approvalId: options.approvalId,
+    idempotencyScope:
+      options.idempotencyScope ?? `finance.booking:${input.invoice.bookingId}:invoice_issue`,
+    idempotencyKey: options.idempotencyKey ?? input.invoice.invoiceNumber,
+    idempotencyFingerprint:
+      options.idempotencyFingerprint ??
+      (await buildIdempotencyFingerprint({
+        actionName,
+        actionVersion: "v1",
+        targetType: target.type,
+        targetId: target.id,
+        commandInput: {
+          invoiceId: input.invoice.id,
+          invoiceNumber: input.invoice.invoiceNumber,
+          invoiceType: input.invoice.invoiceType,
+          bookingId: input.invoice.bookingId,
+          totalCents: input.invoice.totalCents,
+          currency: input.invoice.currency,
+          status: input.invoice.status,
+          issueDate: input.invoice.issueDate,
+          dueDate: input.invoice.dueDate,
+        },
+      })),
     mutationDetail: {
       commandInputRef: `booking:${input.invoice.bookingId}:invoice_issue`,
       commandResultRef: `invoice:${input.invoice.id}`,
@@ -478,39 +496,60 @@ export async function buildCreditNoteCreationActionLedgerInput(
   input: CreateCreditNoteLedgerInput,
   options: {
     authorizationSource?: string | null
+    actionName?: string | null
+    routeOrToolName?: string | null
+    targetType?: string | null
+    targetId?: string | null
+    capabilityId?: string | null
+    capabilityVersion?: string | null
+    evaluatedRisk?: BuildActionLedgerMutationInput["evaluatedRisk"] | null
+    causationActionId?: string | null
+    approvalId?: string | null
+    idempotencyScope?: string | null
+    idempotencyKey?: string | null
+    idempotencyFingerprint?: string | null
   } = {},
 ): Promise<BuildActionLedgerMutationInput> {
   const target = getInvoiceLedgerTarget(input.invoice)
-  const idempotencyKey = input.creditNote.creditNoteNumber
+  const targetType = options.targetType ?? target.type
+  const targetId = options.targetId ?? target.id
+  const actionName = options.actionName ?? "finance.credit_note.create"
+  const idempotencyKey = options.idempotencyKey ?? input.creditNote.creditNoteNumber
 
   return {
     context,
-    actionName: "finance.credit_note.create",
-    actionVersion: "v1",
+    actionName,
+    actionVersion: options.capabilityVersion ?? "v1",
     actionKind: "create",
     status: "succeeded",
-    evaluatedRisk: "high",
-    targetType: target.type,
-    targetId: target.id,
-    routeOrToolName: "finance.credit_note.create",
+    evaluatedRisk: options.evaluatedRisk ?? "high",
+    targetType,
+    targetId,
+    routeOrToolName: options.routeOrToolName ?? "finance.credit_note.create",
+    capabilityId: options.capabilityId ?? null,
+    capabilityVersion: options.capabilityVersion ?? null,
     authorizationSource: options.authorizationSource ?? "finance.credit_note.route",
-    idempotencyScope: `finance.invoice:${input.invoice.id}:credit_note`,
+    causationActionId: options.causationActionId ?? null,
+    approvalId: options.approvalId ?? null,
+    idempotencyScope: options.idempotencyScope ?? `finance.invoice:${input.invoice.id}:credit_note`,
     idempotencyKey,
-    idempotencyFingerprint: await buildIdempotencyFingerprint({
-      actionName: "finance.credit_note.create",
-      actionVersion: "v1",
-      targetType: target.type,
-      targetId: target.id,
-      commandInput: {
-        invoiceId: input.invoice.id,
-        creditNoteId: input.creditNote.id,
-        creditNoteNumber: input.creditNote.creditNoteNumber,
-        amountCents: input.creditNote.amountCents,
-        currency: input.creditNote.currency,
-        status: input.creditNote.status,
-        reason: input.creditNote.reason,
-      },
-    }),
+    idempotencyFingerprint:
+      options.idempotencyFingerprint ??
+      (await buildIdempotencyFingerprint({
+        actionName,
+        actionVersion: options.capabilityVersion ?? "v1",
+        targetType,
+        targetId,
+        commandInput: {
+          invoiceId: input.invoice.id,
+          creditNoteId: input.creditNote.id,
+          creditNoteNumber: input.creditNote.creditNoteNumber,
+          amountCents: input.creditNote.amountCents,
+          currency: input.creditNote.currency,
+          status: input.creditNote.status,
+          reason: input.creditNote.reason,
+        },
+      })),
     mutationDetail: {
       commandInputRef: `invoice:${input.invoice.id}:credit_note`,
       commandResultRef: `credit_note:${input.creditNote.id}`,

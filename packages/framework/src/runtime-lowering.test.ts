@@ -494,12 +494,12 @@ describe("graph runtime lowering", () => {
       inputSchema: {},
       outputSchema: {},
       requiredScopes: ["loyalty:write"],
-      tier: "medium",
+      tier: "write",
       riskPolicy: {
         destructive: false,
         reversible: true,
-        dryRun: false,
-        sideEffects: ["database_write"],
+        dryRunSupported: false,
+        sideEffects: ["data-write"],
       },
       handler: async () => ({ ok: true }),
     }

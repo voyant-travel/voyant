@@ -18,22 +18,79 @@ import {
 import { z } from "zod"
 
 import type { TripComponent } from "./schema.js"
-import type { PriceTripResult, ReserveTripResult, Trip } from "./service.js"
+import type {
+  PriceTripResult as ServicePriceTripResult,
+  ReserveTripResult as ServiceReserveTripResult,
+  Trip,
+} from "./service.js"
 import {
+  createTripResultSchema,
+  priceTripResultSchema,
+  reserveTripResultSchema,
+  reshopTripResultSchema,
+  reviseTripResultSchema,
+  selectTripCandidateResultSchema,
+  sourceTripCandidatesResultSchema,
+  tripRequirementToolSchema,
+} from "./tool-output-schemas.js"
+import {
+  addRequirementSchema,
   createTripComponentBodySchema,
   type createTripComponentSchema,
   createTripEnvelopeSchema,
   priceTripSchema,
   reserveTripSchema,
+  reshopTripSchema,
+  selectCandidateSchema,
+  sourceRequirementCandidatesSchema,
 } from "./validation.js"
+
+const OWNER = "@voyant-travel/trips"
+const VERSION = "v1"
+const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
+const REQUIREMENT_WRITE_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: false,
+  sideEffects: ["data-write"],
+} as const
+const CANDIDATE_WRITE_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: false,
+  sideEffects: ["data-write"],
+} as const
+const CANDIDATE_SELECTION_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: true,
+  sideEffects: ["data-write"],
+} as const
+const RESHOP_RISK = {
+  destructive: true,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: true,
+  sideEffects: ["data-write"],
+} as const
 
 /** The trips service surface a deployment binds into the tool context. */
 export interface TripsToolServices {
   createTrip(input: z.infer<typeof createTripEnvelopeSchema>): Promise<Trip>
   addComponent(input: z.infer<typeof createTripComponentSchema>): Promise<TripComponent>
   removeComponent?(componentId: string): Promise<TripComponent | null>
-  priceTrip(input: z.infer<typeof priceTripSchema>): Promise<PriceTripResult>
-  reserveTrip(input: z.infer<typeof reserveTripSchema>): Promise<ReserveTripResult>
+  priceTrip(input: z.infer<typeof priceTripSchema>): Promise<ServicePriceTripResult>
+  reserveTrip(input: z.infer<typeof reserveTripSchema>): Promise<ServiceReserveTripResult>
+  addRequirement(input: z.infer<typeof addRequirementSchema>): Promise<unknown>
+  sourceRequirementCandidates(
+    input: z.infer<typeof sourceRequirementCandidatesSchema>,
+  ): Promise<unknown>
+  selectCandidate(input: z.infer<typeof selectCandidateSchema>): Promise<unknown>
+  reshopRequirement(input: z.infer<typeof sourceRequirementCandidatesSchema>): Promise<unknown>
+  reshopTrip(input: z.infer<typeof reshopTripSchema>): Promise<unknown>
 }
 
 /** Tool context with the trips service injected. */
@@ -57,10 +114,7 @@ const createTripArgs = createTripEnvelopeSchema.extend({
 })
 export type CreateTripArgs = z.infer<typeof createTripArgs>
 
-export interface CreateTripResult {
-  envelope: Trip["envelope"]
-  components: TripComponent[]
-}
+export type CreateTripResult = z.output<typeof createTripResultSchema>
 
 export const createTripTool = defineTool<CreateTripArgs, CreateTripResult, TripsToolContext>({
   name: "create_trip",
@@ -68,7 +122,7 @@ export const createTripTool = defineTool<CreateTripArgs, CreateTripResult, Trips
     "Create a deterministic trip envelope and optional components for a composed itinerary. " +
     "Use this before pricing or reserving a cross-vertical trip.",
   inputSchema: createTripArgs,
-  outputSchema: z.custom<CreateTripResult>(),
+  outputSchema: createTripResultSchema,
   requiredScopes: ["trips:write"],
   tier: "write",
   riskPolicy: { destructive: false, reversible: true, dryRunSupported: false },
@@ -87,7 +141,7 @@ export const createTripTool = defineTool<CreateTripArgs, CreateTripResult, Trips
       components.push(await composer.addComponent({ ...component, envelopeId: trip.envelope.id }))
     }
 
-    return { envelope: trip.envelope, components }
+    return parseJsonResult(createTripResultSchema, { envelope: trip.envelope, components })
   },
 })
 
@@ -98,11 +152,7 @@ const reviseTripArgs = z.object({
 })
 export type ReviseTripArgs = z.infer<typeof reviseTripArgs>
 
-export interface ReviseTripResult {
-  envelopeId: string
-  added: TripComponent[]
-  removed: TripComponent[]
-}
+export type ReviseTripResult = z.output<typeof reviseTripResultSchema>
 
 export const reviseTripTool = defineTool<ReviseTripArgs, ReviseTripResult, TripsToolContext>({
   name: "revise_trip",
@@ -110,7 +160,7 @@ export const reviseTripTool = defineTool<ReviseTripArgs, ReviseTripResult, Trips
     "Revise a deterministic trip envelope by adding components or removing uncommitted components. " +
     "This does not mutate committed bookings directly.",
   inputSchema: reviseTripArgs,
-  outputSchema: z.custom<ReviseTripResult>(),
+  outputSchema: reviseTripResultSchema,
   requiredScopes: ["trips:write"],
   tier: "write",
   riskPolicy: { destructive: false, reversible: true, dryRunSupported: false },
@@ -134,11 +184,16 @@ export const reviseTripTool = defineTool<ReviseTripArgs, ReviseTripResult, Trips
       if (result) removed.push(result)
     }
 
-    return { envelopeId: args.envelopeId, added, removed }
+    return parseJsonResult(reviseTripResultSchema, {
+      envelopeId: args.envelopeId,
+      added,
+      removed,
+    })
   },
 })
 
 export type PriceTripArgs = z.infer<typeof priceTripSchema>
+export type PriceTripResult = z.output<typeof priceTripResultSchema>
 
 export const priceTripTool = defineTool<PriceTripArgs, PriceTripResult, TripsToolContext>({
   name: "price_trip",
@@ -146,17 +201,18 @@ export const priceTripTool = defineTool<PriceTripArgs, PriceTripResult, TripsToo
     "Price a deterministic trip. Returns aggregate totals, component statuses, warnings, " +
     "failures, and quote expiry data.",
   inputSchema: priceTripSchema,
-  outputSchema: z.custom<PriceTripResult>(),
+  outputSchema: priceTripResultSchema,
   requiredScopes: ["trips:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(args, ctx) {
     assertToolAudience(ctx, args.scope.audience)
-    return trips(ctx).priceTrip(args)
+    return parseJsonResult(priceTripResultSchema, await trips(ctx).priceTrip(args))
   },
 })
 
 export type ReserveTripArgs = z.infer<typeof reserveTripSchema>
+export type ReserveTripResult = z.output<typeof reserveTripResultSchema>
 
 export const reserveTripTool = defineTool<ReserveTripArgs, ReserveTripResult, TripsToolContext>({
   name: "reserve_trip",
@@ -164,7 +220,7 @@ export const reserveTripTool = defineTool<ReserveTripArgs, ReserveTripResult, Tr
     "Reserve a priced trip through deterministic trips services. Partial failures return " +
     "explicit compensation and staff-remediation state.",
   inputSchema: reserveTripSchema,
-  outputSchema: z.custom<ReserveTripResult>(),
+  outputSchema: reserveTripResultSchema,
   requiredScopes: ["trips:write"],
   tier: "destructive",
   riskPolicy: {
@@ -176,9 +232,128 @@ export const reserveTripTool = defineTool<ReserveTripArgs, ReserveTripResult, Tr
   },
   async handler(args, ctx) {
     if (args.refreshScope) assertToolAudience(ctx, args.refreshScope.audience)
-    return trips(ctx).reserveTrip(args)
+    return parseJsonResult(reserveTripResultSchema, await trips(ctx).reserveTrip(args))
+  },
+})
+
+export const addTripRequirementTool = defineTool({
+  capabilityId: `${OWNER}#tool.add-requirement`,
+  capabilityVersion: VERSION,
+  name: "add_trip_requirement",
+  description:
+    "Add an unresolved customer need to a mutable trip envelope so it can be sourced into provider-neutral candidates.",
+  inputSchema: addRequirementSchema,
+  outputSchema: tripRequirementToolSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: REQUIREMENT_WRITE_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    return parseJsonResult(tripRequirementToolSchema, await trips(ctx).addRequirement(input))
+  },
+})
+
+export const sourceTripRequirementCandidatesTool = defineTool({
+  capabilityId: `${OWNER}#tool.source-requirement-candidates`,
+  capabilityVersion: VERSION,
+  name: "source_trip_requirement_candidates",
+  description:
+    "Run the selected provider-neutral catalog availability fan-out for one unresolved trip requirement and persist fresh ranked candidates.",
+  inputSchema: sourceRequirementCandidatesSchema,
+  outputSchema: sourceTripCandidatesResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: CANDIDATE_WRITE_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    assertToolAudience(ctx, input.scope.audience)
+    return parseJsonResult(
+      sourceTripCandidatesResultSchema,
+      await trips(ctx).sourceRequirementCandidates(input),
+    )
+  },
+})
+
+export const selectTripCandidateTool = defineTool({
+  capabilityId: `${OWNER}#tool.select-candidate`,
+  capabilityVersion: VERSION,
+  name: "select_trip_candidate",
+  description:
+    "Select a still-valid ranked candidate for a trip requirement and pin it as a draft trip component.",
+  inputSchema: selectCandidateSchema,
+  outputSchema: selectTripCandidateResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: CANDIDATE_SELECTION_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    return parseJsonResult(selectTripCandidateResultSchema, await trips(ctx).selectCandidate(input))
+  },
+})
+
+export const reshopTripRequirementTool = defineTool({
+  capabilityId: `${OWNER}#tool.reshop-requirement`,
+  capabilityVersion: VERSION,
+  name: "reshop_trip_requirement",
+  description:
+    "Retire a requirement's prior pinned component and source a fresh provider-neutral ranked candidate set.",
+  inputSchema: sourceRequirementCandidatesSchema,
+  outputSchema: sourceTripCandidatesResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "destructive",
+  riskPolicy: RESHOP_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    assertToolAudience(ctx, input.scope.audience)
+    return parseJsonResult(
+      sourceTripCandidatesResultSchema,
+      await trips(ctx).reshopRequirement(input),
+    )
+  },
+})
+
+export const reshopTripTool = defineTool({
+  capabilityId: `${OWNER}#tool.reshop-trip`,
+  capabilityVersion: VERSION,
+  name: "reshop_trip",
+  description:
+    "Retire prior selections and run fresh provider-neutral candidate sourcing for every requirement on a trip envelope.",
+  inputSchema: reshopTripSchema,
+  outputSchema: reshopTripResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "destructive",
+  riskPolicy: RESHOP_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    assertToolAudience(ctx, input.scope.audience)
+    return parseJsonResult(reshopTripResultSchema, await trips(ctx).reshopTrip(input))
   },
 })
 
 /** All trips agent tools, ready to register on a `ToolRegistry`. */
-export const tripsTools = [createTripTool, reviseTripTool, priceTripTool, reserveTripTool] as const
+export const tripsTools = [
+  createTripTool,
+  reviseTripTool,
+  priceTripTool,
+  reserveTripTool,
+  addTripRequirementTool,
+  sourceTripRequirementCandidatesTool,
+  selectTripCandidateTool,
+  reshopTripRequirementTool,
+  reshopTripTool,
+] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}

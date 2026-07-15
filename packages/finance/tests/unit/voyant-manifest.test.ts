@@ -14,7 +14,7 @@ describe("finance deployment manifest", () => {
       id: "@voyant-travel/finance",
       packageName: "@voyant-travel/finance",
       provides: {
-        capabilities: ["finance.payment-sessions"],
+        capabilities: ["finance.data-owner", "finance.payment-sessions"],
         ports: [
           { id: "action-ledger.finance-drift-runtime" },
           { id: "bookings.finance.runtime" },
@@ -89,7 +89,28 @@ describe("finance deployment manifest", () => {
         expect.objectContaining({ name: "list_invoices", risk: "low" }),
         expect.objectContaining({ name: "get_invoice", risk: "low" }),
         expect.objectContaining({ name: "void_invoice", risk: "critical" }),
+        expect.objectContaining({ name: "issue_invoice_refund", risk: "critical" }),
+        expect.objectContaining({ name: "issue_invoice_from_booking", risk: "high" }),
       ]),
+    )
+    expect(financeVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/finance#action.issue-invoice-refund",
+        requiredScopes: ["finance:refund"],
+        risk: "critical",
+        ledger: "required",
+        approval: "required",
+        reversible: false,
+        from: { tools: ["@voyant-travel/finance#tool.issue-invoice-refund"] },
+      }),
+    )
+    expect(financeVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/finance#action.issue-invoice-from-booking",
+        requiredScopes: ["finance:write", "bookings:read"],
+        ledger: "required",
+        approval: "required",
+      }),
     )
     expect(financeVoyantModule.actions).toContainEqual(
       expect.objectContaining({
@@ -107,6 +128,7 @@ describe("finance deployment manifest", () => {
     const runtime = await createFinanceVoyantRuntime({
       unitId: "@voyant-travel/finance",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: [{ id: "finance.admin", surface: "admin" }],
       hasPort: () => true,
       getPort: async <TProvider>(port: { id: string }) => {
@@ -163,6 +185,18 @@ describe("finance deployment manifest", () => {
             openapi: { document: "bookings" },
             runtime: { entry: "@voyant-travel/finance", export: "bookingsCreateExtension" },
           },
+        ],
+        tools: [
+          expect.objectContaining({
+            id: "@voyant-travel/finance#bookings-create-extension.tool.create-booking",
+            name: "create_booking",
+          }),
+        ],
+        actions: [
+          expect.objectContaining({
+            id: "@voyant-travel/finance#bookings-create-extension.action.create-booking",
+            ledger: "required",
+          }),
         ],
       },
     ])

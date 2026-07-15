@@ -3,13 +3,8 @@ import type { EventBus, Extension } from "@voyant-travel/core"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import type { HonoExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context } from "hono"
-import {
-  appendProductMutationLedgerEntry,
-  type ProductLedgerMutationAction,
-} from "../action-ledger.js"
-import { emitProductContentChanged } from "../events.js"
 import { productStatusEnum, productVisibilityEnum } from "../schema.js"
+import { recordProductAuthoring } from "./audit.js"
 import { cloneProduct } from "./clone.js"
 import { composeProduct } from "./service.js"
 import { productGraphSpecSchema } from "./spec.js"
@@ -105,32 +100,6 @@ function idempotencyKey(
   return c.req.header("Idempotency-Key") ?? bodyKey
 }
 
-type LedgerContext = Parameters<typeof appendProductMutationLedgerEntry>[0]
-
-/**
- * Records the same action-ledger entry + `product.content.changed` event the
- * granular product routes emit, so an authored product is indexed and audited
- * like any other create. Only called for freshly built products (a reused
- * idempotent response created nothing new).
- */
-async function recordAuthoring(
-  // biome-ignore lint/suspicious/noExplicitAny: bridges this extension's Env to products' ledger Context<Env> (#1493/#1495); cast to LedgerContext below
-  c: Context<any>,
-  action: ProductLedgerMutationAction,
-  productId: string,
-) {
-  const verb = action === "duplicate" ? "duplicate" : "compose"
-  await appendProductMutationLedgerEntry(c as LedgerContext, {
-    action,
-    productId,
-    changedFields: [],
-    subject: "product",
-    actionName: `product.${verb}`,
-    routeOrToolName: `products.${verb}`,
-  })
-  await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "product" })
-}
-
 export const inventoryAuthoringRoutes = new OpenAPIHono<Env>({
   defaultHook: openApiValidationHook,
 })
@@ -147,7 +116,7 @@ export const inventoryAuthoringRoutes = new OpenAPIHono<Env>({
     }
 
     if (!outcome.reused) {
-      await recordAuthoring(c, "create", outcome.result.productId)
+      await recordProductAuthoring(c, "create", outcome.result.productId)
     }
 
     return c.json(
@@ -188,7 +157,7 @@ export const inventoryAuthoringRoutes = new OpenAPIHono<Env>({
     }
 
     if (!outcome.reused) {
-      await recordAuthoring(c, "duplicate", outcome.product.id)
+      await recordProductAuthoring(c, "duplicate", outcome.product.id)
     }
 
     // `data` stays the full product row (the UI reads `data.id`); `options`

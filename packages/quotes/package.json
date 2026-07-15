@@ -11,6 +11,7 @@
     "./routes": "./src/routes/index.ts",
     "./booking-extension": "./src/booking-extension.ts",
     "./proposal-routes": "./src/proposal-routes.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./voyant": "./src/voyant.ts",
@@ -30,6 +31,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "catalog:",
+    "@voyant-travel/action-ledger": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/quotes-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
@@ -91,6 +93,11 @@
         "types": "./dist/proposal-routes.d.ts",
         "import": "./dist/proposal-routes.js",
         "default": "./dist/proposal-routes.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",

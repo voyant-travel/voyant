@@ -111,9 +111,12 @@ assert.deepEqual(presets.get("agent-staff")?.grants, [
   "bookings:write",
   "catalog:read",
   "catalog:search",
+  "finance:read",
+  "operations:read",
   "products:read",
   "quotes:read",
   "quotes:write",
+  "suppliers:read",
   "trips:read",
   "trips:write",
 ])

@@ -32,7 +32,8 @@
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/cruises.json",
     "./openapi/storefront": "./openapi/storefront/cruises.json",
-    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts"
+    "./catalog-runtime-extension": "./src/catalog-runtime-extension.ts",
+    "./tools": "./src/mcp-runtime.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -53,6 +54,7 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/cruises-contracts": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -210,6 +212,11 @@
         "types": "./dist/catalog-runtime-extension.d.ts",
         "import": "./dist/catalog-runtime-extension.js",
         "default": "./dist/catalog-runtime-extension.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       }
     },
     "main": "./dist/index.js",

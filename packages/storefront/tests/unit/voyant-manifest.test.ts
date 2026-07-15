@@ -107,6 +107,7 @@ describe("storefront deployment manifest", () => {
     const runtime = await createStorefrontVoyantRuntime({
       unitId: "@voyant-travel/storefront",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: [{ id: "storefront.public", surface: "public" }],
       graph: {
         providerSelections: {},
@@ -240,5 +241,49 @@ describe("storefront deployment manifest", () => {
         },
       ],
     })
+  })
+
+  it("declares executable Tools and action-ledger bindings for every extension surface", () => {
+    expect(storefrontCustomerPortalVoyantModule.tools).toHaveLength(13)
+    expect(storefrontCustomerPortalVoyantModule.actions).toHaveLength(5)
+    expect(storefrontVerificationVoyantModule.tools).toHaveLength(4)
+    expect(storefrontVerificationVoyantModule.actions).toHaveLength(2)
+    expect(storefrontPaymentLinkVoyantModule.tools).toHaveLength(2)
+    expect(storefrontPaymentLinkVoyantModule.actions).toHaveLength(2)
+    expect(storefrontVerificationVoyantModule.tools?.every(({ risk }) => risk === "high")).toBe(
+      true,
+    )
+    expect(
+      storefrontPaymentLinkVoyantModule.tools?.find(
+        ({ name }) => name === "create_invoice_payment_link",
+      )?.risk,
+    ).toBe("high")
+
+    for (const module of [
+      storefrontCustomerPortalVoyantModule,
+      storefrontVerificationVoyantModule,
+      storefrontPaymentLinkVoyantModule,
+    ]) {
+      expect(module.meta?.agentTools).toBeUndefined()
+      expect(
+        module.tools?.every(({ runtime }) => runtime.entry === "@voyant-travel/storefront/tools"),
+      ).toBe(true)
+      expect(module.actions?.every(({ ledger }) => ledger === "required")).toBe(true)
+    }
+
+    expect(storefrontCustomerPortalVoyantModule.actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ allowedActorTypes: ["customer"], approval: "never" }),
+      ]),
+    )
+    expect(storefrontPaymentLinkVoyantModule.actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/storefront#action.create-invoice-payment-link",
+          allowedActorTypes: ["staff"],
+          approval: "required",
+        }),
+      ]),
+    )
   })
 })

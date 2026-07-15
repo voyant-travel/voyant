@@ -7,6 +7,7 @@ import {
   defineModule,
   providePort,
   requirePort,
+  type VoyantGraphActionDeclaration,
 } from "@voyant-travel/core/project"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
@@ -61,6 +62,46 @@ const promotionAffectedAllFilter = {
     eq: [{ path: "data.affected.kind" }, { lit: "all" }],
   },
 } as const
+
+const commerceToolActions = [
+  commerceToolAction("resolve-sellability", "sellability", "read"),
+  commerceToolAction("list-cancellation-policies", "pricing", "read"),
+  commerceToolAction("get-cancellation-policy", "pricing", "read"),
+  commerceToolAction("create-cancellation-policy", "pricing", "write"),
+  commerceToolAction("update-cancellation-policy", "pricing", "write"),
+  commerceToolAction("list-price-catalogs", "pricing", "read"),
+  commerceToolAction("get-price-catalog", "pricing", "read"),
+  commerceToolAction("create-price-catalog", "pricing", "write"),
+  commerceToolAction("update-price-catalog", "pricing", "write"),
+  commerceToolAction("list-promotions", "promotions", "read"),
+  commerceToolAction("get-promotion", "promotions", "read"),
+  commerceToolAction("create-promotion", "promotions", "write"),
+  commerceToolAction("update-promotion", "promotions", "write"),
+  commerceToolAction("archive-promotion", "promotions", "write"),
+] as const
+
+function commerceToolAction(
+  suffix: string,
+  resource: "sellability" | "pricing" | "promotions",
+  action: "read" | "write",
+): VoyantGraphActionDeclaration {
+  const write = action === "write"
+  return {
+    id: `@voyant-travel/commerce#action.${suffix}`,
+    version: "v1",
+    kind: write ? "execute" : "read",
+    targetType: resource,
+    resource,
+    action,
+    requiredScopes: [`${resource}:${action}`],
+    risk: write ? "medium" : "low",
+    ledger: write ? "required" : "optional",
+    approval: "never",
+    reversible: write,
+    allowedActorTypes: ["staff"],
+    from: { tools: [`@voyant-travel/commerce#tool.${suffix}`] },
+  }
+}
 
 /** Import-cheap deployment declaration owned by the commerce package. */
 export const commerceVoyantModule = defineModule({
@@ -168,6 +209,133 @@ export const commerceVoyantModule = defineModule({
     },
   ],
   access: commerceAccess,
+  tools: [
+    {
+      id: "@voyant-travel/commerce#tool.resolve-sellability",
+      name: "resolve_sellability",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "resolveSellabilityTool" },
+      requiredScopes: ["sellability:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.list-cancellation-policies",
+      name: "list_cancellation_policies",
+      runtime: {
+        entry: "@voyant-travel/commerce/tools",
+        export: "listCancellationPoliciesTool",
+      },
+      requiredScopes: ["pricing:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.get-cancellation-policy",
+      name: "get_cancellation_policy",
+      runtime: {
+        entry: "@voyant-travel/commerce/tools",
+        export: "getCancellationPolicyTool",
+      },
+      requiredScopes: ["pricing:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.create-cancellation-policy",
+      name: "create_cancellation_policy",
+      runtime: {
+        entry: "@voyant-travel/commerce/tools",
+        export: "createCancellationPolicyTool",
+      },
+      requiredScopes: ["pricing:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.update-cancellation-policy",
+      name: "update_cancellation_policy",
+      runtime: {
+        entry: "@voyant-travel/commerce/tools",
+        export: "updateCancellationPolicyTool",
+      },
+      requiredScopes: ["pricing:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.list-price-catalogs",
+      name: "list_price_catalogs",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "listPriceCatalogsTool" },
+      requiredScopes: ["pricing:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.get-price-catalog",
+      name: "get_price_catalog",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "getPriceCatalogTool" },
+      requiredScopes: ["pricing:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.create-price-catalog",
+      name: "create_price_catalog",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "createPriceCatalogTool" },
+      requiredScopes: ["pricing:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.update-price-catalog",
+      name: "update_price_catalog",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "updatePriceCatalogTool" },
+      requiredScopes: ["pricing:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.list-promotions",
+      name: "list_promotions",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "listPromotionsTool" },
+      requiredScopes: ["promotions:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.get-promotion",
+      name: "get_promotion",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "getPromotionTool" },
+      requiredScopes: ["promotions:read"],
+      context: ["commerce"],
+      risk: "low",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.create-promotion",
+      name: "create_promotion",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "createPromotionTool" },
+      requiredScopes: ["promotions:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.update-promotion",
+      name: "update_promotion",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "updatePromotionTool" },
+      requiredScopes: ["promotions:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+    {
+      id: "@voyant-travel/commerce#tool.archive-promotion",
+      name: "archive_promotion",
+      runtime: { entry: "@voyant-travel/commerce/tools", export: "archivePromotionTool" },
+      requiredScopes: ["promotions:write"],
+      context: ["commerce"],
+      risk: "medium",
+    },
+  ],
+  actions: commerceToolActions,
   events: [
     {
       id: "@voyant-travel/commerce#event.promotion.changed",

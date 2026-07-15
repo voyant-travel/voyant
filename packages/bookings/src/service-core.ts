@@ -333,6 +333,7 @@ export interface BookingServiceRuntime {
   actionLedgerIdempotencyScope?: string | null
   actionLedgerIdempotencyKey?: string | null
   actionLedgerIdempotencyFingerprint?: string | null
+  actionLedgerRouteOrToolName?: string | null
   expirePaymentSessionsForBooking?: (
     db: PostgresJsDatabase,
     bookingId: string,
@@ -376,7 +377,7 @@ async function appendBookingStatusMutationLedger(
     bookingId: string
     fromStatus: BookingStatus
     toStatus: BookingStatus
-    evaluatedRisk?: "medium" | "high"
+    evaluatedRisk?: "medium" | "high" | "critical"
   },
 ) {
   if (!runtime.actionLedgerContext) return
@@ -3913,12 +3914,12 @@ export const bookingsService = {
 
         await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
           actionName: "booking.status.cancel",
-          routeOrToolName: "bookings.cancel",
+          routeOrToolName: runtime.actionLedgerRouteOrToolName ?? "bookings.cancel",
           capabilityId: BOOKING_STATUS_CAPABILITIES.cancel.id,
           bookingId: id,
           fromStatus: booking.status,
           toStatus: "cancelled",
-          evaluatedRisk: "high",
+          evaluatedRisk: "critical",
         })
 
         return { status: "ok" as const, booking: row ?? null, previousStatus }

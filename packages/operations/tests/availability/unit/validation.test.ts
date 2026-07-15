@@ -4,6 +4,7 @@ import {
   allocationResourceKindSchema,
   assignTravelerAllocationSchema,
   availabilityRuleListQuerySchema,
+  availabilitySlotListQuerySchema,
   availabilitySlotStatusSchema,
   customPickupAreaListQuerySchema,
   insertAllocationResourceSchema,
@@ -231,6 +232,18 @@ describe("Availability slot schema", () => {
     expect(result.unlimited).toBe(false)
     expect(result.pastCutoff).toBe(false)
     expect(result.tooEarly).toBe(false)
+  })
+
+  it("accepts an exclusive upper bound for departure list windows", () => {
+    expect(
+      availabilitySlotListQuerySchema.parse({
+        startsAtFrom: "2026-09-01T00:00:00.000Z",
+        startsAtUntil: "2026-10-01T00:00:00.000Z",
+      }),
+    ).toMatchObject({
+      startsAtFrom: "2026-09-01T00:00:00.000Z",
+      startsAtUntil: "2026-10-01T00:00:00.000Z",
+    })
   })
 
   it("rejects invalid dateLocal format", () => {

@@ -18,6 +18,8 @@ async function createFixture(overrides = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-distribution-runtime-authority-"))
   const files = {
     "distribution/src/voyant.ts":
+      'import { distributionChannelPushVoyantExtensionDefinition } from "./voyant-extensions.js"\n',
+    "distribution/src/voyant-extensions.ts":
       'runtimePorts: [requirePort(channelPushRuntimePort)]\nexport: "createChannelPushVoyantRuntime"\n',
     "distribution/src/channel-push/extension.ts":
       "defineGraphRuntimeFactory(({ getPort }) => { getPort(channelPushRuntimePort); runtime.registerWorkflowService(context) })\n",
@@ -66,6 +68,17 @@ describe("check-distribution-channel-push-runtime-authority", () => {
     const result = await runChecker(await createFixture())
 
     assert.match(result.stdout, /check-distribution-channel-push-runtime-authority: OK/)
+  })
+
+  it("rejects a split extension manifest without its runtime dependency", async () => {
+    const root = await createFixture({
+      "distribution/src/voyant-extensions.ts": 'export: "createChannelPushVoyantRuntime"\n',
+    })
+
+    await assert.rejects(runChecker(root), (error) => {
+      assert.match(error.stderr, /must declare the channel-push runtime port and factory/)
+      return true
+    })
   })
 
   it("rejects an eager Catalog lookup that can race Distribution extension registration", async () => {

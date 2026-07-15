@@ -3,6 +3,41 @@ import { describe, expect, it } from "vitest"
 
 import { type NotificationsToolServices, notificationsTools } from "../src/tools.js"
 
+const occurredAt = new Date("2026-07-15T10:00:00.000Z")
+
+function delivery(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "ndl_1",
+    templateId: "ntp_1",
+    templateSlug: "booking-confirmed",
+    targetType: "booking",
+    targetId: "bk_1",
+    personId: null,
+    organizationId: null,
+    bookingId: "bk_1",
+    invoiceId: null,
+    paymentSessionId: null,
+    channel: "email",
+    provider: "resend",
+    providerMessageId: "msg_1",
+    status: "sent",
+    toAddress: "guest@example.com",
+    fromAddress: "bookings@example.com",
+    subject: "Booking confirmed",
+    htmlBody: "<p>Your booking is confirmed.</p>",
+    textBody: "Your booking is confirmed.",
+    payloadData: { bookingId: "bk_1" },
+    metadata: { category: "transactional" },
+    errorMessage: null,
+    scheduledFor: null,
+    sentAt: occurredAt,
+    failedAt: null,
+    createdAt: occurredAt,
+    updatedAt: occurredAt,
+    ...overrides,
+  }
+}
+
 function ctx(
   services?: Partial<NotificationsToolServices>,
 ): ToolContext & { notifications?: NotificationsToolServices } {
@@ -50,18 +85,18 @@ describe("notifications tools", () => {
       { templateSlug: "booking-confirmed", to: "guest@example.com", bookingId: "bk_1" },
       ctx({
         async listDeliveries() {
-          return { data: [] }
+          return { data: [], total: 0, limit: 50, offset: 0 }
         },
         async getDeliveryById() {
           return null
         },
         async sendTemplated(input) {
           sent = input
-          return { id: "ndl_9", status: "queued" }
+          return delivery({ id: "ndl_9" })
         },
       }),
     )
-    expect(result).toMatchObject({ id: "ndl_9", status: "queued" })
+    expect(result).toMatchObject({ id: "ndl_9", status: "sent" })
     expect(sent).toMatchObject({ templateSlug: "booking-confirmed", to: "guest@example.com" })
   })
 
@@ -73,10 +108,10 @@ describe("notifications tools", () => {
       { id: "ndl_1" },
       ctx({
         async listDeliveries() {
-          return { data: [] }
+          return { data: [], total: 0, limit: 50, offset: 0 }
         },
         async getDeliveryById(id) {
-          return { id }
+          return delivery({ id })
         },
       }),
     )

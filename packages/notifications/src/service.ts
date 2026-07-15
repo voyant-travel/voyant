@@ -3,6 +3,7 @@ export type { NotificationService } from "./service-shared.js"
 export {
   createNotificationService,
   NotificationError,
+  NotificationIdempotencyConflictError,
   previewNotificationTemplate,
   renderNotificationTemplate,
   summarizeNotificationAttachments,

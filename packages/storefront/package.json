@@ -16,6 +16,7 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./service": "./src/service.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./transport-eligibility": "./src/transport-eligibility.ts",
     "./validation": "./src/validation.ts",
     "./verification": "./src/verification/index.ts",
@@ -73,6 +74,7 @@
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/relationships-contracts": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
@@ -173,6 +175,11 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./transport-eligibility": {
         "types": "./dist/transport-eligibility.d.ts",

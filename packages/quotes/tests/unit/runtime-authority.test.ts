@@ -25,6 +25,7 @@ function factoryContext<T>(
   return {
     unitId: "quotes-test",
     projectConfig: {},
+    getUnitProjectConfig: () => undefined,
     api,
     graph: {
       providerSelections: {},
@@ -55,7 +56,7 @@ describe("quotes deployment authority", () => {
       api: [{ runtime: { export: "createQuotesVoyantRuntime" } }],
     })
     expect(quotesProposalVoyantPlugin).toMatchObject({
-      runtimePorts: [{ id: "quotes.proposal-runtime" }],
+      runtimePorts: [{ id: "quotes.proposal-runtime" }, { id: "quotes.notifications.runtime" }],
       api: [
         { surface: "admin", runtime: { export: "createQuoteProposalVoyantRuntime" } },
         { surface: "public", runtime: { export: "createQuoteProposalVoyantRuntime" } },

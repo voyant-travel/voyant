@@ -171,6 +171,107 @@ export const cruisesVoyantModule = defineModule({
       },
     },
   ],
+  tools: [
+    ...(
+      [
+        ["search-cruises", "search_cruises", "searchCruisesTool"],
+        ["get-cruise", "get_cruise", "getCruiseTool"],
+        ["get-cruise-sailing", "get_cruise_sailing", "getCruiseSailingTool"],
+        ["get-cruise-ship", "get_cruise_ship", "getCruiseShipTool"],
+        ["quote-cruise-sailing", "quote_cruise_sailing", "quoteCruiseSailingTool"],
+      ] as const
+    ).map(([id, name, exportName]) => ({
+      id: `@voyant-travel/cruises#tool.${id}`,
+      name,
+      runtime: { entry: "@voyant-travel/cruises/tools", export: exportName },
+      requiredScopes: ["cruises:read"],
+      context: ["cruises"],
+      risk: "low" as const,
+    })),
+    ...(
+      [
+        ["create-cruise", "create_cruise", "createCruiseTool"],
+        ["update-cruise", "update_cruise", "updateCruiseTool"],
+        ["upsert-cruise-sailing", "upsert_cruise_sailing", "upsertCruiseSailingTool"],
+        ["update-cruise-sailing", "update_cruise_sailing", "updateCruiseSailingTool"],
+        ["create-cruise-ship", "create_cruise_ship", "createCruiseShipTool"],
+        ["update-cruise-ship", "update_cruise_ship", "updateCruiseShipTool"],
+      ] as const
+    ).map(([id, name, exportName]) => ({
+      id: `@voyant-travel/cruises#tool.${id}`,
+      name,
+      runtime: { entry: "@voyant-travel/cruises/tools", export: exportName },
+      requiredScopes: ["cruises:write"],
+      context: ["cruises"],
+      risk: "medium" as const,
+    })),
+    {
+      id: "@voyant-travel/cruises#tool.create-cruise-booking",
+      name: "create_cruise_booking",
+      runtime: { entry: "@voyant-travel/cruises/tools", export: "createCruiseBookingTool" },
+      requiredScopes: ["cruises:write", "bookings:write"],
+      context: ["cruises"],
+      risk: "critical",
+    },
+  ],
+  actions: [
+    ...(
+      [
+        "search-cruises",
+        "get-cruise",
+        "get-cruise-sailing",
+        "get-cruise-ship",
+        "quote-cruise-sailing",
+      ] as const
+    ).map((id) => ({
+      id: `@voyant-travel/cruises#action.${id}`,
+      version: "v1" as const,
+      kind: "read" as const,
+      targetType: "cruise",
+      requiredScopes: ["cruises:read"],
+      risk: "low" as const,
+      ledger: "optional" as const,
+      approval: "never" as const,
+      reversible: false,
+      allowedActorTypes: ["staff" as const, "customer" as const],
+      from: { tools: [`@voyant-travel/cruises#tool.${id}`] },
+    })),
+    ...(
+      [
+        "create-cruise",
+        "update-cruise",
+        "upsert-cruise-sailing",
+        "update-cruise-sailing",
+        "create-cruise-ship",
+        "update-cruise-ship",
+      ] as const
+    ).map((id) => ({
+      id: `@voyant-travel/cruises#action.${id}`,
+      version: "v1" as const,
+      kind: "execute" as const,
+      targetType: "cruise",
+      requiredScopes: ["cruises:write"],
+      risk: "medium" as const,
+      ledger: "required" as const,
+      approval: "never" as const,
+      reversible: true,
+      allowedActorTypes: ["staff" as const],
+      from: { tools: [`@voyant-travel/cruises#tool.${id}`] },
+    })),
+    {
+      id: "@voyant-travel/cruises#action.create-cruise-booking",
+      version: "v1",
+      kind: "execute",
+      targetType: "cruise-booking",
+      requiredScopes: ["cruises:write", "bookings:write"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      from: { tools: ["@voyant-travel/cruises#tool.create-cruise-booking"] },
+    },
+  ],
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

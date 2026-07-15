@@ -785,6 +785,7 @@ async function getAuthProfileRow(db: PostgresJsDatabase, userId: string) {
     .select({
       id: authUser.id,
       email: authUser.email,
+      phoneNumber: authUser.phoneNumber,
       emailVerified: authUser.emailVerified,
       name: authUser.name,
       image: authUser.image,
@@ -1559,6 +1560,7 @@ export const publicCustomerPortalService = {
     return {
       userId: authProfile.id,
       email: authProfile.email,
+      phoneNumber: authProfile.phoneNumber,
       emailVerified: authProfile.emailVerified,
       firstName: authProfile.firstName ?? null,
       middleName: deriveMiddleName(authProfile.name, authProfile.firstName, authProfile.lastName),
@@ -2151,8 +2153,7 @@ export const publicCustomerPortalService = {
 
     const existing = await identityService.getNamedContactById(db, companionId)
     if (
-      !existing ||
-      existing.entityType !== "person" ||
+      existing?.entityType !== "person" ||
       existing.entityId !== personId ||
       ((existing.metadata as Record<string, unknown> | null)?.kind ?? null) !==
         companionMetadataKind

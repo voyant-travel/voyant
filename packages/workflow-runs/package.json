@@ -12,6 +12,7 @@
     "./hono-module": "./src/hono-module.ts",
     "./recorder": "./src/recorder.ts",
     "./runtime-port": "./src/runtime-port.ts",
+    "./tools": "./src/mcp-runtime.ts",
     "./scheduled-workflow": "./src/scheduled-workflow.ts",
     "./workflows": "./src/workflows.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
@@ -56,6 +57,7 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/workflows": "workspace:^",
     "drizzle-orm": "catalog:",
@@ -114,6 +116,11 @@
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
+      },
+      "./tools": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
       },
       "./scheduled-workflow": {
         "types": "./dist/scheduled-workflow.d.ts",

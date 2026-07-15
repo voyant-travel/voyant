@@ -104,6 +104,32 @@ describe("charters deployment manifest", () => {
       }),
     ])
   })
+
+  it("declares exact ledger and approval policy for Tool actions", () => {
+    expect(chartersVoyantModule.tools).toHaveLength(13)
+    expect(chartersVoyantModule.actions).toHaveLength(13)
+    const booking = chartersVoyantModule.actions?.find((action) =>
+      action.from?.tools?.includes("@voyant-travel/charters#tool.create-charter-booking"),
+    )
+    expect(booking).toMatchObject({
+      requiredScopes: ["charters:write", "bookings:write"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+    })
+    for (const action of chartersVoyantModule.actions?.filter(
+      ({ kind, risk }) => kind === "execute" && risk === "medium",
+    ) ?? []) {
+      expect(action).toMatchObject({
+        ledger: "required",
+        approval: "never",
+        reversible: true,
+        allowedActorTypes: ["staff"],
+      })
+    }
+  })
 })
 
 function readApiIds(routes: OpenApiDocumentSource): unknown[] {

@@ -26,12 +26,17 @@ const depositRuleSchema = z.object({
   amountCents: z.number().int().min(0).optional(),
 })
 
-const paymentPolicySchema = z.object({
+export const paymentPolicySchema = z.object({
   deposit: depositRuleSchema,
   minDaysBeforeDepartureForDeposit: z.number().int().min(0),
   balanceDueDaysBeforeDeparture: z.number().int().min(0),
   balanceDueMinDaysFromNow: z.number().int().min(0),
 })
+
+function parseStoredPaymentPolicy(value: unknown): PaymentPolicy | null {
+  if (value == null) return null
+  return paymentPolicySchema.parse(value)
+}
 
 export const updateOperatorProfileSchema = z.object({
   name: z.string().nullable().optional(),
@@ -178,7 +183,7 @@ export async function resolveOperatorDefaultPaymentPolicy(
   db: PostgresJsDatabase,
 ): Promise<PaymentPolicy | null> {
   const defaults = await getOperatorPaymentDefaults(db)
-  return (defaults?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null
+  return parseStoredPaymentPolicy(defaults?.customerPaymentPolicy)
 }
 
 export async function resolveBookingTaxSettings(
@@ -249,8 +254,7 @@ export function toPublicOperatorProfile(
     website: row.website ?? "",
     license: row.license ?? "",
     licenseAuthority: row.licenseAuthority ?? "",
-    customerPaymentPolicy:
-      (defaults?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+    customerPaymentPolicy: parseStoredPaymentPolicy(defaults?.customerPaymentPolicy),
     bookingCheckoutUrlTemplate: defaults?.bookingCheckoutUrlTemplate ?? null,
     invoicePayUrlTemplate: defaults?.invoicePayUrlTemplate ?? null,
   }
@@ -272,9 +276,9 @@ export interface PublicOperatorProfile {
 
 type CombinedOperatorSettings = Partial<OperatorProfileRow> &
   Partial<OperatorPaymentInstructionsRow> & {
-    customerPaymentPolicy?: unknown
-    bookingCheckoutUrlTemplate?: string | null
-    invoicePayUrlTemplate?: string | null
+    customerPaymentPolicy: PaymentPolicy | null
+    bookingCheckoutUrlTemplate: string | null
+    invoicePayUrlTemplate: string | null
   }
 
 function combineOperatorSettings(
@@ -289,7 +293,7 @@ function combineOperatorSettings(
     iban: instructions?.iban ?? null,
     bank: instructions?.bank ?? null,
     notes: instructions?.notes ?? null,
-    customerPaymentPolicy: defaults?.customerPaymentPolicy ?? null,
+    customerPaymentPolicy: parseStoredPaymentPolicy(defaults?.customerPaymentPolicy),
     bookingCheckoutUrlTemplate: defaults?.bookingCheckoutUrlTemplate ?? null,
     invoicePayUrlTemplate: defaults?.invoicePayUrlTemplate ?? null,
   }
@@ -357,7 +361,7 @@ export function toPublicOperatorSettings(
     website: row?.website ?? "",
     license: row?.license ?? "",
     licenseAuthority: row?.licenseAuthority ?? "",
-    customerPaymentPolicy: (row?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+    customerPaymentPolicy: row?.customerPaymentPolicy ?? null,
     bookingCheckoutUrlTemplate: row?.bookingCheckoutUrlTemplate ?? null,
     invoicePayUrlTemplate: row?.invoicePayUrlTemplate ?? null,
   }

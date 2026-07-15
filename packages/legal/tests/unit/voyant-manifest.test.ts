@@ -76,6 +76,11 @@ describe("legal deployment manifest", () => {
       "contract.document.generated",
       "booking.contract.generated",
     ])
+    expect(legalVoyantModule.tools).toHaveLength(18)
+    expect(legalVoyantModule.actions?.flatMap((action) => action.from?.tools ?? [])).toEqual(
+      expect.arrayContaining(legalVoyantModule.tools?.map((tool) => tool.id) ?? []),
+    )
+    expect(legalVoyantModule.meta?.agentTools).toBeUndefined()
   })
 
   it("declares concrete payloads for every emitted legal event", () => {
@@ -154,6 +159,13 @@ describe("legal deployment manifest", () => {
         },
       ],
     })
+    expect(legalContractDocumentVoyantModule.tools).toHaveLength(4)
+    expect(
+      legalContractDocumentVoyantModule.tools?.every(
+        (tool) => tool.runtime.entry === "@voyant-travel/legal/tools",
+      ),
+    ).toBe(true)
+    expect(legalContractDocumentVoyantModule.meta?.agentTools).toBeUndefined()
   })
 
   it("marks every public OpenAPI operation with its graph API id", () => {

@@ -46,6 +46,7 @@ describe("public document delivery deployment manifest", () => {
     const runtime = await createPublicDocumentDeliveryVoyantRuntime({
       unitId: "@voyant-travel/public-document-delivery",
       projectConfig: {},
+      getUnitProjectConfig: () => undefined,
       api: [{ id: PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID, surface: "public" }],
       graph: {
         providerSelections: {},

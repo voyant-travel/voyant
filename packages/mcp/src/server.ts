@@ -12,6 +12,9 @@
  * Authorization (D2): each tool's `requiredScopes` are checked against the
  * caller's granted scopes with **AND** semantics. Unauthorized tools are neither
  * listed nor registered on the per-request server, so they cannot be called.
+ *
+ * agent-quality: file-size exception -- intentional while the HTTP transport,
+ * graph composition, and action-policy gate remain one reviewable security boundary (#3370).
  */
 import { StreamableHTTPTransport } from "@hono/mcp"
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
@@ -19,11 +22,15 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import {
   createToolRegistry,
+  TOOL_ACTION_INVOCATION_FIELD,
   TOOL_CONTEXT_CONTRIBUTION_EXPORT,
   TOOL_CONTRACT_VERSION,
+  type ToolActionInvocationControl,
+  type ToolActionPolicyBinding,
   type ToolContext,
   type ToolContextContribution,
   ToolError,
+  type ToolManifestEntry,
   type ToolRegistry,
 } from "@voyant-travel/tools"
 import {
@@ -48,12 +55,16 @@ export interface McpHonoAppOptions {
   accessCatalog: AccessCatalog
   /** MCP server identity advertised in `initialize`. */
   serverInfo?: McpServerInfo
+  /** Graph-composed hosts fail closed when a selected Tool has no selected action policy. */
+  requireActionPolicies?: boolean
 }
 
 export interface GraphMcpHonoAppOptions {
   runtime: GraphMcpRuntime
   buildContext(c: Context): ToolContext
   buildResources?(c: Context): Readonly<Record<string, unknown>>
+  /** Resources visible only to context contributors owned by the selected unit. */
+  buildUnitResources?(unitId: string, c: Context): Readonly<Record<string, unknown>>
   /** Context keys supplied by the deployment while packages migrate to contributions. */
   providedContext?: readonly string[]
   serverInfo?: McpServerInfo
@@ -62,9 +73,32 @@ export interface GraphMcpHonoAppOptions {
 export interface GraphMcpRuntime {
   accessCatalog: AccessCatalog
   tools: readonly {
+    /** Stable package Tool id from the selected graph. */
+    id?: string
+    /** Package/module owning the selected Tool. */
+    unitId?: string
+    /** Capability version; legacy graph runtimes default to v1. */
+    capabilityVersion?: string
+    name?: string
+    requiredScopes?: readonly string[]
+    risk?: "low" | "medium" | "high" | "critical"
     referenceId: string
     context?: readonly string[]
     load<T = unknown>(): Promise<T>
+  }[]
+  actions?: readonly {
+    id: string
+    capabilityId?: string
+    version: string
+    kind: "execute" | "read" | "sensitive-read"
+    targetType: string
+    risk: "low" | "medium" | "high" | "critical"
+    ledger: "required" | "optional"
+    approval?: "never" | "conditional" | "required"
+    policy?: string
+    reversible?: boolean
+    allowedActorTypes?: readonly string[]
+    from?: { tools?: readonly string[] }
   }[]
   references: readonly {
     id: string
@@ -119,11 +153,12 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
   const app = new OpenAPIHono()
 
-  app.openapi(getManifestRoute, (c) => {
+  app.openapi(getManifestRoute, async (c) => {
     const permissions = callerPermissions(c)
+    const ctx = await buildContext(c)
     const tools = registry
       .list()
-      .filter((tool) => isAuthorized(tool.requiredScopes, permissions, accessCatalog))
+      .filter((tool) => isAuthorized(tool, permissions, accessCatalog, ctx.audience))
     return c.json({ version: TOOL_CONTRACT_VERSION, serverInfo, tools })
   })
 
@@ -133,12 +168,31 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
     const server = new McpServer(serverInfo)
 
     for (const entry of registry.list()) {
-      if (!isAuthorized(entry.requiredScopes, permissions, accessCatalog)) continue
+      if (!isAuthorized(entry, permissions, accessCatalog, ctx.audience)) continue
       const def = registry.get(entry.name)
       if (!def) continue
-      server.tool(entry.name, entry.description, toRawShape(def.inputSchema), (args) =>
-        dispatchToResult(registry, entry.name, args, ctx),
+      registerMcpTool(
+        server,
+        registry,
+        entry,
+        def,
+        entry.name,
+        ctx,
+        undefined,
+        options.requireActionPolicies,
       )
+      for (const alias of entry.aliases) {
+        registerMcpTool(
+          server,
+          registry,
+          entry,
+          def,
+          alias,
+          ctx,
+          entry.name,
+          options.requireActionPolicies,
+        )
+      }
     }
 
     const transport = new StreamableHTTPTransport({
@@ -155,25 +209,60 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
 /** Compose selected tools and their package-owned context contributors from one graph. */
 export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Promise<OpenAPIHono> {
   const registry = createToolRegistry()
-  const contributions = new Map<string, ToolContextContribution>()
+  const contributions = new Map<string, { contribution: ToolContextContribution; unitId: string }>()
   const requiredContext = new Set<string>()
+  const actionsByTool = indexActionsByTool(options.runtime.actions ?? [])
 
   for (const tool of options.runtime.tools) {
-    registry.register(await tool.load<Parameters<ToolRegistry["register"]>[0]>())
+    const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
+    const actionPolicy = tool.id ? actionsByTool.get(tool.id) : undefined
+    if (!tool.id) {
+      throw new Error(`Selected MCP Tool "${tool.name ?? "unknown"}" has no stable capability id.`)
+    }
+    if (!actionPolicy && tool.risk !== "low") {
+      throw new Error(
+        `Selected MCP Tool "${tool.name ?? tool.id ?? "unknown"}" has no selected graph action policy.`,
+      )
+    }
+    registry.register(definition, {
+      ...(tool.id ? { capabilityId: tool.id } : {}),
+      ...(tool.unitId ? { owner: tool.unitId } : {}),
+      ...(tool.capabilityVersion ? { capabilityVersion: tool.capabilityVersion } : {}),
+      ...(tool.name ? { name: tool.name } : {}),
+      ...(tool.requiredScopes ? { requiredScopes: tool.requiredScopes } : {}),
+      ...(tool.risk ? { deploymentRisk: tool.risk } : {}),
+      ...(actionPolicy ? { actionPolicy } : {}),
+    })
+    if (actionPolicy && definition.actionPolicyEnforcement !== "handler") {
+      requiredContext.add("toolActionPolicy")
+    }
     for (const key of tool.context ?? []) requiredContext.add(key)
 
     const reference = options.runtime.references.find(({ id }) => id === tool.referenceId)
-    if (!reference || contributions.has(reference.importEntry)) continue
+    if (!reference) continue
+    const toolUnitId = tool.unitId ?? ""
+    const existingContribution = contributions.get(reference.importEntry)
+    if (existingContribution) {
+      // A package may expose Tools from both its module and one or more extensions
+      // through the same runtime entry. In that case the contribution remains shared,
+      // as it was before unit-scoped resources existed; only uniquely-owned runtime
+      // entries receive project configuration for their owning unit.
+      if (existingContribution.unitId !== toolUnitId) existingContribution.unitId = ""
+      continue
+    }
     const namespace = await reference.loadModule()
     const contribution = namespace[TOOL_CONTEXT_CONTRIBUTION_EXPORT]
     if (contribution !== undefined) {
       assertToolContextContribution(contribution, reference.importEntry)
-      contributions.set(reference.importEntry, contribution)
+      contributions.set(reference.importEntry, {
+        contribution,
+        unitId: toolUnitId,
+      })
     }
   }
 
   const contextOwners = new Map<string, string>()
-  for (const [importEntry, contribution] of contributions) {
+  for (const [importEntry, { contribution }] of contributions) {
     for (const key of contribution.context) {
       const owner = contextOwners.get(key)
       if (owner && owner !== importEntry) {
@@ -196,20 +285,53 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
   return createMcpHonoApp({
     accessCatalog: options.runtime.accessCatalog,
     registry,
+    requireActionPolicies: true,
     ...(options.serverInfo ? { serverInfo: options.serverInfo } : {}),
     buildContext: (c) => buildContributedContext(c, options, contributions.values()),
   })
 }
 
+function indexActionsByTool(
+  actions: NonNullable<GraphMcpRuntime["actions"]>,
+): Map<string, ToolActionPolicyBinding> {
+  const result = new Map<string, ToolActionPolicyBinding>()
+  for (const action of actions) {
+    const binding: ToolActionPolicyBinding = {
+      id: action.id,
+      capabilityId: action.capabilityId ?? action.id,
+      version: action.version,
+      kind: action.kind,
+      targetType: action.targetType,
+      risk: action.risk,
+      ledger: action.ledger,
+      approval: action.approval ?? "never",
+      ...(action.policy ? { policy: action.policy } : {}),
+      ...(action.reversible !== undefined ? { reversible: action.reversible } : {}),
+      ...(action.allowedActorTypes ? { allowedActorTypes: action.allowedActorTypes } : {}),
+    }
+    for (const toolId of action.from?.tools ?? []) {
+      if (result.has(toolId)) {
+        throw new Error(`Selected MCP Tool capability "${toolId}" maps to multiple graph actions.`)
+      }
+      result.set(toolId, binding)
+    }
+  }
+  return result
+}
+
 async function buildContributedContext(
   c: Context,
   options: GraphMcpHonoAppOptions,
-  contributions: Iterable<ToolContextContribution>,
+  contributions: Iterable<{ contribution: ToolContextContribution; unitId: string }>,
 ): Promise<ToolContext> {
   const base = await options.buildContext(c)
-  const resources = options.buildResources?.(c) ?? {}
+  const sharedResources = options.buildResources?.(c) ?? {}
   let context: ToolContext & Record<string, unknown> = base as ToolContext & Record<string, unknown>
-  for (const contribution of contributions) {
+  for (const { contribution, unitId } of contributions) {
+    const resources = {
+      ...sharedResources,
+      ...(unitId ? options.buildUnitResources?.(unitId, c) : {}),
+    }
     const contributed = await contribution.contribute({ request: c, context, resources })
     const undeclared = Object.keys(contributed).filter((key) => !contribution.context.includes(key))
     if (undeclared.length > 0) {
@@ -253,11 +375,13 @@ function callerPermissions(c: Context): ApiKeyPermissions {
 
 /** AND semantics — the caller must hold every one of the tool's required scopes. */
 function isAuthorized(
-  requiredScopes: readonly string[],
+  tool: ToolManifestEntry,
   permissions: ApiKeyPermissions,
   accessCatalog: AccessCatalog,
+  audience: ToolContext["audience"],
 ): boolean {
-  return requiredScopes.every((scope) => {
+  if (tool.audience.allowed && !tool.audience.allowed.includes(audience)) return false
+  return tool.requiredScopes.every((scope) => {
     const [resource, action] = scope.split(":")
     return Boolean(
       resource && action && hasApiKeyPermission(permissions, resource, action, accessCatalog),
@@ -265,24 +389,203 @@ function isAuthorized(
   })
 }
 
-/** Extract a Zod raw shape for the MCP SDK. Tool inputs are objects by convention. */
-function toRawShape(schema: z.ZodType): z.ZodRawShape {
-  if (schema instanceof z.ZodObject) return schema.shape as z.ZodRawShape
-  return {}
+function registerMcpTool(
+  server: McpServer,
+  registry: ToolRegistry,
+  entry: ToolManifestEntry,
+  def: NonNullable<ReturnType<ToolRegistry["get"]>>,
+  invocationName: string,
+  ctx: ToolContext,
+  aliasFor?: string,
+  requireActionPolicy = false,
+): void {
+  const output = toMcpOutputContract(def.outputSchema)
+  server.registerTool(
+    invocationName,
+    {
+      description: entry.description,
+      inputSchema: toMcpInputSchema(def.inputSchema, entry),
+      outputSchema: output.schema,
+      annotations: entry.annotations,
+      _meta: toMcpMeta(entry, aliasFor),
+    },
+    (args) =>
+      dispatchToResult(
+        registry,
+        invocationName,
+        entry,
+        args,
+        ctx,
+        requireActionPolicy,
+        output.envelopeResult,
+      ),
+  )
+}
+
+function toMcpMeta(entry: ToolManifestEntry, aliasFor?: string): Record<string, unknown> {
+  return {
+    "voyant.travel/tool": {
+      contractVersion: TOOL_CONTRACT_VERSION,
+      capabilityId: entry.capabilityId,
+      owner: entry.owner,
+      capabilityVersion: entry.capabilityVersion,
+      canonicalName: entry.name,
+      aliases: entry.aliases,
+      ...(aliasFor ? { aliasFor } : {}),
+      ...(entry.deprecation ? { deprecation: entry.deprecation } : {}),
+      requiredScopes: entry.requiredScopes,
+      audience: entry.audience,
+      deploymentRisk: entry.deploymentRisk,
+      tier: entry.tier,
+      riskPolicy: entry.riskPolicy,
+      ...(entry.actionPolicy ? { actionPolicy: entry.actionPolicy } : {}),
+    },
+  }
+}
+
+interface McpOutputContract {
+  schema: z.ZodType
+  envelopeResult: boolean
+}
+
+const actionInvocationSchema = z.object({
+  confirmed: z.boolean().optional(),
+  targetId: z.string().trim().min(1).optional(),
+  idempotencyKey: z.string().trim().min(1).max(255).optional(),
+  approvalId: z.string().trim().min(1).optional(),
+  idempotencyFingerprint: z.string().trim().min(1).optional(),
+  reasonCode: z.string().trim().min(1).optional(),
+})
+
+type ZodCompositionDef = {
+  type?: string
+  innerType?: unknown
+  in?: unknown
+  out?: unknown
+  left?: unknown
+  right?: unknown
+}
+
+/**
+ * The MCP SDK validates complete Zod schemas, but its discovery serializer only
+ * recognizes a direct object. Normalize object-bearing intersections,
+ * pipes/effects, and wrappers into one loose object for transport discovery and
+ * argument preservation. The registry still validates the untouched domain
+ * schema before dispatch, including cross-field refinements and transforms.
+ */
+function toMcpInputSchema(schema: z.ZodType, entry: ToolManifestEntry): z.ZodObject {
+  const shape =
+    schema instanceof z.ZodObject
+      ? schema.shape
+      : Object.assign({}, ...collectInputObjectShapes(schema))
+  if (!entry.actionPolicy || entry.actionPolicy.invocation.requiredFields.length === 0) {
+    return schema instanceof z.ZodObject ? schema : z.looseObject(shape)
+  }
+  if (TOOL_ACTION_INVOCATION_FIELD in shape) {
+    throw new Error(
+      `Tool "${entry.name}" input conflicts with reserved action metadata field "${TOOL_ACTION_INVOCATION_FIELD}".`,
+    )
+  }
+  return z.looseObject({
+    ...shape,
+    [TOOL_ACTION_INVOCATION_FIELD]: actionInvocationSchema.optional(),
+  })
+}
+
+function collectInputObjectShapes(schema: unknown, seen = new Set<unknown>()): z.ZodRawShape[] {
+  if (!schema || seen.has(schema)) return []
+  seen.add(schema)
+  if (schema instanceof z.ZodObject) return [schema.shape]
+
+  const def = (schema as { _zod?: { def?: ZodCompositionDef } })._zod?.def
+  switch (def?.type) {
+    case "intersection":
+      return [
+        ...collectInputObjectShapes(def.left, seen),
+        ...collectInputObjectShapes(def.right, seen),
+      ]
+    case "pipe":
+      return [...collectInputObjectShapes(def.in, seen), ...collectInputObjectShapes(def.out, seen)]
+    case "catch":
+    case "default":
+    case "nonoptional":
+    case "nullable":
+    case "optional":
+    case "readonly":
+      return collectInputObjectShapes(def.innerType, seen)
+    default:
+      return []
+  }
+}
+
+/**
+ * MCP structured output must have an object root. Decide once whether the
+ * domain value needs a `{ result }` envelope, then use that same decision for
+ * both the advertised schema and the returned structured content.
+ */
+function toMcpOutputContract(schema: z.ZodType): McpOutputContract {
+  try {
+    const jsonSchema = z.toJSONSchema(schema) as Record<string, unknown>
+    if (jsonSchema.type === "object") return { schema, envelopeResult: false }
+    return { schema: z.object({ result: schema }), envelopeResult: true }
+  } catch {
+    // The custom manifest labels this runtime-only schema. MCP still requires a
+    // serializable object output schema, so preserve the value in an explicit
+    // permissive result envelope.
+    return { schema: z.object({ result: z.unknown() }), envelopeResult: true }
+  }
 }
 
 /** Dispatch through the registry (validates in + out) and wrap pure data in an MCP envelope. */
 async function dispatchToResult(
   registry: ToolRegistry,
   name: string,
+  entry: ToolManifestEntry,
   args: unknown,
   ctx: ToolContext,
+  requireActionPolicy: boolean,
+  envelopeResult: boolean,
 ): Promise<CallToolResult> {
   try {
-    const data = await registry.dispatch(name, args, ctx)
+    const { commandInput, invocation } = entry.actionPolicy
+      ? splitInvocation(args)
+      : { commandInput: args, invocation: {} }
+    if (requireActionPolicy && !entry.actionPolicy && entry.deploymentRisk !== "low") {
+      throw new ToolError(
+        `Tool "${entry.name}" has no selected graph action policy.`,
+        "ACTION_POLICY_REQUIRED",
+        { capabilityId: entry.capabilityId },
+      )
+    }
+    const dispatch = () => registry.dispatch(name, commandInput, ctx)
+    if (
+      entry.actionPolicy?.enforcement === "handler" &&
+      entry.actionPolicy.invocation.requiredFields.includes("confirmed") &&
+      invocation.confirmed !== true
+    ) {
+      throw new ToolError(
+        "This Tool requires explicit confirmation before handler-owned policy dispatch.",
+        "CONFIRMATION_REQUIRED",
+        { capabilityId: entry.capabilityId },
+      )
+    }
+    const data =
+      entry.actionPolicy?.enforcement === "generic"
+        ? await requireActionGate(ctx).execute(
+            {
+              capabilityId: entry.capabilityId,
+              capabilityVersion: entry.capabilityVersion,
+              canonicalName: entry.name,
+              actionPolicy: entry.actionPolicy,
+              commandInput,
+              invocation,
+            },
+            dispatch,
+          )
+        : await dispatch()
     return {
       content: [{ type: "text", text: safeStringify(data) }],
-      structuredContent: toStructuredContent(data),
+      structuredContent: toStructuredContent(data, envelopeResult),
     }
   } catch (err) {
     const code = err instanceof ToolError ? err.code : "PROVIDER_ERROR"
@@ -291,10 +594,43 @@ async function dispatchToResult(
   }
 }
 
-function toStructuredContent(data: unknown): Record<string, unknown> {
-  return data !== null && typeof data === "object" && !Array.isArray(data)
-    ? (data as Record<string, unknown>)
-    : { result: data }
+function toStructuredContent(data: unknown, envelopeResult: boolean): Record<string, unknown> {
+  if (envelopeResult) return { result: data }
+  if (isRecord(data)) return data
+  throw new ToolError(
+    "MCP object output did not produce object structured content.",
+    "INVALID_OUTPUT",
+  )
+}
+
+function splitInvocation(args: unknown): {
+  commandInput: unknown
+  invocation: ToolActionInvocationControl
+} {
+  if (!args || typeof args !== "object" || Array.isArray(args)) {
+    return { commandInput: args, invocation: {} }
+  }
+  const { [TOOL_ACTION_INVOCATION_FIELD]: rawInvocation, ...commandInput } = args as Record<
+    string,
+    unknown
+  >
+  const parsed = actionInvocationSchema.safeParse(rawInvocation ?? {})
+  if (!parsed.success) {
+    throw new ToolError("Invalid Voyant action invocation metadata.", "INVALID_INPUT", {
+      issues: parsed.error.issues,
+    })
+  }
+  return { commandInput, invocation: parsed.data }
+}
+
+function requireActionGate(ctx: ToolContext) {
+  if (!ctx.toolActionPolicy) {
+    throw new ToolError(
+      "The selected action-policy gate is unavailable; refusing Tool dispatch.",
+      "ACTION_POLICY_REQUIRED",
+    )
+  }
+  return ctx.toolActionPolicy
 }
 
 function safeStringify(data: unknown): string {

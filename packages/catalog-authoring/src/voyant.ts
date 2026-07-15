@@ -22,6 +22,11 @@ export const catalogAuthoringVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "This compatibility package only re-exports Inventory authoring contracts and owns no executable service or API; Inventory owns authoring capabilities.",
+    },
   },
 })
 

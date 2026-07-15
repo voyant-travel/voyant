@@ -33,8 +33,10 @@ agents, HTTP) is a thin adapter over them.**
    `outputSchema`, `requiredScopes`, a risk `tier`, and a declarative `riskPolicy`, plus
    a `handler(args, ctx)` returning **typed pure data** — no transport envelopes, no
    presentation. `createToolRegistry` validates input and output on dispatch and emits a
-   discovery manifest with real JSON Schema (`z.toJSONSchema`). Authorization is **not**
-   done here.
+   discovery manifest with real JSON Schema (`z.toJSONSchema`). A selected graph binds
+   the stable package capability id and owner to the runtime definition; standalone
+   tools may declare the same identity directly. Invocation names and aliases are
+   compatibility labels, not capability identity. Authorization is **not** done here.
 
 2. **Each module owns its tools and context contribution.** A domain package exports its
    tools via a `./tools` subpath (mirroring how it exports route bundles). When selected
@@ -72,6 +74,10 @@ agents, HTTP) is a thin adapter over them.**
   auth pipeline, DB lease, and lazy-route `c.var` hydration.
 - Risk/confirmation is declarative data on the manifest, so remote consumers can gate
   destructive tools (e.g. `reserve_trip`) without executing tool code.
+- Standard MCP `tools/list` carries the typed output schema, MCP annotations, and
+  namespaced Voyant metadata (capability identity/version, owner, aliases, scopes,
+  audience, and exact risk policy); clients do not need the custom manifest endpoint
+  to make compatibility or approval decisions.
 - Supersedes the sibling `@voyant-travel/catalog-mcp` idea in
   [catalog-rag-architecture.md](../architecture/catalog-rag-architecture.md): the MCP is
   framework-level and in-deployment, not a per-catalog package.

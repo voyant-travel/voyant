@@ -57,7 +57,23 @@ agent.
 - **Authorization (D2):** each tool's `requiredScopes` are checked against the caller's
   granted scopes with **AND** semantics (`hasApiKeyPermission`). Unauthorized tools are
   neither listed nor registered on the per-request server, so they cannot be called.
+- **Selected action gate:** every graph Tool resolves to exactly one selected graph action.
+  Graph composition and generic dispatch fail closed unless the action-ledger contribution is
+  selected. The gate checks
+  actor, confirmation, target, idempotency key, exact command fingerprint, and any approved
+  principal-bound request before the domain handler runs. Required-ledger writes record a
+  preflight before dispatch and a terminal success/failure entry afterward.
+- **Audience (D3):** the authenticated grant remains the source of audience. A Tool may
+  narrow its allowed grant audiences; disallowed Tools are neither listed nor callable.
 - **Headless boundary:** the registry returns typed pure data; this adapter wraps it in
   the MCP `CallToolResult` envelope only at the transport edge.
+- **Complete standard discovery:** `tools/list` includes structured output schemas,
+  standard MCP annotations, and `_meta["voyant.travel/tool"]` with stable capability
+  identity/version, owner, aliases/deprecation, scopes, audience, and exact risk policy.
+  Compatibility aliases remain callable and identify their canonical name in metadata.
+  Selected action metadata also advertises the reserved `_voyant` invocation control field and
+  its required confirmation/target/idempotency/approval fields. Package-owned two-phase handlers
+  advertise `enforcement: "handler"`; MCP still requires their explicit confirmation control but
+  does not wrap their domain approval or ledger workflow a second time.
 - **Graph-owned context:** selected tool runtime entries contribute only context keys
   declared in package manifests. Missing or undeclared contributions fail closed.
