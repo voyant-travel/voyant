@@ -48,18 +48,66 @@ describe("finance tools", () => {
   it("dispatches reads + void through the injected service", async () => {
     const registry = createToolRegistry()
     registry.registerAll(financeTools)
+    const invoice = {
+      id: "inv_1",
+      invoiceNumber: "INV-1",
+      invoiceType: "invoice" as const,
+      convertedFromInvoiceId: null,
+      convertedToInvoiceId: null,
+      convertedToInvoiceNumber: null,
+      seriesId: null,
+      sequence: null,
+      templateId: null,
+      taxRegimeId: null,
+      language: "en",
+      bookingId: "book_1",
+      personId: null,
+      organizationId: null,
+      status: "issued" as const,
+      currency: "EUR",
+      baseCurrency: null,
+      fxRateSetId: null,
+      subtotalCents: 1000,
+      baseSubtotalCents: null,
+      taxCents: 0,
+      baseTaxCents: null,
+      totalCents: 1000,
+      baseTotalCents: null,
+      paidCents: 0,
+      basePaidCents: null,
+      balanceDueCents: 1000,
+      baseBalanceDueCents: null,
+      commissionPercent: null,
+      commissionAmountCents: null,
+      issueDate: "2026-07-15",
+      dueDate: "2026-07-29",
+      notes: null,
+      voidedAt: null,
+      voidReason: null,
+      createdAt: "2026-07-15T10:00:00.000Z",
+      updatedAt: "2026-07-15T10:00:00.000Z",
+    }
     const services: FinanceToolServices = {
       async listInvoices() {
         return { data: [] }
       },
       async getInvoiceById(id) {
-        return { id }
+        return { ...invoice, id }
       },
       async getFinanceAggregates() {
         return { total: 0 }
       },
       async voidInvoice(id, input) {
-        return { id, status: "voided", reason: input.reason ?? null }
+        return {
+          status: "voided",
+          invoice: {
+            ...invoice,
+            id,
+            status: "void",
+            voidReason: input.reason ?? null,
+            voidedAt: "2026-07-15T10:05:00.000Z",
+          },
+        }
       },
       async issueInvoiceRefund() {
         return {
@@ -91,7 +139,10 @@ describe("finance tools", () => {
     })
     expect(
       await registry.dispatch("void_invoice", { id: "inv_2", reason: "dup" }, ctx(services)),
-    ).toMatchObject({ id: "inv_2", status: "voided", reason: "dup" })
+    ).toMatchObject({
+      status: "voided",
+      invoice: { id: "inv_2", status: "void", voidReason: "dup" },
+    })
     expect(
       await registry.dispatch(
         "issue_invoice_refund",
