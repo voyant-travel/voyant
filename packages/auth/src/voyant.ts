@@ -58,6 +58,7 @@ export const authTeamVoyantModule = defineModule({
       id: "@voyant-travel/auth#team.api.admin",
       surface: "admin",
       mount: "team",
+      resource: "team",
       openapi: { document: "team" },
       runtime: {
         entry: "@voyant-travel/auth/identity-access-graph-runtime",
