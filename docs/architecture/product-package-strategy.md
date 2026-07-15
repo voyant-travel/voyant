@@ -597,8 +597,8 @@ Move the current responsibilities as follows:
 - Transaction PII access logging is replaced by the existing Booking/Quote PII
   and action-ledger patterns.
 - Storefront promotional-offer metadata moves to Commerce/Promotions.
-- OCTO and external API projections read Bookings, booking origin/provenance,
-  Catalog snapshots, and vertical/source refs instead of joining
+- Future OCTO and other external channel projections read Bookings, booking
+  origin/provenance, Catalog snapshots, and vertical/source refs instead of joining
   `transactions.offers` / `transactions.orders`.
 
 Compatibility policy:
@@ -1298,7 +1298,7 @@ stay unchanged.
 | `@voyant-travel/charters`, `@voyant-travel/charters-react` | Keep as a vertical runtime package. | Yacht/charter contracts, APA, suite/whole-vessel pricing, and booking semantics are distinct enough to keep a vertical seam. |
 | `@voyant-travel/flights`, `@voyant-travel/flights-react` | Keep as a vertical/source runtime package. | Flights are live-offer/source-adapter driven and intentionally do not behave like owned product inventory. |
 | retired beta Extras packages | Removed from the v1 workspace surface. | Extras are dependent add-ons discovered through a parent, not independently sellable inventory. Inventory owns product extras, option configs, content/projection helpers, and authoring UI; Bookings owns booking extras, participant selections, slot manifests, and booking-time UI. |
-| `@voyant-travel/octo` | Keep as an adapter/API compatibility package unless it grows into a first-class product seam. | OCTO should project from Bookings, booking origin/provenance, Catalog snapshots, and vertical/source refs after Transactions retirement. |
+| retired beta OCTO package | Removed from the v1 workspace surface. | No deployment consumed the speculative compatibility package. Introduce OCTO later as a demand-driven Distribution adapter or plugin, backed by a production integration and certification harness. |
 
 ### 10.2 Commercial Runtime Packages
 

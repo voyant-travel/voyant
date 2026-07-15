@@ -74,7 +74,8 @@ Voyant already has useful foundations:
 - Availability rules, start times, generated slots, pickup points, cutoff, and capacity live in `packages/availability`.
 - Bookings support hold, confirm, expire, cancel, allocation, fulfillment, redemption, and audit activity.
 - `packages/distribution` has channels, contracts, commission rules, product mappings, booking links, webhook events, allotments, release rules, settlement, and reconciliation structures.
-- `packages/octo` already projects products, availability, and booking operations through an external API shape.
+- No production external channel facade is currently mounted. OCTO support is
+  deferred until a deployment requires a certified adapter over these modules.
 
 The missing part is a production-grade marketplace channel facade:
 

@@ -147,7 +147,6 @@ Voyant ships one first-party starter:
 | [`@voyant-travel/charters`](./packages/charters/README.md) | Charter products |
 | [`@voyant-travel/cruises`](./packages/cruises/README.md) | Cruise products |
 | [`@voyant-travel/flights`](./packages/flights) | Flight products |
-| [`@voyant-travel/octo`](./packages/octo) | OCTO connectivity for tours and activities |
 
 ### Workflows (durable orchestration)
 

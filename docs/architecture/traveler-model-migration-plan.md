@@ -293,7 +293,6 @@ Goal:
 
 Current contact selection logic depends on traveler-participant role values in:
 
-- `packages/octo/src/service-shared.ts`
 - `packages/notifications/src/service-shared.ts`
 
 Current billing-contact behavior already suggests a proper booking-contact
@@ -322,12 +321,10 @@ Required fields:
 
 - `packages/customer-portal`
 - `packages/notifications`
-- `packages/octo`
 - any booking document or finance context builders
 
 ### Acceptance criteria
 
-- OCTO contact projection no longer scans traveler rows for `booker`/`contact`
 - notifications recipient preference no longer depends on `booker`/`contact`
   traveler roles
 - booking billing contact resolves from an explicit booking contact source
@@ -508,7 +505,7 @@ Goal:
 
 ### Required updates
 
-- OCTO booking/order projections
+- future external channel booking/order projections, including OCTO where required
 - customer portal projections
 - notifications template variables and recipient rules
 - storefront configuration and validation

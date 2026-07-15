@@ -1329,11 +1329,6 @@
       ],
       "@voyant-travel/notifications/workflows": ["../notifications/dist/workflow-entry.d.ts"],
       "@voyant-travel/observability-sentry": ["../observability-sentry/dist/index.d.ts"],
-      "@voyant-travel/octo": ["../octo/dist/index.d.ts"],
-      "@voyant-travel/octo/routes": ["../octo/dist/routes.d.ts"],
-      "@voyant-travel/octo/service": ["../octo/dist/service.d.ts"],
-      "@voyant-travel/octo/types": ["../octo/dist/types.d.ts"],
-      "@voyant-travel/octo/validation": ["../octo/dist/validation.d.ts"],
       "@voyant-travel/operations": ["../operations/dist/index.d.ts"],
       "@voyant-travel/operations/catalog-runtime-extension": [
         "../operations/dist/catalog-runtime-extension.d.ts"
