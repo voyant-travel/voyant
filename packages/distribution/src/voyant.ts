@@ -16,10 +16,16 @@ import {
 } from "./voyant-extensions.js"
 
 export const distributionBookingVoyantPlugin = defineExtension(
-  distributionBookingVoyantExtensionDefinition,
+  {
+    ...distributionBookingVoyantExtensionDefinition,
+    id: "@voyant-travel/distribution#extension",
+  },
 )
 export const distributionChannelPushVoyantPlugin = defineExtension(
-  distributionChannelPushVoyantExtensionDefinition,
+  {
+    ...distributionChannelPushVoyantExtensionDefinition,
+    id: "@voyant-travel/distribution#channel-push-extension",
+  },
 )
 
 /** Import-cheap deployment declarations owned by the distribution package. */

@@ -3,7 +3,6 @@ import { requirePort } from "@voyant-travel/core/project"
 import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
 
 export const distributionBookingVoyantExtensionDefinition = {
-  id: "@voyant-travel/distribution#extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution",
   api: [
@@ -22,7 +21,6 @@ export const distributionBookingVoyantExtensionDefinition = {
 } as const
 
 export const distributionChannelPushVoyantExtensionDefinition = {
-  id: "@voyant-travel/distribution#channel-push-extension",
   packageName: "@voyant-travel/distribution",
   localId: "distribution.channel-push-extension",
   runtimePorts: [requirePort(channelPushRuntimePort)],
