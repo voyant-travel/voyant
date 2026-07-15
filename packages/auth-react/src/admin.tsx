@@ -1,5 +1,6 @@
 import {
   type AdminExtension,
+  type AdminRouteLoaderContext,
   adminRoutePageModule,
   defineAdminExtension,
 } from "@voyant-travel/admin/extensions"
@@ -26,5 +27,38 @@ export function createSelectedAuthTeamAdminExtension(): AdminExtension {
           import("./i18n/index.js").then((module) => ({ default: module.AuthUiMessagesProvider })),
       },
     ],
+    setupSteps: [
+      {
+        id: "@voyant-travel/auth#setup.team",
+        order: 60,
+        skippable: true,
+        href: "/settings/team",
+        messages: {
+          en: {
+            title: "Invite your team",
+            description: "Add colleagues and assign the access they need.",
+            action: "Manage team",
+          },
+          ro: {
+            title: "Invita echipa",
+            description: "Adauga colegi si atribuie accesul de care au nevoie.",
+            action: "Gestioneaza echipa",
+          },
+        },
+        isComplete: hasAdditionalTeamMember,
+      },
+    ],
   })
+}
+
+async function hasAdditionalTeamMember({ runtime }: AdminRouteLoaderContext): Promise<boolean> {
+  const fetcher = runtime.fetcher ?? fetch
+  const [membersResponse, invitationsResponse] = await Promise.all([
+    fetcher(`${runtime.baseUrl}/v1/admin/team/members`),
+    fetcher(`${runtime.baseUrl}/v1/admin/team/invitations`),
+  ])
+  if (!membersResponse.ok || !invitationsResponse.ok) return false
+  const members = (await membersResponse.json()) as { data?: unknown[] }
+  const invitations = (await invitationsResponse.json()) as { data?: unknown[] }
+  return (members.data?.length ?? 0) > 1 || (invitations.data?.length ?? 0) > 0
 }

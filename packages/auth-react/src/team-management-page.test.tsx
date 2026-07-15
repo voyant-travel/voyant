@@ -65,6 +65,10 @@ describe("Auth team-management admin surface", () => {
     expect(page).toMatchObject({ id: "team", path: "/team", title: "Team", label: "Team" })
     expect(page?.icon).toBeTypeOf("object")
     expect(page?.routeMessagesProvider).toBeTypeOf("function")
+    expect(extension.setupSteps?.[0]).toMatchObject({
+      id: "@voyant-travel/auth#setup.team",
+      href: "/settings/team",
+    })
   })
 
   it("renders neutral roster data and nullable provider activity without auth-mode discovery", () => {

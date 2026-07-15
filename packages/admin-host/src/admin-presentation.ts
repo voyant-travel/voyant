@@ -1,9 +1,14 @@
+import { redirect } from "@tanstack/react-router"
 import {
   type AdminExtension,
   type AdminRouteLoaderContext,
   type AdminSettingsPageContribution,
+  type AdminSetupFlowContribution,
+  type AdminSetupStepContribution,
   adminExtensionsFromGlob,
   createAdminExtensionRegistry,
+  resolveAdminSetupFlow,
+  resolveAdminSetupSteps,
 } from "@voyant-travel/admin"
 import {
   getDashboardBookingsAggregatesQueryOptions,
@@ -20,6 +25,10 @@ type SelectedExtensionsFactory = (context: {
 
 type CoreExtensionFactory = (
   settingsPages: ReadonlyArray<AdminSettingsPageContribution>,
+  setup: {
+    flow?: AdminSetupFlowContribution
+    steps: ReadonlyArray<AdminSetupStepContribution>
+  },
 ) => AdminExtension
 
 export interface CreateAdminHostExtensionsOptions {
@@ -51,12 +60,16 @@ export function createAdminHostExtensions({
   navMessages,
   discovered = [],
 }: CreateAdminHostExtensionsOptions): ReadonlyArray<AdminExtension> {
-  const selectedExtensions = uniqueExtensionsById(selected({ navMessages }))
+  const composedExtensions = uniqueExtensionsById([...selected({ navMessages }), ...discovered])
   const settingsPages = uniqueSettingsPages(
-    selectedExtensions.flatMap((extension) => extension.settingsPages ?? []),
+    composedExtensions.flatMap((extension) => extension.settingsPages ?? []),
   )
+  const setup = {
+    flow: resolveAdminSetupFlow(composedExtensions),
+    steps: resolveAdminSetupSteps(composedExtensions),
+  }
 
-  return createAdminExtensionRegistry(core(settingsPages), ...selectedExtensions, ...discovered)
+  return createAdminExtensionRegistry(core(settingsPages, setup), ...composedExtensions)
 }
 
 function uniqueSettingsPages(
@@ -89,9 +102,9 @@ export function createAdminHostPresentation({
   const discovered = discoverAdminHostExtensions(project)
   const createExtensions = (navMessages: Readonly<Record<string, string>>) =>
     createAdminHostExtensions({
-      core: (settingsPages) =>
+      core: (settingsPages, setup) =>
         createAdminCoreExtension({
-          dashboard: { loader: loadAdminDashboard },
+          dashboard: { loader: (context) => loadAdminDashboard(context, setup) },
           settings: { accessCatalog, extraPages: settingsPages },
         }),
       selected,
@@ -106,22 +119,37 @@ export function createAdminHostPresentation({
 }
 
 /** Prefetch the standard dashboard through the host's authenticated API runtime. */
-export async function loadAdminDashboard({
-  queryClient,
-  runtime,
-}: AdminRouteLoaderContext): Promise<void> {
+export async function loadAdminDashboard(
+  { queryClient, runtime }: AdminRouteLoaderContext,
+  setup: {
+    flow?: AdminSetupFlowContribution
+    steps?: ReadonlyArray<AdminSetupStepContribution>
+  } = {},
+): Promise<void> {
   const client = {
     baseUrl: runtime.baseUrl,
     fetcher:
       runtime.fetcher ??
       ((url: string, init?: RequestInit) => fetch(url, { credentials: "include", ...init })),
   }
-  await Promise.all([
+  const [bookings, products, suppliers, finance] = await Promise.all([
     queryClient.ensureQueryData(getDashboardBookingsAggregatesQueryOptions(client)),
     queryClient.ensureQueryData(getDashboardProductsAggregatesQueryOptions(client)),
     queryClient.ensureQueryData(getDashboardSuppliersAggregatesQueryOptions(client)),
     queryClient.ensureQueryData(getDashboardFinanceAggregatesQueryOptions(client)),
   ])
+  if (!setup.flow) return
+
+  const fresh =
+    bookings.data.total === 0 &&
+    products.data.total === 0 &&
+    suppliers.data.total === 0 &&
+    finance.data.total === 0
+  const result = await setup.flow.initialize(
+    { queryClient, runtime, params: {} },
+    { stepIds: (setup.steps ?? []).map((step) => step.id), fresh },
+  )
+  if (result.redirectTo) throw redirect({ to: result.redirectTo })
 }
 
 export const defaultAdminHostNavMessages = {
@@ -159,6 +187,7 @@ export const defaultAdminHostNavMessages = {
   promotions: "Promotions",
   quotes: "Quotes",
   resources: "Resources",
+  setup: "Setup",
   supplierInvoices: "Supplier invoices",
   suppliers: "Suppliers",
   trips: "Trips",

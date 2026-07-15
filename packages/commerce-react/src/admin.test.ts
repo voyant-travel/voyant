@@ -7,6 +7,10 @@ describe("createSelectedCommerceAdminExtension", () => {
     const extension = createSelectedCommerceAdminExtension({ navMessages: {} })
     expect(extension.navigation?.[0]?.items[0]?.title).toBe("Promotions")
     expect(extension.routes?.[0]?.title).toBe("Promotions")
+    expect(extension.setupSteps?.[0]).toMatchObject({
+      id: "@voyant-travel/commerce#setup.market",
+      href: "/settings/markets",
+    })
   })
 
   it("uses selected navigation copy when supplied", () => {

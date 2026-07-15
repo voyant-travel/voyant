@@ -444,6 +444,27 @@ export function createSelectedFinanceAdminExtension({
 
   return {
     ...extension,
+    setupSteps: [
+      {
+        id: "@voyant-travel/finance#setup.fiscal-settings",
+        order: 40,
+        skippable: true,
+        href: "/settings/taxes",
+        messages: {
+          en: {
+            title: "Fiscal settings",
+            description: "Review tax classes and regimes before issuing customer documents.",
+            action: "Open tax settings",
+          },
+          ro: {
+            title: "Setari fiscale",
+            description: "Verifica clasele si regimurile fiscale inainte de emiterea documentelor.",
+            action: "Deschide setarile fiscale",
+          },
+        },
+        isComplete: hasFiscalSettings,
+      },
+    ],
     navigation: [
       {
         order: -50,
@@ -477,4 +498,13 @@ export function createSelectedFinanceAdminExtension({
       },
     ],
   }
+}
+
+async function hasFiscalSettings({ runtime }: AdminRouteLoaderContext): Promise<boolean> {
+  const response = await (runtime.fetcher ?? fetch)(
+    `${runtime.baseUrl}/v1/admin/finance/tax-classes?limit=1`,
+  )
+  if (!response.ok) return false
+  const payload = (await response.json()) as { data?: unknown[]; total?: number }
+  return (payload.total ?? payload.data?.length ?? 0) > 0
 }
