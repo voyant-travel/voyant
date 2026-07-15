@@ -2153,8 +2153,7 @@ export const publicCustomerPortalService = {
 
     const existing = await identityService.getNamedContactById(db, companionId)
     if (
-      !existing ||
-      existing.entityType !== "person" ||
+      existing?.entityType !== "person" ||
       existing.entityId !== personId ||
       ((existing.metadata as Record<string, unknown> | null)?.kind ?? null) !==
         companionMetadataKind
