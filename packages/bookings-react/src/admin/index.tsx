@@ -13,6 +13,7 @@ import {
 // augmentation (`person.list`, `organization.list`, ...) into this program;
 // this package already peer-depends on `@voyant-travel/relationships-react/ui`.
 import { personDetailBookingsTabSlot } from "@voyant-travel/relationships-react/admin"
+import { CalendarCheck } from "lucide-react"
 import * as React from "react"
 import { z } from "zod"
 // Lean statics only: the client module (fetcher), query-key types, and the
@@ -323,11 +324,8 @@ function PersonBookingsWidgetLoader(props: PersonBookingsWidgetProps) {
  * The bookings admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The Bookings nav item is part of the BASE
- * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyant-travel/admin` — so contributing nav entries here would duplicate it.
- * If the base nav ever drops the bookings item, this extension is where the
- * entry moves.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Bookings item.
  *
  * ROUTES: full implementations (packaged-admin RFC §4.8) — the package-owned
  * search contracts ({@link bookingsIndexSearchSchema} for the list,
@@ -484,11 +482,29 @@ export function createBookingsAdminExtension(
 export function createSelectedBookingsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
-    createBookingsAdminExtension({ labels: { bookings: navMessages.bookings } }),
+  const bookingsLabel = navMessages.bookings ?? "Bookings"
+  const extension = withAdminRouteMessagesProvider(
+    createBookingsAdminExtension({ labels: { bookings: bookingsLabel } }),
     () =>
       import("../i18n/index.js").then((module) => ({
         default: module.BookingsUiMessagesProvider,
       })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -100,
+        items: [
+          {
+            id: "bookings",
+            title: bookingsLabel,
+            url: "/bookings",
+            icon: CalendarCheck,
+          },
+        ],
+      },
+    ],
+  }
 }

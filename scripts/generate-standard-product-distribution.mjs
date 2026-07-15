@@ -32,7 +32,13 @@ const standardPackages = [
 ].map((match) => match[1])
 const workspacePackages = readWorkspacePackages()
 const manifestReferencePackages = manifestPackageClosure(standardPackages, workspacePackages)
-const bomPackages = [...new Set([...standardPackages, ...manifestReferencePackages])].sort()
+const distributionSourcePackages = sourcePackageReferences(
+  join(ROOT, "packages", "operator-standard", "src"),
+  workspacePackages,
+)
+const bomPackages = [
+  ...new Set([...standardPackages, ...manifestReferencePackages, ...distributionSourcePackages]),
+].sort()
 const distributionRuntimeEntryDeps = {
   "@better-auth/api-key": "^1.6.23",
   "@fontsource-variable/inter-tight": "^5.2.7",
@@ -188,6 +194,23 @@ function manifestPackageClosure(seedPackages, workspacePackages) {
   return [...discovered]
 }
 
+function sourcePackageReferences(directory, workspacePackages) {
+  const references = new Set()
+  for (const sourcePath of findSourceFiles(directory)) {
+    const source = readFileSync(join(directory, sourcePath), "utf8")
+    for (const match of source.matchAll(/["'](@voyant-travel\/[^"'/]+)(?:\/[^"']*)?["']/g)) {
+      const packageName = match[1]
+      if (
+        packageName !== "@voyant-travel/operator-standard" &&
+        workspacePackages.has(packageName)
+      ) {
+        references.add(packageName)
+      }
+    }
+  }
+  return [...references]
+}
+
 function findManifestFiles(directory, relative = "") {
   const files = []
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -196,6 +219,18 @@ function findManifestFiles(directory, relative = "") {
     const path = join(directory, entry.name)
     if (entry.isDirectory()) files.push(...findManifestFiles(path, nextRelative))
     else if (/^(?:voyant|graph-manifest)\.ts$/.test(entry.name)) files.push(nextRelative)
+  }
+  return files
+}
+
+function findSourceFiles(directory, relative = "") {
+  const files = []
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (["node_modules", "dist", "coverage", ".turbo"].includes(entry.name)) continue
+    const nextRelative = join(relative, entry.name)
+    const path = join(directory, entry.name)
+    if (entry.isDirectory()) files.push(...findSourceFiles(path, nextRelative))
+    else if (/\.(?:css|js|jsx|ts|tsx)$/.test(entry.name)) files.push(nextRelative)
   }
   return files
 }

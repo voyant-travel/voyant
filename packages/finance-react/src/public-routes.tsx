@@ -81,7 +81,7 @@ export function createFinancePublicRouteContribution(runtime: FinancePublicRoute
   }
 
   return {
-    id: "@voyant-travel/finance-react#public-routes" as const,
+    id: "@voyant-travel/finance#presentation.public" as const,
     routes: {
       pay: { validateSearch: paymentSearchSchema, component: PayRoute },
       paymentLink: { component: PaymentLinkRoute },

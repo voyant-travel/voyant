@@ -20,11 +20,11 @@
  * the tsc inference cost linear.
  */
 
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-
+import { createBookingsExtrasRoute } from "./routes-openapi.js"
 import { bookingsExtrasService } from "./service.js"
 import {
   bookingExtraListQuerySchema,
@@ -249,7 +249,7 @@ const invalidRequestResponse = {
 
 // --- booking-extras sub-chain ---------------------------------------------
 
-const listBookingExtrasRoute = createRoute({
+const listBookingExtrasRoute = createBookingsExtrasRoute({
   method: "get",
   path: "/booking-extras",
   request: { query: bookingExtraListQuerySchema },
@@ -259,7 +259,7 @@ const listBookingExtrasRoute = createRoute({
   },
 })
 
-const createBookingExtraRoute = createRoute({
+const createBookingExtraRoute = createBookingsExtrasRoute({
   method: "post",
   path: "/booking-extras",
   request: { body: jsonBody(insertBookingExtraSchema, true, "Booking extra") },
@@ -269,7 +269,7 @@ const createBookingExtraRoute = createRoute({
   },
 })
 
-const getBookingExtraRoute = createRoute({
+const getBookingExtraRoute = createBookingsExtrasRoute({
   method: "get",
   path: "/booking-extras/{id}",
   request: { params: idParamSchema },
@@ -279,7 +279,7 @@ const getBookingExtraRoute = createRoute({
   },
 })
 
-const updateBookingExtraRoute = createRoute({
+const updateBookingExtraRoute = createBookingsExtrasRoute({
   method: "patch",
   path: "/booking-extras/{id}",
   request: {
@@ -293,7 +293,7 @@ const updateBookingExtraRoute = createRoute({
   },
 })
 
-const deleteBookingExtraRoute = createRoute({
+const deleteBookingExtraRoute = createBookingsExtrasRoute({
   method: "delete",
   path: "/booking-extras/{id}",
   request: { params: idParamSchema },
@@ -340,7 +340,7 @@ const bookingExtrasRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidatio
 
 // --- slot-manifest sub-chain ----------------------------------------------
 
-const getSlotManifestRoute = createRoute({
+const getSlotManifestRoute = createBookingsExtrasRoute({
   method: "get",
   path: "/slot-manifests/{slotId}",
   request: { params: slotIdParamSchema, query: slotExtraManifestQuerySchema },
@@ -351,7 +351,7 @@ const getSlotManifestRoute = createRoute({
   },
 })
 
-const setSlotSelectionRoute = createRoute({
+const setSlotSelectionRoute = createBookingsExtrasRoute({
   method: "patch",
   path: "/slot-manifests/{slotId}/selections",
   request: {
@@ -365,7 +365,7 @@ const setSlotSelectionRoute = createRoute({
   },
 })
 
-const bulkSetSlotSelectionsRoute = createRoute({
+const bulkSetSlotSelectionsRoute = createBookingsExtrasRoute({
   method: "post",
   path: "/slot-manifests/{slotId}/selections/bulk",
   request: {
@@ -382,7 +382,7 @@ const bulkSetSlotSelectionsRoute = createRoute({
   },
 })
 
-const bulkUpdateSlotCollectionsRoute = createRoute({
+const bulkUpdateSlotCollectionsRoute = createBookingsExtrasRoute({
   method: "post",
   path: "/slot-manifests/{slotId}/collections/bulk",
   request: {

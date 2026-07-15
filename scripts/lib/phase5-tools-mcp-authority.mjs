@@ -36,11 +36,14 @@ const REQUIRED_TOKENS = new Map([
     ["VoyantGraphRuntimeFactoryGraph", "readonly graph:", "readonly runtimePorts:"],
   ],
   [
-    "packages/framework/src/runtime-composition.ts",
-    ["graph: runtime", "runtimePorts: ports ?? {}"],
+    "packages/framework/src/node-runtime.ts",
+    ["composeVoyantGraphRuntime", "graphRuntime", "runtimePorts"],
   ],
   ["packages/operator-standard/src/index.ts", ['resolve: "@voyant-travel/mcp"']],
-  ["starters/operator/src/api/app.ts", ["composeVoyantGraphRuntime", "...deploymentResources"]],
+  [
+    "packages/runtime/src/index.ts",
+    ["loadVoyantNodeRuntime", "generated.graphRuntime", "deploymentResources.ports"],
+  ],
 ])
 
 export function inspectPhase5ToolsMcpAuthority(files) {

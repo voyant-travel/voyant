@@ -15,6 +15,7 @@ describe("charters deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/charters",
       packageName: "@voyant-travel/charters",
+      provides: { ports: [{ id: "catalog.extension.charters" }] },
       api: [
         {
           surface: "admin",
@@ -73,6 +74,34 @@ describe("charters deployment manifest", () => {
       CHARTERS_BOOKING_OPENAPI_API_ID,
       CHARTERS_BOOKING_OPENAPI_API_ID,
       CHARTERS_BOOKING_OPENAPI_API_ID,
+    ])
+  })
+
+  it("describes access for every charter API method", () => {
+    expect(chartersVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "charters",
+        label: "Charters",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
     ])
   })
 })

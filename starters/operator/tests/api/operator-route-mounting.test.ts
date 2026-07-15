@@ -11,18 +11,13 @@
 
 import type { Actor } from "@voyant-travel/core"
 import { composeVoyantGraphRuntime } from "@voyant-travel/framework"
-import {
-  createVoyantNodeEnv,
-  createVoyantNodeRuntimeHostPrimitives,
-} from "@voyant-travel/framework/node-runtime"
 import { mountApp } from "@voyant-travel/hono"
-import { createVoyantDeploymentResources } from "@voyant-travel/runtime/deployment-resources"
 import { describe, expect, it, vi } from "vitest"
 
 import { accessCatalog } from "../../.voyant/access/selected-access-catalog.generated"
 import {
   createGeneratedGraphRuntime,
-  createGeneratedGraphRuntimePorts,
+  createGeneratedTestDeploymentResources,
 } from "./generated-project-runtime.js"
 
 const TEST_ENV = { DATABASE_URL: "postgres://test" } as never
@@ -101,18 +96,11 @@ async function responseWithSessionActor(
   return app.request(path, init, TEST_ENV, TEST_CTX)
 }
 
-function buildGraphComposition() {
-  const env = createVoyantNodeEnv({ DATABASE_URL: "postgres://test" })
-  const primitives = createVoyantNodeRuntimeHostPrimitives({
-    env,
-    deliverEvent: async () => undefined,
-  })
+async function buildGraphComposition() {
+  const runtime = createGeneratedGraphRuntime()
   return composeVoyantGraphRuntime({
-    runtime: createGeneratedGraphRuntime(),
-    ...createVoyantDeploymentResources({
-      primitives,
-      createRuntimePorts: createGeneratedGraphRuntimePorts,
-    }),
+    runtime,
+    ...(await createGeneratedTestDeploymentResources(runtime)),
   })
 }
 

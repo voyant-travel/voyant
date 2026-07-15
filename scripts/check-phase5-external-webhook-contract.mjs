@@ -40,7 +40,7 @@ const [
   read("packages/framework-migrations/migrations/0009_framework_baseline.sql"),
   read("packages/framework/src/runtime-composition.ts"),
   read("packages/framework/src/deployment-graph.ts"),
-  read("packages/catalog/src/voyant.ts"),
+  read("packages/catalog/src/voyant-events.ts"),
   read("packages/distribution/package.json"),
   read("pnpm-lock.yaml"),
   read("packages/webhook-delivery/src/provider.ts"),

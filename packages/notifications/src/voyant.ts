@@ -1,4 +1,15 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront/runtime-port"
+import {
+  bookingDocumentsSentEventPayloadSchema,
+  bookingFullyPaidEventPayloadSchema,
+} from "./event-payload-schemas.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
 
 const schemaSource = "@voyant-travel/notifications/schema"
@@ -9,7 +20,14 @@ export const notificationsVoyantModule = defineModule({
   packageName: "@voyant-travel/notifications",
   localId: "notifications",
   runtimePorts: [requirePort(notificationsRuntimePort)],
-  provides: { capabilities: ["notifications.delivery"] },
+  provides: {
+    capabilities: ["notifications.delivery"],
+    ports: [
+      providePort(storefrontVerificationRuntimePort),
+      providePort(financeNotificationsRuntimePort),
+      providePort(notificationsRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/notifications#api.admin",
@@ -38,31 +56,45 @@ export const notificationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/notifications#linkable.notification-template",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationTemplateLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-delivery",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationDeliveryLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-rule",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationReminderRuleLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-run",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationReminderRunLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-rule-stage",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationReminderRuleStageLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-reminder-stage-channel",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationReminderStageChannelLinkable",
     },
     {
       id: "@voyant-travel/notifications#linkable.notification-settings",
+      kind: "linkable",
       source: schemaSource,
+      export: "notificationSettingsLinkable",
     },
   ],
   workflows: [
@@ -103,7 +135,7 @@ export const notificationsVoyantModule = defineModule({
       id: "@voyant-travel/notifications#event.booking.fully-paid",
       eventType: "booking.fully-paid",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingFullyPaidEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "notifications", category: "domain" },
     },
@@ -111,7 +143,7 @@ export const notificationsVoyantModule = defineModule({
       id: "@voyant-travel/notifications#event.booking.documents.sent",
       eventType: "booking.documents.sent",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingDocumentsSentEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "notifications", category: "domain" },
     },
@@ -121,10 +153,19 @@ export const notificationsVoyantModule = defineModule({
       {
         id: "@voyant-travel/notifications#access.notifications",
         resource: "notifications",
+        label: "Notifications",
+        description: "View notification delivery history and send vetted templates.",
         actions: [
-          "read",
+          {
+            action: "read",
+            label: "View notifications",
+            description: "View notification templates, reminders, and delivery history.",
+          },
           {
             action: "send",
+            label: "Send notifications",
+            description: "Send a vetted notification template to a recipient.",
+            sensitive: true,
             wildcard: "explicit",
           },
         ],
@@ -141,6 +182,7 @@ export const notificationsVoyantModule = defineModule({
       },
       requiredScopes: ["notifications:read"],
       context: ["notifications"],
+      risk: "low",
     },
     {
       id: "@voyant-travel/notifications#tool.get-delivery",
@@ -148,6 +190,7 @@ export const notificationsVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/notifications/tools", export: "getDeliveryTool" },
       requiredScopes: ["notifications:read"],
       context: ["notifications"],
+      risk: "low",
     },
     {
       id: "@voyant-travel/notifications#tool.send-notification",
@@ -158,6 +201,23 @@ export const notificationsVoyantModule = defineModule({
       },
       requiredScopes: ["notifications:send"],
       context: ["notifications"],
+      risk: "high",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/notifications#action.send-notification",
+      version: "v1",
+      kind: "execute",
+      targetType: "notification",
+      resource: "notifications",
+      action: "send",
+      requiredScopes: ["notifications:send"],
+      risk: "high",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      from: { tools: ["@voyant-travel/notifications#tool.send-notification"] },
     },
   ],
   admin: {
@@ -192,11 +252,44 @@ export const notificationsVoyantModule = defineModule({
     ).map(([id, path]) => ({
       id: `@voyant-travel/notifications#admin.route.${id}`,
       path,
+      requiredScopes: ["notifications:read"],
       runtime: {
         entry: "@voyant-travel/notifications-react/admin",
         export: "createNotificationsAdminExtension",
       },
     })),
+    nav: [
+      {
+        id: "@voyant-travel/notifications#admin.nav.templates",
+        routeId: "@voyant-travel/notifications#admin.route.templates-index",
+        label: { namespace: "notifications.admin", key: "admin.templatesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.reminder-rules",
+        routeId: "@voyant-travel/notifications#admin.route.reminder-rules-index",
+        label: { namespace: "notifications.admin", key: "admin.reminderRulesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.deliveries",
+        routeId: "@voyant-travel/notifications#admin.route.deliveries",
+        label: { namespace: "notifications.admin", key: "admin.deliveriesPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.reminder-runs",
+        routeId: "@voyant-travel/notifications#admin.route.reminder-runs",
+        label: { namespace: "notifications.admin", key: "admin.reminderRunsPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.preview",
+        routeId: "@voyant-travel/notifications#admin.route.preview",
+        label: { namespace: "notifications.admin", key: "admin.previewPage.title" },
+      },
+      {
+        id: "@voyant-travel/notifications#admin.nav.settings",
+        routeId: "@voyant-travel/notifications#admin.route.settings",
+        label: { namespace: "notifications.admin", key: "settings.heading" },
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
@@ -225,7 +318,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.contract.generated",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingConfirmationAutoDispatchSubscriber",
       },
     },
@@ -234,7 +327,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.confirmed",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingConfirmedReminderSubscriber",
       },
     },
@@ -243,7 +336,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "payment.completed",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsPaymentCompletedReminderSubscriber",
       },
     },
@@ -252,7 +345,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.fully-paid",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
       },
     },
@@ -261,7 +354,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.cancelled",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingCancelledReminderSubscriber",
       },
     },
@@ -270,7 +363,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.expired",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingExpiredReminderSubscriber",
       },
     },

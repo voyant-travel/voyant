@@ -1,7 +1,21 @@
+import { actionLedgerInventoryDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
+import { bookingsInventoryRuntimePort } from "@voyant-travel/bookings/runtime-port"
+import { catalogInventoryRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { commerceInventoryRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { financeInventoryPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { inventoryBrochureRuntimePort, inventoryRuntimePort } from "./runtime-ports.js"
+import {
+  productContentChangedPayloadSchema,
+  productIdentityEventPayloadSchema,
+} from "./voyant-event-schemas.js"
 
 /** Import-cheap deployment declarations owned by the inventory package. */
 export const inventoryVoyantModule = defineModule({
@@ -9,6 +23,17 @@ export const inventoryVoyantModule = defineModule({
   packageName: "@voyant-travel/inventory",
   localId: "inventory",
   runtimePorts: [requirePort(inventoryRuntimePort)],
+  provides: {
+    capabilities: ["inventory.data-owner"],
+    ports: [
+      providePort(catalogInventoryRuntimeExtensionPort),
+      providePort(commerceInventoryRuntimePort),
+      providePort(actionLedgerInventoryDriftRuntimePort),
+      providePort(bookingsInventoryRuntimePort),
+      providePort(financeInventoryPaymentPolicyRuntimePort),
+      providePort(inventoryRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/inventory#api.admin",
@@ -47,15 +72,18 @@ export const inventoryVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/inventory#linkable.product",
+      kind: "linkable",
       source: "@voyant-travel/inventory/linkables",
     },
     {
       id: "@voyant-travel/inventory#link.organization-product",
+      kind: "definition",
       source: "@voyant-travel/inventory/standard-links",
       export: "organizationProductLink",
     },
     {
       id: "@voyant-travel/inventory#link.person-product",
+      kind: "definition",
       source: "@voyant-travel/inventory/standard-links",
       export: "personProductLink",
     },
@@ -65,7 +93,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#event.product-created",
       eventType: "product.created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: productIdentityEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "inventory", category: "domain" },
     },
@@ -73,7 +101,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#event.product-updated",
       eventType: "product.updated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: productIdentityEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "inventory", category: "domain" },
     },
@@ -81,7 +109,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#event.product-deleted",
       eventType: "product.deleted",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: productIdentityEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "inventory", category: "domain" },
     },
@@ -89,7 +117,7 @@ export const inventoryVoyantModule = defineModule({
       id: "@voyant-travel/inventory#event.product-content-changed",
       eventType: "product.content.changed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: productContentChangedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "inventory", category: "domain" },
     },
@@ -112,17 +140,65 @@ export const inventoryVoyantModule = defineModule({
       {
         id: "@voyant-travel/inventory#access.products",
         resource: "products",
-        actions: ["read", "write", "delete"],
+        label: "Products",
+        description: "Read and manage inventory products and product content.",
+        actions: [
+          {
+            action: "read",
+            label: "Read products",
+            description: "Read products, options, and product content.",
+          },
+          {
+            action: "write",
+            label: "Manage products",
+            description: "Create and update products, options, and product content.",
+            sensitive: true,
+          },
+          {
+            action: "delete",
+            label: "Delete products",
+            description: "Delete inventory products and product-owned records.",
+            sensitive: true,
+          },
+        ],
       },
       {
         id: "@voyant-travel/inventory#access.departures",
         resource: "departures",
-        actions: ["read", "write"],
+        label: "Departures",
+        description: "Read and manage scheduled product departures.",
+        actions: [
+          {
+            action: "read",
+            label: "Read departures",
+            description: "Read scheduled product departure records.",
+          },
+          {
+            action: "write",
+            label: "Manage departures",
+            description: "Create and update scheduled product departures.",
+            sensitive: true,
+          },
+        ],
       },
       {
         id: "@voyant-travel/inventory#access.itineraries",
         resource: "itineraries",
-        actions: ["read", "write"],
+        label: "Itineraries",
+        description: "Read and manage product itinerary content.",
+        actions: [
+          {
+            action: "read",
+            label: "Read itineraries",
+            description: "Read product itinerary records and content.",
+          },
+          {
+            action: "write",
+            label: "Manage itineraries",
+            description: "Create and update product itinerary records and content.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -193,6 +269,7 @@ export const inventoryVoyantModule = defineModule({
       {
         id: "@voyant-travel/inventory#admin.route.products-index",
         path: "/products",
+        requiredScopes: ["products:read"],
         runtime: {
           entry: "@voyant-travel/inventory-react/admin",
           export: "createInventoryAdminExtension",
@@ -201,6 +278,7 @@ export const inventoryVoyantModule = defineModule({
       {
         id: "@voyant-travel/inventory#admin.route.products-categories",
         path: "/products/categories",
+        requiredScopes: ["products:read"],
         runtime: {
           entry: "@voyant-travel/inventory-react/admin",
           export: "createInventoryAdminExtension",
@@ -209,9 +287,20 @@ export const inventoryVoyantModule = defineModule({
       {
         id: "@voyant-travel/inventory#admin.route.products-detail",
         path: "/products/$id",
+        requiredScopes: ["products:read"],
         runtime: {
           entry: "@voyant-travel/inventory-react/admin",
           export: "createInventoryAdminExtension",
+        },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/inventory#admin.nav.products",
+        routeId: "@voyant-travel/inventory#admin.route.products-index",
+        label: {
+          namespace: "inventory.admin",
+          key: "productsPage.title",
         },
       },
     ],
@@ -235,18 +324,49 @@ export const inventoryExtrasVoyantModule = defineModule({
   id: "@voyant-travel/inventory#extras",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.extras",
+  requires: { capabilities: ["inventory.data-owner"] },
   api: [
     {
       id: "@voyant-travel/inventory#extras.api",
       surface: "admin",
       mount: "extras",
       openapi: { document: "extras" },
+      resource: "extras",
       runtime: {
         entry: "@voyant-travel/inventory/graph-runtime",
         export: "createInventoryExtrasVoyantRuntime",
       },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/inventory#extras.access.extras",
+        resource: "extras",
+        label: "Product extras",
+        description: "Read and manage optional product extras and their prices.",
+        actions: [
+          {
+            action: "read",
+            label: "Read product extras",
+            description: "Read optional product extras and pricing details.",
+          },
+          {
+            action: "write",
+            label: "Manage product extras",
+            description: "Create and update optional product extras and prices.",
+            sensitive: true,
+          },
+          {
+            action: "delete",
+            label: "Delete product extras",
+            description: "Delete optional product extra records.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
   meta: {
     ownership: "package",
   },
@@ -332,6 +452,7 @@ export const inventoryBrochureVoyantPlugin = defineExtension({
   id: "@voyant-travel/inventory#brochure-extension",
   packageName: "@voyant-travel/inventory",
   localId: "inventory.brochure-extension",
+  provides: { ports: [providePort(inventoryBrochureRuntimePort)] },
   runtimePorts: [requirePort(inventoryBrochureRuntimePort), requirePort(storageMediaRuntimePort)],
   api: [
     {

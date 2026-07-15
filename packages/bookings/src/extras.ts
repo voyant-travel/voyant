@@ -1,9 +1,12 @@
 import type { Module } from "@voyant-travel/core"
+import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
 import { bookingsExtrasRoutes } from "./extras/routes.js"
 
 export type { BookingsExtrasRoutes } from "./extras/routes.js"
+export { BOOKINGS_EXTRAS_OPENAPI_API_ID } from "./extras/routes-openapi.js"
 export type {
   BookingExtra,
   ExtraParticipantSelection,
@@ -42,10 +45,22 @@ export {
 export { bookingsExtrasRoutes }
 
 export const bookingsExtrasModule: Module = {
-  name: "extras",
+  name: "bookings-extras",
 }
 
 export const bookingsExtrasHonoModule: HonoModule = {
   module: bookingsExtrasModule,
   adminRoutes: bookingsExtrasRoutes,
 }
+
+export const createBookingsExtrasVoyantRuntime = defineGraphRuntimeFactory(async ({ api }) => {
+  const adminApiId = api.find(({ surface }) => surface === "admin")?.id
+  return {
+    module: bookingsExtrasHonoModule.module,
+    ...(adminApiId
+      ? {
+          adminRoutes: stampOpenApiRegistryApiId(bookingsExtrasHonoModule.adminRoutes, adminApiId),
+        }
+      : {}),
+  }
+})

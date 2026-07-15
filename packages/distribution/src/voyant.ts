@@ -1,11 +1,64 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  catalogDistributionRuntimeExtensionPort,
+  catalogRuntimeServicesPort,
+} from "@voyant-travel/catalog/ports"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { financeDistributionPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
+
+const productPublicationChangedEventPayloadSchema = {
+  type: "object",
+  properties: {
+    productId: { type: "string" },
+    channelId: { type: "string" },
+    mappingId: { type: ["string", "null"] },
+    previousActive: { type: ["boolean", "null"] },
+    nextActive: { type: ["boolean", "null"] },
+    operation: {
+      type: "string",
+      enum: ["created", "updated", "deleted", "activated", "deactivated"],
+    },
+    channelKind: { type: ["string", "null"] },
+    channelStatus: { type: ["string", "null"] },
+  },
+  required: [
+    "productId",
+    "channelId",
+    "mappingId",
+    "previousActive",
+    "nextActive",
+    "operation",
+    "channelKind",
+    "channelStatus",
+  ],
+  additionalProperties: false,
+} as const
+
+const supplierLifecycleEventPayloadSchema = {
+  type: "object",
+  properties: { id: { type: "string" } },
+  required: ["id"],
+  additionalProperties: false,
+} as const
 
 /** Import-cheap deployment declarations owned by the distribution package. */
 export const distributionVoyantModule = defineModule({
   id: "@voyant-travel/distribution",
   packageName: "@voyant-travel/distribution",
   localId: "distribution",
+  provides: {
+    ports: [
+      providePort(channelPushRuntimePort),
+      providePort(catalogDistributionRuntimeExtensionPort),
+      providePort(financeDistributionPaymentPolicyRuntimePort),
+    ],
+  },
+  requires: { ports: [requirePort(catalogRuntimeServicesPort)] },
   api: [
     {
       id: "@voyant-travel/distribution#api.external-refs",
@@ -53,15 +106,83 @@ export const distributionVoyantModule = defineModule({
   access: {
     resources: [
       {
+        id: "@voyant-travel/distribution#access.external-refs",
+        resource: "external-refs",
+        label: "External references",
+        description: "Mappings between Voyant records and identifiers in external systems.",
+        actions: [
+          {
+            action: "read",
+            label: "View external references",
+            description: "View external-system identifier mappings.",
+          },
+          {
+            action: "write",
+            label: "Manage external references",
+            description: "Create and update external-system identifier mappings.",
+          },
+          {
+            action: "delete",
+            label: "Delete external references",
+            description: "Delete external-system identifier mappings.",
+            sensitive: true,
+          },
+        ],
+      },
+      {
+        id: "@voyant-travel/distribution#access.distribution",
+        resource: "distribution",
+        label: "Distribution",
+        description: "Channels, contracts, mappings, inventory, settlements, and delivery state.",
+        actions: [
+          {
+            action: "read",
+            label: "View distribution",
+            description: "View channel configuration, mappings, inventory, and delivery state.",
+          },
+          {
+            action: "write",
+            label: "Manage distribution",
+            description: "Create, update, reconcile, and retry distribution records.",
+          },
+          {
+            action: "delete",
+            label: "Delete distribution records",
+            description: "Delete supported channel, mapping, inventory, and settlement records.",
+            sensitive: true,
+          },
+        ],
+      },
+      {
         id: "@voyant-travel/distribution#access.suppliers",
         resource: "suppliers",
-        actions: ["read", "write"],
+        label: "Suppliers",
+        description: "Supplier profiles, contacts, services, rates, notes, and commercial terms.",
+        actions: [
+          {
+            action: "read",
+            label: "View suppliers",
+            description: "View supplier profiles and related commercial records.",
+          },
+          {
+            action: "write",
+            label: "Manage suppliers",
+            description: "Create and update supplier profiles and related commercial records.",
+          },
+          {
+            action: "delete",
+            label: "Delete supplier records",
+            description: "Delete suppliers and supported supplier-owned records.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
   links: [
     {
       id: "@voyant-travel/distribution#linkable.supplier",
+      kind: "linkable",
       source: "@voyant-travel/distribution/linkables",
     },
   ],
@@ -70,7 +191,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#event.product-publication-changed",
       eventType: "product.publication.changed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: productPublicationChangedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "distribution", category: "domain" },
     },
@@ -78,7 +199,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#event.supplier-created",
       eventType: "supplier.created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: supplierLifecycleEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "distribution", category: "domain" },
     },
@@ -86,7 +207,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#event.supplier-updated",
       eventType: "supplier.updated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: supplierLifecycleEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "distribution", category: "domain" },
     },
@@ -94,7 +215,7 @@ export const distributionVoyantModule = defineModule({
       id: "@voyant-travel/distribution#event.supplier-deleted",
       eventType: "supplier.deleted",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: supplierLifecycleEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "distribution", category: "domain" },
     },
@@ -118,16 +239,9 @@ export const distributionVoyantModule = defineModule({
     ],
     routes: [
       {
-        id: "@voyant-travel/distribution#admin.route.channel-sync",
-        path: "/channel-sync",
-        runtime: {
-          entry: "@voyant-travel/distribution-react/admin",
-          export: "createDistributionAdminExtension",
-        },
-      },
-      {
         id: "@voyant-travel/distribution#admin.route.suppliers-index",
         path: "/suppliers",
+        requiredScopes: ["suppliers:read"],
         runtime: {
           entry: "@voyant-travel/distribution-react/admin",
           export: "createDistributionAdminExtension",
@@ -136,10 +250,18 @@ export const distributionVoyantModule = defineModule({
       {
         id: "@voyant-travel/distribution#admin.route.suppliers-detail",
         path: "/suppliers/$id",
+        requiredScopes: ["suppliers:read"],
         runtime: {
           entry: "@voyant-travel/distribution-react/admin",
           export: "createDistributionAdminExtension",
         },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/distribution#admin.nav.suppliers",
+        routeId: "@voyant-travel/distribution#admin.route.suppliers-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.suppliers" },
       },
     ],
     slots: [
@@ -196,13 +318,37 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       },
     },
   ],
+  admin: {
+    runtime: {
+      entry: "@voyant-travel/distribution-react/admin",
+      export: "createSelectedDistributionChannelPushAdminExtension",
+    },
+    routes: [
+      {
+        id: "@voyant-travel/distribution#channel-push-extension.admin.route.channel-sync",
+        path: "/channel-sync",
+        requiredScopes: ["distribution:read"],
+        runtime: {
+          entry: "@voyant-travel/distribution-react/admin",
+          export: "createDistributionChannelPushAdminExtension",
+        },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/distribution#channel-push-extension.admin.nav.channel-sync",
+        routeId: "@voyant-travel/distribution#channel-push-extension.admin.route.channel-sync",
+        label: { namespace: "operator.admin.navigation", key: "nav.channelSync" },
+      },
+    ],
+  },
   subscribers: [
     {
       id: "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
       eventType: "booking.confirmed",
       source: "@voyant-travel/distribution",
       runtime: {
-        entry: "./channel-push-subscribers",
+        entry: "@voyant-travel/distribution/channel-push-subscribers",
         export: "channelPushBookingConfirmedSubscriber",
       },
     },
@@ -211,7 +357,7 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       eventType: "availability.slot.changed",
       source: "@voyant-travel/distribution",
       runtime: {
-        entry: "./channel-push-subscribers",
+        entry: "@voyant-travel/distribution/channel-push-subscribers",
         export: "channelPushAvailabilityChangedSubscriber",
       },
     },
@@ -220,7 +366,7 @@ export const distributionChannelPushVoyantPlugin = defineExtension({
       eventType: "product.content.changed",
       source: "@voyant-travel/distribution",
       runtime: {
-        entry: "./channel-push-subscribers",
+        entry: "@voyant-travel/distribution/channel-push-subscribers",
         export: "channelPushContentChangedSubscriber",
       },
     },

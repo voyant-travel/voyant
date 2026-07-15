@@ -23,4 +23,13 @@ describe("@voyant-travel/realtime package exports", () => {
       default: "./dist/admin-invalidation-subscriber.js",
     })
   })
+
+  it("publishes the selected transport runtime-port contract", () => {
+    expect(packageJson.exports["./runtime-port"]).toBe("./src/runtime-port.ts")
+    expect(packageJson.publishConfig.exports["./runtime-port"]).toEqual({
+      types: "./dist/runtime-port.d.ts",
+      import: "./dist/runtime-port.js",
+      default: "./dist/runtime-port.js",
+    })
+  })
 })

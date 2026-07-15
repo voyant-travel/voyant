@@ -7,6 +7,7 @@ describe("operations deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/operations",
       packageName: "@voyant-travel/operations",
+      provides: { ports: [{ id: "catalog.extension.operations" }] },
       api: [
         {
           id: "@voyant-travel/operations#api.admin",
@@ -24,6 +25,92 @@ describe("operations deployment manifest", () => {
         { id: "@voyant-travel/operations#linkable.property" },
         { id: "@voyant-travel/operations#linkable.spaceBlock" },
       ],
+    })
+  })
+
+  it("authorizes the actual operations mount and every route method", () => {
+    expect(operationsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "operations",
+        label: "Operations",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
+    ])
+  })
+
+  it("scopes selected Operations navigation, routes, and contributions", () => {
+    expect(
+      operationsVoyantModule.admin?.routes?.every(
+        (route) => route.requiredScopes?.join() === "operations:read",
+      ),
+    ).toBe(true)
+    expect(operationsVoyantModule.admin?.contributions?.[0]?.requiredScopes).toEqual([
+      "operations:read",
+    ])
+    expect(operationsVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/operations#admin.route.availability-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.availability" },
+      }),
+      expect.objectContaining({
+        routeId: "@voyant-travel/operations#admin.route.resources-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.resources" },
+      }),
+    ])
+  })
+
+  it("declares the emitted availability slot payload", () => {
+    expect(operationsVoyantModule.events?.[0]?.payloadSchema).toEqual({
+      type: "object",
+      properties: {
+        slotId: { type: "string" },
+        productId: { type: "string" },
+        optionId: { type: ["string", "null"] },
+        startsAt: { type: "string", format: "date-time" },
+        remainingPax: { type: ["number", "null"] },
+        unlimited: { type: "boolean" },
+        source: {
+          type: "string",
+          enum: [
+            "booking",
+            "cancel",
+            "expire",
+            "modify",
+            "manual",
+            "refresh",
+            "created",
+            "deleted",
+          ],
+        },
+      },
+      required: [
+        "slotId",
+        "productId",
+        "optionId",
+        "startsAt",
+        "remainingPax",
+        "unlimited",
+        "source",
+      ],
+      additionalProperties: false,
     })
   })
 })

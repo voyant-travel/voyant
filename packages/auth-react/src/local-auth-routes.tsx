@@ -49,7 +49,7 @@ export interface LocalAuthPresentationRuntime<TUser> {
 }
 
 export interface LocalAuthRouteContribution {
-  readonly id: "@voyant-travel/auth-react#local-auth-routes"
+  readonly id: "@voyant-travel/auth#presentation.local-auth"
   readonly routes: {
     readonly layout: LocalAuthRouteOptions
     readonly acceptInvitation: LocalAuthRouteOptions
@@ -313,7 +313,7 @@ export function createLocalAuthRouteContribution<TUser>(
   }
 
   return {
-    id: "@voyant-travel/auth-react#local-auth-routes",
+    id: "@voyant-travel/auth#presentation.local-auth",
     routes: {
       layout: { component: LocalAuthLayout },
       acceptInvitation: {

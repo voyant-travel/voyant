@@ -45,7 +45,7 @@ const rejectMatch = (source, pattern, message) => {
 }
 
 const promotionRuntimeReferences = sources.manifest.match(
-  /entry:\s*["']\.\/promotion-redemption-subscriber["'][\s\S]*?export:\s*["']createPromotionRedemptionSubscriberGraphRuntime["']/g,
+  /entry:\s*["']@voyant-travel\/commerce\/promotion-redemption-subscriber["'][\s\S]*?export:\s*["']createPromotionRedemptionSubscriberGraphRuntime["']/g,
 )
 if (promotionRuntimeReferences?.length !== 1) {
   failures.push(

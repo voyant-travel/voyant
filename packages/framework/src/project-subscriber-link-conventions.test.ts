@@ -123,8 +123,18 @@ describe("project subscriber and link conventions", () => {
       }),
     ])
     expect(first.graphLinks).toEqual([
-      { id: "project.link.alpha", source: "src/links/alpha.ts" },
-      { id: "project.link.zeta", source: "src/links/zeta.ts" },
+      {
+        export: "default",
+        id: "project.link.alpha",
+        kind: "definition",
+        source: "src/links/alpha.ts",
+      },
+      {
+        export: "default",
+        id: "project.link.zeta",
+        kind: "definition",
+        source: "src/links/zeta.ts",
+      },
     ])
   })
 

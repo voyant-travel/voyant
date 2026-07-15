@@ -1,13 +1,33 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import { miceRuntimePort } from "./runtime-port.js"
 
 const relationshipsMiceRuntimePortReference = { id: "relationships.mice.runtime" } as const
+
+const miceRfpAwardedEventPayloadSchema = {
+  type: "object",
+  properties: {
+    rfpId: { type: "string" },
+    programId: { type: "string" },
+    bidId: { type: "string" },
+    supplierId: { type: "string" },
+    actorId: { type: ["string", "null"] },
+    awardedAt: { type: "string", format: "date-time" },
+  },
+  required: ["rfpId", "programId", "bidId", "supplierId", "actorId", "awardedAt"],
+  additionalProperties: false,
+} as const
 
 /** Import-cheap deployment declarations owned by the MICE package. */
 export const miceVoyantModule = defineModule({
   id: "@voyant-travel/mice",
   packageName: "@voyant-travel/mice",
   localId: "mice",
+  provides: { ports: [providePort(miceRuntimePort)] },
   runtimePorts: [requirePort(miceRuntimePort), relationshipsMiceRuntimePortReference],
   api: [
     {
@@ -35,57 +55,113 @@ export const miceVoyantModule = defineModule({
     },
   ],
   links: [
-    { id: "@voyant-travel/mice#linkable.program", source: "@voyant-travel/mice/linkables" },
-    { id: "@voyant-travel/mice#linkable.session", source: "@voyant-travel/mice/linkables" },
-    { id: "@voyant-travel/mice#linkable.delegate", source: "@voyant-travel/mice/linkables" },
     {
-      id: "@voyant-travel/mice#linkable.roomingAssignment",
+      id: "@voyant-travel/mice#linkable.program",
+      kind: "linkable",
       source: "@voyant-travel/mice/linkables",
     },
-    { id: "@voyant-travel/mice#linkable.rfp", source: "@voyant-travel/mice/linkables" },
-    { id: "@voyant-travel/mice#linkable.bid", source: "@voyant-travel/mice/linkables" },
+    {
+      id: "@voyant-travel/mice#linkable.session",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.delegate",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.roomingAssignment",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.rfp",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
+    {
+      id: "@voyant-travel/mice#linkable.bid",
+      kind: "linkable",
+      source: "@voyant-travel/mice/linkables",
+    },
     {
       id: "@voyant-travel/mice#link.bid-supplier",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "bidSupplierLink",
     },
     {
       id: "@voyant-travel/mice#link.delegate-booking",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "delegateBookingLink",
     },
     {
       id: "@voyant-travel/mice#link.delegate-person",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "delegatePersonLink",
     },
     {
       id: "@voyant-travel/mice#link.organization-program",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "organizationProgramLink",
     },
     {
       id: "@voyant-travel/mice#link.program-space-block",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "programSpaceBlockLink",
     },
     {
       id: "@voyant-travel/mice#link.rooming-room-block",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "roomingRoomBlockLink",
     },
     {
       id: "@voyant-travel/mice#link.session-function-space",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "sessionFunctionSpaceLink",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/mice#access.mice",
+        resource: "mice",
+        label: "MICE programs",
+        description: "Meetings and events programs, sessions, delegates, rooming, RFPs, and bids.",
+        actions: [
+          {
+            action: "read",
+            label: "View MICE programs",
+            description: "View meetings and events programs and related records.",
+          },
+          {
+            action: "write",
+            label: "Manage MICE programs",
+            description: "Create and update meetings and events programs and related records.",
+          },
+          {
+            action: "delete",
+            label: "Delete MICE records",
+            description: "Delete sessions and other supported meetings and events records.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
   events: [
     {
       id: "@voyant-travel/mice#event.rfp-awarded",
       eventType: "mice.rfp.awarded",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: miceRfpAwardedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "mice", category: "domain" },
     },
@@ -100,6 +176,7 @@ export const miceVoyantModule = defineModule({
       {
         id: "@voyant-travel/mice#admin.route.programs-index",
         path: "/mice",
+        requiredScopes: ["mice:read"],
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
           export: "createSelectedMiceAdminExtension",
@@ -108,10 +185,18 @@ export const miceVoyantModule = defineModule({
       {
         id: "@voyant-travel/mice#admin.route.programs-detail",
         path: "/mice/$id",
+        requiredScopes: ["mice:read"],
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
           export: "createSelectedMiceAdminExtension",
         },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/mice#admin.nav.programs",
+        routeId: "@voyant-travel/mice#admin.route.programs-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.mice" },
       },
     ],
   },
@@ -152,6 +237,7 @@ export const miceStandardProductLinksVoyantExtension = defineExtension({
   links: [
     {
       id: "@voyant-travel/mice#link.quote-program",
+      kind: "definition",
       source: "@voyant-travel/mice/standard-links",
       export: "quoteProgramLink",
     },

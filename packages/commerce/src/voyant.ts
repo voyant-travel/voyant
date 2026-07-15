@@ -1,10 +1,20 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  catalogCommerceRuntimeExtensionPort,
+  catalogRuntimeServicesPort,
+} from "@voyant-travel/catalog/ports"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
   financeDistributionPaymentPolicyRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runtime-port"
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import {
   bookingMaintenanceRuntimePort,
@@ -23,10 +33,14 @@ import {
   commerceLegalRuntimePort,
   commerceOperatorSettingsRuntimePort,
 } from "./runtime-port.js"
+import { commerceAccess } from "./voyant-access.js"
+import {
+  inquiryCreatedPayloadSchema,
+  pricingRuleChangedPayloadSchema,
+  promotionChangedPayloadSchema,
+} from "./voyant-event-schemas.js"
 
 const commerceAdminRouteId = "@voyant-travel/commerce#admin.route.promotions-index"
-const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
-const checkoutInquiryRuntimePortReference = { id: "quotes.checkout-inquiry.runtime" } as const
 const commerceAdminRuntime = {
   entry: "@voyant-travel/commerce-react/admin",
   export: "createCommerceAdminExtension",
@@ -60,13 +74,20 @@ export const commerceVoyantModule = defineModule({
     requirePort(commerceInventoryRuntimePort),
     requirePort(commerceLegalRuntimePort),
     requirePort(commerceCardPaymentRuntimePort, { optional: true }),
-    catalogRuntimeServicesPortReference,
+    requirePort(catalogRuntimeServicesPort),
     requirePort(financeDistributionPaymentPolicyRuntimePort),
     requirePort(financeAccommodationsPaymentPolicyRuntimePort),
     requirePort(financeCruisesPaymentPolicyRuntimePort),
     requirePort(financeInventoryPaymentPolicyRuntimePort),
-    checkoutInquiryRuntimePortReference,
+    requirePort(checkoutInquiryRuntimePort),
   ],
+  provides: {
+    ports: [
+      providePort(catalogCommerceRuntimeExtensionPort),
+      providePort(promotionRedemptionDatabaseRuntimePort),
+      providePort(promotionsBulkReindexRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/commerce#api.pricing.admin",
@@ -93,6 +114,7 @@ export const commerceVoyantModule = defineModule({
       surface: "admin",
       mount: "markets",
       openapi: { document: "markets" },
+      resource: "markets",
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "marketsHonoModule",
@@ -103,6 +125,7 @@ export const commerceVoyantModule = defineModule({
       surface: "public",
       mount: "markets",
       openapi: { document: "markets" },
+      resource: "markets",
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/commerce",
@@ -114,6 +137,7 @@ export const commerceVoyantModule = defineModule({
       surface: "admin",
       mount: "sellability",
       openapi: { document: "sellability" },
+      resource: "sellability",
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "sellabilityHonoModule",
@@ -124,6 +148,7 @@ export const commerceVoyantModule = defineModule({
       surface: "admin",
       mount: "promotions",
       openapi: { document: "promotions" },
+      resource: "promotions",
       runtime: {
         entry: "@voyant-travel/commerce",
         export: "promotionsHonoModule",
@@ -142,21 +167,13 @@ export const commerceVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
-  access: {
-    resources: [
-      {
-        id: "@voyant-travel/commerce#access.pricing",
-        resource: "pricing",
-        actions: ["read", "write"],
-      },
-    ],
-  },
+  access: commerceAccess,
   events: [
     {
       id: "@voyant-travel/commerce#event.promotion.changed",
       eventType: "promotion.changed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: promotionChangedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "commerce", category: "domain" },
     },
@@ -164,7 +181,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#event.pricing.rule.changed",
       eventType: "pricing.rule.changed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: pricingRuleChangedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "commerce", category: "domain" },
     },
@@ -172,7 +189,7 @@ export const commerceVoyantModule = defineModule({
       id: "@voyant-travel/commerce#event.inquiry.created",
       eventType: "inquiry.created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: inquiryCreatedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "commerce", category: "domain" },
     },
@@ -183,7 +200,7 @@ export const commerceVoyantModule = defineModule({
       eventType: "booking.confirmed",
       source: "@voyant-travel/commerce/promotion-redemption-subscriber",
       runtime: {
-        entry: "./promotion-redemption-subscriber",
+        entry: "@voyant-travel/commerce/promotion-redemption-subscriber",
         export: "createPromotionRedemptionSubscriberGraphRuntime",
       },
     },
@@ -195,7 +212,7 @@ export const commerceVoyantModule = defineModule({
       filter: promotionAffectedAllFilter,
       source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
       runtime: {
-        entry: "./product-reindex-workflow-manifest",
+        entry: "@voyant-travel/commerce/product-reindex-workflow-manifest",
         export: "promotionAffectedAllFilter",
       },
     },
@@ -209,7 +226,7 @@ export const commerceVoyantModule = defineModule({
       },
       source: "@voyant-travel/commerce/promotion-boundary-workflow",
       runtime: {
-        entry: "./promotion-boundary-workflow",
+        entry: "@voyant-travel/commerce/promotion-boundary-workflow",
         export: "promotionBoundarySchedulerWorkflow",
       },
     },
@@ -220,7 +237,7 @@ export const commerceVoyantModule = defineModule({
       },
       source: "@voyant-travel/commerce/product-reindex-workflow",
       runtime: {
-        entry: "./product-reindex-workflow",
+        entry: "@voyant-travel/commerce/product-reindex-workflow",
         export: "bulkReindexProductsWorkflow",
       },
     },
@@ -279,6 +296,14 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
   id: "@voyant-travel/commerce#catalog-checkout-extension",
   packageName: "@voyant-travel/commerce",
   localId: "commerce.catalog-checkout-extension",
+  provides: {
+    ports: [
+      providePort(catalogCheckoutApiRuntimePort),
+      providePort(catalogCheckoutDatabaseRuntimePort),
+      providePort(catalogCheckoutLegalRuntimePort),
+      providePort(catalogCheckoutContractPdfRuntimePort),
+    ],
+  },
   runtimePorts: [
     requirePort(catalogCheckoutApiRuntimePort),
     requirePort(catalogCheckoutDatabaseRuntimePort),
@@ -304,7 +329,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
       eventType: "contract.document.generated",
       source: "@voyant-travel/commerce/catalog-checkout-subscribers",
       runtime: {
-        entry: "./catalog-checkout-subscribers",
+        entry: "@voyant-travel/commerce/catalog-checkout-subscribers",
         export: "createAcceptanceSignatureSubscriberGraphRuntime",
       },
     },
@@ -313,7 +338,7 @@ export const commerceCatalogCheckoutVoyantPlugin = defineExtension({
       eventType: "payment.completed",
       source: "@voyant-travel/commerce/catalog-checkout-subscribers",
       runtime: {
-        entry: "./catalog-checkout-subscribers",
+        entry: "@voyant-travel/commerce/catalog-checkout-subscribers",
         export: "createCheckoutFinalizeSubscriberGraphRuntime",
       },
     },
@@ -327,6 +352,7 @@ export const commerceBookingMaintenanceVoyantPlugin = defineExtension({
   id: "@voyant-travel/commerce#booking-maintenance-extension",
   packageName: "@voyant-travel/commerce",
   localId: "commerce.booking-maintenance-extension",
+  provides: { ports: [providePort(bookingMaintenanceRuntimePort)] },
   runtime: {
     entry: "@voyant-travel/commerce/checkout",
     export: "createBookingMaintenanceVoyantRuntime",

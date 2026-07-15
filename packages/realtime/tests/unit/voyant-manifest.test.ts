@@ -6,6 +6,7 @@ import {
   createRealtimeHonoModule,
   REALTIME_OPENAPI_API_IDS,
   realtimeRuntimePort,
+  realtimeTransportRuntimePort,
 } from "../../src/index.js"
 import { createLocalRealtimeProvider } from "../../src/providers/local.js"
 import { realtimeVoyantModule } from "../../src/voyant.js"
@@ -17,13 +18,18 @@ describe("realtime deployment manifest", () => {
       id: "@voyant-travel/realtime",
       packageName: "@voyant-travel/realtime",
       provides: {
-        ports: [{ id: "realtime.transport" }, { id: "realtime.admin-invalidation-publication" }],
+        ports: [
+          { id: "realtime.transport" },
+          { id: "realtime.admin-invalidation-publication" },
+          { id: realtimeRuntimePort.id },
+        ],
       },
       runtimePorts: [{ id: "realtime.runtime" }],
       api: [
         {
           id: "@voyant-travel/realtime#api.admin",
           surface: "admin",
+          resource: "realtime",
           openapi: { document: "realtime-admin" },
           runtime: {
             entry: "@voyant-travel/realtime",
@@ -33,6 +39,7 @@ describe("realtime deployment manifest", () => {
         {
           id: "@voyant-travel/realtime#api.public",
           surface: "public",
+          resource: "realtime",
           openapi: { document: "realtime-public" },
           runtime: {
             entry: "@voyant-travel/realtime",
@@ -43,20 +50,42 @@ describe("realtime deployment manifest", () => {
       providers: [
         {
           id: "@voyant-travel/realtime#provider.local",
+          selection: { role: "realtime", value: "local" },
           runtime: {
             entry: "@voyant-travel/realtime/providers/local",
-            export: "createLocalRealtimeProvider",
+            export: "createLocalGraphRealtimeProvider",
           },
         },
         {
           id: "@voyant-travel/realtime#provider.voyant-cloud",
+          selection: { role: "realtime", value: "voyant-cloud" },
+          uses: {
+            config: [
+              "@voyant-travel/realtime#config.voyant-cloud-base-url",
+              "@voyant-travel/realtime#config.voyant-cloud-user-agent",
+            ],
+            secrets: ["@voyant-travel/realtime#secret.voyant-cloud-api-key"],
+          },
           runtime: {
             entry: "@voyant-travel/realtime/providers/voyant-cloud",
-            export: "createVoyantCloudRealtimeProvider",
+            export: "createVoyantCloudGraphRealtimeProvider",
           },
         },
       ],
+      access: {
+        resources: [
+          expect.objectContaining({
+            resource: "realtime",
+            label: "Realtime",
+            actions: [expect.objectContaining({ action: "write" })],
+          }),
+        ],
+      },
     })
+    expect(realtimeVoyantModule.config).toHaveLength(2)
+    expect(realtimeVoyantModule.secrets).toContainEqual(
+      expect.objectContaining({ key: "VOYANT_API_KEY", required: true }),
+    )
   })
 
   it("publishes distinct admin and public OpenAPI registries", () => {
@@ -91,6 +120,9 @@ describe("realtime deployment manifest", () => {
     await expect(
       assertPortConforms(realtimeRuntimePort, { resolveProviders: true } as never),
     ).rejects.toThrow(/resolveProviders/)
+    await expect(
+      assertPortConforms(realtimeTransportRuntimePort, createLocalRealtimeProvider()),
+    ).resolves.toBeUndefined()
   })
 
   it("keeps provider resolution injectable through the manifest runtime factory", async () => {

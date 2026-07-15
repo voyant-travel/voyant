@@ -220,6 +220,7 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   )
   if (materialized.packages.size !== packageCount) graph = await resolveGraph()
   const targetNeutralGraph = requireTargetNeutralGraph(graph)
+  const projectLinkIds = new Set(projectSubscriberLinks.graphLinks.map((link) => link.id))
   const selectedLinks = [
     ...targetNeutralGraph.modules,
     ...targetNeutralGraph.extensions,
@@ -227,8 +228,11 @@ export async function resolveProject(input: ResolveProjectInput): Promise<Resolv
   ]
     .flatMap((unit) => unit.links)
     .filter(
-      (link): link is Required<Pick<typeof link, "id" | "source" | "export">> =>
-        typeof link.source === "string" && typeof link.export === "string",
+      (link): link is Required<Pick<typeof link, "id" | "kind" | "source" | "export">> =>
+        link.kind === "definition" &&
+        !projectLinkIds.has(link.id) &&
+        typeof link.source === "string" &&
+        typeof link.export === "string",
     )
   const runtimeEntry = VOYANT_PROJECT_RUNTIME_ENTRY
   const workflowRuntimeEntry = VOYANT_PROJECT_WORKFLOW_RUNTIME_ENTRY

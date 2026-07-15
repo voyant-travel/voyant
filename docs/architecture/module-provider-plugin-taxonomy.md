@@ -37,6 +37,16 @@ Modules should own:
 - their route surfaces
 - their local domain logic
 
+Selected modules publish this ownership through the same import-cheap
+`voyant.package.v1` manifest contract, whether the module is first-party,
+third-party, or project-local. First-party product code does not use a parallel
+central catalog for API, admin, access, tool, event, webhook, schema, migration,
+or runtime authority. See
+[`unified-deployment-graph.md`](./unified-deployment-graph.md#uniform-first-party-declarations).
+Runtime contributors must declare every returned port on the exact owning graph
+unit, and package frontend routes enter hosts only through graph-selected
+presentation declarations.
+
 Rule:
 
 If a package defines a real capability with its own records and behavior, it is

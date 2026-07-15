@@ -17,10 +17,30 @@ describe("createInventoryAdminExtension", () => {
       navMessages: { products: "Produse", categories: "Categorii" },
     })
     expect(extension.routes?.every((route) => route.routeMessagesProvider)).toBe(true)
+    expect(extension.navigation?.[0]).toMatchObject({
+      order: -120,
+      items: [
+        {
+          id: "products",
+          title: "Produse",
+          url: "/products",
+          items: [{ id: "product-categories", title: "Categorii", url: "/products/categories" }],
+        },
+      ],
+    })
+    expect(extension.navigation?.[0]?.items[0]?.icon).toBeDefined()
     expect(productDetailOptionExtrasSlot).toBe("product.details.option-extras")
     expect(inventoryVoyantModule.admin?.slots?.map((slot) => slot.id)).toContain(
       productDetailOptionExtrasSlot,
     )
+  })
+
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedInventoryAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Products",
+      items: [{ title: "Categories" }],
+    })
   })
 
   it("keeps the package-owned deployment facets aligned with the admin extension", () => {
@@ -40,7 +60,7 @@ describe("createInventoryAdminExtension", () => {
     })
   })
 
-  it("contributes no navigation (products nav is base-nav-owned)", () => {
+  it("leaves standard navigation to the graph-selected factory", () => {
     const extension = createInventoryAdminExtension()
     expect(extension.id).toBe("inventory")
     expect(extension.navigation).toBeUndefined()

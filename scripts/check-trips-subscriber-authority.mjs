@@ -43,7 +43,7 @@ const rejectMatch = (source, pattern, message) => {
 
 requireMatch(
   sources.manifest,
-  /entry:\s*["']\.\/payment-subscribers["'][\s\S]*export:\s*["']tripsPaymentCompletedSubscriber["']/,
+  /entry:\s*["']@voyant-travel\/trips\/payment-subscribers["'][\s\S]*export:\s*["']tripsPaymentCompletedSubscriber["']/,
   "Trips manifest must own the payment subscriber runtime reference",
 )
 if (

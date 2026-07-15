@@ -1,4 +1,6 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { commerceOperatorSettingsRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import { defineModule, providePort } from "@voyant-travel/core/project"
+import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
 
 const runtime = {
   entry: "@voyant-travel/operator-settings/hono-module",
@@ -15,6 +17,12 @@ export const operatorSettingsVoyantModule = defineModule({
   id: "@voyant-travel/operator-settings",
   packageName: "@voyant-travel/operator-settings",
   localId: "operator-settings",
+  provides: {
+    ports: [
+      providePort(commerceOperatorSettingsRuntimePort),
+      providePort(financeOperatorSettingsRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/operator-settings#api.admin",
@@ -65,7 +73,26 @@ export const operatorSettingsVoyantModule = defineModule({
       {
         id: "@voyant-travel/operator-settings#access.settings",
         resource: "settings",
-        actions: ["read", "write", "delete"],
+        label: "Settings",
+        description: "Manage operator profile and application settings.",
+        actions: [
+          {
+            action: "read",
+            label: "View settings",
+            description: "View operator profile and application settings.",
+          },
+          {
+            action: "write",
+            label: "Manage settings",
+            description: "Create and update operator profile and application settings.",
+          },
+          {
+            action: "delete",
+            label: "Delete settings",
+            description: "Delete operator-managed settings.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },

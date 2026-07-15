@@ -1,9 +1,11 @@
+import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtime-port"
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import { assertPortConforms } from "@voyant-travel/core/project"
 import { describe, expect, it, vi } from "vitest"
 import { createRelationshipsVoyantRuntime, relationshipsRouteRuntimePort } from "../../src/index.js"
 import { RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { relationshipsRoutes } from "../../src/routes/index.js"
+import { relationshipsMiceRuntimePort } from "../../src/runtime-port.js"
 import { relationshipsVoyantModule } from "../../src/voyant.js"
 
 describe("relationships deployment manifest", () => {
@@ -12,12 +14,21 @@ describe("relationships deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/relationships",
       packageName: "@voyant-travel/relationships",
+      provides: {
+        ports: [
+          { id: "storefront.intake.runtime" },
+          { id: relationshipsMiceRuntimePort.id },
+          { id: bookingsRelationshipsRuntimePort.id },
+          { id: relationshipsRouteRuntimePort.id },
+        ],
+      },
       runtimePorts: [{ id: "relationships.route-runtime" }],
       api: [
         {
           id: "@voyant-travel/relationships#api.admin",
           surface: "admin",
           mount: "relationships",
+          resource: "crm",
           openapi: { document: "relationships" },
           transactional: true,
           runtime: {
@@ -33,6 +44,17 @@ describe("relationships deployment manifest", () => {
         { id: "@voyant-travel/relationships#linkable.person" },
       ],
     })
+    expect(relationshipsVoyantModule.access?.resources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ resource: "crm" }),
+        expect.objectContaining({
+          resource: "relationships-pii",
+          actions: [expect.objectContaining({ action: "read", sensitive: true })],
+        }),
+      ]),
+    )
+    expect(relationshipsVoyantModule.tools?.every((tool) => tool.risk === "low")).toBe(true)
+    expectConcreteEventSchemas(relationshipsVoyantModule.events)
   })
 
   it("ships a typed route runtime port and package-owned graph factory", async () => {
@@ -77,14 +99,16 @@ describe("relationships deployment manifest", () => {
           ["people-detail", "/people/$id"],
           ["organizations-index", "/organizations"],
           ["organizations-detail", "/organizations/$id"],
-        ].map(([id, path]) => ({
-          id: `@voyant-travel/relationships#admin.route.${id}`,
-          path,
-          runtime: {
-            entry: "@voyant-travel/relationships-react/admin",
-            export: "createRelationshipsAdminExtension",
-          },
-        })),
+        ].map(([id, path]) =>
+          expect.objectContaining({
+            id: `@voyant-travel/relationships#admin.route.${id}`,
+            path,
+            runtime: {
+              entry: "@voyant-travel/relationships-react/admin",
+              export: "createRelationshipsAdminExtension",
+            },
+          }),
+        ),
       ),
       slots: [
         {
@@ -94,5 +118,32 @@ describe("relationships deployment manifest", () => {
         },
       ],
     })
+    expect(
+      relationshipsVoyantModule.admin?.routes?.every((route) =>
+        route.requiredScopes?.includes("crm:read"),
+      ),
+    ).toBe(true)
+    expect(relationshipsVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/relationships#admin.route.people-index",
+        label: { namespace: "relationships.admin", key: "peoplePage.title" },
+      }),
+      expect.objectContaining({
+        routeId: "@voyant-travel/relationships#admin.route.organizations-index",
+        label: { namespace: "relationships.admin", key: "organizationsPage.title" },
+      }),
+    ])
   })
 })
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
+  }
+}

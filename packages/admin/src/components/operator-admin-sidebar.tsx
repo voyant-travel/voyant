@@ -18,11 +18,10 @@ import { Settings as DefaultSettingsIcon } from "lucide-react"
 import type * as React from "react"
 
 import type { AdminExtension } from "../extensions.js"
-import { resolveAdminNavigation } from "../extensions.js"
 import {
   createOperatorAdminNavigation,
-  filterAdminNavigationByModules,
   type OperatorAdminNavigationIcons,
+  resolveOperatorAdminNavigation,
 } from "../navigation/operator-navigation.js"
 import { AdminExtensionsProvider } from "../providers/admin-extensions.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
@@ -42,13 +41,6 @@ import { OperatorAdminUserMenu } from "./operator-admin-user-menu.js"
 export interface OperatorAdminSidebarProps
   extends Omit<React.ComponentProps<typeof Sidebar>, "children"> {
   accountHref?: string
-  /**
-   * The deployment's active module ids (voyant#3063). When provided, the nav is
-   * gated to these modules — a source-free hosted admin composes the full nav
-   * from one shared image and hides modules its profile doesn't activate.
-   * Omit (the default) to show every item.
-   */
-  activeModuleIds?: readonly string[]
   brand?: React.ReactNode
   currentPath: string
   extensions?: ReadonlyArray<AdminExtension>
@@ -94,7 +86,6 @@ export function DefaultOperatorAdminBrand({
 
 export function OperatorAdminSidebar({
   accountHref,
-  activeModuleIds,
   brand,
   currentPath,
   extensions,
@@ -108,10 +99,7 @@ export function OperatorAdminSidebar({
 }: OperatorAdminSidebarProps) {
   const messages = useOperatorAdminMessages()
   const baseItems = navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
-  const resolvedItems = filterAdminNavigationByModules(
-    resolveAdminNavigation({ baseItems, extensions }),
-    activeModuleIds,
-  )
+  const resolvedItems = resolveOperatorAdminNavigation({ baseItems, extensions })
   const resolvedBrand = brand ?? <DefaultOperatorAdminBrand linkComponent={linkComponent} />
   const LinkComponent = linkComponent ?? DefaultAdminNavLink
   const SettingsIcon = icons?.settings ?? DefaultSettingsIcon
@@ -154,12 +142,6 @@ export function OperatorAdminSidebar({
 
 export interface OperatorAdminWorkspaceLayoutProps {
   accountHref?: string
-  /**
-   * The deployment's active module ids (voyant#3063). When provided, the base
-   * nav is gated to these modules so a source-free hosted admin hides modules
-   * its profile doesn't activate. Omit to show every item.
-   */
-  activeModuleIds?: readonly string[]
   brand?: React.ReactNode
   children: React.ReactNode
   currentPath: string
@@ -233,7 +215,6 @@ export function resolveAdminPageTitle(
 
 export function OperatorAdminWorkspaceLayout({
   accountHref,
-  activeModuleIds,
   brand,
   children,
   currentPath,
@@ -263,13 +244,10 @@ export function OperatorAdminWorkspaceLayout({
   } = sidebarProps ?? {}
   const baseItems =
     sidebarNavItems ?? navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
-  const resolvedItems = filterAdminNavigationByModules(
-    resolveAdminNavigation({
-      baseItems,
-      extensions: sidebarExtensions ?? extensions,
-    }),
-    activeModuleIds,
-  )
+  const resolvedItems = resolveOperatorAdminNavigation({
+    baseItems,
+    extensions: sidebarExtensions ?? extensions,
+  })
   const resolvedSide = sidebarSide ?? side
   let pageTitle: string | null = null
   if (pageHead !== false) {

@@ -20,7 +20,7 @@ runtimePorts: [
   requirePort(promotionsBulkReindexRuntimePort),
 ]
 runtime: {
-  entry: "./promotion-redemption-subscriber",
+  entry: "@voyant-travel/commerce/promotion-redemption-subscriber",
   export: "createPromotionRedemptionSubscriberGraphRuntime",
 }
 `,

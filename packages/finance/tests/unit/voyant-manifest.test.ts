@@ -13,6 +13,14 @@ describe("finance deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/finance",
       packageName: "@voyant-travel/finance",
+      provides: {
+        capabilities: ["finance.payment-sessions"],
+        ports: [
+          { id: "action-ledger.finance-drift-runtime" },
+          { id: "bookings.finance.runtime" },
+          { id: "finance.host.runtime" },
+        ],
+      },
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
       runtimePorts: [
         { id: "finance.host.runtime" },
@@ -59,7 +67,40 @@ describe("finance deployment manifest", () => {
         { id: "@voyant-travel/finance#linkable.invoiceTemplate" },
         { id: "@voyant-travel/finance#linkable.supplierInvoice" },
       ],
+      presentations: [
+        {
+          id: "@voyant-travel/finance#presentation.public",
+          runtime: {
+            entry: "@voyant-travel/finance-react/public-routes",
+            export: "createFinancePublicRouteContribution",
+          },
+        },
+      ],
     })
+    expectConcreteEventSchemas(financeVoyantModule.events)
+  })
+
+  it("declares Finance access and destructive tool authority", () => {
+    expect(financeVoyantModule.access?.resources?.map((resource) => resource.resource)).toEqual([
+      "finance",
+    ])
+    expect(financeVoyantModule.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "list_invoices", risk: "low" }),
+        expect.objectContaining({ name: "get_invoice", risk: "low" }),
+        expect.objectContaining({ name: "void_invoice", risk: "critical" }),
+      ]),
+    )
+    expect(financeVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/finance#action.void-invoice",
+        requiredScopes: ["finance:void"],
+        risk: "critical",
+        ledger: "required",
+        approval: "required",
+        from: { tools: ["@voyant-travel/finance#tool.void-invoice"] },
+      }),
+    )
   })
 
   it("mounts only selected Finance API surfaces", async () => {
@@ -173,7 +214,7 @@ describe("finance deployment manifest", () => {
           eventType: "booking.confirmed",
           source: "@voyant-travel/finance/booking-schedule-subscriber",
           runtime: {
-            entry: "./booking-schedule-subscriber",
+            entry: "@voyant-travel/finance/booking-schedule-subscriber",
             export: "bookingScheduleConfirmedSubscriber",
           },
         },
@@ -223,5 +264,33 @@ describe("finance deployment manifest", () => {
         ],
       ],
     )
+    expect(
+      financeVoyantModule.admin?.routes?.every((route) =>
+        route.requiredScopes?.includes("finance:read"),
+      ),
+    ).toBe(true)
+    expect(
+      financeVoyantModule.admin?.contributions?.every((contribution) =>
+        contribution.requiredScopes?.includes("finance:read"),
+      ),
+    ).toBe(true)
+    expect(financeVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/finance#admin.route.invoices-index",
+        label: { namespace: "finance.admin", key: "invoicesPage.title" },
+      }),
+    ])
   })
 })
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
+  }
+}

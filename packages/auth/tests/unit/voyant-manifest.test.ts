@@ -14,11 +14,13 @@ describe("auth identity/access deployment manifests", () => {
     expect(authInvitationsVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#invitations",
       packageName: "@voyant-travel/auth",
+      provides: { ports: [{ id: identityAccessRuntimePort.id }] },
       runtimePorts: [{ id: identityAccessRuntimePort.id }],
       api: [
         {
           surface: "admin",
           mount: "invitations",
+          resource: "team",
           openapi: { document: "invitations" },
           transactional: true,
         },
@@ -30,10 +32,20 @@ describe("auth identity/access deployment manifests", () => {
           transactional: true,
         },
       ],
+      presentations: [
+        {
+          id: "@voyant-travel/auth#presentation.local-auth",
+          runtime: {
+            entry: "@voyant-travel/auth-react/local-auth-routes",
+            export: "createLocalAuthRouteContribution",
+          },
+        },
+      ],
     })
     expect(authTeamVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#team",
       packageName: "@voyant-travel/auth",
+      provides: { ports: [{ id: identityAccessRuntimePort.id }] },
       runtimePorts: [{ id: identityAccessRuntimePort.id }],
       api: [{ surface: "admin", mount: "team", openapi: { document: "team" } }],
     })

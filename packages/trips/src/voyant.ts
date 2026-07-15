@@ -1,4 +1,6 @@
-import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { commerceCardPaymentRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import { storefrontPaymentLinkRuntimePort } from "@voyant-travel/storefront/runtime-port"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 
 const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
@@ -16,6 +18,14 @@ export const tripsVoyantModule = defineModule({
   id: "@voyant-travel/trips",
   packageName: "@voyant-travel/trips",
   localId: "trips",
+  provides: {
+    ports: [
+      providePort(commerceCardPaymentRuntimePort),
+      providePort(storefrontPaymentLinkRuntimePort),
+      providePort(tripsRoutesRuntimePort),
+      providePort(tripsDatabaseRuntimePort),
+    ],
+  },
   runtimePorts: [
     requirePort(tripsRoutesRuntimePort),
     requirePort(tripsDatabaseRuntimePort),
@@ -64,7 +74,26 @@ export const tripsVoyantModule = defineModule({
       {
         id: "@voyant-travel/trips#access.trips",
         resource: "trips",
-        actions: ["read", "write"],
+        label: "Trips",
+        description: "Customer trips, components, pricing, reservations, and requirements.",
+        actions: [
+          {
+            action: "read",
+            label: "View trips",
+            description: "View trips, components, prices, and reservation status.",
+          },
+          {
+            action: "write",
+            label: "Manage trips",
+            description: "Create, revise, price, and reserve trips and their components.",
+          },
+          {
+            action: "delete",
+            label: "Delete trip components",
+            description: "Remove components from a trip.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -135,6 +164,18 @@ export const tripsVoyantModule = defineModule({
       ledger: "optional",
       from: { tools: ["@voyant-travel/trips#tool.price-trip"] },
     },
+    {
+      id: "@voyant-travel/trips#action.reserve-trip",
+      version: "v1",
+      kind: "execute",
+      targetType: "trip",
+      requiredScopes: ["trips:write"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      from: { tools: ["@voyant-travel/trips#tool.reserve-trip"] },
+    },
   ],
   subscribers: [
     {
@@ -142,7 +183,7 @@ export const tripsVoyantModule = defineModule({
       eventType: "payment.completed",
       source: "@voyant-travel/trips",
       runtime: {
-        entry: "./payment-subscribers",
+        entry: "@voyant-travel/trips/payment-subscribers",
         export: "tripsPaymentCompletedSubscriber",
       },
     },
@@ -157,6 +198,7 @@ export const tripsVoyantModule = defineModule({
       {
         id: "@voyant-travel/trips#admin.route.trips-index",
         path: "/trips",
+        requiredScopes: ["trips:read"],
         runtime: {
           entry: "@voyant-travel/trips-react/admin",
           export: "createTripsAdminExtension",
@@ -165,6 +207,7 @@ export const tripsVoyantModule = defineModule({
       {
         id: "@voyant-travel/trips#admin.route.trips-detail",
         path: "/trips/$id",
+        requiredScopes: ["trips:read"],
         runtime: {
           entry: "@voyant-travel/trips-react/admin",
           export: "createTripsAdminExtension",
@@ -175,10 +218,18 @@ export const tripsVoyantModule = defineModule({
       {
         id: "@voyant-travel/trips#admin.contribution.compose-booking",
         slotId: "bookings.list.header-actions",
+        requiredScopes: ["trips:write"],
         runtime: {
           entry: "@voyant-travel/trips-react/admin",
           export: "createTripsAdminExtension",
         },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/trips#admin.nav.trips",
+        routeId: "@voyant-travel/trips#admin.route.trips-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.trips" },
       },
     ],
   },

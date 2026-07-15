@@ -26,6 +26,14 @@ describe("cruises deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/cruises",
       packageName: "@voyant-travel/cruises",
+      provides: {
+        ports: [
+          { id: "catalog.extension.cruises" },
+          { id: "finance.cruises-payment-policy.runtime" },
+          { id: "voyant.workflow-services" },
+        ],
+      },
+      requires: { ports: [{ id: "catalog.runtime-services" }] },
       api: [
         {
           surface: "admin",
@@ -98,6 +106,7 @@ describe("cruises deployment manifest", () => {
         {
           surface: "public",
           mount: "cruises",
+          anonymous: true,
           openapi: { document: "cruises" },
           runtime: { export: "createCruisesContentVoyantRuntime" },
         },
@@ -135,6 +144,45 @@ describe("cruises deployment manifest", () => {
     expect(readApiIds(cruisesBookingExtensionRoutes)).toEqual(
       Array.from({ length: 6 }, () => CRUISES_BOOKING_OPENAPI_API_ID),
     )
+  })
+
+  it("describes read, write, and privileged delete access", () => {
+    expect(cruisesVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "cruises",
+        label: "Cruises",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "delete",
+            label: expect.any(String),
+            description: expect.any(String),
+            sensitive: true,
+          }),
+        ],
+      }),
+    ])
+  })
+
+  it("declares the emitted cruise lifecycle payload", () => {
+    for (const event of cruisesVoyantModule.events ?? []) {
+      expect(event.payloadSchema).toEqual({
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+        additionalProperties: false,
+      })
+    }
   })
 
   it("preserves deployment-injected lazy route bridges", () => {

@@ -1,8 +1,15 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { createLocalRealtimeProvider } from "../../src/providers/local.js"
+import {
+  createLocalGraphRealtimeProvider,
+  createLocalRealtimeProvider,
+} from "../../src/providers/local.js"
 
 describe("createLocalRealtimeProvider", () => {
+  it("constructs the deployment-selected local graph provider", () => {
+    expect(createLocalGraphRealtimeProvider().name).toBe("local")
+  })
+
   it("delivers published messages to in-process channel subscribers", async () => {
     const provider = createLocalRealtimeProvider({ sink: vi.fn() })
     const received: unknown[] = []

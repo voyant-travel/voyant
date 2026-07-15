@@ -3,12 +3,9 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      // The merged client tier (#1652) has cyclic package deps inside its
-      // styled tier (e.g. bookings <-> finance admin widgets), so topological
-      // ^build ordering is impossible here. It is also unnecessary: every
-      // workspace package exports TypeScript source in dev, so tsc never
-      // reads a sibling's dist/.
-      "dependsOn": []
+      // Avoid the cyclic React tier while ensuring the dist-backed domain
+      // declarations consumed by tsconfig.build.json exist first.
+      "dependsOn": ["@voyant-travel/bookings#build"]
     }
   }
 }

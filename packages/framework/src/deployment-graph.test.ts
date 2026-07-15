@@ -80,6 +80,38 @@ describe("deployment graph v1", () => {
     )
   })
 
+  it("rejects ambiguous and malformed graph link declarations", () => {
+    const diagnostics = validateGraphUnitManifest({
+      schemaVersion: "voyant.module.v1",
+      id: "@acme/voyant-links",
+      links: [
+        {
+          id: "@acme/voyant-links#linkable.customer",
+          source: "@acme/voyant-links/linkables",
+          export: "customerLinkable",
+        },
+        {
+          id: "@acme/voyant-links#link.customer-order",
+          kind: "definition",
+          source: "@acme/voyant-links/links",
+        },
+      ],
+    })
+
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "links[0].kind",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_FACET",
+          facet: "links[1].export",
+        }),
+      ]),
+    )
+  })
+
   it("normalizes legacy v1 projects without an extension lane", async () => {
     const plugin = definePlugin({ id: "@acme/voyant-fiscal#smartbill" })
     const project = defineProject({ modules: [], plugins: [plugin] })
@@ -1280,6 +1312,7 @@ describe("deployment graph v1", () => {
         database: "postgres",
         cache: "redis",
         search: "none",
+        realtime: "voyant-cloud",
         outboundWebhooks: "postgres",
       },
     })
@@ -1300,6 +1333,11 @@ describe("deployment graph v1", () => {
           resourceKey: "search:none",
           provider: "none",
           required: false,
+        }),
+        expect.objectContaining({
+          resourceKey: "realtime:voyant-cloud",
+          provider: "voyant-cloud",
+          roles: ["realtime"],
         }),
         expect.objectContaining({
           resourceKey: "outboundWebhooks:postgres",
@@ -1699,7 +1737,7 @@ describe("deployment graph v1", () => {
                 {
                   id: "@acme/notifications#access.notifications",
                   resource: "notifications",
-                  actions: [{ action: "send", wildcard: "explicit" }],
+                  actions: [{ action: "send", sensitive: true, wildcard: "explicit" }],
                 },
               ],
             },
@@ -1709,5 +1747,6 @@ describe("deployment graph v1", () => {
     })
 
     expect(graph.accessCatalog.resources[0]?.actions[0]?.wildcard).toBe("explicit")
+    expect(graph.accessCatalog.resources[0]?.actions[0]?.sensitive).toBe(true)
   })
 })

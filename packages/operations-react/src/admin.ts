@@ -14,6 +14,7 @@ import {
   type ProductDetailOptionExtrasSlotContext,
   productDetailOptionExtrasSlot,
 } from "@voyant-travel/inventory-react/admin"
+import { CalendarDays, Wrench } from "lucide-react"
 import { createElement, lazy, Suspense } from "react"
 
 import { defaultFetcher as availabilityDefaultFetcher } from "./availability/client.js"
@@ -312,13 +313,40 @@ const operationsRouteMessagesProvider = composeAdminRouteMessagesProviders(
 export function createSelectedOperationsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
-    createOperationsAdminExtension({
-      labels: {
-        availability: navMessages.availability,
-        resources: navMessages.resources,
-      },
-    }),
+  const labels = {
+    availability: navMessages.availability ?? "Availability",
+    resources: navMessages.resources ?? "Resources",
+  }
+  const extension = withAdminRouteMessagesProvider(
+    createOperationsAdminExtension({ labels }),
     operationsRouteMessagesProvider,
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -110,
+        items: [
+          {
+            id: "availability",
+            title: labels.availability,
+            url: "/operations/availability",
+            icon: CalendarDays,
+          },
+        ],
+      },
+      {
+        order: -60,
+        items: [
+          {
+            id: "resources",
+            title: labels.resources,
+            url: "/operations/resources",
+            icon: Wrench,
+          },
+        ],
+      },
+    ],
+  }
 }

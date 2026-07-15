@@ -112,8 +112,10 @@ Rule:
 Keep neutral ownership for pair-only links. Require explicit module ownership
 for richer relationship records.
 
-Executable link facets declare both a symbolic package `source` and named
-`export`. The selected deployment graph emits those declarations into the
+Every package-owned link facet declares its contribution `kind`. A `linkable`
+entry exposes entity metadata for composition; a `definition` entry owns an
+executable `defineLink(...)` result and must declare both a symbolic package
+`source` and named `export`. Only `definition` entries are emitted into the
 generated link runtime. Starter `src/links` directories are not an authority.
 
 ### 6. Existing link tables are not a hidden graph API

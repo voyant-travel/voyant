@@ -78,3 +78,8 @@ export function createLocalRealtimeProvider(
     },
   }
 }
+
+/** First-party local implementation selected by deployment.providers.realtime. */
+export function createLocalGraphRealtimeProvider(): RealtimeProvider {
+  return createLocalRealtimeProvider()
+}

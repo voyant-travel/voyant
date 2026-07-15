@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./checkout-inquiry": "./src/checkout-inquiry.ts",
+    "./runtime-port": "./src/checkout-inquiry.ts",
     "./validation": "./src/validation.ts"
   },
   "scripts": {
@@ -28,6 +29,11 @@
         "default": "./dist/index.js"
       },
       "./checkout-inquiry": {
+        "types": "./dist/checkout-inquiry.d.ts",
+        "import": "./dist/checkout-inquiry.js",
+        "default": "./dist/checkout-inquiry.js"
+      },
+      "./runtime-port": {
         "types": "./dist/checkout-inquiry.d.ts",
         "import": "./dist/checkout-inquiry.js",
         "default": "./dist/checkout-inquiry.js"

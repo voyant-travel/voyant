@@ -13,6 +13,13 @@ describe("accommodations deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/accommodations",
       packageName: "@voyant-travel/accommodations",
+      provides: {
+        ports: [
+          { id: "catalog.extension.accommodations" },
+          { id: "bookings.accommodation.runtime" },
+          { id: "finance.accommodations-payment-policy.runtime" },
+        ],
+      },
       api: [
         {
           id: "@voyant-travel/accommodations#api",
@@ -80,6 +87,28 @@ describe("accommodations deployment manifest", () => {
     expect(readApiId(document, "/{id}/content", "get")).toBe(
       ACCOMMODATION_CONTENT_OPENAPI_API_IDS.public,
     )
+  })
+
+  it("describes access to the accommodations API mount", () => {
+    expect(accommodationsVoyantModule.access?.resources).toEqual([
+      expect.objectContaining({
+        resource: "accommodations",
+        label: "Accommodations",
+        description: expect.any(String),
+        actions: [
+          expect.objectContaining({
+            action: "read",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+          expect.objectContaining({
+            action: "write",
+            label: expect.any(String),
+            description: expect.any(String),
+          }),
+        ],
+      }),
+    ])
   })
 })
 

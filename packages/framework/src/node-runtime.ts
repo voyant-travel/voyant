@@ -66,7 +66,6 @@ import type {
   VoyantDeploymentProviders,
 } from "./deployment-types.js"
 import { lowerVoyantGraphActionsToActionLedgerRegistry } from "./graph-action-ledger.js"
-import { createVoyantNodeStorageResolver } from "./node-object-storage.js"
 import {
   resolveVoyantNodeProviderPlan,
   type VoyantNodeKvProvider,
@@ -278,17 +277,31 @@ interface NodeSharedProviderResources {
 
 const MATERIALIZED_NODE_ENVS = new WeakMap<object, string>()
 
+function selectedNodeAuthMode(
+  providers: Readonly<Record<string, string>>,
+): "local" | "voyant-cloud" {
+  const provider = providers.auth
+  if (provider === "better-auth") return "local"
+  if (provider === "voyant-cloud") return "voyant-cloud"
+  throw new Error(
+    `Unsupported deployment.providers.auth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
+  )
+}
+
 /** Boot a generated application graph without constructing a profile compatibility manifest. */
 export async function loadVoyantNodeRuntime(
   options: VoyantNodeRuntimeOptions,
 ): Promise<VoyantNodeRuntime> {
   const providerPlan = resolveVoyantNodeProviderPlan(options.deployment.providers)
-  const providerEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
+  const providerEnv = {
+    ...Object.fromEntries(Object.entries(options.env ?? process.env)),
+    VOYANT_ADMIN_AUTH_MODE: selectedNodeAuthMode(options.deployment.providers),
+  }
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, providerEnv)
   if (providerIssues.length > 0) {
     throw new Error(`Voyant Node provider plan is not ready:\n${formatIssues(providerIssues)}`)
   }
-  const env = createVoyantNodeEnv(options.env ?? process.env, providerPlan)
+  const env = createVoyantNodeEnv(providerEnv, providerPlan)
   assertVoyantNodeWorkflowProviderConfigured(options.deployment, env)
   const requirements = options.deploymentRequirements
   const graphValues = await resolveVoyantGraphRuntimeValues(options.graphRuntime, {
@@ -1130,11 +1143,7 @@ function resolveDb(env: unknown): VoyantDb {
 }
 
 export type { StorageProvider, StorageProviderResolver, VoyantNodeProviderPlan }
-export {
-  createVoyantNodeStorageResolver,
-  resolveVoyantNodeProviderPlan,
-  validateVoyantNodeProviderPlanEnv,
-}
+export { resolveVoyantNodeProviderPlan, validateVoyantNodeProviderPlanEnv }
 
 export type VoyantNodeWorkflowProvider = VoyantDeploymentProviders["workflows"]
 

@@ -101,7 +101,7 @@ visit({ modules: graph.modules, extensions: graph.extensions, plugins: graph.plu
 
 const presets = new Map(graph.accessCatalog.presets.map((preset) => [preset.id, preset]))
 assert.deepEqual(presets.get("commerce-read")?.grants, [
-  "availability:read",
+  "operations:read",
   "pricing:read",
   "products:read",
   "suppliers:read",

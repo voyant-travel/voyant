@@ -8,7 +8,7 @@ const operatorRoot = process.cwd()
 
 describe("Operator project config", () => {
   it("authors only deployment differences", () => {
-    expect(config.modules).toHaveLength(38)
+    expect(config.modules).toHaveLength(39)
     expect(config.extensions).toHaveLength(24)
     expect(config.plugins).toHaveLength(0)
     expect(config.productBom).toEqual({
@@ -30,7 +30,7 @@ describe("Operator project config", () => {
       "read-only",
     ])
 
-    expect(config.selections?.modules).toHaveLength(38)
+    expect(config.selections?.modules).toHaveLength(39)
     expect(
       config.selections?.modules.every(({ provenance }) => provenance.kind === "package"),
     ).toBe(true)

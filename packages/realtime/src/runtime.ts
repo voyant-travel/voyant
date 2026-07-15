@@ -1,52 +1,6 @@
-import { getVoyantCloudClient, type VoyantCloudClient } from "@voyant-travel/cloud-sdk"
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { createAdminInvalidationSubscriberRuntime } from "./admin-invalidation-subscriber.js"
 import type { CreateRealtimeHonoModuleOptions } from "./index.js"
-import { createVoyantCloudRealtimeProvider } from "./providers/voyant-cloud.js"
 import type { RealtimeProvider, RealtimeRouteResult, RealtimeRoutes } from "./types.js"
-
-const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
-const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
-
-function nonEmpty(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined
-  const trimmed = value.trim()
-  return trimmed.length > 0 && !LOCAL_PLACEHOLDER_KEYS.has(trimmed) ? trimmed : undefined
-}
-
-function resolveVoyantApiKey(env: Readonly<Record<string, unknown>>): string | undefined {
-  return nonEmpty(env.VOYANT_API_KEY) ?? nonEmpty(env.VOYANT_CLOUD_API_KEY)
-}
-
-function getCloudClient(env: Readonly<Record<string, unknown>>, apiKey: string): VoyantCloudClient {
-  const cacheOwner = env as object
-  const cached = CLIENT_CACHE.get(cacheOwner)?.get(apiKey)
-  if (cached) return cached
-
-  const baseUrl = nonEmpty(env.VOYANT_CLOUD_API_URL)
-  const userAgent = nonEmpty(env.VOYANT_CLOUD_USER_AGENT)
-  const client = getVoyantCloudClient(
-    {
-      VOYANT_CLOUD_API_KEY: apiKey,
-      ...(baseUrl ? { VOYANT_CLOUD_API_URL: baseUrl } : {}),
-      ...(userAgent ? { VOYANT_CLOUD_USER_AGENT: userAgent } : {}),
-    },
-    { apiKey },
-  )
-  const clients = CLIENT_CACHE.get(cacheOwner) ?? new Map<string, VoyantCloudClient>()
-  clients.set(apiKey, client)
-  CLIENT_CACHE.set(cacheOwner, clients)
-  return client
-}
-
-/** Resolve the selected transport without activating Realtime for local deployments. */
-export function resolveRealtimeProviders(
-  env: Readonly<Record<string, unknown>>,
-): ReadonlyArray<RealtimeProvider> {
-  const apiKey = resolveVoyantApiKey(env)
-  if (nonEmpty(env.VOYANT_ADMIN_AUTH_MODE) !== "voyant-cloud" || !apiKey) return []
-  return [createVoyantCloudRealtimeProvider({ client: getCloudClient(env, apiKey) })]
-}
 
 function adminHint(entity: string, id: string | undefined): RealtimeRouteResult {
   return { channels: ["admin"], hint: id ? { entity, id } : { entity } }
@@ -180,11 +134,11 @@ export const realtimeAvailabilitySlotChangedInvalidationSubscriber = invalidatio
   "availability.slot.changed",
 )
 
-/** Build the package runtime solely from domain-neutral host primitives. */
+/** Build deterministic route options from the deployment-selected transport. */
 export function createRealtimeRuntime(
-  primitives: VoyantRuntimeHostPrimitives,
+  provider: RealtimeProvider | null,
 ): CreateRealtimeHonoModuleOptions {
   return {
-    resolveProviders: (bindings) => resolveRealtimeProviders(primitives.env(bindings)),
+    resolveProviders: () => (provider ? [provider] : []),
   }
 }

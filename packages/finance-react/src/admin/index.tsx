@@ -25,6 +25,7 @@ import {
 // peer-depends on `@voyant-travel/distribution-react/suppliers/ui`.
 import { supplierDetailPaymentPolicySlot } from "@voyant-travel/distribution-react/suppliers/admin"
 import { defaultFetcher } from "@voyant-travel/react"
+import { DollarSign } from "lucide-react"
 import type { ComponentType } from "react"
 import * as React from "react"
 
@@ -167,12 +168,8 @@ export interface CreateFinanceAdminExtensionOptions {
  * The finance admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The Finance nav group (invoices, number
- * series, payments, supplier invoices, profitability) is part of the BASE
- * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyant-travel/admin` — so contributing nav entries here would duplicate them.
- * If the base nav ever drops the finance group, this extension is where the
- * entries move.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Finance group.
  *
  * ROUTES: all eight contributions carry the FULL route implementation
  * (packaged-admin RFC §4.8 endgame) — a lazy `page` module loader, a data
@@ -427,19 +424,57 @@ export function createFinanceAdminExtension(
 export function createSelectedFinanceAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
+  const labels = {
+    finance: navMessages.finance ?? "Finance",
+    invoices: navMessages.invoices ?? "Invoices",
+    invoiceNumberSeries: navMessages.invoiceNumberSeries ?? "Invoice number series",
+    payments: navMessages.payments ?? "Payments",
+    supplierInvoices: navMessages.supplierInvoices ?? "Supplier invoices",
+    profitability: navMessages.profitability ?? "Profitability",
+  }
+  const extension = withAdminRouteMessagesProvider(
     createFinanceAdminExtension({
-      labels: {
-        invoices: navMessages.invoices,
-        invoiceNumberSeries: navMessages.invoiceNumberSeries,
-        payments: navMessages.payments,
-        supplierInvoices: navMessages.supplierInvoices,
-        profitability: navMessages.profitability,
-      },
+      labels,
     }),
     () =>
       import("../i18n/index.js").then((module) => ({
         default: module.FinanceUiMessagesProvider,
       })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -50,
+        items: [
+          {
+            id: "finance",
+            title: labels.finance,
+            url: "/finance/invoices",
+            icon: DollarSign,
+            items: [
+              { id: "invoices", title: labels.invoices, url: "/finance/invoices" },
+              {
+                id: "invoice-number-series",
+                title: labels.invoiceNumberSeries,
+                url: "/finance/invoice-number-series",
+              },
+              { id: "payments", title: labels.payments, url: "/finance/payments" },
+              {
+                id: "supplier-invoices",
+                title: labels.supplierInvoices,
+                url: "/finance/supplier-invoices",
+              },
+              {
+                id: "profitability",
+                title: labels.profitability,
+                url: "/finance/profitability",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  }
 }

@@ -89,6 +89,7 @@ export async function resolveVoyantGraphRuntimeValues(
   const config: ResolvedVoyantGraphRuntimeConfig[] = []
   const secrets: ResolvedVoyantGraphRuntimeSecret[] = []
   const issues: VoyantGraphRuntimeValueIssue[] = []
+  const providerRequirements = selectedProviderRuntimeValueRequirements(runtime)
 
   for (const definition of runtime.config) {
     const declaration = definition.declaration
@@ -100,7 +101,13 @@ export async function resolveVoyantGraphRuntimeValues(
     )
     const candidate =
       authored !== undefined ? authored : deployed !== undefined ? deployed : declaration.default
-    const resolved = await validateRuntimeValue(definition, "config", candidate, issues)
+    const resolved = await validateRuntimeValue(
+      definition,
+      "config",
+      candidate,
+      issues,
+      isRuntimeValueRequired(declaration, providerRequirements.config),
+    )
     configValues.set(declaration.id, resolved)
     if (resolved !== undefined) {
       config.push({
@@ -119,7 +126,13 @@ export async function resolveVoyantGraphRuntimeValues(
       declaration.key,
       deploymentValueAliases[declaration.key] ?? [],
     )
-    const resolved = await validateRuntimeValue(definition, "secrets", candidate, issues)
+    const resolved = await validateRuntimeValue(
+      definition,
+      "secrets",
+      candidate,
+      issues,
+      isRuntimeValueRequired(declaration, providerRequirements.secrets),
+    )
     secretValues.set(declaration.id, resolved)
     secrets.push({
       unitId: definition.unitId,
@@ -154,10 +167,10 @@ async function validateRuntimeValue(
   facet: "config" | "secrets",
   candidate: unknown,
   issues: VoyantGraphRuntimeValueIssue[],
+  required: boolean,
 ): Promise<unknown> {
-  const { declaration } = definition
   if (!hasRuntimeValue(candidate)) {
-    if (declaration.required) issues.push(valueIssue(definition, facet, "required"))
+    if (required) issues.push(valueIssue(definition, facet, "required"))
     return undefined
   }
   if (!definition.loadValidator) return candidate
@@ -179,6 +192,43 @@ async function validateRuntimeValue(
     issues.push(valueIssue(definition, facet, "invalid"))
     return undefined
   }
+}
+
+interface ProviderRuntimeValueRequirements {
+  owned: ReadonlySet<string>
+  selected: ReadonlySet<string>
+}
+
+function selectedProviderRuntimeValueRequirements(runtime: VoyantGraphRuntime): {
+  config: ProviderRuntimeValueRequirements
+  secrets: ProviderRuntimeValueRequirements
+} {
+  const config = { owned: new Set<string>(), selected: new Set<string>() }
+  const secrets = { owned: new Set<string>(), selected: new Set<string>() }
+  for (const { declaration } of runtime.providers) {
+    const selection = declaration.selection
+    const isSelected =
+      selection !== undefined && runtime.providerSelections[selection.role] === selection.value
+    for (const id of declaration.uses?.config ?? []) {
+      config.owned.add(id)
+      if (isSelected) config.selected.add(id)
+    }
+    for (const id of declaration.uses?.secrets ?? []) {
+      secrets.owned.add(id)
+      if (isSelected) secrets.selected.add(id)
+    }
+  }
+  return { config, secrets }
+}
+
+function isRuntimeValueRequired(
+  declaration: { id: string; required?: boolean },
+  requirements: ProviderRuntimeValueRequirements,
+): boolean {
+  return (
+    declaration.required === true &&
+    (!requirements.owned.has(declaration.id) || requirements.selected.has(declaration.id))
+  )
 }
 
 type RuntimeValidator = Record<string, unknown> & {

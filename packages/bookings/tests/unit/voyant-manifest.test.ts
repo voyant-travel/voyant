@@ -18,6 +18,13 @@ describe("bookings deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/bookings",
       packageName: "@voyant-travel/bookings",
+      provides: {
+        capabilities: ["bookings.data-owner"],
+        ports: [
+          { id: "action-ledger.booking-drift-runtime" },
+          { id: "bookings.configuration.runtime" },
+        ],
+      },
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
       runtimePorts: [
         { id: "bookings.configuration.runtime" },
@@ -61,6 +68,7 @@ describe("bookings deployment manifest", () => {
     })
 
     expect(bookingsExpireStaleHoldsWorkflow.id).toBe(bookingsVoyantModule.workflows[0]?.id)
+    expectConcreteEventSchemas(bookingsVoyantModule.events)
   })
 
   it("owns the selected Bookings access catalog", () => {
@@ -76,9 +84,15 @@ describe("bookings deployment manifest", () => {
       expect.objectContaining({
         resource: "bookings-pii",
         wildcard: "explicit-resource",
-        actions: [expect.objectContaining({ action: "read" })],
+        actions: [expect.objectContaining({ action: "read", sensitive: true })],
       }),
     ])
+    expect(bookingsVoyantModule.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "list_bookings", risk: "low" }),
+        expect.objectContaining({ name: "get_booking", risk: "low" }),
+      ]),
+    )
     expect(bookingsVoyantModule.admin?.routes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -99,6 +113,12 @@ describe("bookings deployment manifest", () => {
         }),
       ]),
     )
+    expect(bookingsVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/bookings#admin.route.index",
+        label: { namespace: "bookings.admin", key: "bookingsPage.title" },
+      }),
+    ])
   })
 
   it("owns the requirements module and supplier extension", () => {
@@ -111,11 +131,13 @@ describe("bookings deployment manifest", () => {
         export: "createBookingRequirementsVoyantRuntime",
       },
       runtimePorts: [{ id: "bookings.inventory.runtime" }],
+      requires: { capabilities: ["bookings.data-owner"] },
       api: [
         {
           id: "@voyant-travel/bookings#requirements.api",
           surface: "admin",
           mount: "booking-requirements",
+          resource: "bookings",
           openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
@@ -126,6 +148,7 @@ describe("bookings deployment manifest", () => {
           id: "@voyant-travel/bookings#requirements.api.public",
           surface: "public",
           mount: "booking-requirements",
+          resource: "bookings",
           openapi: { document: "booking-requirements" },
           runtime: {
             entry: "@voyant-travel/bookings/requirements",
@@ -261,6 +284,18 @@ function readApiIds(routes: OpenApiDocumentSource): unknown[] {
   return Object.values(document.paths ?? {}).flatMap((path) =>
     Object.values(path).map((operation) => operation["x-voyant-api-id"]),
   )
+}
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
+  }
 }
 
 interface OpenApiDocumentSource {

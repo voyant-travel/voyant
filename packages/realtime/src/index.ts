@@ -43,13 +43,19 @@ export type {
   LocalRealtimeProvider,
   LocalRealtimeProviderOptions,
 } from "./providers/local.js"
-export { createLocalRealtimeProvider } from "./providers/local.js"
+export {
+  createLocalGraphRealtimeProvider,
+  createLocalRealtimeProvider,
+} from "./providers/local.js"
 export type {
   RealtimeCloudClient,
   RealtimeCloudNamespace,
   VoyantCloudRealtimeProviderOptions,
 } from "./providers/voyant-cloud.js"
-export { createVoyantCloudRealtimeProvider } from "./providers/voyant-cloud.js"
+export {
+  createVoyantCloudGraphRealtimeProvider,
+  createVoyantCloudRealtimeProvider,
+} from "./providers/voyant-cloud.js"
 export type {
   RealtimeRouteRuntime,
   RealtimeRoutesOptions,
@@ -151,4 +157,4 @@ export const createRealtimeVoyantRuntime = defineGraphRuntimeFactory(async ({ ge
   createRealtimeHonoModule(await getPort(realtimeRuntimePort)),
 )
 
-export { realtimeRuntimePort } from "./runtime-port.js"
+export { realtimeRuntimePort, realtimeTransportRuntimePort } from "./runtime-port.js"

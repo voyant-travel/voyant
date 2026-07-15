@@ -19,7 +19,7 @@ import {
 } from "./index.js"
 
 describe("createBookingsAdminExtension", () => {
-  it("contributes no navigation (bookings nav is base-nav-owned)", () => {
+  it("leaves standard navigation to the graph-selected factory", () => {
     const extension = createBookingsAdminExtension()
     expect(extension.id).toBe("bookings")
     expect(extension.navigation).toBeUndefined()
@@ -137,8 +137,19 @@ describe("createBookingsAdminExtension", () => {
     expect(
       extension.routes?.every((route) => route.redirectTo || route.routeMessagesProvider),
     ).toBe(true)
+    expect(extension.navigation?.[0]).toMatchObject({
+      order: -100,
+      items: [{ id: "bookings", title: "Rezervari", url: "/bookings" }],
+    })
+    expect(extension.navigation?.[0]?.items[0]?.icon).toBeDefined()
     expect(bookingsListHeaderActionsSlot).toBe("bookings.list.header-actions")
     expect(bookingDetailPaymentControllerSlot).toBe("booking.details.payment-controller")
+  })
+
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedBookingsAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]?.title).toBe("Bookings")
+    expect(extension.routes?.find((route) => route.id === "bookings-index")?.title).toBe("Bookings")
   })
 })
 

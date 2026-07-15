@@ -5,6 +5,7 @@ import {
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import type { CabinClass } from "@voyant-travel/flights/contract/types"
+import { Plane } from "lucide-react"
 import { z } from "zod"
 
 /**
@@ -143,11 +144,8 @@ export interface CreateFlightsAdminExtensionOptions {
  * The flights admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The Flights nav item is part of the BASE
- * operator navigation — see `createOperatorAdminNavigation` in
- * `@voyant-travel/admin` — so contributing a nav entry here would duplicate it.
- * If the base nav ever drops the flights item, this extension is where the
- * entry moves.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Flights group.
  *
  * ROUTES: full implementations (packaged-admin RFC §4.8 endgame) — the
  * package-owned search contracts ({@link flightsIndexSearchSchema} for the
@@ -221,9 +219,35 @@ export function createFlightsAdminExtension(
 export function createSelectedFlightsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
-    createFlightsAdminExtension({ labels: { flights: navMessages.flights } }),
+  const labels = {
+    flights: navMessages.flights ?? "Flights",
+    search: navMessages.flightsSearch ?? "Search",
+    orders: navMessages.flightOrders ?? "Orders",
+  }
+  const extension = withAdminRouteMessagesProvider(
+    createFlightsAdminExtension({ labels: { flights: labels.flights } }),
     () =>
       import("../i18n/index.js").then((module) => ({ default: module.FlightsUiMessagesProvider })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -130,
+        items: [
+          {
+            id: "flights",
+            title: labels.flights,
+            url: "/flights",
+            icon: Plane,
+            items: [
+              { id: "flights-search", title: labels.search, url: "/flights" },
+              { id: "flights-orders", title: labels.orders, url: "/flights/orders" },
+            ],
+          },
+        ],
+      },
+    ],
+  }
 }

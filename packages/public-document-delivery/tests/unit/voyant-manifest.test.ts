@@ -1,7 +1,8 @@
+import { storageObjectRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { describe, expect, it } from "vitest"
-
 import {
   createPublicDocumentDeliveryHonoModule,
+  createPublicDocumentDeliveryVoyantRuntime,
   PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID,
 } from "../../src/index.js"
 import { publicDocumentDeliveryVoyantModule } from "../../src/voyant.js"
@@ -13,6 +14,7 @@ describe("public document delivery deployment manifest", () => {
       id: "@voyant-travel/public-document-delivery",
       packageName: "@voyant-travel/public-document-delivery",
       requires: { ports: [{ id: "database.client" }, { id: "storage.object" }] },
+      runtimePorts: [{ id: "storage.object" }],
       api: [
         {
           id: "@voyant-travel/public-document-delivery#api.public",
@@ -22,7 +24,7 @@ describe("public document delivery deployment manifest", () => {
           openapi: { document: "public-document-delivery" },
           runtime: {
             entry: "@voyant-travel/public-document-delivery",
-            export: "createPublicDocumentDeliveryHonoModule",
+            export: "createPublicDocumentDeliveryVoyantRuntime",
           },
         },
       ],
@@ -36,6 +38,33 @@ describe("public document delivery deployment manifest", () => {
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
     expect(createPublicDocumentDeliveryHonoModule().module.name).toBe("documents")
+  })
+
+  it("consumes the selected storage.object resolver through its graph runtime factory", async () => {
+    let requestedPort: unknown
+    const storageResolver = { resolve: () => null }
+    const runtime = await createPublicDocumentDeliveryVoyantRuntime({
+      unitId: "@voyant-travel/public-document-delivery",
+      projectConfig: {},
+      api: [{ id: PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID, surface: "public" }],
+      graph: {
+        providerSelections: {},
+        accessCatalog: { resources: [], presets: [] },
+        references: [],
+        tools: [],
+      },
+      runtimePorts: { [storageObjectRuntimePort.id]: storageResolver },
+      hasPort: () => true,
+      async getPort<TProvider>(port) {
+        requestedPort = port
+        return storageResolver as TProvider
+      },
+      getPorts: async <TProvider>() => [] as TProvider[],
+    })
+
+    expect(requestedPort).toBe(storageObjectRuntimePort)
+    expect(runtime.module.name).toBe("documents")
+    expect(runtime.publicRoutes).toBeDefined()
   })
 
   it("publishes its anonymous route from a package-owned OpenAPI registry", () => {

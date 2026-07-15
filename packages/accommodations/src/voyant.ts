@@ -1,11 +1,26 @@
+import { bookingsAccommodationRuntimePort } from "@voyant-travel/bookings/runtime-port"
+import { catalogAccommodationsRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { financeAccommodationsPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 
 /** Import-cheap deployment declaration owned by the accommodations package. */
 export const accommodationsVoyantModule = defineModule({
   id: "@voyant-travel/accommodations",
   packageName: "@voyant-travel/accommodations",
   localId: "accommodations",
+  provides: {
+    ports: [
+      providePort(catalogAccommodationsRuntimeExtensionPort),
+      providePort(bookingsAccommodationRuntimePort),
+      providePort(financeAccommodationsPaymentPolicyRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/accommodations#api",
@@ -34,20 +49,24 @@ export const accommodationsVoyantModule = defineModule({
   links: [
     {
       id: "@voyant-travel/accommodations#linkable.roomBlock",
+      kind: "linkable",
       source: "@voyant-travel/accommodations/linkables",
     },
     {
       id: "@voyant-travel/accommodations#link.program-room-block",
+      kind: "definition",
       source: "@voyant-travel/accommodations/standard-links",
       export: "programRoomBlockLink",
     },
     {
       id: "@voyant-travel/accommodations#link.room-block-property",
+      kind: "definition",
       source: "@voyant-travel/accommodations/standard-links",
       export: "roomBlockPropertyLink",
     },
     {
       id: "@voyant-travel/accommodations#link.room-block-supplier",
+      kind: "definition",
       source: "@voyant-travel/accommodations/standard-links",
       export: "roomBlockSupplierLink",
     },
@@ -57,7 +76,20 @@ export const accommodationsVoyantModule = defineModule({
       {
         id: "@voyant-travel/accommodations#access.accommodations",
         resource: "accommodations",
-        actions: ["read", "write"],
+        label: "Accommodations",
+        description: "Accommodation room blocks and their managed content.",
+        actions: [
+          {
+            action: "read",
+            label: "View accommodations",
+            description: "View accommodation room blocks and content.",
+          },
+          {
+            action: "write",
+            label: "Manage accommodations",
+            description: "Create and update accommodation room blocks and content.",
+          },
+        ],
       },
     ],
   },

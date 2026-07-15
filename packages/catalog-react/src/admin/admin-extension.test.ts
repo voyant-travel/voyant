@@ -31,6 +31,7 @@ describe("createCatalogAdminExtension", () => {
     })
     const extension = createSelectedCatalogAdminExtension({
       navMessages: {
+        catalog: "Catalog",
         catalogProducts: "Pachete",
         catalogExcursions: "Excursii",
         catalogTours: "Tururi",
@@ -41,9 +42,41 @@ describe("createCatalogAdminExtension", () => {
     expect(
       extension.routes?.every((route) => route.redirectTo || route.routeMessagesProvider),
     ).toBe(true)
+    expect(extension.navigation?.[0]).toMatchObject({
+      order: -140,
+      items: [
+        {
+          id: "catalog",
+          title: "Catalog",
+          url: "/catalog/products",
+          items: [
+            { id: "catalog-products", title: "Pachete", url: "/catalog/products" },
+            { id: "catalog-excursions", title: "Excursii", url: "/catalog/excursions" },
+            { id: "catalog-tours", title: "Tururi", url: "/catalog/tours" },
+            { id: "catalog-cruises", title: "Croaziere", url: "/catalog/cruises" },
+            { id: "catalog-accommodations", title: "Cazari", url: "/catalog/accommodations" },
+          ],
+        },
+      ],
+    })
+    expect(extension.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
-  it("contributes no navigation (catalog nav is base-nav-owned)", () => {
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedCatalogAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Catalog",
+      items: [
+        { title: "Products" },
+        { title: "Excursions" },
+        { title: "Tours" },
+        { title: "Cruises" },
+        { title: "Accommodations" },
+      ],
+    })
+  })
+
+  it("leaves standard navigation to the graph-selected factory", () => {
     const extension = createCatalogAdminExtension()
     expect(extension.id).toBe("catalog")
     expect(extension.navigation).toBeUndefined()

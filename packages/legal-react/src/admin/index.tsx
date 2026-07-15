@@ -13,6 +13,7 @@ import {
 // those shared keys, and `booking.detail`'s shape carries bookings-ui's own
 // tab union, so re-declaring it here could not stay shape-identical.
 import type {} from "@voyant-travel/bookings-react/admin"
+import { Scale } from "lucide-react"
 
 // Lean static only: the client module (fetcher + client contract type).
 // Query options resolve via dynamic import inside the loaders so the legal
@@ -87,11 +88,8 @@ export interface CreateLegalAdminExtensionOptions {
  * The legal admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The Legal nav group (contracts, contract
- * templates, policies, number series) is part of the BASE operator
- * navigation — see `createOperatorAdminNavigation` in `@voyant-travel/admin` —
- * so contributing nav entries here would duplicate them. If the base nav
- * ever drops the legal group, this extension is where the entries move.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Legal group.
  *
  * ROUTES: full implementations (packaged-admin RFC §4.8 endgame) — each
  * contribution carries the lazy `page` module loader, the data loader and
@@ -319,16 +317,49 @@ export function createLegalAdminExtension(
 export function createSelectedLegalAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
+  const labels = {
+    legal: navMessages.legal ?? "Legal",
+    contracts: navMessages.contracts ?? "Contracts",
+    contractTemplates: navMessages.contractTemplates ?? "Contract templates",
+    policies: navMessages.policies ?? "Policies",
+    numberSeries: navMessages.contractNumberSeries ?? "Number series",
+  }
+  const extension = withAdminRouteMessagesProvider(
     createLegalAdminExtension({
-      labels: {
-        contracts: navMessages.contracts,
-        contractTemplates: navMessages.contractTemplates,
-        policies: navMessages.policies,
-        numberSeries: navMessages.contractNumberSeries,
-      },
+      labels,
     }),
     () =>
       import("../i18n/index.js").then((module) => ({ default: module.LegalUiMessagesProvider })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -40,
+        items: [
+          {
+            id: "legal",
+            title: labels.legal,
+            url: "/legal/contracts",
+            icon: Scale,
+            items: [
+              { id: "contracts", title: labels.contracts, url: "/legal/contracts" },
+              {
+                id: "contract-templates",
+                title: labels.contractTemplates,
+                url: "/legal/templates",
+              },
+              { id: "policies", title: labels.policies, url: "/legal/policies" },
+              {
+                id: "number-series",
+                title: labels.numberSeries,
+                url: "/legal/number-series",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  }
 }

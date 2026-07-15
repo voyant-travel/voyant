@@ -1,8 +1,8 @@
 import { readFile, realpath } from "node:fs/promises"
 import path from "node:path"
 import type {
-  VoyantGraphFacetEntity,
   VoyantGraphJsonObject,
+  VoyantGraphLinkDeclaration,
   VoyantGraphSubscriber,
 } from "@voyant-travel/core/project"
 import ts from "typescript"
@@ -26,6 +26,28 @@ import {
   discoverProjectConventions,
   type ProjectConventionFileContribution,
 } from "./project-conventions.js"
+import {
+  compareDiagnostics,
+  findSubscriberIdCollisions,
+  importEscapeDiagnostic,
+  invalidDefaultExportDiagnostic,
+  invalidLinkDiagnostic,
+  invalidSubscriberDiagnostic,
+  missingDefaultExportDiagnostic,
+  multipleDefaultExportsDiagnostic,
+  nonDurableSubscriberDiagnostic,
+  unsupportedExportDiagnostic,
+} from "./project-subscriber-link-diagnostics.js"
+import {
+  generateProjectLinksSource,
+  generateProjectSubscribersSource,
+} from "./project-subscriber-link-generated-source.js"
+
+export {
+  generateProjectLinksSource,
+  generateProjectSubscribersSource,
+  generateSelectedLinksSource,
+} from "./project-subscriber-link-generated-source.js"
 
 export const PROJECT_SUBSCRIBERS_GENERATED_PATH = "runtime/project-subscribers.generated.ts"
 export const PROJECT_LINKS_GENERATED_PATH = "runtime/project-links.generated.ts"
@@ -89,7 +111,7 @@ export interface ProjectSubscriberLinkConventionCompilation {
   subscribers: readonly ProjectSubscriberConvention[]
   links: readonly ProjectLinkConvention[]
   graphSubscribers: readonly VoyantGraphSubscriber[]
-  graphLinks: readonly VoyantGraphFacetEntity[]
+  graphLinks: readonly VoyantGraphLinkDeclaration[]
   generatedFiles: readonly [ProjectSubscriberLinkGeneratedFile, ProjectSubscriberLinkGeneratedFile]
 }
 
@@ -200,7 +222,12 @@ export async function compileProjectSubscriberLinkConventions(
         export: `projectSubscriber${index}`,
       },
     })),
-    graphLinks: analysis.links.map((link) => ({ id: link.id, source: link.sourcePath })),
+    graphLinks: analysis.links.map((link) => ({
+      id: link.id,
+      kind: "definition",
+      source: link.sourcePath,
+      export: "default",
+    })),
     generatedFiles: [
       {
         path: PROJECT_SUBSCRIBERS_GENERATED_PATH,
@@ -212,56 +239,6 @@ export async function compileProjectSubscriberLinkConventions(
       },
     ],
   }
-}
-
-export function generateProjectSubscribersSource(
-  subscribers: readonly ProjectSubscriberConvention[],
-): string {
-  const ordered = [...subscribers].sort(compareConventions)
-  return generatedCollectionSource(
-    ordered,
-    "EventFilterDescriptor",
-    "projectSubscribers",
-    "subscriber",
-  )
-}
-
-export function generateProjectLinksSource(links: readonly ProjectLinkConvention[]): string {
-  const ordered = [...links].sort(compareConventions)
-  return generateSelectedLinksSource(ordered, [])
-}
-
-export function generateSelectedLinksSource(
-  projectLinks: readonly ProjectLinkConvention[],
-  selectedLinks: readonly Required<Pick<VoyantGraphFacetEntity, "id" | "source" | "export">>[],
-  sourceOverrides: Readonly<Record<string, string>> = {},
-): string {
-  const orderedProjectLinks = [...projectLinks].sort(compareConventions)
-  const orderedSelectedLinks = [...selectedLinks].sort((left, right) =>
-    `${left.id}:${left.source}:${left.export}`.localeCompare(
-      `${right.id}:${right.source}:${right.export}`,
-    ),
-  )
-  const count = orderedProjectLinks.length + orderedSelectedLinks.length
-  return [
-    'import type { LinkDefinition } from "@voyant-travel/core"',
-    ...orderedProjectLinks.map(
-      ({ sourcePath }, index) =>
-        `import link${index} from ${JSON.stringify(generatedImportSpecifier(sourcePath))}`,
-    ),
-    ...orderedSelectedLinks.map(
-      (link, index) =>
-        `import { ${link.export} as link${orderedProjectLinks.length + index} } from ${JSON.stringify(sourceOverrides[link.source] ?? link.source)}`,
-    ),
-    "",
-    ...Array.from(
-      { length: count },
-      (_, index) => `export { link${index} as projectLink${index} }`,
-    ),
-    ...(count > 0 ? [""] : []),
-    `export const projectLinks = [${Array.from({ length: count }, (_, index) => `link${index}`).join(", ")}] as const satisfies readonly LinkDefinition[]`,
-    "",
-  ].join("\n")
 }
 
 interface ModuleAnalysis {
@@ -441,144 +418,8 @@ function recordDefineLinkImports(declaration: ts.ImportDeclaration, imports: Set
   }
 }
 
-function findSubscriberIdCollisions(
-  subscribers: readonly ProjectSubscriberConvention[],
-): ProjectSubscriberLinkDiagnostic[] {
-  const byId = new Map<string, ProjectSubscriberConvention[]>()
-  for (const subscriber of subscribers) {
-    const matches = byId.get(subscriber.subscriberId)
-    if (matches) matches.push(subscriber)
-    else byId.set(subscriber.subscriberId, [subscriber])
-  }
-  return [...byId]
-    .filter(([, matches]) => matches.length > 1)
-    .map(([subscriberId, matches]) => {
-      const sourcePaths = matches.map(({ sourcePath }) => sourcePath).sort(compareStrings)
-      return {
-        code: "PROJECT_SUBSCRIBER_ID_COLLISION",
-        severity: "error",
-        subscriberId,
-        sourcePaths,
-        message: `Subscriber id "${subscriberId}" is exported by ${formatSources(sourcePaths)}.`,
-      }
-    })
-}
-
-function generatedCollectionSource(
-  contributions: readonly ProjectConventionFileContribution[],
-  typeName: "EventFilterDescriptor" | "LinkDefinition",
-  exportName: "projectSubscribers" | "projectLinks",
-  importName: "subscriber" | "link",
-): string {
-  return [
-    `import type { ${typeName} } from "@voyant-travel/core"`,
-    ...contributions.map(
-      ({ sourcePath }, index) =>
-        `import ${importName}${index} from ${JSON.stringify(generatedImportSpecifier(sourcePath))}`,
-    ),
-    "",
-    ...contributions.map(
-      (_, index) =>
-        `export { ${importName}${index} as project${importName[0]!.toUpperCase()}${importName.slice(1)}${index} }`,
-    ),
-    ...(contributions.length > 0 ? [""] : []),
-    `export const ${exportName} = [${contributions.map((_, index) => `${importName}${index}`).join(", ")}] as const satisfies readonly ${typeName}[]`,
-    "",
-  ].join("\n")
-}
-
 function isJsonObject(value: unknown): value is VoyantGraphJsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function generatedImportSpecifier(sourcePath: string): string {
-  return `../../${sourcePath.replace(/\.ts$/, ".js")}`
-}
-
-function importEscapeDiagnostic(
-  sourcePath: string,
-  specifier: string,
-): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_CONVENTION_IMPORT_ESCAPE",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    message: `Convention file "${sourcePath}" import "${specifier}" escapes the project root.`,
-  }
-}
-
-function missingDefaultExportDiagnostic(sourcePath: string): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_CONVENTION_MISSING_DEFAULT_EXPORT",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    exportName: "default",
-    message: `Convention file "${sourcePath}" must have a default export.`,
-  }
-}
-
-function multipleDefaultExportsDiagnostic(sourcePath: string): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_CONVENTION_MULTIPLE_DEFAULT_EXPORTS",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    exportName: "default",
-    message: `Convention file "${sourcePath}" has more than one default export.`,
-  }
-}
-
-function invalidDefaultExportDiagnostic(sourcePath: string): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_CONVENTION_MISSING_DEFAULT_EXPORT",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    exportName: "default",
-    message: `Convention file "${sourcePath}" must default-export an expression.`,
-  }
-}
-
-function unsupportedExportDiagnostic(
-  sourcePath: string,
-  exportName: string,
-): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_CONVENTION_UNSUPPORTED_EXPORT",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    exportName,
-    message: `Convention file "${sourcePath}" has unsupported runtime export "${exportName}".`,
-  }
-}
-
-function invalidSubscriberDiagnostic(sourcePath: string): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_SUBSCRIBER_INVALID_DESCRIPTOR",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    message: `Subscriber file "${sourcePath}" must default-export an object with non-empty literal "id" and "eventType" fields.`,
-  }
-}
-
-function nonDurableSubscriberDiagnostic(
-  sourcePath: string,
-  subscriberId: string,
-): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_SUBSCRIBER_NON_DURABLE_DESCRIPTOR",
-    severity: "error",
-    subscriberId,
-    sourcePaths: [sourcePath],
-    message: `Subscriber "${subscriberId}" in "${sourcePath}" must contain only literal, serializable data.`,
-  }
-}
-
-function invalidLinkDiagnostic(sourcePath: string): ProjectSubscriberLinkDiagnostic {
-  return {
-    code: "PROJECT_LINK_INVALID_DEFINITION",
-    severity: "error",
-    sourcePaths: [sourcePath],
-    message: `Link file "${sourcePath}" must default-export defineLink(left, right, options?).`,
-  }
 }
 
 function compareConventions(
@@ -588,21 +429,6 @@ function compareConventions(
   return compareStrings(left.sourcePath, right.sourcePath) || compareStrings(left.id, right.id)
 }
 
-function compareDiagnostics(
-  left: ProjectSubscriberLinkDiagnostic,
-  right: ProjectSubscriberLinkDiagnostic,
-): number {
-  return (
-    compareStrings(left.code, right.code) ||
-    compareStrings(left.sourcePaths.join("\0"), right.sourcePaths.join("\0")) ||
-    compareStrings(left.exportName ?? "", right.exportName ?? "")
-  )
-}
-
 function compareStrings(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0
-}
-
-function formatSources(sourcePaths: readonly string[]): string {
-  return sourcePaths.map((sourcePath) => `"${sourcePath}"`).join(", ")
 }

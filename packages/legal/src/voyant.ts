@@ -1,6 +1,21 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { commerceLegalRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 import { legalBookingContractSubscriberRuntimePort } from "./contracts/booking-contract-subscriber-port.js"
+import {
+  bookingContractGeneratedEventPayloadSchema,
+  contractDocumentGeneratedEventPayloadSchema,
+  contractExecutedEventPayloadSchema,
+  contractIssuedEventPayloadSchema,
+  contractSentEventPayloadSchema,
+  contractSignedEventPayloadSchema,
+  contractVoidedEventPayloadSchema,
+} from "./event-payload-schemas.js"
 import { legalRuntimePort } from "./runtime-port.js"
 
 const legalAdminRuntime = {
@@ -15,6 +30,9 @@ export const legalVoyantModule = defineModule({
   id: "@voyant-travel/legal",
   packageName: "@voyant-travel/legal",
   localId: "legal",
+  provides: {
+    ports: [providePort(commerceLegalRuntimePort), providePort(legalRuntimePort)],
+  },
   runtimePorts: [requirePort(legalRuntimePort)],
   api: [
     {
@@ -54,39 +72,75 @@ export const legalVoyantModule = defineModule({
     },
   ],
   links: [
-    { id: "@voyant-travel/legal#linkable.contract", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.contractTemplate", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.policy", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.policyVersion", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.policyAcceptance", source: linkableSource },
-    { id: "@voyant-travel/legal#linkable.term", source: linkableSource },
+    {
+      id: "@voyant-travel/legal#linkable.contract",
+      kind: "linkable",
+      source: linkableSource,
+      export: "contractLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.contractTemplate",
+      kind: "linkable",
+      source: linkableSource,
+      export: "contractTemplateLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.policy",
+      kind: "linkable",
+      source: linkableSource,
+      export: "policyLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.policyVersion",
+      kind: "linkable",
+      source: linkableSource,
+      export: "policyVersionLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.policyAcceptance",
+      kind: "linkable",
+      source: linkableSource,
+      export: "policyAcceptanceLinkable",
+    },
+    {
+      id: "@voyant-travel/legal#linkable.term",
+      kind: "linkable",
+      source: linkableSource,
+      export: "legalTermLinkable",
+    },
     {
       id: "@voyant-travel/legal#link.contract-booking",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractBookingLink",
     },
     {
       id: "@voyant-travel/legal#link.contract-organization",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractOrganizationLink",
     },
     {
       id: "@voyant-travel/legal#link.contract-person",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractPersonLink",
     },
     {
       id: "@voyant-travel/legal#link.contract-supplier",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractSupplierLink",
     },
     {
       id: "@voyant-travel/legal#link.policy-acceptance-booking",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "policyAcceptanceBookingLink",
     },
     {
       id: "@voyant-travel/legal#link.policy-product",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "policyProductLink",
     },
@@ -96,7 +150,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.issued",
       eventType: "contract.issued",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractIssuedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -104,7 +158,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.sent",
       eventType: "contract.sent",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractSentEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -112,7 +166,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.signed",
       eventType: "contract.signed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractSignedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -120,7 +174,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.executed",
       eventType: "contract.executed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractExecutedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -128,7 +182,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.voided",
       eventType: "contract.voided",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractVoidedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -136,7 +190,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.contract.document.generated",
       eventType: "contract.document.generated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: contractDocumentGeneratedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -144,7 +198,7 @@ export const legalVoyantModule = defineModule({
       id: "@voyant-travel/legal#event.booking.contract.generated",
       eventType: "booking.contract.generated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingContractGeneratedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "legal", category: "domain" },
     },
@@ -154,7 +208,20 @@ export const legalVoyantModule = defineModule({
       {
         id: "@voyant-travel/legal#access.legal",
         resource: "legal",
-        actions: ["read", "write"],
+        label: "Legal",
+        description: "Manage contracts, templates, policies, and legal terms.",
+        actions: [
+          {
+            action: "read",
+            label: "View legal records",
+            description: "View contracts, templates, policies, and legal terms.",
+          },
+          {
+            action: "write",
+            label: "Manage legal records",
+            description: "Create and update contracts, templates, policies, and legal terms.",
+          },
+        ],
       },
     ],
   },
@@ -189,8 +256,31 @@ export const legalVoyantModule = defineModule({
     ).map(([id, path]) => ({
       id: `@voyant-travel/legal#admin.route.${id}`,
       path,
+      requiredScopes: ["legal:read"],
       runtime: legalAdminRuntime,
     })),
+    nav: [
+      {
+        id: "@voyant-travel/legal#admin.nav.contracts",
+        routeId: "@voyant-travel/legal#admin.route.contracts-index",
+        label: { namespace: "legal.admin", key: "contractsPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.templates",
+        routeId: "@voyant-travel/legal#admin.route.templates-index",
+        label: { namespace: "legal.admin", key: "templatesPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.policies",
+        routeId: "@voyant-travel/legal#admin.route.policies-index",
+        label: { namespace: "legal.admin", key: "policiesPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.number-series",
+        routeId: "@voyant-travel/legal#admin.route.number-series",
+        label: { namespace: "legal.admin", key: "numberSeriesPage.title" },
+      },
+    ],
   },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
@@ -204,6 +294,7 @@ export const legalContractDocumentVoyantModule = defineModule({
   id: "@voyant-travel/legal#contract-document",
   packageName: "@voyant-travel/legal",
   localId: "legal.contract-document",
+  provides: { ports: [providePort(legalContractDocumentRuntimePort)] },
   runtime: {
     entry: "@voyant-travel/legal/contract-document-routes",
     export: "createContractDocumentVoyantRuntime",
@@ -213,6 +304,7 @@ export const legalContractDocumentVoyantModule = defineModule({
     {
       id: "@voyant-travel/legal#contract-document.api",
       surface: "admin",
+      resource: "legal",
       openapi: { document: "contract-document" },
       runtime: {
         entry: "@voyant-travel/legal/contract-document-routes",
@@ -229,8 +321,9 @@ export const legalBookingContractVoyantExtension = defineExtension({
   id: "@voyant-travel/legal#booking-contract-extension",
   packageName: "@voyant-travel/legal",
   localId: "legal.booking-contract-extension",
+  provides: { ports: [providePort(legalBookingContractSubscriberRuntimePort)] },
   runtime: {
-    entry: "./booking-contract-subscriber",
+    entry: "@voyant-travel/legal/booking-contract-subscriber",
     export: "createLegalBookingContractVoyantRuntime",
   },
   runtimePorts: [requirePort(legalBookingContractSubscriberRuntimePort)],
@@ -240,7 +333,7 @@ export const legalBookingContractVoyantExtension = defineExtension({
       eventType: "booking.confirmed",
       source: "@voyant-travel/legal/booking-contract-subscriber",
       runtime: {
-        entry: "./booking-contract-subscriber",
+        entry: "@voyant-travel/legal/booking-contract-subscriber",
         export: "legalBookingContractConfirmedSubscriber",
       },
     },
@@ -258,6 +351,7 @@ export const legalStandardProductLinksVoyantExtension = defineExtension({
   links: [
     {
       id: "@voyant-travel/legal#link.contract-invoice",
+      kind: "definition",
       source: "@voyant-travel/legal/standard-links",
       export: "contractInvoiceLink",
     },

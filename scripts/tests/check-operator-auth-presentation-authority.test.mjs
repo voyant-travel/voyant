@@ -12,7 +12,6 @@ const routeHosts = Object.fromEntries(
   ]),
 )
 const adapter = [
-  "createLocalAuthRouteContribution",
   "getCurrentUser",
   "getBootstrapStatus",
   "cloudAuthStartHref",
@@ -23,7 +22,7 @@ const adapter = [
   "sendVerificationOtp",
 ].join("\n")
 const packageRoutes = [
-  'id: "@voyant-travel/auth-react#local-auth-routes"',
+  'id: "@voyant-travel/auth#presentation.local-auth"',
   "resolveLocalAuthRedirect",
   "AcceptInvitationPage",
   "RedeemInvitationPage",
@@ -48,10 +47,15 @@ test("rejects presentation and bootstrap policy returning to the starter", () =>
       ...routeHosts,
       "sign-in.tsx": `${routeHosts["sign-in.tsx"]}\nfunction SignInPage() { useNavigate() }`,
     },
-    adapter: `${adapter}\nresolveLocalAuthRedirect()`,
+    adapter: `${adapter}\nresolveLocalAuthRedirect()\ncreateLocalAuthRouteContribution({})`,
     packageRoutes,
   })
 
   assert(result.failures.some((failure) => failure.includes("sign-in.tsx must not own function")))
   assert(result.failures.includes("local auth adapter must not own bootstrap redirect policy"))
+  assert(
+    result.failures.includes(
+      "local auth adapter must not compose the package route factory directly",
+    ),
+  )
 })

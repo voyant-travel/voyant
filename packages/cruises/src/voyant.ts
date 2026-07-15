@@ -1,17 +1,38 @@
+import {
+  catalogCruisesRuntimeExtensionPort,
+  catalogRuntimeServicesPort,
+} from "@voyant-travel/catalog/ports"
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
 import {
   defineExtension,
   defineModule,
+  providePort,
   requirePort,
   voyantWorkflowServiceContributionsPort,
 } from "@voyant-travel/core/project"
+import { financeCruisesPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { cruisesRoutesRuntimePort } from "./runtime-port.js"
+
+const cruiseLifecycleEventPayloadSchema = {
+  type: "object",
+  properties: { id: { type: "string" } },
+  required: ["id"],
+  additionalProperties: false,
+} as const
 
 /** Import-cheap deployment declaration owned by the cruises package. */
 export const cruisesVoyantModule = defineModule({
   id: "@voyant-travel/cruises",
   packageName: "@voyant-travel/cruises",
   localId: "cruises",
+  provides: {
+    ports: [
+      providePort(catalogCruisesRuntimeExtensionPort),
+      providePort(financeCruisesPaymentPolicyRuntimePort),
+      providePort(voyantWorkflowServiceContributionsPort),
+    ],
+  },
+  requires: { ports: [requirePort(catalogRuntimeServicesPort)] },
   runtimePorts: [
     requirePort(cruisesRoutesRuntimePort),
     requirePort(voyantWorkflowServiceContributionsPort, {
@@ -61,28 +82,57 @@ export const cruisesVoyantModule = defineModule({
       {
         id: "@voyant-travel/cruises#access.cruises",
         resource: "cruises",
-        actions: ["read", "write"],
+        label: "Cruises",
+        description: "Cruise products, ships, sailings, voyage groups, prices, and content.",
+        actions: [
+          {
+            action: "read",
+            label: "View cruises",
+            description: "View cruise products and related operational data.",
+          },
+          {
+            action: "write",
+            label: "Manage cruises",
+            description: "Create and update cruise products and related operational data.",
+          },
+          {
+            action: "delete",
+            label: "Delete cruises",
+            description: "Delete or archive cruise products and related records.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
   links: [
-    { id: "@voyant-travel/cruises#linkable.cruise", source: "@voyant-travel/cruises" },
+    {
+      id: "@voyant-travel/cruises#linkable.cruise",
+      kind: "linkable",
+      source: "@voyant-travel/cruises",
+    },
     {
       id: "@voyant-travel/cruises#linkable.cruise_voyage_group",
+      kind: "linkable",
       source: "@voyant-travel/cruises",
     },
     {
       id: "@voyant-travel/cruises#linkable.cruise_sailing",
+      kind: "linkable",
       source: "@voyant-travel/cruises",
     },
-    { id: "@voyant-travel/cruises#linkable.cruise_ship", source: "@voyant-travel/cruises" },
+    {
+      id: "@voyant-travel/cruises#linkable.cruise_ship",
+      kind: "linkable",
+      source: "@voyant-travel/cruises",
+    },
   ],
   events: [
     {
       id: "@voyant-travel/cruises#event.cruise-created",
       eventType: "cruise.created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: cruiseLifecycleEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "cruises", category: "domain" },
     },
@@ -90,7 +140,7 @@ export const cruisesVoyantModule = defineModule({
       id: "@voyant-travel/cruises#event.cruise-updated",
       eventType: "cruise.updated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: cruiseLifecycleEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "cruises", category: "domain" },
     },
@@ -98,7 +148,7 @@ export const cruisesVoyantModule = defineModule({
       id: "@voyant-travel/cruises#event.cruise-deleted",
       eventType: "cruise.deleted",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: cruiseLifecycleEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "cruises", category: "domain" },
     },
@@ -149,6 +199,7 @@ export const cruisesContentVoyantPlugin = defineExtension({
       id: "@voyant-travel/cruises#content-extension.api.public",
       surface: "public",
       mount: "cruises",
+      anonymous: true,
       openapi: { document: "cruises" },
       runtime: {
         entry: "@voyant-travel/cruises/graph-runtime",

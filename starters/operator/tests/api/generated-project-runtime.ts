@@ -1,5 +1,13 @@
 import type { VoyantGraphRuntime } from "@voyant-travel/framework"
-import type { CreateVoyantDeploymentResourcesOptions } from "@voyant-travel/runtime/deployment-resources"
+import {
+  createVoyantNodeEnv,
+  createVoyantNodeRuntimeHostPrimitives,
+} from "@voyant-travel/framework/node-runtime"
+import {
+  type CreateVoyantDeploymentResourcesOptions,
+  createVoyantDeploymentResources,
+  resolveSelectedGraphProviderPorts,
+} from "@voyant-travel/runtime/deployment-resources"
 
 interface GeneratedProjectRuntimeModule {
   createGeneratedGraphRuntime(): VoyantGraphRuntime
@@ -20,3 +28,27 @@ export const {
   GENERATED_GRAPH_RUNTIME_MODULE_IDS,
   GENERATED_GRAPH_RUNTIME_PLUGIN_IDS,
 } = generatedRuntime
+
+const TEST_DEPLOYMENT_VALUES = { DATABASE_URL: "postgres://test" }
+
+export function createGeneratedStaticTestDeploymentResources(
+  providerPorts: Parameters<typeof createVoyantDeploymentResources>[0]["providerPorts"] = {},
+) {
+  const env = createVoyantNodeEnv(TEST_DEPLOYMENT_VALUES)
+  const primitives = createVoyantNodeRuntimeHostPrimitives({
+    env,
+    deliverEvent: async () => undefined,
+  })
+  return createVoyantDeploymentResources({
+    primitives,
+    providerPorts,
+    createRuntimePorts: createGeneratedGraphRuntimePorts,
+  })
+}
+
+export async function createGeneratedTestDeploymentResources(
+  runtime = createGeneratedGraphRuntime(),
+) {
+  const providerPorts = await resolveSelectedGraphProviderPorts(runtime, TEST_DEPLOYMENT_VALUES)
+  return createGeneratedStaticTestDeploymentResources(providerPorts)
+}

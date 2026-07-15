@@ -144,6 +144,49 @@ Executable code is referenced through symbolic package exports and remains
 behind lazy imports. Importing `./voyant` must not load route trees, schemas, UI,
 workflow implementations, or infrastructure clients.
 
+Link declarations are closed metadata: `kind: "linkable"` advertises an entity
+that can participate in links, while `kind: "definition"` identifies an
+executable `LinkDefinition` and requires a package `source` plus named `export`.
+The runtime lowering stage must never infer executable definitions merely from
+the presence of an export.
+
+### Uniform first-party declarations
+
+First-party modules use the same public declaration contract that reusable
+third-party modules use. Core product packages are not allowed a smaller,
+central, or host-only metadata path. Each selected first-party package must:
+
+- publish a `voyant.package.v1` package envelope and an import-cheap `./voyant`
+  export
+- declare every selected module and extension with `defineModule` or
+  `defineExtension`
+- attach executable APIs to symbolic package runtime exports
+- keep schema and migration ownership together, with explicit dependencies for
+  submodules that execute against a parent module's schema
+- describe each access resource and action, mark privileged actions as
+  sensitive, and ensure every protected API and tool scope is grantable from
+  the selected access catalog
+- declare an explicit risk for each tool and bind high- or critical-risk tools
+  to graph action policy
+- pair external events with outbound webhook declarations and webhook APIs with
+  inbound webhook declarations
+- expose package runtime contributors and provider factories only through
+  published package exports
+- declare every port returned by a package runtime contributor in
+  `provides.ports` on the exact module or extension that owns the output
+- declare frontend presentation factories in `presentations`; hosts may emit
+  route files only for presentation IDs selected by the resolved graph
+
+Facets are evidence of real owned behavior, not a completeness checklist. A
+package without tools, webhooks, events, admin UI, or persistence omits those
+facets. Empty placeholders and speculative declarations are invalid because
+they create false authority. Likewise, a compatibility export that delegates
+to another package's implementation does not become a second graph unit.
+
+`pnpm verify:first-party-manifest-convergence` enforces the standard Operator
+BOM, package envelopes, runtime export validity, access/API/tool authority,
+tool-definition parity, event/webhook parity, and stateful ownership rules.
+
 ### Identity
 
 Canonical graph IDs are globally stable package IDs, with a package-scoped

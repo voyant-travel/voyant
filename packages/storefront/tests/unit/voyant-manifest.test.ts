@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { createStorefrontVoyantRuntime } from "../../src/index.js"
 import {
+  storefrontBookingIntentsRuntimePort,
+  storefrontCustomerPortalRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
+  storefrontPaymentLinkRuntimePort,
+} from "../../src/runtime-port.js"
+import {
   storefrontCustomerPortalVoyantModule,
   storefrontPaymentLinkVoyantModule,
   storefrontVerificationVoyantModule,
@@ -8,11 +15,23 @@ import {
 } from "../../src/voyant.js"
 
 describe("storefront deployment manifest", () => {
+  it("exports import-cheap runtime port contracts", () => {
+    expect(storefrontIntakeRuntimePort.id).toBe("storefront.intake.runtime")
+    expect(storefrontPaymentLinkRuntimePort.id).toBe("storefront.payment-link.runtime")
+  })
+
   it("owns the base runtime, persistence, and verification link facets", () => {
     expect(storefrontVoyantModule).toMatchObject({
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
+      provides: {
+        capabilities: ["storefront.data-owner"],
+        ports: [
+          { id: storefrontOffersRuntimePort.id },
+          { id: storefrontBookingIntentsRuntimePort.id },
+        ],
+      },
       runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
       runtimePorts: [
         { id: "storefront.offers.runtime" },
@@ -34,6 +53,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#api.public",
           surface: "public",
           mount: "/",
+          resource: "storefront",
           openapi: { document: "storefront" },
           anonymous: ["/leads", "/newsletter", "/offers"],
           runtime: {
@@ -58,6 +78,7 @@ describe("storefront deployment manifest", () => {
         {
           id: "@voyant-travel/storefront#linkable.storefrontVerificationChallenge",
           source: "@voyant-travel/storefront/verification",
+          export: "storefrontVerificationLinkable",
         },
       ],
       events: [
@@ -76,7 +97,7 @@ describe("storefront deployment manifest", () => {
           eventType: "storefront.booking.bootstrap.requested",
           source: "@voyant-travel/storefront",
           runtime: {
-            entry: "./booking-bootstrap-subscriber",
+            entry: "@voyant-travel/storefront/booking-bootstrap-subscriber",
             export: "storefrontBookingBootstrapSubscriber",
           },
         },
@@ -107,6 +128,37 @@ describe("storefront deployment manifest", () => {
     expect(runtime.publicRoutes).toBeDefined()
   })
 
+  it("declares concrete event payloads without inventing an admin surface", () => {
+    const events = new Map(
+      storefrontVoyantModule.events?.map(({ eventType, payloadSchema }) => [
+        eventType,
+        payloadSchema,
+      ]),
+    )
+
+    expect(events.get("customer.signal.created")).toMatchObject({
+      type: "object",
+      required: ["id", "personId", "kind", "source", "status", "intake"],
+      properties: {
+        kind: { enum: ["wishlist", "notify", "inquiry", "request_offer", "referral"] },
+        intake: {
+          oneOf: [
+            expect.objectContaining({ required: ["surface", "type"] }),
+            expect.objectContaining({ required: ["surface", "type", "doubleOptIn"] }),
+          ],
+        },
+      },
+      additionalProperties: false,
+    })
+    expect(events.get("storefront.booking.bootstrap.requested")).toEqual({
+      type: "object",
+      required: ["intentId"],
+      properties: { intentId: { type: "string" } },
+      additionalProperties: false,
+    })
+    expect(storefrontVoyantModule.admin).toBeUndefined()
+  })
+
   it("owns package-namespaced storefront fragments", () => {
     expect([
       storefrontCustomerPortalVoyantModule,
@@ -116,6 +168,8 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#customer-portal",
         packageName: "@voyant-travel/storefront",
+        provides: { ports: [{ id: storefrontCustomerPortalRuntimePort.id }] },
+        requires: { capabilities: ["storefront.data-owner"] },
         runtime: {
           entry: "@voyant-travel/storefront/customer-portal",
           export: "createCustomerPortalVoyantRuntime",
@@ -126,6 +180,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/storefront#customer-portal.api",
             surface: "public",
             mount: "customer-portal",
+            resource: "storefront",
             openapi: { document: "customer-portal" },
             anonymous: ["/contact-exists"],
             runtime: {
@@ -139,6 +194,7 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#verification",
         packageName: "@voyant-travel/storefront",
+        requires: { capabilities: ["storefront.data-owner"] },
         runtime: {
           entry: "@voyant-travel/storefront/verification",
           export: "createStorefrontVerificationVoyantRuntime",
@@ -159,6 +215,9 @@ describe("storefront deployment manifest", () => {
         ],
       },
     ])
+    expect(storefrontVoyantModule.provides?.ports).not.toContainEqual({
+      id: storefrontCustomerPortalRuntimePort.id,
+    })
   })
 
   it("owns the payment-link bridge", () => {
@@ -166,6 +225,7 @@ describe("storefront deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront#payment-link",
       packageName: "@voyant-travel/storefront",
+      requires: { capabilities: ["storefront.data-owner"] },
       runtime: {
         entry: "@voyant-travel/storefront/payment-link",
         export: "createPaymentLinkVoyantRuntime",
@@ -176,6 +236,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/storefront#payment-link.api",
           surface: "public",
           mount: "/",
+          resource: "storefront",
           openapi: { document: "payment-link" },
           anonymous: ["payment-link-config", "payment-link"],
           runtime: {

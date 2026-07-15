@@ -17,15 +17,6 @@ export const catalogAuthoringVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
-  access: {
-    resources: [
-      {
-        id: "@voyant-travel/catalog-authoring#access.content",
-        resource: "content",
-        actions: ["read", "write", "publish"],
-      },
-    ],
-  },
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },

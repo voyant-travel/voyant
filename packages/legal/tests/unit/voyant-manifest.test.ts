@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs"
+import { commerceLegalRuntimePort } from "@voyant-travel/commerce/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   legalBookingContractVoyantExtension,
@@ -12,6 +13,9 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/legal",
       packageName: "@voyant-travel/legal",
+      provides: {
+        ports: [{ id: commerceLegalRuntimePort.id }, { id: "legal.runtime" }],
+      },
       api: [
         {
           id: "@voyant-travel/legal#api.admin",
@@ -55,13 +59,74 @@ describe("legal deployment manifest", () => {
       "@voyant-travel/legal#link.policy-acceptance-booking",
       "@voyant-travel/legal#link.policy-product",
     ])
-    expect(legalVoyantModule.events).toContainEqual({
-      id: "@voyant-travel/legal#event.booking.contract.generated",
-      eventType: "booking.contract.generated",
-      version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
-      visibility: "internal",
-      audit: { sourceModule: "legal", category: "domain" },
+    expect(legalVoyantModule.links?.slice(0, 6).map((link) => link.export)).toEqual([
+      "contractLinkable",
+      "contractTemplateLinkable",
+      "policyLinkable",
+      "policyVersionLinkable",
+      "policyAcceptanceLinkable",
+      "legalTermLinkable",
+    ])
+    expect(legalVoyantModule.events?.map(({ eventType }) => eventType)).toEqual([
+      "contract.issued",
+      "contract.sent",
+      "contract.signed",
+      "contract.executed",
+      "contract.voided",
+      "contract.document.generated",
+      "booking.contract.generated",
+    ])
+  })
+
+  it("declares concrete payloads for every emitted legal event", () => {
+    const events = new Map(
+      legalVoyantModule.events?.map(({ eventType, payloadSchema }) => [eventType, payloadSchema]),
+    )
+
+    for (const eventType of [
+      "contract.issued",
+      "contract.sent",
+      "contract.signed",
+      "contract.executed",
+      "contract.voided",
+    ]) {
+      expect(events.get(eventType)).toMatchObject({
+        type: "object",
+        required: expect.arrayContaining([
+          "contractId",
+          "scope",
+          "previousStage",
+          "stage",
+          "transition",
+          "occurredAt",
+          "targetKind",
+        ]),
+        additionalProperties: false,
+      })
+    }
+    expect(events.get("contract.issued")).toMatchObject({
+      properties: {
+        previousStage: { enum: ["draft"] },
+        stage: { const: "issued" },
+        transition: { const: "issued" },
+      },
+    })
+    expect(events.get("contract.document.generated")).toMatchObject({
+      required: [
+        "contractId",
+        "contractStatus",
+        "attachmentId",
+        "attachmentKind",
+        "attachmentName",
+        "renderedBodyFormat",
+        "regenerated",
+      ],
+      additionalProperties: false,
+    })
+    expect(events.get("booking.contract.generated")).toMatchObject({
+      required: ["bookingId", "bookingNumber", "actorId", "contractId", "attachmentId"],
+      properties: { suppressNotifications: { type: "boolean" } },
+      additionalProperties: false,
     })
   })
 
@@ -70,6 +135,7 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/legal#contract-document",
       packageName: "@voyant-travel/legal",
+      provides: { ports: [{ id: "legal.contract-document.runtime" }] },
       runtime: {
         entry: "@voyant-travel/legal/contract-document-routes",
         export: "createContractDocumentVoyantRuntime",
@@ -79,6 +145,7 @@ describe("legal deployment manifest", () => {
         {
           id: "@voyant-travel/legal#contract-document.api",
           surface: "admin",
+          resource: "legal",
           openapi: { document: "contract-document" },
           runtime: {
             entry: "@voyant-travel/legal/contract-document-routes",
@@ -106,8 +173,9 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/legal#booking-contract-extension",
       packageName: "@voyant-travel/legal",
+      provides: { ports: [{ id: "legal.booking-contract-subscriber-runtime" }] },
       runtime: {
-        entry: "./booking-contract-subscriber",
+        entry: "@voyant-travel/legal/booking-contract-subscriber",
         export: "createLegalBookingContractVoyantRuntime",
       },
       runtimePorts: [{ id: "legal.booking-contract-subscriber-runtime" }],
@@ -117,11 +185,14 @@ describe("legal deployment manifest", () => {
           eventType: "booking.confirmed",
           source: "@voyant-travel/legal/booking-contract-subscriber",
           runtime: {
-            entry: "./booking-contract-subscriber",
+            entry: "@voyant-travel/legal/booking-contract-subscriber",
             export: "legalBookingContractConfirmedSubscriber",
           },
         },
       ],
+    })
+    expect(legalVoyantModule.provides?.ports).not.toContainEqual({
+      id: "legal.booking-contract-subscriber-runtime",
     })
   })
 
@@ -143,6 +214,33 @@ describe("legal deployment manifest", () => {
           runtime.export === "createLegalAdminExtension",
       ),
     ).toBe(true)
+    expect(
+      legalVoyantModule.admin?.routes?.every(({ requiredScopes }) =>
+        requiredScopes?.includes("legal:read"),
+      ),
+    ).toBe(true)
+    expect(legalVoyantModule.admin?.nav).toEqual([
+      {
+        id: "@voyant-travel/legal#admin.nav.contracts",
+        routeId: "@voyant-travel/legal#admin.route.contracts-index",
+        label: { namespace: "legal.admin", key: "contractsPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.templates",
+        routeId: "@voyant-travel/legal#admin.route.templates-index",
+        label: { namespace: "legal.admin", key: "templatesPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.policies",
+        routeId: "@voyant-travel/legal#admin.route.policies-index",
+        label: { namespace: "legal.admin", key: "policiesPage.title" },
+      },
+      {
+        id: "@voyant-travel/legal#admin.nav.number-series",
+        routeId: "@voyant-travel/legal#admin.route.number-series",
+        label: { namespace: "legal.admin", key: "numberSeriesPage.title" },
+      },
+    ])
   })
 })
 

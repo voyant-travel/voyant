@@ -213,9 +213,9 @@ export function createSelectedTripsAdminExtension({
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
   return createTripsAdminExtension({
     labels: {
-      trips: navMessages.trips,
-      allTrips: navMessages.allTrips,
-      newTrip: navMessages.newTrip,
+      trips: navMessages.trips ?? "Trips",
+      allTrips: navMessages.allTrips ?? "All trips",
+      newTrip: navMessages.newTrip ?? "New trip",
     },
     icon: Route,
   })

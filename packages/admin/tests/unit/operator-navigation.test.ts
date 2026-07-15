@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
-
+import type { AdminExtension } from "../../src/extensions.js"
 import {
   createOperatorAdminNavigation,
-  filterAdminNavigationByModules,
+  resolveOperatorAdminNavigation,
 } from "../../src/navigation/operator-navigation.js"
 import type { OperatorAdminMessages } from "../../src/providers/operator-admin-messages.js"
 
@@ -50,117 +50,55 @@ const navMessages: OperatorAdminMessages["nav"] = {
 }
 
 describe("createOperatorAdminNavigation", () => {
-  it("creates the standard operator navigation order", () => {
+  it("keeps only generic host navigation", () => {
     const items = createOperatorAdminNavigation({ messages: navMessages })
 
-    expect(items.map((item) => item.id)).toEqual([
-      "dashboard",
-      "catalog",
-      "flights",
-      "products",
-      "availability",
-      "bookings",
-      "notifications",
-      "suppliers",
-      "people",
-      "organizations",
-      "resources",
-      "finance",
-      "legal",
-      "channel-sync",
-    ])
-  })
-
-  it("keeps expected nested routes stable", () => {
-    const items = createOperatorAdminNavigation({ messages: navMessages })
-
-    expect(items.find((item) => item.id === "catalog")).toMatchObject({
-      url: "/catalog/products",
-      items: [
-        {
-          id: "catalog-products",
-          title: "Products",
-          url: "/catalog/products",
-        },
-        {
-          id: "catalog-excursions",
-          title: "Excursions",
-          url: "/catalog/excursions",
-        },
-        {
-          id: "catalog-tours",
-          title: "Tours",
-          url: "/catalog/tours",
-        },
-        {
-          id: "catalog-cruises",
-          title: "Cruises",
-          url: "/catalog/cruises",
-        },
-        {
-          id: "catalog-accommodations",
-          title: "Accommodations",
-          url: "/catalog/accommodations",
-        },
-      ],
-    })
-    expect(items.find((item) => item.id === "products")?.items).toEqual([
-      {
-        id: "product-categories",
-        title: "Categories",
-        url: "/products/categories",
-      },
-    ])
-    expect(items.find((item) => item.id === "legal")?.items?.map((item) => item.id)).toEqual([
-      "contracts",
-      "contract-templates",
-      "policies",
-      "number-series",
-    ])
+    expect(items).toEqual([{ id: "dashboard", title: "Dashboard", url: "/" }])
   })
 })
 
-describe("filterAdminNavigationByModules (voyant#3063)", () => {
-  const nav = createOperatorAdminNavigation({ messages: navMessages })
-  const ids = (items: ReturnType<typeof createOperatorAdminNavigation>) =>
-    items.map((item) => item.id)
+describe("resolveOperatorAdminNavigation", () => {
+  it("orders selected package items and preserves anchors without duplication", () => {
+    const extensions: AdminExtension[] = [
+      {
+        id: "bookings",
+        navigation: [
+          { order: -100, items: [{ id: "bookings", title: "Bookings", url: "/bookings" }] },
+        ],
+      },
+      {
+        id: "action-ledger",
+        navigation: [
+          { order: 60, items: [{ id: "action-ledger", title: "Logs", url: "/action-ledger" }] },
+        ],
+      },
+      {
+        id: "quotes",
+        navigation: [
+          {
+            insertAfter: "bookings",
+            items: [{ id: "quotes", title: "Quotes", url: "/quotes" }],
+          },
+        ],
+      },
+      {
+        id: "mice",
+        navigation: [
+          {
+            insertAfter: "bookings",
+            items: [{ id: "mice-programs", title: "Programs", url: "/mice" }],
+          },
+        ],
+      },
+    ]
 
-  it("gates the real base nav down to a deployment's active module set", () => {
-    // The `[bookings, catalog]` subset resolves (server-side) to include the
-    // required foundational modules — here we assert the nav gating for that set.
-    const gated = filterAdminNavigationByModules(nav, [
-      "action-ledger",
-      "relationships",
-      "identity",
-      "commerce",
-      "catalog",
-      "bookings",
-    ])
+    const items = resolveOperatorAdminNavigation({
+      baseItems: createOperatorAdminNavigation({ messages: navMessages }),
+      extensions,
+    })
+    const ids = items.map((item) => item.id)
 
-    expect(ids(gated)).toEqual(["dashboard", "catalog", "bookings", "people", "organizations"])
-    // Inactive modules' base entries are gone — no dead links to unmounted APIs.
-    for (const gone of ["flights", "products", "availability", "suppliers", "finance", "legal"]) {
-      expect(ids(gated)).not.toContain(gone)
-    }
-  })
-
-  it("maps non-identity nav ids to their backing module", () => {
-    // products → inventory, availability/resources → operations,
-    // suppliers/channel-sync → distribution, people/organizations → relationships.
-    const withInventory = ids(filterAdminNavigationByModules(nav, ["inventory"]))
-    expect(withInventory).toContain("products")
-    expect(withInventory).not.toContain("availability")
-
-    const withDistribution = ids(filterAdminNavigationByModules(nav, ["distribution"]))
-    expect(withDistribution).toContain("suppliers")
-    expect(withDistribution).toContain("channel-sync")
-  })
-
-  it("fails open when no active set is provided", () => {
-    expect(ids(filterAdminNavigationByModules(nav, undefined))).toEqual(ids(nav))
-  })
-
-  it("keeps only unmapped items (e.g. dashboard) when the active set is empty", () => {
-    expect(ids(filterAdminNavigationByModules(nav, []))).toEqual(["dashboard"])
+    expect(ids).toEqual(["dashboard", "bookings", "quotes", "mice-programs", "action-ledger"])
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })

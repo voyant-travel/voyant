@@ -3449,6 +3449,9 @@ importers:
       '@voyant-travel/flights-react':
         specifier: workspace:*
         version: link:../flights-react
+      '@voyant-travel/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@voyant-travel/framework-migrations':
         specifier: workspace:*
         version: link:../framework-migrations
@@ -3506,6 +3509,9 @@ importers:
       '@voyant-travel/quotes':
         specifier: workspace:*
         version: link:../quotes
+      '@voyant-travel/quotes-contracts':
+        specifier: workspace:*
+        version: link:../quotes-contracts
       '@voyant-travel/quotes-react':
         specifier: workspace:*
         version: link:../quotes-react

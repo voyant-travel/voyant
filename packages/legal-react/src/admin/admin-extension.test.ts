@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { ContractDetailHost } from "./contract-detail-host.js"
 import { ContractDialog } from "./contract-dialog.js"
 import { ContractsHost } from "./contracts-host.js"
-import { createLegalAdminExtension } from "./index.js"
+import { createLegalAdminExtension, createSelectedLegalAdminExtension } from "./index.js"
 import { NumberSeriesDialog } from "./number-series-dialog.js"
 import { NumberSeriesHost } from "./number-series-host.js"
 import { PoliciesHost } from "./policies-host.js"
@@ -14,10 +14,50 @@ import { TemplateDetailHost } from "./template-detail-host.js"
 import { TemplatesHost } from "./templates-host.js"
 
 describe("createLegalAdminExtension", () => {
-  it("contributes no navigation (legal nav is base-nav-owned)", () => {
+  it("adds localized standard navigation only through the selected factory", () => {
     const extension = createLegalAdminExtension()
     expect(extension.id).toBe("legal")
     expect(extension.navigation).toBeUndefined()
+
+    const selected = createSelectedLegalAdminExtension({
+      navMessages: {
+        legal: "Juridic",
+        contracts: "Contracte",
+        contractTemplates: "Sabloane",
+        policies: "Politici",
+        contractNumberSeries: "Serii",
+      },
+    })
+    expect(selected.navigation?.[0]).toMatchObject({
+      order: -40,
+      items: [
+        {
+          id: "legal",
+          title: "Juridic",
+          url: "/legal/contracts",
+          items: [
+            { id: "contracts", title: "Contracte", url: "/legal/contracts" },
+            { id: "contract-templates", title: "Sabloane", url: "/legal/templates" },
+            { id: "policies", title: "Politici", url: "/legal/policies" },
+            { id: "number-series", title: "Serii", url: "/legal/number-series" },
+          ],
+        },
+      ],
+    })
+    expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
+  })
+
+  it("falls back to stable English selected navigation copy", () => {
+    const extension = createSelectedLegalAdminExtension({ navMessages: {} })
+    expect(extension.navigation?.[0]?.items[0]).toMatchObject({
+      title: "Legal",
+      items: [
+        { title: "Contracts" },
+        { title: "Contract templates" },
+        { title: "Policies" },
+        { title: "Number series" },
+      ],
+    })
   })
 
   it("describes the legal routes with unique ids and paths", () => {

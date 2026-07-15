@@ -12,10 +12,6 @@ const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../../..")
 const checker = path.join(repoRoot, "scripts/check-realtime-runtime-authority.mjs")
 
 const runtime = `
-const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
-const providerPolicy = "VOYANT_ADMIN_AUTH_MODE voyant-cloud VOYANT_API_KEY VOYANT_CLOUD_API_KEY VOYANT_CLOUD_API_URL VOYANT_CLOUD_USER_AGENT"
-export function resolveRealtimeProviders() { return [] }
-createVoyantCloudRealtimeProvider()
 export const realtimeInvalidationRoutes = {
   "product.created": (event) => adminHint("product", firstId(event, "id")),
 }
@@ -23,11 +19,22 @@ const bookingHint = (event) => ({ channels: ["admin", \`booking:\${bookingId}\`]
 const availabilityHint = { channels: ["admin", \`product:\${productId}\`] }
 const invalidationSubscriber = () => descriptor
 export const realtimeProductCreatedInvalidationSubscriber = invalidationSubscriber("product.created")
-export function createRealtimeRuntime(primitives) {
-  return { resolveProviders: (bindings) => resolveRealtimeProviders(primitives.env(bindings)) }
+export function createRealtimeRuntime(provider) {
+  return { resolveProviders: () => (provider ? [provider] : []) }
 }
 `
 const manifest = `
+providers: [
+  {
+    selection: { role: "realtime", value: "local" },
+    runtime: { export: "createLocalGraphRealtimeProvider" },
+  },
+  {
+    selection: { role: "realtime", value: "voyant-cloud" },
+    uses: { secrets: ["@voyant-travel/realtime#secret.voyant-cloud-api-key"] },
+    runtime: { export: "createVoyantCloudGraphRealtimeProvider" },
+  },
+],
 subscribers: [
   ["product.created", "realtimeProductCreatedInvalidationSubscriber"],
 ].map(([eventType, exportName]) => ({
@@ -42,12 +49,22 @@ async function fixture(overrides = {}) {
   const files = {
     "packages/runtime/src/deployment-resources.ts": "const primitives = {}\n",
     "packages/realtime/src/runtime-contributor.ts": `
-import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
-type Host = { primitives: VoyantRuntimeHostPrimitives }
-createRealtimeRuntime(host.primitives)
+const transport = host.getRuntimePort<RealtimeProvider>(realtimeTransportRuntimePort)
+createRealtimeRuntime(transport)
 `,
     "packages/realtime/src/runtime.ts": runtime,
     "packages/realtime/src/voyant.ts": manifest,
+    "packages/realtime/src/providers/local.ts": `
+export function createLocalGraphRealtimeProvider() { return createLocalRealtimeProvider() }
+`,
+    "packages/realtime/src/providers/voyant-cloud.ts": `
+export function createVoyantCloudGraphRealtimeProvider(context) {
+  context.getSecret(REALTIME_VOYANT_CLOUD_API_KEY_SECRET_ID)
+  context.getConfig(REALTIME_VOYANT_CLOUD_BASE_URL_CONFIG_ID)
+  context.getConfig(REALTIME_VOYANT_CLOUD_USER_AGENT_CONFIG_ID)
+  return createVoyantCloudClient()
+}
+`,
     "scripts/fixtures/realtime-route-policy.json": JSON.stringify({
       "product.created": { entity: "product", idKeys: ["id"], kind: "admin" },
     }),
@@ -100,13 +117,12 @@ describe("Realtime runtime authority checker", () => {
     await assert.rejects(runChecker(root), /must match the preserved policy fixture/)
   })
 
-  it("rejects a package-specific contributor capability", async () => {
+  it("rejects a contributor that bypasses the selected transport port", async () => {
     const root = await fixture({
       "packages/realtime/src/runtime-contributor.ts": `
-type Host = { capabilities: { loadRealtimeRuntime(): unknown } }
-createRealtimeRuntime(host.primitives)
+createRealtimeRuntime(resolveRealtimeProviders(host.primitives.env(bindings)))
 `,
     })
-    await assert.rejects(runChecker(root), /must consume generic VoyantRuntimeHostPrimitives/)
+    await assert.rejects(runChecker(root), /must consume only the graph-selected transport port/)
   })
 })
