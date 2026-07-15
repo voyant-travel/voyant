@@ -16,14 +16,15 @@
 "@voyant-travel/legal": minor
 "@voyant-travel/mcp": minor
 "@voyant-travel/mice": minor
+"@voyant-travel/navigation-preferences": minor
 "@voyant-travel/notifications": minor
-"@voyant-travel/octo": minor
 "@voyant-travel/operations": minor
 "@voyant-travel/operator-settings": minor
 "@voyant-travel/public-document-delivery": minor
 "@voyant-travel/quotes": minor
 "@voyant-travel/realtime": minor
 "@voyant-travel/relationships": minor
+"@voyant-travel/setup": minor
 "@voyant-travel/storage": minor
 "@voyant-travel/storefront": minor
 "@voyant-travel/trips": minor
