@@ -18,6 +18,8 @@
     "./hono": "./src/hono.ts",
     "./payment-integration": "./src/payment-integration.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./tools": "./src/tools.ts",
+    "./mcp-runtime": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/flights.json"
   },
@@ -134,6 +136,16 @@
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
       },
+      "./tools": {
+        "types": "./dist/tools.d.ts",
+        "import": "./dist/tools.js",
+        "default": "./dist/tools.js"
+      },
+      "./mcp-runtime": {
+        "types": "./dist/mcp-runtime.d.ts",
+        "import": "./dist/mcp-runtime.js",
+        "default": "./dist/mcp-runtime.js"
+      },
       "./voyant": {
         "types": "./dist/voyant.d.ts",
         "import": "./dist/voyant.js",
@@ -153,6 +165,7 @@
     "@voyant-travel/catalog-contracts": "workspace:^",
     "@voyant-travel/flights-contracts": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/plugin-netopia": "^0.105.21",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
