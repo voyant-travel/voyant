@@ -110,6 +110,14 @@ function appendGithubOutput(key, value) {
   writeFileSync(outputPath, `${key}=${value}${EOL}`, { flag: "a" })
 }
 
+function getReleaseMode(hasReleasableChangesets, pendingPublication) {
+  if (hasReleasableChangesets) {
+    return "version"
+  }
+
+  return pendingPublication ? "publish" : "none"
+}
+
 async function getReleaseState() {
   const cwd = process.cwd()
   const packages = await getPackages(cwd)
@@ -144,6 +152,7 @@ async function getReleaseState() {
 async function main() {
   const state = await getReleaseState()
   const pendingPublication = state.pendingPackageNames.length > 0
+  const releaseMode = getReleaseMode(state.hasReleasableChangesets, pendingPublication)
   const turboFilters = formatRepeatedArg("--filter", state.pendingPackageNames)
   const packageFilters = formatRepeatedArg("--package", state.pendingPackageNames)
 
@@ -153,6 +162,7 @@ async function main() {
         hasReleasableChangesets: state.hasReleasableChangesets,
         pendingPackages: state.pendingPackages,
         pendingPublication,
+        releaseMode,
         plannedReleases: state.plannedReleases,
       },
       null,
@@ -162,6 +172,8 @@ async function main() {
 
   appendGithubOutput("has_releasable_changesets", state.hasReleasableChangesets ? "true" : "false")
   appendGithubOutput("pending", pendingPublication ? "true" : "false")
+  appendGithubOutput("publish_pending", releaseMode === "publish" ? "true" : "false")
+  appendGithubOutput("release_mode", releaseMode)
   appendGithubOutput("pending_count", String(state.pendingPackageNames.length))
   appendGithubOutput("pending_package_names", state.pendingPackageNames.join(" "))
   appendGithubOutput("pending_packages_json", JSON.stringify(state.pendingPackages))
@@ -178,6 +190,7 @@ if (require.main === module) {
 
 module.exports = {
   getPendingPackages,
+  getReleaseMode,
   getReleaseState,
   main,
 }

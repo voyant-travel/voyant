@@ -124,19 +124,19 @@ jobs:
       # Version bumps can invalidate most workspace build caches. Serialize the
       # release build to stay within the runner's memory limit.
       - name: Build pending publish workspaces
-        if: steps.release_plan.outputs.pending == 'true'
+        if: steps.release_plan.outputs.publish_pending == 'true'
         run: pnpm turbo build ${{ steps.release_plan.outputs.turbo_filters }} --continue --concurrency=1
 
       - name: Verify package exports
-        if: steps.release_plan.outputs.pending == 'true'
+        if: steps.release_plan.outputs.publish_pending == 'true'
         run: pnpm verify:package-exports ${{ steps.release_plan.outputs.package_filters }}
 
       - name: Verify before publish
-        if: steps.release_plan.outputs.pending == 'true'
+        if: steps.release_plan.outputs.publish_pending == 'true'
         run: pnpm verify:fast
 
       - name: Verify publish tarballs
-        if: steps.release_plan.outputs.pending == 'true'
+        if: steps.release_plan.outputs.publish_pending == 'true'
         # `Build pending publish workspaces` above already produced fresh dist
         # via turbo; skip the per-package clean+rebuild inside the verifier.
         env:
@@ -145,7 +145,7 @@ jobs:
 
       - name: Publish pending packages
         id: publish_pending
-        if: steps.release_plan.outputs.pending == 'true'
+        if: steps.release_plan.outputs.publish_pending == 'true'
         # Hard outer bound so a stalled publish can never burn a full job slot.
         timeout-minutes: 25
         run: |
