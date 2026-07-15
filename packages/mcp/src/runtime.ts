@@ -2,7 +2,9 @@ import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
 import {
   TOOL_GRAPH_ACTIONS_RESOURCE,
+  TOOL_GRAPH_SETUP_STEPS_RESOURCE,
   TOOL_PROVIDER_SELECTIONS_RESOURCE,
+  TOOL_UNIT_PROJECT_CONFIG_RESOURCE,
   type ToolContext,
   ToolError,
   type Visibility,
@@ -22,10 +24,26 @@ export const createMcpVoyantRuntime = defineGraphRuntimeFactory(
           ...runtimePorts,
           [TOOL_GRAPH_ACTIONS_RESOURCE]: graph.actions ?? [],
           [TOOL_PROVIDER_SELECTIONS_RESOURCE]: graph.providerSelections,
+          [TOOL_GRAPH_SETUP_STEPS_RESOURCE]: graph.setupSteps,
+        }),
+        buildUnitResources: (unitId) => ({
+          [TOOL_UNIT_PROJECT_CONFIG_RESOURCE]: selectedUnitProjectConfig(graph, unitId),
         }),
       }),
   }),
 )
+
+function selectedUnitProjectConfig(
+  graph: {
+    modules: readonly { id: string; projectConfig: Readonly<Record<string, unknown>> }[]
+    extensions: readonly { id: string; projectConfig: Readonly<Record<string, unknown>> }[]
+    plugins: readonly { id: string; projectConfig: Readonly<Record<string, unknown>> }[]
+  },
+  unitId: string,
+): Readonly<Record<string, unknown>> {
+  return [...graph.modules, ...graph.extensions, ...graph.plugins].find(({ id }) => id === unitId)
+    ?.projectConfig ?? {}
+}
 
 function buildMcpBaseContext(c: Context): ToolContext {
   const request = c.var as {

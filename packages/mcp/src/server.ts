@@ -60,6 +60,8 @@ export interface GraphMcpHonoAppOptions {
   runtime: GraphMcpRuntime
   buildContext(c: Context): ToolContext
   buildResources?(c: Context): Readonly<Record<string, unknown>>
+  /** Resources visible only to context contributors owned by the selected unit. */
+  buildUnitResources?(unitId: string, c: Context): Readonly<Record<string, unknown>>
   /** Context keys supplied by the deployment while packages migrate to contributions. */
   providedContext?: readonly string[]
   serverInfo?: McpServerInfo
@@ -204,7 +206,10 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
 /** Compose selected tools and their package-owned context contributors from one graph. */
 export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Promise<OpenAPIHono> {
   const registry = createToolRegistry()
-  const contributions = new Map<string, ToolContextContribution>()
+  const contributions = new Map<
+    string,
+    { contribution: ToolContextContribution; unitId: string }
+  >()
   const requiredContext = new Set<string>()
   const actionsByTool = indexActionsByTool(options.runtime.actions ?? [])
 
@@ -234,17 +239,30 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
     for (const key of tool.context ?? []) requiredContext.add(key)
 
     const reference = options.runtime.references.find(({ id }) => id === tool.referenceId)
-    if (!reference || contributions.has(reference.importEntry)) continue
+    if (!reference) continue
+    const toolUnitId = tool.unitId ?? ""
+    const existingContribution = contributions.get(reference.importEntry)
+    if (existingContribution) {
+      if (existingContribution.unitId !== toolUnitId) {
+        throw new Error(
+          `Selected MCP runtime "${reference.importEntry}" contributes tools for multiple owning units.`,
+        )
+      }
+      continue
+    }
     const namespace = await reference.loadModule()
     const contribution = namespace[TOOL_CONTEXT_CONTRIBUTION_EXPORT]
     if (contribution !== undefined) {
       assertToolContextContribution(contribution, reference.importEntry)
-      contributions.set(reference.importEntry, contribution)
+      contributions.set(reference.importEntry, {
+        contribution,
+        unitId: toolUnitId,
+      })
     }
   }
 
   const contextOwners = new Map<string, string>()
-  for (const [importEntry, contribution] of contributions) {
+  for (const [importEntry, { contribution }] of contributions) {
     for (const key of contribution.context) {
       const owner = contextOwners.get(key)
       if (owner && owner !== importEntry) {
@@ -304,12 +322,16 @@ function indexActionsByTool(
 async function buildContributedContext(
   c: Context,
   options: GraphMcpHonoAppOptions,
-  contributions: Iterable<ToolContextContribution>,
+  contributions: Iterable<{ contribution: ToolContextContribution; unitId: string }>,
 ): Promise<ToolContext> {
   const base = await options.buildContext(c)
-  const resources = options.buildResources?.(c) ?? {}
+  const sharedResources = options.buildResources?.(c) ?? {}
   let context: ToolContext & Record<string, unknown> = base as ToolContext & Record<string, unknown>
-  for (const contribution of contributions) {
+  for (const { contribution, unitId } of contributions) {
+    const resources = {
+      ...sharedResources,
+      ...(unitId ? options.buildUnitResources?.(unitId, c) : {}),
+    }
     const contributed = await contribution.contribute({ request: c, context, resources })
     const undeclared = Object.keys(contributed).filter((key) => !contribution.context.includes(key))
     if (undeclared.length > 0) {

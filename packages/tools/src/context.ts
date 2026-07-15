@@ -63,6 +63,12 @@ export const TOOL_PROVIDER_SELECTIONS_RESOURCE = "voyant.graph.provider-selectio
 /** Generic MCP resource containing the action policies admitted by the selected graph. */
 export const TOOL_GRAPH_ACTIONS_RESOURCE = "voyant.graph.actions" as const
 
+/** Generic MCP resource containing setup steps admitted by the selected graph. */
+export const TOOL_GRAPH_SETUP_STEPS_RESOURCE = "voyant.graph.setup-steps" as const
+
+/** MCP resource scoped to the Tool-owning unit's selected project configuration. */
+export const TOOL_UNIT_PROJECT_CONFIG_RESOURCE = "voyant.graph.unit-project-config" as const
+
 export interface ToolContextContributionInput {
   /** Transport request context. Contributors narrow this at their package boundary. */
   request: unknown

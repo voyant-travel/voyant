@@ -1260,6 +1260,9 @@
       "@voyant-travel/navigation-preferences/service": [
         "../navigation-preferences/dist/service.d.ts"
       ],
+      "@voyant-travel/navigation-preferences/tools": [
+        "../navigation-preferences/dist/mcp-runtime.d.ts"
+      ],
       "@voyant-travel/navigation-preferences/voyant": [
         "../navigation-preferences/dist/voyant.d.ts"
       ],
@@ -1661,6 +1664,7 @@
       "@voyant-travel/setup/routes": ["../setup/dist/routes.d.ts"],
       "@voyant-travel/setup/schema": ["../setup/dist/schema.d.ts"],
       "@voyant-travel/setup/service": ["../setup/dist/service.d.ts"],
+      "@voyant-travel/setup/tools": ["../setup/dist/mcp-runtime.d.ts"],
       "@voyant-travel/setup/voyant": ["../setup/dist/voyant.d.ts"],
       "@voyant-travel/storage": ["../storage/dist/index.d.ts"],
       "@voyant-travel/storage/conformance": ["../storage/dist/conformance.d.ts"],

@@ -3045,6 +3045,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -4397,6 +4400,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
