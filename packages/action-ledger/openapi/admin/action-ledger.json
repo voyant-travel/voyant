@@ -2094,7 +2094,7 @@
         ],
         "responses": {
           "200": {
-            "description": "An action ledger entry with mutation/sensitive details, payloads, and relay rows",
+            "description": "An action ledger entry with mutation/sensitive details and payloads",
             "content": {
               "application/json": {
                 "schema": {
@@ -2383,63 +2383,6 @@
                               "expiresAt"
                             ]
                           }
-                        },
-                        "relayOutbox": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "actionId": {
-                                "type": "string"
-                              },
-                              "organizationId": {
-                                "type": ["string", "null"]
-                              },
-                              "relayStatus": {
-                                "type": "string",
-                                "enum": [
-                                  "pending",
-                                  "processing",
-                                  "succeeded",
-                                  "failed",
-                                  "dead_letter"
-                                ]
-                              },
-                              "payloadRef": {
-                                "type": ["string", "null"]
-                              },
-                              "attemptCount": {
-                                "type": "integer"
-                              },
-                              "nextRetryAt": {
-                                "type": ["string", "null"]
-                              },
-                              "lastError": {
-                                "type": ["string", "null"]
-                              },
-                              "createdAt": {
-                                "type": "string"
-                              },
-                              "processedAt": {
-                                "type": ["string", "null"]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "actionId",
-                              "organizationId",
-                              "relayStatus",
-                              "payloadRef",
-                              "attemptCount",
-                              "nextRetryAt",
-                              "lastError",
-                              "createdAt",
-                              "processedAt"
-                            ]
-                          }
                         }
                       },
                       "required": [
@@ -2480,8 +2423,7 @@
                         "createdAt",
                         "mutationDetail",
                         "sensitiveReadDetail",
-                        "payloads",
-                        "relayOutbox"
+                        "payloads"
                       ]
                     }
                   },
@@ -3704,63 +3646,6 @@
                                   "expiresAt"
                                 ]
                               }
-                            },
-                            "relayOutbox": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "actionId": {
-                                    "type": "string"
-                                  },
-                                  "organizationId": {
-                                    "type": ["string", "null"]
-                                  },
-                                  "relayStatus": {
-                                    "type": "string",
-                                    "enum": [
-                                      "pending",
-                                      "processing",
-                                      "succeeded",
-                                      "failed",
-                                      "dead_letter"
-                                    ]
-                                  },
-                                  "payloadRef": {
-                                    "type": ["string", "null"]
-                                  },
-                                  "attemptCount": {
-                                    "type": "integer"
-                                  },
-                                  "nextRetryAt": {
-                                    "type": ["string", "null"]
-                                  },
-                                  "lastError": {
-                                    "type": ["string", "null"]
-                                  },
-                                  "createdAt": {
-                                    "type": "string"
-                                  },
-                                  "processedAt": {
-                                    "type": ["string", "null"]
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "actionId",
-                                  "organizationId",
-                                  "relayStatus",
-                                  "payloadRef",
-                                  "attemptCount",
-                                  "nextRetryAt",
-                                  "lastError",
-                                  "createdAt",
-                                  "processedAt"
-                                ]
-                              }
                             }
                           },
                           "required": [
@@ -3801,8 +3686,7 @@
                             "createdAt",
                             "mutationDetail",
                             "sensitiveReadDetail",
-                            "payloads",
-                            "relayOutbox"
+                            "payloads"
                           ]
                         }
                       },
@@ -4719,224 +4603,6 @@
         },
         "operationId": "getAdminActionLedgerDelegationsById",
         "summary": "GET /v1/admin/action-ledger/delegations/{id}",
-        "tags": ["action-ledger"],
-        "x-voyant-module": "action-ledger",
-        "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
-        "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
-      }
-    },
-    "/v1/admin/action-ledger/relay-outbox": {
-      "get": {
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            },
-            "required": false,
-            "name": "actionId",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            },
-            "required": false,
-            "name": "organizationId",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": ["pending", "processing", "succeeded", "failed", "dead_letter"]
-              },
-              "minItems": 1
-            },
-            "required": false,
-            "name": "relayStatus",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "dueBefore",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "createdAtFrom",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "createdAtTo",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "processedAtFrom",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "processedAtTo",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "required": false,
-            "name": "cursorCreatedAt",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            },
-            "required": false,
-            "name": "cursorId",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Paginated relay outbox rows (cursor pagination)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "actionId": {
-                            "type": "string"
-                          },
-                          "organizationId": {
-                            "type": ["string", "null"]
-                          },
-                          "relayStatus": {
-                            "type": "string",
-                            "enum": ["pending", "processing", "succeeded", "failed", "dead_letter"]
-                          },
-                          "payloadRef": {
-                            "type": ["string", "null"]
-                          },
-                          "attemptCount": {
-                            "type": "integer"
-                          },
-                          "nextRetryAt": {
-                            "type": ["string", "null"]
-                          },
-                          "lastError": {
-                            "type": ["string", "null"]
-                          },
-                          "createdAt": {
-                            "type": "string"
-                          },
-                          "processedAt": {
-                            "type": ["string", "null"]
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "actionId",
-                          "organizationId",
-                          "relayStatus",
-                          "payloadRef",
-                          "attemptCount",
-                          "nextRetryAt",
-                          "lastError",
-                          "createdAt",
-                          "processedAt"
-                        ]
-                      }
-                    },
-                    "pageInfo": {
-                      "type": "object",
-                      "properties": {
-                        "nextCursor": {
-                          "type": ["object", "null"],
-                          "properties": {
-                            "createdAt": {
-                              "type": "string"
-                            },
-                            "id": {
-                              "type": "string"
-                            }
-                          },
-                          "required": ["createdAt", "id"]
-                        }
-                      },
-                      "required": ["nextCursor"]
-                    }
-                  },
-                  "required": ["data", "pageInfo"]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "invalid_request — `cursorCreatedAt` and `cursorId` must be provided together",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["error"]
-                }
-              }
-            }
-          }
-        },
-        "operationId": "getAdminActionLedgerRelayOutbox",
-        "summary": "GET /v1/admin/action-ledger/relay-outbox",
         "tags": ["action-ledger"],
         "x-voyant-module": "action-ledger",
         "x-voyant-surface": "admin",

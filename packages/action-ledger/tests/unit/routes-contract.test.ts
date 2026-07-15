@@ -7,7 +7,6 @@ import {
   makeEntry,
   makeMutationDetail,
   makePayload,
-  makeRelayOutbox,
   makeSensitiveReadDetail,
 } from "./routes-fixtures.js"
 
@@ -44,21 +43,19 @@ describe("action-ledger admin contract", () => {
     expect(parsed.createdAt).toBe("2026-05-15T10:00:00.000Z")
   })
 
-  it("entry detail schema accepts mutation/sensitive details, payloads, relay rows", () => {
+  it("entry detail schema accepts mutation/sensitive details and payloads", () => {
     const wire = toWire(
       serializeActionLedgerEntryDetail({
         entry: makeEntry(),
         mutationDetail: makeMutationDetail(),
         sensitiveReadDetail: makeSensitiveReadDetail(),
         payloads: [makePayload()],
-        relayOutbox: [makeRelayOutbox()],
       }),
     )
     const parsed = actionLedgerEntryDetailSchema.parse(wire)
     expect(parsed.mutationDetail?.reversalKind).toBe("none")
     expect(parsed.sensitiveReadDetail?.disclosedFieldSet).toEqual(["passportNumber"])
     expect(parsed.payloads[0]?.expiresAt).toBe("2026-06-15T10:00:00.000Z")
-    expect(parsed.relayOutbox[0]?.processedAt).toBeNull()
   })
 
   it("entry detail schema accepts null details and empty collections", () => {
@@ -68,7 +65,6 @@ describe("action-ledger admin contract", () => {
         mutationDetail: null,
         sensitiveReadDetail: null,
         payloads: [],
-        relayOutbox: [],
       }),
     )
     const parsed = actionLedgerEntryDetailSchema.parse(wire)

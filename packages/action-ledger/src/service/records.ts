@@ -6,7 +6,6 @@ import {
   actionDelegations,
   actionLedgerEntries,
   actionLedgerPayloads,
-  actionLedgerRelayOutbox,
   actionMutationDetails,
   actionSensitiveReadDetails,
 } from "../schema.js"
@@ -28,7 +27,7 @@ export async function getEntry(
 
   if (!entry) return null
 
-  const [[mutationDetail], [sensitiveReadDetail], payloads, relayOutbox] = await Promise.all([
+  const [[mutationDetail], [sensitiveReadDetail], payloads] = await Promise.all([
     db.select().from(actionMutationDetails).where(eq(actionMutationDetails.actionId, id)).limit(1),
     db
       .select()
@@ -36,7 +35,6 @@ export async function getEntry(
       .where(eq(actionSensitiveReadDetails.actionId, id))
       .limit(1),
     db.select().from(actionLedgerPayloads).where(eq(actionLedgerPayloads.actionId, id)),
-    db.select().from(actionLedgerRelayOutbox).where(eq(actionLedgerRelayOutbox.actionId, id)),
   ])
 
   return {
@@ -44,7 +42,6 @@ export async function getEntry(
     mutationDetail: mutationDetail ?? null,
     sensitiveReadDetail: sensitiveReadDetail ?? null,
     payloads,
-    relayOutbox,
   }
 }
 

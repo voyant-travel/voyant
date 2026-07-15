@@ -1,8 +1,8 @@
 /**
  * Admin routes for the action ledger — mounted by the operator starter under
  * `/v1/admin/action-ledger` (staff-actor-gated by the parent app's middleware
- * chain). Covers four resource sub-chains (entries, approvals, delegations,
- * relay-outbox) plus a root entries alias.
+ * chain). Covers three resource sub-chains (entries, approvals, delegations)
+ * plus a root entries alias.
  *
  * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
  * voyant#2208). Request schemas reuse the existing `route-schemas.ts` schemas
@@ -13,8 +13,8 @@
  * a bare `any`.
  *
  * agent-quality: file-size exception — intentional: the authored response row
- * schemas (entries/approvals/delegations/relay-outbox), their `createRoute`
- * objects, and the four per-resource sub-chains co-locate with their handlers
+ * schemas (entries/approvals/delegations), their `createRoute` objects, and the
+ * three per-resource sub-chains co-locate with their handlers
  * per the established admin route pattern (mirrors `commerce/pricing/
  * routes-core.ts`). Splitting per resource would fragment the single mounted
  * instance and its shared serializers without aiding review. See voyant#2114 /
@@ -30,7 +30,6 @@ import {
   actionApprovalListQuerySchema,
   actionDelegationListQuerySchema,
   actionLedgerEntryListQuerySchema,
-  actionLedgerRelayOutboxListQuerySchema,
   decideActionApprovalBodySchema,
   recordActionLedgerReversalBodySchema,
   requestActionApprovalBodySchema,
@@ -40,7 +39,6 @@ import type {
   ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
-  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
 } from "./schema.js"
@@ -78,21 +76,10 @@ export type ActionLedgerEntryDetailResponse = ActionLedgerEntryResponse & {
   mutationDetail: ActionMutationDetail | null
   sensitiveReadDetail: ActionSensitiveReadDetail | null
   payloads: ActionLedgerPayloadResponse[]
-  relayOutbox: ActionLedgerRelayOutboxResponse[]
 }
 
 export interface ActionLedgerGetResponse {
   data: ActionLedgerEntryDetailResponse
-}
-
-export interface ActionLedgerRelayOutboxListResponse {
-  data: ActionLedgerRelayOutboxResponse[]
-  pageInfo: {
-    nextCursor: {
-      createdAt: string
-      id: string
-    } | null
-  }
 }
 
 export interface ActionApprovalListResponse {
@@ -151,15 +138,6 @@ export type ActionLedgerPayloadResponse = Omit<ActionLedgerPayload, "createdAt" 
   expiresAt: string | null
 }
 
-export type ActionLedgerRelayOutboxResponse = Omit<
-  ActionLedgerRelayOutbox,
-  "createdAt" | "nextRetryAt" | "processedAt"
-> & {
-  createdAt: string
-  nextRetryAt: string | null
-  processedAt: string | null
-}
-
 export type ActionApprovalResponse = Omit<
   ActionApproval,
   "createdAt" | "decidedAt" | "expiresAt"
@@ -207,17 +185,6 @@ function serializeActionLedgerPayload(payload: ActionLedgerPayload): ActionLedge
   }
 }
 
-function serializeActionLedgerRelayOutbox(
-  row: ActionLedgerRelayOutbox,
-): ActionLedgerRelayOutboxResponse {
-  return {
-    ...row,
-    createdAt: serializeDate(row.createdAt),
-    nextRetryAt: serializeNullableDate(row.nextRetryAt),
-    processedAt: serializeNullableDate(row.processedAt),
-  }
-}
-
 function serializeActionApproval(row: ActionApproval): ActionApprovalResponse {
   return {
     ...row,
@@ -260,7 +227,6 @@ function serializeActionLedgerEntryDetail(
     mutationDetail: result.mutationDetail,
     sensitiveReadDetail: result.sensitiveReadDetail,
     payloads: result.payloads.map(serializeActionLedgerPayload),
-    relayOutbox: result.relayOutbox.map(serializeActionLedgerRelayOutbox),
   }
 }
 
@@ -306,7 +272,6 @@ const approvalStatusSchema = z.enum([
   "cancelled",
   "superseded",
 ])
-const relayStatusSchema = z.enum(["pending", "processing", "succeeded", "failed", "dead_letter"])
 const redactionStatusSchema = z.enum(["none", "redacted", "tombstoned", "crypto_shredded"])
 const reversalKindSchema = z.enum(["none", "revert", "compensate", "domain_command"])
 const reversalStateSchema = z.enum([
@@ -394,24 +359,10 @@ const actionLedgerPayloadSchema = z.object({
   expiresAt: isoTimestamp.nullable(),
 })
 
-const actionLedgerRelayOutboxSchema = z.object({
-  id: z.string(),
-  actionId: z.string(),
-  organizationId: z.string().nullable(),
-  relayStatus: relayStatusSchema,
-  payloadRef: z.string().nullable(),
-  attemptCount: z.number().int(),
-  nextRetryAt: isoTimestamp.nullable(),
-  lastError: z.string().nullable(),
-  createdAt: isoTimestamp,
-  processedAt: isoTimestamp.nullable(),
-})
-
 const actionLedgerEntryDetailSchema = actionLedgerEntrySchema.extend({
   mutationDetail: actionMutationDetailSchema.nullable(),
   sensitiveReadDetail: actionSensitiveReadDetailSchema.nullable(),
   payloads: z.array(actionLedgerPayloadSchema),
-  relayOutbox: z.array(actionLedgerRelayOutboxSchema),
 })
 
 const actionApprovalSchema = z.object({
@@ -457,11 +408,6 @@ const createdAtCursorSchema = z.object({ createdAt: isoTimestamp, id: z.string()
 const actionLedgerListResponseSchema = z.object({
   data: z.array(actionLedgerEntrySchema),
   pageInfo: z.object({ nextCursor: entryCursorSchema }),
-})
-
-const relayOutboxListResponseSchema = z.object({
-  data: z.array(actionLedgerRelayOutboxSchema),
-  pageInfo: z.object({ nextCursor: createdAtCursorSchema }),
 })
 
 const approvalListResponseSchema = z.object({
@@ -550,8 +496,7 @@ const getEntryRoute = createRoute({
   request: { params: idParamSchema },
   responses: {
     200: {
-      description:
-        "An action ledger entry with mutation/sensitive details, payloads, and relay rows",
+      description: "An action ledger entry with mutation/sensitive details and payloads",
       content: {
         "application/json": { schema: z.object({ data: actionLedgerEntryDetailSchema }) },
       },
@@ -874,38 +819,6 @@ const delegationsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
     )
   })
 
-// --- relay-outbox sub-chain -----------------------------------------------
-
-const listRelayOutboxRoute = createRoute({
-  method: "get",
-  path: "/relay-outbox",
-  request: { query: actionLedgerRelayOutboxListQuerySchema },
-  responses: {
-    200: {
-      description: "Paginated relay outbox rows (cursor pagination)",
-      content: { "application/json": { schema: relayOutboxListResponseSchema } },
-    },
-    400: {
-      description: "invalid_request — `cursorCreatedAt` and `cursorId` must be provided together",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-  },
-})
-
-const relayOutboxRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook }).openapi(
-  listRelayOutboxRoute,
-  async (c) => {
-    const result = await actionLedgerService.listRelayOutbox(c.get("db"), c.req.valid("query"))
-    return c.json(
-      {
-        data: result.rows.map(serializeActionLedgerRelayOutbox),
-        pageInfo: { nextCursor: result.nextCursor },
-      } satisfies ActionLedgerRelayOutboxListResponse,
-      200,
-    )
-  },
-)
-
 // --- root entries alias ---------------------------------------------------
 
 const listEntriesRootRoute = createRoute({
@@ -939,8 +852,7 @@ export const actionLedgerAdminRoutes = stampOpenApiRegistryApiId(
     })
     .route("/", entriesRoutes)
     .route("/", approvalsRoutes)
-    .route("/", delegationsRoutes)
-    .route("/", relayOutboxRoutes),
+    .route("/", delegationsRoutes),
   "@voyant-travel/action-ledger#api.admin",
 )
 
@@ -962,7 +874,6 @@ export const __test__ = {
   recordActionLedgerReversalBodySchema,
   requestActionApprovalBodySchema,
   actionDelegationListQuerySchema,
-  actionLedgerRelayOutboxListQuerySchema,
   serializeActionApproval,
   serializeActionApprovalDetail,
   serializeActionDelegation,

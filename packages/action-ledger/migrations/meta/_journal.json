@@ -8,6 +8,13 @@
       "when": 1781942390744,
       "tag": "0000_action_ledger_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784149868241,
+      "tag": "20260715211108_remove_action_ledger_relay_outbox",
+      "breakpoints": true
     }
   ]
 }

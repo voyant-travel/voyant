@@ -3,12 +3,10 @@ import { and, eq, gt, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-o
 import {
   type ActionApproval,
   type ActionLedgerEntry,
-  type ActionLedgerRelayOutbox,
   type ActionMutationDetail,
   actionApprovals,
   actionDelegations,
   actionLedgerEntries,
-  actionLedgerRelayOutbox,
   actionMutationDetails,
   actionSensitiveReadDetails,
 } from "../schema.js"
@@ -17,11 +15,9 @@ import type {
   ActionApprovalListCursor,
   ActionDelegationListCursor,
   ActionLedgerListCursor,
-  ActionLedgerRelayOutboxListCursor,
   ListActionApprovalsInput,
   ListActionDelegationsInput,
   ListActionLedgerEntriesInput,
-  ListActionLedgerRelayOutboxInput,
 } from "./types.js"
 
 function riskCondition(
@@ -107,20 +103,6 @@ function reversalOutcomeCondition(
   return eq(actionMutationDetails.reversalOutcomeProjection, value)
 }
 
-function relayStatusCondition(
-  value:
-    | ActionLedgerRelayOutbox["relayStatus"]
-    | ActionLedgerRelayOutbox["relayStatus"][]
-    | undefined,
-): SQL | undefined {
-  if (value === undefined) return undefined
-  if (Array.isArray(value)) {
-    if (value.length === 0) return undefined
-    return inArray(actionLedgerRelayOutbox.relayStatus, value)
-  }
-  return eq(actionLedgerRelayOutbox.relayStatus, value)
-}
-
 function mutationDetailExists(condition: SQL): SQL {
   return sql`EXISTS (
     SELECT 1
@@ -151,16 +133,6 @@ function buildCursorCondition(
   )
 
   return or(compare(actionLedgerEntries.occurredAt, occurredAt), tieBreaker) as SQL
-}
-
-function buildRelayOutboxCursorCondition(cursor: ActionLedgerRelayOutboxListCursor): SQL {
-  const createdAt = parseCursorDate(cursor.createdAt)
-  const tieBreaker = and(
-    eq(actionLedgerRelayOutbox.createdAt, createdAt),
-    lt(actionLedgerRelayOutbox.id, cursor.id),
-  )
-
-  return or(lt(actionLedgerRelayOutbox.createdAt, createdAt), tieBreaker) as SQL
 }
 
 function buildApprovalCursorCondition(cursor: ActionApprovalListCursor): SQL {
@@ -292,47 +264,6 @@ function buildActionApprovalsPredicate(input: ListActionApprovalsInput): SQL | u
   return and(...conditions)
 }
 
-function buildActionLedgerRelayOutboxPredicate(
-  input: ListActionLedgerRelayOutboxInput,
-): SQL | undefined {
-  const conditions: SQL[] = []
-
-  if (input.actionId) conditions.push(eq(actionLedgerRelayOutbox.actionId, input.actionId))
-  if (input.organizationId) {
-    conditions.push(eq(actionLedgerRelayOutbox.organizationId, input.organizationId))
-  }
-
-  const entryRelayStatusCondition = relayStatusCondition(input.relayStatus)
-  if (entryRelayStatusCondition) conditions.push(entryRelayStatusCondition)
-
-  if (input.dueBefore) {
-    conditions.push(lte(actionLedgerRelayOutbox.nextRetryAt, parseCursorDate(input.dueBefore)))
-  }
-
-  if (input.createdAtFrom) {
-    conditions.push(gte(actionLedgerRelayOutbox.createdAt, parseCursorDate(input.createdAtFrom)))
-  }
-  if (input.createdAtTo) {
-    conditions.push(lte(actionLedgerRelayOutbox.createdAt, parseCursorDate(input.createdAtTo)))
-  }
-  if (input.processedAtFrom) {
-    conditions.push(
-      gte(actionLedgerRelayOutbox.processedAt, parseCursorDate(input.processedAtFrom)),
-    )
-  }
-  if (input.processedAtTo) {
-    conditions.push(lte(actionLedgerRelayOutbox.processedAt, parseCursorDate(input.processedAtTo)))
-  }
-
-  if (input.cursor) {
-    conditions.push(buildRelayOutboxCursorCondition(input.cursor))
-  }
-
-  if (conditions.length === 0) return undefined
-  if (conditions.length === 1) return conditions[0]
-  return and(...conditions)
-}
-
 function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput): SQL | undefined {
   const conditions: SQL[] = []
 
@@ -455,5 +386,4 @@ export {
   buildActionApprovalsPredicate,
   buildActionDelegationsPredicate,
   buildActionLedgerEntriesPredicate,
-  buildActionLedgerRelayOutboxPredicate,
 }

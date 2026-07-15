@@ -35,13 +35,6 @@ const actionLedgerApprovalStatusValues = [
   "cancelled",
   "superseded",
 ] as const
-const actionLedgerRelayStatusValues = [
-  "pending",
-  "processing",
-  "succeeded",
-  "failed",
-  "dead_letter",
-] as const
 const actionLedgerReversalKindValues = ["none", "revert", "compensate", "domain_command"] as const
 const actionLedgerReversalStateValues = [
   "not_reversible",
@@ -148,56 +141,6 @@ export const actionLedgerEntryListQuerySchema = z
           }
         : undefined,
   }))
-
-export const actionLedgerRelayOutboxListQuerySchema = z
-  .object({
-    actionId: z.string().trim().min(1).optional(),
-    organizationId: z.string().trim().min(1).optional(),
-    relayStatus: commaSeparatedEnumList(actionLedgerRelayStatusValues),
-    dueBefore: z.string().datetime().optional(),
-    createdAtFrom: z.string().datetime().optional(),
-    createdAtTo: z.string().datetime().optional(),
-    processedAtFrom: z.string().datetime().optional(),
-    processedAtTo: z.string().datetime().optional(),
-    cursorCreatedAt: z.string().datetime().optional(),
-    cursorId: z.string().trim().min(1).optional(),
-    limit: z.coerce.number().int().min(1).max(200).optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (Boolean(value.cursorCreatedAt) === Boolean(value.cursorId)) return
-
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: value.cursorCreatedAt ? ["cursorId"] : ["cursorCreatedAt"],
-      message: "cursorCreatedAt and cursorId must be provided together",
-    })
-  })
-  .transform(
-    ({
-      cursorCreatedAt,
-      cursorId,
-      dueBefore,
-      createdAtFrom,
-      createdAtTo,
-      processedAtFrom,
-      processedAtTo,
-      ...query
-    }) => ({
-      ...query,
-      dueBefore: dueBefore ? new Date(dueBefore) : undefined,
-      createdAtFrom: createdAtFrom ? new Date(createdAtFrom) : undefined,
-      createdAtTo: createdAtTo ? new Date(createdAtTo) : undefined,
-      processedAtFrom: processedAtFrom ? new Date(processedAtFrom) : undefined,
-      processedAtTo: processedAtTo ? new Date(processedAtTo) : undefined,
-      cursor:
-        cursorCreatedAt && cursorId
-          ? {
-              createdAt: cursorCreatedAt,
-              id: cursorId,
-            }
-          : undefined,
-    }),
-  )
 
 export const actionApprovalListQuerySchema = z
   .object({

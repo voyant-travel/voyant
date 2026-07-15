@@ -48,14 +48,13 @@ describe("actionLedgerService.appendEntry", () => {
           storageRef: "blob://action-ledger/book_1/cancel-input",
         },
       ],
-      enqueueRelay: true,
     })
 
     expect(transactionCalls).toEqual(["begin", "commit"])
   })
 
-  test("inserts payload references and relay markers with the action id", async () => {
-    const { db, insertedPayloads, insertedRelayOutbox } = makeAppendDb()
+  test("inserts payload references with the action id", async () => {
+    const { db, insertedPayloads } = makeAppendDb()
 
     const result = await actionLedgerService.appendEntry(db, {
       actionName: "booking.cancel",
@@ -78,7 +77,6 @@ describe("actionLedgerService.appendEntry", () => {
           hash: "sha256:payload",
         },
       ],
-      enqueueRelay: { payloadRef: "blob://action-ledger/book_1" },
     })
 
     expect(result.replayed).toBe(false)
@@ -90,14 +88,6 @@ describe("actionLedgerService.appendEntry", () => {
         retentionPolicy: "audit-default",
         storageRef: "blob://action-ledger/book_1/cancel-input",
         hash: "sha256:payload",
-      }),
-    ])
-    expect(insertedRelayOutbox).toEqual([
-      expect.objectContaining({
-        actionId: result.entry.id,
-        organizationId: "org_1",
-        payloadRef: "blob://action-ledger/book_1",
-        relayStatus: "pending",
       }),
     ])
   })

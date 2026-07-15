@@ -33,6 +33,5 @@ describe("operator action ledger schema mounting", () => {
     expect(migration).toContain('CREATE TABLE "action_ledger_entries"')
     expect(migration).toContain('CREATE TABLE "action_approvals"')
     expect(migration).toContain('CREATE TABLE "action_mutation_details"')
-    expect(migration).toContain('CREATE TABLE "action_ledger_outbox"')
   })
 })

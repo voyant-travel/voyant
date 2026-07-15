@@ -2,13 +2,8 @@ import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, test } from "vitest"
 
 import { __test__, actionLedgerService } from "../../src/service.js"
-import { makeApproval, makeDelegation, makeEntry, makeRelayOutbox } from "./service-fixtures.js"
-import {
-  makeApprovalListDb,
-  makeDelegationListDb,
-  makeListDb,
-  makeRelayOutboxListDb,
-} from "./service-list-fixtures.js"
+import { makeApproval, makeDelegation, makeEntry } from "./service-fixtures.js"
+import { makeApprovalListDb, makeDelegationListDb, makeListDb } from "./service-list-fixtures.js"
 
 describe("actionLedgerService.listEntries", () => {
   test("composes action, actor, target, workflow, control, risk, and status filters", () => {
@@ -199,86 +194,6 @@ describe("actionLedgerService.listEntries", () => {
     expect(result.nextCursor).toEqual({
       occurredAt: "2026-05-15T10:02:00.000Z",
       id: "alge_2",
-    })
-    expect(calls).toEqual([
-      { phase: "orderBy", argCount: 2 },
-      { phase: "limit", value: 3 },
-    ])
-  })
-})
-
-describe("actionLedgerService.listRelayOutbox", () => {
-  test("composes relay status, action, organization, due, and cursor filters", () => {
-    const predicate = __test__.buildActionLedgerRelayOutboxPredicate({
-      actionId: "alge_1",
-      organizationId: "org_1",
-      relayStatus: ["pending", "failed"],
-      dueBefore: "2026-05-15T10:05:00.000Z",
-      cursor: {
-        createdAt: "2026-05-15T10:00:00.000Z",
-        id: "alro_cursor",
-      },
-    })
-
-    expect(predicate).toBeDefined()
-    const query = new PgDialect().sqlToQuery(predicate!)
-
-    expect(query.sql).toContain('"action_ledger_outbox"."action_id" = $1')
-    expect(query.sql).toContain('"action_ledger_outbox"."organization_id" = $2')
-    expect(query.sql).toContain('"action_ledger_outbox"."relay_status" in ($3, $4)')
-    expect(query.sql).toContain('"action_ledger_outbox"."next_retry_at" <= $5')
-    expect(query.sql).toContain('"action_ledger_outbox"."created_at" < $6')
-    expect(query.sql).toContain('"action_ledger_outbox"."created_at" = $7')
-    expect(query.sql).toContain('"action_ledger_outbox"."id" < $8')
-    expect(query.params).toEqual([
-      "alge_1",
-      "org_1",
-      "pending",
-      "failed",
-      "2026-05-15T10:05:00.000Z",
-      "2026-05-15T10:00:00.000Z",
-      "2026-05-15T10:00:00.000Z",
-      "alro_cursor",
-    ])
-  })
-
-  test("composes relay outbox created and processed time-window filters", () => {
-    const predicate = __test__.buildActionLedgerRelayOutboxPredicate({
-      createdAtFrom: "2026-05-15T09:00:00.000Z",
-      createdAtTo: "2026-05-15T10:00:00.000Z",
-      processedAtFrom: "2026-05-15T10:15:00.000Z",
-      processedAtTo: "2026-05-15T10:30:00.000Z",
-    })
-
-    expect(predicate).toBeDefined()
-    const query = new PgDialect().sqlToQuery(predicate!)
-
-    expect(query.sql).toContain('"action_ledger_outbox"."created_at" >= $1')
-    expect(query.sql).toContain('"action_ledger_outbox"."created_at" <= $2')
-    expect(query.sql).toContain('"action_ledger_outbox"."processed_at" >= $3')
-    expect(query.sql).toContain('"action_ledger_outbox"."processed_at" <= $4')
-    expect(query.params).toEqual([
-      "2026-05-15T09:00:00.000Z",
-      "2026-05-15T10:00:00.000Z",
-      "2026-05-15T10:15:00.000Z",
-      "2026-05-15T10:30:00.000Z",
-    ])
-  })
-
-  test("overfetches by one and returns the last visible relay row as the next cursor", async () => {
-    const rows = [
-      makeRelayOutbox({ id: "alro_3", createdAt: new Date("2026-05-15T10:03:00.000Z") }),
-      makeRelayOutbox({ id: "alro_2", createdAt: new Date("2026-05-15T10:02:00.000Z") }),
-      makeRelayOutbox({ id: "alro_1", createdAt: new Date("2026-05-15T10:01:00.000Z") }),
-    ]
-    const { db, calls } = makeRelayOutboxListDb(rows)
-
-    const result = await actionLedgerService.listRelayOutbox(db, { limit: 2 })
-
-    expect(result.rows.map((row) => row.id)).toEqual(["alro_3", "alro_2"])
-    expect(result.nextCursor).toEqual({
-      createdAt: "2026-05-15T10:02:00.000Z",
-      id: "alro_2",
     })
     expect(calls).toEqual([
       { phase: "orderBy", argCount: 2 },

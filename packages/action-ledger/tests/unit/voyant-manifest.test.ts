@@ -95,7 +95,6 @@ describe("action-ledger deployment manifest", () => {
       "list_action_approvals",
       "list_action_delegations",
       "list_action_ledger_entries",
-      "list_action_relay_outbox",
       "request_action_approval",
     ])
     expect(actionLedgerVoyantModule.meta?.agentTools).toBeUndefined()

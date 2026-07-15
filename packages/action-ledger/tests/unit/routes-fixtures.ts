@@ -7,7 +7,6 @@ import type {
   ActionDelegation,
   ActionLedgerEntry,
   ActionLedgerPayload,
-  ActionLedgerRelayOutbox,
   ActionMutationDetail,
   ActionSensitiveReadDetail,
 } from "../../src/schema.js"
@@ -100,24 +99,6 @@ export function makePayload(overrides: Partial<ActionLedgerPayload> = {}): Actio
     hash: "sha256:payload",
     createdAt: baseDate,
     expiresAt: new Date("2026-06-15T10:00:00.000Z"),
-    ...overrides,
-  }
-}
-
-export function makeRelayOutbox(
-  overrides: Partial<ActionLedgerRelayOutbox> = {},
-): ActionLedgerRelayOutbox {
-  return {
-    id: "alro_1",
-    actionId: "alge_1",
-    organizationId: "org_1",
-    relayStatus: "pending",
-    payloadRef: "blob://action-ledger/alge_1",
-    attemptCount: 0,
-    nextRetryAt: new Date("2026-05-15T10:05:00.000Z"),
-    lastError: null,
-    createdAt: baseDate,
-    processedAt: null,
     ...overrides,
   }
 }

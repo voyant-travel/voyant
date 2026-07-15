@@ -53,7 +53,6 @@ const reversalStateSchema = z.enum([
   "expired",
 ])
 const reversalOutcomeSchema = z.enum(["full", "partial", "failed"])
-const relayStatusSchema = z.enum(["pending", "processing", "succeeded", "failed", "dead_letter"])
 const redactionStatusSchema = z.enum(["none", "redacted", "tombstoned", "crypto_shredded"])
 
 const ledgerCursorSchema = z.object({ occurredAt: z.string().datetime(), id: z.string() })
@@ -130,23 +129,10 @@ const payloadDtoSchema = z.object({
   createdAt: z.string().datetime(),
   expiresAt: z.string().datetime().nullable(),
 })
-export const actionLedgerRelayDtoSchema = z.object({
-  id: z.string(),
-  actionId: z.string(),
-  organizationId: z.string().nullable(),
-  relayStatus: relayStatusSchema,
-  payloadRef: z.string().nullable(),
-  attemptCount: z.number().int().nonnegative(),
-  nextRetryAt: z.string().datetime().nullable(),
-  lastError: z.string().nullable(),
-  createdAt: z.string().datetime(),
-  processedAt: z.string().datetime().nullable(),
-})
 export const actionLedgerEntryDetailDtoSchema = actionLedgerEntryDtoSchema.extend({
   mutationDetail: mutationDetailDtoSchema.nullable(),
   sensitiveReadDetail: sensitiveReadDetailDtoSchema.nullable(),
   payloads: z.array(payloadDtoSchema),
-  relayOutbox: z.array(actionLedgerRelayDtoSchema),
 })
 
 export const actionApprovalDtoSchema = z.object({
@@ -244,14 +230,6 @@ const listDelegationsInputSchema = z.object({
   cursor: createdCursorSchema.optional(),
   limit: z.number().int().min(1).max(200).optional(),
 })
-const listRelayInputSchema = z.object({
-  actionId: z.string().trim().min(1).optional(),
-  organizationId: z.string().trim().min(1).optional(),
-  relayStatus: z.array(relayStatusSchema).min(1).optional(),
-  dueBefore: z.string().datetime().optional(),
-  cursor: createdCursorSchema.optional(),
-  limit: z.number().int().min(1).max(200).optional(),
-})
 const requestApprovalInputSchema = z.object({
   actionId: z.string().trim().min(1).describe("Stable id of a selected graph action."),
   actionVersion: z.string().trim().min(1).default("v1"),
@@ -270,7 +248,6 @@ export type ActionLedgerEntryDetailDto = z.infer<typeof actionLedgerEntryDetailD
 export type ActionApprovalDto = z.infer<typeof actionApprovalDtoSchema>
 export type ActionApprovalDetailDto = z.infer<typeof actionApprovalDetailDtoSchema>
 export type ActionDelegationDto = z.infer<typeof actionDelegationDtoSchema>
-export type ActionLedgerRelayDto = z.infer<typeof actionLedgerRelayDtoSchema>
 export type ListActionLedgerEntriesToolInput = z.infer<typeof listActionLedgerEntriesInputSchema>
 export type RequestActionApprovalToolInput = z.infer<typeof requestApprovalInputSchema>
 
@@ -294,10 +271,6 @@ export interface ActionLedgerToolServices {
     nextCursor: z.infer<typeof createdCursorSchema> | null
   }>
   getDelegation(id: string): Promise<ActionDelegationDto | null>
-  listRelayOutbox(input: z.infer<typeof listRelayInputSchema>): Promise<{
-    data: ActionLedgerRelayDto[]
-    nextCursor: z.infer<typeof createdCursorSchema> | null
-  }>
   requestApproval(input: RequestActionApprovalToolInput): Promise<{
     requestedAction: ActionLedgerEntryDto
     approval: ActionApprovalDto
@@ -355,7 +328,7 @@ export const listActionLedgerEntriesTool = defineTool({
 export const getActionLedgerEntryTool = defineTool({
   name: "get_action_ledger_entry",
   description:
-    "Read one staff-only audit record with mutation, sensitive-read, payload-reference, and relay metadata. Stored payload contents are not dereferenced.",
+    "Read one staff-only audit record with mutation, sensitive-read, and payload-reference metadata. Stored payload contents are not dereferenced.",
   inputSchema: getByIdInputSchema,
   outputSchema: actionLedgerEntryDetailDtoSchema,
   requiredScopes: ["action-ledger:read"],
@@ -444,23 +417,6 @@ export const getActionDelegationTool = defineTool({
   },
 })
 
-export const listActionRelayOutboxTool = defineTool({
-  name: "list_action_relay_outbox",
-  description:
-    "Inspect staff-only audit-relay delivery state and errors. Does not claim, retry, or mutate relay work.",
-  inputSchema: listRelayInputSchema,
-  outputSchema: z.object({
-    data: z.array(actionLedgerRelayDtoSchema),
-    nextCursor: createdCursorSchema.nullable(),
-  }),
-  requiredScopes: ["action-ledger:read"],
-  tier: "sensitive",
-  riskPolicy: READ_ONLY_RISK,
-  async handler(input, ctx: ActionLedgerToolContext) {
-    return service(ctx).listRelayOutbox(input)
-  },
-})
-
 export const requestActionApprovalTool = defineTool({
   name: "request_action_approval",
   description:
@@ -536,7 +492,6 @@ export const actionLedgerTools = [
   getActionApprovalTool,
   listActionDelegationsTool,
   getActionDelegationTool,
-  listActionRelayOutboxTool,
   requestActionApprovalTool,
   approveActionApprovalTool,
   denyActionApprovalTool,

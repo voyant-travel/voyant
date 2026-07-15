@@ -185,7 +185,6 @@ describe("action ledger route entry builders", () => {
           storageRef: "blob://action-ledger/book_1/cancel-input",
         },
       ],
-      enqueueRelay: { payloadRef: "blob://action-ledger/book_1" },
       mutationDetail: {
         summary: "Booking cancelled",
         reversalKind: "domain_command",
@@ -213,7 +212,6 @@ describe("action ledger route entry builders", () => {
           storageRef: "blob://action-ledger/book_1/cancel-input",
         },
       ],
-      enqueueRelay: { payloadRef: "blob://action-ledger/book_1" },
       mutationDetail: {
         summary: "Booking cancelled",
         reversalKind: "domain_command",
