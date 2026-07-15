@@ -76,7 +76,7 @@ export function createLegalToolServices(
   return {
     async listContracts(query) {
       const result = await contractsService.listContracts(db, query)
-      return { data: result.data.map(contractSummary), meta: result.meta }
+      return { data: result.data.map(contractSummary), meta: pageMeta(result) }
     },
     async getContract(id) {
       const row = await contractsService.getContractById(db, id)
@@ -101,7 +101,7 @@ export function createLegalToolServices(
     },
     async listTemplates(query) {
       const result = await contractsService.listTemplates(db, query)
-      return { data: result.data.map(templateSummary), meta: result.meta }
+      return { data: result.data.map(templateSummary), meta: pageMeta(result) }
     },
     async getTemplate(id) {
       const row = await contractsService.getTemplateById(db, id)
@@ -127,7 +127,7 @@ export function createLegalToolServices(
     },
     async listPolicies(query) {
       const result = await policiesService.listPolicies(db, query)
-      return { data: result.data.map(policySummary), meta: result.meta }
+      return { data: result.data.map(policySummary), meta: pageMeta(result) }
     },
     async getPolicy(id) {
       const policy = await policiesService.getPolicyById(db, id)
@@ -147,7 +147,7 @@ export function createLegalToolServices(
     },
     async listTerms(query) {
       const result = await legalTermsService.listTerms(db, query)
-      return { data: result.data.map(termDto), meta: result.meta }
+      return { data: result.data.map(termDto), meta: pageMeta(result) }
     },
     async getTerm(id) {
       const row = await legalTermsService.getTermById(db, id)
@@ -195,6 +195,10 @@ export function createLegalToolServices(
       return contractDetail(result.contract)
     },
   }
+}
+
+function pageMeta(result: { total: number; limit: number; offset: number }) {
+  return { total: result.total, limit: result.limit, offset: result.offset }
 }
 
 export function createLegalContractDocumentToolServices(input: {
