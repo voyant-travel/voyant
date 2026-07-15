@@ -51,10 +51,20 @@ export function createAdminHostExtensions({
   navMessages,
   discovered = [],
 }: CreateAdminHostExtensionsOptions): ReadonlyArray<AdminExtension> {
-  const selectedExtensions = selected({ navMessages })
+  const selectedExtensions = uniqueExtensionsById(selected({ navMessages }))
   const settingsPages = selectedExtensions.flatMap((extension) => extension.settingsPages ?? [])
 
   return createAdminExtensionRegistry(core(settingsPages), ...selectedExtensions, ...discovered)
+}
+
+function uniqueExtensionsById(
+  extensions: ReadonlyArray<AdminExtension>,
+): ReadonlyArray<AdminExtension> {
+  const unique = new Map<string, AdminExtension>()
+  for (const extension of extensions) {
+    if (!unique.has(extension.id)) unique.set(extension.id, extension)
+  }
+  return [...unique.values()]
 }
 
 /** Build the standard selected-graph presentation with optional project-local extensions. */
