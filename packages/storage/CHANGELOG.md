@@ -1,5 +1,15 @@
 # @voyant-travel/storage
 
+## 0.111.0
+
+### Minor Changes
+
+- 8f0fa26: Make Hono the explicit sole server API runtime while moving package and
+  deployment interfaces to role-based API vocabulary. Replace Hono-prefixed module,
+  extension, bundle, lazy-route, and factory names with `Api*` names; move
+  router-named domain runtime entry points to `./api-runtime`; and remove the old
+  names without compatibility aliases.
+
 ## 0.110.2
 
 ### Patch Changes

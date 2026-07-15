@@ -1,5 +1,11 @@
 # @voyant-travel/db
 
+## 0.114.8
+
+### Patch Changes
+
+- @voyant-travel/workflows@0.122.0
+
 ## 0.114.7
 
 ### Patch Changes
