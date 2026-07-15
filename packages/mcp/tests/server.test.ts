@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import {
   createToolRegistry,
+  defineToolContextContribution,
   defineTool,
   READ_ONLY_RISK,
   type ToolContext,
@@ -71,6 +72,15 @@ const accessCatalog = {
   ],
   presets: [],
 }
+
+const testActionPolicyContribution = defineToolContextContribution({
+  context: ["toolActionPolicy"],
+  contribute: () => ({
+    toolActionPolicy: {
+      execute: (_input, dispatch) => dispatch(),
+    },
+  }),
+})
 
 const MCP_HEADERS = {
   "content-type": "application/json",
@@ -218,12 +228,24 @@ async function selectedRuntimeRoutes() {
       accessCatalog,
       providerSelections: {},
       tools: [runtimeTool],
+      actions: [
+        {
+          id: "@voyant-travel/test#action.echo",
+          version: "v1",
+          kind: "read",
+          targetType: "echo",
+          risk: "low",
+          ledger: "optional",
+          approval: "never",
+          from: { tools: ["@voyant-travel/test#tool.echo"] },
+        },
+      ],
       references: [
         {
           id: "test-tools",
           importEntry: "@voyant-travel/test/tools",
           async loadModule<T extends Record<string, unknown>>() {
-            return {} as T
+            return { voyantToolContextContribution: testActionPolicyContribution } as T
           },
         },
       ],
