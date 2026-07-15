@@ -76,6 +76,31 @@ describe.skipIf(!DB_AVAILABLE)("availability hold lifecycle", () => {
     expect(rows).toHaveLength(1)
   })
 
+  it("reconciles capacity when a replay changes the passenger count", async () => {
+    const input = {
+      draftId: "draft_resized",
+      productId,
+      slotId,
+      paxCount: 2,
+      ttlMs: 30 * 60 * 1000,
+      holdToken: "draft_resized",
+    }
+
+    await placeAvailabilityHold(db, input)
+    const increased = await placeAvailabilityHold(db, { ...input, paxCount: 4 })
+    const decreased = await placeAvailabilityHold(db, { ...input, paxCount: 1 })
+
+    expect(increased.status).toBe("ok")
+    expect(decreased.status).toBe("ok")
+    expect(await remainingPax()).toBe(11)
+    const rows = await db
+      .select()
+      .from(availabilityHolds)
+      .where(eq(availabilityHolds.holdToken, input.holdToken))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.paxCount).toBe(1)
+  })
+
   it("releases every matching live hold and restores their capacity", async () => {
     await db.insert(availabilityHolds).values([
       {
@@ -144,5 +169,45 @@ describe.skipIf(!DB_AVAILABLE)("availability hold lifecycle", () => {
       .from(availabilityHolds)
       .where(isNull(availabilityHolds.releasedAt))
     expect(liveRows).toHaveLength(0)
+  })
+
+  it("does not release an unexpired hold that shares an expired hold token", async () => {
+    await db.insert(availabilityHolds).values([
+      {
+        draftId: "draft_expired_shared",
+        holdToken: "shared_token",
+        productId,
+        slotId,
+        paxCount: 2,
+        expiresAt: new Date("2026-07-31T23:00:00Z"),
+      },
+      {
+        draftId: "draft_live_shared",
+        holdToken: "shared_token",
+        productId,
+        slotId,
+        paxCount: 1,
+        expiresAt: new Date("2026-08-01T01:00:00Z"),
+      },
+    ])
+    await db
+      .update(availabilitySlots)
+      .set({ remainingPax: 9 })
+      .where(eq(availabilitySlots.id, slotId))
+
+    const released = await releaseExpiredHolds(db, new Date("2026-08-01T00:00:00Z"))
+
+    expect(released).toBe(1)
+    expect(await remainingPax()).toBe(11)
+    const rows = await db
+      .select()
+      .from(availabilityHolds)
+      .where(eq(availabilityHolds.holdToken, "shared_token"))
+    expect(
+      rows.find((row: { draftId: string }) => row.draftId === "draft_expired_shared")?.releasedAt,
+    ).toBeInstanceOf(Date)
+    expect(
+      rows.find((row: { draftId: string }) => row.draftId === "draft_live_shared")?.releasedAt,
+    ).toBeNull()
   })
 })

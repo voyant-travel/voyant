@@ -85,7 +85,37 @@ export async function placeAvailabilityHold(
       .limit(1)
 
     if (existing) {
-      return { status: "ok" as const, hold: existing }
+      const paxDelta = input.paxCount - existing.paxCount
+
+      if (!slot.unlimited && paxDelta > 0) {
+        const remaining = slot.remainingPax ?? 0
+        if (remaining < paxDelta) {
+          return {
+            status: "insufficient_capacity" as const,
+            remaining: remaining + existing.paxCount,
+            needed: input.paxCount,
+          }
+        }
+      }
+
+      if (!slot.unlimited && paxDelta !== 0) {
+        await tx
+          .update(availabilitySlots)
+          .set({
+            // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            remainingPax: sql`${availabilitySlots.remainingPax} - ${paxDelta}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(availabilitySlots.id, input.slotId))
+      }
+
+      const [updated] = await tx
+        .update(availabilityHolds)
+        .set({ paxCount: input.paxCount, expiresAt, updatedAt: new Date() })
+        .where(eq(availabilityHolds.id, existing.id))
+        .returning()
+      if (!updated) throw new Error("placeAvailabilityHold: update returned no rows")
+      return { status: "ok" as const, hold: updated }
     }
 
     if (slot.unlimited) {
@@ -252,22 +282,60 @@ export async function releaseExpiredHolds(
   db: PostgresJsDatabase,
   cutoff: Date = new Date(),
 ): Promise<number> {
-  const expired = await db
-    .select({ holdToken: availabilityHolds.holdToken })
-    .from(availabilityHolds)
-    .where(
-      and(
-        lt(availabilityHolds.expiresAt, cutoff),
-        isNull(availabilityHolds.releasedAt),
-        isNull(availabilityHolds.convertedAt),
-      ),
-    )
+  return db.transaction(async (tx) => {
+    const expired = await tx
+      .select()
+      .from(availabilityHolds)
+      .where(
+        and(
+          lt(availabilityHolds.expiresAt, cutoff),
+          isNull(availabilityHolds.releasedAt),
+          isNull(availabilityHolds.convertedAt),
+        ),
+      )
+      .orderBy(asc(availabilityHolds.slotId), asc(availabilityHolds.createdAt))
+      .for("update")
 
-  let released = 0
-  for (const holdToken of new Set(expired.map((row) => row.holdToken))) {
-    released += await releaseAvailabilityHoldsByToken(db, holdToken)
-  }
-  return released
+    if (expired.length === 0) return 0
+
+    const paxBySlot = new Map<string, number>()
+    for (const hold of expired) {
+      paxBySlot.set(hold.slotId, (paxBySlot.get(hold.slotId) ?? 0) + hold.paxCount)
+    }
+
+    for (const [slotId, paxCount] of paxBySlot) {
+      const [slot] = await tx
+        .select({ unlimited: availabilitySlots.unlimited })
+        .from(availabilitySlots)
+        .where(eq(availabilitySlots.id, slotId))
+        .for("update")
+        .limit(1)
+
+      if (slot && !slot.unlimited) {
+        await tx
+          .update(availabilitySlots)
+          .set({
+            // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            remainingPax: sql`${availabilitySlots.remainingPax} + ${paxCount}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(availabilitySlots.id, slotId))
+      }
+    }
+
+    const now = new Date()
+    await tx
+      .update(availabilityHolds)
+      .set({ releasedAt: now, updatedAt: now })
+      .where(
+        inArray(
+          availabilityHolds.id,
+          expired.map((hold) => hold.id),
+        ),
+      )
+
+    return expired.length
+  })
 }
 
 /**
