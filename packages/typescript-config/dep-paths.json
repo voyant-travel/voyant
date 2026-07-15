@@ -193,10 +193,10 @@
       "@voyant-travel/auth/node-runtime": ["../auth/dist/node-runtime.d.ts"],
       "@voyant-travel/auth/permissions": ["../auth/dist/permissions.d.ts"],
       "@voyant-travel/auth/runtime-contributor": ["../auth/dist/runtime-contributor.d.ts"],
+      "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
       "@voyant-travel/auth/team-management-runtime-port": [
         "../auth/dist/team-management-runtime-port.d.ts"
       ],
-      "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
       "@voyant-travel/auth/voyant": ["../auth/dist/voyant.d.ts"],
       "@voyant-travel/auth/workspace": ["../auth/dist/workspace.d.ts"],
       "@voyant-travel/availability": ["../availability/dist/index.d.ts"],
