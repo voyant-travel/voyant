@@ -27,6 +27,10 @@ describe("navigation preferences admin contribution", () => {
     expect(extension.navigationPreferences?.queryKey("member-b")).not.toEqual(
       extension.navigationPreferences?.queryKey("member-a"),
     )
+    expect(extension.setupSteps?.[0]).toMatchObject({
+      id: "@voyant-travel/navigation-preferences#setup.organization-navigation",
+      href: "/settings/navigation",
+    })
     await expect(
       extension.navigationPreferences?.load({ baseUrl: "/api", fetcher }),
     ).resolves.toEqual({

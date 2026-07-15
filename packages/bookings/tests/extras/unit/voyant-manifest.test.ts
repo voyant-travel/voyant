@@ -84,6 +84,7 @@ function runtimeContext(api: readonly { id: string; surface: "admin" }[]) {
       providerSelections: {},
       accessCatalog: { resources: [], presets: [] },
       references: [],
+      setupSteps: [],
       tools: [],
     },
     runtimePorts: {},

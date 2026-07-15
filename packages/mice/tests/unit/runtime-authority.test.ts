@@ -27,6 +27,7 @@ describe("MICE deployment authority", () => {
         providerSelections: {},
         accessCatalog: { resources: [], presets: [] },
         references: [],
+        setupSteps: [],
         tools: [],
       },
       runtimePorts: {},

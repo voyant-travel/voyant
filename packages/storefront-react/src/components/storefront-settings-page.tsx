@@ -1,5 +1,6 @@
 "use client"
 
+import { consumeAdminSetupPrefill } from "@voyant-travel/admin"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { useEffect, useMemo, useState } from "react"
 import { useAdminStorefrontSettings, useAdminStorefrontSettingsMutation } from "../index.js"
@@ -25,6 +26,10 @@ import {
   StorefrontSettingsSaveError,
   SupportSection,
 } from "../internal/storefront-settings-sections.js"
+import {
+  mergeStorefrontSetupPrefill,
+  STOREFRONT_BRANDING_SETUP_STEP_ID,
+} from "../internal/storefront-setup-prefill.js"
 
 export interface StorefrontSettingsPageProps {
   className?: string
@@ -35,13 +40,14 @@ export function StorefrontSettingsPage({ className }: StorefrontSettingsPageProp
   const mutation = useAdminStorefrontSettingsMutation()
   const [form, setForm] = useState<FormState>(emptyForm)
   const [localError, setLocalError] = useState<string | null>(null)
+  const [setupPrefill] = useState(() => consumeAdminSetupPrefill(STOREFRONT_BRANDING_SETUP_STEP_ID))
 
   useEffect(() => {
     if (settingsQuery.data?.data) {
-      setForm(toFormState(settingsQuery.data.data))
+      setForm(mergeStorefrontSetupPrefill(toFormState(settingsQuery.data.data), setupPrefill))
       setLocalError(null)
     }
-  }, [settingsQuery.data?.data])
+  }, [settingsQuery.data?.data, setupPrefill])
 
   const isEmpty = useMemo(() => hasEmptySettings(settingsQuery.data?.data), [settingsQuery.data])
   const isSaving = mutation.isPending

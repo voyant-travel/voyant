@@ -99,6 +99,26 @@ Rule:
 Admin pages contributed by packages should be treated as a supported extension
 surface.
 
+### Setup guidance composes from the selected admin graph
+
+Packages may contribute setup steps through `AdminExtension.setupSteps`. Step
+IDs, ordering, completion predicates, prefill interpretation, and actions stay
+package-owned. The admin host composes only selected extensions and delegates
+organization-level setup persistence to one selected `setupFlow` contribution.
+Each contributing package also declares the stable step ID and `skippable`
+policy in `admin.setupSteps`. Selected graph metadata is the server-side
+authority for persistence, so clients cannot admit steps or relax required-step
+policy.
+
+The setup shell may persist setup lifecycle state, but it must use existing
+package surfaces for domain changes. Fresh-instance inference may seed the
+persisted state once; it must not remain the source of truth or gate access to
+the rest of the admin.
+
+Rule:
+
+Setup is selected-graph guidance, not a central package catalog or a boot gate.
+
 ### 6. Navigation contributions should stay narrow and predictable
 
 The admin should allow packages to contribute navigation entries without

@@ -42,6 +42,7 @@ export interface GeneratedRuntimeUnitDefinition {
   tools: VoyantGraphRuntimeToolDefinition[]
   workflows: VoyantGraphRuntimeWorkflowDefinition[]
   actions: VoyantGraphRuntimeActionDefinition[]
+  setupSteps: { id: string; skippable: boolean }[]
   selectedIds: {
     routes: string[]
     tools: string[]
@@ -185,6 +186,10 @@ export function lowerGraphRuntimeUnits(
         tools,
         workflows,
         actions,
+        setupSteps: (unit.admin?.setupSteps ?? []).map(({ id, skippable }) => ({
+          id,
+          skippable,
+        })),
         selectedIds: {
           routes: unit.api.map(({ id }) => id).sort(),
           tools: (unit.tools ?? []).map(({ id }) => id).sort(),

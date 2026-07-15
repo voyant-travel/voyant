@@ -29,6 +29,10 @@ describe("createInventoryAdminExtension", () => {
       ],
     })
     expect(extension.navigation?.[0]?.items[0]?.icon).toBeDefined()
+    expect(extension.setupSteps?.[0]).toMatchObject({
+      id: "@voyant-travel/inventory#setup.first-product",
+    })
+    expect(extension.setupSteps?.[0]?.actionComponent).toBeTypeOf("function")
     expect(productDetailOptionExtrasSlot).toBe("product.details.option-extras")
     expect(inventoryVoyantModule.admin?.slots?.map((slot) => slot.id)).toContain(
       productDetailOptionExtrasSlot,

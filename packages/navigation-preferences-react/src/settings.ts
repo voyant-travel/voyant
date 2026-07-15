@@ -1,5 +1,6 @@
 import {
   type AdminExtension,
+  type AdminRouteLoaderContext,
   adminRoutePageModule,
   defineAdminExtension,
 } from "@voyant-travel/admin/extensions"
@@ -33,5 +34,34 @@ export function createSelectedNavigationPreferencesAdminExtension(): AdminExtens
           })),
       },
     ],
+    setupSteps: [
+      {
+        id: "@voyant-travel/navigation-preferences#setup.organization-navigation",
+        order: 50,
+        skippable: true,
+        href: "/settings/navigation",
+        messages: {
+          en: {
+            title: "Workspace navigation",
+            description: "Choose which product areas your team sees in the main navigation.",
+            action: "Choose navigation",
+          },
+          ro: {
+            title: "Navigarea spatiului de lucru",
+            description: "Alege zonele de produs afisate echipei in navigarea principala.",
+            action: "Alege navigarea",
+          },
+        },
+        isComplete: hasOrganizationNavigation,
+      },
+    ],
   })
+}
+
+async function hasOrganizationNavigation(context: AdminRouteLoaderContext): Promise<boolean> {
+  const preferences = await loadNavigationPreferences({
+    baseUrl: context.runtime.baseUrl,
+    fetcher: context.runtime.fetcher ?? fetch,
+  })
+  return Object.keys(preferences.organization).length > 0
 }

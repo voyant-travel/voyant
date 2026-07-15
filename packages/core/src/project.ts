@@ -170,6 +170,10 @@ export interface VoyantGraphRuntimeFactoryGraph {
     readonly importEntry: string
     loadModule<T extends Record<string, unknown> = Record<string, unknown>>(): Promise<T>
   }[]
+  readonly setupSteps: readonly {
+    readonly id: string
+    readonly skippable: boolean
+  }[]
 }
 
 export interface VoyantGraphRuntimeFactoryContext {

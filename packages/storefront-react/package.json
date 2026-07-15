@@ -11,6 +11,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
@@ -36,6 +37,7 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyant-travel/admin": "workspace:^",
     "@tanstack/react-router": "^1.170.17",
     "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
@@ -49,6 +51,9 @@
     "zod": "^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@voyant-travel/admin": {
+      "optional": true
+    },
     "@voyant-travel/accommodations": {
       "optional": true
     },
@@ -77,6 +82,7 @@
     "@tanstack/react-router": "^1.170.17",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/accommodations": "workspace:^",
     "@voyant-travel/auth-react": "workspace:^",
     "@voyant-travel/catalog-contracts": "workspace:^",
@@ -103,6 +109,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin.d.ts",
+        "import": "./dist/admin.js",
+        "default": "./dist/admin.js"
       },
       "./provider": {
         "types": "./dist/provider.d.ts",

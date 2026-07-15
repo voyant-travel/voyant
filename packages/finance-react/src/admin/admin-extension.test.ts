@@ -69,6 +69,10 @@ describe("createFinanceAdminExtension", () => {
       ],
     })
     expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
+    expect(selected.setupSteps?.[0]).toMatchObject({
+      id: "@voyant-travel/finance#setup.fiscal-settings",
+      href: "/settings/taxes",
+    })
   })
 
   it("falls back to stable English selected navigation copy", () => {

@@ -70,6 +70,12 @@ export const navigationPreferencesVoyantModule = defineModule({
   },
   admin: {
     compositionOrder: 15,
+    setupSteps: [
+      {
+        id: "@voyant-travel/navigation-preferences#setup.organization-navigation",
+        skippable: true,
+      },
+    ],
     runtime: adminRuntime,
     routes: [
       {

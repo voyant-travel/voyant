@@ -84,5 +84,10 @@ describe("standard package manifests", () => {
         (selection) => selection.resolve === "@voyant-travel/navigation-preferences",
       ),
     ).toEqual({ resolve: "@voyant-travel/navigation-preferences", required: true })
+    expect(
+      STANDARD_OPERATOR_DISTRIBUTION_POLICY.modules.find(
+        (selection) => selection.resolve === "@voyant-travel/setup",
+      ),
+    ).toEqual({ resolve: "@voyant-travel/setup", required: true })
   })
 })

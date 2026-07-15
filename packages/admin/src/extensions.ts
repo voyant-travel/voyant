@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: admin; extension contribution contracts and registry resolution remain co-located until a dedicated contract-module split preserves the public API.
 import type { QueryClient } from "@tanstack/react-query"
 import type * as React from "react"
 
@@ -244,6 +245,102 @@ export interface AdminSettingsPageContribution {
   ssr?: boolean | "data-only"
 }
 
+export interface AdminSetupStepMessages {
+  title: string
+  description: string
+  action: string
+}
+
+export interface AdminSetupStepActionProps {
+  label: string
+  prefill: unknown
+}
+
+const ADMIN_SETUP_STEP_PARAM = "voyantSetupStep"
+const ADMIN_SETUP_PREFILL_PREFIX = "voyant.setup.prefill:"
+
+/** Add a non-sensitive step marker to a setup destination URL. */
+export function createAdminSetupPrefillHref(href: string, stepId: string): string {
+  const url = new URL(href, "https://voyant.invalid")
+  url.searchParams.set(ADMIN_SETUP_STEP_PARAM, stepId)
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
+/** Keep opaque provisioning values out of URLs while navigating to an owned form. */
+export function storeAdminSetupPrefill(
+  stepId: string,
+  value: unknown,
+  storage: Pick<Storage, "setItem"> | undefined = browserSessionStorage(),
+): void {
+  if (value === undefined || !storage) return
+  storage.setItem(`${ADMIN_SETUP_PREFILL_PREFIX}${stepId}`, JSON.stringify(value))
+}
+
+/** Consume prefill only when the current URL explicitly identifies the expected setup step. */
+export function consumeAdminSetupPrefill(
+  stepId: string,
+  search: string | undefined = browserLocationSearch(),
+  storage: Pick<Storage, "getItem" | "removeItem"> | undefined = browserSessionStorage(),
+): unknown {
+  if (!search || !storage || new URLSearchParams(search).get(ADMIN_SETUP_STEP_PARAM) !== stepId) {
+    return undefined
+  }
+  const key = `${ADMIN_SETUP_PREFILL_PREFIX}${stepId}`
+  const serialized = storage.getItem(key)
+  if (serialized === null) return undefined
+  storage.removeItem(key)
+  try {
+    return JSON.parse(serialized) as unknown
+  } catch {
+    return undefined
+  }
+}
+
+function browserSessionStorage(): Storage | undefined {
+  return typeof window === "undefined" ? undefined : window.sessionStorage
+}
+
+function browserLocationSearch(): string | undefined {
+  return typeof window === "undefined" ? undefined : window.location.search
+}
+
+/** Package-owned guidance shown by the selected setup flow. */
+export interface AdminSetupStepContribution {
+  /** Globally stable package-owned identifier. */
+  id: string
+  order: number
+  skippable: boolean
+  messages: Readonly<Record<string, AdminSetupStepMessages>>
+  /** Existing package surface used to carry out this step. */
+  href?: string
+  /** Use when the action must resolve a semantic destination. */
+  actionComponent?: React.ComponentType<AdminSetupStepActionProps>
+  /** Read-only domain predicate. The setup shell persists a positive result. */
+  isComplete: (context: AdminRouteLoaderContext) => boolean | Promise<boolean>
+  /** Validate or narrow the opaque provisioning value before handing it to the action. */
+  prefill?: (value: unknown) => unknown
+}
+
+export interface AdminSetupInitializeInput {
+  stepIds: readonly string[]
+  fresh: boolean
+}
+
+export interface AdminSetupInitializeResult {
+  redirectTo?: string
+}
+
+/** Package-owned setup persistence/controller attached to the selected admin graph. */
+export interface AdminSetupFlowContribution {
+  id: string
+  /** Resolve whether the current actor may persist setup state. */
+  canInitialize: (context: AdminRouteLoaderContext) => Promise<boolean>
+  initialize: (
+    context: AdminRouteLoaderContext,
+    input: AdminSetupInitializeInput,
+  ) => Promise<AdminSetupInitializeResult>
+}
+
 /** Shell chrome slot rendered in the workspace header's right action area. */
 export const adminWorkspaceHeaderActionsSlot = "workspace.header.actions" satisfies AdminWidgetSlot
 
@@ -260,6 +357,8 @@ export interface AdminExtension {
   navigationPreferences?: AdminNavigationPreferencesContribution
   routes?: ReadonlyArray<AdminUiRouteContribution>
   settingsPages?: ReadonlyArray<AdminSettingsPageContribution>
+  setupSteps?: ReadonlyArray<AdminSetupStepContribution>
+  setupFlow?: AdminSetupFlowContribution
   widgets?: ReadonlyArray<AnyAdminWidgetContribution>
 }
 
@@ -408,6 +507,41 @@ export function createAdminExtensionRegistry(
   ...extensions: ReadonlyArray<AdminExtension>
 ): ReadonlyArray<AdminExtension> {
   return extensions
+}
+
+/** Resolve only the setup steps present in the composed selected extension set. */
+export function resolveAdminSetupSteps(
+  extensions: ReadonlyArray<AdminExtension>,
+): AdminSetupStepContribution[] {
+  const steps = extensions.flatMap((extension) => extension.setupSteps ?? [])
+  const seen = new Set<string>()
+  for (const step of steps) {
+    if (seen.has(step.id)) {
+      throw new Error(`[voyant-admin] Duplicate setup step id "${step.id}".`)
+    }
+    seen.add(step.id)
+  }
+  return steps
+    .map((step, index) => ({ step, index }))
+    .sort((a, b) => a.step.order - b.step.order || a.index - b.index)
+    .map(({ step }) => step)
+}
+
+/** A composed admin may select one setup-state owner. */
+export function resolveAdminSetupFlow(
+  extensions: ReadonlyArray<AdminExtension>,
+): AdminSetupFlowContribution | undefined {
+  const flows = extensions.flatMap((extension) =>
+    extension.setupFlow ? [extension.setupFlow] : [],
+  )
+  if (flows.length > 1) {
+    throw new Error(
+      `[voyant-admin] Expected one setup flow contribution, received: ${flows
+        .map((flow) => flow.id)
+        .join(", ")}.`,
+    )
+  }
+  return flows[0]
 }
 
 type OrderedValue<T> = {

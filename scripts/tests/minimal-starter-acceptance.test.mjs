@@ -58,6 +58,9 @@ test("legacy minimal starter serves project API and SSR routes without direct fr
       ],
       app,
     )
+    for (const dependency of ["@voyant-travel/admin", "@voyant-travel/admin-app"]) {
+      removeReleasePeerFixture(app, dependency)
+    }
     assertNonHoistedConsumerLayout(app)
     assertPublishedPackageLayout(app)
     write(app, "src/api/admin/health/route.ts", "export const GET = (c) => c.json({ ok: true })\n")
@@ -318,6 +321,12 @@ function useInstalledToolingArtifacts(app, publishedPackages) {
     `file:${publishedPackages.get("@voyant-travel/framework")}`
   packageJson.dependencies["@voyant-travel/runtime"] =
     `file:${publishedPackages.get("@voyant-travel/runtime")}`
+  // Changesets publishes Admin and its consumers together. Pin both local
+  // tarballs during this pre-release install so pnpm cannot combine either one
+  // with a same-version, pre-change registry package.
+  for (const dependency of ["@voyant-travel/admin", "@voyant-travel/admin-app"]) {
+    packageJson.dependencies[dependency] = `file:${publishedPackages.get(dependency)}`
+  }
   packageJson.pnpm = {
     ...packageJson.pnpm,
     overrides: {
@@ -338,6 +347,14 @@ function useInstalledToolingArtifacts(app, publishedPackages) {
     )}`
   }
   writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+}
+
+function removeReleasePeerFixture(app, dependency) {
+  const packageJsonPath = join(app, "package.json")
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+  delete packageJson.dependencies[dependency]
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+  rmSync(join(app, "node_modules", ...dependency.split("/")), { force: true })
 }
 
 function assertNonHoistedConsumerLayout(app) {

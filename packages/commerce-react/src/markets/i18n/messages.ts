@@ -3,6 +3,12 @@ import type { CreateMarketInput } from "../index.js"
 export type MarketStatus = NonNullable<CreateMarketInput["status"]>
 
 export type MarketsUiMessages = {
+  settingsPage: {
+    title: string
+    description: string
+    empty: string
+    add: string
+  }
   common: {
     cancel: string
     saveChanges: string

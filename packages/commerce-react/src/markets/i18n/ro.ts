@@ -1,6 +1,12 @@
 import type { MarketsUiMessages } from "./messages.js"
 
 export const marketsUiRo = {
+  settingsPage: {
+    title: "Piete",
+    description: "Gestioneaza regiunile de vanzare, limbile, monedele si contextul fiscal.",
+    empty: "Nu exista piete configurate.",
+    add: "Adauga piata",
+  },
   common: {
     cancel: "Anuleaza",
     saveChanges: "Salveaza Modificarile",

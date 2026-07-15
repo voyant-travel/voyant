@@ -8,6 +8,8 @@ import {
   findAdminRouteContribution,
   requireImplementedAdminRoute,
   resolveAdminNavigation,
+  resolveAdminSetupFlow,
+  resolveAdminSetupSteps,
   resolveAdminWidgets,
 } from "../../src/extensions.js"
 
@@ -78,6 +80,64 @@ describe("admin extensions", () => {
     const widgets = resolveAdminWidgets({ slot: "booking.details.sidebar", extensions })
 
     expect(widgets.map((widget) => widget.id)).toEqual(["audit", "status"])
+  })
+
+  it("resolves setup steps only from composed extensions in stable order", () => {
+    const step = (id: string, order: number) => ({
+      id,
+      order,
+      skippable: true,
+      messages: { en: { title: id, description: id, action: id } },
+      isComplete: () => false,
+    })
+    const selected = [
+      defineAdminExtension({ id: "inventory", setupSteps: [step("inventory.first", 20)] }),
+      defineAdminExtension({ id: "profile", setupSteps: [step("profile.business", 10)] }),
+    ]
+
+    expect(resolveAdminSetupSteps(selected).map(({ id }) => id)).toEqual([
+      "profile.business",
+      "inventory.first",
+    ])
+    expect(resolveAdminSetupSteps(selected.slice(0, 1)).map(({ id }) => id)).toEqual([
+      "inventory.first",
+    ])
+  })
+
+  it("rejects duplicate setup steps and setup state owners", () => {
+    const contribution = {
+      id: "duplicate",
+      order: 1,
+      skippable: true,
+      messages: { en: { title: "Duplicate", description: "Duplicate", action: "Duplicate" } },
+      isComplete: () => false,
+    }
+    expect(() =>
+      resolveAdminSetupSteps([
+        defineAdminExtension({ id: "one", setupSteps: [contribution] }),
+        defineAdminExtension({ id: "two", setupSteps: [contribution] }),
+      ]),
+    ).toThrow(/Duplicate setup step/)
+    expect(() =>
+      resolveAdminSetupFlow([
+        defineAdminExtension({
+          id: "one",
+          setupFlow: {
+            id: "one",
+            canInitialize: async () => true,
+            initialize: async () => ({}),
+          },
+        }),
+        defineAdminExtension({
+          id: "two",
+          setupFlow: {
+            id: "two",
+            canInitialize: async () => true,
+            initialize: async () => ({}),
+          },
+        }),
+      ]),
+    ).toThrow(/Expected one setup flow/)
   })
 
   it("accepts a redirect contribution as implemented", () => {

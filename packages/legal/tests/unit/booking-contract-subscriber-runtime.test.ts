@@ -143,6 +143,7 @@ describe("Legal booking-contract subscriber runtime", () => {
         providerSelections: {},
         accessCatalog: { resources: [], presets: [] },
         references: [],
+        setupSteps: [],
         tools: [],
       },
       runtimePorts: {},
