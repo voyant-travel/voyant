@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-
+import { mergeOperatorProfileSetupPrefill } from "./operator-profile-setup-prefill.js"
 import { createSelectedOperatorSettingsAdminExtension } from "./settings.js"
 
 describe("operator setup contribution", () => {
@@ -22,5 +22,14 @@ describe("operator setup contribution", () => {
       }),
     ).resolves.toBe(true)
     expect(fetcher).toHaveBeenCalledWith("/api/v1/admin/settings/operator-profile")
+  })
+
+  it("validates and initializes empty business identity fields without overwriting data", () => {
+    expect(
+      mergeOperatorProfileSetupPrefill(
+        { name: "Persisted", legalName: "", email: "" },
+        { name: "Provisioned", legalName: "Acme SRL", email: 42, ignored: "value" },
+      ),
+    ).toEqual({ name: "Persisted", legalName: "Acme SRL", email: "" })
   })
 })

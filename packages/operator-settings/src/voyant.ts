@@ -98,6 +98,12 @@ export const operatorSettingsVoyantModule = defineModule({
   },
   admin: {
     compositionOrder: 10,
+    setupSteps: [
+      {
+        id: "@voyant-travel/operator-settings#setup.business-profile",
+        skippable: true,
+      },
+    ],
     runtime: operatorSettingsAdminRuntime,
     routes: [
       {

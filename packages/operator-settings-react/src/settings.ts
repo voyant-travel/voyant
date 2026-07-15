@@ -7,6 +7,11 @@ import {
 import type { AdminCoreSettingsExtraPage } from "@voyant-travel/admin-app/core-extension"
 import { Building } from "lucide-react"
 
+import {
+  OPERATOR_PROFILE_SETUP_STEP_ID,
+  parseOperatorProfileSetupPrefill,
+} from "./operator-profile-setup-prefill.js"
+
 /**
  * Options for {@link createOperatorProfileSettingsExtraPage}. All optional —
  * the defaults reproduce the operator starter's placement (General group,
@@ -55,7 +60,7 @@ export function createSelectedOperatorSettingsAdminExtension(): AdminExtension {
     settingsPages: [createOperatorProfileSettingsExtraPage()],
     setupSteps: [
       {
-        id: "@voyant-travel/operator-settings#setup.business-profile",
+        id: OPERATOR_PROFILE_SETUP_STEP_ID,
         order: 10,
         skippable: true,
         href: "/settings/operator",
@@ -72,7 +77,7 @@ export function createSelectedOperatorSettingsAdminExtension(): AdminExtension {
             action: "Deschide setarile operatorului",
           },
         },
-        prefill: objectPrefill,
+        prefill: parseOperatorProfileSetupPrefill,
         isComplete: hasBusinessProfile,
       },
     ],
@@ -86,8 +91,4 @@ async function hasBusinessProfile({ runtime }: AdminRouteLoaderContext): Promise
   if (!response.ok) return false
   const profile = ((await response.json()) as { data?: Record<string, unknown> | null }).data
   return Boolean(profile?.name && (profile.email || profile.phone || profile.address))
-}
-
-function objectPrefill(value: unknown): unknown {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : undefined
 }

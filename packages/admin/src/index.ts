@@ -149,7 +149,9 @@ export {
   adminRoutePageModule,
   adminWorkspaceHeaderActionsSlot,
   type BindableAdminRoute,
+  consumeAdminSetupPrefill,
   createAdminExtensionRegistry,
+  createAdminSetupPrefillHref,
   defineAdminExtension,
   findAdminRouteContribution,
   type ImplementedAdminRoute,
@@ -163,6 +165,7 @@ export {
   resolveAdminWidgets,
   type SelectedAdminExtensionFactory,
   type SelectedAdminExtensionFactoryContext,
+  storeAdminSetupPrefill,
 } from "./extensions.js"
 export {
   composeLocaleMessageDefinitions,

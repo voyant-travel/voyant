@@ -1,4 +1,6 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": { "noEmit": true }
+  "extends": ["./tsconfig.json", "../typescript-config/dep-paths.json"],
+  "compilerOptions": {
+    "noEmit": true
+  }
 }

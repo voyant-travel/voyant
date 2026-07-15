@@ -3,10 +3,13 @@ import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { HonoModule } from "@voyant-travel/hono/module"
 
+import { type SetupStepDefinition, setupStepDefinitionSchema } from "./contracts.js"
+
 export const SETUP_ROUTE_PATHS = ["/v1/admin/setup", "/v1/admin/setup/*"] as const
 
 export interface SetupHonoModuleOptions {
   prefill?: Readonly<Record<string, unknown>>
+  steps?: readonly SetupStepDefinition[]
 }
 
 export function createSetupHonoModule(options: SetupHonoModuleOptions = {}): HonoModule {
@@ -17,16 +20,34 @@ export function createSetupHonoModule(options: SetupHonoModuleOptions = {}): Hon
       load: () =>
         import("./routes.js").then((module) => {
           const app = new OpenAPIHono({ defaultHook: openApiValidationHook })
-          app.route("/", module.createSetupRoutes({ prefill: options.prefill }))
+          app.route(
+            "/",
+            module.createSetupRoutes({ prefill: options.prefill, steps: options.steps }),
+          )
           return app
         }),
     },
   }
 }
 
-export const createSetupVoyantRuntime = defineGraphRuntimeFactory(({ projectConfig }) =>
-  createSetupHonoModule({ prefill: readSetupPrefill(projectConfig.prefill) }),
+export const createSetupVoyantRuntime = defineGraphRuntimeFactory(({ projectConfig, graph }) =>
+  createSetupHonoModule({
+    prefill: readSetupPrefill(projectConfig.prefill),
+    steps: readSetupSteps(graph.setupSteps),
+  }),
 )
+
+export function readSetupSteps(value: unknown): readonly SetupStepDefinition[] {
+  if (value === undefined) return []
+  const parsed = setupStepDefinitionSchema.array().max(100).safeParse(value)
+  if (!parsed.success) {
+    throw new TypeError("setup.steps must be an array of selected setup step definitions.")
+  }
+  if (new Set(parsed.data.map((step) => step.id)).size !== parsed.data.length) {
+    throw new TypeError("setup.steps must not contain duplicate step ids.")
+  }
+  return parsed.data
+}
 
 export function readSetupPrefill(value: unknown): Readonly<Record<string, unknown>> {
   if (value === undefined) return {}

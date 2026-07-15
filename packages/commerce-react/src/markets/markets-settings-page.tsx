@@ -1,5 +1,6 @@
 "use client"
 
+import { consumeAdminSetupPrefill } from "@voyant-travel/admin"
 import { Button, Card, CardContent } from "@voyant-travel/ui/components"
 import { Plus } from "lucide-react"
 import { useState } from "react"
@@ -7,11 +8,15 @@ import { useState } from "react"
 import { MarketDialog } from "./components/market-dialog.js"
 import { useMarketsUiMessagesOrDefault } from "./i18n/index.js"
 import { useMarkets } from "./index.js"
+import { COMMERCE_MARKET_SETUP_STEP_ID, parseMarketSetupPrefill } from "./setup-prefill.js"
 
 export function MarketsSettingsPage() {
   const messages = useMarketsUiMessagesOrDefault().settingsPage
   const markets = useMarkets({ limit: 100 })
-  const [open, setOpen] = useState(false)
+  const [setupPrefill] = useState(() =>
+    parseMarketSetupPrefill(consumeAdminSetupPrefill(COMMERCE_MARKET_SETUP_STEP_ID)),
+  )
+  const [open, setOpen] = useState(() => Object.keys(setupPrefill).length > 0)
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
@@ -43,7 +48,7 @@ export function MarketsSettingsPage() {
       {!markets.isPending && (markets.data?.data.length ?? 0) === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">{messages.empty}</p>
       ) : null}
-      <MarketDialog open={open} onOpenChange={setOpen} />
+      <MarketDialog open={open} onOpenChange={setOpen} setupPrefill={setupPrefill} />
     </div>
   )
 }

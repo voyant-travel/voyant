@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { readSetupPrefill } from "../../src/hono-module.js"
+import { readSetupPrefill, readSetupSteps } from "../../src/hono-module.js"
 
 describe("setup provisioning prefill", () => {
   it("accepts opaque JSON values keyed by step id", () => {
@@ -11,5 +11,17 @@ describe("setup provisioning prefill", () => {
 
   it("rejects secret-like values", () => {
     expect(() => readSetupPrefill({ "acme.step": { apiToken: "private" } })).toThrow(/secret-like/)
+  })
+
+  it("reads selected graph step policy and rejects duplicate ids", () => {
+    expect(readSetupSteps([{ id: "acme.required", skippable: false }])).toEqual([
+      { id: "acme.required", skippable: false },
+    ])
+    expect(() =>
+      readSetupSteps([
+        { id: "duplicate", skippable: true },
+        { id: "duplicate", skippable: false },
+      ]),
+    ).toThrow(/duplicate/)
   })
 })

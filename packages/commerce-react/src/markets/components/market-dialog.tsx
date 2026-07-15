@@ -30,6 +30,7 @@ import {
   type UpdateMarketInput,
   useMarketMutation,
 } from "../index.js"
+import type { MarketSetupPrefill } from "../setup-prefill.js"
 
 const MARKET_STATUSES = ["active", "inactive", "archived"] as const
 
@@ -58,9 +59,16 @@ export interface MarketDialogProps {
   onOpenChange: (open: boolean) => void
   market?: MarketRecord
   onSuccess?: (market: MarketRecord) => void
+  setupPrefill?: MarketSetupPrefill
 }
 
-export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDialogProps) {
+export function MarketDialog({
+  open,
+  onOpenChange,
+  market,
+  onSuccess,
+  setupPrefill,
+}: MarketDialogProps) {
   const isEditing = Boolean(market)
   const { create, update } = useMarketMutation()
   const messages = useMarketsUiMessagesOrDefault()
@@ -98,18 +106,19 @@ export function MarketDialog({ open, onOpenChange, market, onSuccess }: MarketDi
     }
     if (open) {
       form.reset({
-        code: "",
-        name: "",
+        code: setupPrefill?.code ?? "",
+        name: setupPrefill?.name ?? "",
         status: "active",
-        regionCode: "",
-        countryCode: "",
-        defaultLanguageTag: "en",
-        defaultCurrency: "EUR" /* i18n-literal-ok domain default currency */,
-        timezone: "",
-        taxContext: "",
+        regionCode: setupPrefill?.regionCode ?? "",
+        countryCode: setupPrefill?.countryCode ?? "",
+        defaultLanguageTag: setupPrefill?.defaultLanguageTag ?? "en",
+        defaultCurrency:
+          setupPrefill?.defaultCurrency ?? "EUR" /* i18n-literal-ok domain default currency */,
+        timezone: setupPrefill?.timezone ?? "",
+        taxContext: setupPrefill?.taxContext ?? "",
       })
     }
-  }, [form, market, open])
+  }, [form, market, open, setupPrefill])
 
   const onSubmit = async (values: FormOutput) => {
     const payload: CreateMarketInput | UpdateMarketInput = {

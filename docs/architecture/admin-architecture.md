@@ -105,6 +105,10 @@ Packages may contribute setup steps through `AdminExtension.setupSteps`. Step
 IDs, ordering, completion predicates, prefill interpretation, and actions stay
 package-owned. The admin host composes only selected extensions and delegates
 organization-level setup persistence to one selected `setupFlow` contribution.
+Each contributing package also declares the stable step ID and `skippable`
+policy in `admin.setupSteps`. Selected graph metadata is the server-side
+authority for persistence, so clients cannot admit steps or relax required-step
+policy.
 
 The setup shell may persist setup lifecycle state, but it must use existing
 package surfaces for domain changes. Fresh-instance inference may seed the

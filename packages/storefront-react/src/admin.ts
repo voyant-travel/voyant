@@ -5,7 +5,10 @@ import {
   defineAdminExtension,
 } from "@voyant-travel/admin"
 import { Paintbrush } from "lucide-react"
-
+import {
+  parseStorefrontSetupPrefill,
+  STOREFRONT_BRANDING_SETUP_STEP_ID,
+} from "./internal/storefront-setup-prefill.js"
 import { getAdminStorefrontSettings } from "./operations.js"
 
 export function createSelectedStorefrontAdminExtension(): AdminExtension {
@@ -28,7 +31,7 @@ export function createSelectedStorefrontAdminExtension(): AdminExtension {
     ],
     setupSteps: [
       {
-        id: "@voyant-travel/storefront#setup.branding",
+        id: STOREFRONT_BRANDING_SETUP_STEP_ID,
         order: 20,
         skippable: true,
         href: "/settings/storefront",
@@ -44,7 +47,7 @@ export function createSelectedStorefrontAdminExtension(): AdminExtension {
             action: "Deschide setarile magazinului",
           },
         },
-        prefill: objectPrefill,
+        prefill: parseStorefrontSetupPrefill,
         isComplete: hasStorefrontBranding,
       },
     ],
@@ -61,8 +64,4 @@ async function hasStorefrontBranding({ runtime }: AdminRouteLoaderContext): Prom
   } catch {
     return false
   }
-}
-
-function objectPrefill(value: unknown): unknown {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : undefined
 }

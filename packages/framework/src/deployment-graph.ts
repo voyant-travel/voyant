@@ -1116,6 +1116,9 @@ function resolveUnit(
             ...(unit.admin.contributions?.length
               ? { contributions: sortFacetEntities(unit.admin.contributions) }
               : {}),
+            ...(unit.admin.setupSteps?.length
+              ? { setupSteps: sortFacetEntities(unit.admin.setupSteps) }
+              : {}),
           },
         }
       : {}),
@@ -1840,7 +1843,7 @@ function validateAdminFacet(
       "Admin composition order must be a safe integer.",
     )
   }
-  for (const facet of ["copy", "routes", "nav", "slots", "contributions"] as const) {
+  for (const facet of ["copy", "routes", "nav", "slots", "contributions", "setupSteps"] as const) {
     diagnostics.push(...validateFacetEntities(value[facet], `admin.${facet}`, source))
   }
   validateEntityArray(value.copy, "admin.copy", source, diagnostics, (entry, facet) => {
@@ -1870,6 +1873,11 @@ function validateAdminFacet(
       validateScopeArray(entry.requiredScopes, `${facet}.requiredScopes`, source, diagnostics)
     },
   )
+  validateEntityArray(value.setupSteps, "admin.setupSteps", source, diagnostics, (entry, facet) => {
+    if (typeof entry.skippable !== "boolean") {
+      invalidFacet(`${facet}.skippable`, source, diagnostics, "Setup skippable must be boolean.")
+    }
+  })
 }
 
 function validateEntityArray(

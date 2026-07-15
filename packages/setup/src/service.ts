@@ -1,7 +1,12 @@
 import type { VoyantDb } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
 
-import type { InitializeSetupInput, SetupState, SetupStepState } from "./contracts.js"
+import type {
+  InitializeSetupInput,
+  SetupState,
+  SetupStepDefinition,
+  SetupStepState,
+} from "./contracts.js"
 import {
   ORGANIZATION_SETUP_ID,
   type OrganizationSetup,
@@ -11,6 +16,7 @@ import {
 } from "./schema.js"
 
 export interface SetupStore {
+  transaction<T>(run: (store: SetupStore) => Promise<T>): Promise<T>
   createOrganization(input: OrganizationSetup): Promise<boolean>
   getOrganization(): Promise<OrganizationSetup | null>
   ensureStep(stepId: string, firstSeenAt: Date): Promise<void>
@@ -23,55 +29,79 @@ export interface InitializeSetupResult extends SetupState {
   shouldRedirect: boolean
 }
 
+export class SetupSelectionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "SetupSelectionError"
+  }
+}
+
 export async function initializeSetup(
   store: SetupStore,
   input: InitializeSetupInput,
+  selectedSteps: readonly SetupStepDefinition[],
   prefill: Readonly<Record<string, unknown>> = {},
   now = new Date(),
 ): Promise<InitializeSetupResult> {
-  const created = await store.createOrganization({
-    id: ORGANIZATION_SETUP_ID,
-    startedAt: now,
-    firstRunOpenedAt: input.fresh ? now : null,
-  })
-  for (const stepId of new Set(input.stepIds)) await store.ensureStep(stepId, now)
+  assertSelectedStepIds(input.stepIds, selectedSteps)
+  return store.transaction(async (transaction) => {
+    const created = await transaction.createOrganization({
+      id: ORGANIZATION_SETUP_ID,
+      startedAt: now,
+      firstRunOpenedAt: input.fresh ? now : null,
+    })
+    for (const step of selectedSteps) await transaction.ensureStep(step.id, now)
 
-  const organization = await store.getOrganization()
-  if (!organization) throw new Error("Setup initialization did not persist organization state.")
-  return {
-    ...serializeState(organization, await store.listSteps(), prefill),
-    shouldRedirect: created && input.fresh,
-  }
+    const organization = await transaction.getOrganization()
+    if (!organization) throw new Error("Setup initialization did not persist organization state.")
+    return {
+      ...serializeState(organization, await transaction.listSteps(), selectedSteps, prefill),
+      shouldRedirect: created && input.fresh,
+    }
+  })
 }
 
 export async function getSetupState(
   store: SetupStore,
+  selectedSteps: readonly SetupStepDefinition[],
   prefill: Readonly<Record<string, unknown>> = {},
 ): Promise<SetupState | null> {
   const organization = await store.getOrganization()
-  return organization ? serializeState(organization, await store.listSteps(), prefill) : null
+  return organization
+    ? serializeState(organization, await store.listSteps(), selectedSteps, prefill)
+    : null
 }
 
 export async function completeSetupStep(
   store: SetupStore,
+  selectedSteps: readonly SetupStepDefinition[],
   stepId: string,
   now = new Date(),
 ): Promise<SetupStepState> {
-  await store.ensureStep(stepId, now)
+  requireSelectedStep(selectedSteps, stepId)
   return serializeStep(await store.markCompleted(stepId, now))
 }
 
 export async function skipSetupStep(
   store: SetupStore,
+  selectedSteps: readonly SetupStepDefinition[],
   stepId: string,
   now = new Date(),
 ): Promise<SetupStepState> {
-  await store.ensureStep(stepId, now)
+  const step = requireSelectedStep(selectedSteps, stepId)
+  if (!step.skippable) {
+    throw new SetupSelectionError(`Setup step "${stepId}" cannot be skipped.`)
+  }
   return serializeStep(await store.markSkipped(stepId, now))
 }
 
 export function createDrizzleSetupStore(db: VoyantDb): SetupStore {
   return {
+    async transaction(run) {
+      return db.transaction((transaction) =>
+        run(createDrizzleSetupStore(transaction as unknown as VoyantDb)),
+      )
+    },
     async createOrganization(input) {
       const rows = await db
         .insert(organizationSetup)
@@ -118,14 +148,51 @@ export function createDrizzleSetupStore(db: VoyantDb): SetupStore {
 function serializeState(
   organization: OrganizationSetup,
   steps: OrganizationSetupStep[],
+  selectedSteps: readonly SetupStepDefinition[],
   prefill: Readonly<Record<string, unknown>>,
 ): SetupState {
+  const stepById = new Map(steps.map((step) => [step.stepId, step]))
   return {
     startedAt: organization.startedAt.toISOString(),
     firstRunOpenedAt: organization.firstRunOpenedAt?.toISOString() ?? null,
-    steps: steps.map(serializeStep),
-    prefill: { ...prefill },
+    steps: selectedSteps.flatMap((selected) => {
+      const step = stepById.get(selected.id)
+      return step ? [serializeStep(step)] : []
+    }),
+    prefill: Object.fromEntries(
+      selectedSteps.flatMap((step) =>
+        Object.hasOwn(prefill, step.id) ? [[step.id, prefill[step.id]]] : [],
+      ),
+    ),
   }
+}
+
+function assertSelectedStepIds(
+  requestedStepIds: readonly string[],
+  selectedSteps: readonly SetupStepDefinition[],
+): void {
+  const requested = new Set(requestedStepIds)
+  const selected = new Set(selectedSteps.map((step) => step.id))
+  if (
+    requested.size !== requestedStepIds.length ||
+    requested.size !== selected.size ||
+    [...requested].some((stepId) => !selected.has(stepId))
+  ) {
+    throw new SetupSelectionError(
+      "Setup initialization step ids do not match the selected project graph.",
+    )
+  }
+}
+
+function requireSelectedStep(
+  selectedSteps: readonly SetupStepDefinition[],
+  stepId: string,
+): SetupStepDefinition {
+  const step = selectedSteps.find((candidate) => candidate.id === stepId)
+  if (!step) {
+    throw new SetupSelectionError(`Setup step "${stepId}" is not selected by the project graph.`)
+  }
+  return step
 }
 
 function serializeStep(step: OrganizationSetupStep): SetupStepState {

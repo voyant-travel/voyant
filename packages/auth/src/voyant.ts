@@ -96,6 +96,7 @@ export const authTeamVoyantModule = defineModule({
   },
   admin: {
     compositionOrder: 5,
+    setupSteps: [{ id: "@voyant-travel/auth#setup.team", skippable: true }],
     runtime: {
       entry: "@voyant-travel/auth-react/admin",
       export: "createSelectedAuthTeamAdminExtension",

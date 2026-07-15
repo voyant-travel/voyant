@@ -125,6 +125,10 @@ export interface VoyantGraphAdminContribution extends VoyantGraphFacetEntity {
   copy?: readonly VoyantGraphMessageReference[]
 }
 
+export interface VoyantGraphAdminSetupStep extends VoyantGraphFacetEntity {
+  skippable: boolean
+}
+
 export interface VoyantGraphAdminDeclaration {
   /** Import-cheap factory for this unit's complete nav/route/page extension. */
   runtime?: VoyantGraphRuntimeReference
@@ -135,6 +139,8 @@ export interface VoyantGraphAdminDeclaration {
   nav?: readonly VoyantGraphAdminNavItem[]
   slots?: readonly VoyantGraphAdminSlot[]
   contributions?: readonly VoyantGraphAdminContribution[]
+  /** Trusted persistence policy for package-owned setup guidance. */
+  setupSteps?: readonly VoyantGraphAdminSetupStep[]
 }
 
 /** A package-owned frontend presentation selected through the deployment graph. */
