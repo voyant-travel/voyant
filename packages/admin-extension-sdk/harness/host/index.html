@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UiExtensionHost harness</title>
+    <style>
+      :root {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #eef2f6;
+        color: #0f172a;
+      }
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      header h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+      }
+      header p {
+        margin: 0 0 8px;
+        color: #64748b;
+        font-size: 13px;
+      }
+      section {
+        margin-top: 24px;
+      }
+      h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+        margin: 0 0 8px;
+      }
+      .host {
+        background: transparent;
+      }
+      /* Approximate the admin card look; real admin loads Tailwind for this. */
+      [data-slot="card"] {
+        border: 1px solid #d5dce5;
+        border-radius: 12px;
+        background: #fff;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+      [data-slot="card"].border-destructive\/40 {
+        border-color: #f0a3a3;
+      }
+      [data-slot="card-title"] {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      [data-slot="card-description"] {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 4px;
+      }
+      [data-slot="card-content"] {
+        margin-top: 10px;
+      }
+      .animate-pulse {
+        background: #e2e8f0;
+        border-radius: 6px;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .h-4 {
+        height: 14px;
+      }
+      .w-3\/4 {
+        width: 75%;
+      }
+      .w-1\/2 {
+        width: 50%;
+      }
+      iframe {
+        width: 100%;
+        border: 1px solid #d5dce5;
+        border-radius: 12px;
+        background: #fff;
+        min-height: 220px;
+      }
+      iframe.sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+      }
+      .log {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 6px;
+      }
+      .log li {
+        background: #fff;
+        border: 1px solid #d5dce5;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+      .muted {
+        color: #94a3b8;
+      }
+      .badge {
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+      }
+      .badge-navigate {
+        background: #2563eb;
+      }
+      .badge-toast {
+        background: #16a34a;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./host.js"></script>
+  </body>
+</html>

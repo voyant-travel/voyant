@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Silent extension (never handshakes)</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Deliberately never calls initUiExtension, to exercise the host timeout. -->
+    <p>Loading a slow extension…</p>
+  </body>
+</html>
