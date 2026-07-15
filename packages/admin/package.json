@@ -38,7 +38,8 @@
     "./providers/admin-provider": "./src/providers/admin-provider.tsx",
     "./lib/i18n": "./src/lib/i18n.tsx",
     "./lib/initials": "./src/lib/initials.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./ui-extensions": "./src/ui-extensions/index.ts"
   },
   "scripts": {
     "build": "pnpm run clean && tsc -p tsconfig.build.json",
@@ -58,6 +59,7 @@
     "recharts": "^3.0.0"
   },
   "dependencies": {
+    "@voyant-travel/admin-extension-sdk": "workspace:^",
     "@voyant-travel/i18n": "workspace:^",
     "@voyant-travel/react": "workspace:^",
     "@voyant-travel/types": "workspace:^"
@@ -252,6 +254,11 @@
         "types": "./dist/types.d.ts",
         "import": "./dist/types.js",
         "default": "./dist/types.js"
+      },
+      "./ui-extensions": {
+        "types": "./dist/ui-extensions/index.d.ts",
+        "import": "./dist/ui-extensions/index.js",
+        "default": "./dist/ui-extensions/index.js"
       }
     },
     "main": "./dist/index.js",
