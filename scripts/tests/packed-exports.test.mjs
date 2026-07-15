@@ -5,6 +5,7 @@ import path from "node:path"
 import { afterEach, test } from "node:test"
 
 import { packedFileExportsName } from "../lib/packed-exports.mjs"
+import { collectPackedManifestProtocolDependencies } from "../lib/packed-manifest.mjs"
 
 const temporaryDirectories = []
 
@@ -48,6 +49,31 @@ test("uses the exported alias rather than the local name", () => {
 
   assert.equal(packedFileExportsName(root, "dist/index.js", "defineWorkflow"), true)
   assert.equal(packedFileExportsName(root, "dist/index.js", "internal"), false)
+})
+
+test("rejects package-manager protocols from packed manifest dependencies", () => {
+  const manifest = {
+    dependencies: { zod: "catalog:" },
+    peerDependencies: { react: "^19.0.0" },
+    optionalDependencies: { internal: "workspace:^" },
+    devDependencies: { typescript: "catalog:build" },
+  }
+
+  assert.deepEqual(collectPackedManifestProtocolDependencies(manifest), [
+    "dependencies.zod=catalog:",
+    "optionalDependencies.internal=workspace:^",
+    "devDependencies.typescript=catalog:build",
+  ])
+})
+
+test("accepts external-consumer dependency ranges in packed manifests", () => {
+  const manifest = {
+    dependencies: { zod: "^4.4.3" },
+    peerDependencies: { react: ">=18" },
+    optionalDependencies: { sharp: "npm:@img/sharp@^0.34.0" },
+  }
+
+  assert.deepEqual(collectPackedManifestProtocolDependencies(manifest), [])
 })
 
 function createFixture(files) {

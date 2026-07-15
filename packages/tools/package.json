@@ -29,13 +29,14 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "pnpm run build"
   },
-  "dependencies": {
-    "zod": "catalog:"
-  },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "peerDependencies": {
+    "zod": "^4.4.3"
   },
   "repository": {
     "type": "git",
