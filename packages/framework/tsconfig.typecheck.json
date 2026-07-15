@@ -199,6 +199,7 @@
       "@voyant-travel/auth/team-management-runtime-port": [
         "../auth/dist/team-management-runtime-port.d.ts"
       ],
+      "@voyant-travel/auth/tools": ["../auth/dist/mcp-runtime.d.ts"],
       "@voyant-travel/auth/voyant": ["../auth/dist/voyant.d.ts"],
       "@voyant-travel/auth/workspace": ["../auth/dist/workspace.d.ts"],
       "@voyant-travel/availability": ["../availability/dist/index.d.ts"],
@@ -1412,6 +1413,7 @@
         "../operations/dist/availability/slot-timezone.d.ts"
       ],
       "@voyant-travel/operations/schema": ["../operations/dist/schema.d.ts"],
+      "@voyant-travel/operations/tools": ["../operations/dist/mcp-runtime.d.ts"],
       "@voyant-travel/operations/validation": ["../operations/dist/validation.d.ts"],
       "@voyant-travel/operations/voyant": ["../operations/dist/voyant.d.ts"],
       "@voyant-travel/operator-settings": ["../operator-settings/dist/index.d.ts"],
@@ -1428,6 +1430,7 @@
       ],
       "@voyant-travel/operator-settings/schema": ["../operator-settings/dist/schema.d.ts"],
       "@voyant-travel/operator-settings/service": ["../operator-settings/dist/service.d.ts"],
+      "@voyant-travel/operator-settings/tools": ["../operator-settings/dist/mcp-runtime.d.ts"],
       "@voyant-travel/operator-settings/voyant": ["../operator-settings/dist/voyant.d.ts"],
       "@voyant-travel/operator-standard": ["../operator-standard/dist/index.d.ts"],
       "@voyant-travel/operator-standard/runtime/react": [
