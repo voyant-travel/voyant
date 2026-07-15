@@ -11,7 +11,6 @@ import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-tra
 import {
   navigationPreferencesSnapshotSchema,
   navigationVisibilityMapSchema,
-  type UpdateNavigationPreferencesInput,
   updateNavigationPreferencesSchema,
 } from "./contracts.js"
 import {
@@ -114,20 +113,14 @@ export function createNavigationPreferencesRoutes(
 
   routes.openapi(putOrganizationRoute, async (c) => {
     requireOrganizationWrite(c.get("scopes"))
-    const input = (await parseJsonBody(
-      c,
-      updateNavigationPreferencesSchema,
-    )) as UpdateNavigationPreferencesInput
+    const input = await parseJsonBody(c, updateNavigationPreferencesSchema)
     const visibility = await service.setOrganization(c.get("db"), input.visibility)
     return c.json({ data: { visibility } }, 200)
   })
 
   routes.openapi(putMemberRoute, async (c) => {
     const memberId = requireUserId(c)
-    const input = (await parseJsonBody(
-      c,
-      updateNavigationPreferencesSchema,
-    )) as UpdateNavigationPreferencesInput
+    const input = await parseJsonBody(c, updateNavigationPreferencesSchema)
     const visibility = await service.setMember(c.get("db"), memberId, input.visibility)
     return c.json({ data: { visibility } }, 200)
   })

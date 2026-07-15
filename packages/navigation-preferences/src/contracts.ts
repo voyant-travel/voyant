@@ -1,7 +1,14 @@
 import { z } from "zod"
 
 export const navigationVisibilityMapSchema = z
-  .record(z.string().trim().min(1).max(200), z.boolean())
+  .record(
+    z
+      .string()
+      .min(1)
+      .max(200)
+      .refine((id) => id === id.trim(), "Navigation IDs cannot have surrounding whitespace."),
+    z.boolean(),
+  )
   .superRefine((value, context) => {
     if (Object.keys(value).length > 1_000) {
       context.addIssue({
@@ -22,7 +29,21 @@ export const navigationPreferencesSnapshotSchema = z.object({
   canManageOrganization: z.boolean(),
 })
 
-export type NavigationVisibilityMap = z.infer<typeof navigationVisibilityMapSchema>
-export type UpdateNavigationPreferencesInput = z.infer<typeof updateNavigationPreferencesSchema>
+export type NavigationVisibilityMap = Readonly<z.infer<typeof navigationVisibilityMapSchema>>
 
-export type NavigationPreferencesSnapshot = z.infer<typeof navigationPreferencesSnapshotSchema>
+export interface NavigationPreferencesLayers {
+  readonly organization: NavigationVisibilityMap
+  readonly member: NavigationVisibilityMap
+}
+
+export interface ResolvedNavigationPreferences extends NavigationPreferencesLayers {
+  readonly effective: NavigationVisibilityMap
+}
+
+export interface NavigationPreferencesSnapshot extends ResolvedNavigationPreferences {
+  readonly canManageOrganization: boolean
+}
+
+export interface UpdateNavigationPreferencesInput {
+  readonly visibility: NavigationVisibilityMap
+}

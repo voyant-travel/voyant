@@ -1,14 +1,12 @@
+import type { VoyantDb } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { NavigationVisibilityMap } from "./contracts.js"
+import type { NavigationVisibilityMap, ResolvedNavigationPreferences } from "./contracts.js"
 import {
   memberNavigationPreferences,
   ORGANIZATION_NAVIGATION_PREFERENCES_ID,
   organizationNavigationPreferences,
 } from "./schema.js"
-
-const EMPTY_VISIBILITY: NavigationVisibilityMap = {}
 
 export function resolveEffectiveNavigationVisibility(
   organization: NavigationVisibilityMap,
@@ -18,18 +16,18 @@ export function resolveEffectiveNavigationVisibility(
 }
 
 export async function getOrganizationNavigationPreferences(
-  db: PostgresJsDatabase,
+  db: VoyantDb,
 ): Promise<NavigationVisibilityMap> {
   const [row] = await db
     .select({ visibility: organizationNavigationPreferences.visibility })
     .from(organizationNavigationPreferences)
     .where(eq(organizationNavigationPreferences.id, ORGANIZATION_NAVIGATION_PREFERENCES_ID))
     .limit(1)
-  return row?.visibility ?? EMPTY_VISIBILITY
+  return row?.visibility ?? {}
 }
 
 export async function setOrganizationNavigationPreferences(
-  db: PostgresJsDatabase,
+  db: VoyantDb,
   visibility: NavigationVisibilityMap,
 ): Promise<NavigationVisibilityMap> {
   const [row] = await db
@@ -39,12 +37,12 @@ export async function setOrganizationNavigationPreferences(
       target: organizationNavigationPreferences.id,
       set: { visibility, updatedAt: new Date() },
     })
-    .returning({ visibility: organizationNavigationPreferences.visibility })
+    .returning()
   return row?.visibility ?? visibility
 }
 
 export async function getMemberNavigationPreferences(
-  db: PostgresJsDatabase,
+  db: VoyantDb,
   memberId: string,
 ): Promise<NavigationVisibilityMap> {
   const [row] = await db
@@ -52,11 +50,11 @@ export async function getMemberNavigationPreferences(
     .from(memberNavigationPreferences)
     .where(eq(memberNavigationPreferences.memberId, memberId))
     .limit(1)
-  return row?.visibility ?? EMPTY_VISIBILITY
+  return row?.visibility ?? {}
 }
 
 export async function setMemberNavigationPreferences(
-  db: PostgresJsDatabase,
+  db: VoyantDb,
   memberId: string,
   visibility: NavigationVisibilityMap,
 ): Promise<NavigationVisibilityMap> {
@@ -67,18 +65,14 @@ export async function setMemberNavigationPreferences(
       target: memberNavigationPreferences.memberId,
       set: { visibility, updatedAt: new Date() },
     })
-    .returning({ visibility: memberNavigationPreferences.visibility })
+    .returning()
   return row?.visibility ?? visibility
 }
 
 export async function getNavigationPreferences(
-  db: PostgresJsDatabase,
+  db: VoyantDb,
   memberId: string,
-): Promise<{
-  organization: NavigationVisibilityMap
-  member: NavigationVisibilityMap
-  effective: NavigationVisibilityMap
-}> {
+): Promise<ResolvedNavigationPreferences> {
   const [organization, member] = await Promise.all([
     getOrganizationNavigationPreferences(db),
     getMemberNavigationPreferences(db, memberId),
