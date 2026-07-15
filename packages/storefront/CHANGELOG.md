@@ -1,5 +1,42 @@
 # @voyant-travel/storefront
 
+## 0.162.0
+
+### Minor Changes
+
+- eae32f8: Add provider-neutral MCP Tools for authenticated customer-portal self service, invoice-backed
+  payment links, and customer email/SMS verification. Enforce self identity and destination from
+  the authenticated grant, preserve existing ownership and rate-limit guards, derive payment
+  amounts from authoritative invoices, and declare action-ledger and approval policy for every
+  sensitive read and write.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [a2fd806]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [d9e8984]
+- Updated dependencies [33cc782]
+- Updated dependencies [db5adce]
+- Updated dependencies [bf19d5a]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/commerce@0.36.0
+  - @voyant-travel/identity@0.160.0
+  - @voyant-travel/legal@0.160.0
+  - @voyant-travel/relationships@0.126.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.161.0
 
 ### Minor Changes

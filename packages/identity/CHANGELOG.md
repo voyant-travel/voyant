@@ -1,5 +1,23 @@
 # @voyant-travel/identity
 
+## 0.160.0
+
+### Minor Changes
+
+- d9e8984: Add guarded MCP Tools for reusable contact points, addresses, and named contacts.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.159.0
 
 ### Patch Changes

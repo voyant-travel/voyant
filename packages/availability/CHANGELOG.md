@@ -1,5 +1,16 @@
 # @voyant-travel/availability
 
+## 0.2.13
+
+### Patch Changes
+
+- 5617f37: Mark the schema-only Tool posture as not applicable because Operations owns and Tool-backs the
+  provider-neutral availability services; duplicate availability Tools would compete for ownership.
+- Updated dependencies [cabf662]
+- Updated dependencies [c9b6144]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/db@0.114.7
+
 ## 0.2.12
 
 ### Patch Changes

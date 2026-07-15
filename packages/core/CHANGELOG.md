@@ -1,5 +1,23 @@
 # @voyant-travel/core
 
+## 0.124.0
+
+### Minor Changes
+
+- c9b6144: Add graph-composed, module-owned Tools for navigation preferences and organization setup,
+  including exact action policies and owner-scoped project configuration for MCP context wiring.
+
+### Patch Changes
+
+- cabf662: Add the provider-neutral, staff-only action-ledger Tool surface for audit
+  entries, target timelines, approvals, delegations, and relay inspection. Add
+  guarded approval request/decision Tools whose capability, risk, and policy are
+  derived from selected graph actions and whose writes fail closed for missing,
+  conditional, expired, misassigned, or no-longer-selected authority. Publish
+  selected graph actions to package Tool context contributions. Reversal remains
+  inspection-only until a provider-neutral runtime can execute and attest the
+  underlying domain reversal command.
+
 ## 0.123.0
 
 ### Minor Changes

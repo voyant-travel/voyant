@@ -1,5 +1,20 @@
 # @voyant-travel/catalog-authoring
 
+## 0.107.13
+
+### Patch Changes
+
+- 0ad9ecb: Clarify that executable authoring Tools belong to Inventory rather than the compatibility package.
+- Updated dependencies [cabf662]
+- Updated dependencies [372f4f4]
+- Updated dependencies [a2fd806]
+- Updated dependencies [7e4ab07]
+- Updated dependencies [497dff2]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/inventory@0.11.0
+
 ## 0.107.12
 
 ### Patch Changes

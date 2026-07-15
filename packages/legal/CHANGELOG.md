@@ -1,5 +1,48 @@
 # @voyant-travel/legal
 
+## 0.160.0
+
+### Minor Changes
+
+- 33cc782: Add typed, staff-only Tools for legal contract, template, policy, term, attachment, and guarded
+  lifecycle operations. Add provider-neutral booking-contract preview, generation, and authorized
+  delivery Tools without exposing private storage keys or allowing Tools to attest signatures or
+  perform destructive void/delete operations. Separate document regeneration behind an explicit
+  critical, irreversible, approval-required graph policy.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [701ccc4]
+- Updated dependencies [5f15e2e]
+- Updated dependencies [7ac40a0]
+- Updated dependencies [372f4f4]
+- Updated dependencies [6c8d46a]
+- Updated dependencies [a2fd806]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [7e4ab07]
+- Updated dependencies [497dff2]
+- Updated dependencies [db5adce]
+- Updated dependencies [54be000]
+- Updated dependencies [bf19d5a]
+- Updated dependencies [c9b6144]
+- Updated dependencies [6604f9e]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/action-ledger@0.109.0
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/bookings@0.160.0
+  - @voyant-travel/finance@0.160.0
+  - @voyant-travel/commerce@0.36.0
+  - @voyant-travel/inventory@0.11.0
+  - @voyant-travel/distribution@0.150.0
+  - @voyant-travel/operator-settings@0.4.0
+  - @voyant-travel/relationships@0.126.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+  - @voyant-travel/public-document-delivery@0.3.7
+  - @voyant-travel/storage@0.110.2
+
 ## 0.159.0
 
 ### Patch Changes

@@ -1,5 +1,28 @@
 # @voyant-travel/auth
 
+## 0.131.0
+
+### Minor Changes
+
+- 848b581: Add provider-neutral, staff-only team-management Tools for roster, roles,
+  invitations, and access lifecycle operations. Sensitive writes require explicit
+  confirmation and are declared as approval- and ledger-gated graph actions.
+  The Tools fail closed unless deployment authentication supplies an explicit
+  acting user; organization-only MCP API keys are not treated as user identity and
+  remain non-invocable until a delegated-user or service-principal model exists.
+
+### Patch Changes
+
+- Updated dependencies [cabf662]
+- Updated dependencies [b8cef4c]
+- Updated dependencies [db5adce]
+- Updated dependencies [c9b6144]
+- Updated dependencies [ff87f68]
+  - @voyant-travel/core@0.124.0
+  - @voyant-travel/tools@0.3.0
+  - @voyant-travel/db@0.114.7
+  - @voyant-travel/hono@0.127.1
+
 ## 0.130.0
 
 ### Minor Changes
