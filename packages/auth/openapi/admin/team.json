@@ -118,6 +118,22 @@
         ],
         "responses": { "200": { "description": "Deactivated team member." } }
       }
+    },
+    "/v1/admin/team/members/{memberId}/activation": {
+      "put": {
+        "operationId": "activateTeamMember",
+        "tags": ["Team"],
+        "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "Activated team member." } }
+      }
     }
   }
 }

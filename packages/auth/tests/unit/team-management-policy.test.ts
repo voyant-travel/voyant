@@ -14,6 +14,7 @@ const allCapabilities: TeamManagementCapabilitiesDto = {
   viewRoster: true,
   inviteMembers: true,
   manageRoles: true,
+  activateMembers: true,
   deactivateMembers: true,
   revokeInvitations: true,
 }
@@ -55,6 +56,10 @@ function adapter(overrides: Partial<TeamManagementAdapter> = {}): TeamManagement
     })),
     revokeInvitation: vi.fn(async () => undefined),
     updateMemberRole: vi.fn(async (_request, id, roleId) => member(id, roleId)),
+    activateMember: vi.fn(async (_request, id) => ({
+      ...members.find((candidate) => candidate.id === id)!,
+      status: "active",
+    })),
     deactivateMember: vi.fn(async (_request, id) => ({
       ...members.find((candidate) => candidate.id === id)!,
       status: "deactivated",
@@ -99,6 +104,33 @@ describe("guarded team-management provider", () => {
     await expect(runtime.deactivateMember(context, "actor")).rejects.toMatchObject({
       code: "self_change_forbidden",
     })
+    await expect(runtime.activateMember(context, "actor")).rejects.toMatchObject({
+      code: "self_change_forbidden",
+    })
+  })
+
+  it("requires activation capability and blocks activating a more privileged member", async () => {
+    const deactivatedOwner = { ...member("owner", "owner"), status: "deactivated" as const }
+    const withoutCapability = adapter({
+      getCapabilities: vi.fn(async () => ({ ...allCapabilities, activateMembers: false })),
+      listMembers: vi.fn(async () => [member("actor", "admin"), deactivatedOwner]),
+    })
+    const forbiddenRuntime = createGuardedTeamManagementProvider(() => withoutCapability)
+
+    await expect(forbiddenRuntime.activateMember(context, "owner")).rejects.toMatchObject({
+      code: "forbidden",
+    })
+    expect(withoutCapability.activateMember).not.toHaveBeenCalled()
+
+    const source = adapter({
+      listMembers: vi.fn(async () => [member("actor", "admin"), deactivatedOwner]),
+    })
+    const runtime = createGuardedTeamManagementProvider(() => source)
+
+    await expect(runtime.activateMember(context, "owner")).rejects.toMatchObject({
+      code: "privilege_escalation",
+    })
+    expect(source.activateMember).not.toHaveBeenCalled()
   })
 
   it("blocks demotion and deactivation of the last active owner", async () => {

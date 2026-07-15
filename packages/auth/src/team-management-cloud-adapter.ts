@@ -16,6 +16,7 @@ import {
 import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
 import { type TeamManagementAdapter, TeamManagementError } from "./team-management-policy.js"
 import type {
+  CreatedTeamInvitationDto,
   TeamInvitationDto,
   TeamManagementCapabilitiesDto,
   TeamManagementRequestContext,
@@ -56,7 +57,7 @@ export function cloudTeamMemberDto(member: CloudAdminMember): TeamMemberDto {
   }
 }
 
-function invitationDto(invitation: CloudAdminInvitation): TeamInvitationDto {
+export function cloudTeamInvitationDto(invitation: CloudAdminInvitation): TeamInvitationDto {
   const roleId = invitation.roleSlug ?? "member"
   return {
     id: invitation.id,
@@ -66,6 +67,12 @@ function invitationDto(invitation: CloudAdminInvitation): TeamInvitationDto {
     status: invitation.state,
     createdAt: invitation.createdAt,
     expiresAt: invitation.expiresAt,
+  }
+}
+
+function createdInvitationDto(invitation: CloudAdminInvitation): CreatedTeamInvitationDto {
+  return {
+    ...cloudTeamInvitationDto(invitation),
     acceptUrl: invitation.acceptInvitationUrl || null,
   }
 }
@@ -106,7 +113,7 @@ export function createCloudTeamManagementAdapter(
       const actor = (await listCloudAdminMembers(request)).find(
         (member) => member.externalUserId === request.actingExternalUserId,
       )
-      if (!actor || !actor.hasDeploymentAccess) {
+      if (!actor?.hasDeploymentAccess) {
         throw new TeamManagementError("forbidden", "The current user cannot manage this team.")
       }
       return { memberId: actor.membershipId, roleId: actor.roleSlug ?? "member" }
@@ -117,6 +124,7 @@ export function createCloudTeamManagementAdapter(
         viewRoster: true,
         inviteMembers: canManage,
         manageRoles: canManage,
+        activateMembers: canManage,
         deactivateMembers: canManage,
         revokeInvitations: canManage,
       }
@@ -134,10 +142,10 @@ export function createCloudTeamManagementAdapter(
     async listInvitations(context) {
       return (
         await listCloudAdminInvitations(await resolveCloudRequest(identityAccess, context))
-      ).map(invitationDto)
+      ).map(cloudTeamInvitationDto)
     },
     async inviteMember(context, input) {
-      return invitationDto(
+      return createdInvitationDto(
         await inviteCloudAdminMember({
           ...(await resolveCloudRequest(identityAccess, context)),
           input: {
@@ -169,6 +177,15 @@ export function createCloudTeamManagementAdapter(
           ...(await resolveCloudRequest(identityAccess, context)),
           membershipId: memberId,
           hasAccess: false,
+        }),
+      )
+    },
+    async activateMember(context, memberId) {
+      return cloudTeamMemberDto(
+        await setCloudAdminMemberAccess({
+          ...(await resolveCloudRequest(identityAccess, context)),
+          membershipId: memberId,
+          hasAccess: true,
         }),
       )
     },

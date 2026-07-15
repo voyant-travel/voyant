@@ -158,6 +158,12 @@ export const authUiRo: AuthUiMessages = {
       roleLabel: "Rol",
       submit: "Invita",
       submitting: "Se invita",
+      acceptUrlLabel: "Link de invitatie",
+      acceptUrlDescription:
+        "Acest link este afisat o singura data. Trimite-l in siguranta membrului invitat.",
+      copyUrl: "Copiaza linkul",
+      copied: "Copiat",
+      copyFailed: "Linkul de invitatie nu a putut fi copiat.",
     },
     members: {
       title: "Echipa",
@@ -168,6 +174,8 @@ export const authUiRo: AuthUiMessages = {
       lastActivityColumn: "Ultima activitate",
       actionsColumn: "Actiuni",
       empty: "Nu au fost gasiti membri.",
+      activate: "Activeaza",
+      activateLabel: (name) => `Activeaza ${name}`,
       deactivate: "Dezactiveaza",
       deactivateLabel: (name) => `Dezactiveaza ${name}`,
       deactivateConfirm: (name) => `Dezactivezi ${name}? Accesul va fi retras imediat.`,

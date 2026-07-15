@@ -13,6 +13,7 @@ import { desc, eq } from "drizzle-orm"
 import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
 import { type TeamManagementAdapter, TeamManagementError } from "./team-management-policy.js"
 import type {
+  CreatedTeamInvitationDto,
   InviteTeamMemberInput,
   TeamInvitationDto,
   TeamManagementCapabilitiesDto,
@@ -29,6 +30,21 @@ const LOCAL_ROLES: TeamRoleDto[] = [
 ]
 
 const ROLE_LEVELS: Record<string, number> = { owner: 40, admin: 30, editor: 20, viewer: 10 }
+const DEACTIVATED_PROVIDER_PREFIX = "voyant-deactivated:"
+
+export function localProviderIdForStatus(
+  providerId: string,
+  status: TeamMemberDto["status"],
+): string {
+  if (status === "deactivated") {
+    return providerId.startsWith(DEACTIVATED_PROVIDER_PREFIX)
+      ? providerId
+      : `${DEACTIVATED_PROVIDER_PREFIX}${providerId}`
+  }
+  return providerId.startsWith(DEACTIVATED_PROVIDER_PREFIX)
+    ? providerId.slice(DEACTIVATED_PROVIDER_PREFIX.length)
+    : providerId
+}
 
 function roleName(roleId: string): string {
   return LOCAL_ROLES.find((role) => role.id === roleId)?.name ?? roleId
@@ -97,9 +113,15 @@ async function listLocalMembers(context: TeamManagementRequestContext): Promise<
       })
       .from(authUser)
       .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id)),
-    context.db.select({ userId: authAccount.userId }).from(authAccount),
+    context.db
+      .select({ userId: authAccount.userId, providerId: authAccount.providerId })
+      .from(authAccount),
   ])
-  const activeUserIds = new Set(accounts.map((account) => account.userId))
+  const activeUserIds = new Set(
+    accounts
+      .filter((account) => !account.providerId.startsWith(DEACTIVATED_PROVIDER_PREFIX))
+      .map((account) => account.userId),
+  )
 
   return rows.map((row) => {
     const roleId = resolveLocalRole(row.isSuperAdmin ?? false, row.permissions ?? null)
@@ -123,7 +145,7 @@ export function createLocalTeamManagementAdapter(
   return {
     async getActor(context) {
       const actor = (await listLocalMembers(context)).find((member) => member.id === context.userId)
-      if (!actor || actor.status !== "active") {
+      if (actor?.status !== "active") {
         throw new TeamManagementError("forbidden", "The current user cannot manage this team.")
       }
       return { memberId: actor.id, roleId: actor.roleId }
@@ -134,6 +156,7 @@ export function createLocalTeamManagementAdapter(
         viewRoster: true,
         inviteMembers: canManage,
         manageRoles: canManage,
+        activateMembers: canManage,
         deactivateMembers: canManage,
         revokeInvitations: canManage,
       }
@@ -165,11 +188,10 @@ export function createLocalTeamManagementAdapter(
           status: invitationStatus(row),
           createdAt: row.createdAt.toISOString(),
           expiresAt: row.expiresAt.toISOString(),
-          acceptUrl: null,
         }
       })
     },
-    async inviteMember(context, input: InviteTeamMemberInput) {
+    async inviteMember(context, input: InviteTeamMemberInput): Promise<CreatedTeamInvitationDto> {
       const email = input.email.trim().toLowerCase()
       const [existingUser] = await context.db
         .select({ id: authUser.id })
@@ -238,11 +260,48 @@ export function createLocalTeamManagementAdapter(
     async deactivateMember(context, memberId) {
       await context.db.delete(authSession).where(eq(authSession.userId, memberId))
       await context.db.delete(apikeyTable).where(eq(apikeyTable.referenceId, memberId))
-      await context.db.delete(authAccount).where(eq(authAccount.userId, memberId))
+      const accounts = await context.db
+        .select({ id: authAccount.id, providerId: authAccount.providerId })
+        .from(authAccount)
+        .where(eq(authAccount.userId, memberId))
+      await Promise.all(
+        accounts.map((account) =>
+          context.db
+            .update(authAccount)
+            .set({ providerId: localProviderIdForStatus(account.providerId, "deactivated") })
+            .where(eq(authAccount.id, account.id)),
+        ),
+      )
       const member = (await listLocalMembers(context)).find(
         (candidate) => candidate.id === memberId,
       )
       if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
+      return member
+    },
+    async activateMember(context, memberId) {
+      const accounts = await context.db
+        .select({ id: authAccount.id, providerId: authAccount.providerId })
+        .from(authAccount)
+        .where(eq(authAccount.userId, memberId))
+      await Promise.all(
+        accounts.map((account) =>
+          context.db
+            .update(authAccount)
+            .set({ providerId: localProviderIdForStatus(account.providerId, "active") })
+            .where(eq(authAccount.id, account.id)),
+        ),
+      )
+      const member = (await listLocalMembers(context)).find(
+        (candidate) => candidate.id === memberId,
+      )
+      if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
+      if (member.status !== "active") {
+        throw new TeamManagementError(
+          "activation_unavailable",
+          "This local member has no sign-in account to reactivate.",
+          409,
+        )
+      }
       return member
     },
     roleLevel(roleId) {

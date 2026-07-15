@@ -188,6 +188,11 @@ export interface TeamManagementPageMessages {
     roleLabel: string
     submit: string
     submitting: string
+    acceptUrlLabel: string
+    acceptUrlDescription: string
+    copyUrl: string
+    copied: string
+    copyFailed: string
   }
   members: {
     title: string
@@ -198,6 +203,8 @@ export interface TeamManagementPageMessages {
     lastActivityColumn: string
     actionsColumn: string
     empty: string
+    activate: string
+    activateLabel: (name: string) => string
     deactivate: string
     deactivateLabel: (name: string) => string
     deactivateConfirm: (name: string) => string

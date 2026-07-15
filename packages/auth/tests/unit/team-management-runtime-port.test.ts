@@ -18,6 +18,16 @@ describe("team-management runtime port", () => {
       /getCapabilities/,
     )
   })
+
+  it("requires the provider-neutral activation operation", () => {
+    const contribution = createAuthRuntimePortContribution(hostWithAuthProvider("better-auth"))
+    const provider = contribution[teamManagementRuntimePort.id] as TeamManagementRuntimeProvider
+    const incomplete = { ...provider, activateMember: undefined }
+
+    expect(() =>
+      teamManagementRuntimePort.test(incomplete as TeamManagementRuntimeProvider),
+    ).toThrow(/activateMember/)
+  })
 })
 
 function hostWithAuthProvider(provider: "better-auth" | "voyant-cloud") {

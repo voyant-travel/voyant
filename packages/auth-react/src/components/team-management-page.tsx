@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type {
+  CreatedTeamInvitationDto,
   TeamInvitationDto,
   TeamManagementCapabilitiesDto,
   TeamMemberDto,
@@ -28,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyant-travel/ui/components"
-import { Loader2, Mail, Trash2, UserPlus, Users } from "lucide-react"
+import { Check, Copy, Loader2, Mail, Trash2, UserPlus, UserRoundCheck, Users } from "lucide-react"
 import { type FormEvent, useEffect, useMemo, useState } from "react"
 
 import { useAuthUiI18nOrDefault } from "../i18n/provider.js"
@@ -109,6 +110,12 @@ function TeamManagementView() {
   const deactivate = useMutation({
     mutationFn: (memberId: string) =>
       api.delete(`/v1/admin/team/members/${encodeURIComponent(memberId)}`),
+    onSuccess: invalidateTeam,
+    onError: (error) => setActionError(error instanceof Error ? error.message : copy.actionFailed),
+  })
+  const activate = useMutation({
+    mutationFn: (memberId: string) =>
+      api.put(`/v1/admin/team/members/${encodeURIComponent(memberId)}/activation`, undefined),
     onSuccess: invalidateTeam,
     onError: (error) => setActionError(error instanceof Error ? error.message : copy.actionFailed),
   })
@@ -246,6 +253,22 @@ function TeamManagementView() {
                               <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           ) : null}
+                          {capabilities?.activateMembers && member.status === "deactivated" ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              title={copy.members.activate}
+                              aria-label={copy.members.activateLabel(label)}
+                              disabled={activate.isPending}
+                              onClick={() => {
+                                setActionError(null)
+                                activate.mutate(member.id)
+                              }}
+                            >
+                              <UserRoundCheck className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          ) : null}
                         </TableCell>
                       </TableRow>
                     )
@@ -330,16 +353,24 @@ function InviteMemberForm({ roles }: { roles: TeamRoleDto[] }) {
   const [email, setEmail] = useState("")
   const [roleId, setRoleId] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [createdInvitation, setCreatedInvitation] = useState<CreatedTeamInvitationDto | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!roleId && roles[0]) setRoleId(roles[0].id)
   }, [roleId, roles])
 
   const invite = useMutation({
-    mutationFn: () => api.post("/v1/admin/team/invitations", { email: email.trim(), roleId }),
-    onSuccess: () => {
+    mutationFn: () =>
+      api.post<{ data: CreatedTeamInvitationDto }>("/v1/admin/team/invitations", {
+        email: email.trim(),
+        roleId,
+      }),
+    onSuccess: ({ data }) => {
       setEmail("")
       setError(null)
+      setCreatedInvitation(data)
+      setCopied(false)
       void queryClient.invalidateQueries({ queryKey: ["team-management"] })
     },
     onError: (cause) => setError(cause instanceof Error ? cause.message : copy.actionFailed),
@@ -348,7 +379,19 @@ function InviteMemberForm({ roles }: { roles: TeamRoleDto[] }) {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setCreatedInvitation(null)
+    setCopied(false)
     invite.mutate()
+  }
+
+  const copyAcceptUrl = async () => {
+    if (!createdInvitation?.acceptUrl) return
+    try {
+      await navigator.clipboard.writeText(createdInvitation.acceptUrl)
+      setCopied(true)
+    } catch {
+      setError(copy.invite.copyFailed)
+    }
   }
 
   return (
@@ -399,6 +442,34 @@ function InviteMemberForm({ roles }: { roles: TeamRoleDto[] }) {
             </Button>
           </div>
           {error ? <p className="text-sm text-destructive md:col-span-3">{error}</p> : null}
+          {createdInvitation?.acceptUrl ? (
+            <div className="space-y-2 border-t pt-4 md:col-span-3" role="status">
+              <Label htmlFor="team-invite-accept-url">{copy.invite.acceptUrlLabel}</Label>
+              <p className="text-sm text-muted-foreground">{copy.invite.acceptUrlDescription}</p>
+              <div className="flex gap-2">
+                <Input
+                  id="team-invite-accept-url"
+                  readOnly
+                  value={createdInvitation.acceptUrl}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  title={copied ? copy.invite.copied : copy.invite.copyUrl}
+                  aria-label={copied ? copy.invite.copied : copy.invite.copyUrl}
+                  onClick={() => void copyAcceptUrl()}
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {copied ? copy.invite.copied : copy.invite.copyUrl}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </form>
       </CardContent>
     </Card>

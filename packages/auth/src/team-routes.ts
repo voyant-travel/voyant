@@ -99,6 +99,13 @@ const deactivateMemberRoute = teamRoute({
   request: { params: z.object({ memberId: z.string() }) },
   statuses: [200, 401, 403, 404, 409, 501],
 })
+const activateMemberRoute = teamRoute({
+  method: "put",
+  path: "/members/{memberId}/activation",
+  operationId: "activateTeamMember",
+  request: { params: z.object({ memberId: z.string() }) },
+  statuses: [200, 401, 403, 404, 409, 501],
+})
 
 function requestContext(c: TeamRouteContext): TeamManagementRequestContext | Response {
   const userId = c.get("userId")
@@ -175,6 +182,11 @@ export function createTeamAdminRoutes(runtime: TeamManagementRuntimeProvider) {
   routes.openapi(deactivateMemberRoute, async (c) => {
     const { memberId } = c.req.param()
     const result = await run(c, (context) => runtime.deactivateMember(context, memberId))
+    return result instanceof Response ? result : c.json({ data: result })
+  })
+  routes.openapi(activateMemberRoute, async (c) => {
+    const { memberId } = c.req.param()
+    const result = await run(c, (context) => runtime.activateMember(context, memberId))
     return result instanceof Response ? result : c.json({ data: result })
   })
 

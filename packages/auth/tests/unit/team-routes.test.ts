@@ -11,6 +11,7 @@ function runtime(): TeamManagementRuntimeProvider {
       viewRoster: true,
       inviteMembers: true,
       manageRoles: true,
+      activateMembers: true,
       deactivateMembers: true,
       revokeInvitations: true,
     })),
@@ -27,7 +28,17 @@ function runtime(): TeamManagementRuntimeProvider {
       },
     ]),
     listRoles: vi.fn(async () => []),
-    listInvitations: vi.fn(async () => []),
+    listInvitations: vi.fn(async () => [
+      {
+        id: "invite_1",
+        email: "new@example.com",
+        roleId: "editor",
+        roleName: "Editor",
+        status: "pending",
+        createdAt: "2026-07-15T00:00:00.000Z",
+        expiresAt: "2026-07-18T00:00:00.000Z",
+      },
+    ]),
     inviteMember: vi.fn(async (_context, input) => ({
       id: "invite_1",
       email: input.email,
@@ -36,12 +47,22 @@ function runtime(): TeamManagementRuntimeProvider {
       status: "pending",
       createdAt: "2026-07-15T00:00:00.000Z",
       expiresAt: "2026-07-18T00:00:00.000Z",
-      acceptUrl: null,
+      acceptUrl: "https://operator.example/accept-invite?token=one-time-secret",
     })),
     revokeInvitation: vi.fn(async () => undefined),
     updateMemberRole: vi.fn(async () => {
       throw new TeamManagementError("self_change_forbidden", "No self-demotion.", 409)
     }),
+    activateMember: vi.fn(async () => ({
+      id: "member_1",
+      email: "member@example.com",
+      name: "Member",
+      roleId: "editor",
+      roleName: "Editor",
+      status: "active",
+      joinedAt: null,
+      lastActivityAt: null,
+    })),
     deactivateMember: vi.fn(async () => {
       throw new TeamManagementError("last_owner", "Last owner.", 409)
     }),
@@ -80,6 +101,28 @@ describe("team admin routes", () => {
     expect(provider.getCapabilities).not.toHaveBeenCalled()
   })
 
+  it("returns the accept URL only from invitation creation", async () => {
+    const provider = runtime()
+    const created = await app(provider).request("/v1/admin/team/invitations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "new@example.com", roleId: "editor" }),
+    })
+    const listed = await app(provider).request("/v1/admin/team/invitations")
+
+    expect(created.status).toBe(201)
+    expect(await created.json()).toEqual({
+      data: expect.objectContaining({
+        acceptUrl: "https://operator.example/accept-invite?token=one-time-secret",
+      }),
+    })
+    expect(JSON.stringify(await listed.json())).not.toContain("token")
+    expect(provider.inviteMember).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user_actor" }),
+      { email: "new@example.com", roleId: "editor" },
+    )
+  })
+
   it("serializes policy invariant failures", async () => {
     const response = await app(runtime()).request("/v1/admin/team/members/member_1/role", {
       method: "PUT",
@@ -91,6 +134,22 @@ describe("team admin routes", () => {
     expect(await response.json()).toEqual({
       code: "self_change_forbidden",
       error: "No self-demotion.",
+    })
+  })
+
+  it("activates a member through the provider-neutral route", async () => {
+    const provider = runtime()
+    const response = await app(provider).request("/v1/admin/team/members/member_1/activation", {
+      method: "PUT",
+    })
+
+    expect(response.status).toBe(200)
+    expect(provider.activateMember).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user_actor" }),
+      "member_1",
+    )
+    expect(await response.json()).toEqual({
+      data: expect.objectContaining({ id: "member_1", status: "active" }),
     })
   })
 })

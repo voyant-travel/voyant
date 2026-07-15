@@ -1,4 +1,5 @@
 import type {
+  CreatedTeamInvitationDto,
   InviteTeamMemberInput,
   TeamInvitationDto,
   TeamManagementCapabilitiesDto,
@@ -15,6 +16,7 @@ export type TeamManagementErrorCode =
   | "self_change_forbidden"
   | "privilege_escalation"
   | "last_owner"
+  | "activation_unavailable"
   | "not_configured"
 
 export class TeamManagementError extends Error {
@@ -45,13 +47,14 @@ export interface TeamManagementAdapter {
   inviteMember(
     context: TeamManagementRequestContext,
     input: InviteTeamMemberInput,
-  ): Promise<TeamInvitationDto>
+  ): Promise<CreatedTeamInvitationDto>
   revokeInvitation(context: TeamManagementRequestContext, invitationId: string): Promise<void>
   updateMemberRole(
     context: TeamManagementRequestContext,
     memberId: string,
     roleId: string,
   ): Promise<TeamMemberDto>
+  activateMember(context: TeamManagementRequestContext, memberId: string): Promise<TeamMemberDto>
   deactivateMember(context: TeamManagementRequestContext, memberId: string): Promise<TeamMemberDto>
   roleLevel(roleId: string): number
   isOwnerRole(roleId: string): boolean
@@ -91,7 +94,7 @@ async function mutationState(
   if (target.id === actor.memberId) {
     throw new TeamManagementError(
       "self_change_forbidden",
-      "You cannot demote or deactivate your own account.",
+      "You cannot change your own role or access.",
       409,
     )
   }
@@ -199,6 +202,11 @@ export function createGuardedTeamManagementProvider(
       )
       assertOwnerRemains(adapter, members, target)
       return adapter.deactivateMember(context, memberId)
+    },
+    async activateMember(context, memberId) {
+      const adapter = resolveAdapter(context)
+      await mutationState(adapter, context, "activateMembers", memberId)
+      return adapter.activateMember(context, memberId)
     },
   }
 }

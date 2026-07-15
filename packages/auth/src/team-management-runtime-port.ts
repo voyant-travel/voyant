@@ -29,6 +29,9 @@ export interface TeamInvitationDto {
   status: TeamInvitationStatus
   createdAt: string
   expiresAt: string
+}
+
+export interface CreatedTeamInvitationDto extends TeamInvitationDto {
   acceptUrl: string | null
 }
 
@@ -36,6 +39,7 @@ export interface TeamManagementCapabilitiesDto {
   viewRoster: boolean
   inviteMembers: boolean
   manageRoles: boolean
+  activateMembers: boolean
   deactivateMembers: boolean
   revokeInvitations: boolean
 }
@@ -60,13 +64,14 @@ export interface TeamManagementRuntimeProvider {
   inviteMember(
     context: TeamManagementRequestContext,
     input: InviteTeamMemberInput,
-  ): Promise<TeamInvitationDto>
+  ): Promise<CreatedTeamInvitationDto>
   revokeInvitation(context: TeamManagementRequestContext, invitationId: string): Promise<void>
   updateMemberRole(
     context: TeamManagementRequestContext,
     memberId: string,
     roleId: string,
   ): Promise<TeamMemberDto>
+  activateMember(context: TeamManagementRequestContext, memberId: string): Promise<TeamMemberDto>
   deactivateMember(context: TeamManagementRequestContext, memberId: string): Promise<TeamMemberDto>
 }
 
@@ -84,6 +89,7 @@ export const teamManagementRuntimePort = definePort<TeamManagementRuntimeProvide
       "inviteMember",
       "revokeInvitation",
       "updateMemberRole",
+      "activateMember",
       "deactivateMember",
     ] as const) {
       if (typeof provider[method] !== "function") {
