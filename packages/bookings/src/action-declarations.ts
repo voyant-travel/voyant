@@ -67,7 +67,14 @@ export const BOOKING_ACTION_DECLARATIONS = {
       action: "cancel",
       risk: "critical",
       approvalPolicy: "conditional",
-      graph: { ...bookingWriteCapability.graph, id: "booking.status.cancel" },
+      graph: {
+        ...bookingWriteCapability.graph,
+        id: "booking.status.cancel",
+        from: {
+          ...adminRouteBinding,
+          tools: ["@voyant-travel/bookings#tool.cancel-booking"],
+        },
+      },
     },
     start: {
       ...bookingWriteCapability,
