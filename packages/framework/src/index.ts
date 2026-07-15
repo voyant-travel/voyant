@@ -175,6 +175,7 @@ export {
   VOYANT_POSTGRES_EXPORT_SCHEMA_VERSION,
   VOYANT_SELF_HOST_EXPORT_BUNDLE_JSON_SCHEMA,
   VOYANT_SELF_HOST_EXPORT_BUNDLE_SCHEMA_VERSION,
+  VOYANT_SELF_HOST_MIGRATION_POLICY,
   VOYANT_SELF_HOST_PROJECTION_JSON_SCHEMA,
   VOYANT_SELF_HOST_PROJECTION_SCHEMA_VERSION,
   VOYANT_SELF_HOST_PROVIDER_DEFAULTS,
@@ -188,12 +189,14 @@ export {
   type VoyantSelfHostExportValidationIssue,
   type VoyantSelfHostExportValidationIssueCode,
   type VoyantSelfHostExportValidationResult,
+  type VoyantSelfHostPackageInstall,
   type VoyantSelfHostProjection,
   type VoyantSelfHostProjectionDiagnostic,
   type VoyantSelfHostProjectionDiagnosticCode,
   type VoyantSelfHostProjectProjection,
   type VoyantSelfHostProjectSelection,
   type VoyantSelfHostProviderRemap,
+  type VoyantSelfHostStarterProjection,
   validateVoyantSelfHostExportBundle,
 } from "./self-host-export.js"
 export {

@@ -284,19 +284,26 @@ restored as an export format.
 
 `@voyant-travel/framework/self-host-export` validates the duplicated graph/hash/
 BOM evidence and projects deployment authority to self-hosted Node. Projection
-preserves selected graph IDs and package-scoped config, remaps Cloud substrate
-providers through `deployment.providers`, recomputes resource requirements and
-the graph hash, and reports unsupported providers or non-portable packages as
-explicit diagnostics. It does not rediscover package facets or maintain a
-central package catalog.
+preserves selected graph IDs and package-scoped config only after recursively
+rejecting secret-like fields and values. It remaps Cloud substrate providers
+through `deployment.providers`, recomputes resource requirements and the graph
+hash, and reports unsupported providers or non-portable packages as explicit
+diagnostics. It does not rediscover package facets or maintain a central package
+catalog.
 
 External generators consume that projection and the versioned
-`STANDARD_NODE_STARTER` contract. They generate selection intent and install the
-admitted package versions; package manifests remain the sole composition path.
-The restored database retains the shared `drizzle._voyant_migrations` lineage,
-so standard package migrations already applied in Cloud are not replayed and
-self-host-only additions continue in the same journal. Operational steps live
-in [Exporting From Voyant Cloud](../exporting-from-voyant-cloud.md).
+`STANDARD_NODE_STARTER` contract. The starter carries exact coordinates for
+every runtime and development dependency; generators may not resolve absent
+coordinates through registry tags. Projected registry package installs preserve
+their exact version, lockfile/npm reference, and sha512 integrity for deterministic
+verification. Package manifests remain the sole composition path.
+
+The restored database retains the shared `drizzle._voyant_migrations` lineage.
+The public projection's migration policy identifies entries by `(source, tag)`,
+skips matching entries without replay, applies only absent entries, and rejects
+an immutable-content hash mismatch as drift. Self-host-only additions continue
+in that same journal. Operational steps live in
+[Exporting From Voyant Cloud](../exporting-from-voyant-cloud.md).
 
 ## Facet Ownership
 

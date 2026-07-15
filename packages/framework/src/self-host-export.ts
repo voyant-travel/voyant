@@ -22,14 +22,23 @@ import { DEPLOYMENT_PROVIDER_CONTRACTS, DEPLOYMENT_PROVIDER_ROLES } from "./depl
 import { STANDARD_NODE_STARTER } from "./standard-node-starter.js"
 
 export const VOYANT_SELF_HOST_EXPORT_BUNDLE_SCHEMA_VERSION =
-  "voyant.self-host-export-bundle.v1" as const
+  "voyant.self-host-export-bundle.v2" as const
 export const VOYANT_POSTGRES_EXPORT_SCHEMA_VERSION = "voyant.postgres-export.v1" as const
 export const VOYANT_OBJECT_STORAGE_EXPORT_SCHEMA_VERSION =
   "voyant.object-storage-export.v1" as const
-export const VOYANT_SELF_HOST_PROJECTION_SCHEMA_VERSION = "voyant.self-host-projection.v1" as const
+export const VOYANT_SELF_HOST_PROJECTION_SCHEMA_VERSION = "voyant.self-host-projection.v2" as const
 
 const SHA256_PATTERN = /^sha256:[a-f0-9]{64}$/
+const EXACT_PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+const SHA512_INTEGRITY_PATTERN = /^sha512-[A-Za-z0-9+/]{86}==$/
 const PORTABLE_PACKAGE_SOURCE_KINDS = new Set(["registry", "git"])
+
+export const VOYANT_SELF_HOST_MIGRATION_POLICY = {
+  identity: ["source", "tag"],
+  matchingEntry: "skip",
+  contentHashMismatch: "reject-drift",
+  pendingEntry: "apply",
+} as const
 
 export type VoyantPostgresDumpFormat = "pg-custom" | "pg-directory" | "sql"
 
@@ -71,7 +80,7 @@ export interface VoyantSelfHostExportBundle {
 
 export const VOYANT_SELF_HOST_EXPORT_BUNDLE_JSON_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://schemas.voyant.travel/self-host-export-bundle.v1.json",
+  $id: "https://schemas.voyant.travel/self-host-export-bundle.v2.json",
   type: "object",
   additionalProperties: false,
   required: [
@@ -118,7 +127,7 @@ export const VOYANT_SELF_HOST_EXPORT_BUNDLE_JSON_SCHEMA = {
 
 export const VOYANT_SELF_HOST_PROJECTION_JSON_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://schemas.voyant.travel/self-host-projection.v1.json",
+  $id: "https://schemas.voyant.travel/self-host-projection.v2.json",
   type: "object",
   additionalProperties: false,
   required: [
@@ -132,7 +141,9 @@ export const VOYANT_SELF_HOST_PROJECTION_JSON_SCHEMA = {
     "graph",
     "providerRemaps",
     "provisioning",
+    "packageInstalls",
     "migrationJournal",
+    "migrationPolicy",
     "diagnostics",
   ],
   properties: {
@@ -146,7 +157,9 @@ export const VOYANT_SELF_HOST_PROJECTION_JSON_SCHEMA = {
     graph: { type: "object" },
     providerRemaps: { type: "array" },
     provisioning: { type: "object" },
+    packageInstalls: { type: "array" },
     migrationJournal: { type: "object" },
+    migrationPolicy: { type: "object" },
     diagnostics: { type: "array" },
   },
 } as const
@@ -160,6 +173,8 @@ export type VoyantSelfHostExportValidationIssueCode =
   | "VOYANT_EXPORT_GRAPH_NOT_CANONICAL"
   | "VOYANT_EXPORT_GRAPH_NOT_ADMITTED"
   | "VOYANT_EXPORT_BOM_MISMATCH"
+  | "VOYANT_EXPORT_INVALID_PACKAGE_PROVENANCE"
+  | "VOYANT_EXPORT_SECRET_IN_PROJECT_CONFIG"
   | "VOYANT_EXPORT_INVALID_DATABASE_DUMP"
   | "VOYANT_EXPORT_MIGRATION_LINEAGE_MISMATCH"
   | "VOYANT_EXPORT_INVALID_STORAGE_MANIFEST"
@@ -222,13 +237,45 @@ export interface VoyantSelfHostProjectProjection {
   }
 }
 
+export type VoyantSelfHostPackageInstall =
+  | {
+      packageName: string
+      coordinate: string
+      source: {
+        kind: "registry"
+        reference: string
+        integrity: string
+      }
+    }
+  | {
+      packageName: string
+      coordinate: string
+      source: {
+        kind: "git"
+        reference: string
+        integrity?: string
+      }
+    }
+
+export type VoyantSelfHostStarterProjection = Omit<
+  typeof STANDARD_NODE_STARTER,
+  "runtimeDependencyCoordinates"
+> & {
+  readonly runtimeDependencyCoordinates: Omit<
+    (typeof STANDARD_NODE_STARTER)["runtimeDependencyCoordinates"],
+    "@voyant-travel/framework"
+  > & {
+    readonly "@voyant-travel/framework": string
+  }
+}
+
 export interface VoyantSelfHostProjection {
   schemaVersion: typeof VOYANT_SELF_HOST_PROJECTION_SCHEMA_VERSION
   ready: boolean
   frameworkVersion: string
   sourceGraphHash: string
   projectedGraphHash: string
-  starter: typeof STANDARD_NODE_STARTER
+  starter: VoyantSelfHostStarterProjection
   project: VoyantSelfHostProjectProjection
   graph: ResolvedVoyantDeploymentGraph
   providerRemaps: readonly VoyantSelfHostProviderRemap[]
@@ -237,7 +284,9 @@ export interface VoyantSelfHostProjection {
     database: VoyantPostgresExportMetadata
     objectStorage: VoyantObjectStorageExportManifest
   }
+  packageInstalls: readonly VoyantSelfHostPackageInstall[]
   migrationJournal: typeof VOYANT_MIGRATION_JOURNAL_LINEAGE
+  migrationPolicy: typeof VOYANT_SELF_HOST_MIGRATION_POLICY
   diagnostics: readonly VoyantSelfHostProjectionDiagnostic[]
 }
 
@@ -270,7 +319,7 @@ export async function validateVoyantSelfHostExportBundle(
   }
   const frameworkVersion =
     nonEmptyString(input.frameworkVersion) &&
-    /^v?\d+\.\d+\.\d+(?:[-+].*)?$/.test(input.frameworkVersion)
+    EXACT_PACKAGE_VERSION_PATTERN.test(input.frameworkVersion)
       ? input.frameworkVersion
       : undefined
   if (!frameworkVersion) {
@@ -278,7 +327,7 @@ export async function validateVoyantSelfHostExportBundle(
       issues,
       "VOYANT_EXPORT_INVALID_FRAMEWORK_VERSION",
       "$.frameworkVersion",
-      "frameworkVersion must be a semantic version.",
+      "frameworkVersion must be an exact semantic version without a tag or range.",
     )
   }
 
@@ -388,7 +437,7 @@ export async function projectVoyantSelfHostExport(
     frameworkVersion: bundle.frameworkVersion,
     sourceGraphHash: bundle.graphHash,
     projectedGraphHash: graph.contentHash,
-    starter: STANDARD_NODE_STARTER,
+    starter: projectStarter(bundle.frameworkVersion),
     project: {
       productBom: bundle.productBom,
       modules: projectSelections(graph.modules, versions),
@@ -408,7 +457,9 @@ export async function projectVoyantSelfHostExport(
       database: bundle.database,
       objectStorage: bundle.objectStorage,
     },
+    packageInstalls: projectPackageInstalls(graph),
     migrationJournal: VOYANT_MIGRATION_JOURNAL_LINEAGE,
+    migrationPolicy: VOYANT_SELF_HOST_MIGRATION_POLICY,
     diagnostics,
   }
 }
@@ -476,6 +527,14 @@ function validateGraph(
           `$.resolvedGraph.${kind}[${index}]`,
           `resolvedGraph.${kind} entries require non-empty id and packageName values plus an optional object projectConfig.`,
         )
+        continue
+      }
+      if (unit.projectConfig !== undefined) {
+        validateSecretFreeProjectConfig(
+          unit.projectConfig,
+          `$.resolvedGraph.${kind}[${index}].projectConfig`,
+          issues,
+        )
       }
     }
   }
@@ -489,7 +548,13 @@ function validateGraph(
           `$.resolvedGraph.packageRecords[${index}]`,
           "resolvedGraph.packageRecords entries require a packageName, a supported source coordinate, and well-formed compatibility metadata.",
         )
+        continue
       }
+      validatePackageProvenance(
+        record as unknown as ResolvedVoyantDeploymentGraph["packageRecords"][number],
+        index,
+        issues,
+      )
     }
   }
   if (Array.isArray(value.diagnostics)) {
@@ -616,6 +681,114 @@ function validPackageRecord(value: unknown): boolean {
     (compatibility.targets === undefined || stringArray(compatibility.targets)) &&
     (compatibility.modes === undefined || stringArray(compatibility.modes))
   )
+}
+
+function validatePackageProvenance(
+  record: ResolvedVoyantDeploymentGraph["packageRecords"][number],
+  index: number,
+  issues: VoyantSelfHostExportValidationIssue[],
+): void {
+  if (record.source.kind !== "registry") return
+  if (
+    !record.version ||
+    !EXACT_PACKAGE_VERSION_PATTERN.test(record.version) ||
+    !registryReferenceMatches(record.source.reference, record.packageName, record.version) ||
+    !record.source.integrity ||
+    !SHA512_INTEGRITY_PATTERN.test(record.source.integrity)
+  ) {
+    addIssue(
+      issues,
+      "VOYANT_EXPORT_INVALID_PACKAGE_PROVENANCE",
+      `$.resolvedGraph.packageRecords[${index}].source`,
+      `Registry package ${record.packageName} must preserve an exact version, matching npm or pnpm-lock reference, and sha512 integrity.`,
+    )
+  }
+}
+
+function registryReferenceMatches(
+  reference: string | undefined,
+  packageName: string,
+  version: string,
+): boolean {
+  if (!reference) return false
+  if (reference === `npm:${packageName}@${version}`) return true
+  const lockfilePrefix = `pnpm-lock:${packageName}@${version}`
+  return reference === lockfilePrefix || reference.startsWith(`${lockfilePrefix}(`)
+}
+
+function validateSecretFreeProjectConfig(
+  value: unknown,
+  path: string,
+  issues: VoyantSelfHostExportValidationIssue[],
+): void {
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      validateSecretFreeProjectConfig(item, `${path}[${index}]`, issues)
+    }
+    return
+  }
+  if (isRecord(value)) {
+    for (const [key, item] of Object.entries(value)) {
+      const itemPath = jsonPathProperty(path, key)
+      if (secretLikeField(key)) {
+        addSecretIssue(itemPath, "field name", issues)
+        continue
+      }
+      validateSecretFreeProjectConfig(item, itemPath, issues)
+    }
+    return
+  }
+  if (typeof value === "string" && secretLikeValue(value)) {
+    addSecretIssue(path, "value", issues)
+  }
+}
+
+function secretLikeField(key: string): boolean {
+  const tokens = key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+  if (
+    tokens.some((token) =>
+      ["password", "passwd", "secret", "token", "credential", "credentials"].includes(token),
+    )
+  ) {
+    return true
+  }
+  const normalized = tokens.join("")
+  return ["apikey", "privatekey", "accesskey", "signingkey", "authorization"].some((term) =>
+    normalized.includes(term),
+  )
+}
+
+function secretLikeValue(value: string): boolean {
+  return (
+    /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/.test(value) ||
+    /^[a-z][a-z0-9+.-]*:\/\/[^/\s:@]+:[^/\s@]+@/i.test(value) ||
+    /^(?:Bearer\s+)?eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value) ||
+    /^(?:sk_(?:live|test)_|gh[pousr]_|xox[baprs]-)[A-Za-z0-9_-]{8,}$/.test(value) ||
+    /^AKIA[A-Z0-9]{16}$/.test(value)
+  )
+}
+
+function addSecretIssue(
+  path: string,
+  reason: "field name" | "value",
+  issues: VoyantSelfHostExportValidationIssue[],
+): void {
+  addIssue(
+    issues,
+    "VOYANT_EXPORT_SECRET_IN_PROJECT_CONFIG",
+    path,
+    `Projected package config contains a secret-like ${reason}; export only non-secret settings and provision secrets separately.`,
+  )
+}
+
+function jsonPathProperty(path: string, key: string): string {
+  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+    ? `${path}.${key}`
+    : `${path}[${JSON.stringify(key)}]`
 }
 
 function validateProductBom(
@@ -844,6 +1017,57 @@ function validatePackagePortability(
             : "Export the admitted git reference.",
       })
     }
+  }
+}
+
+function projectPackageInstalls(
+  graph: ResolvedVoyantDeploymentGraph,
+): VoyantSelfHostPackageInstall[] {
+  return [...graph.packageRecords]
+    .sort((left, right) => left.packageName.localeCompare(right.packageName))
+    .flatMap((record): VoyantSelfHostPackageInstall[] => {
+      if (
+        record.source.kind === "registry" &&
+        record.version &&
+        record.source.reference &&
+        record.source.integrity
+      ) {
+        return [
+          {
+            packageName: record.packageName,
+            coordinate: record.version,
+            source: {
+              kind: "registry",
+              reference: record.source.reference,
+              integrity: record.source.integrity,
+            },
+          },
+        ]
+      }
+      if (record.source.kind === "git" && record.source.reference) {
+        return [
+          {
+            packageName: record.packageName,
+            coordinate: record.source.reference,
+            source: {
+              kind: "git",
+              reference: record.source.reference,
+              ...(record.source.integrity ? { integrity: record.source.integrity } : {}),
+            },
+          },
+        ]
+      }
+      return []
+    })
+}
+
+function projectStarter(frameworkVersion: string): VoyantSelfHostStarterProjection {
+  return {
+    ...STANDARD_NODE_STARTER,
+    runtimeDependencyCoordinates: {
+      ...STANDARD_NODE_STARTER.runtimeDependencyCoordinates,
+      "@voyant-travel/framework": frameworkVersion,
+    },
   }
 }
 

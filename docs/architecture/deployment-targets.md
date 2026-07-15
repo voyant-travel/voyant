@@ -64,7 +64,7 @@ workload class well. On Node none of it is necessary.
   missing. Local `.env` loading is only a source for satisfying the same graph
   contract; it is not a parallel deployment shape.
 - **Cloud export:** a managed deployment exits through a validated
-  `voyant.self-host-export-bundle.v1` containing its admitted resolved graph and
+  `voyant.self-host-export-bundle.v2` containing its admitted resolved graph and
   data manifests. The framework projects that same graph to self-hosted
   `deployment.providers`; an external generator consumes the projection and
   `STANDARD_NODE_STARTER`. It does not boot a profile snapshot or select a

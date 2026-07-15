@@ -18,6 +18,11 @@ describe("standard Node starter contract", () => {
           "tsx",
           "typescript",
         ],
+        "developmentDependencyCoordinates": {
+          "@voyant-travel/cli": "0.40.5",
+          "tsx": "4.22.4",
+          "typescript": "6.0.3",
+        },
         "gitignoreEntries": [
           ".voyant/",
           "dist/",
@@ -61,7 +66,17 @@ describe("standard Node starter contract", () => {
           "react-dom",
           "pg",
         ],
-        "schemaVersion": "voyant.node-starter.v2",
+        "runtimeDependencyCoordinates": {
+          "@tanstack/react-query": "5.101.2",
+          "@tanstack/react-router": "1.170.17",
+          "@voyant-travel/framework": "0.45.0",
+          "@voyant-travel/operator-standard": "0.5.0",
+          "@voyant-travel/runtime": "0.11.0",
+          "pg": "8.22.0",
+          "react": "19.2.7",
+          "react-dom": "19.2.7",
+        },
+        "schemaVersion": "voyant.node-starter.v3",
         "seedEntry": "src/scripts/seed.ts",
       }
     `)
@@ -76,10 +91,27 @@ describe("standard Node starter contract", () => {
     expect(buildStandardNodeStarterSnapshot()).not.toMatch(/smartbill/i)
   })
 
+  it("provides exact coordinates for every generated project dependency", () => {
+    expect(Object.keys(STANDARD_NODE_STARTER.runtimeDependencyCoordinates).sort()).toEqual(
+      [...STANDARD_NODE_STARTER.runtimeDependencies].sort(),
+    )
+    expect(Object.keys(STANDARD_NODE_STARTER.developmentDependencyCoordinates).sort()).toEqual(
+      [...STANDARD_NODE_STARTER.developmentDependencies].sort(),
+    )
+
+    for (const coordinate of [
+      ...Object.values(STANDARD_NODE_STARTER.runtimeDependencyCoordinates),
+      ...Object.values(STANDARD_NODE_STARTER.developmentDependencyCoordinates),
+    ]) {
+      expect(coordinate).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/)
+      expect(coordinate).not.toMatch(/^(?:latest|next)|^[~^*]|\s|\|/)
+    }
+  })
+
   it("preserves literal readonly types for consumers", () => {
     expectTypeOf(
       VOYANT_STANDARD_NODE_STARTER_SCHEMA_VERSION,
-    ).toEqualTypeOf<"voyant.node-starter.v2">()
+    ).toEqualTypeOf<"voyant.node-starter.v3">()
     expectTypeOf<(typeof STANDARD_NODE_STARTER.rootFiles)[number]>().toEqualTypeOf<
       ".env.example" | ".gitignore" | "package.json" | "voyant.config.ts"
     >()
