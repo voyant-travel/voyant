@@ -46,17 +46,10 @@
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "organization",
-                        "member",
-                        "effective",
-                        "canManageOrganization"
-                      ]
+                      "required": ["organization", "member", "effective", "canManageOrganization"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -97,9 +90,7 @@
                     }
                   }
                 },
-                "required": [
-                  "visibility"
-                ]
+                "required": ["visibility"]
               }
             }
           }
@@ -122,14 +113,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "visibility"
-                      ]
+                      "required": ["visibility"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -200,9 +187,7 @@
                     }
                   }
                 },
-                "required": [
-                  "visibility"
-                ]
+                "required": ["visibility"]
               }
             }
           }
@@ -225,14 +210,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "visibility"
-                      ]
+                      "required": ["visibility"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
