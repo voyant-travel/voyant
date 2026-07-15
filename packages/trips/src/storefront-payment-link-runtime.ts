@@ -27,7 +27,7 @@ function resolveCardPaymentStarter(): Promise<CardPaymentStarter | null> {
         error instanceof Error &&
         "code" in error &&
         error.code === "ERR_MODULE_NOT_FOUND" &&
-        error.message.includes("@voyant-travel/plugin-netopia")
+        /Cannot find (?:package|module) ['"]@voyant-travel\/plugin-netopia['"]/.test(error.message)
       ) {
         return null
       }
