@@ -480,6 +480,7 @@ export const requestActionApprovalTool = defineTool({
     confirmationRequired: true,
     sideEffects: ["data-write"],
   },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx: ActionLedgerToolContext) {
     return service(ctx).requestApproval(input)
   },
@@ -506,6 +507,7 @@ export const approveActionApprovalTool = defineTool({
   requiredScopes: ["action-ledger:approve"],
   tier: "destructive",
   riskPolicy: approvalDecisionRisk,
+  actionPolicyEnforcement: "handler",
   async handler({ approvalId }, ctx: ActionLedgerToolContext) {
     return service(ctx).decideApproval({ approvalId, status: "approved" })
   },
@@ -520,6 +522,7 @@ export const denyActionApprovalTool = defineTool({
   requiredScopes: ["action-ledger:approve"],
   tier: "destructive",
   riskPolicy: approvalDecisionRisk,
+  actionPolicyEnforcement: "handler",
   async handler({ approvalId }, ctx: ActionLedgerToolContext) {
     return service(ctx).decideApproval({ approvalId, status: "denied" })
   },

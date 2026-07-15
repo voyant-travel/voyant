@@ -25,6 +25,7 @@ import type {
   ActionSensitiveReadDetail,
 } from "./schema.js"
 import { actionLedgerService } from "./service.js"
+import { createToolActionPolicyGate } from "./tool-action-policy.js"
 import type {
   ActionApprovalDetailDto,
   ActionApprovalDto,
@@ -60,7 +61,7 @@ type ActionLedgerMcpContext = Context<{
 }>
 
 export const voyantToolContextContribution = defineToolContextContribution({
-  context: ["actionLedger"],
+  context: ["actionLedger", "toolActionPolicy"],
   async contribute({ request, context, resources }) {
     const c = request as ActionLedgerMcpContext
     const db = requireService((c.get("db") ?? context.db) as AnyDrizzleDb | undefined, "db")
@@ -73,6 +74,11 @@ export const voyantToolContextContribution = defineToolContextContribution({
 
     return {
       actionLedger: createActionLedgerToolServices({
+        db,
+        selectedActions: selectedActions as SelectedAction[],
+        requestContext: actionLedgerRequestContext(c),
+      }),
+      toolActionPolicy: createToolActionPolicyGate({
         db,
         selectedActions: selectedActions as SelectedAction[],
         requestContext: actionLedgerRequestContext(c),

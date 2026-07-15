@@ -24,6 +24,17 @@ confirmation but do not themselves require another approval, which would
 create a recursive approval loop. The decision service appends the auditable
 approve or reject action in the same transaction.
 
+The package also contributes the transport-neutral `ToolActionPolicyGate` used by graph MCP
+dispatch. It resolves the Tool capability back to the exact selected action, rejects missing or
+wrong confirmation/target/idempotency/approval metadata, validates approval fingerprints and
+principal identity with `validateApprovedAction`, and writes required-ledger preflight and
+terminal records around domain dispatch. Conditional policies remain fail-closed because a
+generic transport cannot safely invent their domain evaluator.
+
+Booking cancellation and invoice refund keep their existing package-owned two-phase guards: both
+fingerprint domain target state and pass approved causation into atomic domain services. Their
+Tool definitions explicitly advertise handler-owned enforcement so MCP does not double-gate them.
+
 Reversal execution is intentionally not exposed as a Tool. The package service
 can record an outcome after a caller has already executed a reversal, but no
 provider-neutral port currently dispatches or verifies the referenced domain

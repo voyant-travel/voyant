@@ -368,9 +368,27 @@ describe("createMcpHonoApp", () => {
         },
       },
     ]
+    const actions = [
+      {
+        id: "@voyant-travel/catalog#action.echo",
+        version: "v1",
+        kind: "read" as const,
+        targetType: "echo",
+        risk: "low" as const,
+        ledger: "optional" as const,
+        approval: "never" as const,
+        from: { tools: ["@voyant-travel/catalog#tool.echo"] },
+      },
+    ]
     const graphApp = await createGraphMcpHonoApp({
-      runtime: { accessCatalog, tools: [runtimeTool], references },
+      runtime: {
+        accessCatalog,
+        tools: [runtimeTool],
+        actions,
+        references,
+      },
       buildContext: () => buildContext(),
+      providedContext: ["toolActionPolicy"],
     })
     const outer = new Hono()
     outer.use("*", async (c, next) => {
@@ -389,14 +407,39 @@ describe("createMcpHonoApp", () => {
 
     await expect(
       createGraphMcpHonoApp({
+        runtime: { accessCatalog, tools: [runtimeTool], actions, references },
+        buildContext: () => buildContext(),
+      }),
+    ).rejects.toThrow(/toolActionPolicy/)
+
+    await expect(
+      createGraphMcpHonoApp({
         runtime: {
           accessCatalog,
           tools: [{ ...runtimeTool, name: "drifted_echo" }],
+          actions: [
+            {
+              id: "@voyant-travel/catalog#action.echo",
+              version: "v1",
+              kind: "read",
+              targetType: "echo",
+              risk: "low",
+              ledger: "optional",
+              from: { tools: ["@voyant-travel/catalog#tool.echo"] },
+            },
+          ],
           references,
         },
         buildContext: () => buildContext(),
       }),
     ).rejects.toThrow(/name "echo" does not match graph binding "drifted_echo"/)
+
+    await expect(
+      createGraphMcpHonoApp({
+        runtime: { accessCatalog, tools: [runtimeTool], actions: [], references },
+        buildContext: () => buildContext(),
+      }),
+    ).rejects.toThrow(/no selected graph action policy/)
   })
 
   it("hides a tool from grant audiences outside its declared audience policy", async () => {
@@ -613,5 +656,182 @@ describe("createMcpHonoApp", () => {
     app.route("/", routes)
 
     expect((await app.request("/manifest")).status).toBe(500)
+  })
+
+  it("exposes selected action invocation metadata and gates before domain dispatch", async () => {
+    const registry = createToolRegistry()
+    let handlerCalls = 0
+    registry.register(
+      defineTool({
+        name: "guarded_send",
+        description: "Guarded write",
+        inputSchema: z.object({ message: z.string() }),
+        outputSchema: z.object({ ok: z.boolean() }),
+        requiredScopes: ["notifications:send"],
+        tier: "destructive",
+        riskPolicy: {
+          destructive: true,
+          reversible: false,
+          dryRunSupported: false,
+          confirmationRequired: true,
+          sideEffects: ["email"],
+        },
+        async handler() {
+          handlerCalls += 1
+          return { ok: true }
+        },
+      }),
+      {
+        capabilityId: "@voyant-travel/notifications#tool.guarded-send",
+        owner: "@voyant-travel/notifications",
+        capabilityVersion: "v1",
+        deploymentRisk: "critical",
+        actionPolicy: {
+          id: "@voyant-travel/notifications#action.guarded-send",
+          capabilityId: "@voyant-travel/notifications#action.guarded-send",
+          version: "v1",
+          kind: "execute",
+          targetType: "notification",
+          risk: "critical",
+          ledger: "required",
+          approval: "required",
+        },
+      },
+    )
+    const gateCalls: unknown[] = []
+    const mcp = createMcpHonoApp({
+      accessCatalog,
+      registry,
+      requireActionPolicies: true,
+      buildContext: () => ({
+        ...buildContext(),
+        toolActionPolicy: {
+          async execute(input, dispatch) {
+            gateCalls.push(input)
+            return dispatch()
+          },
+        },
+      }),
+    })
+    const outer = new Hono()
+    outer.use("*", async (c, next) => {
+      c.set("scopes", ["notifications:send"])
+      await next()
+    })
+    outer.route("/", mcp)
+
+    const listed = await readRpc(await outer.request("/", rpc("tools/list", {})))
+    const listedTool = (
+      listed.result as {
+        tools: Array<{
+          name: string
+          inputSchema: Record<string, unknown>
+          _meta: Record<string, unknown>
+        }>
+      }
+    ).tools.find(({ name }) => name === "guarded_send")
+    expect(listedTool).toMatchObject({
+      inputSchema: { properties: { _voyant: { type: "object" } } },
+      _meta: {
+        "voyant.travel/tool": {
+          actionPolicy: {
+            id: "@voyant-travel/notifications#action.guarded-send",
+            enforcement: "generic",
+            invocation: {
+              controlField: "_voyant",
+              requiredFields: [
+                "confirmed",
+                "targetId",
+                "idempotencyKey",
+                "approvalId",
+                "idempotencyFingerprint",
+              ],
+            },
+          },
+        },
+      },
+    })
+
+    const called = await readRpc(
+      await outer.request(
+        "/",
+        rpc("tools/call", {
+          name: "guarded_send",
+          arguments: {
+            message: "hello",
+            _voyant: {
+              confirmed: true,
+              targetId: "notification_1",
+              idempotencyKey: "send-1",
+              approvalId: "approval_1",
+              idempotencyFingerprint: "sha256:exact",
+            },
+          },
+        }),
+      ),
+    )
+    expect((called.result as { structuredContent: unknown }).structuredContent).toEqual({
+      ok: true,
+    })
+    expect(handlerCalls).toBe(1)
+    expect(gateCalls).toEqual([
+      expect.objectContaining({
+        commandInput: { message: "hello" },
+        invocation: expect.objectContaining({ approvalId: "approval_1" }),
+      }),
+    ])
+  })
+
+  it("fails closed when a graph-bound generic Tool has no action-policy gate", async () => {
+    const registry = createToolRegistry()
+    let dispatched = false
+    registry.register(
+      defineTool({
+        name: "guarded_read",
+        description: "Guarded read",
+        inputSchema: z.object({}),
+        outputSchema: z.object({ ok: z.boolean() }),
+        requiredScopes: ["catalog:read"],
+        tier: "read",
+        riskPolicy: READ_ONLY_RISK,
+        async handler() {
+          dispatched = true
+          return { ok: true }
+        },
+      }),
+      {
+        capabilityId: "@voyant-travel/catalog#tool.guarded-read",
+        owner: "@voyant-travel/catalog",
+        capabilityVersion: "v1",
+        actionPolicy: {
+          id: "@voyant-travel/catalog#action.guarded-read",
+          capabilityId: "@voyant-travel/catalog#action.guarded-read",
+          version: "v1",
+          kind: "read",
+          targetType: "catalog",
+          risk: "low",
+          ledger: "optional",
+          approval: "never",
+        },
+      },
+    )
+    const mcp = createMcpHonoApp({
+      accessCatalog,
+      registry,
+      requireActionPolicies: true,
+      buildContext,
+    })
+    const outer = new Hono()
+    outer.use("*", async (c, next) => {
+      c.set("scopes", ["catalog:read"])
+      await next()
+    })
+    outer.route("/", mcp)
+    const called = await readRpc(
+      await outer.request("/", rpc("tools/call", { name: "guarded_read", arguments: {} })),
+    )
+    expect((called.result as { isError?: boolean }).isError).toBe(true)
+    expect(JSON.stringify(called)).toContain("ACTION_POLICY_REQUIRED")
+    expect(dispatched).toBe(false)
   })
 })

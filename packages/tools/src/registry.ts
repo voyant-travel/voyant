@@ -1,6 +1,14 @@
 import { z } from "zod"
 
-import type { ToolAnnotations, ToolBindingMetadata, ToolManifestEntry } from "./binding.js"
+import {
+  TOOL_ACTION_INVOCATION_FIELD,
+  type ToolActionInvocationPolicy,
+  type ToolActionPolicyBinding,
+  type ToolActionPolicyManifest,
+  type ToolAnnotations,
+  type ToolBindingMetadata,
+  type ToolManifestEntry,
+} from "./binding.js"
 import type { ToolContext } from "./context.js"
 import type { ToolDefinition } from "./define-tool.js"
 import { ToolError } from "./errors.js"
@@ -167,12 +175,43 @@ function createRegisteredTool(
     tier: tool.tier,
     riskPolicy: tool.riskPolicy,
     annotations: deriveAnnotations(tool, binding.annotations),
+    ...(binding.actionPolicy
+      ? { actionPolicy: deriveActionPolicy(tool, binding.actionPolicy) }
+      : {}),
   }
   assertNonEmpty(manifest.capabilityId, "capabilityId", tool.name)
   assertNonEmpty(manifest.owner, "owner", tool.name)
   assertNonEmpty(manifest.capabilityVersion, "capabilityVersion", tool.name)
   assertCompatibleRisk(manifest.deploymentRisk, tool.tier, tool.name)
   return { definition: tool, manifest }
+}
+
+function deriveActionPolicy(
+  tool: AnyToolDefinition,
+  action: ToolActionPolicyBinding,
+): ToolActionPolicyManifest {
+  const enforcement = tool.actionPolicyEnforcement ?? "generic"
+  const requiredFields: ToolActionInvocationPolicy["requiredFields"][number][] = []
+  if (tool.riskPolicy.confirmationRequired) requiredFields.push("confirmed")
+  if (enforcement === "generic") {
+    if (action.ledger === "required") requiredFields.push("targetId")
+    if (action.kind === "execute" && action.ledger === "required") {
+      requiredFields.push("idempotencyKey")
+    }
+    if (action.approval === "required") {
+      requiredFields.push("approvalId", "idempotencyFingerprint")
+    }
+  }
+  return {
+    ...action,
+    enforcement,
+    invocation: {
+      controlField: TOOL_ACTION_INVOCATION_FIELD,
+      requiredFields,
+      optionalFields: ["reasonCode", "approvalId", "idempotencyFingerprint"],
+      fingerprintAlgorithm: "action-ledger-command-v1",
+    },
+  }
 }
 
 /**

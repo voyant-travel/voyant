@@ -1,6 +1,11 @@
 import type { z } from "zod"
 
-import type { ToolAnnotations, ToolAudiencePolicy, ToolDeprecation } from "./binding.js"
+import type {
+  ToolActionPolicyEnforcement,
+  ToolAnnotations,
+  ToolAudiencePolicy,
+  ToolDeprecation,
+} from "./binding.js"
 import type { ToolContext } from "./context.js"
 import type { RiskPolicy, RiskTier } from "./risk.js"
 
@@ -54,6 +59,8 @@ export interface ToolDefinition<In, Out, Ctx extends ToolContext = ToolContext> 
   riskPolicy: RiskPolicy
   /** Optional overrides for standard MCP ToolAnnotations hints. */
   annotations?: ToolAnnotations
+  /** Use only when the handler already enforces the selected action-ledger policy itself. */
+  actionPolicyEnforcement?: ToolActionPolicyEnforcement
   /** The implementation — receives parsed args + context, returns pure data. */
   handler(args: In, ctx: Ctx): Promise<Out>
 }

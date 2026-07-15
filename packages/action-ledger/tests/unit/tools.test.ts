@@ -323,6 +323,9 @@ describe("action-ledger Tool services", () => {
       resources: { [TOOL_GRAPH_ACTIONS_RESOURCE]: [selectedAction] },
     })
     const service = contribution.actionLedger as ActionLedgerToolServices
+    expect(contribution.toolActionPolicy).toEqual(
+      expect.objectContaining({ execute: expect.any(Function) }),
+    )
     await expect(service.listEntries({})).resolves.toMatchObject({
       data: [{ id: "alge_1", occurredAt: "2026-05-15T10:00:00.000Z" }],
     })

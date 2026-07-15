@@ -35,6 +35,43 @@ export interface ToolDeprecation {
 /** Deployment/action-ledger risk posture from the selected package graph. */
 export type ToolDeploymentRisk = "low" | "medium" | "high" | "critical"
 
+export const TOOL_ACTION_INVOCATION_FIELD = "_voyant" as const
+
+export type ToolActionPolicyEnforcement = "generic" | "handler"
+
+/** Selected graph action policy bound to one stable Tool capability. */
+export interface ToolActionPolicyBinding {
+  id: string
+  capabilityId: string
+  version: string
+  kind: "execute" | "read" | "sensitive-read"
+  targetType: string
+  risk: ToolDeploymentRisk
+  ledger: "required" | "optional"
+  approval: "never" | "conditional" | "required"
+  policy?: string
+  reversible?: boolean
+  allowedActorTypes?: readonly string[]
+}
+
+export interface ToolActionInvocationPolicy {
+  controlField: typeof TOOL_ACTION_INVOCATION_FIELD
+  requiredFields: readonly (
+    | "confirmed"
+    | "targetId"
+    | "idempotencyKey"
+    | "approvalId"
+    | "idempotencyFingerprint"
+  )[]
+  optionalFields: readonly ("reasonCode" | "approvalId" | "idempotencyFingerprint")[]
+  fingerprintAlgorithm: "action-ledger-command-v1"
+}
+
+export interface ToolActionPolicyManifest extends ToolActionPolicyBinding {
+  enforcement: ToolActionPolicyEnforcement
+  invocation: ToolActionInvocationPolicy
+}
+
 /** Stable identity supplied by a package graph binding or directly by a standalone tool. */
 export interface ToolBindingMetadata {
   capabilityId: string
@@ -48,6 +85,7 @@ export interface ToolBindingMetadata {
   deprecation?: ToolDeprecation
   audience?: ToolAudiencePolicy
   annotations?: ToolAnnotations
+  actionPolicy?: ToolActionPolicyBinding
 }
 
 /**
@@ -82,6 +120,8 @@ export interface ToolManifestEntry {
   riskPolicy: RiskPolicy
   /** Standard MCP hints derived from risk, with explicit tool overrides applied. */
   annotations: ToolAnnotations
+  /** Selected graph action and the fail-closed invocation contract for this capability. */
+  actionPolicy?: ToolActionPolicyManifest
 }
 
 /** Version of the manifest contract, carried so consumers degrade gracefully. */

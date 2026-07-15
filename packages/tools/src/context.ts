@@ -28,6 +28,31 @@ export interface ToolContext {
   resolverScope: ResolverScope
   /** Optional runtime hook to keep the isolate alive for background work. */
   waitUntil?(promise: Promise<unknown>): void
+  /** Request-scoped selected-graph action gate supplied by the action-ledger package. */
+  toolActionPolicy?: ToolActionPolicyGate
+}
+
+export interface ToolActionInvocationControl {
+  confirmed?: boolean
+  targetId?: string
+  idempotencyKey?: string
+  approvalId?: string
+  idempotencyFingerprint?: string
+  reasonCode?: string
+}
+
+export interface ToolActionPolicyExecutionInput {
+  capabilityId: string
+  capabilityVersion: string
+  canonicalName: string
+  actionPolicy: import("./binding.js").ToolActionPolicyManifest
+  commandInput: unknown
+  invocation: ToolActionInvocationControl
+}
+
+/** Transport-neutral gate: the implementation owns policy checks and audited dispatch. */
+export interface ToolActionPolicyGate {
+  execute<T>(input: ToolActionPolicyExecutionInput, dispatch: () => Promise<T>): Promise<T>
 }
 
 export const TOOL_CONTEXT_CONTRIBUTION_EXPORT = "voyantToolContextContribution" as const

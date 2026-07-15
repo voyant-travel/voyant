@@ -191,6 +191,7 @@ export const issueInvoiceRefundTool = defineTool<
     sideEffects: ["refund", "data-write"],
   },
   annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
     return issueInvoiceRefundOutputSchema.parse(await finance(ctx).issueInvoiceRefund(input))
   },

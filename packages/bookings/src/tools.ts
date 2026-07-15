@@ -200,6 +200,7 @@ export const cancelBookingTool = defineTool<
     sideEffects: ["data-write", "external-booking"],
   },
   annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
   async handler(input, ctx) {
     return cancelBookingToolOutputSchema.parse(await bookings(ctx).cancelBooking(input))
   },

@@ -14,7 +14,9 @@ data** validated by an `outputSchema` — never transport envelopes or presentat
   owner; standalone tools should declare them directly. `Ctx` widens by intersection so a domain
   injects its services (`ToolContext & { trips: … }`) without this package depending on
   the domain.
-- `ToolContext` — `{ db, actor, audience, tenantId, resolverScope, waitUntil? }`.
+- `ToolContext` — `{ db, actor, audience, tenantId, resolverScope, waitUntil?,
+  toolActionPolicy? }`. The optional gate is supplied by graph hosts and called by transport
+  adapters before selected action dispatch.
 - `RiskTier` + `RiskPolicy` — **declarative** risk data (destructive / reversible /
   dry-run / side effects) so remote consumers and the MCP layer gate approvals without
   executing tool code (D1).
@@ -24,6 +26,10 @@ data** validated by an `outputSchema` — never transport envelopes or presentat
   `z.toJSONSchema`), capability identity/version, owner, aliases/deprecation, audience,
   `requiredScopes`, MCP annotations, `tier`, and `riskPolicy`. Aliases dispatch to the
   canonical definition; capability lookup may require an exact supported version.
+- Graph bindings add an `actionPolicy` to discovery. Generic transports pass the command and
+  reserved invocation controls through `ToolActionPolicyGate`; the action-ledger package owns the
+  implementation. `actionPolicyEnforcement: "handler"` is reserved for Tools whose existing
+  package handler already performs the same selected-policy approval and ledger workflow.
 - Authorization is **not** enforced in the registry — the transport binds each tool's
   `requiredScopes` to `hasApiKeyPermission` (AND semantics).
 

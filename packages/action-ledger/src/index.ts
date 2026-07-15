@@ -176,3 +176,7 @@ export {
   sortActionLedgerTimelineEntries,
   toActionLedgerTimelineCursor,
 } from "./timeline.js"
+export {
+  type CreateToolActionPolicyGateInput,
+  createToolActionPolicyGate,
+} from "./tool-action-policy.js"
