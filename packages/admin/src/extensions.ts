@@ -244,6 +244,52 @@ export interface AdminSettingsPageContribution {
   ssr?: boolean | "data-only"
 }
 
+export interface AdminSetupStepMessages {
+  title: string
+  description: string
+  action: string
+}
+
+export interface AdminSetupStepActionProps {
+  label: string
+  prefill: unknown
+}
+
+/** Package-owned guidance shown by the selected setup flow. */
+export interface AdminSetupStepContribution {
+  /** Globally stable package-owned identifier. */
+  id: string
+  order: number
+  skippable: boolean
+  messages: Readonly<Record<string, AdminSetupStepMessages>>
+  /** Existing package surface used to carry out this step. */
+  href?: string
+  /** Use when the action must resolve a semantic destination. */
+  actionComponent?: React.ComponentType<AdminSetupStepActionProps>
+  /** Read-only domain predicate. The setup shell persists a positive result. */
+  isComplete: (context: AdminRouteLoaderContext) => boolean | Promise<boolean>
+  /** Validate or narrow the opaque provisioning value before handing it to the action. */
+  prefill?: (value: unknown) => unknown
+}
+
+export interface AdminSetupInitializeInput {
+  stepIds: readonly string[]
+  fresh: boolean
+}
+
+export interface AdminSetupInitializeResult {
+  redirectTo?: string
+}
+
+/** Package-owned setup persistence/controller attached to the selected admin graph. */
+export interface AdminSetupFlowContribution {
+  id: string
+  initialize: (
+    context: AdminRouteLoaderContext,
+    input: AdminSetupInitializeInput,
+  ) => Promise<AdminSetupInitializeResult>
+}
+
 /** Shell chrome slot rendered in the workspace header's right action area. */
 export const adminWorkspaceHeaderActionsSlot = "workspace.header.actions" satisfies AdminWidgetSlot
 
@@ -260,6 +306,8 @@ export interface AdminExtension {
   navigationPreferences?: AdminNavigationPreferencesContribution
   routes?: ReadonlyArray<AdminUiRouteContribution>
   settingsPages?: ReadonlyArray<AdminSettingsPageContribution>
+  setupSteps?: ReadonlyArray<AdminSetupStepContribution>
+  setupFlow?: AdminSetupFlowContribution
   widgets?: ReadonlyArray<AnyAdminWidgetContribution>
 }
 
@@ -408,6 +456,41 @@ export function createAdminExtensionRegistry(
   ...extensions: ReadonlyArray<AdminExtension>
 ): ReadonlyArray<AdminExtension> {
   return extensions
+}
+
+/** Resolve only the setup steps present in the composed selected extension set. */
+export function resolveAdminSetupSteps(
+  extensions: ReadonlyArray<AdminExtension>,
+): AdminSetupStepContribution[] {
+  const steps = extensions.flatMap((extension) => extension.setupSteps ?? [])
+  const seen = new Set<string>()
+  for (const step of steps) {
+    if (seen.has(step.id)) {
+      throw new Error(`[voyant-admin] Duplicate setup step id "${step.id}".`)
+    }
+    seen.add(step.id)
+  }
+  return steps
+    .map((step, index) => ({ step, index }))
+    .sort((a, b) => a.step.order - b.step.order || a.index - b.index)
+    .map(({ step }) => step)
+}
+
+/** A composed admin may select one setup-state owner. */
+export function resolveAdminSetupFlow(
+  extensions: ReadonlyArray<AdminExtension>,
+): AdminSetupFlowContribution | undefined {
+  const flows = extensions.flatMap((extension) =>
+    extension.setupFlow ? [extension.setupFlow] : [],
+  )
+  if (flows.length > 1) {
+    throw new Error(
+      `[voyant-admin] Expected one setup flow contribution, received: ${flows
+        .map((flow) => flow.id)
+        .join(", ")}.`,
+    )
+  }
+  return flows[0]
 }
 
 type OrderedValue<T> = {

@@ -1,5 +1,6 @@
 import {
   type AdminExtension,
+  type AdminRouteLoaderContext,
   adminRoutePageModule,
   defineAdminExtension,
 } from "@voyant-travel/admin/extensions"
@@ -52,5 +53,41 @@ export function createSelectedOperatorSettingsAdminExtension(): AdminExtension {
   return defineAdminExtension({
     id: "operator-settings",
     settingsPages: [createOperatorProfileSettingsExtraPage()],
+    setupSteps: [
+      {
+        id: "@voyant-travel/operator-settings#setup.business-profile",
+        order: 10,
+        skippable: true,
+        href: "/settings/operator",
+        messages: {
+          en: {
+            title: "Business profile",
+            description:
+              "Add the business name and contact details used across customer documents.",
+            action: "Open operator settings",
+          },
+          ro: {
+            title: "Profilul companiei",
+            description: "Adauga numele si datele de contact folosite in documentele clientilor.",
+            action: "Deschide setarile operatorului",
+          },
+        },
+        prefill: objectPrefill,
+        isComplete: hasBusinessProfile,
+      },
+    ],
   })
+}
+
+async function hasBusinessProfile({ runtime }: AdminRouteLoaderContext): Promise<boolean> {
+  const response = await (runtime.fetcher ?? fetch)(
+    `${runtime.baseUrl}/v1/admin/settings/operator-profile`,
+  )
+  if (!response.ok) return false
+  const profile = ((await response.json()) as { data?: Record<string, unknown> | null }).data
+  return Boolean(profile?.name && (profile.email || profile.phone || profile.address))
+}
+
+function objectPrefill(value: unknown): unknown {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : undefined
 }

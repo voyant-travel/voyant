@@ -7,7 +7,7 @@ import {
   type SelectedAdminExtensionFactoryContext,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
-import { Tag } from "lucide-react"
+import { Globe2, Tag } from "lucide-react"
 
 export {
   type CreatePromotionsAdminExtensionOptions,
@@ -67,7 +67,7 @@ export function createSelectedCommerceAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
   const promotionsLabel = navMessages.promotions ?? "Promotions"
-  return withAdminRouteMessagesProvider(
+  const extension = withAdminRouteMessagesProvider(
     createCommerceAdminExtension({
       labels: { promotions: promotionsLabel },
       icon: Tag,
@@ -78,4 +78,56 @@ export function createSelectedCommerceAdminExtension({
         default: module.PromotionsUiMessagesProvider,
       })),
   )
+  return {
+    ...extension,
+    settingsPages: [
+      {
+        id: "markets",
+        path: "/markets",
+        title: "Markets",
+        label: "Markets",
+        icon: Globe2,
+        group: "general",
+        order: 35,
+        page: () =>
+          import("./markets/markets-settings-page.js").then((module) =>
+            adminRoutePageModule(module.MarketsSettingsPage),
+          ),
+        routeMessagesProvider: () =>
+          import("./markets/i18n/provider.js").then((module) => ({
+            default: module.MarketsUiMessagesProvider,
+          })),
+      },
+    ],
+    setupSteps: [
+      {
+        id: "@voyant-travel/commerce#setup.market",
+        order: 30,
+        skippable: true,
+        href: "/settings/markets",
+        messages: {
+          en: {
+            title: "Locale, currency, and market",
+            description: "Define the primary market, language, and selling currency.",
+            action: "Configure markets",
+          },
+          ro: {
+            title: "Limba, moneda si piata",
+            description: "Defineste piata principala, limba si moneda de vanzare.",
+            action: "Configureaza pietele",
+          },
+        },
+        isComplete: hasCommerceMarket,
+      },
+    ],
+  }
+}
+
+async function hasCommerceMarket({ runtime }: AdminRouteLoaderContext): Promise<boolean> {
+  const response = await (runtime.fetcher ?? fetch)(
+    `${runtime.baseUrl}/v1/admin/markets/markets?limit=1`,
+  )
+  if (!response.ok) return false
+  const payload = (await response.json()) as { data?: unknown[]; total?: number }
+  return (payload.total ?? payload.data?.length ?? 0) > 0
 }

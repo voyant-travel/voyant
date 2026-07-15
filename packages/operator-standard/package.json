@@ -121,6 +121,8 @@
     "@voyant-travel/realtime-react": "workspace:*",
     "@voyant-travel/relationships": "workspace:*",
     "@voyant-travel/relationships-react": "workspace:*",
+    "@voyant-travel/setup": "workspace:*",
+    "@voyant-travel/setup-react": "workspace:*",
     "@voyant-travel/storage": "workspace:*",
     "@voyant-travel/storefront": "workspace:*",
     "@voyant-travel/storefront-react": "workspace:*",
