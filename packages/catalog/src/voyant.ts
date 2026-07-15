@@ -369,6 +369,26 @@ export const catalogBookingEngineVoyantModule = defineModule({
   ],
   actions: [
     {
+      id: "@voyant-travel/catalog#booking-engine#action.inspect-catalog-orders",
+      version: "v1",
+      kind: "sensitive-read",
+      targetType: "catalog-order",
+      resource: "bookings",
+      action: "read",
+      requiredScopes: ["bookings:read"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: [
+          "@voyant-travel/catalog#booking-engine#tool.list-catalog-orders",
+          "@voyant-travel/catalog#booking-engine#tool.get-catalog-order",
+        ],
+      },
+    },
+    {
       id: "@voyant-travel/catalog#booking-engine#action.quote-catalog-entity",
       version: "v1",
       kind: "execute",

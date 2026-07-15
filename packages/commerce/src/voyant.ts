@@ -7,6 +7,7 @@ import {
   defineModule,
   providePort,
   requirePort,
+  type VoyantGraphActionDeclaration,
 } from "@voyant-travel/core/project"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
@@ -61,6 +62,46 @@ const promotionAffectedAllFilter = {
     eq: [{ path: "data.affected.kind" }, { lit: "all" }],
   },
 } as const
+
+const commerceToolActions = [
+  commerceToolAction("resolve-sellability", "sellability", "read"),
+  commerceToolAction("list-cancellation-policies", "pricing", "read"),
+  commerceToolAction("get-cancellation-policy", "pricing", "read"),
+  commerceToolAction("create-cancellation-policy", "pricing", "write"),
+  commerceToolAction("update-cancellation-policy", "pricing", "write"),
+  commerceToolAction("list-price-catalogs", "pricing", "read"),
+  commerceToolAction("get-price-catalog", "pricing", "read"),
+  commerceToolAction("create-price-catalog", "pricing", "write"),
+  commerceToolAction("update-price-catalog", "pricing", "write"),
+  commerceToolAction("list-promotions", "promotions", "read"),
+  commerceToolAction("get-promotion", "promotions", "read"),
+  commerceToolAction("create-promotion", "promotions", "write"),
+  commerceToolAction("update-promotion", "promotions", "write"),
+  commerceToolAction("archive-promotion", "promotions", "write"),
+] as const
+
+function commerceToolAction(
+  suffix: string,
+  resource: "sellability" | "pricing" | "promotions",
+  action: "read" | "write",
+): VoyantGraphActionDeclaration {
+  const write = action === "write"
+  return {
+    id: `@voyant-travel/commerce#action.${suffix}`,
+    version: "v1",
+    kind: write ? "execute" : "read",
+    targetType: resource,
+    resource,
+    action,
+    requiredScopes: [`${resource}:${action}`],
+    risk: write ? "medium" : "low",
+    ledger: write ? "required" : "optional",
+    approval: "never",
+    reversible: write,
+    allowedActorTypes: ["staff"],
+    from: { tools: [`@voyant-travel/commerce#tool.${suffix}`] },
+  }
+}
 
 /** Import-cheap deployment declaration owned by the commerce package. */
 export const commerceVoyantModule = defineModule({
@@ -294,6 +335,7 @@ export const commerceVoyantModule = defineModule({
       risk: "medium",
     },
   ],
+  actions: commerceToolActions,
   events: [
     {
       id: "@voyant-travel/commerce#event.promotion.changed",

@@ -18,7 +18,7 @@ const READ_METADATA = {
   capabilityVersion: "v1",
   requiredScopes: ["mice:read"],
   audience: STAFF_AUDIENCE,
-  tier: "sensitive" as const,
+  tier: "read" as const,
   riskPolicy: READ_ONLY_RISK,
   annotations: { readOnlyHint: true, idempotentHint: true },
 }
@@ -27,7 +27,7 @@ const WRITE_METADATA = {
   capabilityVersion: "v1",
   requiredScopes: ["mice:write"],
   audience: STAFF_AUDIENCE,
-  tier: "sensitive" as const,
+  tier: "write" as const,
   riskPolicy: {
     destructive: false,
     reversible: true,

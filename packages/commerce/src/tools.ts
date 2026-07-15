@@ -168,7 +168,7 @@ function readMetadata(scopes: readonly string[]) {
     capabilityVersion: VERSION,
     requiredScopes: scopes,
     audience: STAFF_AUDIENCE,
-    tier: "sensitive" as const,
+    tier: "read" as const,
     riskPolicy: READ_ONLY_RISK,
     annotations: { readOnlyHint: true, idempotentHint: true },
   }
@@ -180,7 +180,7 @@ function writeMetadata(scopes: readonly string[]) {
     capabilityVersion: VERSION,
     requiredScopes: scopes,
     audience: STAFF_AUDIENCE,
-    tier: "sensitive" as const,
+    tier: "write" as const,
     riskPolicy: reversibleWriteRisk,
   }
 }

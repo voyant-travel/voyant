@@ -160,12 +160,12 @@ describe("first-party manifest convergence", () => {
     assert.match(failures, /required scope loyalty:write is absent/)
   })
 
-  it("requires explicit tool risk and action authority for high-risk tools", () => {
+  it("requires explicit tool risk and action authority for every non-low-risk tool", () => {
     const input = fixture()
-    input.graph.modules[0].tools[0].risk = "critical"
+    input.graph.modules[0].tools[0].risk = "medium"
     assert.match(
       inspectFirstPartyManifestConvergence(input).join("\n"),
-      /critical-risk tool must bind to a graph action/,
+      /medium-risk tool must bind to a graph action/,
     )
   })
 

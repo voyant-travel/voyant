@@ -79,7 +79,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.get-entry",
@@ -90,7 +90,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.target-timeline",
@@ -101,7 +101,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.list-approvals",
@@ -112,7 +112,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.get-approval",
@@ -123,7 +123,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.list-delegations",
@@ -134,7 +134,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.get-delegation",
@@ -145,7 +145,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.list-relay-outbox",
@@ -156,7 +156,7 @@ export const actionLedgerVoyantModule = defineModule({
       },
       requiredScopes: ["action-ledger:read"],
       context: ["actionLedger"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/action-ledger#tool.request-approval",
@@ -201,7 +201,7 @@ export const actionLedgerVoyantModule = defineModule({
       resource: "action-ledger",
       action: "read",
       requiredScopes: ["action-ledger:read"],
-      risk: "medium",
+      risk: "high",
       ledger: "required",
       approval: "never",
       allowedActorTypes: ["staff"],
@@ -222,7 +222,7 @@ export const actionLedgerVoyantModule = defineModule({
       resource: "action-ledger",
       action: "read",
       requiredScopes: ["action-ledger:read"],
-      risk: "medium",
+      risk: "high",
       ledger: "required",
       approval: "never",
       allowedActorTypes: ["staff"],
@@ -241,7 +241,7 @@ export const actionLedgerVoyantModule = defineModule({
       resource: "action-ledger",
       action: "read",
       requiredScopes: ["action-ledger:read"],
-      risk: "medium",
+      risk: "high",
       ledger: "required",
       approval: "never",
       allowedActorTypes: ["staff"],

@@ -319,7 +319,7 @@ function inspectToolParity(graph, workspacePackages, sources, failures) {
     for (const tool of unit.tools ?? []) {
       if (!nonEmpty(tool.risk))
         failures.push(`${tool.id}: first-party tool must declare an explicit risk`)
-      if ((tool.risk === "high" || tool.risk === "critical") && !actionTools.has(tool.id)) {
+      if (tool.risk !== "low" && !actionTools.has(tool.id)) {
         failures.push(`${tool.id}: ${tool.risk}-risk tool must bind to a graph action`)
       }
     }
