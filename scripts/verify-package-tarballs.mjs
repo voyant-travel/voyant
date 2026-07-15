@@ -23,6 +23,7 @@ import path from "node:path"
 import { promisify } from "node:util"
 
 import { packedFileExportsName } from "./lib/packed-exports.mjs"
+import { collectPackedManifestProtocolDependencies } from "./lib/packed-manifest.mjs"
 import { collectPackedSourceMapProblems } from "./lib/packed-sourcemaps.mjs"
 
 const execFileAsync = promisify(execFile)
@@ -380,29 +381,6 @@ function collectPackedExportProblems(extractRoot, packageName) {
   return problems
 }
 
-function collectWorkspaceProtocolDependencies(pkg) {
-  const problems = []
-  const dependencyFields = [
-    "dependencies",
-    "peerDependencies",
-    "optionalDependencies",
-    "devDependencies",
-  ]
-
-  for (const field of dependencyFields) {
-    const dependencies = pkg[field]
-    if (!dependencies || typeof dependencies !== "object") continue
-
-    for (const [name, version] of Object.entries(dependencies)) {
-      if (typeof version === "string" && version.startsWith("workspace:")) {
-        problems.push(`${field}.${name}=${version}`)
-      }
-    }
-  }
-
-  return problems
-}
-
 function getPublishedTargets(pkg) {
   const targets = new Set()
   const publishedMain = pkg.publishConfig?.main ?? pkg.main
@@ -534,10 +512,10 @@ function collectTarballProblems(
     problems.push(`missing packed exports: ${missingPackedExports.join("; ")}`)
   }
   problems.push(...packedSourceMapProblems)
-  const workspaceProtocolDependencies = collectWorkspaceProtocolDependencies(packedManifest)
-  if (workspaceProtocolDependencies.length > 0) {
+  const internalProtocolDependencies = collectPackedManifestProtocolDependencies(packedManifest)
+  if (internalProtocolDependencies.length > 0) {
     problems.push(
-      `packed manifest contains workspace protocol dependencies: ${workspaceProtocolDependencies.join(
+      `packed manifest contains package-manager protocol dependencies: ${internalProtocolDependencies.join(
         ", ",
       )}`,
     )
