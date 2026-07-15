@@ -497,7 +497,7 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/storefront/tools", export: "getPaymentLinkTool" },
       requiredScopes: ["storefront:read"],
       context: ["storefrontPaymentLink"],
-      risk: "medium",
+      risk: "high",
     },
     {
       id: "@voyant-travel/storefront#tool.create-invoice-payment-link",
@@ -520,7 +520,7 @@ export const storefrontPaymentLinkVoyantModule = defineModule({
       resource: "storefront",
       action: "read",
       requiredScopes: ["storefront:read"],
-      risk: "medium",
+      risk: "high",
       ledger: "required",
       approval: "never",
       allowedActorTypes: ["staff"],

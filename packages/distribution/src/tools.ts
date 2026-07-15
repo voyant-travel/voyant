@@ -98,7 +98,7 @@ function writeMetadata(scopes: readonly string[]) {
     capabilityVersion: VERSION,
     requiredScopes: scopes,
     audience: STAFF_AUDIENCE,
-    tier: "sensitive" as const,
+    tier: "write" as const,
     riskPolicy: REVERSIBLE_WRITE_RISK,
   }
 }

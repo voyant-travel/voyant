@@ -306,7 +306,7 @@ const write = {
   capabilityVersion: "v1",
   requiredScopes: WRITE_SCOPES,
   audience: STAFF_AUDIENCE,
-  tier: "sensitive" as const,
+  tier: "write" as const,
   riskPolicy: WRITE_RISK,
 }
 

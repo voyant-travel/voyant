@@ -96,11 +96,14 @@ const getProductContentArgs = z.object({
   forceFresh: z.boolean().default(false),
 })
 
-const createProductToolSchema = insertProductSchema.omit({
-  status: true,
-  visibility: true,
-  activated: true,
-})
+const createProductToolSchema = z.object(
+  (({
+    status: _status,
+    visibility: _visibility,
+    activated: _activated,
+    ...shape
+  }) => shape)(insertProductSchema.shape),
+)
 const updateProductToolSchema = z.object({
   id: z.string().min(1),
   ...updateProductSchema.shape,
@@ -238,14 +241,15 @@ export const createProductTool = defineTool({
   tier: "write",
   riskPolicy: PRODUCT_WRITE_RISK,
   async handler(input, ctx: InventoryToolContext) {
+    const draft = insertProductSchema.parse({
+      ...input,
+      status: "draft",
+      visibility: "private",
+      activated: false,
+    })
     return parseJsonResult(
       productToolSchema,
-      await inventory(ctx).createProduct({
-        ...input,
-        status: "draft",
-        visibility: "private",
-        activated: false,
-      }),
+      await inventory(ctx).createProduct(draft),
     )
   },
 })

@@ -53,6 +53,7 @@ const readMetadata = {
   riskPolicy: READ_ONLY_RISK,
   annotations: { readOnlyHint: true, idempotentHint: true },
 }
+const offerReadMetadata = { ...readMetadata, tier: "read" as const }
 const criticalWriteRisk = {
   destructive: true,
   reversible: false,
@@ -62,7 +63,7 @@ const criticalWriteRisk = {
 } as const
 
 export const searchFlightsTool = defineTool({
-  ...readMetadata,
+  ...offerReadMetadata,
   capabilityId: `${OWNER}#tool.search`,
   name: "search_flights",
   description: "Search a configured flight connector for one-way, return, or multi-city offers.",
@@ -75,7 +76,7 @@ export const searchFlightsTool = defineTool({
 })
 
 export const priceFlightOfferTool = defineTool({
-  ...readMetadata,
+  ...offerReadMetadata,
   capabilityId: `${OWNER}#tool.price-offer`,
   name: "price_flight_offer",
   description: "Re-price a flight offer and verify that it remains valid before booking.",
