@@ -344,7 +344,7 @@ export async function validateVoyantSelfHostExportBundle(
 
   return issues.length > 0
     ? { ok: false, issues }
-    : { ok: true, value: input as VoyantSelfHostExportBundle, issues: [] }
+    : { ok: true, value: input as unknown as VoyantSelfHostExportBundle, issues: [] }
 }
 
 export async function projectVoyantSelfHostExport(
@@ -460,6 +460,51 @@ function validateGraph(
       )
     }
   }
+  for (const kind of ["modules", "extensions", "plugins"] as const) {
+    if (!Array.isArray(value[kind])) continue
+    for (const [index, unit] of value[kind].entries()) {
+      if (
+        !isRecord(unit) ||
+        !nonEmptyString(unit.id) ||
+        !nonEmptyString(unit.packageName) ||
+        (unit.projectConfig !== undefined && !isRecord(unit.projectConfig))
+      ) {
+        validShape = false
+        addIssue(
+          issues,
+          "VOYANT_EXPORT_INVALID_GRAPH",
+          `$.resolvedGraph.${kind}[${index}]`,
+          `resolvedGraph.${kind} entries require non-empty id and packageName values plus an optional object projectConfig.`,
+        )
+      }
+    }
+  }
+  if (Array.isArray(value.packageRecords)) {
+    for (const [index, record] of value.packageRecords.entries()) {
+      if (!validPackageRecord(record)) {
+        validShape = false
+        addIssue(
+          issues,
+          "VOYANT_EXPORT_INVALID_GRAPH",
+          `$.resolvedGraph.packageRecords[${index}]`,
+          "resolvedGraph.packageRecords entries require a packageName, a supported source coordinate, and well-formed compatibility metadata.",
+        )
+      }
+    }
+  }
+  if (Array.isArray(value.diagnostics)) {
+    for (const [index, diagnostic] of value.diagnostics.entries()) {
+      if (!isRecord(diagnostic)) {
+        validShape = false
+        addIssue(
+          issues,
+          "VOYANT_EXPORT_INVALID_GRAPH",
+          `$.resolvedGraph.diagnostics[${index}]`,
+          "resolvedGraph.diagnostics entries must be objects.",
+        )
+      }
+    }
+  }
   if (
     !isRecord(value.project) ||
     !isRecord(value.deployment) ||
@@ -486,6 +531,19 @@ function validateGraph(
         "$.resolvedGraph.deployment",
         'Export source graph must use target "node" and mode "managed-cloud".',
       )
+    }
+    if (isRecord(value.deployment.providers)) {
+      for (const [role, provider] of Object.entries(value.deployment.providers)) {
+        if (!nonEmptyString(provider)) {
+          validShape = false
+          addIssue(
+            issues,
+            "VOYANT_EXPORT_INVALID_GRAPH",
+            `$.resolvedGraph.deployment.providers.${role}`,
+            "Deployment provider selections must be non-empty strings.",
+          )
+        }
+      }
     }
   }
   if (Array.isArray(value.diagnostics)) {
@@ -533,7 +591,31 @@ function validateGraph(
       }
     }
   }
-  return validShape ? (value as ResolvedVoyantDeploymentGraph) : undefined
+  return validShape ? (value as unknown as ResolvedVoyantDeploymentGraph) : undefined
+}
+
+function validPackageRecord(value: unknown): boolean {
+  if (!isRecord(value) || !nonEmptyString(value.packageName) || !isRecord(value.source)) {
+    return false
+  }
+  if (
+    !nonEmptyString(value.source.kind) ||
+    (value.version !== undefined && !nonEmptyString(value.version)) ||
+    (value.source.reference !== undefined && !nonEmptyString(value.source.reference)) ||
+    (value.source.integrity !== undefined && !nonEmptyString(value.source.integrity))
+  ) {
+    return false
+  }
+  if (value.metadata === undefined) return true
+  if (!isRecord(value.metadata)) return false
+  if (value.metadata.compatibleWith === undefined) return true
+  if (!isRecord(value.metadata.compatibleWith)) return false
+  const compatibility = value.metadata.compatibleWith
+  return (
+    (compatibility.framework === undefined || nonEmptyString(compatibility.framework)) &&
+    (compatibility.targets === undefined || stringArray(compatibility.targets)) &&
+    (compatibility.modes === undefined || stringArray(compatibility.modes))
+  )
 }
 
 function validateProductBom(
@@ -554,7 +636,7 @@ function validateProductBom(
     )
     return undefined
   }
-  return value as VoyantProductBomReference
+  return value as unknown as VoyantProductBomReference
 }
 
 function validateDatabase(value: unknown, issues: VoyantSelfHostExportValidationIssue[]): void {
@@ -802,6 +884,10 @@ function sha256String(value: unknown): value is string {
 
 function nonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
+}
+
+function stringArray(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.every(nonEmptyString)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

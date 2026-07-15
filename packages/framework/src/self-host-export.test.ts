@@ -87,6 +87,32 @@ describe("Voyant self-host export bundle", () => {
       expect.objectContaining({ code: "VOYANT_EXPORT_INVALID_FRAMEWORK_VERSION" }),
     )
   })
+
+  it("reports malformed graph array entries without throwing", async () => {
+    const bundle = await exportBundle()
+    const malformed = structuredClone(bundle) as unknown as Record<string, unknown>
+    const graph = malformed.resolvedGraph as Record<string, unknown>
+    graph.modules = [null]
+    graph.packageRecords = ["not-a-package-record"]
+
+    const result = await validateVoyantSelfHostExportBundle(malformed)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_INVALID_GRAPH",
+          path: "$.resolvedGraph.modules[0]",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_INVALID_GRAPH",
+          path: "$.resolvedGraph.packageRecords[0]",
+        }),
+      ]),
+    )
+    await expect(projectVoyantSelfHostExport(malformed)).rejects.toBeInstanceOf(Error)
+  })
 })
 
 describe("self-host projection", () => {
