@@ -60,6 +60,45 @@ describe("auth identity/access deployment manifests", () => {
     })
   })
 
+  it("declares scoped team Tools and ledger/approval gates for every sensitive write", () => {
+    expect(authInvitationsVoyantModule.meta?.agentTools).toMatchObject({
+      posture: "not-applicable",
+    })
+    expect(authTeamVoyantModule.tools?.map(({ name }) => name).sort()).toEqual([
+      "activate_team_member",
+      "deactivate_team_member",
+      "get_team_management_capabilities",
+      "invite_team_member",
+      "list_team_invitations",
+      "list_team_members",
+      "list_team_roles",
+      "revoke_team_invitation",
+      "update_team_member_role",
+    ])
+
+    const writes = authTeamVoyantModule.actions?.filter(({ kind }) => kind === "execute") ?? []
+    expect(writes).toHaveLength(5)
+    expect(
+      writes.every(
+        ({ risk, ledger, approval, allowedActorTypes, requiredScopes, from }) =>
+          risk === "high" &&
+          ledger === "required" &&
+          approval === "required" &&
+          allowedActorTypes?.join() === "staff" &&
+          requiredScopes?.length === 1 &&
+          from?.tools?.length === 1,
+      ),
+    ).toBe(true)
+    expect(authTeamVoyantModule.access?.resources[0]).toMatchObject({
+      wildcard: "explicit-resource",
+      actions: [
+        { action: "read" },
+        { action: "write", sensitive: true, wildcard: "explicit" },
+        { action: "delete", sensitive: true, wildcard: "explicit" },
+      ],
+    })
+  })
+
   it("claims every package-owned invitations and team OpenAPI operation", async () => {
     const documents = await Promise.all([
       readOpenApi("../../openapi/admin/invitations.json"),
