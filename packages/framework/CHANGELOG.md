@@ -1,5 +1,38 @@
 # @voyant-travel/framework
 
+## 0.45.0
+
+### Minor Changes
+
+- 46e7edf: Add the validated resolved-graph export bundle and deterministic self-host
+  projection contract, including provider remaps, provisioning diagnostics,
+  standard Node starter metadata, and a shared migration-journal lineage.
+- 73ab096: Standardize first-party packages on package-owned deployment manifests, provider selection,
+  access metadata, concrete event contracts, selected admin navigation, and published runtime
+  references. Add Bookings Extras as an independently selected graph unit and remove the central
+  admin navigation catalog.
+  Link facets now distinguish entity `linkable` metadata from executable `definition` exports, and
+  generated Node registries reject malformed definitions before service registration.
+  Provider-owned required config and secrets now apply only when that provider is selected, so
+  local and in-memory deployments do not require credentials for inactive remote providers.
+
+### Patch Changes
+
+- Updated dependencies [46e7edf]
+- Updated dependencies [73ab096]
+  - @voyant-travel/framework-migrations@0.9.0
+  - @voyant-travel/auth@0.129.0
+  - @voyant-travel/operator-standard@0.5.0
+  - @voyant-travel/storage@0.110.0
+  - @voyant-travel/action-ledger@0.108.5
+  - @voyant-travel/core@0.122.2
+  - @voyant-travel/cruises@0.157.0
+  - @voyant-travel/db@0.114.5
+  - @voyant-travel/mcp@0.2.5
+  - @voyant-travel/types@0.109.2
+  - @voyant-travel/workflows@0.120.3
+  - @voyant-travel/workflows-orchestrator@0.120.3
+
 ## 0.44.4
 
 ### Patch Changes
