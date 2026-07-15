@@ -109,7 +109,7 @@ describe("OperatorAdminWorkspaceLayout", () => {
     await waitFor(() => expect(document.title).toBe("Invoices · Voyant"))
   })
 
-  it("renders a hidden parent as a non-link container for visible children", () => {
+  it("renders a hidden parent as a non-link container for an explicitly visible child", () => {
     renderWithAdminProviders(
       <OperatorAdminWorkspaceLayout
         currentPath="/elsewhere"
@@ -121,7 +121,7 @@ describe("OperatorAdminWorkspaceLayout", () => {
             items: [{ id: "invoices", title: "Invoices", url: "/finance/invoices" }],
           },
         ]}
-        navigationPreferences={{ organization: { finance: false }, member: {} }}
+        navigationPreferences={{ organization: { finance: false }, member: { invoices: true } }}
       >
         <section>Content</section>
       </OperatorAdminWorkspaceLayout>,
