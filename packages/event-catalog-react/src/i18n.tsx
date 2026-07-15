@@ -8,7 +8,7 @@ import {
 } from "@voyant-travel/i18n"
 import type { ReactNode } from "react"
 
-export interface EventCatalogUiMessages {
+export type EventCatalogUiMessages = {
   navigation: { title: string }
   page: {
     title: string

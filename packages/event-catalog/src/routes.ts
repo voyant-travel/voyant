@@ -48,7 +48,8 @@ const getEventCatalogRoute = createRoute({
 
 /** Build the read-only admin API over one generated selected-graph catalog. */
 export function createEventCatalogHonoApp(eventCatalog: VoyantGraphEventCatalog): OpenAPIHono {
-  return new OpenAPIHono().openapi(getEventCatalogRoute, (context) =>
-    context.json({ data: eventCatalog }, 200),
-  )
+  const app = new OpenAPIHono()
+  const responseBody = { data: eventCatalog as z.infer<typeof eventCatalogSchema> }
+  app.openapi(getEventCatalogRoute, (context) => context.json(responseBody, 200))
+  return app
 }
