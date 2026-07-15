@@ -10,41 +10,12 @@ import {
 } from "@voyant-travel/core/project"
 import { financeDistributionPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { channelPushRuntimePort } from "./channel-push/runtime-port.js"
+import {
+  productPublicationChangedEventPayloadSchema,
+  supplierLifecycleEventPayloadSchema,
+} from "./voyant-event-schemas.js"
 
-const productPublicationChangedEventPayloadSchema = {
-  type: "object",
-  properties: {
-    productId: { type: "string" },
-    channelId: { type: "string" },
-    mappingId: { type: ["string", "null"] },
-    previousActive: { type: ["boolean", "null"] },
-    nextActive: { type: ["boolean", "null"] },
-    operation: {
-      type: "string",
-      enum: ["created", "updated", "deleted", "activated", "deactivated"],
-    },
-    channelKind: { type: ["string", "null"] },
-    channelStatus: { type: ["string", "null"] },
-  },
-  required: [
-    "productId",
-    "channelId",
-    "mappingId",
-    "previousActive",
-    "nextActive",
-    "operation",
-    "channelKind",
-    "channelStatus",
-  ],
-  additionalProperties: false,
-} as const
-
-const supplierLifecycleEventPayloadSchema = {
-  type: "object",
-  properties: { id: { type: "string" } },
-  required: ["id"],
-  additionalProperties: false,
-} as const
+export { distributionBookingVoyantPlugin } from "./voyant-extensions.js"
 
 /** Import-cheap deployment declarations owned by the distribution package. */
 export const distributionVoyantModule = defineModule({
@@ -553,27 +524,6 @@ export const distributionVoyantModule = defineModule({
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
-  meta: {
-    ownership: "package",
-  },
-})
-
-export const distributionBookingVoyantPlugin = defineExtension({
-  id: "@voyant-travel/distribution#extension",
-  packageName: "@voyant-travel/distribution",
-  localId: "distribution",
-  api: [
-    {
-      id: "@voyant-travel/distribution#extension.api",
-      surface: "admin",
-      mount: "bookings",
-      openapi: { document: "distribution-booking" },
-      runtime: {
-        entry: "@voyant-travel/distribution",
-        export: "distributionBookingExtension",
-      },
-    },
-  ],
   meta: {
     ownership: "package",
   },

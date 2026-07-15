@@ -5,7 +5,7 @@ export {
   operatorDashboardSummaryInputSchema,
   operatorDashboardSummaryOutputSchema,
   resolveOperatorDashboardWindow,
-} from "./tools.js"
+} from "./dashboard-tool.js"
 export {
   operationsDashboardVoyantModule,
   operationsDashboardVoyantModule as default,
