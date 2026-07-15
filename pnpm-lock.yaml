@@ -3392,6 +3392,9 @@ importers:
       '@voyant-travel/bookings':
         specifier: workspace:*
         version: link:../bookings
+      '@voyant-travel/bookings-react':
+        specifier: workspace:*
+        version: link:../bookings-react
       '@voyant-travel/catalog':
         specifier: workspace:*
         version: link:../catalog
