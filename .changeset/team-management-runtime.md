@@ -3,7 +3,6 @@
 "@voyant-travel/admin-app": minor
 "@voyant-travel/auth": minor
 "@voyant-travel/auth-react": minor
-"@voyant-travel/voyant-typescript-config": patch
 ---
 
 Add a package-owned `/settings/team` surface backed by a graph-selected,
