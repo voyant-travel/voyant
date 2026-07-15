@@ -38,7 +38,7 @@ const COMMIT_RISK = {
   reversible: false,
   confirmationRequired: true,
   dryRunSupported: false,
-  sideEffects: ["data-write", "external-call"],
+  sideEffects: ["data-write", "external-booking"],
 } as const
 const timestampSchema = z.string().datetime()
 const sourceRefSchema = z

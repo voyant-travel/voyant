@@ -175,7 +175,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "resolveSellabilityTool" },
       requiredScopes: ["sellability:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.list-cancellation-policies",
@@ -186,7 +186,7 @@ export const commerceVoyantModule = defineModule({
       },
       requiredScopes: ["pricing:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.get-cancellation-policy",
@@ -197,7 +197,7 @@ export const commerceVoyantModule = defineModule({
       },
       requiredScopes: ["pricing:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.create-cancellation-policy",
@@ -208,7 +208,7 @@ export const commerceVoyantModule = defineModule({
       },
       requiredScopes: ["pricing:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
     {
       id: "@voyant-travel/commerce#tool.update-cancellation-policy",
@@ -219,7 +219,7 @@ export const commerceVoyantModule = defineModule({
       },
       requiredScopes: ["pricing:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
     {
       id: "@voyant-travel/commerce#tool.list-price-catalogs",
@@ -227,7 +227,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "listPriceCatalogsTool" },
       requiredScopes: ["pricing:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.get-price-catalog",
@@ -235,7 +235,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "getPriceCatalogTool" },
       requiredScopes: ["pricing:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.create-price-catalog",
@@ -243,7 +243,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "createPriceCatalogTool" },
       requiredScopes: ["pricing:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
     {
       id: "@voyant-travel/commerce#tool.update-price-catalog",
@@ -251,7 +251,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "updatePriceCatalogTool" },
       requiredScopes: ["pricing:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
     {
       id: "@voyant-travel/commerce#tool.list-promotions",
@@ -259,7 +259,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "listPromotionsTool" },
       requiredScopes: ["promotions:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.get-promotion",
@@ -267,7 +267,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "getPromotionTool" },
       requiredScopes: ["promotions:read"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "low",
     },
     {
       id: "@voyant-travel/commerce#tool.create-promotion",
@@ -275,7 +275,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "createPromotionTool" },
       requiredScopes: ["promotions:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
     {
       id: "@voyant-travel/commerce#tool.update-promotion",
@@ -283,7 +283,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "updatePromotionTool" },
       requiredScopes: ["promotions:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
     {
       id: "@voyant-travel/commerce#tool.archive-promotion",
@@ -291,7 +291,7 @@ export const commerceVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/commerce/tools", export: "archivePromotionTool" },
       requiredScopes: ["promotions:write"],
       context: ["commerce"],
-      risk: "sensitive",
+      risk: "medium",
     },
   ],
   events: [

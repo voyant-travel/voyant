@@ -152,7 +152,7 @@ export interface CommerceToolServices {
   listPromotions(input: z.infer<typeof promotionalOfferListQuerySchema>): Promise<unknown>
   getPromotion(id: string): Promise<unknown>
   createPromotion(input: z.infer<typeof insertPromotionalOfferSchema>): Promise<unknown>
-  updatePromotion(id: string, input: AnyServiceInput): Promise<unknown>
+  updatePromotion(id: string, input: z.infer<typeof updatePromotionalOfferSchema>): Promise<unknown>
   archivePromotion(id: string): Promise<unknown>
 }
 
