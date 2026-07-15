@@ -1,5 +1,13 @@
 # @voyant-travel/admin-extension-sdk
 
+## 0.1.1
+
+### Patch Changes
+
+- 2e34e64: Republish with packaged `dist` exports. The 0.1.0 tarball was published outside
+  the release train, so its `exports` map pointed at unpackaged `src/*.ts` files
+  and the package could not be imported.
+
 ## 0.1.0
 
 ### Minor Changes
