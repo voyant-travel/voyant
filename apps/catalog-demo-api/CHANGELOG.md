@@ -1,5 +1,11 @@
 # catalog-demo-api
 
+## 0.20.60
+
+### Patch Changes
+
+- @voyant-travel/catalog@0.159.0
+
 ## 0.20.59
 
 ### Patch Changes

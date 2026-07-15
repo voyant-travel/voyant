@@ -1,5 +1,12 @@
 # @voyant-travel/navigation-preferences
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [a1842a7]
+  - @voyant-travel/hono@0.127.2
+
 ## 0.3.0
 
 ### Minor Changes

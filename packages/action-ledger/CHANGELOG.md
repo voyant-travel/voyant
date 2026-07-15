@@ -1,5 +1,13 @@
 # @voyant-travel/action-ledger
 
+## 0.109.1
+
+### Patch Changes
+
+- 85bfe2c: Validate approved-action fingerprints and principals before reporting a prior execution as a replay.
+- Updated dependencies [a1842a7]
+  - @voyant-travel/hono@0.127.2
+
 ## 0.109.0
 
 ### Minor Changes
