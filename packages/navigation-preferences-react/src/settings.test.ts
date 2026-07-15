@@ -20,6 +20,13 @@ describe("navigation preferences admin contribution", () => {
       id: "navigation",
       path: "/navigation",
     })
+    expect(extension.navigationPreferences?.queryKey("member-a")).toEqual([
+      "navigation-preferences",
+      "member-a",
+    ])
+    expect(extension.navigationPreferences?.queryKey("member-b")).not.toEqual(
+      extension.navigationPreferences?.queryKey("member-a"),
+    )
     await expect(
       extension.navigationPreferences?.load({ baseUrl: "/api", fetcher }),
     ).resolves.toEqual({
