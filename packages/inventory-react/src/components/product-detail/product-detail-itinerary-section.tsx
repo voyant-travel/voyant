@@ -164,7 +164,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
               <Plus className="mr-2 h-4 w-4" />
               {productMessages.addDay}
             </Button>
-            <ActionMenu>
+            <ActionMenu label={productMessages.itineraryOptionsLabel}>
               <DropdownMenuItem onClick={openCreateItinerary}>
                 <Plus className="h-4 w-4" />
                 {productMessages.newItinerary}

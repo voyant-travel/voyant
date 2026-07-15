@@ -107,7 +107,11 @@ export function ProductDetailDayRow({
             })}
           </Badge>
         ) : null}
-        <ActionMenu>
+        <ActionMenu
+          label={`${formatMessage(dayRowMessages.title, { dayNumber: day.dayNumber })}${
+            day.title ? `: ${day.title}` : ""
+          }`}
+        >
           <DropdownMenuItem onClick={onEdit}>
             <Pencil className="h-4 w-4" />
             {dayRowMessages.editAction}
@@ -159,7 +163,9 @@ export function ProductDetailDayRow({
                     </td>
                     <td className="px-3 py-2">{service.quantity}</td>
                     <td className="px-3 py-2">
-                      <ActionMenu>
+                      <ActionMenu
+                        label={`${service.name}: ${dayRowMessages.editAction} / ${dayRowMessages.deleteAction}`}
+                      >
                         <DropdownMenuItem onClick={() => onEditService(service)}>
                           <Pencil className="h-4 w-4" />
                           {dayRowMessages.editAction}

@@ -24,6 +24,11 @@ import { RichTextVariable } from "./rich-text-variable-extension.js"
 export type RichTextEditorProps = {
   value: string
   onChange: (value: string) => void
+  id?: string
+  "aria-label"?: string
+  "aria-labelledby"?: string
+  "aria-describedby"?: string
+  "aria-invalid"?: React.AriaAttributes["aria-invalid"]
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -132,6 +137,11 @@ function ToolbarButton({
 export function RichTextEditor({
   value,
   onChange,
+  id,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby,
+  "aria-describedby": ariaDescribedby,
+  "aria-invalid": ariaInvalid,
   placeholder = "Write something…",
   disabled = false,
   className,
@@ -177,6 +187,14 @@ export function RichTextEditor({
     extensions.push(RichTextVariable)
   }
 
+  const accessibilityAttributes = {
+    ...(id ? { id } : {}),
+    ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
+    ...(ariaLabelledby ? { "aria-labelledby": ariaLabelledby } : {}),
+    ...(ariaDescribedby ? { "aria-describedby": ariaDescribedby } : {}),
+    ...(ariaInvalid !== undefined ? { "aria-invalid": String(ariaInvalid) } : {}),
+  }
+
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
@@ -184,6 +202,9 @@ export function RichTextEditor({
     content: normalizeEditorContent(value),
     editorProps: {
       attributes: {
+        role: "textbox",
+        "aria-multiline": "true",
+        ...accessibilityAttributes,
         class:
           "ProseMirror min-h-48 px-3 py-3 text-sm outline-none [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-5 [&_h3]:text-lg [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 [&_li]:my-1 [&_p]:my-2",
       },

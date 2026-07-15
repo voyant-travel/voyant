@@ -285,7 +285,9 @@ function PriceRuleCard({
             {rule.allPricingCategories && <span>{priceRuleMessages.allCategoriesLabel}</span>}
           </div>
         </div>
-        <ActionMenu>
+        <ActionMenu
+          label={`${rule.name}: ${priceRuleMessages.editAction} / ${priceRuleMessages.deleteAction}`}
+        >
           <DropdownMenuItem onClick={onEdit}>
             <Pencil className="h-4 w-4" />
             {priceRuleMessages.editAction}

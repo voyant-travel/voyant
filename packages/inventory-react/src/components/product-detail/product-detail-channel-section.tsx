@@ -54,10 +54,12 @@ export function ProductChannelsSection({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label={`${productMessages.delete}: ${channel.name}`}
+                      title={`${productMessages.delete}: ${channel.name}`}
                       className="h-7 w-7 text-muted-foreground hover:text-destructive"
                       onClick={() => onRemoveChannel(mapping.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
                   ) : null}
                 </div>

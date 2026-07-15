@@ -40,7 +40,7 @@ export function ProductDeparturesSection({
     <Section
       title={productMessages.departuresTitle}
       actions={
-        <ActionMenu>
+        <ActionMenu label={productMessages.newDeparture}>
           <DropdownMenuItem onClick={onCreate}>
             <Plus className="h-4 w-4" />
             {productMessages.newDeparture}
@@ -118,7 +118,7 @@ export function ProductDeparturesSection({
                   {formatCapacityLabel(slot, messages)}
                 </td>
                 <td className="px-3 py-2.5">
-                  <ActionMenu>
+                  <ActionMenu label={`${productMessages.departuresTitle}: ${slot.dateLocal}`}>
                     <DropdownMenuItem onClick={() => onEdit(slot)}>
                       <Pencil className="h-4 w-4" />
                       {productMessages.edit}
@@ -168,7 +168,7 @@ export function ProductSchedulesSection({
     <Section
       title={productMessages.schedulesTitle}
       actions={
-        <ActionMenu>
+        <ActionMenu label={productMessages.newSchedule}>
           <DropdownMenuItem onClick={onCreate}>
             <Plus className="h-4 w-4" />
             {productMessages.newSchedule}
@@ -207,7 +207,9 @@ export function ProductSchedulesSection({
                   })}
                 </p>
               </div>
-              <ActionMenu>
+              <ActionMenu
+                label={`${productMessages.schedulesTitle}: ${describeRRule(rule.recurrenceRule)}`}
+              >
                 <DropdownMenuItem onClick={() => onEdit(rule)}>
                   <Pencil className="h-4 w-4" />
                   {productMessages.edit}

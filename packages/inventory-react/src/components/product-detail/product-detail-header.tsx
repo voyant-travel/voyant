@@ -52,7 +52,7 @@ export function ProductDetailHeader({
           <CalendarPlus className="h-4 w-4" />
           {productMessages.addBooking}
         </Button>
-        <ActionMenu>
+        <ActionMenu label={`${productMessages.pageTitle}: ${product.name}`}>
           <DropdownMenuItem disabled={isDuplicating} onClick={onDuplicate}>
             <Copy className="h-4 w-4" />
             {productMessages.duplicate}

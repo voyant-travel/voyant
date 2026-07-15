@@ -265,6 +265,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <TranslatableField
+          id="product-detail-name"
           label={productMessages.nameLabel}
           type="text"
           field="name"
@@ -283,6 +284,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <TranslatableField
+          id="product-detail-description"
           label={productMessages.descriptionLabel}
           type="richtext"
           field="description"
@@ -298,6 +300,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <TranslatableField
+          id="product-detail-slug"
           label={productMessages.slugLabel}
           type="text"
           field="slug"
@@ -309,6 +312,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <TranslatableField
+          id="product-detail-inclusions"
           label={productMessages.inclusionsLabel}
           type="richtext"
           field="inclusionsHtml"
@@ -324,6 +328,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <TranslatableField
+          id="product-detail-exclusions"
           label={productMessages.exclusionsLabel}
           type="richtext"
           field="exclusionsHtml"
@@ -339,6 +344,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <TranslatableField
+          id="product-detail-terms"
           label={productMessages.termsLabel}
           type="richtext"
           field="termsHtml"
@@ -354,8 +360,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         />
 
         <div className="flex flex-col gap-2">
-          <Label>{productMessages.defaultLanguageLabel}</Label>
+          <Label htmlFor="product-detail-default-language">
+            {productMessages.defaultLanguageLabel}
+          </Label>
           <LanguageCombobox
+            id="product-detail-default-language"
             value={form.watch("defaultLanguageTag")?.trim() || adminBaseLocale}
             onValueChange={(code) =>
               form.setValue("defaultLanguageTag", code, { shouldDirty: true })
@@ -367,13 +376,15 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label>{productMessages.tagsLabel}</Label>
+          <Label htmlFor="product-detail-tags">{productMessages.tagsLabel}</Label>
           <div className="flex flex-wrap gap-1.5">
             {(form.watch("tags") ?? []).map((tag) => (
               <Badge key={tag} variant="secondary" className="gap-1 text-xs">
                 {tag}
                 <button
                   type="button"
+                  aria-label={`${productMessages.delete}: ${tag}`}
+                  title={`${productMessages.delete}: ${tag}`}
                   className="ml-0.5 rounded-full hover:text-destructive"
                   onClick={() => {
                     const current = form.getValues("tags") ?? []
@@ -390,6 +401,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
             ))}
           </div>
           <Input
+            id="product-detail-tags"
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => {
@@ -409,7 +421,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <Label>{productMessages.bookingModeLabel}</Label>
+            <Label id="product-detail-booking-mode-label" htmlFor="product-detail-booking-mode">
+              {productMessages.bookingModeLabel}
+            </Label>
             <Select
               value={form.watch("bookingMode")}
               onValueChange={(v) =>
@@ -417,7 +431,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               }
               items={bookingModes}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id="product-detail-booking-mode"
+                aria-labelledby="product-detail-booking-mode-label"
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -430,7 +448,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label>{productMessages.visibilityLabel}</Label>
+            <Label id="product-detail-visibility-label" htmlFor="product-detail-visibility">
+              {productMessages.visibilityLabel}
+            </Label>
             <Select
               value={form.watch("visibility")}
               onValueChange={(v) =>
@@ -440,7 +460,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               }
               items={visibilityOptions}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id="product-detail-visibility"
+                aria-labelledby="product-detail-visibility-label"
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -456,7 +480,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <Label>{productMessages.productTypeLabel}</Label>
+            <Label id="product-detail-product-type-label" htmlFor="product-detail-product-type">
+              {productMessages.productTypeLabel}
+            </Label>
             <Select
               value={form.watch("productTypeId") ?? ""}
               onValueChange={(v) =>
@@ -469,7 +495,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
                 ...productTypes.map((t) => ({ value: t.id, label: t.name })),
               ]}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id="product-detail-product-type"
+                aria-labelledby="product-detail-product-type-label"
+                className="w-full"
+              >
                 <SelectValue placeholder={productMessages.productTypeNone} />
               </SelectTrigger>
               <SelectContent>
@@ -500,13 +530,19 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
         {isEditing && (
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label>{productMessages.statusLabel}</Label>
+              <Label id="product-detail-status-label" htmlFor="product-detail-status">
+                {productMessages.statusLabel}
+              </Label>
               <Select
                 value={form.watch("status")}
                 onValueChange={(v) => form.setValue("status", v as ProductFormValues["status"])}
                 items={productStatuses}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  id="product-detail-status"
+                  aria-labelledby="product-detail-status-label"
+                  className="w-full"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -519,7 +555,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               </Select>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>{productMessages.taxClassLabel}</Label>
+              <Label id="product-detail-tax-class-label" htmlFor="product-detail-tax-class">
+                {productMessages.taxClassLabel}
+              </Label>
               <Select
                 value={form.watch("taxClassId") ?? ""}
                 onValueChange={(v) =>
@@ -535,7 +573,11 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
                   })),
                 ]}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  id="product-detail-tax-class"
+                  aria-labelledby="product-detail-tax-class-label"
+                  className="w-full"
+                >
                   <SelectValue placeholder={productMessages.taxClassNone} />
                 </SelectTrigger>
                 <SelectContent>
@@ -549,14 +591,23 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
               </Select>
             </div>
             <div className="flex flex-col gap-2">
-              <Label>{productMessages.sellCurrencyLabel}</Label>
+              <Label htmlFor="product-detail-sell-currency">
+                {productMessages.sellCurrencyLabel}
+              </Label>
               <CurrencyCombobox
+                id="product-detail-sell-currency"
                 value={form.watch("sellCurrency")}
                 onChange={(v) => form.setValue("sellCurrency", v, { shouldDirty: true })}
                 messages={productMessages}
+                aria-invalid={form.formState.errors.sellCurrency ? true : undefined}
+                aria-describedby={
+                  form.formState.errors.sellCurrency
+                    ? "product-detail-sell-currency-error"
+                    : undefined
+                }
               />
               {form.formState.errors.sellCurrency && (
-                <p className="text-xs text-destructive">
+                <p id="product-detail-sell-currency-error" className="text-xs text-destructive">
                   {form.formState.errors.sellCurrency.message}
                 </p>
               )}
@@ -581,17 +632,30 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
 }
 
 function CurrencyCombobox({
+  id,
   value,
   onChange,
   messages,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedby,
 }: {
+  id: string
   value: string
   onChange: (value: string) => void
   messages: ReturnType<typeof useProductDetailMessages>["products"]["core"]
+  "aria-invalid"?: boolean
+  "aria-describedby"?: string
 }) {
   return (
     <Combobox value={value} onValueChange={(v) => onChange(v ?? "")}>
-      <ComboboxInput placeholder={messages.currencySearchPlaceholder} className="w-full" />
+      <ComboboxInput
+        id={id}
+        aria-label={messages.sellCurrencyLabel}
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedby}
+        placeholder={messages.currencySearchPlaceholder}
+        className="w-full"
+      />
       <ComboboxContent>
         <ComboboxList>
           {CURRENCY_OPTIONS.map((c) => (
