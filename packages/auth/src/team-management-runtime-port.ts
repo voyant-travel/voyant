@@ -67,10 +67,7 @@ export interface TeamManagementRuntimeProvider {
     memberId: string,
     roleId: string,
   ): Promise<TeamMemberDto>
-  deactivateMember(
-    context: TeamManagementRequestContext,
-    memberId: string,
-  ): Promise<TeamMemberDto>
+  deactivateMember(context: TeamManagementRequestContext, memberId: string): Promise<TeamMemberDto>
 }
 
 export const teamManagementRuntimePort = definePort<TeamManagementRuntimeProvider>({

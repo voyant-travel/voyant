@@ -78,8 +78,7 @@ function TeamManagementView() {
 
   const capabilitiesQuery = useQuery({
     queryKey: queryKeys.capabilities,
-    queryFn: () =>
-      api.get<{ data: TeamManagementCapabilitiesDto }>("/v1/admin/team/capabilities"),
+    queryFn: () => api.get<{ data: TeamManagementCapabilitiesDto }>("/v1/admin/team/capabilities"),
   })
   const canView = capabilitiesQuery.data?.data.viewRoster === true
   const membersQuery = useQuery({
@@ -197,7 +196,10 @@ function TeamManagementView() {
                               disabled={updateRole.isPending}
                               onChange={(event) => {
                                 setActionError(null)
-                                updateRole.mutate({ memberId: member.id, roleId: event.target.value })
+                                updateRole.mutate({
+                                  memberId: member.id,
+                                  roleId: event.target.value,
+                                })
                               }}
                             >
                               {!roles.some((role) => role.id === member.roleId) ? (
@@ -271,7 +273,9 @@ function TeamManagementView() {
                   <TableHead>{copy.invitations.emailColumn}</TableHead>
                   <TableHead>{copy.invitations.roleColumn}</TableHead>
                   <TableHead>{copy.invitations.expiresColumn}</TableHead>
-                  <TableHead className="w-20 text-right">{copy.invitations.actionsColumn}</TableHead>
+                  <TableHead className="w-20 text-right">
+                    {copy.invitations.actionsColumn}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -332,8 +336,7 @@ function InviteMemberForm({ roles }: { roles: TeamRoleDto[] }) {
   }, [roleId, roles])
 
   const invite = useMutation({
-    mutationFn: () =>
-      api.post("/v1/admin/team/invitations", { email: email.trim(), roleId }),
+    mutationFn: () => api.post("/v1/admin/team/invitations", { email: email.trim(), roleId }),
     onSuccess: () => {
       setEmail("")
       setError(null)

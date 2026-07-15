@@ -2,11 +2,11 @@ import { readFile } from "node:fs/promises"
 import { describe, expect, it } from "vitest"
 
 import { identityAccessRuntimePort } from "../../src/identity-access-runtime-port.js"
-import { teamManagementRuntimePort } from "../../src/team-management-runtime-port.js"
 import {
   createInvitationsAdminRoutes,
   createInvitationsPublicRoutes,
 } from "../../src/invitations-routes.js"
+import { teamManagementRuntimePort } from "../../src/team-management-runtime-port.js"
 import { createTeamAdminRoutes } from "../../src/team-routes.js"
 import { authInvitationsVoyantModule, authTeamVoyantModule } from "../../src/voyant.js"
 

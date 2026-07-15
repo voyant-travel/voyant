@@ -52,10 +52,7 @@ export interface TeamManagementAdapter {
     memberId: string,
     roleId: string,
   ): Promise<TeamMemberDto>
-  deactivateMember(
-    context: TeamManagementRequestContext,
-    memberId: string,
-  ): Promise<TeamMemberDto>
+  deactivateMember(context: TeamManagementRequestContext, memberId: string): Promise<TeamMemberDto>
   roleLevel(roleId: string): number
   isOwnerRole(roleId: string): boolean
 }
@@ -124,7 +121,11 @@ function assertAssignableRole(
   }
 }
 
-function assertOwnerRemains(adapter: TeamManagementAdapter, members: TeamMemberDto[], target: TeamMemberDto) {
+function assertOwnerRemains(
+  adapter: TeamManagementAdapter,
+  members: TeamMemberDto[],
+  target: TeamMemberDto,
+) {
   if (!adapter.isOwnerRole(target.roleId)) return
   const activeOwners = members.filter(
     (member) => member.status === "active" && adapter.isOwnerRole(member.roleId),

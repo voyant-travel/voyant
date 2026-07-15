@@ -6,7 +6,6 @@ import {
 } from "../../src/team-management-policy.js"
 import type {
   TeamManagementCapabilitiesDto,
-  TeamManagementRequestContext,
   TeamMemberDto,
 } from "../../src/team-management-runtime-port.js"
 
@@ -61,7 +60,7 @@ function adapter(overrides: Partial<TeamManagementAdapter> = {}): TeamManagement
       status: "deactivated",
     })),
     roleLevel: (roleId) =>
-      ({ owner: 40, admin: 30, editor: 20 } as Record<string, number>)[roleId] ?? 0,
+      (({ owner: 40, admin: 30, editor: 20 }) as Record<string, number>)[roleId] ?? 0,
     isOwnerRole: (roleId) => roleId === "owner",
     ...overrides,
   }

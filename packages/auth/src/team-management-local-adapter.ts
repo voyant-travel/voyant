@@ -11,6 +11,7 @@ import { scopesForRole } from "@voyant-travel/types/member-roles"
 import { desc, eq } from "drizzle-orm"
 
 import type { IdentityAccessRuntimeProvider } from "./identity-access-runtime-port.js"
+import { type TeamManagementAdapter, TeamManagementError } from "./team-management-policy.js"
 import type {
   InviteTeamMemberInput,
   TeamInvitationDto,
@@ -19,7 +20,6 @@ import type {
   TeamMemberDto,
   TeamRoleDto,
 } from "./team-management-runtime-port.js"
-import { TeamManagementError, type TeamManagementAdapter } from "./team-management-policy.js"
 
 const LOCAL_ROLES: TeamRoleDto[] = [
   { id: "owner", name: "Owner", description: "Full access, including ownership changes." },
@@ -229,7 +229,9 @@ export function createLocalTeamManagementAdapter(
           updatedAt: new Date(),
         })
         .where(eq(userProfilesTable.id, memberId))
-      const member = (await listLocalMembers(context)).find((candidate) => candidate.id === memberId)
+      const member = (await listLocalMembers(context)).find(
+        (candidate) => candidate.id === memberId,
+      )
       if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
       return member
     },
@@ -237,7 +239,9 @@ export function createLocalTeamManagementAdapter(
       await context.db.delete(authSession).where(eq(authSession.userId, memberId))
       await context.db.delete(apikeyTable).where(eq(apikeyTable.referenceId, memberId))
       await context.db.delete(authAccount).where(eq(authAccount.userId, memberId))
-      const member = (await listLocalMembers(context)).find((candidate) => candidate.id === memberId)
+      const member = (await listLocalMembers(context)).find(
+        (candidate) => candidate.id === memberId,
+      )
       if (!member) throw new TeamManagementError("member_not_found", "Team member not found.", 404)
       return member
     },
