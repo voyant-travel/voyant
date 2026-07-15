@@ -43,11 +43,12 @@ test("operator release archive contains only the minimal authored project", () =
     const packageJson = JSON.parse(readFileSync(join(fixture.extractDir, "package.json"), "utf8"))
     assert.deepEqual(packageJson.scripts, standardNodeStarter.packageScripts)
     assert.equal(packageJson.scripts["graph:emit"], undefined)
-    assert.equal(typeof packageJson.dependencies["@voyant-travel/framework"], "string")
-    assert.equal(typeof packageJson.dependencies["@voyant-travel/runtime"], "string")
-    assert.equal(packageJson.dependencies.pg, "8.22.0")
+    assert.deepEqual(packageJson.dependencies, standardNodeStarter.runtimeDependencyCoordinates)
     assert.equal(packageJson.dependencies["@voyant-travel/plugin-smartbill"], undefined)
-    assert.equal(packageJson.devDependencies["@voyant-travel/cli"], "^0.40.0")
+    assert.deepEqual(
+      packageJson.devDependencies,
+      standardNodeStarter.developmentDependencyCoordinates,
+    )
     const dependencySpecs = Object.values({
       ...packageJson.dependencies,
       ...packageJson.devDependencies,

@@ -141,6 +141,10 @@ describe("Voyant self-host export bundle", () => {
       (bundle: VoyantSelfHostExportBundle) => {
         delete bundle.resolvedGraph.packageRecords[0]!.source.integrity
       },
+      (bundle: VoyantSelfHostExportBundle) => {
+        bundle.resolvedGraph.packageRecords[0]!.source.integrity =
+          "sha512-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5eg=="
+      },
     ]
 
     for (const mutate of mutations) {
@@ -409,7 +413,7 @@ async function exportBundle(
                 kind: "registry",
                 reference: "pnpm-lock:@acme/voyant-loyalty@1.2.3",
                 integrity:
-                  "sha512-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5eg==",
+                  "sha512-g7nE4PFtngOZNZSy1lOPpkC+FAiHxqBJXqyRMEG7NUrEVZlz5goBdtHg1YgWRJIX776JTXAmbOI5JreAKVAsVA==",
               },
         metadata: {
           schemaVersion: "voyant.package.v1",

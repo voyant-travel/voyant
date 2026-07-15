@@ -30,7 +30,7 @@ export const VOYANT_SELF_HOST_PROJECTION_SCHEMA_VERSION = "voyant.self-host-proj
 
 const SHA256_PATTERN = /^sha256:[a-f0-9]{64}$/
 const EXACT_PACKAGE_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
-const SHA512_INTEGRITY_PATTERN = /^sha512-[A-Za-z0-9+/]{43,}={0,2}$/
+const SHA512_INTEGRITY_PATTERN = /^sha512-[A-Za-z0-9+/]{86}==$/
 const PORTABLE_PACKAGE_SOURCE_KINDS = new Set(["registry", "git"])
 
 export const VOYANT_SELF_HOST_MIGRATION_POLICY = {
