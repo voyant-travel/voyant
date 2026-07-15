@@ -32,9 +32,10 @@ jobs:
     runs-on:
       size: 8x32
       image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
-      NODE_OPTIONS: --conditions=development --max-old-space-size=24576
+      NODE_OPTIONS: --conditions=development --max-old-space-size=12288
+      TEST_CONCURRENCY: "2"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -42,24 +43,24 @@ jobs:
 
       - uses: ./.depot/actions/setup-workspace
 
-      - fail-fast: false
-        parallel:
-          - name: Lint
-            run: pnpm lint
+      # These commands can each reserve several GiB across child processes.
+      # Keep them sequential so a single sandbox has a deterministic memory ceiling.
+      - name: Lint
+        run: pnpm lint
 
-          - name: Selective typecheck
-            run: pnpm typecheck:ci --concurrency=2
+      - name: Selective typecheck
+        run: pnpm typecheck:ci --concurrency=1
 
-          - name: Test
-            run: pnpm test --summarize --output-logs=new-only
+      - name: Test
+        run: pnpm test --summarize --output-logs=new-only
 
-          # verify:architecture already runs the operator graph drift gate via
-          # `operator graph:check`; do not rebuild the full operator here.
-          - name: Architecture checks
-            run: pnpm verify:architecture
+      # verify:architecture already runs the operator graph drift gate via
+      # `operator graph:check`; do not rebuild the full operator here.
+      - name: Architecture checks
+        run: pnpm verify:architecture
 
-          - name: i18n checks
-            run: pnpm i18n:check
+      - name: i18n checks
+        run: pnpm i18n:check
 
       - name: Record Turbo metrics
         if: always()
@@ -67,12 +68,13 @@ jobs:
 
   build-graph:
     name: build-graph
+    needs: checks
     runs-on:
       size: 8x32
       image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
     timeout-minutes: 10
     env:
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=14336
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -81,7 +83,7 @@ jobs:
       - uses: ./.depot/actions/setup-workspace
 
       - name: Build
-        run: pnpm turbo build --concurrency=2 --summarize --output-logs=new-only
+        run: pnpm turbo build --concurrency=1 --summarize --output-logs=new-only
 
       - name: Record Turbo metrics
         if: always()
@@ -95,7 +97,7 @@ jobs:
       image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
     timeout-minutes: 10
     env:
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=14336
       TEST_DATABASE_URL: postgresql://voyant:voyant@localhost:5432/voyant_starter_acceptance
     services:
       postgres:
@@ -119,7 +121,7 @@ jobs:
       - uses: ./.depot/actions/setup-workspace
 
       - name: Restore build graph
-        run: pnpm turbo build --concurrency=2 --output-logs=new-only
+        run: pnpm turbo build --concurrency=1 --output-logs=new-only
 
       - name: Packaged starter production and development acceptance
         run: |
@@ -128,13 +130,15 @@ jobs:
 
   package-artifacts:
     name: package-artifacts
-    needs: build-graph
+    needs:
+      - build-graph
+      - packaged-acceptance
     runs-on:
       size: 8x32
       image: 5ctgrq9prr.registry.depot.dev/voyant/ci:node24-pnpm10-playwright1.61.1-workspace
     timeout-minutes: 10
     env:
-      NODE_OPTIONS: --max-old-space-size=24576
+      NODE_OPTIONS: --max-old-space-size=14336
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -143,7 +147,7 @@ jobs:
       - uses: ./.depot/actions/setup-workspace
 
       - name: Restore build graph
-        run: pnpm turbo build --concurrency=2 --output-logs=new-only
+        run: pnpm turbo build --concurrency=1 --output-logs=new-only
 
       # These consumers only read the completed dist graph and use isolated
       # temporary output, so Depot can run them concurrently in one sandbox.
@@ -176,9 +180,10 @@ jobs:
 
   db-lanes:
     name: db-${{ matrix.lane }}
-    needs: checks
+    needs: build-graph
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - lane: replay
