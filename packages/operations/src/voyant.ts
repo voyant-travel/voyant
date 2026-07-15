@@ -362,12 +362,6 @@ export const operationsVoyantModule = defineModule({
   },
   meta: {
     ownership: "package",
-    agentTools: {
-      posture: "planned",
-      rationale:
-        "Operational dashboards, departures, and cross-module projections need composed Tools.",
-      issue: "#3370",
-    },
   },
 })
 
