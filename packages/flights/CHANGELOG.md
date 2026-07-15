@@ -1,5 +1,21 @@
 # @voyant-travel/flights
 
+## 0.159.0
+
+### Patch Changes
+
+- b459761: Keep the externally maintained Netopia provider out of the default public dependency tree so
+  framework consumers can install the standard package graph with npm.
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [9c85101]
+  - @voyant-travel/core@0.123.0
+  - @voyant-travel/hono@0.127.0
+  - @voyant-travel/catalog@0.157.0
+  - @voyant-travel/catalog-contracts@0.111.1
+  - @voyant-travel/finance@0.159.0
+  - @voyant-travel/db@0.114.6
+
 ## 0.158.0
 
 ### Patch Changes

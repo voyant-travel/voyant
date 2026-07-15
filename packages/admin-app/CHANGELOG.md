@@ -1,5 +1,37 @@
 # @voyant-travel/admin-app
 
+## 0.51.0
+
+### Minor Changes
+
+- 6147b93: Add a package-owned `/settings/team` surface backed by a graph-selected,
+  provider-neutral team-management runtime port. Better Auth and Voyant Cloud now
+  adapt roster, invitation, role, deactivation, capability, and nullable activity
+  data behind the same server-enforced contract. Move the team route, page, copy,
+  and icon from the admin shell into Auth and Auth React.
+
+### Patch Changes
+
+- 7e9f77a: Add organization defaults and member overrides for stable admin navigation IDs. Apply visibility
+  after selected navigation composition without exposing ineligible routes, inherit hidden parent
+  state through navigation subtrees, and retain structural parents only when a child is explicitly
+  re-enabled. Ship the persistence, admin API, provisioning seam, and settings UI in standard Operator
+  deployments, with duplicate settings contributions normalized at the host and core boundaries.
+- b459761: Accept current Lucide releases in public peer ranges so the standard Operator package closure
+  resolves for external npm consumers.
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [82ffd12]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/distribution-react@0.149.0
+  - @voyant-travel/inventory-react@0.41.0
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/auth-react@0.130.0
+  - @voyant-travel/commerce-react@0.41.0
+  - @voyant-travel/finance-react@0.159.0
+
 ## 0.50.0
 
 ### Patch Changes

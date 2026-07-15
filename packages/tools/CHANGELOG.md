@@ -1,5 +1,12 @@
 # @voyant-travel/tools
 
+## 0.2.2
+
+### Patch Changes
+
+- 552acbf: Publish an external-consumer-safe Zod peer range and refresh Bookings so its public dependency
+  range no longer selects the historical `@voyant-travel/tools@0.0.0` manifest.
+
 ## 0.2.1
 
 ### Patch Changes

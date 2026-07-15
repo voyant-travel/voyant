@@ -1,5 +1,20 @@
 # @voyant-travel/notifications-react
 
+## 0.128.0
+
+### Patch Changes
+
+- b459761: Accept current Lucide releases in public peer ranges so the standard Operator package closure
+  resolves for external npm consumers.
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [82ffd12]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/notifications@0.128.0
+
 ## 0.127.0
 
 ### Patch Changes

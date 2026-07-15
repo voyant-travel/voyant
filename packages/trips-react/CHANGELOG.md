@@ -1,5 +1,30 @@
 # @voyant-travel/trips-react
 
+## 0.150.0
+
+### Patch Changes
+
+- b459761: Accept current Lucide releases in public peer ranges so the standard Operator package closure
+  resolves for external npm consumers.
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [b459761]
+- Updated dependencies [49f55d0]
+- Updated dependencies [82ffd12]
+- Updated dependencies [9c85101]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/flights@0.159.0
+  - @voyant-travel/trips@0.150.0
+  - @voyant-travel/bookings-react@0.159.0
+  - @voyant-travel/catalog@0.157.0
+  - @voyant-travel/finance@0.159.0
+  - @voyant-travel/catalog-react@0.157.0
+  - @voyant-travel/flights-react@0.159.0
+  - @voyant-travel/relationships-react@0.159.0
+
 ## 0.149.0
 
 ### Patch Changes

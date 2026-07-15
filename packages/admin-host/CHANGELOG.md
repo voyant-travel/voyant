@@ -1,5 +1,29 @@
 # @voyant-travel/admin-host
 
+## 0.9.0
+
+### Minor Changes
+
+- 82ffd12: Add persisted organization-level first-run setup guidance composed from the
+  selected admin graph. Standard Operator deployments now collect package-owned
+  business profile, storefront, market, fiscal, navigation, team, and first-product
+  steps while keeping domain mutations in their existing package surfaces.
+
+### Patch Changes
+
+- 7e9f77a: Add organization defaults and member overrides for stable admin navigation IDs. Apply visibility
+  after selected navigation composition without exposing ineligible routes, inherit hidden parent
+  state through navigation subtrees, and retain structural parents only when a child is explicitly
+  re-enabled. Ship the persistence, admin API, provisioning seam, and settings UI in standard Operator
+  deployments, with duplicate settings contributions normalized at the host and core boundaries.
+- Updated dependencies [7e9f77a]
+- Updated dependencies [82ffd12]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/admin-app@0.51.0
+  - @voyant-travel/admin-react@0.125.0
+
 ## 0.8.0
 
 ### Patch Changes

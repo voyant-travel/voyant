@@ -1,5 +1,23 @@
 # @voyant-travel/distribution-react
 
+## 0.149.0
+
+### Patch Changes
+
+- 766d24b: Associate admin form controls with visible labels and validation messages, and add accessible names to phone, channel, product translation, tag, action-menu, and channel-assignment helpers.
+- Updated dependencies [766d24b]
+- Updated dependencies [7e9f77a]
+- Updated dependencies [49f55d0]
+- Updated dependencies [82ffd12]
+- Updated dependencies [6147b93]
+- Updated dependencies [b459761]
+  - @voyant-travel/ui@0.109.2
+  - @voyant-travel/inventory-react@0.41.0
+  - @voyant-travel/admin@0.125.0
+  - @voyant-travel/bookings-react@0.159.0
+  - @voyant-travel/relationships-react@0.159.0
+  - @voyant-travel/distribution@0.149.0
+
 ## 0.148.0
 
 ### Minor Changes
