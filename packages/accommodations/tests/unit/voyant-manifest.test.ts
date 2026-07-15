@@ -110,6 +110,35 @@ describe("accommodations deployment manifest", () => {
       }),
     ])
   })
+
+  it("binds provider-neutral tools to selected read and ledgered write actions", () => {
+    expect(accommodationsVoyantModule.tools).toHaveLength(7)
+    expect(accommodationsVoyantModule.actions).toHaveLength(7)
+    for (const tool of accommodationsVoyantModule.tools ?? []) {
+      const action = accommodationsVoyantModule.actions?.find((candidate) =>
+        candidate.from?.tools?.includes(tool.id),
+      )
+      expect(action).toBeDefined()
+      if (tool.requiredScopes.includes("accommodations:write")) {
+        expect(action?.ledger).toBe("required")
+      }
+      if (tool.risk === "high") {
+        expect(action).toMatchObject({ approval: "required", risk: "high" })
+      }
+    }
+    expect(accommodationsContentVoyantPlugin.tools).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/accommodations#tool.get-accommodation-content",
+        requiredScopes: ["accommodations:read"],
+        context: ["accommodations"],
+      }),
+    ])
+    expect(accommodationsContentVoyantPlugin.actions).toEqual([
+      expect.objectContaining({
+        from: { tools: ["@voyant-travel/accommodations#tool.get-accommodation-content"] },
+      }),
+    ])
+  })
 })
 
 function openApiDocument(routes: unknown) {

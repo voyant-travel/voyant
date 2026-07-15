@@ -15,3 +15,14 @@ importing the schema from here.
 
 - `.` / `./schema` — the `availability_*` Drizzle tables, enums, relations and
   inferred types.
+
+## Agent Tool Boundary
+
+This foundational package's executable Tool posture is **not applicable**. It owns schema only;
+there is no public availability service or route to bind without querying tables directly. The
+provider-neutral availability services are owned by `@voyant-travel/operations`, whose selected
+Tools cover overview, aggregates, rules, start times, departures, and closeouts.
+
+Adding Tools here would first require moving that service ownership out of Operations, including
+its catalog and runtime dependencies. No such migration is selected: duplicate MCP wrappers over
+the same tables would create competing capability ownership rather than fill a coverage gap.
