@@ -14,7 +14,7 @@ describe("finance deployment manifest", () => {
       id: "@voyant-travel/finance",
       packageName: "@voyant-travel/finance",
       provides: {
-        capabilities: ["finance.payment-sessions"],
+        capabilities: ["finance.data-owner", "finance.payment-sessions"],
         ports: [
           { id: "action-ledger.finance-drift-runtime" },
           { id: "bookings.finance.runtime" },
