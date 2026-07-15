@@ -222,6 +222,8 @@ export {
   type CatalogBookingRoutesOptions,
   createCatalogBookingHonoModule,
   createCatalogBookingRoutes,
+  serializeBookResult,
+  serializeQuoteResult,
 } from "./routes.js"
 export {
   catalogQuotesTable,

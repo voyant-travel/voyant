@@ -1,10 +1,16 @@
 import { defineToolContextContribution, requireService, ToolError } from "@voyant-travel/tools"
 import type { Context } from "hono"
 
-import { type CatalogSearchRuntimeOptions, catalogSearchRuntimePort } from "./api-runtime-ports.js"
+import {
+  type CatalogSearchRuntimeOptions,
+  catalogBookingRuntimePort,
+  catalogSearchRuntimePort,
+} from "./api-runtime-ports.js"
+import { createCatalogBookingToolServices } from "./booking-tool-services.js"
 import { executeSemanticSearch } from "./search/semantic.js"
 import type { CatalogToolServices } from "./tools.js"
 
+export * from "./booking-tools.js"
 export * from "./tools.js"
 
 export const voyantToolContextContribution = defineToolContextContribution({
@@ -53,6 +59,16 @@ export const voyantToolContextContribution = defineToolContextContribution({
         return null
       },
     }
-    return { catalog }
+    const bookingResource = resources[catalogBookingRuntimePort.id] as
+      | import("./booking-engine/operator-routes.js").CatalogBookingRouteModuleOptions
+      | Promise<import("./booking-engine/operator-routes.js").CatalogBookingRouteModuleOptions>
+      | undefined
+    if (!bookingResource) return { catalog }
+    const bookingProvider = await Promise.resolve(bookingResource)
+    catalogBookingRuntimePort.test(bookingProvider)
+    return {
+      catalog,
+      catalogBooking: createCatalogBookingToolServices(bookingProvider, request as Context),
+    }
   },
 })

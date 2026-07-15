@@ -1288,7 +1288,7 @@ function cryptoRandom(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function serializeQuoteResult(result: QuoteEntityResult): QuoteResponseV1 {
+export function serializeQuoteResult(result: QuoteEntityResult): QuoteResponseV1 {
   return quoteResponseV1.parse({
     ...result,
     quotedAt: result.quotedAt.toISOString(),
@@ -1308,7 +1308,7 @@ function serializeBatchQuoteResult(
   })
 }
 
-function serializeBookResult(result: BookEntityResult): BookResponseV1 {
+export function serializeBookResult(result: BookEntityResult): BookResponseV1 {
   return bookResponseV1.parse({
     ...result,
     pricing: toPricingBreakdownV1(result.pricing),

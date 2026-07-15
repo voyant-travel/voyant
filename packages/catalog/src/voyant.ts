@@ -315,13 +315,54 @@ export const catalogBookingEngineVoyantModule = defineModule({
       },
     },
   ],
+  tools: [
+    {
+      id: "@voyant-travel/catalog#booking-engine#tool.quote-catalog-entity",
+      name: "quote_catalog_entity",
+      runtime: {
+        entry: "@voyant-travel/catalog/tools",
+        export: "quoteCatalogEntityTool",
+      },
+      requiredScopes: ["catalog:read"],
+      context: ["catalog"],
+      risk: "write",
+    },
+    {
+      id: "@voyant-travel/catalog#booking-engine#tool.commit-catalog-booking",
+      name: "commit_catalog_booking",
+      runtime: {
+        entry: "@voyant-travel/catalog/tools",
+        export: "commitCatalogBookingTool",
+      },
+      requiredScopes: ["catalog:read", "bookings:write"],
+      context: ["catalog"],
+      risk: "destructive",
+    },
+    {
+      id: "@voyant-travel/catalog#booking-engine#tool.list-catalog-orders",
+      name: "list_catalog_orders",
+      runtime: {
+        entry: "@voyant-travel/catalog/tools",
+        export: "listCatalogOrdersTool",
+      },
+      requiredScopes: ["bookings:read"],
+      context: ["catalog"],
+      risk: "sensitive",
+    },
+    {
+      id: "@voyant-travel/catalog#booking-engine#tool.get-catalog-order",
+      name: "get_catalog_order",
+      runtime: {
+        entry: "@voyant-travel/catalog/tools",
+        export: "getCatalogOrderTool",
+      },
+      requiredScopes: ["bookings:read"],
+      context: ["catalog"],
+      risk: "sensitive",
+    },
+  ],
   meta: {
     ownership: "package",
-    agentTools: {
-      posture: "planned",
-      rationale: "Sellability, pricing, hold, and booking-engine capabilities need guarded Tools.",
-      issue: "#3370",
-    },
   },
 })
 
