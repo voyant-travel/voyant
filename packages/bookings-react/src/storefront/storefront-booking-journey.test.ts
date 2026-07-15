@@ -1,9 +1,52 @@
 import { describe, expect, it } from "vitest"
 
+import type { Draft } from "../journey/index.js"
 import { buildStorefrontBookFailureMessage } from "./storefront-booking-errors"
-import { buildStorefrontCommitParty } from "./storefront-booking-journey"
+import {
+  buildStorefrontBookBody,
+  buildStorefrontCheckoutStartBody,
+  buildStorefrontCommitParty,
+} from "./storefront-booking-journey"
 
 describe("package-owned storefront booking journey", () => {
+  it.each([
+    "card",
+    "bank_transfer",
+    "inquiry",
+  ] as const)("reserves with hold before starting %s checkout", (intent) => {
+    const draft = {
+      entity: { module: "products", id: "prod_1", sourceKind: "owned" },
+      configure: { pax: { adult: 2 }, departureSlotId: "slot_1" },
+      billing: {
+        buyerType: "B2C",
+        contact: {
+          firstName: "Ada",
+          lastName: "Lovelace",
+          email: "ada@example.com",
+        },
+        address: {},
+      },
+      travelers: [],
+      addons: [],
+      payment: { intent },
+    } as Draft
+
+    const book = buildStorefrontBookBody({
+      draftId: "draft_1",
+      quoteId: "quote_1",
+      draft,
+    })
+    const checkout = buildStorefrontCheckoutStartBody({
+      bookingId: "booking_1",
+      draft,
+      acceptance: null,
+      returnOrigin: "https://shop.example",
+    })
+
+    expect(book.paymentIntent).toEqual({ type: "hold" })
+    expect(checkout.paymentIntent).toBe(intent)
+  })
+
   it("keeps billing contact and traveler details for sourced reserve", () => {
     const party = buildStorefrontCommitParty({
       entity: { module: "products", id: "pkg_1", sourceKind: "" },

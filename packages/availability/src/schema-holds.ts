@@ -29,6 +29,14 @@ export const availabilityHolds = pgTable(
     paxCount: integer("pax_count").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     releasedAt: timestamp("released_at", { withTimezone: true }),
+    /**
+     * Conversion is recorded on the hold without cross-package foreign keys.
+     * Bookings owns both referenced rows and writes these fields atomically
+     * while turning reserved capacity into a booking allocation.
+     */
+    convertedAt: timestamp("converted_at", { withTimezone: true }),
+    convertedBookingId: text("converted_booking_id"),
+    convertedAllocationId: text("converted_allocation_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -37,6 +45,7 @@ export const availabilityHolds = pgTable(
     index("idx_availability_holds_draft").on(table.draftId),
     index("idx_availability_holds_token").on(table.holdToken),
     index("idx_availability_holds_expires").on(table.expiresAt),
+    index("idx_availability_holds_converted_booking").on(table.convertedBookingId),
   ],
 )
 

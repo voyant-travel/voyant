@@ -17,7 +17,7 @@ import {
   availabilitySlots,
 } from "@voyant-travel/availability/schema"
 import { newId } from "@voyant-travel/db/lib/typeid"
-import { and, eq, isNull, lt, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, lt, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 export interface PlaceAvailabilityHoldInput {
@@ -67,6 +67,26 @@ export async function placeAvailabilityHold(
 
     const expiresAt = new Date(Date.now() + input.ttlMs)
     const holdToken = input.holdToken ?? `hold_${newId("availability_holds")}`
+
+    const [existing] = await tx
+      .select()
+      .from(availabilityHolds)
+      .where(
+        and(
+          eq(availabilityHolds.holdToken, holdToken),
+          eq(availabilityHolds.draftId, input.draftId),
+          eq(availabilityHolds.productId, input.productId),
+          eq(availabilityHolds.slotId, input.slotId),
+          isNull(availabilityHolds.releasedAt),
+          isNull(availabilityHolds.convertedAt),
+        ),
+      )
+      .orderBy(asc(availabilityHolds.createdAt))
+      .limit(1)
+
+    if (existing) {
+      return { status: "ok" as const, hold: existing }
+    }
 
     if (slot.unlimited) {
       const [row] = await tx
@@ -138,7 +158,9 @@ export async function extendAvailabilityHold(
       releasedAt: availabilityHolds.releasedAt,
     })
     .from(availabilityHolds)
-    .where(eq(availabilityHolds.holdToken, input.holdToken))
+    .where(
+      and(eq(availabilityHolds.holdToken, input.holdToken), isNull(availabilityHolds.convertedAt)),
+    )
     .limit(1)
 
   if (!row) return { status: "hold_not_found" }
@@ -160,36 +182,65 @@ export async function releaseAvailabilityHold(
   db: PostgresJsDatabase,
   holdToken: string,
 ): Promise<void> {
-  await db.transaction(async (tx) => {
-    const [hold] = await tx
+  await releaseAvailabilityHoldsByToken(db, holdToken)
+}
+
+async function releaseAvailabilityHoldsByToken(
+  db: PostgresJsDatabase,
+  holdToken: string,
+): Promise<number> {
+  return db.transaction(async (tx) => {
+    const holds = await tx
       .select()
       .from(availabilityHolds)
-      .where(eq(availabilityHolds.holdToken, holdToken))
-      .limit(1)
-    if (!hold || hold.releasedAt) return
-
-    const [slot] = await tx
-      .select({ unlimited: availabilitySlots.unlimited })
-      .from(availabilitySlots)
-      .where(eq(availabilitySlots.id, hold.slotId))
+      .where(
+        and(
+          eq(availabilityHolds.holdToken, holdToken),
+          isNull(availabilityHolds.releasedAt),
+          isNull(availabilityHolds.convertedAt),
+        ),
+      )
+      .orderBy(asc(availabilityHolds.slotId), asc(availabilityHolds.createdAt))
       .for("update")
-      .limit(1)
 
-    if (slot && !slot.unlimited) {
-      await tx
-        .update(availabilitySlots)
-        .set({
-          // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
-          remainingPax: sql`${availabilitySlots.remainingPax} + ${hold.paxCount}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(availabilitySlots.id, hold.slotId))
+    if (holds.length === 0) return 0
+
+    const paxBySlot = new Map<string, number>()
+    for (const hold of holds) {
+      paxBySlot.set(hold.slotId, (paxBySlot.get(hold.slotId) ?? 0) + hold.paxCount)
+    }
+
+    for (const [slotId, paxCount] of paxBySlot) {
+      const [slot] = await tx
+        .select({ unlimited: availabilitySlots.unlimited })
+        .from(availabilitySlots)
+        .where(eq(availabilitySlots.id, slotId))
+        .for("update")
+        .limit(1)
+
+      if (slot && !slot.unlimited) {
+        await tx
+          .update(availabilitySlots)
+          .set({
+            // agent-quality: raw-sql reviewed -- owner: availability; dynamic SQL interpolation uses Drizzle parameter binding or vetted SQL identifiers.
+            remainingPax: sql`${availabilitySlots.remainingPax} + ${paxCount}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(availabilitySlots.id, slotId))
+      }
     }
 
     await tx
       .update(availabilityHolds)
       .set({ releasedAt: new Date(), updatedAt: new Date() })
-      .where(eq(availabilityHolds.id, hold.id))
+      .where(
+        inArray(
+          availabilityHolds.id,
+          holds.map((hold) => hold.id),
+        ),
+      )
+
+    return holds.length
   })
 }
 
@@ -204,12 +255,19 @@ export async function releaseExpiredHolds(
   const expired = await db
     .select({ holdToken: availabilityHolds.holdToken })
     .from(availabilityHolds)
-    .where(and(lt(availabilityHolds.expiresAt, cutoff), isNull(availabilityHolds.releasedAt)))
+    .where(
+      and(
+        lt(availabilityHolds.expiresAt, cutoff),
+        isNull(availabilityHolds.releasedAt),
+        isNull(availabilityHolds.convertedAt),
+      ),
+    )
 
-  for (const row of expired) {
-    await releaseAvailabilityHold(db, row.holdToken)
+  let released = 0
+  for (const holdToken of new Set(expired.map((row) => row.holdToken))) {
+    released += await releaseAvailabilityHoldsByToken(db, holdToken)
   }
-  return expired.length
+  return released
 }
 
 /**

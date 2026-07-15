@@ -80,6 +80,9 @@ export interface BookingCreateBridgeInput {
   productId: string
   optionId?: string | null
   slotId?: string | null
+  pax?: number | null
+  /** Hold token created before /book; converted atomically by booking create. */
+  availabilityHoldToken?: string
   bookingNumber: string
   personId?: string | null
   organizationId?: string | null
@@ -853,6 +856,11 @@ export function createProductsBookingHandler(
       request: CommitOwnedRequest,
     ): Promise<CommitOwnedResult> {
       const draft = (request.draft ?? {}) as DraftLike
+      const configuredPax = sumPax(draft.configure?.pax)
+      const availabilityHoldToken =
+        typeof request.parameters?.availabilityHoldToken === "string"
+          ? request.parameters.availabilityHoldToken
+          : undefined
       // Defensive product load — the bridge will fail with
       // `product_not_found` anyway, but a clean early-return keeps the
       // commit path's error envelope predictable.
@@ -983,6 +991,8 @@ export function createProductsBookingHandler(
         // Link the departure so the booking item carries availability_slot_id
         // (powers the duplicate-departure check + slot-level reporting).
         slotId: draft.configure?.departureSlotId ?? null,
+        pax: configuredPax > 0 ? configuredPax : travelers.length || null,
+        availabilityHoldToken,
         bookingNumber,
         personId: billingPersonId,
         organizationId: billingOrganizationId,
@@ -1024,7 +1034,7 @@ export function createProductsBookingHandler(
           currency: product.sellCurrency,
           quantityMultiplier: Math.max(1, travelers.length || 1),
         }),
-        initialStatus: readInitialStatus(request.parameters),
+        initialStatus: readInitialStatus(request.parameters) ?? "on_hold",
       })
 
       if (bridge.status !== "ok" || !bridge.bookingId) {

@@ -78,7 +78,7 @@ export async function confirmResourceHold(
     .limit(1)
 
   if (!hold) return { status: "hold_not_found" }
-  if (hold.releasedAt) return { status: "already_released" }
+  if (hold.releasedAt || hold.convertedAt) return { status: "already_released" }
   if (hold.expiresAt.getTime() <= Date.now()) return { status: "expired" }
   return { status: "ok", hold }
 }

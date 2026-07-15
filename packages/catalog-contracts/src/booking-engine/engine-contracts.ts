@@ -78,10 +78,13 @@ export const quoteBatchResponseV1 = z.object({
  * `catalog-flights-architecture.md` §3.1. Default `{ type: "hold" }`
  * when omitted. Kept in lockstep with `bookRequestV1.paymentIntent`.
  */
-export type BookingPaymentIntent =
-  | { type: "hold" }
-  | { type: "card"; tokenizedCard: string }
-  | { type: "ticket_on_credit"; agencyAccount: string }
+export const bookingReservationPaymentIntentV1 = z.union([
+  z.object({ type: z.literal("hold") }),
+  z.object({ type: z.literal("card"), tokenizedCard: z.string().min(1) }),
+  z.object({ type: z.literal("ticket_on_credit"), agencyAccount: z.string().min(1) }),
+])
+
+export type BookingPaymentIntent = z.infer<typeof bookingReservationPaymentIntentV1>
 
 export const bookRequestV1 = z
   .object({
@@ -89,13 +92,7 @@ export const bookRequestV1 = z
     draftId: z.string().optional(),
     bookingId: z.string().optional(),
     party: z.record(z.string(), z.unknown()).optional(),
-    paymentIntent: z
-      .union([
-        z.object({ type: z.literal("hold") }),
-        z.object({ type: z.literal("card"), tokenizedCard: z.string() }),
-        z.object({ type: z.literal("ticket_on_credit"), agencyAccount: z.string() }),
-      ])
-      .optional(),
+    paymentIntent: bookingReservationPaymentIntentV1.optional(),
     parameters: z.record(z.string(), z.unknown()).optional(),
     /** Idempotency — same key in 24h returns the existing booking. */
     idempotencyKey: z.string().min(8).max(128).optional(),

@@ -17,6 +17,7 @@ import {
   ilike,
   inArray,
   isNotNull,
+  isNull,
   lte,
   ne,
   notInArray,
@@ -28,7 +29,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
 import { BOOKING_STATUS_CAPABILITIES } from "./action-ledger-capabilities.js"
-import { availabilitySlotsRef } from "./availability-ref.js"
+import { availabilityHoldsRef, availabilitySlotsRef } from "./availability-ref.js"
 import { exchangeRatesRef } from "./markets-ref.js"
 import {
   applyTravelDetailSnapshot,
@@ -1464,6 +1465,68 @@ async function adjustSlotCapacity(
   }
 }
 
+interface AvailabilityHoldConversion {
+  id: string
+  holdToken: string
+  paxCount: number
+}
+
+async function prepareAvailabilityHoldConversion(
+  db: PostgresJsDatabase,
+  input: { holdToken: string; productId: string; slotId: string },
+): Promise<AvailabilityHoldConversion | null> {
+  const holds = await db
+    .select()
+    .from(availabilityHoldsRef)
+    .where(
+      and(
+        eq(availabilityHoldsRef.holdToken, input.holdToken),
+        isNull(availabilityHoldsRef.releasedAt),
+        isNull(availabilityHoldsRef.convertedAt),
+      ),
+    )
+    .orderBy(asc(availabilityHoldsRef.slotId), asc(availabilityHoldsRef.createdAt))
+    .for("update")
+
+  if (holds.length === 0) return null
+
+  const now = new Date()
+  const canonical =
+    holds.find(
+      (hold) =>
+        hold.productId === input.productId &&
+        hold.slotId === input.slotId &&
+        hold.expiresAt.getTime() > now.getTime(),
+    ) ?? null
+  const releases = canonical ? holds.filter((hold) => hold.id !== canonical.id) : holds
+
+  if (releases.length > 0) {
+    const paxBySlot = new Map<string, number>()
+    for (const hold of releases) {
+      paxBySlot.set(hold.slotId, (paxBySlot.get(hold.slotId) ?? 0) + hold.paxCount)
+    }
+    for (const [slotId, paxCount] of paxBySlot) {
+      const restored = await adjustSlotCapacity(db, slotId, paxCount, "booking")
+      if (restored.status !== "ok") {
+        throw new BookingServiceError(restored.status)
+      }
+    }
+    await db
+      .update(availabilityHoldsRef)
+      .set({ releasedAt: now, updatedAt: now })
+      .where(
+        inArray(
+          availabilityHoldsRef.id,
+          releases.map((hold) => hold.id),
+        ),
+      )
+  }
+
+  return canonical
+    ? { id: canonical.id, holdToken: canonical.holdToken, paxCount: canonical.paxCount }
+    : null
+}
+
 /**
  * Per-resource capacity check used when a traveler is being assigned
  * to one or more allocation_resources via `travelDetails.allocations`.
@@ -2320,6 +2383,7 @@ export const bookingsService = {
     data: ConvertProductInput,
     productData: ConvertProductData,
     userId?: string,
+    options: { availabilityHoldToken?: string } = {},
   ) {
     const { product, option, slot, dayServices, units } = productData
 
@@ -2621,11 +2685,48 @@ export const bookingsService = {
         metadata: item.metadata ?? null,
       }))
 
-    if (allocationRows.length > 0) {
-      for (const allocation of allocationRows) {
+    const convertibleSlotId = slot?.id ?? null
+    const convertedHold =
+      options.availabilityHoldToken && convertibleSlotId
+        ? await prepareAvailabilityHoldConversion(db, {
+            holdToken: options.availabilityHoldToken,
+            productId: product.id,
+            slotId: convertibleSlotId,
+          })
+        : null
+    const convertedAllocationId = convertedHold ? newId("booking_allocations") : null
+    const rowsToInsert = convertedHold
+      ? allocationRows.flatMap((allocation, index) => {
+          if (allocation.availabilitySlotId !== convertibleSlotId) return [allocation]
+          if (
+            index !==
+            allocationRows.findIndex((row) => row.availabilitySlotId === convertibleSlotId)
+          ) {
+            return []
+          }
+          return [
+            {
+              ...allocation,
+              id: convertedAllocationId ?? undefined,
+              quantity: convertedHold.paxCount,
+              metadata: {
+                ...(allocation.metadata ?? {}),
+                availabilityHoldId: convertedHold.id,
+                availabilityHoldToken: convertedHold.holdToken,
+              },
+            },
+          ]
+        })
+      : allocationRows
+
+    if (rowsToInsert.length > 0) {
+      for (const allocation of rowsToInsert) {
+        const isConvertedAllocation =
+          convertedHold && allocation.metadata?.availabilityHoldId === convertedHold.id
         if (
           !allocation.availabilitySlotId ||
-          !allocationStatusConsumesSlotCapacity(allocation.status)
+          !allocationStatusConsumesSlotCapacity(allocation.status) ||
+          isConvertedAllocation
         ) {
           continue
         }
@@ -2648,7 +2749,19 @@ export const bookingsService = {
         }
       }
 
-      await db.insert(bookingAllocations).values(allocationRows)
+      await db.insert(bookingAllocations).values(rowsToInsert)
+    }
+
+    if (convertedHold && convertedAllocationId) {
+      await db
+        .update(availabilityHoldsRef)
+        .set({
+          convertedAt: now,
+          convertedBookingId: booking.id,
+          convertedAllocationId,
+          updatedAt: now,
+        })
+        .where(eq(availabilityHoldsRef.id, convertedHold.id))
     }
 
     await db
@@ -2689,6 +2802,13 @@ export const bookingsService = {
         productName: product.name,
         optionId: option?.id ?? null,
         slotId: slot?.id ?? null,
+        ...(convertedHold
+          ? {
+              availabilityHoldId: convertedHold.id,
+              availabilityHoldToken: convertedHold.holdToken,
+              availabilityHoldPax: convertedHold.paxCount,
+            }
+          : {}),
       },
     })
 
@@ -2714,13 +2834,14 @@ export const bookingsService = {
     db: PostgresJsDatabase,
     data: ConvertProductInput,
     userId?: string,
+    options: { availabilityHoldToken?: string } = {},
   ) {
     const productData = await getConvertProductData(db, data)
     if (!productData) {
       return null
     }
 
-    return this.convertProductToBooking(db, data, productData, userId)
+    return this.convertProductToBooking(db, data, productData, userId, options)
   },
 
   listAllocations(db: PostgresJsDatabase, bookingId: string) {

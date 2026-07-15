@@ -1,3 +1,4 @@
+import { bookingReservationPaymentIntentV1 } from "@voyant-travel/catalog-contracts/booking-engine/contracts"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { Context } from "hono"
 import { z } from "zod"
@@ -70,13 +71,7 @@ export const bookBodySchema = z
     quoteId: z.string().min(1).optional(),
     bookingId: z.string().min(1).optional(),
     party: recordSchema.optional(),
-    paymentIntent: z
-      .union([
-        z.object({ type: z.literal("hold") }),
-        z.object({ type: z.literal("card"), tokenizedCard: z.string().min(1) }),
-        z.object({ type: z.literal("ticket_on_credit"), agencyAccount: z.string().min(1) }),
-      ])
-      .optional(),
+    paymentIntent: bookingReservationPaymentIntentV1.optional(),
     parameters: recordSchema.optional(),
     draftId: z.string().min(1).optional(),
     idempotencyKey: z.string().min(8).max(128).optional(),
