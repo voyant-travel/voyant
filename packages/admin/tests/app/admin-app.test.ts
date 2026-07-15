@@ -208,6 +208,12 @@ describe("attachAdminExtensionRoutes", () => {
     const children = layout.children as Array<{ options: { path?: string } }>
     expect(children).toHaveLength(2)
     expect(children.filter((child) => child.options.path === "/bookings")).toHaveLength(1)
+
+    const duplicateRoute = createRoute({ getParentRoute: () => layout, path: "/bookings" })
+    attachAdminExtensionRoutes(tree, layout, [reloadedRoute, duplicateRoute])
+    const deduplicated = layout.children as Array<{ options: { path?: string } }>
+    expect(deduplicated).toHaveLength(2)
+    expect(deduplicated.filter((child) => child.options.path === "/bookings")).toHaveLength(1)
   })
 })
 
