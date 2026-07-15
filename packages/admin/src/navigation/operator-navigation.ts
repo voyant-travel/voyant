@@ -18,6 +18,10 @@ import {
 import { type AdminExtension, resolveAdminNavigation } from "../extensions.js"
 import type { OperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import type { NavItem } from "../types.js"
+import {
+  type AdminNavigationPreferences,
+  resolveAdminNavigationPreferences,
+} from "./preferences.js"
 
 export type OperatorAdminNavigationIconName =
   | "availability"
@@ -85,6 +89,7 @@ export function createOperatorAdminNavigation({
 export interface ResolveOperatorAdminNavigationOptions {
   baseItems: ReadonlyArray<NavItem>
   extensions?: ReadonlyArray<AdminExtension>
+  preferences?: AdminNavigationPreferences
 }
 
 /**
@@ -95,6 +100,7 @@ export interface ResolveOperatorAdminNavigationOptions {
 export function resolveOperatorAdminNavigation({
   baseItems,
   extensions = [],
+  preferences,
 }: ResolveOperatorAdminNavigationOptions): NavItem[] {
   const selectContributions = (anchored: boolean): AdminExtension[] =>
     extensions.flatMap((extension) => {
@@ -110,8 +116,12 @@ export function resolveOperatorAdminNavigation({
     extensions: selectContributions(false),
   })
 
-  return resolveAdminNavigation({
+  const mergedItems = resolveAdminNavigation({
     baseItems: packageItems,
     extensions: selectContributions(true),
   })
+
+  return preferences
+    ? resolveAdminNavigationPreferences({ items: mergedItems, ...preferences })
+    : mergedItems
 }

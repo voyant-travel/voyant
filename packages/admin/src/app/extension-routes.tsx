@@ -242,19 +242,19 @@ export function adminExtensionChildRoutes(
   }
   const exclude = new Set(options.exclude ?? [])
 
-  return (parent.children ?? [])
-    .filter((child) => !exclude.has(child.path))
-    .map((child) => {
-      const options = {
-        getParentRoute,
-        path: child.path,
-        validateSearch: child.validateSearch,
-        ...adminRouteOptionsFromContribution(requireChildImplementation(extension, child), runtime),
-      }
-      // Runtime-built routes carry no typed-link contract (they are invisible
-      // to the host's generated typed-link maps), so the loose cast is sound.
-      return createRoute(options)
-    })
+  return uniqueContributionsByPath(
+    (parent.children ?? []).filter((child) => !exclude.has(child.path)),
+  ).map((child) => {
+    const options = {
+      getParentRoute,
+      path: child.path,
+      validateSearch: child.validateSearch,
+      ...adminRouteOptionsFromContribution(requireChildImplementation(extension, child), runtime),
+    }
+    // Runtime-built routes carry no typed-link contract (they are invisible
+    // to the host's generated typed-link maps), so the loose cast is sound.
+    return createRoute(options)
+  })
 }
 
 function requireChildImplementation(
@@ -310,7 +310,7 @@ export function buildAdminExtensionRoutes(
       routes.push(route)
     }
   }
-  return routes
+  return uniqueRoutesByPath(routes)
 }
 
 /**
@@ -373,16 +373,36 @@ export function attachAdminExtensionRoutes<TRouteTree extends AnyRoute>(
   parentRoute: AnyRoute,
   extensionRoutes: ReadonlyArray<AnyRoute>,
 ): TRouteTree {
+  const uniqueExtensionRoutes = uniqueRoutesByPath(extensionRoutes)
   const existing: Array<AnyRoute> = Array.isArray(parentRoute.children)
     ? (parentRoute.children as Array<AnyRoute>)
     : []
   const extensionPaths = new Set(
-    extensionRoutes.map((route) => (route.options as { path?: string }).path),
+    uniqueExtensionRoutes.map((route) => (route.options as { path?: string }).path),
   )
   const children = [
     ...existing.filter((route) => !extensionPaths.has((route.options as { path?: string }).path)),
-    ...extensionRoutes,
+    ...uniqueExtensionRoutes,
   ]
   parentRoute.addChildren(children)
   return routeTree
+}
+
+function uniqueContributionsByPath(
+  contributions: ReadonlyArray<AdminUiRouteContribution>,
+): ReadonlyArray<AdminUiRouteContribution> {
+  const unique = new Map<string, AdminUiRouteContribution>()
+  for (const contribution of contributions) unique.set(contribution.path, contribution)
+  return [...unique.values()]
+}
+
+function uniqueRoutesByPath(routes: ReadonlyArray<AnyRoute>): Array<AnyRoute> {
+  const unique = new Map<string, AnyRoute>()
+  const unkeyed: AnyRoute[] = []
+  for (const route of routes) {
+    const path = (route.options as { path?: string }).path
+    if (typeof path === "string") unique.set(path, route)
+    else unkeyed.push(route)
+  }
+  return [...unkeyed, ...unique.values()]
 }

@@ -285,7 +285,11 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
   basePath?: string
   publicPaths?: string[]
   /** Selected graph mount-to-resource authorization overrides. */
-  accessResources?: readonly { path: string; resource: string }[]
+  accessResources?: readonly {
+    path: string
+    resource: string
+    authorization?: "coarse" | "route"
+  }[]
   /** Effective selected-plus-legacy catalog used for wildcard policy. */
   accessCatalog?: AccessCatalog
   logger?: LoggerProvider

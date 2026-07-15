@@ -168,7 +168,8 @@ export function createAdminCoreExtension(
 }
 
 function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiRouteContribution {
-  const { basePath = "/settings", omit = [], extraPages = [] } = options
+  const { basePath = "/settings", omit = [] } = options
+  const extraPages = uniqueExtraSettingsPages(options.extraPages ?? [])
   const entries = adminCoreSettingsNavEntries.filter((entry) => !omit.includes(entry.id))
   const indexRedirectTo =
     options.indexRedirectTo ??
@@ -217,6 +218,17 @@ function createSettingsContribution(options: AdminCoreSettingsOptions): AdminUiR
     },
     children,
   }
+}
+
+function uniqueExtraSettingsPages(
+  pages: ReadonlyArray<AdminCoreSettingsExtraPage>,
+): ReadonlyArray<AdminCoreSettingsExtraPage> {
+  const unique = new Map<string, AdminCoreSettingsExtraPage>()
+  for (const page of pages) {
+    const key = `${page.id}\0${page.path}`
+    if (!unique.has(key)) unique.set(key, page)
+  }
+  return [...unique.values()]
 }
 
 function createBuiltInSettingsPage(

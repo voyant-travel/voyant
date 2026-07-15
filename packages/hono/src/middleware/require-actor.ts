@@ -103,7 +103,11 @@ export interface RequireActorOptions {
    */
   basePath?: string
   /** Selected graph mount prefixes whose authorization resource differs from the URL segment. */
-  resources?: readonly { path: string; resource: string }[]
+  resources?: readonly {
+    path: string
+    resource: string
+    authorization?: "coarse" | "route"
+  }[]
   accessCatalog?: AccessCatalog
 }
 
@@ -111,11 +115,17 @@ function isRequireActorOptions(value: unknown): value is RequireActorOptions {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-function apiKeyResourceForRequest(pathname: string, options: RequireActorOptions): string | null {
+function authorizationForRequest(
+  pathname: string,
+  options: RequireActorOptions,
+): { resource: string | null; authorization: "coarse" | "route" } {
   const override = [...(options.resources ?? [])]
     .sort((left, right) => right.path.length - left.path.length)
     .find(({ path }) => pathname === path || pathname.startsWith(`${path}/`))
-  return override?.resource ?? apiKeyResourceFromPath(pathname)
+  return {
+    resource: override?.resource ?? apiKeyResourceFromPath(pathname),
+    authorization: override?.authorization ?? "coarse",
+  }
 }
 
 /**
@@ -171,7 +181,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       const pathname = normalizePathname(new URL(c.req.url).pathname, {
         basePath: options.basePath,
       })
-      const resource = apiKeyResourceForRequest(pathname, options)
+      const { resource, authorization } = authorizationForRequest(pathname, options)
 
       // Coarse-guard-exempt surfaces. `_meta` (capability discovery) and `mcp`
       // (the agent tool server) are dispatch surfaces where authorization is
@@ -179,7 +189,7 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       // gates each tool by its own `requiredScopes` (voyant#2792, D2). So any
       // authenticated key reaches them; a key with no relevant scopes simply
       // sees an empty tool list. Neither is a real module name.
-      if (isCoarseGuardExempt(resource)) return next()
+      if (authorization === "route" || isCoarseGuardExempt(resource)) return next()
 
       const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
 
@@ -220,8 +230,8 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
       const pathname = normalizePathname(new URL(c.req.url).pathname, {
         basePath: options.basePath,
       })
-      const resource = apiKeyResourceForRequest(pathname, options)
-      if (resource && !isCoarseGuardExempt(resource)) {
+      const { resource, authorization } = authorizationForRequest(pathname, options)
+      if (resource && authorization !== "route" && !isCoarseGuardExempt(resource)) {
         const actions = apiKeyPermissionActionsForMethod(c.req.method, pathname)
         if (!hasAnyApiKeyPermission(scopes, resource, actions, options.accessCatalog)) {
           return c.json({ error: "Forbidden: missing required permission" }, 403)

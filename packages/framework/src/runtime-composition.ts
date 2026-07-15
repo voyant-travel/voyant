@@ -221,7 +221,11 @@ export interface ComposeVoyantGraphRuntimeInput<TCapabilities> {
 export interface VoyantGraphRuntimeComposition {
   modules: HonoModule[]
   extensions: HonoExtension[]
-  accessResources: { path: string; resource: string }[]
+  accessResources: {
+    path: string
+    resource: string
+    authorization?: "coarse" | "route"
+  }[]
   routePosture: VoyantGraphRuntimeRoutePosture
 }
 
@@ -333,12 +337,22 @@ export async function composeVoyantGraphRuntime<TCapabilities>(
   }
 }
 
-function deriveAccessResources(runtime: VoyantGraphRuntime): { path: string; resource: string }[] {
+function deriveAccessResources(runtime: VoyantGraphRuntime): {
+  path: string
+  resource: string
+  authorization?: "coarse" | "route"
+}[] {
   return [...runtime.modules, ...runtime.extensions, ...runtime.plugins]
     .flatMap((unit) =>
       unit.routes.flatMap(({ route }) =>
         route.resource
-          ? [{ path: resolveVoyantGraphRouteMountPath(unit, route), resource: route.resource }]
+          ? [
+              {
+                path: resolveVoyantGraphRouteMountPath(unit, route),
+                resource: route.resource,
+                ...(route.authorization ? { authorization: route.authorization } : {}),
+              },
+            ]
           : [],
       ),
     )

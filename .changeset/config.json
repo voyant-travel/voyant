@@ -15,6 +15,7 @@
     ["@voyant-travel/identity", "@voyant-travel/identity-react"],
     ["@voyant-travel/legal", "@voyant-travel/legal-react"],
     ["@voyant-travel/notifications", "@voyant-travel/notifications-react"],
+    ["@voyant-travel/navigation-preferences", "@voyant-travel/navigation-preferences-react"],
     [
       "@voyant-travel/storefront",
       "@voyant-travel/storefront-react",

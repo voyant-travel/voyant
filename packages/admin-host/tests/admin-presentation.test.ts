@@ -16,6 +16,10 @@ describe("createAdminHostExtensions", () => {
         },
       ],
     })
+    const duplicateTeamContribution = defineAdminExtension({
+      id: "deployment-team",
+      settingsPages: team.settingsPages,
+    })
     let settingsPageIds: ReadonlyArray<string> = []
 
     const extensions = createAdminHostExtensions({
@@ -23,11 +27,11 @@ describe("createAdminHostExtensions", () => {
         settingsPageIds = settingsPages.map(({ id }) => id)
         return defineAdminExtension({ id: "core" })
       },
-      selected: () => [team, team],
+      selected: () => [team, duplicateTeamContribution, team],
       navMessages: {},
     })
 
     expect(settingsPageIds).toEqual(["team"])
-    expect(extensions.map(({ id }) => id)).toEqual(["core", "auth-team"])
+    expect(extensions.map(({ id }) => id)).toEqual(["core", "auth-team", "deployment-team"])
   })
 })

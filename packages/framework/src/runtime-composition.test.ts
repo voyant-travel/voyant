@@ -590,6 +590,39 @@ describe("graph runtime composition", () => {
     expect(factory).toHaveBeenCalledTimes(1)
   })
 
+  it("preserves route-owned authorization in selected graph access posture", async () => {
+    const importRuntime = vi.fn(async () => ({
+      createLoyaltyModule: () => ({ module: { name: "loyalty" } }),
+    }))
+    const base = runtimeWithDuplicateFacets(importRuntime)
+    const runtime = {
+      ...base,
+      modules: base.modules.map((unit) => ({
+        ...unit,
+        routes: unit.routes.map((definition) => ({
+          ...definition,
+          route:
+            definition.route.surface === "admin"
+              ? {
+                  ...definition.route,
+                  mount: "navigation-preferences",
+                  resource: "admin-navigation",
+                  authorization: "route" as const,
+                }
+              : definition.route,
+        })),
+      })),
+    }
+
+    const composition = await composeVoyantGraphRuntime({ runtime, capabilities: {} })
+
+    expect(composition.accessResources).toContainEqual({
+      path: "/v1/admin/navigation-preferences",
+      resource: "admin-navigation",
+      authorization: "route",
+    })
+  })
+
   it("preserves a project API root mount when a single public route is selected", async () => {
     const publicRoutes = new Hono().get("/foo", (context) => context.json({ route: "foo" }))
     const runtime = createVoyantGraphRuntime({

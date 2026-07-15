@@ -142,6 +142,7 @@
       "@voyant-travel/admin/navigation/operator-navigation": [
         "../admin/dist/navigation/operator-navigation.d.ts"
       ],
+      "@voyant-travel/admin/navigation/preferences": ["../admin/dist/navigation/preferences.d.ts"],
       "@voyant-travel/admin/providers/admin-extensions": [
         "../admin/dist/providers/admin-extensions.d.ts"
       ],
@@ -1227,6 +1228,34 @@
       "@voyant-travel/mice/standard-links": ["../mice/dist/standard-links.d.ts"],
       "@voyant-travel/mice/validation": ["../mice/dist/validation.d.ts"],
       "@voyant-travel/mice/voyant": ["../mice/dist/voyant.d.ts"],
+      "@voyant-travel/navigation-preferences": ["../navigation-preferences/dist/index.d.ts"],
+      "@voyant-travel/navigation-preferences-react": [
+        "../navigation-preferences-react/dist/index.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences-react/i18n": [
+        "../navigation-preferences-react/dist/i18n/index.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences-react/settings": [
+        "../navigation-preferences-react/dist/settings.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences/contracts": [
+        "../navigation-preferences/dist/contracts.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences/hono-module": [
+        "../navigation-preferences/dist/hono-module.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences/routes": [
+        "../navigation-preferences/dist/routes.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences/schema": [
+        "../navigation-preferences/dist/schema.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences/service": [
+        "../navigation-preferences/dist/service.d.ts"
+      ],
+      "@voyant-travel/navigation-preferences/voyant": [
+        "../navigation-preferences/dist/voyant.d.ts"
+      ],
       "@voyant-travel/notifications": ["../notifications/dist/index.d.ts"],
       "@voyant-travel/notifications-react": ["../notifications-react/dist/index.d.ts"],
       "@voyant-travel/notifications-react/admin": ["../notifications-react/dist/admin/index.d.ts"],
