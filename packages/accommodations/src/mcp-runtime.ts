@@ -17,6 +17,7 @@ import {
   setRoomBlockNights,
   summarizeRoomBlock,
 } from "./service-room-blocks.js"
+import type { AccommodationsToolServices } from "./tools.js"
 
 export * from "./tools.js"
 
@@ -28,21 +29,16 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const contentRuntime = await optionalContentRuntime(resources[catalogContentRuntimePort.id])
     return {
       accommodations: {
-        async searchOwned(input: {
-          checkIn: string
-          checkOut: string
-          currency?: string
-          limit: number
-          cursor?: string
-          [key: string]: unknown
-        }) {
+        async searchOwned(
+          input: Parameters<AccommodationsToolServices["searchOwned"]>[0],
+        ) {
           const { currency, limit, cursor, ...criteria } = input
           const nights = eachStayNight(input.checkIn, input.checkOut)
           if (nights.length === 0) {
             throw new ToolError("checkOut must be after checkIn.", "INVALID_INPUT")
           }
           const result = await searchOwnedStays(db, {
-            criteria: criteria as Parameters<typeof searchOwnedStays>[1]["criteria"],
+            criteria,
             nights: nights.length,
             scope: {
               locale: context.resolverScope.locale,
