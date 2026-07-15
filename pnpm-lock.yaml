@@ -2087,9 +2087,6 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
-      '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.21
-        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -2100,6 +2097,9 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      '@voyant-travel/plugin-netopia':
+        specifier: ^0.105.21
+        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config
@@ -4637,9 +4637,6 @@ importers:
       '@voyant-travel/operator-settings':
         specifier: workspace:^
         version: link:../operator-settings
-      '@voyant-travel/plugin-netopia':
-        specifier: ^0.105.21
-        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/storefront':
         specifier: workspace:^
         version: link:../storefront
@@ -4659,6 +4656,9 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      '@voyant-travel/plugin-netopia':
+        specifier: ^0.105.21
+        version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
         version: link:../typescript-config

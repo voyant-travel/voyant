@@ -1,12 +1,12 @@
 /** Standard statically composed payment-link runtime selected by Storefront. */
 
 import type { CommerceCardPaymentRuntime } from "@voyant-travel/commerce/runtime-port"
+import type { CardPaymentStarter } from "@voyant-travel/finance/card-payment"
 import { productMedia, products } from "@voyant-travel/inventory/schema"
 import {
   getOperatorPaymentInstructions,
   getOperatorProfile,
 } from "@voyant-travel/operator-settings"
-import { netopiaCardPaymentStarter } from "@voyant-travel/plugin-netopia"
 import type {
   PaymentLinkRoutesOptions,
   PaymentLinkTripData,
@@ -17,15 +17,34 @@ import type { Context } from "hono"
 import { tripComponents, tripEnvelopes } from "./schema.js"
 import { tripsService } from "./service.js"
 
-const cardPaymentStarter = netopiaCardPaymentStarter()
+let cardPaymentStarterPromise: Promise<CardPaymentStarter | null> | undefined
+
+function resolveCardPaymentStarter(): Promise<CardPaymentStarter | null> {
+  cardPaymentStarterPromise ??= import("@voyant-travel/plugin-netopia")
+    .then((module) => module.netopiaCardPaymentStarter())
+    .catch((error: unknown) => {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ERR_MODULE_NOT_FOUND" &&
+        error.message.includes("@voyant-travel/plugin-netopia")
+      ) {
+        return null
+      }
+      throw error
+    })
+  return cardPaymentStarterPromise
+}
 
 /** Standard selected payment provider exposed through Commerce's neutral port. */
 export function createCommerceCardPaymentRuntime(): CommerceCardPaymentRuntime {
   return {
     createStartCardPayment:
       (context) =>
-      async ({ db, sessionId, billing, description, returnUrl }) =>
-        cardPaymentStarter(context, {
+      async ({ db, sessionId, billing, description, returnUrl }) => {
+        const cardPaymentStarter = await resolveCardPaymentStarter()
+        if (!cardPaymentStarter) return null
+        return cardPaymentStarter(context, {
           db,
           sessionId,
           billing: {
@@ -41,7 +60,8 @@ export function createCommerceCardPaymentRuntime(): CommerceCardPaymentRuntime {
           },
           description,
           returnUrl,
-        }),
+        })
+      },
   }
 }
 
@@ -102,6 +122,8 @@ async function resolveBankTransferDetails(c: Context) {
 
 /** Start a fresh card payment via this deployment's processor, or report it isn't configured. */
 const startCardPayment: PaymentLinkRoutesOptions["startCardPayment"] = async (c, session) => {
+  const cardPaymentStarter = await resolveCardPaymentStarter()
+  if (!cardPaymentStarter) return { configured: false }
   const [first, ...rest] = (session.payerName ?? "").trim().split(/\s+/)
   const last = rest.length > 0 ? rest.join(" ") : "Customer"
   const result = await cardPaymentStarter(c, {
