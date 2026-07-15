@@ -13,6 +13,14 @@ const packageJson = JSON.parse(
 ) as PackageJson
 
 describe("@voyant-travel/framework package exports", () => {
+  it("publishes the self-host export contract for external generators", () => {
+    expect(packageJson.exports["./self-host-export"]).toBe("./src/self-host-export.ts")
+    expect(packageJson.publishConfig.exports["./self-host-export"]).toEqual({
+      types: "./dist/self-host-export.d.ts",
+      import: "./dist/self-host-export.js",
+    })
+  })
+
   it("publishes the selected graph OpenAPI authority used by the Node host", () => {
     expect(packageJson.exports["./selected-graph-openapi"]).toBe("./src/selected-graph-openapi.ts")
     expect(packageJson.publishConfig.exports["./selected-graph-openapi"]).toEqual({

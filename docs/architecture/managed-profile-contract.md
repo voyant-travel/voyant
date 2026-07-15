@@ -4,6 +4,9 @@
 > `@voyant-travel/framework/profile` export were removed. Applications now use
 > `defineConfig` and graph project types from `@voyant-travel/framework/project`.
 > See [Profile Compatibility Retirement](./profile-compatibility-retirement.md).
+> Cloud-to-self-host portability uses the admitted resolved-graph bundle in
+> [Exporting From Voyant Cloud](../exporting-from-voyant-cloud.md), not this
+> retired contract.
 
 Status: accepted
 

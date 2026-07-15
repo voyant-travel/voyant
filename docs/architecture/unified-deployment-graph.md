@@ -274,6 +274,30 @@ satisfy the selected provider; their presence must not silently change provider
 choice. `managed-cloud`, `self-hosted`, and `local` are deployment modes for the
 same graph contract, not product profiles.
 
+## Cloud Export And Self-Host Projection
+
+The portability boundary is a versioned export bundle containing an admitted
+`voyant.resolved-graph.v1`, its content hash and product BOM, the framework
+version, Postgres dump metadata, and an object-storage manifest. A serialized
+managed/operator profile is not an application authority and must not be
+restored as an export format.
+
+`@voyant-travel/framework/self-host-export` validates the duplicated graph/hash/
+BOM evidence and projects deployment authority to self-hosted Node. Projection
+preserves selected graph IDs and package-scoped config, remaps Cloud substrate
+providers through `deployment.providers`, recomputes resource requirements and
+the graph hash, and reports unsupported providers or non-portable packages as
+explicit diagnostics. It does not rediscover package facets or maintain a
+central package catalog.
+
+External generators consume that projection and the versioned
+`STANDARD_NODE_STARTER` contract. They generate selection intent and install the
+admitted package versions; package manifests remain the sole composition path.
+The restored database retains the shared `drizzle._voyant_migrations` lineage,
+so standard package migrations already applied in Cloud are not replayed and
+self-host-only additions continue in the same journal. Operational steps live
+in [Exporting From Voyant Cloud](../exporting-from-voyant-cloud.md).
+
 ## Facet Ownership
 
 ### API and OpenAPI
@@ -341,6 +365,8 @@ to match the package graph:
 - compatibility generators that remain after package-owned parity is proven
 - runtime filesystem scanning, runtime `require`, or mutable `install(app)` hooks
 - separate managed and self-hosted product compositions
+- serialized managed/operator profiles or profile-to-project compatibility paths
+- export generators that copy a central package catalog instead of consuming the admitted graph
 - a Cloudflare Worker target for the unified composed application
 
 Temporary bridges must be named, mechanically detected, and paired with a

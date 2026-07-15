@@ -63,6 +63,13 @@ workload class well. On Node none of it is necessary.
   graph-declared required resource env or graph-selected provider env is
   missing. Local `.env` loading is only a source for satisfying the same graph
   contract; it is not a parallel deployment shape.
+- **Cloud export:** a managed deployment exits through a validated
+  `voyant.self-host-export-bundle.v1` containing its admitted resolved graph and
+  data manifests. The framework projects that same graph to self-hosted
+  `deployment.providers`; an external generator consumes the projection and
+  `STANDARD_NODE_STARTER`. It does not boot a profile snapshot or select a
+  second product composition. See
+  [Exporting From Voyant Cloud](../exporting-from-voyant-cloud.md).
 - **Reusable host contract:** `@voyant-travel/framework/node-host` owns graph
   artifact admission and graph-selected provider planning, while
   `@voyant-travel/runtime` owns the complete resident application host.

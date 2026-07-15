@@ -9,6 +9,7 @@
     "./deployment-artifacts": "./src/deployment-artifacts.ts",
     "./deployment-graph": "./src/deployment-graph.ts",
     "./graph-lifecycle": "./src/graph-lifecycle.ts",
+    "./self-host-export": "./src/self-host-export.ts",
     "./selected-graph-openapi": "./src/selected-graph-openapi.ts",
     "./operator-distribution": "./src/operator-distribution.ts",
     "./project-api-conventions": "./src/project-api-conventions.ts",
@@ -104,6 +105,10 @@
       "./graph-lifecycle": {
         "types": "./dist/graph-lifecycle.d.ts",
         "import": "./dist/graph-lifecycle.js"
+      },
+      "./self-host-export": {
+        "types": "./dist/self-host-export.d.ts",
+        "import": "./dist/self-host-export.js"
       },
       "./selected-graph-openapi": {
         "types": "./dist/selected-graph-openapi.d.ts",

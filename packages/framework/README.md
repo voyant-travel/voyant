@@ -44,6 +44,8 @@ selected package records and each package's `voyant.package.v1` metadata.
 - `@voyant-travel/framework/deployment-artifacts` — pure lowering helpers that
   turn a resolved graph into deterministic JSON, artifact manifests, and tiny
   Node runtime entry modules for build/deploy tooling.
+- `@voyant-travel/framework/self-host-export` — validated Cloud export-bundle
+  input and deterministic self-host projection for external project generators.
 
 Profile snapshots and their managed runtime/conversion subpaths are no longer
 published. Applications author projects through `@voyant-travel/framework/project`

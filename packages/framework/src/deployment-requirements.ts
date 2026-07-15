@@ -138,6 +138,16 @@ function envForProvider(
         variable("EMAIL_REPLY_TO", "Optional comma-separated reply-to addresses.", false),
       ]
     }
+    if (provider === "smtp") {
+      return [
+        variable("SMTP_HOST", "SMTP server hostname."),
+        variable("SMTP_PORT", "SMTP server port."),
+        secret("SMTP_USER", "SMTP authentication user."),
+        secret("SMTP_PASSWORD", "SMTP authentication password."),
+        variable("EMAIL_FROM", "Default email sender."),
+        variable("EMAIL_REPLY_TO", "Optional comma-separated reply-to addresses.", false),
+      ]
+    }
     return [
       secret(`${provider.toUpperCase().replace("-", "_")}_API_KEY`, `${provider} email API key.`),
       variable("EMAIL_FROM", "Default email sender."),
@@ -168,6 +178,12 @@ function envForProvider(
       secret("BETTER_AUTH_SECRET", "Better Auth secret."),
     ]
   }
+  if (role === "auth" && provider === "better-auth") {
+    return [
+      secret("BETTER_AUTH_SECRET", "Better Auth secret used to sign local auth sessions."),
+      secret("SESSION_CLAIMS_SECRET", "Session claims signing secret."),
+    ]
+  }
   if (role === "realtime" && provider === "voyant-cloud") {
     return [
       secret("VOYANT_API_KEY", "Voyant Cloud API key for hosted realtime delivery."),
@@ -189,6 +205,24 @@ function envForProvider(
       secret("VOYANT_CLOUD_WORKFLOW_TRIGGER_TOKEN", "Workflow trigger token."),
       variable("VOYANT_CLOUD_APP_SLUG", "Cloud app slug."),
       variable("VOYANT_CLOUD_ENVIRONMENT", "Cloud environment name.", false),
+    ]
+  }
+  if (role === "workflows" && provider === "self-hosted") {
+    return [
+      secret(
+        "DATABASE_URL",
+        "Postgres URL used by the self-hosted workflow runtime.",
+        true,
+        ["DATABASE_URL_DIRECT"],
+        "postgres-url",
+      ),
+      secret(
+        "DATABASE_URL_DIRECT",
+        "Direct Postgres URL for the resident workflow runtime.",
+        false,
+        [],
+        "postgres-url",
+      ),
     ]
   }
   if (role === "outboundWebhooks" && provider === "postgres") {

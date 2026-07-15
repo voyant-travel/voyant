@@ -13,6 +13,7 @@ const graphNativeFiles = [
   "packages/framework/src/deployment-requirements.ts",
   "packages/framework/src/deployment-types.ts",
   "packages/framework/src/scheduled-jobs.ts",
+  "packages/framework/src/self-host-export.ts",
   "packages/runtime/src/index.ts",
   "packages/admin-host/src/index.ts",
   "packages/admin-host/src/serve.ts",
