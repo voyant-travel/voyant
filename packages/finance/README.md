@@ -2,6 +2,19 @@
 
 Finance module for Voyant. Invoices, payments, credit notes, supplier payments, and finance notes.
 
+## Composed agent commands
+
+`create_booking` is owned by the Finance booking-create extension because that package
+already owns the atomic composer spanning product conversion, travelers, room/item
+lines, payment schedules, optional credits and group membership, invoices, ledger
+records, and post-commit events. The Tool is a structural adapter over that service.
+
+`issue_invoice_from_booking` creates and issues either an invoice or proforma through
+the same package-owned composer used by the HTTP route. Agent execution requires an
+idempotency key and exact approval. Approved execution records approval and causation
+in the action ledger; replaying an already executed approval returns the original
+invoice rather than issuing a duplicate.
+
 ## Agent Tools
 
 `issue_invoice_refund` defines a refund as issuing an `issued` credit note

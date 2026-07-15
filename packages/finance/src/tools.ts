@@ -4,7 +4,13 @@
  * by intersection so this module stays deployment-agnostic.
  * Refunds are issued through the credit-note service after action approval.
  */
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import {
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  ToolError,
+  type ToolContext,
+} from "@voyant-travel/tools"
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
@@ -14,7 +20,12 @@ import {
   invoiceListItemSchema,
   invoiceSchema,
 } from "./routes-invoice-schemas.js"
-import { insertCreditNoteSchema, invoiceListQuerySchema } from "./validation.js"
+import { bookingCreateSchema, type BookingCreateOutcome } from "./service-booking-create.js"
+import {
+  insertCreditNoteSchema,
+  invoiceFromBookingSchema,
+  invoiceListQuerySchema,
+} from "./validation.js"
 
 const voidInvoiceResultSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("not_found") }),
@@ -49,6 +60,10 @@ export interface FinanceToolServices {
     idempotencyKey: string
     approvalId?: string
   }): Promise<unknown>
+  createBooking(input: z.infer<typeof bookingCreateSchema>): Promise<BookingCreateOutcome>
+  issueInvoiceFromBooking(
+    input: z.infer<typeof issueInvoiceFromBookingToolInputSchema>,
+  ): Promise<unknown>
 }
 
 export type FinanceToolContext = ToolContext & { finance?: FinanceToolServices }
@@ -139,7 +154,7 @@ export const issueInvoiceRefundInputSchema = insertCreditNoteSchema.omit({ statu
     .describe("Approval id returned after the prior request is approved."),
 })
 
-const pendingInvoiceRefundSchema = z.object({
+const pendingFinanceApprovalSchema = z.object({
   status: z.literal("approval_required"),
   requestedAction: z.object({
     id: z.string(),
@@ -163,7 +178,7 @@ const pendingInvoiceRefundSchema = z.object({
 })
 
 export const issueInvoiceRefundOutputSchema = z.union([
-  pendingInvoiceRefundSchema,
+  pendingFinanceApprovalSchema,
   z.object({ status: z.literal("issued"), creditNote: creditNoteSchema }),
 ])
 
@@ -197,15 +212,194 @@ export const issueInvoiceRefundTool = defineTool<
   },
 })
 
+const bookingCreateSummarySchema = z.object({
+  status: z.literal("created"),
+  booking: z.object({
+    id: z.string(),
+    bookingNumber: z.string(),
+    status: z.string(),
+    currency: z.string(),
+    amountCents: z.number().int().nullable(),
+    pax: z.number().int().nullable(),
+  }),
+  travelerIds: z.array(z.string()),
+  paymentSchedules: z.array(
+    z.object({
+      id: z.string(),
+      scheduleType: z.string(),
+      status: z.string(),
+      dueDate: z.string(),
+      currency: z.string(),
+      amountCents: z.number().int(),
+    }),
+  ),
+  invoice: z
+    .object({
+      id: z.string(),
+      invoiceNumber: z.string(),
+      invoiceType: z.string(),
+      status: z.string(),
+    })
+    .nullable(),
+  invoiceDocument: z.discriminatedUnion("status", [
+    z.object({ status: z.literal("requested"), renditionId: z.string().nullable() }),
+    z.object({ status: z.literal("generated"), renditionId: z.string() }),
+    z.object({ status: z.enum(["not_requested", "not_available", "failed"]) }),
+  ]),
+  paymentIds: z.array(z.string()),
+  groupId: z.string().nullable(),
+  travelCreditRedemptionId: z.string().nullable(),
+})
+
+export const createBookingToolInputSchema = z.object({
+  booking: bookingCreateSchema.describe(
+    "The atomic product/slot booking command, including travelers, room/item lines, and schedules.",
+  ),
+})
+
+export const createBookingTool = defineTool<
+  z.infer<typeof createBookingToolInputSchema>,
+  z.infer<typeof bookingCreateSummarySchema>,
+  FinanceToolContext
+>({
+  owner: "@voyant-travel/finance",
+  capabilityId: "@voyant-travel/finance#bookings-create-extension.tool.create-booking",
+  capabilityVersion: "v1",
+  name: "create_booking",
+  aliases: ["bookings_create"],
+  description:
+    "Atomically create a booking from a product or slot with travelers, room/item lines, payment schedules, optional credit, group membership, and invoice documents.",
+  inputSchema: createBookingToolInputSchema,
+  outputSchema: bookingCreateSummarySchema,
+  requiredScopes: ["bookings:write", "finance:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "destructive",
+  riskPolicy: {
+    destructive: false,
+    reversible: true,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write", "external-booking", "payment"],
+  },
+  async handler({ booking }, ctx) {
+    const outcome = await finance(ctx).createBooking(booking)
+    if (outcome.status !== "ok") {
+      throw bookingCreateToolError(outcome)
+    }
+    const result = outcome.result
+    return {
+      status: "created",
+      booking: {
+        id: result.booking.id,
+        bookingNumber: result.booking.bookingNumber,
+        status: result.booking.status,
+        currency: result.booking.sellCurrency,
+        amountCents: result.booking.sellAmountCents,
+        pax: result.booking.pax,
+      },
+      travelerIds: result.travelers.map((traveler) => traveler.id),
+      paymentSchedules: result.paymentSchedules.map((schedule) => ({
+        id: schedule.id,
+        scheduleType: schedule.scheduleType,
+        status: schedule.status,
+        dueDate: schedule.dueDate,
+        currency: schedule.currency,
+        amountCents: schedule.amountCents,
+      })),
+      invoice: result.invoice
+        ? {
+            id: result.invoice.id,
+            invoiceNumber: result.invoice.invoiceNumber,
+            invoiceType: result.invoice.invoiceType,
+            status: result.invoice.status,
+          }
+        : null,
+      invoiceDocument: result.invoiceDocument,
+      paymentIds: result.payments.map((payment) => payment.id),
+      groupId: result.groupMembership?.groupId ?? null,
+      travelCreditRedemptionId: result.travelCreditRedemption?.redemption.id ?? null,
+    }
+  },
+})
+
+export const financeBookingsCreateTools = [createBookingTool] as const
+
+export const issueInvoiceFromBookingToolInputSchema = z.object({
+  command: invoiceFromBookingSchema.describe("The exact invoice or proforma issue command."),
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .describe("Stable key used when requesting approval and replaying the exact command."),
+  approvalId: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe("Approval id returned after the exact prior command is approved."),
+})
+
+export const issueInvoiceFromBookingToolOutputSchema = z.union([
+  pendingFinanceApprovalSchema,
+  z.object({ status: z.literal("issued"), invoice: invoiceSchema, replayed: z.boolean() }),
+])
+
+export const issueInvoiceFromBookingTool = defineTool<
+  z.infer<typeof issueInvoiceFromBookingToolInputSchema>,
+  z.infer<typeof issueInvoiceFromBookingToolOutputSchema>,
+  FinanceToolContext
+>({
+  owner: "@voyant-travel/finance",
+  capabilityId: "@voyant-travel/finance#tool.issue-invoice-from-booking",
+  capabilityVersion: "v1",
+  name: "issue_invoice_from_booking",
+  aliases: ["invoices_issue_from_booking"],
+  description:
+    "Request approval to create and issue an invoice or proforma from a booking, or execute and idempotently replay the exact approved command.",
+  inputSchema: issueInvoiceFromBookingToolInputSchema,
+  outputSchema: issueInvoiceFromBookingToolOutputSchema,
+  requiredScopes: ["finance:write", "bookings:read"],
+  audience: { source: "grant", allowed: ["staff"] },
+  actionPolicyEnforcement: "handler",
+  tier: "destructive",
+  riskPolicy: {
+    destructive: false,
+    reversible: false,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write"],
+  },
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return issueInvoiceFromBookingToolOutputSchema.parse(
+      await finance(ctx).issueInvoiceFromBooking(input),
+    )
+  },
+})
+
 export const financeTools = [
   listInvoicesTool,
   getInvoiceTool,
   voidInvoiceTool,
   issueInvoiceRefundTool,
+  issueInvoiceFromBookingTool,
 ] as const
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
   return schema.parse(toJsonValue(value))
+}
+
+function bookingCreateToolError(outcome: Exclude<BookingCreateOutcome, { status: "ok" }>) {
+  switch (outcome.status) {
+    case "product_not_found":
+    case "travel_credit_not_found":
+    case "group_not_found":
+      return new ToolError(`Booking create failed: ${outcome.status}`, "NOT_FOUND", { outcome })
+    default:
+      return new ToolError(`Booking create rejected: ${outcome.status}`, "INVALID_INPUT", {
+        outcome,
+      })
+  }
 }
 
 function toJsonValue(value: unknown): unknown {

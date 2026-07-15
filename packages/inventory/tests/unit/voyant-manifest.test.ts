@@ -163,6 +163,20 @@ describe("inventory deployment manifests", () => {
           },
         },
       ],
+      tools: [
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#authoring.tool.compose-product",
+          name: "compose_product",
+          risk: "high",
+        }),
+      ],
+      actions: [
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#authoring.action.compose-product",
+          ledger: "required",
+          reversible: true,
+        }),
+      ],
     })
 
     expect(inventoryBookingVoyantPlugin).toMatchObject({

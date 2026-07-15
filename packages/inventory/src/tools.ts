@@ -13,6 +13,7 @@ import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@v
 import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
+import { productGraphSpecSchema } from "./authoring/spec.js"
 import {
   createOptionExtraConfigTool as createOptionExtraConfigDefinition,
   createProductExtraTool as createProductExtraDefinition,
@@ -133,10 +134,18 @@ export interface InventoryContentToolServices {
   getProductContent(input: ProductContentToolInput): Promise<unknown | null>
 }
 
+export interface InventoryAuthoringToolServices {
+  composeProduct(input: {
+    spec: z.output<typeof productGraphSpecSchema>
+    idempotencyKey?: string
+  }): Promise<unknown>
+}
+
 /** Tool context with the inventory service injected. */
 export type InventoryToolContext = ToolContext & {
   inventory?: InventoryToolServices
   inventoryContent?: InventoryContentToolServices
+  inventoryAuthoring?: InventoryAuthoringToolServices
 }
 
 function inventory(ctx: InventoryToolContext): InventoryToolServices {
@@ -146,6 +155,44 @@ function inventory(ctx: InventoryToolContext): InventoryToolServices {
 function inventoryContent(ctx: InventoryToolContext): InventoryContentToolServices {
   return requireService(ctx.inventoryContent, "inventoryContent")
 }
+
+function inventoryAuthoring(ctx: InventoryToolContext): InventoryAuthoringToolServices {
+  return requireService(ctx.inventoryAuthoring, "inventoryAuthoring")
+}
+
+export const composeProductToolInputSchema = z.object({
+  spec: productGraphSpecSchema,
+  idempotencyKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .optional()
+    .describe("Stable retry key for atomic product-graph authoring."),
+})
+
+const authoringIssueSchema = z.object({
+  code: z.string(),
+  field: z.string().optional(),
+  message: z.string(),
+  fix: z.string().optional(),
+})
+
+export const composeProductToolOutputSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("created"),
+    productId: z.string(),
+    options: z.array(
+      z.object({
+        ref: z.string(),
+        id: z.string(),
+        units: z.array(z.object({ ref: z.string(), id: z.string() })),
+      }),
+    ),
+    reused: z.boolean(),
+  }),
+  z.object({ status: z.literal("invalid"), issues: z.array(authoringIssueSchema) }),
+])
 
 function constrainProductListQuery(query: ProductListQuery, ctx: ToolContext): ProductListQuery {
   if (ctx.actor === "staff") return query
@@ -302,6 +349,33 @@ export const archiveProductTool = defineTool(productLifecycleToolDefinition({
   patch: { status: "archived", activated: false },
 }))
 
+export const composeProductTool = defineTool({
+  capabilityId: `${OWNER}#authoring.tool.compose-product`,
+  capabilityVersion: VERSION,
+  name: "compose_product",
+  aliases: ["products_compose"],
+  description:
+    "Atomically author a complete product graph through Inventory's category-aware composer: product, options, units, pricing rules, and itinerary. Invalid graphs return actionable issues without writing. Departures and publication remain separate confirmed operations.",
+  inputSchema: composeProductToolInputSchema,
+  outputSchema: composeProductToolOutputSchema,
+  requiredScopes: ["products:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "destructive",
+  riskPolicy: {
+    destructive: false,
+    reversible: true,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write"],
+  },
+  annotations: { idempotentHint: true },
+  async handler(input, ctx: InventoryToolContext) {
+    return composeProductToolOutputSchema.parse(
+      await inventoryAuthoring(ctx).composeProduct(input),
+    )
+  },
+})
+
 export const listProductExtrasTool = defineTool(listProductExtrasDefinition)
 export const getProductExtraTool = defineTool(getProductExtraDefinition)
 export const createProductExtraTool = defineTool(createProductExtraDefinition)
@@ -321,6 +395,7 @@ export const inventoryTools = [
   publishProductTool,
   unpublishProductTool,
   archiveProductTool,
+  composeProductTool,
 ] as const
 
 function productLifecycleToolDefinition(input: {

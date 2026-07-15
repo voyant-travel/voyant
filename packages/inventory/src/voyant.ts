@@ -601,6 +601,38 @@ export const inventoryAuthoringVoyantPlugin = defineExtension({
       },
     },
   ],
+  tools: [
+    {
+      id: "@voyant-travel/inventory#authoring.tool.compose-product",
+      name: "compose_product",
+      runtime: {
+        entry: "@voyant-travel/inventory/tools",
+        export: "composeProductTool",
+      },
+      requiredScopes: ["products:write"],
+      context: ["inventoryAuthoring"],
+      risk: "high",
+    },
+  ],
+  actions: [
+    {
+      id: "@voyant-travel/inventory#authoring.action.compose-product",
+      version: "v1",
+      kind: "execute",
+      targetType: "product",
+      resource: "products",
+      action: "write",
+      requiredScopes: ["products:write"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: true,
+      allowedActorTypes: ["staff"],
+      from: {
+        tools: ["@voyant-travel/inventory#authoring.tool.compose-product"],
+      },
+    },
+  ],
   meta: {
     ownership: "package",
   },

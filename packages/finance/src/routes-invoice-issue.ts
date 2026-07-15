@@ -210,110 +210,15 @@ financeInvoiceIssueRoutes
   .openapi(issueInvoiceFromBookingRoute, async (c) => {
     const input = c.req.valid("json")
     const db = c.get("db")
-    const [
-      { bookingItems, bookings },
-      { bookingPaymentSchedules },
-      { and, asc, eq },
-      { issueInvoiceFromBooking, issueProformaFromBooking },
-    ] = await Promise.all([
-      import("@voyant-travel/bookings/schema"),
-      import("./schema.js"),
-      import("drizzle-orm"),
-      import("./service-issue.js"),
-    ])
-
-    const [booking] = await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.id, input.bookingId))
-      .limit(1)
-
-    if (!booking) {
-      return c.json({ error: "Booking not found" }, 404)
-    }
-
-    const items = await db
-      .select()
-      .from(bookingItems)
-      .where(eq(bookingItems.bookingId, booking.id))
-      .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id))
-    const [paymentSchedule] = input.bookingPaymentScheduleId
-      ? await db
-          .select()
-          .from(bookingPaymentSchedules)
-          .where(
-            and(
-              eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
-              eq(bookingPaymentSchedules.bookingId, booking.id),
-            ),
-          )
-          .limit(1)
-      : []
-
-    if (input.bookingPaymentScheduleId && !paymentSchedule) {
-      return c.json({ error: "Booking payment schedule not found" }, 404)
-    }
-
     const runtime = getFinanceRouteRuntime(c)
-
-    const issuer =
-      input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
-
-    let row: Awaited<ReturnType<typeof issuer>>
+    const { issueInvoiceFromBookingCommand } = await import("./service-issue.js")
+    let outcome: Awaited<ReturnType<typeof issueInvoiceFromBookingCommand>>
     try {
-      row = await issuer(
-        db,
-        input,
-        {
-          booking: {
-            id: booking.id,
-            bookingNumber: booking.bookingNumber,
-            personId: booking.personId,
-            organizationId: booking.organizationId,
-            startDate: booking.startDate,
-            endDate: booking.endDate,
-            sellCurrency: booking.sellCurrency,
-            baseCurrency: booking.baseCurrency,
-            fxRateSetId: booking.fxRateSetId,
-            sellAmountCents: booking.sellAmountCents,
-            baseSellAmountCents: booking.baseSellAmountCents,
-          },
-          paymentSchedule: paymentSchedule
-            ? {
-                id: paymentSchedule.id,
-                bookingId: paymentSchedule.bookingId,
-                bookingItemId: paymentSchedule.bookingItemId,
-                scheduleType: paymentSchedule.scheduleType,
-                dueDate: paymentSchedule.dueDate,
-                currency: paymentSchedule.currency,
-                amountCents: paymentSchedule.amountCents,
-              }
-            : null,
-          items: items.map((item) => ({
-            id: item.id,
-            title: item.title,
-            productId: item.productId,
-            productName: item.productNameSnapshot,
-            productNameSnapshot: item.productNameSnapshot,
-            optionNameSnapshot: item.optionNameSnapshot,
-            unitNameSnapshot: item.unitNameSnapshot,
-            departureLabelSnapshot: item.departureLabelSnapshot,
-            startDate: item.serviceDate ?? item.startsAt,
-            serviceDate: item.serviceDate,
-            startsAt: item.startsAt,
-            endDate: item.endsAt ?? item.serviceDate,
-            endsAt: item.endsAt,
-            quantity: item.quantity,
-            unitSellAmountCents: item.unitSellAmountCents,
-            totalSellAmountCents: item.totalSellAmountCents,
-          })),
-        },
-        {
-          ...(runtime ?? {}),
-          actionLedgerContext: getActionLedgerRequestContext(c),
-          actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
-        },
-      )
+      outcome = await issueInvoiceFromBookingCommand(db, input, {
+        ...(runtime ?? {}),
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
+      })
     } catch (error) {
       if (error instanceof InvoiceNumberAllocationError) {
         return c.json(
@@ -339,8 +244,13 @@ financeInvoiceIssueRoutes
       }
       throw error
     }
-
-    return c.json({ data: row }, 201)
+    if (outcome.status === "booking_not_found") {
+      return c.json({ error: "Booking not found" }, 404)
+    }
+    if (outcome.status === "payment_schedule_not_found") {
+      return c.json({ error: "Booking payment schedule not found" }, 404)
+    }
+    return c.json({ data: outcome.invoice }, 201)
   })
   .openapi(convertProformaToInvoiceRoute, async (c) => {
     const { convertProformaToInvoice } = await import("./service-issue.js")

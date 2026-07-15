@@ -90,6 +90,7 @@ describe("finance deployment manifest", () => {
         expect.objectContaining({ name: "get_invoice", risk: "low" }),
         expect.objectContaining({ name: "void_invoice", risk: "critical" }),
         expect.objectContaining({ name: "issue_invoice_refund", risk: "critical" }),
+        expect.objectContaining({ name: "issue_invoice_from_booking", risk: "high" }),
       ]),
     )
     expect(financeVoyantModule.actions).toContainEqual(
@@ -101,6 +102,14 @@ describe("finance deployment manifest", () => {
         approval: "required",
         reversible: false,
         from: { tools: ["@voyant-travel/finance#tool.issue-invoice-refund"] },
+      }),
+    )
+    expect(financeVoyantModule.actions).toContainEqual(
+      expect.objectContaining({
+        id: "@voyant-travel/finance#action.issue-invoice-from-booking",
+        requiredScopes: ["finance:write", "bookings:read"],
+        ledger: "required",
+        approval: "required",
       }),
     )
     expect(financeVoyantModule.actions).toContainEqual(
@@ -175,6 +184,18 @@ describe("finance deployment manifest", () => {
             openapi: { document: "bookings" },
             runtime: { entry: "@voyant-travel/finance", export: "bookingsCreateExtension" },
           },
+        ],
+        tools: [
+          expect.objectContaining({
+            id: "@voyant-travel/finance#bookings-create-extension.tool.create-booking",
+            name: "create_booking",
+          }),
+        ],
+        actions: [
+          expect.objectContaining({
+            id: "@voyant-travel/finance#bookings-create-extension.action.create-booking",
+            ledger: "required",
+          }),
         ],
       },
     ])

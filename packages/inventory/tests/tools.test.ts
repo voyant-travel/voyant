@@ -2,17 +2,21 @@ import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import {
+  type InventoryAuthoringToolServices,
   type InventoryContentToolServices,
   type InventoryToolServices,
   inventoryTools,
 } from "../src/tools.js"
 
 function ctxWith(
-  services?: Partial<InventoryToolServices & InventoryContentToolServices>,
+  services?: Partial<
+    InventoryToolServices & InventoryContentToolServices & InventoryAuthoringToolServices
+  >,
   overrides: Partial<ToolContext> = {},
 ): ToolContext & {
   inventory?: InventoryToolServices
   inventoryContent?: InventoryContentToolServices
+  inventoryAuthoring?: InventoryAuthoringToolServices
 } {
   const actor = overrides.actor ?? "customer"
   const audience = overrides.audience ?? actor
@@ -31,6 +35,7 @@ function ctxWith(
     ...overrides,
     inventory: services as InventoryToolServices | undefined,
     inventoryContent: services as InventoryContentToolServices | undefined,
+    inventoryAuthoring: services as InventoryAuthoringToolServices | undefined,
   }
 }
 
@@ -67,6 +72,7 @@ describe("inventory tools", () => {
     expect(manifest.map((t) => t.name).sort()).toEqual([
       "archive_product",
       "create_product",
+      "compose_product",
       "get_product",
       "get_product_content",
       "list_products",
@@ -85,6 +91,34 @@ describe("inventory tools", () => {
       confirmationRequired: true,
       reversible: true,
     })
+  })
+
+  it("composes an atomic product graph through the authoring service", async () => {
+    const result = await makeRegistry().dispatch(
+      "compose_product",
+      {
+        spec: {
+          product: { name: "Cairo discovery", sellCurrency: "EUR" },
+          options: [{ ref: "standard", name: "Standard" }],
+        },
+        idempotencyKey: "compose-cairo-v1",
+      },
+      ctxWith(
+        {
+          async composeProduct(_spec, options) {
+            expect(options.idempotencyKey).toBe("compose-cairo-v1")
+            return {
+              status: "created",
+              productId: "prod_1",
+              options: [{ ref: "standard", id: "opt_1", units: [] }],
+              reused: false,
+            }
+          },
+        },
+        { actor: "staff", audience: "staff" },
+      ),
+    )
+    expect(result).toMatchObject({ status: "created", productId: "prod_1", reused: false })
   })
 
   it("lists products through the injected service", async () => {

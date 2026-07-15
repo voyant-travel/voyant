@@ -60,8 +60,10 @@ Rules:
 - **Declare risk as data** (`tier` + `riskPolicy`) so remote consumers can gate
   destructive tools (e.g. a `reserve`-style tool: `tier: "destructive"`,
   `riskPolicy.confirmationRequired`) without executing the handler.
-- **Cross-module / composed tools** (spanning several domains) live in the composing
-  layer — `trips` — not in a leaf domain package.
+- **Cross-module / composed tools** (spanning several domains) live in the package that
+  already owns the real orchestration service. For example, Trips owns candidate
+  composition while Finance owns booking creation across Bookings and Finance. A Tool
+  must not create a second composition layer or persist directly into foreign tables.
 - Keep `inputSchema` serialization-friendly (avoid top-level `.transform()`/`.refine()`)
   so `z.toJSONSchema` emits a faithful manifest.
 - Treat the package Tool id as the stable capability identity. `name` is the canonical
@@ -83,6 +85,9 @@ Inventory owns guarded core authoring and lifecycle Tools (`create_product`,
 the real product service. Publication continues to use that service's readiness gate;
 the Tool does not reproduce the rule. `get_product_content` composes owned and sourced
 content through the selected Catalog content runtime, preserving provider authority.
+`compose_product` accepts the structural `productGraphSpecSchema` and delegates to the
+atomic authoring composer. The runtime records the same mutation ledger entry and
+`product.content.changed` event as the authoring HTTP surface.
 
 There is intentionally no monolithic `update_product_content` Tool. The unified
 product-content service is a read resolver; authored options, itineraries, media,
@@ -97,6 +102,15 @@ deployment-selected provider-neutral availability fan-out, while candidate selec
 delegates to the Trips invariant service that pins a draft component. Tool outputs
 omit provider replay/economics payloads even though Trips retains them internally for
 later reservation.
+
+Finance owns two composed operator commands. `create_booking` delegates to the atomic
+booking-create service for product/slot conversion, travelers, room and item lines,
+payment schedules, optional credits, groups, invoice documents, ledger entries, and
+post-commit events. `issue_invoice_from_booking` delegates to the reusable invoice
+composer extracted from the HTTP route. Invoice/proforma issue requires an exact action
+approval: the command fingerprint is stable across request and execution, successful
+execution carries the approval/causation fields into the ledger, and a replay resolves
+the previously issued invoice instead of creating another.
 
 ## Coverage posture
 
