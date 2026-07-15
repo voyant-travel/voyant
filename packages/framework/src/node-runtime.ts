@@ -264,7 +264,6 @@ const DEFAULT_MANAGED_APP_URL = "http://localhost:3300"
 interface NodeSharedStores {
   CACHE: KVStore
   SHARED_STATE: KVStore
-  RATE_LIMIT: KVStore
   RATE_LIMIT_STORE: RateLimitStore
 }
 
@@ -484,7 +483,6 @@ export function createVoyantNodeEnv(
     kv: {
       CACHE: stores.CACHE,
       SHARED_STATE: stores.SHARED_STATE,
-      RATE_LIMIT: stores.RATE_LIMIT,
     },
     extra: {
       RATE_LIMIT_STORE: stores.RATE_LIMIT_STORE,
@@ -961,7 +959,6 @@ function createNodeSharedStores(
 ): NodeSharedStores {
   const l1Cache = createMemoryKvNamespace()
   const l1SharedState = createMemoryKvNamespace()
-  const l1RateLimit = createMemoryKvNamespace()
   const selectedProviders = [plan.cache, plan.sharedState, plan.rateLimit]
   const redisUrl = selectedProviders.includes("redis")
     ? requireNodeEnv(env, "REDIS_URL")
@@ -986,7 +983,6 @@ function createNodeSharedStores(
   return {
     CACHE: selectedCacheStore(plan.cache, l1Cache, resources),
     SHARED_STATE: selectedAuthoritativeKvStore(plan.sharedState, l1SharedState, resources),
-    RATE_LIMIT: selectedAuthoritativeKvStore(plan.rateLimit, l1RateLimit, resources),
     RATE_LIMIT_STORE: selectedRateLimitStore(plan.rateLimit, resources),
   }
 }

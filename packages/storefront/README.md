@@ -153,8 +153,8 @@ or payment pages for guests:
 
 The lookup endpoint verifies the email against booking participants, issues a
 short-lived `voyant_guest_booking` HttpOnly cookie, and returns the same scoped
-token for non-browser clients. When `RATE_LIMIT` KV is bound, lookups are
-throttled per client IP and booking code.
+token for non-browser clients. When composition injects a rate-limit store,
+lookups are throttled per client IP and booking code.
 
 ```ts
 import { createGuestBookingGuard } from "@voyant-travel/storefront"

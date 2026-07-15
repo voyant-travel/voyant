@@ -212,7 +212,6 @@ describe("forwarded auth sub-app honors the request id + reporter", () => {
       appName: "auth-test",
       reporter,
       rateLimit: false,
-      metrics: false,
       publicCache: false,
       auth: { handler: authHandlerReturning(status) },
     })

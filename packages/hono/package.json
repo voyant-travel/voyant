@@ -49,7 +49,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "@voyant-travel/workflows-orchestrator": "workspace:^",
     "typescript": "catalog:",

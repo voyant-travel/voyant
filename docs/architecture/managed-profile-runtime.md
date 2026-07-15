@@ -32,7 +32,7 @@ manifest. The JSON snapshot remains a compatibility input for older callers
 and cannot override graph-selected self-hosted providers.
 
 The source-free managed runtime is not yet a complete managed Cloud image by
-itself. Redis-backed `CACHE`/`RATE_LIMIT` bindings, Voyant Cloud admin auth
+itself. Redis-backed cache and rate-limit providers, Voyant Cloud admin auth
 broker integration, snapshot plugin resolution, and route families still backed
 by starter-local loaders must be promoted to package/framework-owned exports
 before the corresponding managed Cloud surfaces can be enabled. Until then, the

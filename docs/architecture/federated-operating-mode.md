@@ -9,10 +9,10 @@ or customer-owned systems remain authoritative for selected capabilities.
 This guide defines **federated operating mode**. It is paired with
 [ADR-0009](../adr/0009-federated-operating-mode.md).
 
-Federated per-domain apps are also the **edge-native** deployment posture: their
-per-domain graphs are small enough to stay resident on Cloudflare Workers, unlike
-a composed operator API (which is Node-first — see
-[deployment-targets.md](./deployment-targets.md)).
+Federated operating mode is a product posture, not a separate starter or
+deployment target. It runs in the same Node application graph as every other
+Voyant deployment. A future edge-native, per-domain architecture may reuse this
+vocabulary, but it is not a supported deployment shape today.
 
 Federated operating mode is not a new runtime abstraction. It is a deployment
 posture that uses the existing Voyant vocabulary: modules, providers, adapters,

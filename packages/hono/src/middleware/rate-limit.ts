@@ -1,4 +1,3 @@
-import type { KVStore } from "@voyant-travel/utils/cache"
 import { createLazyRedisClient, type LazyRedisClient } from "@voyant-travel/utils/redis-client"
 import type { MiddlewareHandler } from "hono"
 
@@ -7,11 +6,9 @@ import type { MiddlewareHandler } from "hono"
  *
  * The limiter is split into two halves:
  *
- * - a {@link RateLimitStore} — the counting backend. Three implementations
- *   ship with the framework: the Cloudflare native Rate Limiting binding
- *   (truly distributed, limits configured in wrangler), a KV-backed
- *   fixed-window counter (best-effort — see {@link createKvRateLimitStore}),
- *   and an in-memory Map for Node/dev/tests (per-isolate).
+ * - a {@link RateLimitStore} — the counting backend. Composition injects the
+ *   selected provider; an in-memory Map remains the zero-configuration
+ *   fallback for Node/dev/tests.
  * - the enforcement surface — the {@link rateLimit} Hono middleware and the
  *   imperative {@link enforceRateLimit} helper that route packages
  *   (storefront, bookings, …) call directly inside handlers.
@@ -75,9 +72,8 @@ export interface RateLimitPolicy {
 export interface RateLimitConfig {
   /**
    * Explicit store, or a function-of-bindings for stores built from env
-   * bindings (Workers env is only available per request). When omitted —
-   * or when the function returns `undefined` — resolution falls through
-   * to `c.env.RATE_LIMITER` (CF binding) → `c.env.RATE_LIMIT` (KV) →
+   * bindings. When omitted — or when the function returns `undefined` —
+   * resolution falls through to the injected `RATE_LIMIT_STORE`, then
    * in-memory.
    */
   store?: RateLimitStore | ((env: unknown) => RateLimitStore | undefined)
@@ -94,18 +90,6 @@ export interface RateLimitConfig {
 export interface RateLimitRule {
   max: number
   windowSeconds: number
-}
-
-/**
- * The Cloudflare native Rate Limiting binding shape (wrangler
- * `[[ratelimits]]`). The binding's `limit`/`period` are fixed in wrangler
- * config — the policy's `max`/`windowSeconds` are advisory for headers
- * only. One shared binding works across policies because the bucket is
- * part of the key; deployments wanting different limits per policy bind
- * one ratelimiter per policy and pass it via `policy.store`.
- */
-export interface CloudflareRateLimiterBinding {
-  limit(opts: { key: string }): Promise<{ success: boolean }>
 }
 
 /**
@@ -187,62 +171,6 @@ export function createMemoryRateLimitStore(options?: { maxEntries?: number }): R
   }
 }
 
-/**
- * KV-backed fixed-window store.
- *
- * **Best-effort by construction**: KV is eventually consistent and the
- * counter is a non-atomic read-modify-write, so concurrent requests
- * across PoPs undercount — a determined attacker gets somewhat more than
- * `max` through before the window converges. With per-client keys this
- * is still a real brake on brute force and write floods; deployments
- * needing exact distributed limits should bind the Cloudflare Rate
- * Limiting binding (`RATE_LIMITER`) instead.
- *
- * Stored keys are `lim:<bucket>:<clientKey>:<windowKey>` (the window
- * suffix is appended here) with a TTL of `max(60, windowSeconds * 2)` —
- * KV's TTL floor is 60s.
- */
-export function createKvRateLimitStore(kv: KVStore): RateLimitStore {
-  return {
-    async limit(key, { max, windowSeconds }) {
-      const nowSeconds = Math.floor(Date.now() / 1000)
-      const windowKey = Math.floor(nowSeconds / windowSeconds)
-      const storageKey = `${key}:${windowKey}`
-      const raw = await kv.get(storageKey)
-      const current = raw ? Number(raw) || 0 : 0
-      const next = current + 1
-      await kv.put(storageKey, String(next), {
-        expirationTtl: Math.max(60, windowSeconds * 2),
-      })
-      return {
-        allowed: next <= max,
-        remaining: Math.max(0, max - next),
-        retryAfterSeconds: Math.max(1, windowSeconds - (nowSeconds % windowSeconds)),
-      }
-    },
-  }
-}
-
-/**
- * Adapter for the Cloudflare native Rate Limiting binding. Truly
- * distributed and atomic; the actual limit/period are fixed in wrangler
- * config, so the policy's `max`/`windowSeconds` only inform the
- * `Retry-After` hint. `remaining` is never reported (the binding does
- * not expose it).
- */
-export function createCloudflareRateLimitStore(
-  binding: CloudflareRateLimiterBinding,
-): RateLimitStore {
-  return {
-    async limit(key, { windowSeconds }) {
-      const { success } = await binding.limit({ key })
-      return success
-        ? { allowed: true }
-        : { allowed: false, retryAfterSeconds: Math.max(1, windowSeconds) }
-    },
-  }
-}
-
 export interface RedisRateLimitStoreOptions {
   client?: LazyRedisClient
 }
@@ -274,9 +202,7 @@ export function createRedisRateLimitStore(
 
 // ---- Store resolution ----
 
-const bindingStoreCache = new WeakMap<object, RateLimitStore>()
 const explicitStoreCache = new WeakMap<object, RateLimitStore>()
-const kvStoreCache = new WeakMap<object, RateLimitStore>()
 const sharedMemoryStore = createMemoryRateLimitStore()
 let warnedNoDistributedStore = false
 
@@ -293,8 +219,8 @@ export function resetRateLimitWarningsForTests(): void {
 
 /**
  * Resolve the best available store from the environment:
- * `c.env.RATE_LIMITER` (CF Rate Limiting binding) → `c.env.RATE_LIMIT`
- * (KV) → in-memory fallback. **Fails open into the memory store** —
+ * Injected `c.env.RATE_LIMIT_STORE` → in-memory fallback. **Fails open into
+ * the memory store** —
  * rate limiting must never break Node/headless deployments that bind
  * neither — but warns once per isolate outside dev/test so a
  * production deploy without a distributed backend is visible in logs.
@@ -304,19 +230,7 @@ export function resolveRateLimitStore(
   memoryFallback: RateLimitStore = sharedMemoryStore,
 ): RateLimitStore {
   const env = (c.env ?? {}) as {
-    RATE_LIMITER?: CloudflareRateLimiterBinding
     RATE_LIMIT_STORE?: RateLimitStore
-    RATE_LIMIT?: KVStore
-  }
-
-  const binding = env.RATE_LIMITER
-  if (binding && typeof binding.limit === "function") {
-    let store = bindingStoreCache.get(binding)
-    if (!store) {
-      store = createCloudflareRateLimitStore(binding)
-      bindingStoreCache.set(binding, store)
-    }
-    return store
   }
 
   const explicit = env.RATE_LIMIT_STORE
@@ -329,21 +243,11 @@ export function resolveRateLimitStore(
     return store
   }
 
-  const kv = env.RATE_LIMIT
-  if (kv && typeof kv.get === "function" && typeof kv.put === "function") {
-    let store = kvStoreCache.get(kv)
-    if (!store) {
-      store = createKvRateLimitStore(kv)
-      kvStoreCache.set(kv, store)
-    }
-    return store
-  }
-
   if (!warnedNoDistributedStore && !isDevLikeEnv()) {
     warnedNoDistributedStore = true
     console.warn(
       "[voyant] rate-limit: no distributed store available (inject RATE_LIMIT_STORE " +
-        "or a KV-compatible RATE_LIMIT fallback). " +
+        "). " +
         "Falling back to a per-isolate in-memory limiter — limits apply " +
         "per instance, not fleet-wide.",
     )

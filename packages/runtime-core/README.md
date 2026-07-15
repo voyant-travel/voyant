@@ -32,7 +32,8 @@ The resident-process server plus the real providers it wires. See
 - `composeNodeEnv(process.env, { kv })` — assemble the env bag app code reads
   from string vars and concrete Node provider objects.
 - `createMemoryKvNamespace()` — in-process KV (`Map` + TTL + LRU) for
-  `CACHE`/`RATE_LIMIT` in a single resident process.
+  `CACHE` and other injected KVStore provider roles in a single resident
+  process.
 - `originTrustMiddleware` / `verifyOriginTrust` / `constantTimeEqual` — the
   `x-voyant-origin-trust` gate the platform dispatcher stamps.
 - `createWaitUntilRegistry()` — the in-process `waitUntil` registry + drain.

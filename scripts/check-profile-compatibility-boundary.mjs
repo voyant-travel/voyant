@@ -27,7 +27,6 @@ const graphNativeFiles = [
   "packages/operator-standard/src/standard-frontend.tsx",
   "starters/operator/src/server.ts",
   "starters/operator/src/ssr-handler.ts",
-  "starters/federated-operator/src/lib/admin-auth-runtime.ts",
 ]
 
 const retiredTokens = [

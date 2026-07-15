@@ -100,9 +100,10 @@ workload class well. On Node none of it is necessary.
 These surfaces can still be deployed as independent Worker applications:
 
 - storefronts, small/public cacheable surfaces, demo deployments, UI shells;
-- **federated (per-domain) apps** under the residency cliff — per-domain graphs
-  are small enough to stay resident, which is the edge-native long-term
-  alternative (see [federated-operating-mode.md](./federated-operating-mode.md)).
+- future edge-native, per-domain applications, if their graphs are proven small
+  enough to remain resident. This is not the current federated operating mode
+  and Voyant ships no federated Worker starter (see
+  [federated-operating-mode.md](./federated-operating-mode.md)).
 
 They do not consume or statically compose the unified application deployment
 graph. A `cloudflare-worker` target must not be offered by its CLI target

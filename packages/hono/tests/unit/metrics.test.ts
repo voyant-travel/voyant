@@ -28,7 +28,7 @@ describe("metrics middleware", () => {
   it("writes one data point per request with method/route/surface/duration/status", async () => {
     const dataset = fakeDataset()
     const app = new Hono()
-    app.use("*", metrics())
+    app.use("*", metrics({ dataset: () => dataset }))
     app.get("/v1/public/products/:id", (c) => c.json({ ok: true }))
 
     const res = await app.request("/v1/public/products/prod_1", {}, { METRICS: dataset })
@@ -43,9 +43,9 @@ describe("metrics middleware", () => {
     expect(point?.indexes?.[0]).toBe("/v1/public/products/:id")
   })
 
-  it("is a no-op without the METRICS binding", async () => {
+  it("is a no-op when the configured sink is unavailable", async () => {
     const app = new Hono()
-    app.use("*", metrics())
+    app.use("*", metrics({ dataset: () => undefined }))
     app.get("/x", (c) => c.json({ ok: true }))
 
     const res = await app.request("/x", {}, {})
@@ -56,7 +56,7 @@ describe("metrics middleware", () => {
   it("records the in-worker cache status blob", async () => {
     const dataset = fakeDataset()
     const app = new Hono()
-    app.use("*", metrics())
+    app.use("*", metrics({ dataset: () => dataset }))
     app.get("/v1/public/things", (c) => {
       c.header("x-voyant-cache", "hit")
       return c.json({ ok: true })
@@ -71,7 +71,7 @@ describe("metrics middleware", () => {
     const dataset = fakeDataset()
     const app = new Hono()
     app.onError((_err, c) => c.json({ error: true }, 500))
-    app.use("*", metrics())
+    app.use("*", metrics({ dataset: () => dataset }))
     app.get("/boom", () => {
       throw new Error("boom")
     })
@@ -90,7 +90,7 @@ describe("metrics middleware", () => {
     })
     const fakeDbFactory: DbFactory = () => fakeDb
     const app = new Hono()
-    app.use("*", metrics())
+    app.use("*", metrics({ dataset: () => dataset }))
     app.use("*", db(fakeDbFactory))
     app.get("/v1/admin/things", async (c) => {
       const handle = c.get("db") as {

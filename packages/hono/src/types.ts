@@ -38,17 +38,9 @@ export interface VoyantBindings {
   APP_URL?: string
   DASH_BASE_URL?: string
   API_BASE_URL?: string
-  RATE_LIMIT?: KVStore
   RATE_LIMIT_STORE?: import("./middleware/rate-limit.js").RateLimitStore
   CACHE?: KVStore
   SHARED_STATE?: KVStore
-  RATE_LIMITER?: import("./middleware/rate-limit.js").CloudflareRateLimiterBinding
-  /**
-   * Workers Analytics Engine dataset receiving per-request metrics
-   * (see the `metrics` middleware). Optional — without it the
-   * middleware is a no-op.
-   */
-  METRICS?: import("./middleware/metrics.js").AnalyticsEngineDatasetLike
 }
 
 export type VoyantDb = PostgresJsDatabase | NeonHttpDatabase | NeonWsDatabase
@@ -71,8 +63,6 @@ export type VoyantVariables = CoreVoyantVariables & {
   query?: VoyantQueryRuntime
   /** Optional workflow driver surfaced to HTTP routes after lazy app bootstrap. */
   workflowDriver?: import("@voyant-travel/workflows/driver").WorkflowDriver
-  /** Per-request db metrics counter populated by the metrics middleware. */
-  __voyantDbMetrics?: import("./middleware/metrics.js").RequestDbMetrics
 }
 
 /** Handler contract for application-authored Hono API routes. */
@@ -330,13 +320,6 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * `insertOutboxEvents(tx, ...)`. Default off.
    */
   outbox?: boolean
-  /**
-   * Per-request metrics to the `env.METRICS` Analytics Engine dataset
-   * (method, route pattern, surface, cache status, duration, status,
-   * db query count). Enabled by default and inert without the binding;
-   * set `false` to disable entirely.
-   */
-  metrics?: boolean
   /**
    * Default request body limit enforced before route handlers parse
    * JSON/form data. Content-type-aware: JSON bodies are capped at 10 MiB

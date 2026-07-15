@@ -371,15 +371,17 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     expect(overview.fulfillments).toHaveLength(1)
     expect(overview.travelers[0]?.firstName).toBe("Elena")
 
-    const rateLimitStore = new Map<string, string>()
     const rateLimitEnv = {
       GUEST_BOOKING_LOOKUP_LIMIT_PER_MINUTE: "1",
-      RATE_LIMIT: {
-        get: async (key: string) => rateLimitStore.get(key) ?? null,
-        put: async (key: string, value: string) => {
-          rateLimitStore.set(key, value)
-        },
-      },
+      RATE_LIMIT_STORE: (() => {
+        let requests = 0
+        return {
+          limit: async () => {
+            requests += 1
+            return { allowed: requests <= 1, remaining: Math.max(0, 1 - requests) }
+          },
+        }
+      })(),
     }
     const limitedLookupPath = `/overview?bookingNumber=${encodeURIComponent(session.bookingNumber)}&email=${encodeURIComponent("elena@example.com")}`
 

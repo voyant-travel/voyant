@@ -160,7 +160,7 @@ paths need uniform coverage).
 ### T8 — MEDIUM: no observability, no limits, no load proof
 
 No per-request metrics (duration/db-time/query-count/memory), no tracing, no Analytics Engine
-binding, no `statement_timeout`, no per-tenant rate limits (an unused `RATE_LIMIT` KV middleware
+binding, no `statement_timeout`, no per-tenant rate limits (an unused rate-limit middleware
 exists), no load tests. #1686 was diagnosed from the outside ("HTTP 000, redeploy fixes it").
 
 ## 3. Verdict on RFC #1687
