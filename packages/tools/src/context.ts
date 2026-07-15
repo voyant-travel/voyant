@@ -32,6 +32,9 @@ export interface ToolContext {
 
 export const TOOL_CONTEXT_CONTRIBUTION_EXPORT = "voyantToolContextContribution" as const
 
+/** Generic MCP resource containing the selected deployment providers by graph role. */
+export const TOOL_PROVIDER_SELECTIONS_RESOURCE = "voyant.graph.provider-selections" as const
+
 export interface ToolContextContributionInput {
   /** Transport request context. Contributors narrow this at their package boundary. */
   request: unknown

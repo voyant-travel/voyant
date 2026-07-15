@@ -35,6 +35,30 @@ routes. Other selected packages register executable workflows through the
 `workflows.runner-registry` runtime port; the generic Node host does not need
 Workflow Runs-specific wiring.
 
+## Agent Tools
+
+The package owns staff-only Tools for listing run summaries, reading one run
+with its ordered steps, triggering an explicitly registered workflow, and
+retrying a recorded run through rerun or failed-step resume. Read Tools use the
+package's recorded-run service. Write Tools dispatch only through the selected
+`workflows.runner-registry` port and require explicit `workflows:trigger` or
+`workflows:retry` grants, confirmation, action-ledger recording, and approval.
+
+Workflow management remains owned by the selected deployment provider. Trigger
+and retry Tools run only when `deployment.providers.workflows` is
+`self-hosted`; managed-cloud, disabled, missing, and unknown selections fail
+closed. Tool discovery may still describe these operations so remote clients
+can explain the requirement before invocation.
+
+Trigger and retry are classified at the worst-case `critical` risk level. The
+runner port does not yet publish per-workflow side-effect metadata, so callers
+must not infer a narrower risk from the selected workflow name.
+
+Cancellation is intentionally not exposed. The package's provider-neutral
+runner port currently has no cancellation capability, and changing a recorded
+row would not cancel underlying execution. Add cancellation only after the
+runtime port can prove that the selected provider can cancel a live run.
+
 ## Direct composition
 
 `mountWorkflowRunsAdminRoutes` adds the workflow-run list, detail, rerun, and resume endpoints under `/v1/admin/workflow-runs`, plus an explicit trigger endpoint at `POST /v1/admin/workflows/:name/runs`.

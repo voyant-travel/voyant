@@ -1,6 +1,10 @@
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { HonoModule } from "@voyant-travel/hono/module"
-import type { ToolContext, Visibility } from "@voyant-travel/tools"
+import {
+  TOOL_PROVIDER_SELECTIONS_RESOURCE,
+  type ToolContext,
+  type Visibility,
+} from "@voyant-travel/tools"
 import type { Context } from "hono"
 import { createGraphMcpHonoApp } from "./server.js"
 
@@ -12,7 +16,10 @@ export const createMcpVoyantRuntime = defineGraphRuntimeFactory(
       createGraphMcpHonoApp({
         runtime: graph,
         buildContext: buildMcpBaseContext,
-        buildResources: () => runtimePorts,
+        buildResources: () => ({
+          ...runtimePorts,
+          [TOOL_PROVIDER_SELECTIONS_RESOURCE]: graph.providerSelections,
+        }),
       }),
   }),
 )
