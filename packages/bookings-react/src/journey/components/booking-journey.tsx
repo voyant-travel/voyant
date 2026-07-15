@@ -207,7 +207,11 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   // want to silently let two shoppers race past Configure with one
   // capacity unit between them.
   const holdApi = useBookingHold({ surface })
-  const holdState = useRef<{ holdToken?: string; signature?: string }>({})
+  const holdState = useRef<{
+    holdToken?: string
+    signature?: string
+    transition: Promise<void>
+  }>({ transition: Promise.resolve() })
   const holdSignature = makeHoldSignature(draft, props.entityModule, props.entityId)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values -- owner: bookings-react; existing suppression is intentional pending typed cleanup.
@@ -222,30 +226,49 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     // burning capacity. The operator follows up before any inventory
     // is touched.
     if (draft.payment.intent === "inquiry") return
-    const previousToken = holdState.current.holdToken
-    holdState.current = { signature: holdSignature }
-    void holdApi
-      .place({
-        entityModule: props.entityModule,
-        entityId: props.entityId,
-        draftId: props.draftId,
-        parameters: {
-          slotId: draft.configure.departureSlotId,
-          paxCount: totalPax(draft),
-          productId: props.entityId,
-        },
-      })
-      .then((result) => {
-        holdState.current = { holdToken: result.holdToken, signature: holdSignature }
-      })
-      .catch(() => {
+    holdState.current.signature = holdSignature
+    holdState.current.transition = holdState.current.transition.then(async () => {
+      // A newer selection can arrive while this transition is queued. Skip
+      // stale work before it reaches inventory.
+      if (holdState.current.signature !== holdSignature) return
+
+      const previousToken = holdState.current.holdToken
+      if (previousToken) {
+        holdState.current.holdToken = undefined
+        await holdApi
+          .release({ entityModule: props.entityModule, holdToken: previousToken })
+          .catch(() => {})
+      }
+
+      // Re-check after the release: a newer transition may now be waiting.
+      if (holdState.current.signature !== holdSignature) return
+
+      try {
+        const result = await holdApi.place({
+          entityModule: props.entityModule,
+          entityId: props.entityId,
+          draftId: props.draftId,
+          parameters: {
+            slotId: draft.configure.departureSlotId,
+            paxCount: totalPax(draft),
+            productId: props.entityId,
+          },
+        })
+        if (holdState.current.signature === holdSignature) {
+          holdState.current.holdToken = result.holdToken
+          return
+        }
+
+        // The placement completed after the selection changed. Release it
+        // before the queued replacement starts so token-wide release cannot
+        // delete that replacement.
+        await holdApi
+          .release({ entityModule: props.entityModule, holdToken: result.holdToken })
+          .catch(() => {})
+      } catch {
         // Non-blocking — see comment above.
-      })
-    if (previousToken) {
-      void holdApi
-        .release({ entityModule: props.entityModule, holdToken: previousToken })
-        .catch(() => {})
-    }
+      }
+    })
   }, [holdSignature, currentStep])
 
   const available = quote.data?.available !== false

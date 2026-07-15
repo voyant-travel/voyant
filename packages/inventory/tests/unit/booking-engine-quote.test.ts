@@ -422,6 +422,38 @@ describe("createProductsBookingHandler.computeQuote", () => {
 })
 
 describe("createProductsBookingHandler.commit", () => {
+  it("converts the draft hold into an on-hold booking for the held pax", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_held",
+      bookingNumber: "BK-HELD",
+    }))
+    const handler = createProductsBookingHandler({ createBooking })
+
+    const result = await handler.commit(makeCtx([product]), {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_held",
+      parameters: { availabilityHoldToken: "draft_held" },
+      draft: {
+        configure: {
+          departureSlotId: "slot_held",
+          pax: { adult: 2 },
+        },
+      },
+    })
+
+    expect(result.status).toBe("held")
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slotId: "slot_held",
+        pax: 2,
+        availabilityHoldToken: "draft_held",
+        initialStatus: "on_hold",
+      }),
+    )
+  })
+
   it("uses the gross inclusive-tax total for the booking sell amount override", async () => {
     const createBooking = vi.fn(async () => ({
       status: "ok" as const,

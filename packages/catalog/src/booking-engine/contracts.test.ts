@@ -99,6 +99,15 @@ describe("V1 contracts", () => {
         bookRequestV1.safeParse({ quoteId: "q1", idempotencyKey: "x".repeat(129) }).success,
       ).toBe(false)
     })
+
+    it.each([
+      "bank_transfer",
+      "inquiry",
+    ])("rejects checkout-only %s intents from the reservation contract", (type) => {
+      const result = bookRequestV1.safeParse({ quoteId: "q1", paymentIntent: { type } })
+
+      expect(result.success).toBe(false)
+    })
   })
 
   describe("pricingBreakdownV1", () => {

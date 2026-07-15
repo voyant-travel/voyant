@@ -38,3 +38,24 @@ export const availabilitySlotsRef = pgTable("availability_slots", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 })
+
+/**
+ * DELIBERATE local mirror of the hold fields bookings needs to convert a
+ * pre-booking reservation atomically. The availability package owns the table
+ * and migration; the loose booking/allocation ids preserve package boundaries.
+ */
+export const availabilityHoldsRef = pgTable("availability_holds", {
+  id: typeId("availability_holds").primaryKey(),
+  draftId: text("draft_id").notNull(),
+  holdToken: text("hold_token").notNull(),
+  productId: text("product_id").notNull(),
+  slotId: typeIdRef("slot_id").notNull(),
+  paxCount: integer("pax_count").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  releasedAt: timestamp("released_at", { withTimezone: true }),
+  convertedAt: timestamp("converted_at", { withTimezone: true }),
+  convertedBookingId: text("converted_booking_id"),
+  convertedAllocationId: text("converted_allocation_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+})

@@ -8,6 +8,13 @@
       "when": 1781954969333,
       "tag": "0000_availability_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784090529380,
+      "tag": "20260715044209_booking_hold_conversion",
+      "breakpoints": true
     }
   ]
 }

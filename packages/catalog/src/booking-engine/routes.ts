@@ -741,6 +741,10 @@ async function prepareBookParameters(
     },
   )
 
+  if (input.body.draftId) {
+    parameters.availabilityHoldToken = input.body.draftId
+  }
+
   return (
     (await options.prepareBookParameters?.({
       c,

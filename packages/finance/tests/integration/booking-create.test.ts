@@ -1,6 +1,8 @@
 // agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
 import {
+  bookingActivityLog,
+  bookingAllocations,
   bookingGroups,
   bookingItems,
   bookingItemTravelers,
@@ -10,7 +12,10 @@ import {
 import { createEventBus } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-
+import {
+  availabilityHoldsRef as availabilityHolds,
+  availabilitySlotsRef as availabilitySlots,
+} from "../../../bookings/src/availability-ref.js"
 import {
   bookingPaymentSchedules,
   invoiceRenditions,
@@ -46,6 +51,7 @@ async function resetTables(
     "booking_supplier_statuses",
     "booking_items",
     "bookings",
+    "availability_holds",
     "availability_slots",
     "option_units",
     "product_day_services",
@@ -409,6 +415,164 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       .from(bookings)
       .where(eq(bookings.id, outcome.result.booking.id))
     expect(bookingRow?.pax).toBe(2)
+  })
+
+  it("atomically converts a live availability hold into one on-hold pax allocation", async () => {
+    const { productId, optionId } = await seedProduct({ pax: 2 })
+    const slot = await seedSlot({ productId, optionId })
+    const holdToken = `draft_hold_${productSeq}`
+    const staleSlotId = `${slot.id}_stale`
+    await db.execute(sql`
+      INSERT INTO availability_slots (
+        id, product_id, option_id, date_local, starts_at, ends_at, timezone,
+        status, unlimited, initial_pax, remaining_pax, created_at, updated_at
+      ) VALUES (
+        ${staleSlotId}, ${productId}, ${optionId}, '2026-07-02',
+        '2026-07-02T09:00:00.000Z', '2026-07-02T11:00:00.000Z',
+        'Europe/Bucharest', 'open', false, 10, 9, now(), now()
+      )
+    `)
+    const [staleHold] = await db
+      .insert(availabilityHolds)
+      .values({
+        draftId: holdToken,
+        holdToken,
+        productId,
+        slotId: staleSlotId,
+        paxCount: 1,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      })
+      .returning()
+    const [hold] = await db
+      .insert(availabilityHolds)
+      .values({
+        draftId: holdToken,
+        holdToken,
+        productId,
+        slotId: slot.id,
+        paxCount: 2,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      })
+      .returning()
+    await db
+      .update(availabilitySlots)
+      .set({ remainingPax: 8 })
+      .where(eq(availabilitySlots.id, slot.id))
+
+    const outcome = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      availabilityHoldToken: holdToken,
+      bookingNumber: nextBookingNumber(),
+      initialStatus: "on_hold",
+      pax: 2,
+      ...bookingParty(),
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.booking.status).toBe("on_hold")
+
+    const [slotAfter] = await db
+      .select({ remainingPax: availabilitySlots.remainingPax })
+      .from(availabilitySlots)
+      .where(eq(availabilitySlots.id, slot.id))
+    expect(slotAfter?.remainingPax).toBe(8)
+    const [staleSlotAfter] = await db
+      .select({ remainingPax: availabilitySlots.remainingPax })
+      .from(availabilitySlots)
+      .where(eq(availabilitySlots.id, staleSlotId))
+    expect(staleSlotAfter?.remainingPax).toBe(10)
+
+    const allocations = await db
+      .select()
+      .from(bookingAllocations)
+      .where(eq(bookingAllocations.bookingId, outcome.result.booking.id))
+    expect(allocations).toHaveLength(1)
+    expect(allocations[0]).toMatchObject({
+      availabilitySlotId: slot.id,
+      quantity: 2,
+      status: "held",
+      metadata: {
+        availabilityHoldId: hold.id,
+        availabilityHoldToken: holdToken,
+      },
+    })
+
+    const [converted] = await db
+      .select()
+      .from(availabilityHolds)
+      .where(eq(availabilityHolds.id, hold.id))
+    expect(converted).toMatchObject({
+      releasedAt: null,
+      convertedBookingId: outcome.result.booking.id,
+      convertedAllocationId: allocations[0]?.id,
+    })
+    expect(converted?.convertedAt).toBeInstanceOf(Date)
+    const [releasedStaleHold] = await db
+      .select()
+      .from(availabilityHolds)
+      .where(eq(availabilityHolds.id, staleHold.id))
+    expect(releasedStaleHold?.releasedAt).toBeInstanceOf(Date)
+
+    const activities = await db
+      .select()
+      .from(bookingActivityLog)
+      .where(eq(bookingActivityLog.bookingId, outcome.result.booking.id))
+    expect(activities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          activityType: "booking_converted",
+          metadata: expect.objectContaining({ availabilityHoldId: hold.id }),
+        }),
+      ]),
+    )
+  })
+
+  it("releases an expired hold before allocating the booking capacity", async () => {
+    const { productId, optionId } = await seedProduct({ pax: 2 })
+    const slot = await seedSlot({ productId, optionId })
+    const holdToken = `draft_expired_${productSeq}`
+    const [hold] = await db
+      .insert(availabilityHolds)
+      .values({
+        draftId: holdToken,
+        holdToken,
+        productId,
+        slotId: slot.id,
+        paxCount: 2,
+        expiresAt: new Date(Date.now() - 60_000),
+      })
+      .returning()
+    await db
+      .update(availabilitySlots)
+      .set({ remainingPax: 8 })
+      .where(eq(availabilitySlots.id, slot.id))
+
+    const outcome = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      availabilityHoldToken: holdToken,
+      bookingNumber: nextBookingNumber(),
+      initialStatus: "on_hold",
+      pax: 2,
+      ...bookingParty(),
+    })
+
+    expect(outcome.status).toBe("ok")
+    const [slotAfter] = await db
+      .select({ remainingPax: availabilitySlots.remainingPax })
+      .from(availabilitySlots)
+      .where(eq(availabilitySlots.id, slot.id))
+    expect(slotAfter?.remainingPax).toBe(8)
+    const [expired] = await db
+      .select()
+      .from(availabilityHolds)
+      .where(eq(availabilityHolds.id, hold.id))
+    expect(expired?.releasedAt).toBeInstanceOf(Date)
+    expect(expired?.convertedAt).toBeNull()
   })
 
   it("keeps explicit booking pax when travelers are also supplied", async () => {

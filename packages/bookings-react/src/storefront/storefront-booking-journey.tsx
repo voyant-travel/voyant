@@ -27,7 +27,6 @@ import {
   type BookingJourneyCheckoutContext,
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
-  type Draft,
 } from "../journey/index.js"
 import {
   type ContractSourceContext,
@@ -38,6 +37,16 @@ import {
   buildStorefrontBookFailureMessage,
   type StorefrontBookErrorBody,
 } from "./storefront-booking-errors.js"
+import {
+  buildStorefrontBookBody,
+  buildStorefrontCheckoutStartBody,
+} from "./storefront-checkout-bodies.js"
+
+export {
+  buildStorefrontBookBody,
+  buildStorefrontCheckoutStartBody,
+  buildStorefrontCommitParty,
+} from "./storefront-checkout-bodies.js"
 
 /**
  * Marker for checkout failures we've already turned into a localized,
@@ -202,10 +211,6 @@ export function StorefrontBookingJourney({
     context: BookingJourneyCheckoutContext,
   ) => {
     try {
-      const intent = checkoutIntentFromDraft(context.draft.payment.intent)
-      const contact = context.draft.billing?.contact
-      const payerName = [contact?.firstName, contact?.lastName].filter(Boolean).join(" ").trim()
-      const idempotencyKey = `bj-${draftId}-${acceptance?.acceptedAt ?? "noaccept"}`
       // Step 1 — book the entity. Send the live scoped quote id explicitly
       // (the server prefers `quoteId` over resolving the draft's stored
       // `currentQuoteId`), so a market/currency change made mid-journey books
@@ -215,13 +220,14 @@ export function StorefrontBookingJourney({
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          draftId,
-          quoteId: context.quoteId,
-          party: buildStorefrontCommitParty(context.draft),
-          paymentIntent: { type: "hold" },
-          idempotencyKey,
-        }),
+        body: JSON.stringify(
+          buildStorefrontBookBody({
+            draftId,
+            quoteId: context.quoteId,
+            draft: context.draft,
+            acceptedAt: acceptance?.acceptedAt,
+          }),
+        ),
       })
       if (!bookRes.ok) {
         const errBody = (await bookRes.json().catch(() => ({}))) as StorefrontBookErrorBody
@@ -263,25 +269,14 @@ export function StorefrontBookingJourney({
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          paymentIntent: intent,
-          ...(acceptance
-            ? {
-                contractAcceptance: {
-                  templateId: acceptance.templateId,
-                  templateSlug: acceptance.templateSlug,
-                  acceptedTerms: true as const,
-                  acceptedMarketing: acceptance.acceptedMarketing,
-                  acceptedAt: acceptance.acceptedAt,
-                  renderedHtml: acceptance.renderedHtml,
-                },
-              }
-            : {}),
-          ...(contact?.email ? { payerEmail: contact.email } : {}),
-          ...(payerName ? { payerName } : {}),
-          returnOrigin: window.location.origin,
-        }),
+        body: JSON.stringify(
+          buildStorefrontCheckoutStartBody({
+            bookingId,
+            draft: context.draft,
+            acceptance,
+            returnOrigin: window.location.origin,
+          }),
+        ),
       })
       type CheckoutStartResponse =
         | { kind: "card_redirect"; bookingId: string; redirectUrl: string | null }
@@ -430,47 +425,6 @@ export function StorefrontBookingJourney({
       {...slots}
     />
   )
-}
-
-function checkoutIntentFromDraft(
-  intent: BookingJourneyCheckoutContext["draft"]["payment"]["intent"],
-): "card" | "bank_transfer" | "hold" | "inquiry" {
-  if (intent === "card" || intent === "bank_transfer" || intent === "inquiry") return intent
-  return "hold"
-}
-
-export function buildStorefrontCommitParty(draft: Draft): Record<string, unknown> {
-  const contact = draft.billing.contact
-  const personId = draft.billing.buyerType === "B2C" ? contact.personId : undefined
-  const organizationId =
-    draft.billing.buyerType === "B2B" ? draft.billing.organizationId : undefined
-  return {
-    personId,
-    organizationId,
-    billing: {
-      personId,
-      organizationId,
-      contact: {
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email,
-        phone: contact.phone,
-      },
-    },
-    travelerParty: {
-      travelers: draft.travelers.map((traveler) => ({
-        personId: traveler.personId,
-        firstName: traveler.firstName,
-        lastName: traveler.lastName,
-        email: traveler.email,
-        phone: traveler.phone,
-        dateOfBirth: traveler.dateOfBirth,
-        band: traveler.band,
-        documents: traveler.documents,
-        isPrimary: traveler.isPrimary,
-      })),
-    },
-  }
 }
 
 /**

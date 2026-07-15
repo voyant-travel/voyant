@@ -110,6 +110,28 @@ describe("createCatalogBookingRoutes", () => {
     })
   })
 
+  it.each([
+    "bank_transfer",
+    "inquiry",
+  ])("rejects checkout-only %s intents from /book with structured JSON", async (type) => {
+    const { app } = createTestApp()
+
+    const response = await app.request("/v1/public/catalog/book", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        draftId: "draft_1",
+        paymentIntent: { type },
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: "invalid_request",
+    })
+    expect(bookEntity).not.toHaveBeenCalled()
+  })
+
   it("quotes through injected provenance, registries, and adapter context", async () => {
     vi.mocked(quoteEntity).mockResolvedValue({
       quoteId: "quote_1",
@@ -455,6 +477,7 @@ describe("createCatalogBookingRoutes", () => {
         idempotencyKey: "idem_12345678",
         parameters: expect.objectContaining({
           draft: expect.any(Object),
+          availabilityHoldToken: "draft_1",
           departureSlotId: "slot_1",
           departure_id: "slot_1",
           slotId: "slot_1",
