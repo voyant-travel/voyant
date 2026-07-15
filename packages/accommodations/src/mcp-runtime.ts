@@ -29,9 +29,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const contentRuntime = await optionalContentRuntime(resources[catalogContentRuntimePort.id])
     return {
       accommodations: {
-        async searchOwned(
-          input: Parameters<AccommodationsToolServices["searchOwned"]>[0],
-        ) {
+        async searchOwned(input: Parameters<AccommodationsToolServices["searchOwned"]>[0]) {
           const { currency, limit, cursor, ...criteria } = input
           const nights = eachStayNight(input.checkIn, input.checkOut)
           if (nights.length === 0) {
