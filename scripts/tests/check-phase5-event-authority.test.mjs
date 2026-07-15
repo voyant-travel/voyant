@@ -37,6 +37,16 @@ async function runFixture(source) {
   return execFileAsync(process.execPath, [checker, "--root", root])
 }
 
+async function runMultiPackageFixture(sources) {
+  const root = await mkdtemp(path.join(tmpdir(), "voyant-phase5-events-"))
+  for (const [name, source] of Object.entries(sources)) {
+    const file = path.join(root, `packages/${name}/src/voyant.ts`)
+    await mkdir(path.dirname(file), { recursive: true })
+    await writeFile(file, source)
+  }
+  return execFileAsync(process.execPath, [checker, "--root", root])
+}
+
 describe("Phase 5 event authority checker", () => {
   it("pins the package-owned Quotes proposal feedback event contract", async () => {
     const manifest = await readFile(path.join(repoRoot, "packages/quotes/src/voyant.ts"), "utf8")
@@ -109,6 +119,46 @@ describe("Phase 5 event authority checker", () => {
   it("rejects emitters without package-owned contracts", async () => {
     const invalid = `${validManifest}\neventBus.emit("example.undeclared", {})\n`
     await assert.rejects(runFixture(invalid), /emitter publishes undeclared event type/)
+  })
+
+  it("rejects duplicate event type authorities", async () => {
+    await assert.rejects(
+      runMultiPackageFixture({
+        first: validManifest,
+        second: validManifest
+          .replaceAll("@acme/example", "@acme/other")
+          .replace('sourceModule: "example"', 'sourceModule: "other"'),
+      }),
+      /event type "example.changed" has duplicate package authorities/,
+    )
+  })
+
+  it("accepts multiple event versions from one package authority", async () => {
+    const multiVersion = validManifest.replace(
+      "  }],\n  webhooks:",
+      `  }, {
+    id: "@acme/example#event.changed-v2",
+    eventType: "example.changed",
+    version: "2.0.0",
+    payloadSchema: { type: "object" },
+    visibility: "external",
+    audit: { sourceModule: "example", category: "domain" },
+  }],
+  webhooks:`,
+    )
+    const result = await runFixture(multiVersion)
+    assert.match(result.stdout, /Phase 5 event authority: OK/)
+  })
+
+  it("rejects a new persistence mutation package without a declared event emission", async () => {
+    const invalid = `${validManifest}\nasync function save(db) { await db.insert(records).values({}) }\n`
+    await assert.rejects(runFixture(invalid), /persistence mutations but emits no declared event/)
+  })
+
+  it("accepts persistence mutations covered by a declared event emission", async () => {
+    const covered = `${validManifest}\nasync function save(db, eventBus) {\n  await db.insert(records).values({})\n  await eventBus.emit("example.changed", {})\n}\n`
+    const result = await runFixture(covered)
+    assert.match(result.stdout, /1\/1 mutation packages covered/)
   })
 
   it("reports runtime subscriptions without manifest owners", async () => {

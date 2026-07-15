@@ -199,6 +199,65 @@ describe("deployment graph v1", () => {
     ).not.toThrow()
   })
 
+  it("rejects duplicate selected event type authorities", async () => {
+    const event = {
+      eventType: "loyalty.changed",
+      version: "1.0.0",
+      payloadSchema: { type: "object", properties: {} },
+      visibility: "internal" as const,
+      audit: { sourceModule: "loyalty", category: "domain" as const },
+    }
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/loyalty",
+            events: [{ id: "@acme/loyalty#event.changed", ...event }],
+          }),
+          defineModule({
+            id: "@acme/rewards",
+            events: [{ id: "@acme/rewards#event.changed", ...event }],
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_DUPLICATE_EVENT_TYPE",
+          facet: "events.eventType",
+        }),
+      ]),
+    )
+  })
+
+  it("allows one selected unit to own multiple versions of an event type", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/loyalty",
+            events: ["1.0.0", "2.0.0"].map((version) => ({
+              id: `@acme/loyalty#event.changed-v${version[0]}`,
+              eventType: "loyalty.changed",
+              version,
+              payloadSchema: { type: "object", properties: {} },
+              visibility: "internal" as const,
+              audit: { sourceModule: "loyalty", category: "domain" as const },
+            })),
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual([])
+    expect(graph.eventCatalog.events.map(({ key }) => key)).toEqual([
+      "loyalty.changed@1.0.0",
+      "loyalty.changed@2.0.0",
+    ])
+  })
+
   it("resolves the full package-owned facet contract without starter catalogs", async () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",
@@ -319,7 +378,13 @@ describe("deployment graph v1", () => {
           id: "@acme/voyant-loyalty#event.points-adjusted",
           eventType: "points.adjusted",
           version: "1.0.0",
-          payloadSchema: { type: "object", properties: {} },
+          payloadSchema: {
+            type: "object",
+            properties: {
+              accountId: { type: "string" },
+              secret: { type: "string", writeOnly: true },
+            },
+          },
           visibility: "external",
           audit: { sourceModule: "loyalty", category: "domain" },
         },
@@ -382,12 +447,41 @@ describe("deployment graph v1", () => {
         eventUnitId: "@acme/voyant-loyalty",
         eventType: "points.adjusted",
         eventVersion: "1.0.0",
-        payloadSchema: { type: "object", properties: {} },
+        payloadSchema: {
+          type: "object",
+          properties: {
+            accountId: { type: "string" },
+            secret: { type: "string", writeOnly: true },
+          },
+        },
         visibility: "external",
         audit: { sourceModule: "loyalty", category: "domain" },
         secretIds: ["@acme/voyant-loyalty#secret.webhook"],
       },
     ])
+    expect(graph.eventCatalog).toEqual({
+      schemaVersion: "voyant.event-catalog.v1",
+      events: [
+        {
+          key: "points.adjusted@1.0.0",
+          id: "@acme/voyant-loyalty#event.points-adjusted",
+          unitId: "@acme/voyant-loyalty",
+          packageName: "@acme/voyant-loyalty",
+          eventType: "points.adjusted",
+          version: "1.0.0",
+          payloadSchema: {
+            type: "object",
+            properties: {
+              accountId: { type: "string" },
+              secret: { type: "string", writeOnly: true },
+            },
+          },
+          visibility: "external",
+          audit: { sourceModule: "loyalty", category: "domain" },
+          redactedFields: ["secret"],
+        },
+      ],
+    })
   })
 
   it("compiles cross-unit inbound routes and outbound events into a deterministic plan", async () => {
@@ -1532,6 +1626,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_ARTIFACT_MISSING",
       "VOYANT_GRAPH_ARTIFACT_STALE",
       "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
+      "VOYANT_GRAPH_DUPLICATE_EVENT_TYPE",
       "VOYANT_GRAPH_DUPLICATE_ID",
       "VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA",
       "VOYANT_GRAPH_INCOMPATIBLE_UPGRADE",

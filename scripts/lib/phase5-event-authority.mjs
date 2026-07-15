@@ -177,3 +177,10 @@ export function collectEventCalls(source, method, knownConstants = new Map()) {
     .map((match) => match[1] ?? constants.get(match[2]))
     .filter(Boolean)
 }
+
+/** Find direct Drizzle-style persistence mutations without treating array helpers as writes. */
+export function collectPersistenceMutationCalls(source) {
+  return [...source.matchAll(/\b(?:db|tx|trx|database)\.(insert|update|delete)\s*\(/g)].map(
+    (match) => match[1],
+  )
+}

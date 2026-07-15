@@ -16,6 +16,16 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
   audit-attributed; name-only internal event declarations are no longer accepted.
 - The authority checker reconciles observed package emitters and runtime subscriptions with
   manifest-owned contracts and subscribers, and reports graph-wide coverage counts.
+- Duplicate event types across package manifests fail both graph admission and the source-level
+  authority checker. The domain authority owns the declaration; legitimate cross-domain emitters
+  reuse that contract without redeclaring it. One owning unit may publish multiple versions, each
+  under its unique `eventType@version` catalog key.
+- The selected graph lowers complete event declarations into a canonical versioned catalog with
+  package provenance, schemas, audit metadata, and redacted fields. Generated artifacts, runtime,
+  the package-owned admin API, and the admin reference page consume that same catalog.
+- The authority checker scans selected package roots for direct persistence mutations and ratchets
+  packages that emit no declared event. Existing gaps are explicit in
+  `scripts/fixtures/phase5-event-mutation-coverage.json`; new gaps and stale entries fail.
 - Selected-graph validation rejects executable subscribers when their event contract owner is
   absent from the selected graph.
 - The package-owned subscription mutation service accepts only event types in the selected
@@ -49,6 +59,10 @@ Status at `4c94a014b0`, updated by the graph-wide first-party event contract cut
   package-owned adapters and workflow retry policy, not webhook subscriptions.
 
 ## Residual Checklist
+
+- Remove entries from the Phase 5 mutation coverage baseline as each package emits a declared
+  domain event for its persistence mutations. The baseline records debt; it does not confer event
+  ownership or exempt new mutation packages.
 
 - Route the legacy Dash subscription mutations through the package-owned service. This repository
   contains no subscription mutation API or direct insert call outside the service factory, so

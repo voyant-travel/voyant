@@ -83,6 +83,7 @@ export interface VoyantDeploymentArtifactManifest {
   graphHash: string
   graph: string
   accessCatalog: ResolvedVoyantDeploymentGraph["accessCatalog"]
+  eventCatalog: ResolvedVoyantDeploymentGraph["eventCatalog"]
   webhookPlan: ResolvedVoyantDeploymentGraph["webhookPlan"]
   runtimeEntries: readonly VoyantDeploymentRuntimeEntryArtifact[]
   migrationSources: readonly VoyantDeploymentMigrationSourceArtifact[]
@@ -147,6 +148,7 @@ export function createResolvedGraphRuntime(
   return createVoyantGraphRuntime({
     graphHash: input.graph.contentHash,
     accessCatalog: input.graph.accessCatalog,
+    eventCatalog: input.graph.eventCatalog,
     providerSelections: Object.fromEntries(
       Object.entries(input.graph.deployment.providers).filter(
         (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -457,6 +459,10 @@ export const GENERATED_GRAPH_RUNTIME_PLUGIN_IDS = ${formatConstArray(
     plugins.map((unit) => unit.id),
   )}
 export const GENERATED_GRAPH_RUNTIME_MANY_PORT_IDS = ${formatConstArray(manyRuntimePorts)}
+export const GENERATED_GRAPH_RUNTIME_EVENT_CATALOG = ${formatGeneratedValue(
+    input.graph.eventCatalog,
+    0,
+  )} as const
 export const GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN = ${formatGeneratedValue(
     input.graph.webhookPlan,
     0,
@@ -530,6 +536,7 @@ export function createGeneratedGraphRuntime(): VoyantGraphRuntime {
   return createVoyantGraphRuntime({
     graphHash: GENERATED_GRAPH_RUNTIME_HASH,
     accessCatalog: ${formatGeneratedValue(input.graph.accessCatalog, 4)},
+    eventCatalog: GENERATED_GRAPH_RUNTIME_EVENT_CATALOG,
     providerSelections: ${formatGeneratedValue(input.graph.deployment.providers, 4)},
     entries: GENERATED_GRAPH_RUNTIME_IMPORTERS,
     modules: ${formatGeneratedValue(modules, 4)},
@@ -660,6 +667,7 @@ export function buildDeploymentArtifactManifest(
     graphHash: input.graph.contentHash,
     graph: input.graphArtifactPath,
     accessCatalog: input.graph.accessCatalog,
+    eventCatalog: input.graph.eventCatalog,
     webhookPlan: input.graph.webhookPlan,
     runtimeEntries: [...input.runtimeEntries].sort((left, right) =>
       left.id.localeCompare(right.id),

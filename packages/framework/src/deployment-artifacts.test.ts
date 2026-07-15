@@ -107,6 +107,7 @@ describe("deployment graph artifacts", () => {
     expect(JSON.parse(first)).toMatchObject({
       schemaVersion: "voyant.resolved-graph.v1",
       contentHash: graph.contentHash,
+      eventCatalog: { schemaVersion: "voyant.event-catalog.v1", events: [] },
       webhookPlan: { inbound: [], outbound: [] },
     })
   })
@@ -138,7 +139,10 @@ describe("deployment graph artifacts", () => {
     const source = buildGraphRuntimeModule({ graph })
 
     expect(source).toContain("GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
+    expect(source).toContain("GENERATED_GRAPH_RUNTIME_EVENT_CATALOG")
+    expect(source).toContain('"key": "hooks.changed@1.0.0"')
     expect(source).toContain('"eventType": "hooks.changed"')
+    expect(source).toContain("eventCatalog: GENERATED_GRAPH_RUNTIME_EVENT_CATALOG")
     expect(source).toContain("webhookPlan: GENERATED_GRAPH_RUNTIME_WEBHOOK_PLAN")
   })
 
@@ -327,6 +331,7 @@ describe("deployment graph artifacts", () => {
       graphHash: graph.contentHash,
       graph: "deployment-graph.generated.json",
       accessCatalog: graph.accessCatalog,
+      eventCatalog: graph.eventCatalog,
       webhookPlan: { inbound: [], outbound: [] },
       runtimeEntries: [
         {

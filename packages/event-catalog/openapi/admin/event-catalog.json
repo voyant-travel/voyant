@@ -1,0 +1,79 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Event Catalog Admin API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/admin/event-catalog": {
+      "get": {
+        "operationId": "getSelectedEventCatalog",
+        "summary": "Get selected event contracts",
+        "tags": ["Event catalog"],
+        "x-voyant-api-id": "@voyant-travel/event-catalog#api.admin",
+        "responses": {
+          "200": {
+            "description": "Versioned event contracts selected for this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": ["schemaVersion", "events"],
+                      "properties": {
+                        "schemaVersion": { "const": "voyant.event-catalog.v1" },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "key",
+                              "id",
+                              "unitId",
+                              "packageName",
+                              "eventType",
+                              "version",
+                              "payloadSchema",
+                              "visibility",
+                              "audit",
+                              "redactedFields"
+                            ],
+                            "properties": {
+                              "key": { "type": "string" },
+                              "id": { "type": "string" },
+                              "unitId": { "type": "string" },
+                              "packageName": { "type": "string" },
+                              "eventType": { "type": "string" },
+                              "version": { "type": "string" },
+                              "payloadSchema": { "type": "object", "additionalProperties": true },
+                              "visibility": { "enum": ["internal", "external"] },
+                              "audit": {
+                                "type": "object",
+                                "required": ["sourceModule", "category"],
+                                "properties": {
+                                  "sourceModule": { "type": "string" },
+                                  "category": { "enum": ["domain", "internal"] }
+                                }
+                              },
+                              "redactedFields": {
+                                "type": "array",
+                                "items": { "type": "string" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

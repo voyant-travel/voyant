@@ -328,6 +328,25 @@ only selected events marked external and carrying an admissible payload schema
 may be delivered. Project-local subscribers are compiled into the graph rather
 than registered by the starter.
 
+One domain package owns each `eventType` contract. Other selected packages may
+legitimately emit that type, but must not repeat its manifest declaration.
+Resolution rejects duplicate selected `eventType` authorities even when their
+versions or schemas differ. The owning graph unit may publish multiple versions
+of its event type; each version has a unique `eventType@version` catalog key.
+
+Resolution compiles every complete selected event declaration into the canonical
+`voyant.event-catalog.v1` catalog, keyed by `eventType@version` and retaining
+unit/package provenance, payload schema, visibility, audit metadata, and derived
+redacted field paths. The catalog is part of the hashed graph, deployment artifact
+manifest, generated runtime, and graph runtime factory context. It is never a
+hand-maintained list.
+
+`@voyant-travel/event-catalog` owns the read-only admin API and
+`@voyant-travel/event-catalog-react` owns its selected admin reference page. These
+surfaces return and render the lowered catalog without importing package manifests
+or rebuilding contracts. Product distributions select the infrastructure module;
+settings packages and application hosts do not own or reconstruct the catalog.
+
 ### Workflows, jobs, and schedules
 
 Packages own workflow and schedule descriptors. Project jobs compile into graph
@@ -359,7 +378,7 @@ to match the package graph:
 
 - first-party package lists in `voyant.config.ts` or the starter bootstrap
 - central composition, lazy-composition, runtime-binding, admin, subscriber,
-  schedule, migration, tool, access, or OpenAPI catalogs
+  schedule, migration, tool, access, event, or OpenAPI catalogs
 - package-specific runtime branches in the generic Node host
 - copied package routes, OpenAPI files, links, or migrations in the starter
 - compatibility generators that remain after package-owned parity is proven

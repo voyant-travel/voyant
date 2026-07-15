@@ -843,6 +843,12 @@
       "@voyant-travel/distribution/schema": ["../distribution/dist/schema.d.ts"],
       "@voyant-travel/distribution/validation": ["../distribution/dist/validation.d.ts"],
       "@voyant-travel/distribution/voyant": ["../distribution/dist/voyant.d.ts"],
+      "@voyant-travel/event-catalog": ["../event-catalog/dist/index.d.ts"],
+      "@voyant-travel/event-catalog-react": ["../event-catalog-react/dist/index.d.ts"],
+      "@voyant-travel/event-catalog-react/admin": ["../event-catalog-react/dist/admin.d.ts"],
+      "@voyant-travel/event-catalog-react/i18n": ["../event-catalog-react/dist/i18n.d.ts"],
+      "@voyant-travel/event-catalog/runtime": ["../event-catalog/dist/runtime.d.ts"],
+      "@voyant-travel/event-catalog/voyant": ["../event-catalog/dist/voyant.d.ts"],
       "@voyant-travel/extras-contracts": ["../extras-contracts/dist/index.d.ts"],
       "@voyant-travel/extras-contracts/content-shape": [
         "../extras-contracts/dist/content-shape.d.ts"

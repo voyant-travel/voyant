@@ -28,8 +28,9 @@ describe("standard Operator distribution", () => {
       target: "node",
     })
     expect(STANDARD_OPERATOR_DISTRIBUTION.modules).toContain("@voyant-travel/bookings/extras")
-    expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(0, 3)).toEqual([
+    expect(STANDARD_OPERATOR_DISTRIBUTION.modules.slice(0, 4)).toEqual([
       "@voyant-travel/action-ledger",
+      "@voyant-travel/event-catalog",
       "@voyant-travel/mcp",
       "@voyant-travel/relationships",
     ])
@@ -76,6 +77,9 @@ describe("standard Operator distribution", () => {
   it("does not allow required or unknown selections to be removed", () => {
     expect(() =>
       selectStandardOperatorDistribution({ exclude: ["@voyant-travel/identity"] }),
+    ).toThrow(/cannot exclude required module/)
+    expect(() =>
+      selectStandardOperatorDistribution({ exclude: ["@voyant-travel/event-catalog"] }),
     ).toThrow(/cannot exclude required module/)
     expect(() =>
       selectStandardOperatorDistribution({ exclude: ["@voyant-travel/not-real"] }),

@@ -158,6 +158,8 @@ export interface VoyantGraphRuntimeFactoryGraph {
       readonly audience?: "staff" | "customer" | "partner" | "supplier"
     }[]
   }
+  /** Present on generated v1 runtimes; optional for direct factory test harnesses. */
+  readonly eventCatalog?: VoyantGraphEventCatalog
   readonly tools: readonly {
     readonly referenceId: string
     readonly context?: readonly string[]
@@ -257,6 +259,33 @@ export interface VoyantGraphEvent extends VoyantGraphFacetEntity {
     sourceModule: string
     category: "domain" | "internal"
   }
+}
+
+export const VOYANT_EVENT_CATALOG_SCHEMA_VERSION = "voyant.event-catalog.v1" as const
+
+/** One versioned event contract compiled from a selected package manifest. */
+export interface VoyantGraphEventCatalogEntry {
+  /** Stable lookup identity for one event contract version. */
+  key: string
+  id: string
+  unitId: string
+  packageName: string
+  eventType: string
+  version: string
+  payloadSchema: VoyantGraphJsonObject
+  visibility: "internal" | "external"
+  audit: {
+    sourceModule: string
+    category: "domain" | "internal"
+  }
+  /** JSON paths whose schema marks them write-only or explicitly redacted. */
+  redactedFields: readonly string[]
+}
+
+/** Canonical event contracts derived exclusively from the selected graph. */
+export interface VoyantGraphEventCatalog {
+  schemaVersion: typeof VOYANT_EVENT_CATALOG_SCHEMA_VERSION
+  events: readonly VoyantGraphEventCatalogEntry[]
 }
 
 /** External delivery is deny-by-default and requires an explicit object property allowlist. */

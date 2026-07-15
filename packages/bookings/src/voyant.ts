@@ -16,7 +16,6 @@ import {
 } from "./runtime-port.js"
 import { bookingsVoyantAdmin } from "./voyant-admin.js"
 import {
-  availabilitySlotChangedPayloadSchema,
   bookingCancelledPayloadSchema,
   bookingConfirmedPayloadSchema,
   bookingExpiredPayloadSchema,
@@ -111,14 +110,6 @@ export const bookingsVoyantModule = defineModule({
     },
   ],
   events: [
-    {
-      id: "@voyant-travel/bookings#event.availability.slot.changed",
-      eventType: "availability.slot.changed",
-      version: "1.0.0",
-      payloadSchema: availabilitySlotChangedPayloadSchema,
-      visibility: "internal",
-      audit: { sourceModule: "bookings", category: "domain" },
-    },
     {
       id: "@voyant-travel/bookings#event.booking.confirmed",
       eventType: "booking.confirmed",
