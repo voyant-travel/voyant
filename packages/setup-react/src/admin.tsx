@@ -6,9 +6,11 @@ import {
   type AdminRouteLoaderContext,
   type AdminSetupStepContribution,
   adminRoutePageModule,
+  createAdminSetupPrefillHref,
   defineAdminExtension,
   resolveAdminSetupSteps,
   type SelectedAdminExtensionFactoryContext,
+  storeAdminSetupPrefill,
   useAdminExtensions,
 } from "@voyant-travel/admin"
 import { useLocale } from "@voyant-travel/admin/providers/locale"
@@ -225,7 +227,11 @@ function SetupStepCard({
         {Action ? (
           <Action label={copy.action} prefill={resolvedPrefill} />
         ) : step.href ? (
-          <a href={step.href} className={buttonVariants()}>
+          <a
+            href={createAdminSetupPrefillHref(step.href, step.id)}
+            className={buttonVariants()}
+            onClick={() => storeAdminSetupPrefill(step.id, resolvedPrefill)}
+          >
             {copy.action}
             <ExternalLink className="size-4" />
           </a>

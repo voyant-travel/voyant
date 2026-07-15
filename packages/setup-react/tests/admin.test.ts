@@ -1,4 +1,9 @@
 import { QueryClient } from "@tanstack/react-query"
+import {
+  consumeAdminSetupPrefill,
+  createAdminSetupPrefillHref,
+  storeAdminSetupPrefill,
+} from "@voyant-travel/admin"
 import { describe, expect, it, vi } from "vitest"
 
 import { createSelectedSetupAdminExtension, initializeSelectedSetup } from "../src/admin.js"
@@ -39,6 +44,30 @@ describe("selected setup admin extension", () => {
       { stepIds: ["acme.step"], fresh: false },
     )
     expect(fetcher.mock.calls[0]?.[0]).toBe("/api/v1/admin/setup/initialize")
+  })
+
+  it("hands opaque prefill to an href-backed package form without putting it in the URL", () => {
+    const values = new Map<string, string>()
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    }
+    const stepId = "@acme/setup#business"
+    const prefill = { name: "Acme Travel" }
+
+    const href = createAdminSetupPrefillHref("/settings/operator?tab=profile", stepId)
+    storeAdminSetupPrefill(stepId, prefill, storage)
+
+    expect(href).toContain("tab=profile")
+    expect(href).toContain("voyantSetupStep=")
+    expect(href).not.toContain("Acme")
+    expect(consumeAdminSetupPrefill(stepId, new URL(href, "https://test").search, storage)).toEqual(
+      prefill,
+    )
+    expect(consumeAdminSetupPrefill(stepId, new URL(href, "https://test").search, storage)).toBe(
+      undefined,
+    )
   })
 })
 

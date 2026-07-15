@@ -255,6 +255,54 @@ export interface AdminSetupStepActionProps {
   prefill: unknown
 }
 
+const ADMIN_SETUP_STEP_PARAM = "voyantSetupStep"
+const ADMIN_SETUP_PREFILL_PREFIX = "voyant.setup.prefill:"
+
+/** Add a non-sensitive step marker to a setup destination URL. */
+export function createAdminSetupPrefillHref(href: string, stepId: string): string {
+  const url = new URL(href, "https://voyant.invalid")
+  url.searchParams.set(ADMIN_SETUP_STEP_PARAM, stepId)
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
+/** Keep opaque provisioning values out of URLs while navigating to an owned form. */
+export function storeAdminSetupPrefill(
+  stepId: string,
+  value: unknown,
+  storage: Pick<Storage, "setItem"> | undefined = browserSessionStorage(),
+): void {
+  if (value === undefined || !storage) return
+  storage.setItem(`${ADMIN_SETUP_PREFILL_PREFIX}${stepId}`, JSON.stringify(value))
+}
+
+/** Consume prefill only when the current URL explicitly identifies the expected setup step. */
+export function consumeAdminSetupPrefill(
+  stepId: string,
+  search: string | undefined = browserLocationSearch(),
+  storage: Pick<Storage, "getItem" | "removeItem"> | undefined = browserSessionStorage(),
+): unknown {
+  if (!search || !storage || new URLSearchParams(search).get(ADMIN_SETUP_STEP_PARAM) !== stepId) {
+    return undefined
+  }
+  const key = `${ADMIN_SETUP_PREFILL_PREFIX}${stepId}`
+  const serialized = storage.getItem(key)
+  if (serialized === null) return undefined
+  storage.removeItem(key)
+  try {
+    return JSON.parse(serialized) as unknown
+  } catch {
+    return undefined
+  }
+}
+
+function browserSessionStorage(): Storage | undefined {
+  return typeof window === "undefined" ? undefined : window.sessionStorage
+}
+
+function browserLocationSearch(): string | undefined {
+  return typeof window === "undefined" ? undefined : window.location.search
+}
+
 /** Package-owned guidance shown by the selected setup flow. */
 export interface AdminSetupStepContribution {
   /** Globally stable package-owned identifier. */

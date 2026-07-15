@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
   openApiValidationHook,
   parseJsonBody,
+  RequestValidationError,
   requireUserId,
   type VoyantDb,
 } from "@voyant-travel/hono"
@@ -18,6 +19,7 @@ import {
   createDrizzleSetupStore,
   getSetupState,
   initializeSetup,
+  SetupSelectionError,
   type SetupStore,
   skipSetupStep,
 } from "./service.js"
@@ -27,6 +29,7 @@ type Env = { Bindings: Record<string, unknown>; Variables: { db: VoyantDb; userI
 
 export interface CreateSetupRoutesOptions {
   prefill?: Readonly<Record<string, unknown>>
+  steps?: readonly import("./contracts.js").SetupStepDefinition[]
   createStore?: (db: VoyantDb) => SetupStore
 }
 
@@ -38,6 +41,7 @@ const errorResponse = z.object({ error: z.unknown() })
 const errors = {
   400: jsonContent(errorResponse, "Invalid request"),
   401: jsonContent(errorResponse, "Authentication required"),
+  403: jsonContent(errorResponse, "Authorization required"),
 } as const
 
 const getStateRoute = createRoute({
@@ -45,7 +49,11 @@ const getStateRoute = createRoute({
   path: "/v1/admin/setup",
   operationId: "getSetupState",
   "x-voyant-api-id": apiId,
-  responses: { 200: jsonContent(setupStateResponseSchema, "Setup state"), 401: errors[401] },
+  responses: {
+    200: jsonContent(setupStateResponseSchema, "Setup state"),
+    401: errors[401],
+    403: errors[403],
+  },
 })
 const initializeRoute = createRoute({
   method: "post",
@@ -87,27 +95,52 @@ export function createSetupRoutes(options: CreateSetupRoutesOptions = {}) {
   const app = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   const store = (db: VoyantDb) => (options.createStore ?? createDrizzleSetupStore)(db)
   const prefill = options.prefill ?? {}
+  const steps = options.steps ?? []
+
+  const selectionRequest = async <T>(run: () => Promise<T>): Promise<T> => {
+    try {
+      return await run()
+    } catch (error) {
+      if (error instanceof SetupSelectionError) throw new RequestValidationError(error.message)
+      throw error
+    }
+  }
 
   app.openapi(getStateRoute, async (c) => {
     requireUserId(c)
-    return c.json({ data: await getSetupState(store(c.get("db")), prefill) }, 200)
+    return c.json({ data: await getSetupState(store(c.get("db")), steps, prefill) }, 200)
   })
   app.openapi(initializeRoute, async (c) => {
     requireUserId(c)
     const input = await parseJsonBody(c, initializeSetupInputSchema)
-    return c.json({ data: await initializeSetup(store(c.get("db")), input, prefill) }, 200)
+    return c.json(
+      {
+        data: await selectionRequest(() =>
+          initializeSetup(store(c.get("db")), input, steps, prefill),
+        ),
+      },
+      200,
+    )
   })
   app.openapi(completeRoute, async (c) => {
     requireUserId(c)
     return c.json(
-      { data: await completeSetupStep(store(c.get("db")), c.req.valid("param").stepId) },
+      {
+        data: await selectionRequest(() =>
+          completeSetupStep(store(c.get("db")), steps, c.req.valid("param").stepId),
+        ),
+      },
       200,
     )
   })
   app.openapi(skipRoute, async (c) => {
     requireUserId(c)
     return c.json(
-      { data: await skipSetupStep(store(c.get("db")), c.req.valid("param").stepId) },
+      {
+        data: await selectionRequest(() =>
+          skipSetupStep(store(c.get("db")), steps, c.req.valid("param").stepId),
+        ),
+      },
       200,
     )
   })

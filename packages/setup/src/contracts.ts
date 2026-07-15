@@ -2,6 +2,11 @@ import { z } from "@hono/zod-openapi"
 
 export const setupStepIdSchema = z.string().trim().min(1).max(200)
 
+export const setupStepDefinitionSchema = z.object({
+  id: setupStepIdSchema,
+  skippable: z.boolean(),
+})
+
 export const initializeSetupInputSchema = z.object({
   stepIds: z.array(setupStepIdSchema).max(100),
   fresh: z.boolean(),
@@ -29,5 +34,6 @@ export const setupStateResponseSchema = z.object({ data: setupStateSchema.nullab
 export const setupStepResponseSchema = z.object({ data: setupStepStateSchema })
 
 export type InitializeSetupInput = z.infer<typeof initializeSetupInputSchema>
+export type SetupStepDefinition = z.infer<typeof setupStepDefinitionSchema>
 export type SetupStepState = z.infer<typeof setupStepStateSchema>
 export type SetupState = z.infer<typeof setupStateSchema>

@@ -5,14 +5,26 @@ import { createSetupRoutes } from "../../src/routes.js"
 
 const committed = JSON.parse(
   readFileSync(new URL("../../openapi/admin/setup.json", import.meta.url), "utf8"),
-) as { paths: Record<string, Record<string, { "x-voyant-api-id"?: string }>> }
+) as {
+  openapi?: string
+  info?: { title?: string; version?: string }
+  paths: Record<
+    string,
+    Record<string, { "x-voyant-api-id"?: string; responses?: Record<string, unknown> }>
+  >
+}
 
 describe("setup OpenAPI ownership", () => {
   it("claims every committed and live operation", () => {
     const apiId = "@voyant-travel/setup#api.admin"
     const live = createSetupRoutes().getOpenAPIDocument({
+      openapi: "3.1.0",
       info: { title: "test", version: "1" },
     })
+
+    expect(committed.openapi).toBe("3.1.0")
+    expect(committed.info?.title).toBeTruthy()
+    expect(committed.info?.version).toBeTruthy()
 
     expect(Object.keys(live.paths ?? {}).sort()).toEqual(Object.keys(committed.paths).sort())
     for (const path of Object.keys(committed.paths)) {
@@ -26,6 +38,8 @@ describe("setup OpenAPI ownership", () => {
             method
           ]?.["x-voyant-api-id"],
         ).toBe(apiId)
+        expect(operation.responses).toHaveProperty("401")
+        expect(operation.responses).toHaveProperty("403")
       }
     }
   })

@@ -250,6 +250,7 @@ export const inventoryVoyantModule = defineModule({
   ],
   admin: {
     compositionOrder: 3,
+    setupSteps: [{ id: "@voyant-travel/inventory#setup.first-product", skippable: true }],
     runtime: {
       entry: "@voyant-travel/inventory-react/admin",
       export: "createSelectedInventoryAdminExtension",

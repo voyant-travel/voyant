@@ -9,6 +9,8 @@ import {
 } from "@voyant-travel/admin"
 import { Globe2, Tag } from "lucide-react"
 
+import { COMMERCE_MARKET_SETUP_STEP_ID, parseMarketSetupPrefill } from "./markets/setup-prefill.js"
+
 export {
   type CreatePromotionsAdminExtensionOptions,
   createPromotionsAdminExtension,
@@ -101,7 +103,7 @@ export function createSelectedCommerceAdminExtension({
     ],
     setupSteps: [
       {
-        id: "@voyant-travel/commerce#setup.market",
+        id: COMMERCE_MARKET_SETUP_STEP_ID,
         order: 30,
         skippable: true,
         href: "/settings/markets",
@@ -117,6 +119,7 @@ export function createSelectedCommerceAdminExtension({
             action: "Configureaza pietele",
           },
         },
+        prefill: parseMarketSetupPrefill,
         isComplete: hasCommerceMarket,
       },
     ],
