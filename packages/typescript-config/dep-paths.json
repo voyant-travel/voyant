@@ -140,9 +140,7 @@
       "@voyant-travel/admin/navigation/operator-navigation": [
         "../admin/dist/navigation/operator-navigation.d.ts"
       ],
-      "@voyant-travel/admin/navigation/preferences": [
-        "../admin/dist/navigation/preferences.d.ts"
-      ],
+      "@voyant-travel/admin/navigation/preferences": ["../admin/dist/navigation/preferences.d.ts"],
       "@voyant-travel/admin/providers/admin-extensions": [
         "../admin/dist/providers/admin-extensions.d.ts"
       ],
@@ -1230,9 +1228,7 @@
       "@voyant-travel/mice/standard-links": ["../mice/dist/standard-links.d.ts"],
       "@voyant-travel/mice/validation": ["../mice/dist/validation.d.ts"],
       "@voyant-travel/mice/voyant": ["../mice/dist/voyant.d.ts"],
-      "@voyant-travel/navigation-preferences": [
-        "../navigation-preferences/dist/index.d.ts"
-      ],
+      "@voyant-travel/navigation-preferences": ["../navigation-preferences/dist/index.d.ts"],
       "@voyant-travel/navigation-preferences-react": [
         "../navigation-preferences-react/dist/index.d.ts"
       ],
