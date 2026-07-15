@@ -215,6 +215,7 @@ export const availabilitySlotListQuerySchema = paginationSchema.extend({
   startTimeId: z.string().optional(),
   dateLocal: isoDateSchema.optional(),
   startsAtFrom: isoDateTimeSchema.optional(),
+  startsAtUntil: isoDateTimeSchema.optional(),
   status: availabilitySlotStatusSchema.optional(),
 })
 

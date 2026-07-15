@@ -7,7 +7,7 @@ import {
 } from "@voyant-travel/availability/schema"
 import type { EventBus } from "@voyant-travel/core"
 import { RequestValidationError } from "@voyant-travel/hono"
-import { and, asc, desc, eq, getTableColumns, gte, sql } from "drizzle-orm"
+import { and, asc, desc, eq, getTableColumns, gte, lt, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
 import { productOptionsRef, productsRef } from "./products-ref.js"
@@ -260,6 +260,8 @@ export async function listSlots(db: PostgresJsDatabase, query: AvailabilitySlotL
   if (query.dateLocal) conditions.push(eq(availabilitySlots.dateLocal, query.dateLocal))
   if (query.startsAtFrom)
     conditions.push(gte(availabilitySlots.startsAt, new Date(query.startsAtFrom)))
+  if (query.startsAtUntil)
+    conditions.push(lt(availabilitySlots.startsAt, new Date(query.startsAtUntil)))
   if (query.status) conditions.push(eq(availabilitySlots.status, query.status))
   const where = conditions.length ? and(...conditions) : undefined
 

@@ -113,4 +113,26 @@ describe("operations deployment manifest", () => {
       additionalProperties: false,
     })
   })
+
+  it("binds every read-only Operations tool to a read action", () => {
+    const tools = operationsVoyantModule.tools ?? []
+    const actions = operationsVoyantModule.actions ?? []
+    expect(tools).toHaveLength(8)
+    expect(actions).toHaveLength(8)
+    for (const tool of tools) {
+      expect(tool).toMatchObject({
+        requiredScopes: ["operations:read"],
+        context: ["operations"],
+        risk: "low",
+      })
+      const action = actions.find((candidate) => candidate.from?.tools?.includes(tool.id))
+      expect(action).toMatchObject({
+        version: "v1",
+        kind: "read",
+        requiredScopes: ["operations:read"],
+        risk: "low",
+        ledger: "optional",
+      })
+    }
+  })
 })
