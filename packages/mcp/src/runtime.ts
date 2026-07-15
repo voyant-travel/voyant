@@ -14,7 +14,7 @@ import { createGraphMcpHonoApp } from "./server.js"
 
 /** Compose the package-selected MCP route from the selected graph runtime. */
 export const createMcpVoyantRuntime = defineGraphRuntimeFactory(
-  async ({ graph, runtimePorts }): Promise<HonoModule> => ({
+  async ({ getUnitProjectConfig, graph, runtimePorts }): Promise<HonoModule> => ({
     module: { name: "mcp" },
     lazyAdminRoutes: () =>
       createGraphMcpHonoApp({
@@ -27,23 +27,11 @@ export const createMcpVoyantRuntime = defineGraphRuntimeFactory(
           [TOOL_GRAPH_SETUP_STEPS_RESOURCE]: graph.setupSteps,
         }),
         buildUnitResources: (unitId) => ({
-          [TOOL_UNIT_PROJECT_CONFIG_RESOURCE]: selectedUnitProjectConfig(graph, unitId),
+          [TOOL_UNIT_PROJECT_CONFIG_RESOURCE]: getUnitProjectConfig(unitId) ?? {},
         }),
       }),
   }),
 )
-
-function selectedUnitProjectConfig(
-  graph: {
-    modules: readonly { id: string; projectConfig: Readonly<Record<string, unknown>> }[]
-    extensions: readonly { id: string; projectConfig: Readonly<Record<string, unknown>> }[]
-    plugins: readonly { id: string; projectConfig: Readonly<Record<string, unknown>> }[]
-  },
-  unitId: string,
-): Readonly<Record<string, unknown>> {
-  return [...graph.modules, ...graph.extensions, ...graph.plugins].find(({ id }) => id === unitId)
-    ?.projectConfig ?? {}
-}
 
 function buildMcpBaseContext(c: Context): ToolContext {
   const request = c.var as {

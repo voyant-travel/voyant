@@ -54,7 +54,9 @@ export const getSetupStateTool = defineTool<
   audience: { source: "grant", allowed: ["staff"] },
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
-  handler: (_input, context) => setup(context).get(),
+  async handler(_input, context) {
+    return setup(context).get()
+  },
 })
 
 export const initializeSetupTool = defineTool<
@@ -78,7 +80,9 @@ export const initializeSetupTool = defineTool<
     confirmationRequired: false,
     sideEffects: ["data-write"],
   },
-  handler: (input, context) => setup(context).initialize(input),
+  async handler(input, context) {
+    return setup(context).initialize(input)
+  },
 })
 
 export const completeSetupStepTool = defineTool<
@@ -101,7 +105,9 @@ export const completeSetupStepTool = defineTool<
     confirmationRequired: false,
     sideEffects: ["data-write"],
   },
-  handler: ({ stepId }, context) => setup(context).complete(stepId),
+  async handler({ stepId }, context) {
+    return setup(context).complete(stepId)
+  },
 })
 
 export const skipSetupStepTool = defineTool<
@@ -124,7 +130,9 @@ export const skipSetupStepTool = defineTool<
     confirmationRequired: false,
     sideEffects: ["data-write"],
   },
-  handler: ({ stepId }, context) => setup(context).skip(stepId),
+  async handler({ stepId }, context) {
+    return setup(context).skip(stepId)
+  },
 })
 
 export const setupTools = [

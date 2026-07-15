@@ -3,6 +3,8 @@
 "@voyant-travel/navigation-preferences": minor
 "@voyant-travel/setup": minor
 "@voyant-travel/tools": minor
+"@voyant-travel/core": minor
+"@voyant-travel/framework": patch
 ---
 
 Add graph-composed, module-owned Tools for navigation preferences and organization setup,

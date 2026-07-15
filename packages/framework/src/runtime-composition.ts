@@ -669,6 +669,10 @@ function createRuntimeFactoryContext(
   return {
     unitId: unit.id,
     projectConfig: unit.projectConfig,
+    getUnitProjectConfig: (unitId) =>
+      [...runtime.modules, ...runtime.extensions, ...runtime.plugins].find(
+        (selectedUnit) => selectedUnit.id === unitId,
+      )?.projectConfig,
     api: unit.routes.map(({ route }) => ({ id: route.id, surface: route.surface })),
     graph: runtime,
     runtimePorts: ports ?? {},
