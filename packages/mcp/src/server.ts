@@ -24,6 +24,7 @@ import {
   type ToolContext,
   type ToolContextContribution,
   ToolError,
+  type ToolManifestEntry,
   type ToolRegistry,
 } from "@voyant-travel/tools"
 import {
@@ -62,6 +63,15 @@ export interface GraphMcpHonoAppOptions {
 export interface GraphMcpRuntime {
   accessCatalog: AccessCatalog
   tools: readonly {
+    /** Stable package Tool id from the selected graph. */
+    id?: string
+    /** Package/module owning the selected Tool. */
+    unitId?: string
+    /** Capability version; legacy graph runtimes default to v1. */
+    capabilityVersion?: string
+    name?: string
+    requiredScopes?: readonly string[]
+    risk?: "low" | "medium" | "high" | "critical"
     referenceId: string
     context?: readonly string[]
     load<T = unknown>(): Promise<T>
@@ -119,11 +129,12 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
   const serverInfo = options.serverInfo ?? DEFAULT_SERVER_INFO
   const app = new OpenAPIHono()
 
-  app.openapi(getManifestRoute, (c) => {
+  app.openapi(getManifestRoute, async (c) => {
     const permissions = callerPermissions(c)
+    const ctx = await buildContext(c)
     const tools = registry
       .list()
-      .filter((tool) => isAuthorized(tool.requiredScopes, permissions, accessCatalog))
+      .filter((tool) => isAuthorized(tool, permissions, accessCatalog, ctx.audience))
     return c.json({ version: TOOL_CONTRACT_VERSION, serverInfo, tools })
   })
 
@@ -133,12 +144,13 @@ export function createMcpHonoApp(options: McpHonoAppOptions): OpenAPIHono {
     const server = new McpServer(serverInfo)
 
     for (const entry of registry.list()) {
-      if (!isAuthorized(entry.requiredScopes, permissions, accessCatalog)) continue
+      if (!isAuthorized(entry, permissions, accessCatalog, ctx.audience)) continue
       const def = registry.get(entry.name)
       if (!def) continue
-      server.tool(entry.name, entry.description, toRawShape(def.inputSchema), (args) =>
-        dispatchToResult(registry, entry.name, args, ctx),
-      )
+      registerMcpTool(server, registry, entry, def, entry.name, ctx)
+      for (const alias of entry.aliases) {
+        registerMcpTool(server, registry, entry, def, alias, ctx, entry.name)
+      }
     }
 
     const transport = new StreamableHTTPTransport({
@@ -159,7 +171,15 @@ export async function createGraphMcpHonoApp(options: GraphMcpHonoAppOptions): Pr
   const requiredContext = new Set<string>()
 
   for (const tool of options.runtime.tools) {
-    registry.register(await tool.load<Parameters<ToolRegistry["register"]>[0]>())
+    const definition = await tool.load<Parameters<ToolRegistry["register"]>[0]>()
+    registry.register(definition, {
+      ...(tool.id ? { capabilityId: tool.id } : {}),
+      ...(tool.unitId ? { owner: tool.unitId } : {}),
+      ...(tool.capabilityVersion ? { capabilityVersion: tool.capabilityVersion } : {}),
+      ...(tool.name ? { name: tool.name } : {}),
+      ...(tool.requiredScopes ? { requiredScopes: tool.requiredScopes } : {}),
+      ...(tool.risk ? { deploymentRisk: tool.risk } : {}),
+    })
     for (const key of tool.context ?? []) requiredContext.add(key)
 
     const reference = options.runtime.references.find(({ id }) => id === tool.referenceId)
@@ -253,11 +273,13 @@ function callerPermissions(c: Context): ApiKeyPermissions {
 
 /** AND semantics — the caller must hold every one of the tool's required scopes. */
 function isAuthorized(
-  requiredScopes: readonly string[],
+  tool: ToolManifestEntry,
   permissions: ApiKeyPermissions,
   accessCatalog: AccessCatalog,
+  audience: ToolContext["audience"],
 ): boolean {
-  return requiredScopes.every((scope) => {
+  if (tool.audience.allowed && !tool.audience.allowed.includes(audience)) return false
+  return tool.requiredScopes.every((scope) => {
     const [resource, action] = scope.split(":")
     return Boolean(
       resource && action && hasApiKeyPermission(permissions, resource, action, accessCatalog),
@@ -265,10 +287,64 @@ function isAuthorized(
   })
 }
 
+function registerMcpTool(
+  server: McpServer,
+  registry: ToolRegistry,
+  entry: ToolManifestEntry,
+  def: NonNullable<ReturnType<ToolRegistry["get"]>>,
+  invocationName: string,
+  ctx: ToolContext,
+  aliasFor?: string,
+): void {
+  server.registerTool(
+    invocationName,
+    {
+      description: entry.description,
+      inputSchema: toRawShape(def.inputSchema),
+      outputSchema: toMcpOutputSchema(def.outputSchema),
+      annotations: entry.annotations,
+      _meta: toMcpMeta(entry, aliasFor),
+    },
+    (args) => dispatchToResult(registry, invocationName, args, ctx),
+  )
+}
+
+function toMcpMeta(entry: ToolManifestEntry, aliasFor?: string): Record<string, unknown> {
+  return {
+    "voyant.travel/tool": {
+      contractVersion: TOOL_CONTRACT_VERSION,
+      capabilityId: entry.capabilityId,
+      owner: entry.owner,
+      capabilityVersion: entry.capabilityVersion,
+      canonicalName: entry.name,
+      aliases: entry.aliases,
+      ...(aliasFor ? { aliasFor } : {}),
+      ...(entry.deprecation ? { deprecation: entry.deprecation } : {}),
+      requiredScopes: entry.requiredScopes,
+      audience: entry.audience,
+      deploymentRisk: entry.deploymentRisk,
+      tier: entry.tier,
+      riskPolicy: entry.riskPolicy,
+    },
+  }
+}
+
 /** Extract a Zod raw shape for the MCP SDK. Tool inputs are objects by convention. */
 function toRawShape(schema: z.ZodType): z.ZodRawShape {
   if (schema instanceof z.ZodObject) return schema.shape as z.ZodRawShape
   return {}
+}
+
+/** MCP structured output must be an object; wrap scalar schemas to match `toStructuredContent`. */
+function toMcpOutputSchema(schema: z.ZodType): z.ZodType {
+  try {
+    z.toJSONSchema(schema)
+    return schema instanceof z.ZodObject ? schema : z.object({ result: schema })
+  } catch {
+    // The custom manifest labels this runtime-only schema. MCP still requires a
+    // serializable object output schema, so preserve structured data permissively.
+    return z.looseObject({})
+  }
 }
 
 /** Dispatch through the registry (validates in + out) and wrap pure data in an MCP envelope. */

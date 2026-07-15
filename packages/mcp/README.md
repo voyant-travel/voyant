@@ -57,7 +57,13 @@ agent.
 - **Authorization (D2):** each tool's `requiredScopes` are checked against the caller's
   granted scopes with **AND** semantics (`hasApiKeyPermission`). Unauthorized tools are
   neither listed nor registered on the per-request server, so they cannot be called.
+- **Audience (D3):** the authenticated grant remains the source of audience. A Tool may
+  narrow its allowed grant audiences; disallowed Tools are neither listed nor callable.
 - **Headless boundary:** the registry returns typed pure data; this adapter wraps it in
   the MCP `CallToolResult` envelope only at the transport edge.
+- **Complete standard discovery:** `tools/list` includes structured output schemas,
+  standard MCP annotations, and `_meta["voyant.travel/tool"]` with stable capability
+  identity/version, owner, aliases/deprecation, scopes, audience, and exact risk policy.
+  Compatibility aliases remain callable and identify their canonical name in metadata.
 - **Graph-owned context:** selected tool runtime entries contribute only context keys
   declared in package manifests. Missing or undeclared contributions fail closed.

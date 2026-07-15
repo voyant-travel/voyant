@@ -1,6 +1,12 @@
 export {
   type RemoteToolRef,
   TOOL_CONTRACT_VERSION,
+  type ToolAnnotations,
+  type ToolAudience,
+  type ToolAudiencePolicy,
+  type ToolBindingMetadata,
+  type ToolDeploymentRisk,
+  type ToolDeprecation,
   type ToolManifestEntry,
 } from "./binding.js"
 export {

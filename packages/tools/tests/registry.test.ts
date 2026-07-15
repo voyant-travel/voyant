@@ -18,13 +18,19 @@ const ctx: ToolContext = {
 }
 
 const echoTool = defineTool({
+  capabilityId: "@voyant-travel/test#tool.echo",
+  owner: "@voyant-travel/test",
+  capabilityVersion: "v2",
   name: "echo",
   description: "Echo the input text back.",
+  aliases: ["echo_text"],
   inputSchema: z.object({ text: z.string() }),
   outputSchema: z.object({ text: z.string() }),
   requiredScopes: ["catalog:read"],
+  audience: { source: "grant", allowed: ["staff"] },
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
+  annotations: { idempotentHint: true },
   async handler({ text }) {
     return { text: `echo: ${text}` }
   },
@@ -38,6 +44,11 @@ describe("createToolRegistry", () => {
     const result = await registry.dispatch<{ text: string }>("echo", { text: "hi" }, ctx)
     expect(result).toEqual({ text: "echo: hi" })
     expect(registry.names()).toEqual(["echo"])
+    await expect(registry.dispatch("echo_text", { text: "hi" }, ctx)).resolves.toEqual({
+      text: "echo: hi",
+    })
+    expect(registry.getByCapabilityId("@voyant-travel/test#tool.echo", "v2")).toBe(echoTool)
+    expect(registry.getByCapabilityId("@voyant-travel/test#tool.echo", "v3")).toBeUndefined()
   })
 
   it("throws NOT_FOUND for an unregistered tool", async () => {
@@ -84,11 +95,24 @@ describe("createToolRegistry", () => {
     expect(() => registry.register(echoTool)).toThrow(/already registered/)
   })
 
-  it("emits a discovery manifest with real JSON Schema, scopes, tier, and risk", () => {
+  it("emits stable identity, compatibility, schemas, audience, annotations, and risk", () => {
     const registry = createToolRegistry()
     registry.register(echoTool)
     const [entry] = registry.list()
     expect(entry?.name).toBe("echo")
+    expect(entry).toMatchObject({
+      capabilityId: "@voyant-travel/test#tool.echo",
+      owner: "@voyant-travel/test",
+      capabilityVersion: "v2",
+      aliases: ["echo_text"],
+      audience: { source: "grant", allowed: ["staff"] },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    })
     expect(entry?.requiredScopes).toEqual(["catalog:read"])
     expect(entry?.tier).toBe("read")
     expect(entry?.riskPolicy).toEqual(READ_ONLY_RISK)
@@ -98,6 +122,61 @@ describe("createToolRegistry", () => {
       properties: { text: { type: "string" } },
       required: ["text"],
     })
+    expect(entry?.outputSchema).toMatchObject({
+      type: "object",
+      properties: { text: { type: "string" } },
+      required: ["text"],
+    })
+  })
+
+  it("uses a graph binding as canonical identity and rejects duplicated metadata drift", () => {
+    const legacy = defineTool({
+      name: "legacy",
+      description: "Legacy definition with graph-owned identity.",
+      inputSchema: z.object({}),
+      outputSchema: z.custom<unknown>(),
+      requiredScopes: ["catalog:read"],
+      tier: "read",
+      riskPolicy: READ_ONLY_RISK,
+      async handler() {
+        return {}
+      },
+    })
+    const registry = createToolRegistry()
+    registry.register(legacy, {
+      capabilityId: "@voyant-travel/catalog#tool.legacy",
+      owner: "@voyant-travel/catalog",
+      capabilityVersion: "v1",
+    })
+    expect(registry.list()[0]).toMatchObject({
+      capabilityId: "@voyant-travel/catalog#tool.legacy",
+      owner: "@voyant-travel/catalog",
+      capabilityVersion: "v1",
+      deploymentRisk: "low",
+      outputSchema: { "x-voyant-schema-quality": "runtime-only" },
+    })
+
+    const drifted = { ...echoTool, capabilityVersion: "v3" }
+    expect(() => createToolRegistry().register(drifted, { capabilityVersion: "v2" })).toThrow(
+      /does not match graph binding/,
+    )
+    expect(() =>
+      createToolRegistry().register(legacy, { requiredScopes: ["catalog:write"] }),
+    ).toThrow(/requiredScopes.*do not match graph binding/)
+    expect(() => createToolRegistry().register(legacy, { deploymentRisk: "critical" })).toThrow(
+      /tier "read" is incompatible with graph risk "critical"/,
+    )
+  })
+
+  it("rejects canonical and alias collisions", () => {
+    const registry = createToolRegistry()
+    registry.register(echoTool)
+    expect(() =>
+      registry.register({ ...echoTool, capabilityId: "second", name: "echo_text", aliases: [] }),
+    ).toThrow(/invocation name/)
+    expect(() =>
+      createToolRegistry().register({ ...echoTool, aliases: ["invalid alias"] }),
+    ).toThrow(/must use 1-128/)
   })
 
   it("surfaces a ToolError thrown by a handler unchanged", async () => {

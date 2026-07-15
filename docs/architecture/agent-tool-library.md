@@ -13,7 +13,7 @@ for the decision record.
 
 ```
 @voyant-travel/tools      pure contract (zod only): defineTool, ToolContext,
-        ▲                 ToolRegistry, RiskTier/RiskPolicy, ToolManifestEntry
+        ▲                 ToolRegistry, stable identity, schemas, audience + risk
         │
    ┌────┴───────────────┐
 domain packages           @voyant-travel/mcp        transport adapter:
@@ -64,6 +64,16 @@ Rules:
   layer — `trips` — not in a leaf domain package.
 - Keep `inputSchema` serialization-friendly (avoid top-level `.transform()`/`.refine()`)
   so `z.toJSONSchema` emits a faithful manifest.
+- Treat the package Tool id as the stable capability identity. `name` is the canonical
+  MCP invocation label and `aliases` are temporary compatibility labels. Graph-driven
+  registration supplies `capabilityId` and `owner`; standalone registries should declare
+  them on the Tool. Capability versions default to `v1` only for legacy compatibility.
+- Graph-driven registration checks duplicated invocation name, required scopes, and
+  deployment risk against the loaded runtime definition. Drift fails registration
+  instead of producing a misleading manifest.
+- Prefer serializable output schemas. Runtime-only/permissive schemas remain callable,
+  but the manifest labels their schema quality so coverage checks and clients do not
+  treat them as strong contracts.
 
 ## Deployment wiring
 
@@ -88,6 +98,8 @@ bindings and outbound webhook plans. Separate `tools.json`, `actions.json`, and
 - **Audience (D3):** carried on the API-key grant metadata (`API_KEY_GRANT_PRESETS` bundle
   a scope subset + audience), resolved into the catalog `ResolverScope`. PII-sensitive
   resources (`bookings-pii`) are never satisfied by the `*` wildcard.
+  A Tool may additionally narrow its `audience.allowed` set; both discovery and
+  invocation fail closed for other grant audiences.
 
 ## Transport
 
@@ -96,6 +108,13 @@ bindings and outbound webhook plans. Separate `tools.json`, `actions.json`, and
 `enableJsonResponse: true`). It runs inside the tenant's Node application; no
 separate MCP service or Durable Object is required. `GET /v1/admin/mcp/manifest`
 serves a contract-versioned discovery manifest for remote agents.
+
+Standard `tools/list` is also a complete discovery surface. It includes input and
+structured-output schemas, derived standard MCP annotations, and exact framework
+metadata under `_meta["voyant.travel/tool"]`. Aliases are registered as callable MCP
+names with `aliasFor` metadata, while the canonical manifest contains one entry per
+capability. Consumers resolve capabilities by `capabilityId` plus an exact supported
+`capabilityVersion`; an unknown version is unsupported rather than silently coerced.
 
 ## Migration status
 
