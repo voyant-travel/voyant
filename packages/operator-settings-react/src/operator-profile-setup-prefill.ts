@@ -30,11 +30,13 @@ export function mergeOperatorProfileSetupPrefill<T extends Record<string, unknow
   value: unknown,
 ): T & OperatorProfileSetupPrefill {
   const prefill = parseOperatorProfileSetupPrefill(value)
-  const merged = { ...profile }
-  for (const field of fields) {
-    if (!merged[field] && prefill[field]) merged[field] = prefill[field]
-  }
-  return merged
+  const defaults = Object.fromEntries(
+    fields.flatMap((field) => {
+      const defaultValue = prefill[field]
+      return !profile[field] && defaultValue ? [[field, defaultValue]] : []
+    }),
+  ) as OperatorProfileSetupPrefill
+  return { ...profile, ...defaults }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

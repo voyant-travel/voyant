@@ -60,16 +60,25 @@ export function createAdminHostExtensions({
   navMessages,
   discovered = [],
 }: CreateAdminHostExtensionsOptions): ReadonlyArray<AdminExtension> {
-  const composedExtensions = uniqueExtensionsById([...selected({ navMessages }), ...discovered])
+  const selectedExtensions = uniqueExtensionsById(selected({ navMessages }))
+  const composedExtensions = uniqueExtensionsById([
+    ...selectedExtensions,
+    ...discovered.map(withoutGraphOwnedSetupContributions),
+  ])
   const settingsPages = uniqueSettingsPages(
     composedExtensions.flatMap((extension) => extension.settingsPages ?? []),
   )
   const setup = {
-    flow: resolveAdminSetupFlow(composedExtensions),
-    steps: resolveAdminSetupSteps(composedExtensions),
+    flow: resolveAdminSetupFlow(selectedExtensions),
+    steps: resolveAdminSetupSteps(selectedExtensions),
   }
 
   return createAdminExtensionRegistry(core(settingsPages, setup), ...composedExtensions)
+}
+
+function withoutGraphOwnedSetupContributions(extension: AdminExtension): AdminExtension {
+  const { setupFlow: _setupFlow, setupSteps: _setupSteps, ...presentation } = extension
+  return presentation
 }
 
 function uniqueSettingsPages(

@@ -35,7 +35,7 @@ describe("createAdminHostExtensions", () => {
     expect(extensions.map(({ id }) => id)).toEqual(["core", "auth-team", "deployment-team"])
   })
 
-  it("passes only composed selected and discovered setup contributions to core", () => {
+  it("passes selected-graph setup contributions to core", () => {
     const seen: string[] = []
     createAdminHostExtensions({
       core: (_settings, setup) => {
@@ -59,6 +59,38 @@ describe("createAdminHostExtensions", () => {
       navMessages: {},
     })
     expect(seen).toEqual(["selected.step"])
+  })
+
+  it("excludes project-local setup contributions from graph-owned setup state", () => {
+    const seen: string[] = []
+    const extensions = createAdminHostExtensions({
+      core: (_settings, setup) => {
+        seen.push(...setup.steps.map((step) => step.id))
+        return { id: "core" }
+      },
+      selected: () => [{ id: "selected", setupSteps: [setupStep("selected.step")] }],
+      discovered: [
+        {
+          id: "project-local",
+          routes: [{ id: "local", path: "/local", page: async () => ({ default: () => null }) }],
+          setupFlow: {
+            id: "local.flow",
+            canInitialize: async () => true,
+            initialize: async () => ({}),
+          },
+          setupSteps: [setupStep("local.step")],
+        },
+      ],
+      navMessages: {},
+    })
+
+    expect(seen).toEqual(["selected.step"])
+    expect(extensions.find(({ id }) => id === "project-local")).toMatchObject({
+      id: "project-local",
+      routes: [expect.objectContaining({ id: "local" })],
+    })
+    expect(extensions.find(({ id }) => id === "project-local")).not.toHaveProperty("setupFlow")
+    expect(extensions.find(({ id }) => id === "project-local")).not.toHaveProperty("setupSteps")
   })
 
   it.each([
