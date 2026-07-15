@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import {
   createSellabilityRoutes,
@@ -13,12 +13,12 @@ export const sellabilityModule: Module = {
   name: "sellability",
 }
 
-export const sellabilityHonoModule: HonoModule = {
+export const sellabilityApiModule: ApiModule = {
   module: sellabilityModule,
   adminRoutes: sellabilityRoutes,
 }
 
-export function createSellabilityHonoModule(options?: SellabilityRoutesOptions): HonoModule {
+export function createSellabilityApiModule(options?: SellabilityRoutesOptions): ApiModule {
   const routes = createSellabilityRoutes(options)
   return {
     module: sellabilityModule,

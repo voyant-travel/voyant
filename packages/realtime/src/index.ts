@@ -1,6 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   createAdminInvalidationPublicationPort,
   registerAdminInvalidationPublicationPort,
@@ -87,7 +87,7 @@ export const realtimeModule: Module = {
   name: "realtime",
 }
 
-export interface CreateRealtimeHonoModuleOptions extends RealtimeRoutesOptions {
+export interface CreateRealtimeApiModuleOptions extends RealtimeRoutesOptions {
   /**
    * Declarative event → channel routing table. When set, deferred EventBus
    * subscribers are registered at bootstrap to fan domain events out to
@@ -99,7 +99,7 @@ export interface CreateRealtimeHonoModuleOptions extends RealtimeRoutesOptions {
 }
 
 /**
- * Assemble the realtime {@link HonoModule}: the token-mint route (mounted on
+ * Assemble the realtime {@link ApiModule}: the token-mint route (mounted on
  * both admin and public surfaces) plus, when `bridgeRoutes` is supplied, the
  * deferred EventBus → channel bridge.
  *
@@ -107,9 +107,7 @@ export interface CreateRealtimeHonoModuleOptions extends RealtimeRoutesOptions {
  * returns 503 and no subscribers are registered, so deployments can adopt
  * realtime incrementally (or never).
  */
-export function createRealtimeHonoModule(
-  options: CreateRealtimeHonoModuleOptions = {},
-): HonoModule {
+export function createRealtimeApiModule(options: CreateRealtimeApiModuleOptions = {}): ApiModule {
   const adminRoutes = createRealtimeRoutes(options, REALTIME_OPENAPI_API_IDS.admin)
   const publicRoutes = createRealtimeRoutes(options, REALTIME_OPENAPI_API_IDS.public)
 
@@ -154,7 +152,7 @@ export function createRealtimeHonoModule(
 
 /** Package-owned adapter from the graph port registry to the public module factory. */
 export const createRealtimeVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createRealtimeHonoModule(await getPort(realtimeRuntimePort)),
+  createRealtimeApiModule(await getPort(realtimeRuntimePort)),
 )
 
 export { realtimeRuntimePort, realtimeTransportRuntimePort } from "./runtime-port.js"

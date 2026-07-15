@@ -64,8 +64,8 @@ if (publicPathLiterals.length > 0) {
 
 for (const legacyNetopiaAuthority of [
   "GENERATED_GRAPH_RUNTIME_PLUGIN_IDS",
-  "defineLazyHonoBundle",
-  "netopiaHonoBundle",
+  "defineLazyApiBundle",
+  "netopiaApiBundle",
 ]) {
   if (host.includes(legacyNetopiaAuthority)) {
     violations.push(

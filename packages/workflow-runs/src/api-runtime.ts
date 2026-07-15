@@ -1,7 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import type { MountWorkflowRunsAdminRoutesOptions, WorkflowAdminSurface } from "./routes.js"
 import { workflowRunnerRegistryRuntimePort } from "./runtime-port.js"
@@ -13,9 +13,9 @@ export const WORKFLOW_RUNS_ADMIN_ROUTE_PATHS = [
 ] as const
 
 /** Build the workflow-runs absolute admin route family for deployment composition. */
-export function createWorkflowRunsHonoModule(
+export function createWorkflowRunsApiModule(
   options: MountWorkflowRunsAdminRoutesOptions = {},
-): HonoModule {
+): ApiModule {
   return {
     module: { name: "workflow-runs" },
     lazyRoutes: {
@@ -33,7 +33,7 @@ export function createWorkflowRunsHonoModule(
 /** Package-owned adapter from the selected runner-registry port to admin routes. */
 export const createWorkflowRunsVoyantRuntime = defineGraphRuntimeFactory(
   async ({ graph, getPort }) =>
-    createWorkflowRunsHonoModule({
+    createWorkflowRunsApiModule({
       runners: await getPort(workflowRunnerRegistryRuntimePort),
       adminSurface: workflowAdminSurfaceForProvider(graph.providerSelections.workflows),
       resolveUserId: (context) => {

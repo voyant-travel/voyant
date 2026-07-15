@@ -29,7 +29,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { parseJsonBody, parseOptionalJsonBody } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import {
   type CancelTripComponentsDeps,
   type ReserveTripDeps,
@@ -351,9 +351,7 @@ export function createQuoteVersionSnapshotRoutes(
 }
 
 /** Package-owned proposal extension descriptor; deployments inject cross-module readers. */
-export function createQuoteProposalHonoExtension(
-  options: QuoteProposalRoutesOptions,
-): HonoExtension {
+export function createQuoteProposalApiExtension(options: QuoteProposalRoutesOptions): ApiExtension {
   return {
     extension: { name: "proposal", module: "quote-versions" },
     lazyAdminRoutes: async () => createQuoteProposalAdminRoutes(options),
@@ -364,9 +362,9 @@ export function createQuoteProposalHonoExtension(
 }
 
 /** Package-owned Trip snapshot extension descriptor; deployments inject the db resolver. */
-export function createQuoteVersionSnapshotHonoExtension(
+export function createQuoteVersionSnapshotApiExtension(
   options: QuoteVersionSnapshotRoutesOptions,
-): HonoExtension {
+): ApiExtension {
   return {
     extension: { name: "quote-version-snapshot", module: "trips" },
     lazyAdminRoutes: async () => createQuoteVersionSnapshotRoutes(options),
@@ -375,13 +373,13 @@ export function createQuoteVersionSnapshotHonoExtension(
 
 /** Package-owned graph adapter for the proposal extension. */
 export const createQuoteProposalVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createQuoteProposalHonoExtension(await getPort(quotesProposalRuntimePort)),
+  createQuoteProposalApiExtension(await getPort(quotesProposalRuntimePort)),
 )
 
 /** Package-owned graph adapter for the quote-version snapshot extension. */
 export const createQuoteVersionSnapshotVoyantRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) =>
-    createQuoteVersionSnapshotHonoExtension(await getPort(quotesSnapshotRuntimePort)),
+    createQuoteVersionSnapshotApiExtension(await getPort(quotesSnapshotRuntimePort)),
 )
 
 async function handleSendQuoteVersion(

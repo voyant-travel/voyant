@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { productsCompatibilityLinkable } from "./linkables.js"
 import { productRoutes } from "./routes.js"
@@ -51,7 +51,7 @@ export const productsModule: Module = {
   linkable: productsCompatibilityLinkable,
 }
 
-export const productsHonoModule: HonoModule = {
+export const productsApiModule: ApiModule = {
   module: productsModule,
   adminRoutes: productRoutes,
   publicRoutes: publicProductRoutes,
@@ -60,8 +60,8 @@ export const productsHonoModule: HonoModule = {
 export {
   type InventoryAuthoringSurface,
   type InventoryInterfaceDescriptor,
+  inventoryApiModule,
   inventoryBookingExtension,
-  inventoryHonoModule,
   inventoryInterfaceDescriptor,
   inventoryLinkable,
   inventoryModule,

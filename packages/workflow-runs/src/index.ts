@@ -19,10 +19,10 @@
  */
 
 export {
-  createWorkflowRunsHonoModule,
+  createWorkflowRunsApiModule,
   createWorkflowRunsVoyantRuntime,
   WORKFLOW_RUNS_ADMIN_ROUTE_PATHS,
-} from "./hono-module.js"
+} from "./api-runtime.js"
 export {
   type BeginWorkflowRunInput,
   beginWorkflowRun,

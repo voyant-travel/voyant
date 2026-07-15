@@ -8,7 +8,7 @@ const violations = []
 
 for (const retired of [
   "starters/operator/src/entry.ts",
-  "starters/operator/src/hono-api-dispatch.ts",
+  "starters/operator/src/api-dispatch.ts",
   "starters/operator/src/scheduled-crons.ts",
   "starters/operator/src/ssr-handler.ts",
   "starters/operator/src/workflow-runtime.ts",

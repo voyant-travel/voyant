@@ -3,7 +3,7 @@ import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
-import { createMcpHonoApp } from "../src/index.js"
+import { createMcpApiRoutes } from "../src/index.js"
 
 const accessCatalog = {
   resources: [
@@ -61,7 +61,7 @@ describe("handler-owned MCP action policy", () => {
         },
       },
     )
-    const mcp = createMcpHonoApp({
+    const mcp = createMcpApiRoutes({
       accessCatalog,
       registry,
       requireActionPolicies: true,

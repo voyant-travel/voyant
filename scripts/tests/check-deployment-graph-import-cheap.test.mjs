@@ -106,8 +106,8 @@ export const graph = { routes }
 
   it("rejects package-root imports from package-owned manifests", async () => {
     const root = await createFixture({
-      "voyant.ts": `import { bookingsHonoModule } from "@voyant-travel/bookings"
-export const manifest = { id: "bookings", bookingsHonoModule }
+      "voyant.ts": `import { bookingsApiModule } from "@voyant-travel/bookings"
+export const manifest = { id: "bookings", bookingsApiModule }
 `,
     })
 
@@ -119,8 +119,8 @@ export const manifest = { id: "bookings", bookingsHonoModule }
 
   it("enforces package manifest imports independently of the export target filename", async () => {
     const root = await createFixture({
-      "graph-manifest.ts": `import { bookingsHonoModule } from "@voyant-travel/bookings"
-export const manifest = { id: "bookings", bookingsHonoModule }
+      "graph-manifest.ts": `import { bookingsApiModule } from "@voyant-travel/bookings"
+export const manifest = { id: "bookings", bookingsApiModule }
 `,
     })
 

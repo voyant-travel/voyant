@@ -1,6 +1,6 @@
 import type { OpenAPIHono } from "@hono/zod-openapi"
 import { describe, expect, it } from "vitest"
-import { createOperatorSettingsHonoModule } from "../../src/hono-module.js"
+import { createOperatorSettingsApiModule } from "../../src/api-runtime.js"
 import { operatorSettingsVoyantModule } from "../../src/voyant.js"
 
 describe("operator-settings deployment manifest", () => {
@@ -85,7 +85,7 @@ describe("operator-settings deployment manifest", () => {
   })
 
   it("marks each public OpenAPI operation with its graph API id", async () => {
-    const routes = (await createOperatorSettingsHonoModule().lazyRoutes?.load()) as
+    const routes = (await createOperatorSettingsApiModule().lazyRoutes?.load()) as
       | OpenAPIHono
       | undefined
     const document = routes?.getOpenAPI31Document({

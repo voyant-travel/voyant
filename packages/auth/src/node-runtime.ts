@@ -141,7 +141,7 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
 
   const auth = new Hono<AuthHonoEnv>()
   // This lean auth app is dispatched around `createVoyantApp` (see
-  // hono-api-dispatch.ts), so it must mint/propagate the correlation id and wire
+  // api-dispatch.ts), so it must mint/propagate the correlation id and wire
   // the reporter itself — otherwise auth 5xx are an observability blind spot and
   // the user-facing requestId wouldn't be findable (RFC voyant#1553).
   auth.use("*", requestId)

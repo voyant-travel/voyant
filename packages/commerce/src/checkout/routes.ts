@@ -22,7 +22,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import { rebuildBookingItemTaxLines } from "./materialization-tax.js"
@@ -217,9 +217,9 @@ export function createBookingMaintenanceRoutes(
 }
 
 /** Package-owned checkout descriptor; payment and product providers stay injected. */
-export function createCatalogCheckoutHonoExtension(
+export function createCatalogCheckoutApiExtension(
   options: CheckoutStartOptions | ((c: Context) => CheckoutStartOptions),
-): HonoExtension {
+): ApiExtension {
   return {
     extension: {
       name: "catalog-checkout",
@@ -236,9 +236,9 @@ export function createCatalogCheckoutHonoExtension(
 }
 
 /** Package-owned maintenance descriptor; tax settings stay deployment-supplied. */
-export function createBookingMaintenanceHonoExtension(
+export function createBookingMaintenanceApiExtension(
   options: BookingMaintenanceRoutesOptions,
-): HonoExtension {
+): ApiExtension {
   return {
     extension: { name: "booking-maintenance", module: "bookings" },
     adminRoutes: createBookingMaintenanceRoutes(options),
@@ -247,7 +247,7 @@ export function createBookingMaintenanceHonoExtension(
 
 export const createBookingMaintenanceVoyantRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) =>
-    createBookingMaintenanceHonoExtension(await getPort(bookingMaintenanceRuntimePort)),
+    createBookingMaintenanceApiExtension(await getPort(bookingMaintenanceRuntimePort)),
 )
 
 function checkoutRequestMeta(c: Context): CheckoutStartRequestMeta {

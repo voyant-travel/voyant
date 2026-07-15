@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-import { createFinanceHonoModule } from "../src/index.js"
+import { createFinanceApiModule } from "../src/index.js"
 
 const root = resolve(import.meta.dirname, "..")
 const metadataKeys = [
@@ -15,7 +15,7 @@ const metadataKeys = [
 const surfaces = [
   {
     artifact: "openapi/admin/finance.json",
-    live: createFinanceHonoModule().adminRoutes,
+    live: createFinanceApiModule().adminRoutes,
     prefix: "/v1/admin/finance",
     paths: ["/travel-credits", "/travel-credits/{id}", "/travel-credits/{id}/redeem"],
     legacyPaths: [
@@ -26,7 +26,7 @@ const surfaces = [
   },
   {
     artifact: "openapi/storefront/finance.json",
-    live: createFinanceHonoModule().publicRoutes,
+    live: createFinanceApiModule().publicRoutes,
     prefix: "/v1/public/finance",
     paths: ["/travel-credits/validate"],
     legacyPaths: ["/v1/public/finance/vouchers/validate"],

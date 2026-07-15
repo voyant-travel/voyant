@@ -1,11 +1,11 @@
 import { definePort } from "@voyant-travel/core/project"
 
-import type { CreateNotificationsHonoModuleOptions } from "./index.js"
+import type { CreateNotificationsApiModuleOptions } from "./index.js"
 import type { NotificationReminderWorkflowRuntime } from "./workflow-runtime.js"
 
-export interface NotificationsRuntimeProvider extends CreateNotificationsHonoModuleOptions {
-  resolveDb: NonNullable<CreateNotificationsHonoModuleOptions["resolveDb"]>
-  resolveProviders: NonNullable<CreateNotificationsHonoModuleOptions["resolveProviders"]>
+export interface NotificationsRuntimeProvider extends CreateNotificationsApiModuleOptions {
+  resolveDb: NonNullable<CreateNotificationsApiModuleOptions["resolveDb"]>
+  resolveProviders: NonNullable<CreateNotificationsApiModuleOptions["resolveProviders"]>
   resolveReminderWorkflowRuntime: (
     bindings: Record<string, unknown>,
   ) => NotificationReminderWorkflowRuntime

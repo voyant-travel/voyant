@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import {
-  createPaymentLinkHonoModule,
+  createPaymentLinkApiModule,
   createPaymentLinkRoutes,
   PAYMENT_LINK_ROUTE_PATHS,
   type PaymentLinkRoutesOptions,
@@ -65,7 +65,7 @@ function stubOptions(overrides: Partial<PaymentLinkRoutesOptions> = {}): Payment
 
 describe("createPaymentLinkRoutes", () => {
   it("describes the package-owned anonymous lazy route module", () => {
-    const module = createPaymentLinkHonoModule(stubOptions())
+    const module = createPaymentLinkApiModule(stubOptions())
 
     expect(module).toMatchObject({
       module: { name: "payment-link" },

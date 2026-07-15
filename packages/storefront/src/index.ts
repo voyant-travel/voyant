@@ -1,7 +1,7 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { registerStorefrontBookingBootstrapRuntime } from "./booking-bootstrap-subscriber-runtime.js"
 import { createStorefrontAdminRoutes } from "./routes-admin.js"
@@ -26,7 +26,7 @@ export type {
   PaymentLinkTripData,
 } from "./payment-link/routes.js"
 export {
-  createPaymentLinkHonoModule,
+  createPaymentLinkApiModule,
   createPaymentLinkRoutes,
   PAYMENT_LINK_ROUTE_PATHS,
 } from "./payment-link/routes.js"
@@ -209,9 +209,9 @@ export const storefrontModule: Module = {
 
 export const storefrontAnonymousPublicPaths = ["/leads", "/newsletter", "/offers"] as const
 
-export type StorefrontHonoModuleOptions = Parameters<typeof createStorefrontPublicRoutes>[0]
+export type StorefrontApiModuleOptions = Parameters<typeof createStorefrontPublicRoutes>[0]
 
-export function createStorefrontHonoModule(options?: StorefrontHonoModuleOptions): HonoModule {
+export function createStorefrontApiModule(options?: StorefrontApiModuleOptions): ApiModule {
   return {
     module: {
       ...storefrontModule,
@@ -242,12 +242,12 @@ export const createStorefrontVoyantRuntime = defineGraphRuntimeFactory(async ({ 
     getPort(storefrontBookingIntentsRuntimePort),
     getPort(storefrontIntakeRuntimePort),
   ])
-  const configured = createStorefrontHonoModule({
+  const configured = createStorefrontApiModule({
     offers,
     bookingIntents,
     intake: { persistence },
   })
-  const selected: HonoModule = { module: configured.module }
+  const selected: ApiModule = { module: configured.module }
   if (api.some(({ surface }) => surface === "admin") && configured.adminRoutes) {
     selected.adminRoutes = configured.adminRoutes
   }

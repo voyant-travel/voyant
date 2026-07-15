@@ -9,7 +9,7 @@ External MCP clients (Claude, ChatGPT, …) connect to that endpoint over the wi
 
 ## API
 
-`createMcpHonoApp({ registry, buildContext, serverInfo? })` → a Hono sub-app. Mount it
+`createMcpApiRoutes({ registry, buildContext, serverInfo? })` → a Hono sub-app. Mount it
 at `/v1/admin/mcp` (the `"operator/mcp"` composition entry):
 
 - `POST /` — MCP JSON-RPC (`initialize` / `tools/list` / `tools/call`).
@@ -19,7 +19,7 @@ at `/v1/admin/mcp` (the `"operator/mcp"` composition entry):
 a `@voyant-travel/tools` `ToolContext`.
 
 Graph-driven hosts use
-`createGraphMcpHonoApp({ runtime, buildContext, buildResources? })`. It registers only
+`createGraphMcpApiRoutes({ runtime, buildContext, buildResources? })`. It registers only
 tools admitted by the resolved graph and discovers the conventional
 `voyantToolContextContribution` export from those same runtime entries. Package
 contributions own service injection for their declared `tools[].context` keys;

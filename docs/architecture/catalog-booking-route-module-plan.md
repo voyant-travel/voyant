@@ -30,7 +30,7 @@ dependencies into `@voyant-travel/catalog`.
 
 ## Goals
 
-- Export a `createCatalogBookingHonoModule()` or equivalent route factory from
+- Export a `createCatalogBookingApiModule()` or equivalent route factory from
   `@voyant-travel/catalog/booking-engine`.
 - Cover the route family used by `@voyant-travel/catalog-react/booking-engine`:
   - `POST /v1/{admin,public}/catalog/quote`
@@ -74,12 +74,12 @@ export function createCatalogBookingRoutes(
   options: CatalogBookingRoutesOptions,
 ): Hono
 
-export function createCatalogBookingHonoModule(
+export function createCatalogBookingApiModule(
   options: CatalogBookingRoutesOptions,
-): HonoModule
+): ApiModule
 ```
 
-The Hono module should use `module.name = "catalog"` with both `adminRoutes`
+The API module should use `module.name = "catalog"` with both `adminRoutes`
 and `publicRoutes` mounted at the catalog module path by `@voyant-travel/hono`:
 
 - admin routes become `/v1/admin/catalog/*`

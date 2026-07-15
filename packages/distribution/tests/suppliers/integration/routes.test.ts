@@ -3,7 +3,7 @@ import {
   supplierContracts,
   supplierRates,
   supplierServices,
-  suppliersHonoModule,
+  suppliersApiModule,
 } from "@voyant-travel/distribution"
 import { handleApiError } from "@voyant-travel/hono"
 import { eq } from "drizzle-orm"
@@ -29,7 +29,7 @@ describe.skipIf(!DB_AVAILABLE)("Supplier routes", () => {
       c.set("userId" as never, "test-user-id")
       await next()
     })
-    app.route("/", suppliersHonoModule.adminRoutes)
+    app.route("/", suppliersApiModule.adminRoutes)
   })
 
   beforeEach(async () => {

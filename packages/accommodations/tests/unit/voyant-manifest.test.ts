@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { createAccommodationsContentVoyantRuntime } from "../../src/graph-runtime.js"
 import {
   ACCOMMODATION_CONTENT_OPENAPI_API_IDS,
-  createAccommodationContentHonoExtension,
+  createAccommodationContentApiExtension,
 } from "../../src/routes-content.js"
 import { accommodationsContentVoyantPlugin, accommodationsVoyantModule } from "../../src/voyant.js"
 
@@ -29,7 +29,7 @@ describe("accommodations deployment manifest", () => {
           openapi: { document: "accommodations" },
           runtime: {
             entry: "@voyant-travel/accommodations",
-            export: "accommodationsHonoModule",
+            export: "accommodationsApiModule",
           },
         },
       ],
@@ -75,7 +75,7 @@ describe("accommodations deployment manifest", () => {
     })
 
     const resolveRegistry = () => ({}) as never
-    const extension = createAccommodationContentHonoExtension({
+    const extension = createAccommodationContentApiExtension({
       admin: { resolveRegistry, defaultAcceptMachineTranslated: false },
       public: { resolveRegistry, defaultAcceptMachineTranslated: true },
     })

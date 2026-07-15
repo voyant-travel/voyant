@@ -2,8 +2,8 @@ import type { BootstrapContext, VoyantRuntimeHostPrimitives } from "@voyant-trav
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { BookingsHonoModuleOptions } from "./index.js"
-import type { BookingRequirementsHonoModuleOptions } from "./requirements/index.js"
+import type { BookingsApiModuleOptions } from "./index.js"
+import type { BookingRequirementsApiModuleOptions } from "./requirements/index.js"
 import type { ResolveBookingRequirementsProductSnapshot } from "./requirements/service-public.js"
 import type {
   BookingOverviewItemEnricher,
@@ -13,7 +13,7 @@ import type {
 import type { BookingsExpireStaleHoldsWorkflowRuntime } from "./workflow-runtime.js"
 
 export interface BookingsRuntimeProvider {
-  options: BookingsHonoModuleOptions
+  options: BookingsApiModuleOptions
   registerWorkflowService?(context: BootstrapContext): Promise<void> | void
 }
 
@@ -77,7 +77,7 @@ export const bookingsRuntimePort = definePort<BookingsRuntimeProvider>({
     }
   },
 })
-export const bookingRequirementsRuntimePort = objectPort<BookingRequirementsHonoModuleOptions>(
+export const bookingRequirementsRuntimePort = objectPort<BookingRequirementsApiModuleOptions>(
   "bookings.requirements.runtime",
 )
 export const bookingsConfigurationRuntimePort = objectPort<BookingsConfigurationRuntime>(

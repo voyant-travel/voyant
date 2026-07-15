@@ -1,6 +1,6 @@
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 
-import { createActionLedgerHealthHonoExtension } from "./health-routes.js"
+import { createActionLedgerHealthApiExtension } from "./health-routes.js"
 import {
   actionLedgerBookingDriftRuntimePort,
   actionLedgerFinanceDriftRuntimePort,
@@ -14,7 +14,7 @@ export const createActionLedgerHealthVoyantRuntime = defineGraphRuntimeFactory(
       getPort(actionLedgerFinanceDriftRuntimePort),
       getPort(actionLedgerInventoryDriftRuntimePort),
     ])
-    return createActionLedgerHealthHonoExtension({ ...bookings, ...finance, ...inventory })
+    return createActionLedgerHealthApiExtension({ ...bookings, ...finance, ...inventory })
   },
 )
 

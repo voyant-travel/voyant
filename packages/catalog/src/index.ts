@@ -79,13 +79,13 @@ export {
   type SourceAdapterRequestScope,
 } from "./adapter/contract.js"
 export * from "./adapter/schemas.js"
-// BookingJourney HTTP contract — root export matches the Hono module pattern
+// BookingJourney HTTP contract — root export matches the API module pattern
 // used by the vertical packages while keeping the ./booking-engine subpath.
 export {
   type CatalogBookingRouteModuleOptions,
   catalogBookingRoutePaths,
   catalogBookingTransactionalPaths,
-  createCatalogBookingEngineHonoModule,
+  createCatalogBookingEngineApiModule,
   createCatalogBookingOrdersRoutes,
   mountCatalogBookingRoutes,
 } from "./booking-engine/operator-routes.js"
@@ -108,7 +108,7 @@ export {
   type CatalogBookingQuoteBody,
   type CatalogBookingQuoteTransformInput,
   type CatalogBookingRoutesOptions,
-  createCatalogBookingHonoModule,
+  createCatalogBookingApiModule,
   createCatalogBookingRoutes,
 } from "./booking-engine/routes.js"
 export * from "./contract.js"
@@ -207,7 +207,7 @@ export {
   type CatalogOffersRouteModuleOptions,
   type CatalogOffersSearchDestination,
   createCatalogOffersAdminRoutes,
-  createCatalogOffersHonoExtension,
+  createCatalogOffersApiExtension,
 } from "./offers/operator-routes.js"
 export {
   applyMerge,
@@ -275,7 +275,7 @@ export {
   type CatalogSearchRoutesWithSurfaceOptions,
   type CatalogSearchRuntime,
   type CatalogSearchSurface,
-  createCatalogSearchHonoModule,
+  createCatalogSearchApiModule,
   createCatalogSearchRoutes,
   mountCatalogSearchRoutes,
 } from "./search/routes.js"

@@ -16,7 +16,7 @@ import type {
 import { createContractDocumentService } from "./contracts/contract-document-service.js"
 import { buildContractVariableBindings } from "./contracts/contract-variables.js"
 import { contractsService } from "./contracts/service.js"
-import type { CreateLegalHonoModuleOptions } from "./index.js"
+import type { CreateLegalApiModuleOptions } from "./index.js"
 import {
   type AutoGenerateContractOptions,
   type ContractDocumentGenerator,
@@ -34,7 +34,7 @@ const LOCAL_PLACEHOLDER_KEYS = new Set(["local-dev"])
 const CLIENT_CACHE = new WeakMap<object, Map<string, VoyantCloudClient>>()
 
 export interface LegalRuntime {
-  legal: CreateLegalHonoModuleOptions
+  legal: CreateLegalApiModuleOptions
   contractDocument: ContractDocumentRoutesOptions
   bookingContractSubscriber: LegalBookingContractSubscriberHost
 }

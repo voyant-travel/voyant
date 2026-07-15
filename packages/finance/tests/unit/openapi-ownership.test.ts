@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
 import { createBookingTaxRoutes } from "../../src/booking-tax.js"
-import { createFinanceHonoModule } from "../../src/index.js"
+import { createFinanceApiModule } from "../../src/index.js"
 
 const document = JSON.parse(
   readFileSync(new URL("../../openapi/admin/booking-tax.json", import.meta.url), "utf8"),
@@ -45,9 +45,7 @@ describe("booking tax OpenAPI ownership", () => {
   })
 
   it("stamps base Finance routes without overwriting extension ownership", () => {
-    const routes = createFinanceHonoModule().adminRoutes as ReturnType<
-      typeof createBookingTaxRoutes
-    >
+    const routes = createFinanceApiModule().adminRoutes as ReturnType<typeof createBookingTaxRoutes>
     const live = routes.getOpenAPIDocument({ info: { title: "test", version: "1" } })
 
     expect(live.paths?.["/payment-sessions"]?.get?.["x-voyant-api-id"]).toBe(
@@ -60,7 +58,7 @@ describe("booking tax OpenAPI ownership", () => {
 })
 
 describe("Travel Credit OpenAPI ownership", () => {
-  const financeModule = createFinanceHonoModule()
+  const financeModule = createFinanceApiModule()
   const adminLive = financeModule.adminRoutes.getOpenAPI31Document(openApiOptions)
   const storefrontLive = financeModule.publicRoutes.getOpenAPI31Document(openApiOptions)
   const adminCommitted = JSON.parse(

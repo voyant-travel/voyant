@@ -1,7 +1,7 @@
 import { storageObjectRuntimePort } from "@voyant-travel/storage/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
-  createPublicDocumentDeliveryHonoModule,
+  createPublicDocumentDeliveryApiModule,
   createPublicDocumentDeliveryVoyantRuntime,
   PUBLIC_DOCUMENT_DELIVERY_OPENAPI_API_ID,
 } from "../../src/index.js"
@@ -37,7 +37,7 @@ describe("public document delivery deployment manifest", () => {
       ],
       lifecycle: { uninstall: { default: "retain-data", purge: "not-supported" } },
     })
-    expect(createPublicDocumentDeliveryHonoModule().module.name).toBe("documents")
+    expect(createPublicDocumentDeliveryApiModule().module.name).toBe("documents")
   })
 
   it("consumes the selected storage.object resolver through its graph runtime factory", async () => {
@@ -70,7 +70,7 @@ describe("public document delivery deployment manifest", () => {
   })
 
   it("publishes its anonymous route from a package-owned OpenAPI registry", () => {
-    const routes = createPublicDocumentDeliveryHonoModule().publicRoutes as OpenApiDocumentSource
+    const routes = createPublicDocumentDeliveryApiModule().publicRoutes as OpenApiDocumentSource
     const document = routes.getOpenAPI31Document({
       openapi: "3.1.0",
       info: { title: "Public documents", version: "1" },

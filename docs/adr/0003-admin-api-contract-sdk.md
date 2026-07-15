@@ -26,7 +26,7 @@ attribution drift four ways. #1411 asks for a shared **Admin API contract** and
 
 ### What already exists (from codebase recon)
 
-- **Routes:** each `HonoModule` exposes `adminRoutes` mounted at
+- **Routes:** each `ApiModule` exposes `adminRoutes` mounted at
   `/v1/admin/{module}` (`packages/hono/src/app.ts`). Bookings has ~33 admin
   operations; finance ~130+.
 - **Auth:** a 4-strategy chain (`packages/hono/src/middleware/auth.ts`) —

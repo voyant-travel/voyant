@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { accommodationsLinkable } from "./linkables.js"
 import { roomBlockAdminRoutes } from "./routes-room-blocks.js"
@@ -18,12 +18,12 @@ export const accommodationsModule: Module = {
   linkable: accommodationsLinkable,
 }
 
-export const accommodationsHonoModule: HonoModule = {
+export const accommodationsApiModule: ApiModule = {
   module: accommodationsModule,
   adminRoutes: roomBlockAdminRoutes,
 }
 
-export const accommodationsHonoModules = [accommodationsHonoModule] as const
+export const accommodationsApiModules = [accommodationsApiModule] as const
 
 export * from "./booking-engine/index.js"
 export * from "./catalog-policy.js"

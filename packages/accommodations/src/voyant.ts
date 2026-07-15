@@ -30,7 +30,7 @@ export const accommodationsVoyantModule = defineModule({
       openapi: { document: "accommodations" },
       runtime: {
         entry: "@voyant-travel/accommodations",
-        export: "accommodationsHonoModule",
+        export: "accommodationsApiModule",
       },
     },
   ],

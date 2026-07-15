@@ -1,4 +1,4 @@
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { promotionsModule } from "./module-metadata.js"
 import { createPromotionsRoutes, type PromotionsRoutesOptions, promotionsRoutes } from "./routes.js"
@@ -6,12 +6,12 @@ import { createPromotionsRoutes, type PromotionsRoutesOptions, promotionsRoutes 
 export { promotionsModule } from "./module-metadata.js"
 export type { PromotionsRoutes, PromotionsRoutesOptions } from "./routes.js"
 
-export const promotionsHonoModule: HonoModule = {
+export const promotionsApiModule: ApiModule = {
   module: promotionsModule,
   adminRoutes: promotionsRoutes,
 }
 
-export function createPromotionsHonoModule(options?: PromotionsRoutesOptions): HonoModule {
+export function createPromotionsApiModule(options?: PromotionsRoutesOptions): ApiModule {
   return {
     module: promotionsModule,
     adminRoutes: createPromotionsRoutes(options),

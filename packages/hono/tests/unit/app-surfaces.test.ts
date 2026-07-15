@@ -10,7 +10,7 @@ import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
 import { mountApp } from "../../src/app.js"
-import type { HonoModule } from "../../src/module.js"
+import type { ApiModule } from "../../src/module.js"
 import type { VoyantBindings } from "../../src/types.js"
 
 const TEST_ENV: VoyantBindings = { DATABASE_URL: "postgres://test" }
@@ -26,7 +26,7 @@ function makeModule(options: {
   admin?: boolean
   public_?: boolean
   publicPath?: string
-}): HonoModule {
+}): ApiModule {
   const admin = new Hono().get("/ping", (c) => c.json({ surface: "admin", name: options.name }))
   const pub = new Hono().get("/ping", (c) => c.json({ surface: "public", name: options.name }))
 
@@ -43,7 +43,7 @@ function makeModule(options: {
  * that requireAuth marks the request authenticated and requireActor sees the
  * intended actor.
  */
-function build(actor: Actor | undefined, mods: HonoModule[]) {
+function build(actor: Actor | undefined, mods: ApiModule[]) {
   return mountApp({
     // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db -- owner: hono; existing suppression is intentional pending typed cleanup.
     db: () => ({}) as any,
@@ -63,7 +63,7 @@ describe("mountApp surface mounting", () => {
     const waitUntil = vi.fn((promise: Promise<unknown>) => {
       void promise
     })
-    const mod: HonoModule = {
+    const mod: ApiModule = {
       module: { name: "things" },
       adminRoutes: new Hono().get("/ping", (c) => {
         expect(c.get("db")).toBe(db)

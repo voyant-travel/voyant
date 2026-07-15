@@ -97,7 +97,7 @@ requires it.
 
 The current `compose` and `duplicate` routes are Inventory-owned operated
 authoring. They keep the `/v1/admin/products` mount through the Inventory-owned
-product Hono module so existing clients do not see route churn during the v1
+product API module so existing clients do not see route churn during the v1
 package restructure.
 
 ## 4. Schema Boundary

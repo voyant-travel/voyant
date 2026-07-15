@@ -63,17 +63,17 @@ email providers that use a provider-side default sender should expose it through
 `defaultFromAddress`; otherwise direct email sends without an explicit sender
 fail before the provider is called.
 
-For the Hono module:
+For the API module:
 
 ```ts
 import { getVoyantCloudClient } from "@voyant-travel/voyant-cloud"
 import {
-  createNotificationsHonoModule,
+  createNotificationsApiModule,
   createVoyantCloudEmailProvider,
   createVoyantCloudSmsProvider,
 } from "@voyant-travel/notifications"
 
-const notificationsModule = createNotificationsHonoModule({
+const notificationsModule = createNotificationsApiModule({
   resolveProviders: (env) => {
     const cloud = getVoyantCloudClient(env as Record<string, unknown>)
     return [
@@ -119,18 +119,18 @@ ready invoice/proforma rendition for a booking. By default they use the stored
 artifact URL when one is durable and publicly readable. Private document flows
 should override that behavior with `documentAttachmentResolver` or
 `resolveDocumentAttachmentResolver` when mounting `createNotificationsRoutes()`
-or `createNotificationsHonoModule()`, so attachment URLs are resolved at send
+or `createNotificationsApiModule()`, so attachment URLs are resolved at send
 time from the current storage/runtime context.
 
 ## Booking Document Bundle Lifecycle
 
-`createNotificationsHonoModule()` can subscribe to booking confirmation and
+`createNotificationsApiModule()` can subscribe to booking confirmation and
 fully-paid lifecycle signals through `documentBundleLifecycle`. The hook
 resolves the booking, primary customer/recipient, travelers, booking items, and
 existing legal/finance document bundle before invoking the configured policy.
 
 ```ts
-const notificationsModule = createNotificationsHonoModule({
+const notificationsModule = createNotificationsApiModule({
   resolveDb: (bindings) => getDbFromEnv(bindings),
   resolveProviders,
   documentBundleLifecycle: {

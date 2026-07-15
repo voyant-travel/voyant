@@ -20,14 +20,14 @@
  *
  * The deployment supplies the connector (`resolveAdapter`) and, optionally, a
  * payment integration for order payment sessions (`payment`). The routes mount at
- * `/v1/admin/flights` via `createFlightsHonoModule(...)`.
+ * `/v1/admin/flights` via `createFlightsApiModule(...)`.
  */
 
 import { OpenAPIHono } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { createOrderPaymentSessions } from "@voyant-travel/finance/order-payment-sessions"
-import type { HonoModule } from "@voyant-travel/hono"
+import type { ApiModule } from "@voyant-travel/hono"
 import { ilike, or } from "drizzle-orm"
 import type { Context } from "hono"
 
@@ -89,7 +89,7 @@ export interface FlightsRouteOptions {
   payment?: FlightPaymentIntegration
 }
 
-export type FlightsHonoModuleOptions = FlightsRouteOptions
+export type FlightsApiModuleOptions = FlightsRouteOptions
 
 export const FLIGHTS_OPENAPI_API_ID = "@voyant-travel/flights#api"
 
@@ -451,7 +451,7 @@ export function createFlightAdminRoutes(options: FlightsRouteOptions): OpenAPIHo
  * The flights route module — mounts the admin routes at `/v1/admin/flights`.
  * A deployment composes this and supplies the connector + payment options.
  */
-export function createFlightsHonoModule(options: FlightsHonoModuleOptions): HonoModule {
+export function createFlightsApiModule(options: FlightsApiModuleOptions): ApiModule {
   return {
     module: { name: "flights" },
     adminRoutes: createFlightAdminRoutes(options),
@@ -461,7 +461,7 @@ export function createFlightsHonoModule(options: FlightsHonoModuleOptions): Hono
 /** Package-owned adapter from graph runtime ports to the Flights route factory. */
 export const createFlightsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
   const runtime = await getPort(flightsRuntimePort)
-  return createFlightsHonoModule({
+  return createFlightsApiModule({
     resolveAdapter: runtime.resolveAdapter,
     payment: createFlightOrderPaymentIntegration({
       orderPaymentSessions: createOrderPaymentSessions({ targetType: "flight_order" }),

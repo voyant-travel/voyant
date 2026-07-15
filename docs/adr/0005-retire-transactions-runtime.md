@@ -129,7 +129,7 @@ Before removing the runtime package from templates:
 
 - no non-legacy runtime package imports `@voyant-travel/transactions` or
   `@voyant-travel/transactions-react`
-- default templates no longer mount `transactionsHonoModule`,
+- default templates no longer mount `transactionsApiModule`,
   `transactionsBookingExtension`, or transactions link tables
 - Sellability no longer constructs or persists Transactions Offers
 - `booking_transaction_details` is replaced by Bookings-owned

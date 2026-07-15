@@ -21,7 +21,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 
@@ -283,9 +283,7 @@ export function createContractDocumentRoutes(options: ContractDocumentRoutesOpti
 }
 
 /** Package-owned module descriptor; deployments inject document generation and storage. */
-export function createContractDocumentHonoModule(
-  options: ContractDocumentRoutesOptions,
-): HonoModule {
+export function createContractDocumentApiModule(options: ContractDocumentRoutesOptions): ApiModule {
   return {
     module: { name: "contract-document" },
     lazyRoutes: {
@@ -296,5 +294,5 @@ export function createContractDocumentHonoModule(
 }
 
 export const createContractDocumentVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createContractDocumentHonoModule(await getPort(legalContractDocumentRuntimePort)),
+  createContractDocumentApiModule(await getPort(legalContractDocumentRuntimePort)),
 )

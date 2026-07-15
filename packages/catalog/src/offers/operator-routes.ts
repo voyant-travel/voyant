@@ -32,7 +32,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -397,9 +397,9 @@ export function createCatalogOffersAdminRoutes(
 }
 
 /** Package-owned descriptor for deployments that inject catalog offer providers. */
-export function createCatalogOffersHonoExtension(
+export function createCatalogOffersApiExtension(
   options: CatalogOffersRouteModuleOptions,
-): HonoExtension {
+): ApiExtension {
   return {
     extension: { name: "catalog-offers", module: "catalog" },
     adminRoutes: createCatalogOffersAdminRoutes(options),

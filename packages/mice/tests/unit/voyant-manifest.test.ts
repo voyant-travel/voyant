@@ -4,7 +4,7 @@ import {
   miceBookingExtension,
   miceBookingExtensionRoutes,
 } from "../../src/booking-extension.js"
-import { createMiceHonoModule } from "../../src/index.js"
+import { createMiceApiModule } from "../../src/index.js"
 import { miceBookingVoyantPlugin, miceVoyantModule } from "../../src/voyant.js"
 
 describe("MICE deployment manifests", () => {
@@ -125,7 +125,7 @@ describe("MICE deployment manifests", () => {
   })
 
   it("references exported runtimes with matching mounts", () => {
-    expect(createMiceHonoModule().module.name).toBe("mice")
+    expect(createMiceApiModule().module.name).toBe("mice")
     expect(miceBookingExtension.extension.module).toBe("bookings")
   })
 

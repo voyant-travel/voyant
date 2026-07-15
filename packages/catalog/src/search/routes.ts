@@ -9,7 +9,7 @@ import type {
   SearchSortOption,
 } from "@voyant-travel/catalog-contracts/indexer/contract"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import type { Context, Hono as HonoApp } from "hono"
 
 const searchModeSchema = z.enum(["keyword", "semantic", "hybrid"])
@@ -320,7 +320,7 @@ export function createCatalogSearchRoutes(
   )
 }
 
-export function createCatalogSearchHonoModule(options: CatalogSearchRoutesOptions): HonoModule {
+export function createCatalogSearchApiModule(options: CatalogSearchRoutesOptions): ApiModule {
   return {
     module: { name: "catalog" },
     adminRoutes: createCatalogSearchRoutes({ ...options, surface: "admin" }),

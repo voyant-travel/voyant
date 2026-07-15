@@ -280,7 +280,7 @@ export const bookingsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/bookings",
-        export: "createBookingsHonoModule",
+        export: "createBookingsApiModule",
       },
     },
     {
@@ -293,7 +293,7 @@ export const bookingsVoyantModule = defineModule({
       transactional: true,
       runtime: {
         entry: "@voyant-travel/bookings",
-        export: "createBookingsHonoModule",
+        export: "createBookingsApiModule",
       },
     },
   ],
@@ -492,7 +492,7 @@ export const bookingRequirementsVoyantModule = defineModule({
       resource: "bookings",
       runtime: {
         entry: "@voyant-travel/bookings/requirements",
-        export: "createBookingRequirementsHonoModule",
+        export: "createBookingRequirementsApiModule",
       },
     },
     {
@@ -503,7 +503,7 @@ export const bookingRequirementsVoyantModule = defineModule({
       resource: "bookings",
       runtime: {
         entry: "@voyant-travel/bookings/requirements",
-        export: "createBookingRequirementsHonoModule",
+        export: "createBookingRequirementsApiModule",
       },
     },
   ],

@@ -1,7 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { parseJsonBody } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { eq } from "drizzle-orm"
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -9,7 +9,7 @@ import { z } from "zod"
 
 /**
  * MICE booking extension — a 1:1 sidecar that links a booking to its program +
- * delegate, following the established HonoExtension pattern (precedent:
+ * delegate, following the established ApiExtension pattern (precedent:
  * inventory's booking-extension). `booking_id` is a loose text PK (no
  * cross-package FK), so this package doesn't depend on bookings. See RFC
  * voyant#1489 (Phase 3) §4.2.
@@ -130,7 +130,7 @@ const miceBookingExtensionDef: Extension = {
   module: "bookings",
 }
 
-export const miceBookingExtension: HonoExtension = {
+export const miceBookingExtension: ApiExtension = {
   extension: miceBookingExtensionDef,
   adminRoutes: miceBookingExtensionRoutes,
 }

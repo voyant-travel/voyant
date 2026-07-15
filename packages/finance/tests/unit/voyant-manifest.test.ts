@@ -33,7 +33,7 @@ describe("finance deployment manifest", () => {
           id: "@voyant-travel/finance#api.admin",
           surface: "admin",
           openapi: { document: "finance" },
-          runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
+          runtime: { entry: "@voyant-travel/finance", export: "createFinanceApiModule" },
         },
         {
           id: "@voyant-travel/finance#api.public",
@@ -46,7 +46,7 @@ describe("finance deployment manifest", () => {
             "/accountant",
             "/travel-credits",
           ],
-          runtime: { entry: "@voyant-travel/finance", export: "createFinanceHonoModule" },
+          runtime: { entry: "@voyant-travel/finance", export: "createFinanceApiModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/finance#schema" }],
@@ -169,7 +169,7 @@ describe("finance deployment manifest", () => {
             openapi: { document: "booking-tax" },
             runtime: {
               entry: "@voyant-travel/finance",
-              export: "createBookingTaxHonoExtension",
+              export: "createBookingTaxApiExtension",
             },
           },
         ],
@@ -227,7 +227,7 @@ describe("finance deployment manifest", () => {
           openapi: { document: "bookings" },
           runtime: {
             entry: "@voyant-travel/finance",
-            export: "createBookingScheduleHonoExtension",
+            export: "createBookingScheduleApiExtension",
           },
         },
         {
@@ -238,7 +238,7 @@ describe("finance deployment manifest", () => {
           anonymous: true,
           runtime: {
             entry: "@voyant-travel/finance",
-            export: "createBookingScheduleHonoExtension",
+            export: "createBookingScheduleApiExtension",
           },
         },
       ],

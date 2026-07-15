@@ -25,7 +25,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Module } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import {
   actionApprovalListQuerySchema,
   actionDelegationListQuerySchema,
@@ -950,7 +950,7 @@ export const actionLedgerModule: Module = {
   name: "action-ledger",
 }
 
-export const actionLedgerHonoModule: HonoModule = {
+export const actionLedgerApiModule: ApiModule = {
   module: actionLedgerModule,
   adminRoutes: actionLedgerAdminRoutes,
 }

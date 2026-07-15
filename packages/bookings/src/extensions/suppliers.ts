@@ -1,6 +1,6 @@
 import type { Extension } from "@voyant-travel/core"
 import { parseJsonBody } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
@@ -171,7 +171,7 @@ const bookingsSupplierExtensionDef: Extension = {
   module: "bookings",
 }
 
-export const bookingsSupplierExtension: HonoExtension = {
+export const bookingsSupplierExtension: ApiExtension = {
   extension: bookingsSupplierExtensionDef,
   adminRoutes: supplierStatusRoutes,
 }

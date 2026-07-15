@@ -1,5 +1,5 @@
 /**
- * Supplier admin routes. The `suppliersHonoModule` mounts this bundle as the
+ * Supplier admin routes. The `suppliersApiModule` mounts this bundle as the
  * module's `adminRoutes`, so these resolve under `/v1/admin/suppliers/*`
  * (staff-actor-gated by the parent app's middleware chain).
  *

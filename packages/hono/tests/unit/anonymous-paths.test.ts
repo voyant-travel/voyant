@@ -2,15 +2,15 @@ import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
 import { assembleAnonymousPaths } from "../../src/anonymous-paths.js"
-import type { HonoExtension, HonoModule } from "../../src/module.js"
+import type { ApiExtension, ApiModule } from "../../src/module.js"
 
 const noop = (c: { json: (b: unknown) => unknown }) => c.json({})
 
-const mod = (name: string, extra: Partial<HonoModule> = {}): HonoModule => ({
+const mod = (name: string, extra: Partial<ApiModule> = {}): ApiModule => ({
   module: { name },
   ...extra,
 })
-const ext = (module: string, extra: Partial<HonoExtension> = {}): HonoExtension => ({
+const ext = (module: string, extra: Partial<ApiExtension> = {}): ApiExtension => ({
   extension: { name: module, module },
   ...extra,
 })

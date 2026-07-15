@@ -4,14 +4,14 @@ import {
   composeFromManifest,
   diffManifestRegistry,
 } from "../../src/composition.js"
-import type { HonoExtension, HonoModule } from "../../src/module.js"
+import type { ApiExtension, ApiModule } from "../../src/module.js"
 
 interface Caps {
   prefix: string
 }
 
-const mod = (name: string): HonoModule => ({ module: { name } })
-const ext = (module: string): HonoExtension => ({ extension: { name: module, module } })
+const mod = (name: string): ApiModule => ({ module: { name } })
+const ext = (module: string): ApiExtension => ({ extension: { name: module, module } })
 
 const registry: CompositionRegistry<Caps> = {
   modules: {

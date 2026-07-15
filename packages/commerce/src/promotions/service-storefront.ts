@@ -6,7 +6,7 @@
  *
  * Wire via:
  *
- *   const storefrontModule = createStorefrontHonoModule({
+ *   const storefrontModule = createStorefrontApiModule({
  *     offers: createPromotionsStorefrontResolvers(),
  *   })
  *

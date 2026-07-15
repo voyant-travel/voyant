@@ -1,6 +1,6 @@
 import { definePort } from "@voyant-travel/core/project"
 
-import type { CreateRealtimeHonoModuleOptions } from "./index.js"
+import type { CreateRealtimeApiModuleOptions } from "./index.js"
 import type { RealtimeProvider } from "./types.js"
 
 /** Deployment-selected realtime transport supplied before package runtime contributors execute. */
@@ -22,7 +22,7 @@ export const realtimeTransportRuntimePort = definePort<RealtimeProvider>({
 })
 
 /** Deployment contract required by the package-owned realtime runtime factory. */
-export const realtimeRuntimePort = definePort<CreateRealtimeHonoModuleOptions>({
+export const realtimeRuntimePort = definePort<CreateRealtimeApiModuleOptions>({
   id: "realtime.runtime",
   test(provider) {
     if (provider === null || typeof provider !== "object") {

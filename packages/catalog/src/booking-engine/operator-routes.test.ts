@@ -8,7 +8,7 @@ import {
   type CatalogBookingRouteModuleOptions,
   catalogBookingRoutePaths,
   catalogBookingTransactionalPaths,
-  createCatalogBookingEngineHonoModule,
+  createCatalogBookingEngineApiModule,
   createCatalogBookingOrdersRoutes,
   mountCatalogBookingRoutes,
 } from "./operator-routes.js"
@@ -214,7 +214,7 @@ describe("createCatalogBookingOrdersRoutes", () => {
 
 describe("mountCatalogBookingRoutes", () => {
   it("publishes a lazy package runtime descriptor with the complete route contract", async () => {
-    const descriptor = createCatalogBookingEngineHonoModule(makeOptions())
+    const descriptor = createCatalogBookingEngineApiModule(makeOptions())
 
     expect(descriptor.module).toEqual({ name: "catalog-booking" })
     expect(descriptor.lazyRoutes?.paths).toBe(catalogBookingRoutePaths)

@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from "vitest"
 import {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
   type BookingRouteRuntime,
-  createBookingsHonoModule,
+  createBookingsApiModule,
 } from "../../src/index.js"
 
-describe("createBookingsHonoModule.bootstrap", () => {
+describe("createBookingsApiModule.bootstrap", () => {
   it("registers the shared bookings route runtime once", async () => {
-    const module = createBookingsHonoModule()
+    const module = createBookingsApiModule()
     const container = createContainer()
 
     await module.module.bootstrap?.({
@@ -38,7 +38,7 @@ describe("createBookingsHonoModule.bootstrap", () => {
     }
     const resolveKmsProvider = vi.fn(async () => fakeKms)
 
-    const module = createBookingsHonoModule({ resolveKmsProvider })
+    const module = createBookingsApiModule({ resolveKmsProvider })
     const container = createContainer()
 
     await module.module.bootstrap?.({
@@ -59,7 +59,7 @@ describe("createBookingsHonoModule.bootstrap", () => {
   it("registers injected billing-party reference resolvers", async () => {
     const resolveBillingPersonById = vi.fn(async () => true)
     const resolveBillingOrganizationById = vi.fn(async () => true)
-    const module = createBookingsHonoModule({
+    const module = createBookingsApiModule({
       resolveBillingPersonById,
       resolveBillingOrganizationById,
     })

@@ -8,10 +8,9 @@
  * customization unit — modules, providers, extensions, and workflows should be
  * preferred when a smaller seam fits.
  *
- * Core plugins are transport-agnostic — they contain {@link Module} and
- * {@link Extension} values (no HTTP routes). Transport adapters (such as
- * `@voyant-travel/hono`) layer their own plugin shape on top of this
- * contract to carry route bundles.
+ * Core plugins do not carry HTTP routes — they contain {@link Module} and
+ * {@link Extension} values. The API runtime in `@voyant-travel/hono` layers
+ * {@link ApiBundle}-style route contributions on top of this contract.
  */
 
 import type { EventBus, EventHandler, EventMetadata } from "./events.js"
@@ -56,8 +55,8 @@ export interface Subscriber<
  * - {@link Subscriber} values (event listeners)
  * - {@link LinkDefinition} values (cross-module associations)
  *
- * Transport adapters can intersect this shape with their own fields (see
- * `HonoBundle` in `@voyant-travel/hono` for the Hono variant).
+ * The server API runtime intersects this shape with its route fields; see
+ * `ApiBundle` in `@voyant-travel/hono`.
  */
 export interface Plugin {
   /** Unique plugin identifier (e.g. "payload-cms", "bokun"). */

@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { marketsRoutes } from "./routes.js"
 import { publicMarketsRoutes } from "./routes-public.js"
 import { marketsService } from "./service.js"
@@ -18,7 +18,7 @@ export const marketsModule: Module = {
   name: "markets",
 }
 
-export const marketsHonoModule: HonoModule = {
+export const marketsApiModule: ApiModule = {
   module: marketsModule,
   adminRoutes: marketsRoutes,
   // Read-only market/locale/currency discovery for anonymous storefront clients

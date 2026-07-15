@@ -1,5 +1,5 @@
 import type { Module } from "@voyant-travel/core"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { identityRoutes } from "./routes.js"
 import { identityService } from "./service.js"
@@ -10,7 +10,7 @@ export const identityModule: Module = {
   name: "identity",
 }
 
-export const identityHonoModule: HonoModule = {
+export const identityApiModule: ApiModule = {
   module: identityModule,
   adminRoutes: identityRoutes,
 }

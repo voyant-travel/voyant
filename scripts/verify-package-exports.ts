@@ -48,7 +48,7 @@ const checks: ExportCheck[] = [
     packageName: "@voyant-travel/finance",
     entry: "packages/finance/dist/index.js",
     requiredExports: [
-      "createFinanceHonoModule",
+      "createFinanceApiModule",
       "createFinanceAdminDocumentRoutes",
       "createFinanceAdminSettlementRoutes",
       "createPdfInvoiceDocumentGenerator",
@@ -230,7 +230,7 @@ const checks: ExportCheck[] = [
     packageName: "@voyant-travel/storefront",
     entry: "packages/storefront/dist/index.js",
     requiredExports: [
-      "createStorefrontHonoModule",
+      "createStorefrontApiModule",
       "createStorefrontPublicRoutes",
       "createStorefrontService",
       "resolveStorefrontSettings",
@@ -315,8 +315,8 @@ const checks: ExportCheck[] = [
     packageName: "@voyant-travel/legal",
     entry: "packages/legal/dist/index.js",
     requiredExports: [
-      "createLegalHonoModule",
-      "legalHonoModule",
+      "createLegalApiModule",
+      "legalApiModule",
       "createContractsAdminRoutes",
       "createContractsPublicRoutes",
       "createPdfContractDocumentGenerator",
@@ -333,7 +333,7 @@ const checks: ExportCheck[] = [
     packageName: "@voyant-travel/storefront/verification",
     entry: "packages/storefront/dist/verification/index.js",
     requiredExports: [
-      "createStorefrontVerificationHonoModule",
+      "createStorefrontVerificationApiModule",
       "createStorefrontVerificationPublicRoutes",
       "createStorefrontVerificationService",
       "createStorefrontVerificationSendersFromProviders",

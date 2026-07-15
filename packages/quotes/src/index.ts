@@ -1,6 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { quotesLinkable } from "./linkables.js"
 import type { QuotesRouteRuntimeOptions } from "./route-runtime.js"
@@ -16,9 +16,9 @@ export const quotesModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface QuotesHonoModuleOptions extends QuotesRouteRuntimeOptions {}
+export interface QuotesApiModuleOptions extends QuotesRouteRuntimeOptions {}
 
-export function createQuotesHonoModule(options: QuotesHonoModuleOptions = {}): HonoModule {
+export function createQuotesApiModule(options: QuotesApiModuleOptions = {}): ApiModule {
   return {
     module: quotesModule,
     adminRoutes: createQuotesRoutes(options),
@@ -27,7 +27,7 @@ export function createQuotesHonoModule(options: QuotesHonoModuleOptions = {}): H
 
 /** Package-owned adapter from graph runtime ports to the Quotes route factory. */
 export const createQuotesVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createQuotesHonoModule(await getPort(quotesRuntimePort)),
+  createQuotesApiModule(await getPort(quotesRuntimePort)),
 )
 
 export type {
@@ -45,7 +45,7 @@ export {
   quotesSnapshotRuntimePort,
 } from "./runtime-port.js"
 
-export const quotesHonoModule: HonoModule = createQuotesHonoModule()
+export const quotesApiModule: ApiModule = createQuotesApiModule()
 
 export type { BookingQuoteDetail, NewBookingQuoteDetail } from "./booking-extension.js"
 export {
@@ -70,10 +70,10 @@ export type {
 export {
   buildQuoteVersionProposalUrl,
   createQuoteProposalAdminRoutes,
-  createQuoteProposalHonoExtension,
+  createQuoteProposalApiExtension,
   createQuoteProposalPublicRoutes,
   createQuoteProposalVoyantRuntime,
-  createQuoteVersionSnapshotHonoExtension,
+  createQuoteVersionSnapshotApiExtension,
   createQuoteVersionSnapshotRoutes,
   createQuoteVersionSnapshotVoyantRuntime,
   tripSnapshotToQuoteVersionApply,

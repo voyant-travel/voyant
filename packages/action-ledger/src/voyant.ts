@@ -19,7 +19,7 @@ export const actionLedgerVoyantModule = defineModule({
       resource: "action-ledger",
       runtime: {
         entry: "@voyant-travel/action-ledger",
-        export: "actionLedgerHonoModule",
+        export: "actionLedgerApiModule",
       },
     },
   ],

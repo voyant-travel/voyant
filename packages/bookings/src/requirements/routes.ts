@@ -1,7 +1,8 @@
+// agent-quality: file-size exception -- owner: bookings; this vocabulary-only migration preserves the existing booking-requirements route surface until a dedicated split can preserve its child-route ordering and OpenAPI output.
 /**
  * Admin routes for booking requirements — mounted (legacy surface) at
  * `/v1/booking-requirements` by the framework composition's
- * `createBookingRequirementsHonoModule`. Covers eight resource sub-chains:
+ * `createBookingRequirementsApiModule`. Covers eight resource sub-chains:
  * contact-requirements, product booking questions, option booking questions,
  * question options, unit/option/extra triggers, and answers.
  *

@@ -617,7 +617,7 @@ Required cleanup:
 
 - Remove the `@voyant-travel/transactions` dependency from Sellability before
   Commerce consolidation.
-- Remove `transactionsHonoModule` and `transactionsBookingExtension` from
+- Remove `transactionsApiModule` and `transactionsBookingExtension` from
   template composition after Bookings owns origin/provenance.
 - Replace Legal/Finance `orderId` and `offerId` references with Booking, Quote
   Version, Program, Trip Component, provider order ref, or generic target links
@@ -630,7 +630,7 @@ ADR acceptance checklist:
 
 - No non-legacy runtime package imports `@voyant-travel/transactions` or
   `@voyant-travel/transactions-react`.
-- Default templates no longer mount `transactionsHonoModule`,
+- Default templates no longer mount `transactionsApiModule`,
   `transactionsBookingExtension`, or transactions link tables.
 - Sellability no longer constructs or persists Transactions Offers.
 - `booking_transaction_details` is replaced by Bookings-owned
@@ -1351,7 +1351,7 @@ stay unchanged.
 
 | Current package(s) | Direction | Notes |
 | --- | --- | --- |
-| `@voyant-travel/core`, `@voyant-travel/db`, `@voyant-travel/hono` | Keep separate. | Core framework, database helpers, and route composition are real infrastructure seams. |
+| `@voyant-travel/core`, `@voyant-travel/db`, `@voyant-travel/hono` | Keep separate. | Core framework, database helpers, and the concrete server API runtime are real infrastructure seams. `@voyant-travel/hono` stays explicit because it owns Hono-dependent implementation and sits below domain packages; it is not a swappable adapter. |
 | `@voyant-travel/auth`, `@voyant-travel/auth-react`, `@voyant-travel/identity`, `@voyant-travel/identity-react` | Keep separate, but keep audience/customer terminology aligned. | Auth/session identity and contact/person identity are cross-cutting infrastructure. |
 | `@voyant-travel/action-ledger`, `@voyant-travel/action-ledger-react` | Keep separate as an infrastructure/audit Module. | Audit/action timelines cut across domains. |
 | `@voyant-travel/notifications`, `@voyant-travel/notifications-react` | Keep separate. | Notifications are infrastructure with provider/adapters and domain event consumers. |

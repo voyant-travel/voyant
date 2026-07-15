@@ -29,7 +29,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 
 import {
@@ -206,7 +206,7 @@ export function createCruiseContentRoutes(
   return routes
 }
 
-export interface CruiseContentHonoExtensionOptions {
+export interface CruiseContentApiExtensionOptions {
   admin: CreateCruiseContentRoutesOptions
   public: CreateCruiseContentRoutesOptions
 }
@@ -217,9 +217,9 @@ export const cruiseContentExtension: Extension = {
 }
 
 /** Build sourced-aware cruise content routes for both API surfaces. */
-export function createCruiseContentHonoExtension(
-  options: CruiseContentHonoExtensionOptions,
-): HonoExtension {
+export function createCruiseContentApiExtension(
+  options: CruiseContentApiExtensionOptions,
+): ApiExtension {
   return {
     extension: cruiseContentExtension,
     adminRoutes: createCruiseContentRoutes(options.admin, CRUISE_CONTENT_OPENAPI_API_IDS.admin),

@@ -26,7 +26,7 @@ const REQUIRED_TOKENS = new Map([
     "packages/mcp/src/runtime.ts",
     [
       "defineGraphRuntimeFactory",
-      "createGraphMcpHonoApp",
+      "createGraphMcpApiRoutes",
       "graph, runtimePorts",
       "buildMcpBaseContext",
     ],

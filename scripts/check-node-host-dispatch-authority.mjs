@@ -6,7 +6,7 @@ const violations = []
 const retiredAdapters = [
   "starters/operator/src/workflow-runtime.ts",
   "starters/operator/src/scheduled-crons.ts",
-  "starters/operator/src/hono-api-dispatch.ts",
+  "starters/operator/src/api-dispatch.ts",
   "starters/operator/src/entry.ts",
   "starters/operator/src/ssr-handler.ts",
 ]
@@ -19,7 +19,7 @@ for (const file of retiredAdapters) {
 for (const file of [
   "starters/operator/src/workflow-runtime.test.ts",
   "starters/operator/src/scheduled-crons.test.ts",
-  "starters/operator/src/hono-api-dispatch.test.ts",
+  "starters/operator/src/api-dispatch.test.ts",
 ]) {
   if (existsSync(resolve(root, file)))
     violations.push(`${file}: generic tests must be framework-owned`)

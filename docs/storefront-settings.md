@@ -5,7 +5,7 @@ read/update routes for operator storefront configuration.
 
 ## Routes
 
-Mount `createStorefrontHonoModule(...)` to get:
+Mount `createStorefrontApiModule(...)` to get:
 
 - `GET /v1/public/settings`
 - `GET /v1/admin/storefront/settings`
@@ -16,7 +16,7 @@ the optional `updateSettings` callback, so deployments can keep their existing
 settings store while using Voyant's route, validation, and React/UI contract.
 
 ```ts
-createStorefrontHonoModule({
+createStorefrontApiModule({
   resolveSettings: ({ env }) => loadStorefrontSettings(env),
   updateSettings: async (settings, { env }) => {
     await saveStorefrontSettings(env, settings)

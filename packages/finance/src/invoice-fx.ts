@@ -1,7 +1,7 @@
 import type { Extension, ModuleContainer } from "@voyant-travel/core"
 import { createVoyantDataClient } from "@voyant-travel/data-sdk"
 import { ApiHttpError, parseJsonBody, parseQuery } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 import { Hono as HonoApp } from "hono"
@@ -318,7 +318,7 @@ export function mountInvoiceFxRoutes(hono: Hono, options: InvoiceFxRouteOptions 
   return hono
 }
 
-export function createInvoiceFxHonoExtension(options: InvoiceFxRouteOptions = {}): HonoExtension {
+export function createInvoiceFxApiExtension(options: InvoiceFxRouteOptions = {}): ApiExtension {
   const extension: Extension = {
     name: "finance.invoice-fx",
     module: "finance",

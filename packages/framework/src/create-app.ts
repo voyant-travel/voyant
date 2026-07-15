@@ -27,7 +27,7 @@ export interface CreateVoyantAppConfig<TBindings extends VoyantBindings, TProvid
   extensions?: Record<string, ExtensionFactory<TProviders>>
 }
 
-/** Compose only explicitly supplied factories through the generic Hono machinery. */
+/** Compose only explicitly supplied factories through the shared API runtime. */
 export function createVoyantApp<TBindings extends VoyantBindings, TProviders>(
   config: CreateVoyantAppConfig<TBindings, TProviders>,
 ) {

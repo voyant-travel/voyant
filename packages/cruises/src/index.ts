@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { LinkableDefinition, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import type { Hono } from "hono"
 
 import { cruiseAdminRoutes } from "./routes.js"
@@ -183,19 +183,19 @@ export const cruisesModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface CreateCruisesHonoModuleOptions {
-  adminRoutes?: HonoModule["adminRoutes"]
-  publicRoutes?: HonoModule["publicRoutes"]
-  lazyAdminRoutes?: HonoModule["lazyAdminRoutes"]
-  lazyPublicRoutes?: HonoModule["lazyPublicRoutes"]
-  anonymous?: HonoModule["anonymous"]
+export interface CreateCruisesApiModuleOptions {
+  adminRoutes?: ApiModule["adminRoutes"]
+  publicRoutes?: ApiModule["publicRoutes"]
+  lazyAdminRoutes?: ApiModule["lazyAdminRoutes"]
+  lazyPublicRoutes?: ApiModule["lazyPublicRoutes"]
+  anonymous?: ApiModule["anonymous"]
 }
 
 /**
  * Assemble the cruise module while preserving deployment-owned registry
  * middleware through injected route bundles or lazy loaders.
  */
-export function createCruisesHonoModule(options: CreateCruisesHonoModuleOptions = {}): HonoModule {
+export function createCruisesApiModule(options: CreateCruisesApiModuleOptions = {}): ApiModule {
   return {
     module: cruisesModule,
     ...(options.lazyAdminRoutes
@@ -208,7 +208,7 @@ export function createCruisesHonoModule(options: CreateCruisesHonoModuleOptions 
   }
 }
 
-export const cruisesHonoModule: HonoModule = createCruisesHonoModule()
+export const cruisesApiModule: ApiModule = createCruisesApiModule()
 
 // biome-ignore lint/suspicious/noExplicitAny: package route bundles have distinct Env generics -- owner: cruises.
 type CruiseRouteBundle = Hono<any> | OpenAPIHono<any>

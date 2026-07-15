@@ -19,8 +19,8 @@ import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Handler, Hono } from "hono"
-import type { HonoBundleInput } from "./bundle.js"
-import type { HonoExtension, HonoModule } from "./module.js"
+import type { ApiBundleInput } from "./bundle.js"
+import type { ApiExtension, ApiModule } from "./module.js"
 import type { Reporter } from "./observability/reporter.js"
 
 export interface VoyantExecutionContext {
@@ -263,9 +263,9 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * together with `dbTransactional`.
    */
   dbTransactionalPaths?: string[]
-  modules?: HonoModule[]
-  extensions?: HonoExtension[]
-  plugins?: HonoBundleInput[]
+  modules?: ApiModule[]
+  extensions?: ApiExtension[]
+  plugins?: ApiBundleInput[]
   eventBus?: EventBus
   /**
    * Link definitions activated against each request's resolved database.

@@ -1,8 +1,8 @@
 export {
-  createGraphMcpHonoApp,
-  createMcpHonoApp,
-  type GraphMcpHonoAppOptions,
+  createGraphMcpApiRoutes,
+  createMcpApiRoutes,
+  type GraphMcpApiRoutesOptions,
   type GraphMcpRuntime,
-  type McpHonoAppOptions,
+  type McpApiRoutesOptions,
   type McpServerInfo,
 } from "./server.js"

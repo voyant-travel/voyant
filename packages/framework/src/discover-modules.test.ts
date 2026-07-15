@@ -1,5 +1,5 @@
 import type { CompositionContext } from "@voyant-travel/hono/composition"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { ApiExtension, ApiModule } from "@voyant-travel/hono/module"
 import { describe, expect, it } from "vitest"
 import {
   defineDeploymentExtension,
@@ -8,13 +8,13 @@ import {
   modulesFromGlob,
 } from "./discover-modules.js"
 
-const loyalty: HonoModule = { module: { name: "loyalty" } }
-const bookingNotes: HonoExtension = { extension: { name: "booking-notes", module: "bookings" } }
+const loyalty: ApiModule = { module: { name: "loyalty" } }
+const bookingNotes: ApiExtension = { extension: { name: "booking-notes", module: "bookings" } }
 // The factories under test ignore capabilities; cast a minimal context.
 const ctx = { capabilities: {}, options: {} } as CompositionContext<unknown>
 
 describe("defineDeploymentModule", () => {
-  it("wraps a ready HonoModule in a factory", () => {
+  it("wraps a ready ApiModule in a factory", () => {
     const factory = defineDeploymentModule(loyalty)
     expect(typeof factory).toBe("function")
     expect(factory(ctx)).toBe(loyalty)
@@ -25,8 +25,8 @@ describe("defineDeploymentModule", () => {
     expect(defineDeploymentModule(original)).toBe(original)
   })
 
-  it("supports a HonoModule[] declaration", () => {
-    const pair: HonoModule[] = [loyalty, { module: { name: "loyalty-admin" } }]
+  it("supports a ApiModule[] declaration", () => {
+    const pair: ApiModule[] = [loyalty, { module: { name: "loyalty-admin" } }]
     expect(defineDeploymentModule(pair)(ctx)).toBe(pair)
   })
 })
@@ -61,7 +61,7 @@ describe("modulesFromGlob", () => {
 })
 
 describe("defineDeploymentExtension", () => {
-  it("wraps a ready HonoExtension in a factory", () => {
+  it("wraps a ready ApiExtension in a factory", () => {
     const factory = defineDeploymentExtension(bookingNotes)
     expect(typeof factory).toBe("function")
     expect(factory(ctx)).toBe(bookingNotes)

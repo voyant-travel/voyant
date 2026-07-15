@@ -13,7 +13,7 @@ describe("operations deployment manifest", () => {
           id: "@voyant-travel/operations#api.admin",
           surface: "admin",
           openapi: { document: "operations" },
-          runtime: { entry: "@voyant-travel/operations", export: "operationsHonoModule" },
+          runtime: { entry: "@voyant-travel/operations", export: "operationsApiModule" },
         },
       ],
       schema: [{ id: "@voyant-travel/operations#schema" }],

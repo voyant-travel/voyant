@@ -27,7 +27,7 @@ const fixturePaths = [
   "packages/distribution/src/runtime.ts",
   "packages/runtime/src/index.ts",
   "packages/workflow-runs/src/runtime-contributor.ts",
-  "packages/workflow-runs/src/hono-module.ts",
+  "packages/workflow-runs/src/api-runtime.ts",
   "packages/workflow-runs/src/voyant.ts",
   "packages/workflow-runs/src/runner.ts",
 ]

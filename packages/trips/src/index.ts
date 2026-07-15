@@ -1,7 +1,7 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import {
   TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
@@ -64,31 +64,31 @@ export const tripsModule: Module = {
   name: "trips",
 }
 
-export interface TripsHonoModuleOptions extends TripsRoutesOptions {
+export interface TripsApiModuleOptions extends TripsRoutesOptions {
   adminRoutes?: boolean
   publicRoutes?: boolean
   routesOptions?: TripsRoutesOptionsInput
 }
 
-export function createTripsHonoModule(options: TripsHonoModuleOptions = {}) {
+export function createTripsApiModule(options: TripsApiModuleOptions = {}) {
   const { adminRoutes = true, publicRoutes = false, routesOptions, ...routeOptions } = options
   const resolvedRouteOptions = memoizeTripsRouteOptionsInput(routesOptions ?? routeOptions)
-  const honoModule: HonoModule = {
+  const apiModule: ApiModule = {
     module: tripsModule,
   }
   if (adminRoutes) {
-    honoModule.adminRoutes = stampOpenApiRegistryApiId(
+    apiModule.adminRoutes = stampOpenApiRegistryApiId(
       createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "admin")),
       "@voyant-travel/trips#api.admin",
     )
   }
   if (publicRoutes) {
-    honoModule.publicRoutes = stampOpenApiRegistryApiId(
+    apiModule.publicRoutes = stampOpenApiRegistryApiId(
       createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "public")),
       "@voyant-travel/trips#api.public",
     )
   }
-  return honoModule
+  return apiModule
 }
 
 /** Package-owned adapter from graph ports to the complete Trips runtime. */
@@ -97,7 +97,7 @@ export const createTripsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, 
     getPort(tripsRoutesRuntimePort),
     getPort(tripsDatabaseRuntimePort),
   ])
-  const configured = createTripsHonoModule({
+  const configured = createTripsApiModule({
     routesOptions,
     adminRoutes: api.some(({ surface }) => surface === "admin"),
     publicRoutes: api.some(({ surface }) => surface === "public"),

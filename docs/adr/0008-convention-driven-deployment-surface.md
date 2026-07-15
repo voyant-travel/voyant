@@ -75,7 +75,7 @@ publicPaths: [
 ]
 
 // after — declared where the route lives
-export const catalogPublicRoutes: HonoModule = {
+export const catalogPublicRoutes: ApiModule = {
   module: { name: "catalog" },
   publicRoutes: catalogRoutes,
   anonymous: ["/quote", "/book", "/holds"],   // relative to the module's public mount

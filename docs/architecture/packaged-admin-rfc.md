@@ -27,7 +27,7 @@ Voyant has **two delivery models** for the same product:
 
 voyant#1641 documents what that costs: the #1636 outage ("admin never loads")
 was fixed by #1638, whose package half shipped automatically and whose template
-half (`entry.ts` / `hono-api-dispatch.ts`) had to be hand-ported into every
+half (`entry.ts` / `api-dispatch.ts`) had to be hand-ported into every
 diverged project. Same fix, two delivery models, and the load-bearing half was
 the manual one. The same pattern recurs with every starter-level improvement
 (#1631/#1637 cold-start chunking, #1642 SSR preloads).
@@ -38,7 +38,7 @@ The fork surface today, measured on `starters/operator`:
 | --- | --- | --- |
 | Route files (`src/routes/**`) | 103 files, ~8,100 LOC | copied, diverges |
 | Components (`src/components/**`) | 158 files, ~33,200 LOC | copied, diverges |
-| Worker entry + dispatch (`entry.ts`, `hono-api-dispatch.ts`) | ~380 LOC | copied, diverges |
+| Worker entry + dispatch (`entry.ts`, `api-dispatch.ts`) | ~380 LOC | copied, diverges |
 | Build config (`vite.config.ts` incl. chunking, SSR preloads) | copied, diverges |
 | Backend wiring (`createApp` + manifest) | config | ✅ version bump |
 
@@ -92,7 +92,7 @@ half of it:
 | Change (from #1638) | Lives in | Downstream delivery |
 | --- | --- | --- |
 | CORS preflight fix | `@voyant-travel/hono` | ✅ version bump |
-| Lean `/api/auth/*` dispatch | template `entry.ts` / `hono-api-dispatch.ts` | ❌ hand-port |
+| Lean `/api/auth/*` dispatch | template `entry.ts` / `api-dispatch.ts` | ❌ hand-port |
 
 A missed hand-port is invisible until it breaks, and template code is exactly
 the load-bearing infrastructure (auth dispatch, cold-start chunking, SSR
@@ -322,7 +322,7 @@ Directly per voyant#1641's suggested directions:
 
 - **`@voyant-travel/runtime-core`** (or an export of `@voyant-travel/hono`):
   `createWorkerFetch({ ssrHandler, authApp, apiApp })` — the current
-  `hono-api-dispatch.ts` (97 LOC) plus the **fetch-side** parts of `entry.ts`:
+  `api-dispatch.ts` (97 LOC) plus the **fetch-side** parts of `entry.ts`:
   API/auth/SSR dispatch and the SSR-manifest-restriction logic (#1642).
   Scoping is deliberate: `entry.ts` (287 LOC) also owns the cron
   `scheduled()` handler, lazy workflow-runtime loading, and the workflow

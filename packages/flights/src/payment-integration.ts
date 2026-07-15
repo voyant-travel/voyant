@@ -16,9 +16,8 @@
  */
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { Context } from "hono"
-
+import type { FlightOrderPaymentSummary, FlightPaymentIntegration } from "./api-runtime.js"
 import type { FlightOrder, FlightPassenger } from "./contract/types.js"
-import type { FlightOrderPaymentSummary, FlightPaymentIntegration } from "./hono.js"
 
 // `c.var.db` is set by the createApp DB middleware; the global ContextVariableMap
 // doesn't declare it, so cast at the call site to keep type-safety local.

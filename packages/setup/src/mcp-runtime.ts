@@ -6,9 +6,8 @@ import {
   ToolError,
 } from "@voyant-travel/tools"
 import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
-
+import { readSetupPrefill, readSetupSteps } from "./api-runtime.js"
 import type { SetupStepDefinition } from "./contracts.js"
-import { readSetupPrefill, readSetupSteps } from "./hono-module.js"
 import {
   completeSetupStep,
   createDrizzleSetupStore,

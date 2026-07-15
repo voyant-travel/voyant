@@ -1,6 +1,6 @@
 # Custom deployment extensions
 
-Drop a `HonoExtension` here to add **custom routes to an existing module's
+Drop a `ApiExtension` here to add **custom routes to an existing module's
 surface** without forking — e.g. a `/v1/admin/bookings/notes` endpoint on the
 standard `bookings` module. A directory under `src/extensions/<name>/` is
 auto-discovered and mounted; it survives `voyant upgrade`.
@@ -11,7 +11,7 @@ an existing module* (`extension.module`) and mounts under that module's path.
 
 ## index.ts — mounting
 
-Default-export via `defineDeploymentExtension` (a ready `HonoExtension` or a
+Default-export via `defineDeploymentExtension` (a ready `ApiExtension` or a
 factory receiving the deployment's capabilities):
 
 ```ts

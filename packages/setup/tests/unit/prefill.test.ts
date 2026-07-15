@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { readSetupPrefill, readSetupSteps } from "../../src/hono-module.js"
+import { readSetupPrefill, readSetupSteps } from "../../src/api-runtime.js"
 
 describe("setup provisioning prefill", () => {
   it("accepts opaque JSON values keyed by step id", () => {

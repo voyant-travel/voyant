@@ -21,7 +21,7 @@ The package intentionally exposes the Commerce Interface from the root:
 - `evaluateCommercialDecision(input, context)`
 - `createCommerceAdapterRegistry(...)`
 - `recordCommercialSnapshot(decision, target, repository)`
-- `createCommerceHonoModules()`
+- `createCommerceApiModules()`
 - `createCommerceStorefrontOfferResolvers()`
 - decision, adapter, trace, pricing, promotion, FX, and snapshot types
 
@@ -42,10 +42,10 @@ Sellability React/admin source under owner-path subpaths:
 ## Runtime Mounting
 
 Templates should declare one Commerce runtime entry and expand it through
-`createCommerceHonoModules()`:
+`createCommerceApiModules()`:
 
 ```ts
-const modules = createCommerceHonoModules()
+const modules = createCommerceApiModules()
 ```
 
 The returned modules preserve the existing route prefixes:

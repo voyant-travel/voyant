@@ -2,7 +2,7 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -54,7 +54,7 @@ export type {
   NotificationDelivery,
   NotificationReminderRule,
   NotificationReminderRun,
-  NotificationsHonoModule,
+  NotificationsApiModule,
   NotificationTemplate,
 } from "./schema.js"
 export {
@@ -223,7 +223,7 @@ export {
   type SendDueRemindersWorkflowInput,
 } from "./workflow-runtime.js"
 
-export interface CreateNotificationsHonoModuleOptions extends NotificationsRoutesOptions {
+export interface CreateNotificationsApiModuleOptions extends NotificationsRoutesOptions {
   /**
    * Resolves a database from runtime bindings. Required for
    * `autoConfirmAndDispatch` — the `booking.confirmed` subscriber fires
@@ -243,9 +243,9 @@ export interface CreateNotificationsHonoModuleOptions extends NotificationsRoute
   documentBundleLifecycle?: BookingDocumentBundleLifecycleOptions
 }
 
-export function createNotificationsHonoModule(
-  options?: CreateNotificationsHonoModuleOptions,
-): HonoModule {
+export function createNotificationsApiModule(
+  options?: CreateNotificationsApiModuleOptions,
+): ApiModule {
   const routes = createNotificationsRoutes(options)
 
   const module: Module = {
@@ -267,7 +267,7 @@ export function createNotificationsHonoModule(
 /** Package-owned adapter from the selected graph's typed Node host port. */
 export const createNotificationsVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) => {
   const provider = await getPort(notificationsRuntimePort)
-  const configured = createNotificationsHonoModule(provider)
+  const configured = createNotificationsApiModule(provider)
   const bootstrap = configured.module.bootstrap
 
   return {

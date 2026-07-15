@@ -276,7 +276,7 @@ async function main(): Promise<void> {
     const route = bookingsUnit?.api?.find((entry) => entry.surface === surface)
     if (
       route?.runtime?.entry !== "@voyant-travel/bookings" ||
-      route.runtime.export !== "createBookingsHonoModule" ||
+      route.runtime.export !== "createBookingsApiModule" ||
       route.transactional !== true
     ) {
       failures.push(

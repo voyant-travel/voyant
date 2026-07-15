@@ -390,7 +390,7 @@ export function createPublicDocumentDeliveryRoutes<
   return routes
 }
 
-export function createPublicDocumentDeliveryHonoModule<
+export function createPublicDocumentDeliveryApiModule<
   TBindings extends object = Record<string, unknown>,
 >(options: PublicDocumentDeliveryRouteOptions<TBindings> = {}) {
   return {
@@ -405,7 +405,7 @@ export function createPublicDocumentDeliveryHonoModule<
 export const createPublicDocumentDeliveryVoyantRuntime = defineGraphRuntimeFactory(
   async ({ getPort }) => {
     const storage = await getPort(storageObjectRuntimePort)
-    return createPublicDocumentDeliveryHonoModule({
+    return createPublicDocumentDeliveryApiModule({
       resolveStorage: () => storage.resolve("documents"),
     })
   },

@@ -5,11 +5,11 @@ import { createContainer, createEventBus } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
 import {
-  createNotificationsHonoModule,
+  createNotificationsApiModule,
   NOTIFICATIONS_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "../../src/index.js"
 
-describe("createNotificationsHonoModule.bootstrap", () => {
+describe("createNotificationsApiModule.bootstrap", () => {
   it("keeps document-related table imports on schema-only package surfaces", () => {
     const srcDir = fileURLToPath(new URL("../../src", import.meta.url))
     const files = collectTypeScriptFiles(srcDir)
@@ -32,7 +32,7 @@ describe("createNotificationsHonoModule.bootstrap", () => {
     ])
     const documentAttachmentResolver = vi.fn(async () => null)
     const eventBus = createEventBus()
-    const module = createNotificationsHonoModule({
+    const module = createNotificationsApiModule({
       resolveProviders,
       documentAttachmentResolver,
       eventBus,

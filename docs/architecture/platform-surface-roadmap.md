@@ -74,11 +74,11 @@ The current gap is no longer “invent the surface model”. The gap is:
 - add first-class lifecycle/document workflows where apps still need copied
   orchestration
 
-Transport taxonomy note:
+Server API runtime taxonomy note:
 
-- `@voyant-travel/hono` is the default HTTP transport adapter for Voyant, not a
-  plugin package in the same sense as Netopia or SmartBill
-- reusable Hono transport contributions use the `HonoBundle` terminology;
+- `@voyant-travel/hono` is Voyant's sole server API runtime implementation, not
+  a swappable adapter or a plugin package in the same sense as Netopia or SmartBill
+- reusable server API contributions use the `ApiBundle` terminology;
   product integrations remain plugins at the project configuration boundary
 
 This document reflects the source tree on `main` as of 2026-04-14 and calls
@@ -295,7 +295,7 @@ Now covered for legal:
 - first-class contract document generate/regenerate workflow with canonical
   attachment persistence
 - configurable admin routes for `generate-document` and `regenerate-document`
-  through `createLegalHonoModule()` / `createContractsAdminRoutes()`
+  through `createLegalApiModule()` / `createContractsAdminRoutes()`
 - shared Liquid-compatible template rendering for contract templates, including
   loops, conditionals, and filters in html/markdown bodies plus lexical text
   nodes
@@ -312,7 +312,7 @@ Now covered for finance:
 - first-class invoice/proforma document generate/regenerate workflow with ready
   rendition persistence
 - configurable admin routes for `generate-document` and `regenerate-document`
-  through `createFinanceHonoModule()` / `createFinanceAdminDocumentRoutes()`
+  through `createFinanceApiModule()` / `createFinanceAdminDocumentRoutes()`
 - shared Liquid-compatible template rendering for invoice/proforma templates,
   including loops, conditionals, and filters in html/markdown bodies plus
   lexical text nodes

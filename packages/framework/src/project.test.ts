@@ -903,7 +903,7 @@ export default ${JSON.stringify(moduleManifest("@acme/cloud-only"))}
           surface: "admin",
           runtime: {
             entry: "./.voyant/runtime/project-api.generated.ts",
-            export: "projectApiHonoModule",
+            export: "projectApiModule",
           },
         },
       ],

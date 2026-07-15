@@ -1,5 +1,18 @@
 // Flight contract types — offers, orders, segments, search, booking.
 
+// Flight admin HTTP routes (module-owned; the deployment supplies connector +
+// payment options).
+export {
+  createFlightAdminRoutes,
+  createFlightsApiModule,
+  createFlightsVoyantRuntime,
+  type FlightOrderPaymentSummary,
+  type FlightPaymentIntegration,
+  type FlightsApiModuleOptions,
+  type FlightsRouteOptions,
+  type FlightsRuntime,
+  flightsRuntimePort,
+} from "./api-runtime.js"
 // FlightConnectorAdapter contract.
 export {
   type AdapterLogger,
@@ -20,19 +33,6 @@ export {
 } from "./contract/adapter.js"
 export * from "./contract/schemas.js"
 export * from "./contract/types.js"
-// Flight admin HTTP routes (module-owned; the deployment supplies connector +
-// payment options).
-export {
-  createFlightAdminRoutes,
-  createFlightsHonoModule,
-  createFlightsVoyantRuntime,
-  type FlightOrderPaymentSummary,
-  type FlightPaymentIntegration,
-  type FlightsHonoModuleOptions,
-  type FlightsRouteOptions,
-  type FlightsRuntime,
-  flightsRuntimePort,
-} from "./hono.js"
 export {
   FLIGHTS_ENTITY_MODULE,
   mergedFlightOffersToCandidates,

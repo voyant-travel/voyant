@@ -1,6 +1,6 @@
 import type { Hono } from "hono"
 
-import type { HonoExtension, HonoModule } from "./module.js"
+import type { ApiExtension, ApiModule } from "./module.js"
 import { resolveSurfaceMountPath } from "./mount-paths.js"
 
 /**
@@ -16,8 +16,8 @@ import { resolveSurfaceMountPath } from "./mount-paths.js"
  * matches to skip auth (and stamp `actor: "customer"`).
  */
 export function assembleAnonymousPaths(
-  modules: readonly HonoModule[],
-  extensions: readonly HonoExtension[],
+  modules: readonly ApiModule[],
+  extensions: readonly ApiExtension[],
   explicit: readonly string[] = [],
 ): string[] {
   const paths = new Set<string>(explicit)
@@ -40,7 +40,7 @@ export function assembleAnonymousPaths(
   // at `/v1/{name}`, matching the mount in `app.ts`. Parameterized/wildcard paths
   // are skipped (the literal `matchesPublicPath` matcher can't match them) and
   // must be declared via `anonymous` if ever needed.
-  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; mirrors the HonoModule.webhookRoutes suppression.
+  // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics -- owner: hono; mirrors the ApiModule.webhookRoutes suppression.
   const addWebhooks = (name: string, routes: Hono<any> | undefined): void => {
     if (!routes) return
     for (const route of routes.routes) {

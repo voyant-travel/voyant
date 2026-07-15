@@ -1,6 +1,6 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { FinanceHonoModuleOptions } from "./index.js"
+import type { FinanceApiModuleOptions } from "./index.js"
 import {
   createVoyantDataFxExchangeRateResolver,
   type ResolveInvoiceExchangeRate,
@@ -25,7 +25,7 @@ export function createFinanceRuntime(
   notifications: FinanceNotificationsRuntime,
   checkoutPaymentStarters?: FinanceCheckoutPaymentStartersRuntime,
   invoiceSettlementPollerProviders: readonly FinanceInvoiceSettlementPollerProvider[] = [],
-): FinanceHonoModuleOptions {
+): FinanceApiModuleOptions {
   const { primitives } = host
   return {
     resolveDocumentDownloadUrl: primitives.storage.downloadUrl,
@@ -86,7 +86,7 @@ export function createFinanceBookingScheduleRuntime(
 
 export function createFinanceBookingTaxRuntime(
   settings: FinanceOperatorSettingsRuntime,
-): FinanceHonoModuleOptions {
+): FinanceApiModuleOptions {
   return {
     resolveBookingTaxSettings: settings.resolveBookingTaxSettings,
     updateBookingTaxSettings: settings.updateBookingTaxSettings,

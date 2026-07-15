@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import type { Extension } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
@@ -389,7 +389,7 @@ const bookingsCreateExtensionDef: Extension = {
   module: "bookings",
 }
 
-export const bookingsCreateExtension: HonoExtension = {
+export const bookingsCreateExtension: ApiExtension = {
   extension: bookingsCreateExtensionDef,
   // Mounted at the staff-guarded `/v1/admin/bookings/...` surface.
   adminRoutes: createBookingRoutes,

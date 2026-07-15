@@ -41,7 +41,7 @@ export {
   type ActionLedgerDriftCheckRow,
   type ActionLedgerHealthResponse,
   type ActionLedgerHealthRoutesOptions,
-  createActionLedgerHealthHonoExtension,
+  createActionLedgerHealthApiExtension,
   createActionLedgerHealthRoutes,
   type RunActionLedgerHealthCheckInput,
   runActionLedgerHealthCheck,
@@ -90,7 +90,7 @@ export {
   type ActionLedgerRelayOutboxResponse,
   type ActionLedgerReversalResponse,
   actionLedgerAdminRoutes,
-  actionLedgerHonoModule,
+  actionLedgerApiModule,
   actionLedgerModule,
 } from "./routes.js"
 export {

@@ -1,7 +1,7 @@
 import { defineModule } from "@voyant-travel/core/project"
 
 const setupRuntime = {
-  entry: "@voyant-travel/setup/hono-module",
+  entry: "@voyant-travel/setup/api-runtime",
   export: "createSetupVoyantRuntime",
 } as const
 

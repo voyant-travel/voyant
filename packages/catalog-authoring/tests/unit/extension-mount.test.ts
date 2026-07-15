@@ -4,7 +4,7 @@ import { catalogAuthoringExtension } from "../../src/extension.js"
 import { productGraphSpecSchema } from "../../src/spec.js"
 
 /**
- * Proves the Option-B mounting mechanism: registered as a HonoExtension whose
+ * Proves the Option-B mounting mechanism: registered as a ApiExtension whose
  * `module` is "products", the routes resolve under `/v1/admin/products/...`
  * exactly as `createApp` mounts extensions (`packages/hono/src/app.ts`:
  * `app.route('/v1/admin/' + ext.extension.module, ext.adminRoutes)`).

@@ -76,7 +76,7 @@ describe("check-relationships-runtime-authority", () => {
   it("rejects package-id binding and the compatibility module export", async () => {
     const root = await createFixture({
       "relationships/src/index.ts":
-        "export const relationshipsHonoModule = createRelationshipsHonoModule()\n",
+        "export const relationshipsApiModule = createRelationshipsApiModule()\n",
       "runtime/src/deployment-resources.ts":
         'function createDeploymentPortResources() { return options.createRuntimePorts({ primitives }) }\nexport const operatorGraphRuntimeBindings = { "@voyant-travel/relationships": factory }\n',
     })

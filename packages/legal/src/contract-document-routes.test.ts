@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   CONTRACT_DOCUMENT_ROUTE_PATHS,
   type ContractDocumentRoutesOptions,
-  createContractDocumentHonoModule,
+  createContractDocumentApiModule,
   createContractDocumentRoutes,
 } from "./contract-document-routes.js"
 
@@ -50,7 +50,7 @@ describe("contract document routes", () => {
   })
 
   it("describes the package-owned lazy route module", () => {
-    const module = createContractDocumentHonoModule(stubOptions())
+    const module = createContractDocumentApiModule(stubOptions())
 
     expect(module.module.name).toBe("contract-document")
     expect(module.lazyRoutes?.paths).toBe(CONTRACT_DOCUMENT_ROUTE_PATHS)

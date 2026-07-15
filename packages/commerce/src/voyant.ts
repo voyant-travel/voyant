@@ -137,7 +137,7 @@ export const commerceVoyantModule = defineModule({
       openapi: { document: "pricing" },
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "pricingHonoModule",
+        export: "pricingApiModule",
       },
     },
     {
@@ -147,7 +147,7 @@ export const commerceVoyantModule = defineModule({
       openapi: { document: "pricing" },
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "pricingHonoModule",
+        export: "pricingApiModule",
       },
     },
     {
@@ -158,7 +158,7 @@ export const commerceVoyantModule = defineModule({
       resource: "markets",
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "marketsHonoModule",
+        export: "marketsApiModule",
       },
     },
     {
@@ -170,7 +170,7 @@ export const commerceVoyantModule = defineModule({
       anonymous: true,
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "marketsHonoModule",
+        export: "marketsApiModule",
       },
     },
     {
@@ -181,7 +181,7 @@ export const commerceVoyantModule = defineModule({
       resource: "sellability",
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "sellabilityHonoModule",
+        export: "sellabilityApiModule",
       },
     },
     {
@@ -192,7 +192,7 @@ export const commerceVoyantModule = defineModule({
       resource: "promotions",
       runtime: {
         entry: "@voyant-travel/commerce",
-        export: "promotionsHonoModule",
+        export: "promotionsApiModule",
       },
     },
   ],
@@ -535,7 +535,7 @@ export const commerceBookingMaintenanceVoyantPlugin = defineExtension({
       openapi: { document: "bookings" },
       runtime: {
         entry: "@voyant-travel/commerce/checkout",
-        export: "createBookingMaintenanceHonoExtension",
+        export: "createBookingMaintenanceApiExtension",
       },
     },
   ],

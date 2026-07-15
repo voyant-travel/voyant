@@ -13,10 +13,10 @@ import {
 import {
   createChannelPushExtension,
   createChannelPushVoyantRuntime,
+  distributionApiModule,
   distributionBookingExtension,
-  distributionHonoModule,
-  externalRefsHonoModule,
-  suppliersHonoModule,
+  externalRefsApiModule,
+  suppliersApiModule,
 } from "../../src/index.js"
 import {
   distributionBookingVoyantPlugin,
@@ -46,7 +46,7 @@ describe("distribution deployment manifests", () => {
           openapi: { document: "external-refs" },
           runtime: {
             entry: "@voyant-travel/distribution",
-            export: "externalRefsHonoModule",
+            export: "externalRefsApiModule",
           },
         },
         {
@@ -56,7 +56,7 @@ describe("distribution deployment manifests", () => {
           openapi: { document: "distribution" },
           runtime: {
             entry: "@voyant-travel/distribution",
-            export: "distributionHonoModule",
+            export: "distributionApiModule",
           },
         },
         {
@@ -66,7 +66,7 @@ describe("distribution deployment manifests", () => {
           openapi: { document: "suppliers" },
           runtime: {
             entry: "@voyant-travel/distribution",
-            export: "suppliersHonoModule",
+            export: "suppliersApiModule",
           },
         },
       ],
@@ -225,9 +225,9 @@ describe("distribution deployment manifests", () => {
   })
 
   it("references exported runtimes with matching mounts", () => {
-    expect(externalRefsHonoModule.module.name).toBe("external-refs")
-    expect(distributionHonoModule.module.name).toBe("distribution")
-    expect(suppliersHonoModule.module.name).toBe("suppliers")
+    expect(externalRefsApiModule.module.name).toBe("external-refs")
+    expect(distributionApiModule.module.name).toBe("distribution")
+    expect(suppliersApiModule.module.name).toBe("suppliers")
     expect(distributionBookingExtension.extension.module).toBe("bookings")
     expect(createChannelPushExtension).toBeTypeOf("function")
     expect(createChannelPushVoyantRuntime).toBeTypeOf("function")

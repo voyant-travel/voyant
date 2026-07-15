@@ -1,6 +1,6 @@
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 import { resolveBookingFinancialLifecycle } from "./financial-lifecycle.js"
 import { bookingsLinkable } from "./linkables.js"
 import {
@@ -121,9 +121,9 @@ export const bookingsModule: Module = {
   requiresTransactionalDb: true,
 }
 
-export interface BookingsHonoModuleOptions extends BookingRouteRuntimeOptions {}
+export interface BookingsApiModuleOptions extends BookingRouteRuntimeOptions {}
 
-export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}): HonoModule {
+export function createBookingsApiModule(options: BookingsApiModuleOptions = {}): ApiModule {
   const module: Module = {
     ...bookingsModule,
     bootstrap: ({ bindings, container }) => {
@@ -155,7 +155,7 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
   }
 }
 
-export const bookingsHonoModule: HonoModule = createBookingsHonoModule()
+export const bookingsApiModule: ApiModule = createBookingsApiModule()
 
 /** Package-owned adapter from graph ports to the complete Bookings runtime. */
 export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ api, getPort }) => {
@@ -171,9 +171,9 @@ export const createBookingsVoyantRuntime = defineGraphRuntimeFactory(async ({ ap
     finance,
     relationships,
   })
-  const configured = createBookingsHonoModule(provider.options)
+  const configured = createBookingsApiModule(provider.options)
   const bootstrap = configured.module.bootstrap
-  const selected: HonoModule = {
+  const selected: ApiModule = {
     module: {
       ...configured.module,
       bootstrap: async (context: BootstrapContext) => {

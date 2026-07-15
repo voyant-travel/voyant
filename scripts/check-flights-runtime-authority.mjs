@@ -32,7 +32,7 @@ function readRequired(path) {
 
 const packageJson = JSON.parse(readRequired(join(flightsRoot, "package.json")))
 const manifest = readRequired(join(flightsRoot, "src/voyant.ts"))
-const hono = readRequired(join(flightsRoot, "src/hono.ts"))
+const hono = readRequired(join(flightsRoot, "src/api-runtime.ts"))
 const runtimePort = readRequired(join(flightsRoot, "src/runtime-port.ts"))
 const composition = readRequired(compositionPath)
 const nodeContributor = readRequired(join(flightsRoot, "src/runtime-contributor.ts"))

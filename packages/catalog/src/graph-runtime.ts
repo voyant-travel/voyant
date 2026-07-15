@@ -1,21 +1,21 @@
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
-import type { HonoExtension, HonoModule } from "@voyant-travel/hono/module"
+import type { ApiExtension, ApiModule } from "@voyant-travel/hono/module"
 
 import {
   catalogBookingRuntimePort,
   catalogOffersRuntimePort,
   catalogSearchRuntimePort,
 } from "./api-runtime-ports.js"
-import { createCatalogBookingEngineHonoModule } from "./booking-engine/operator-routes.js"
-import { createCatalogOffersHonoExtension } from "./offers/operator-routes.js"
-import { createCatalogSearchHonoModule } from "./search/routes.js"
+import { createCatalogBookingEngineApiModule } from "./booking-engine/operator-routes.js"
+import { createCatalogOffersApiExtension } from "./offers/operator-routes.js"
+import { createCatalogSearchApiModule } from "./search/routes.js"
 import { executeSemanticSearch } from "./search/semantic.js"
 
 function selectedModuleSurfaces(
-  configured: HonoModule,
+  configured: ApiModule,
   api: readonly { id: string; surface: string }[],
-): HonoModule {
+): ApiModule {
   const adminApiId = api.find(({ surface }) => surface === "admin")?.id
   const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
@@ -34,9 +34,9 @@ function selectedModuleSurfaces(
 }
 
 function selectedExtensionSurfaces(
-  configured: HonoExtension,
+  configured: ApiExtension,
   api: readonly { id: string; surface: string }[],
-): HonoExtension {
+): ApiExtension {
   const adminApiId = api.find(({ surface }) => surface === "admin")?.id
   const publicApiId = api.find(({ surface }) => surface === "public")?.id
   return {
@@ -58,7 +58,7 @@ export const createCatalogSearchVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) => {
     const runtime = await getPort(catalogSearchRuntimePort)
     return selectedModuleSurfaces(
-      createCatalogSearchHonoModule({
+      createCatalogSearchApiModule({
         ...runtime,
         executeSearch: ({ adapter, embeddings, slice, request }) =>
           executeSemanticSearch({
@@ -76,7 +76,7 @@ export const createCatalogSearchVoyantRuntime = defineGraphRuntimeFactory(
 export const createCatalogBookingVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) =>
     selectedModuleSurfaces(
-      createCatalogBookingEngineHonoModule(await getPort(catalogBookingRuntimePort)),
+      createCatalogBookingEngineApiModule(await getPort(catalogBookingRuntimePort)),
       api,
     ),
 )
@@ -84,7 +84,7 @@ export const createCatalogBookingVoyantRuntime = defineGraphRuntimeFactory(
 export const createCatalogOffersVoyantRuntime = defineGraphRuntimeFactory(
   async ({ api, getPort }) =>
     selectedExtensionSurfaces(
-      createCatalogOffersHonoExtension(await getPort(catalogOffersRuntimePort)),
+      createCatalogOffersApiExtension(await getPort(catalogOffersRuntimePort)),
       api,
     ),
 )

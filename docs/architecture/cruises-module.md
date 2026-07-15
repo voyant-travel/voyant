@@ -143,7 +143,7 @@ packages/cruises/
 ├── tsconfig.json
 ├── vitest.config.ts
 ├── src/
-│   ├── index.ts                 # Module + HonoModule + Linkable exports
+│   ├── index.ts                 # Module + ApiModule + Linkable exports
 │   ├── schema.ts                # Re-export rollup of all schema-*.ts
 │   ├── schema-shared.ts         # pgEnums (cruiseTypeEnum, cabinRoomTypeEnum, etc.)
 │   ├── schema-core.ts           # cruises, cruiseShips, cruiseSailings
@@ -190,7 +190,7 @@ packages/cruises/
 }
 ```
 
-`src/index.ts` exports `cruisesModule`, `cruisesHonoModule`, `cruisesBookingExtension`, `cruiseLinkable`, `cruiseSailingLinkable`, `cruiseShipLinkable`, plus the schema/validation/service/routes re-exports. Same shape as `packages/products/src/index.ts`.
+`src/index.ts` exports `cruisesModule`, `cruisesApiModule`, `cruisesBookingExtension`, `cruiseLinkable`, `cruiseSailingLinkable`, `cruiseShipLinkable`, plus the schema/validation/service/routes re-exports. Same shape as `packages/products/src/index.ts`.
 
 The adapter contract lives in this package (`./adapters`). It defines the `CruiseAdapter` interface plus the registry templates use to plug Connect (or a custom adapter) in. **No actual connector implementations live here.** See §10 for the contract methods and §3.5 for how external rows participate in the admin and storefront experience.
 
@@ -595,7 +595,7 @@ Quotes are returned in the **native currency** of the underlying price rows — 
 
 ## 9. Routes
 
-Two Hono apps, mounted by template via `createApp({ modules: [cruisesHonoModule] })`. The admin surface is **provenance-aware**: list and detail endpoints transparently interleave self-managed cruises (read from the local DB) and external cruises (read live through registered adapters). The storefront surface reads from the local `cruise_search_index` projection.
+Two Hono apps, mounted by template via `createApp({ modules: [cruisesApiModule] })`. The admin surface is **provenance-aware**: list and detail endpoints transparently interleave self-managed cruises (read from the local DB) and external cruises (read live through registered adapters). The storefront surface reads from the local `cruise_search_index` projection.
 
 ### Admin routes — `/v1/admin/cruises/*`
 
@@ -726,13 +726,13 @@ Two registration points in a template:
 
 ```ts
 import { createApp } from "@voyant-travel/hono"
-import { cruisesHonoModule, registerCruiseAdapter } from "@voyant-travel/cruises"
+import { cruisesApiModule, registerCruiseAdapter } from "@voyant-travel/cruises"
 import { createCruiseAdapter } from "external-cruise-adapter"
 
 registerCruiseAdapter(createCruiseAdapter({ token: env.CRUISE_ADAPTER_TOKEN }))
 
 export const app = createApp({
-  modules: [cruisesHonoModule, ...],
+  modules: [cruisesApiModule, ...],
 })
 ```
 

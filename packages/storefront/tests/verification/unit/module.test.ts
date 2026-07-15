@@ -4,12 +4,12 @@ import { getTableName } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 
 import {
-  createStorefrontVerificationHonoModule,
+  createStorefrontVerificationApiModule,
   STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
   storefrontVerificationChallenges,
 } from "../../../src/verification/index.js"
 
-describe("createStorefrontVerificationHonoModule.bootstrap", () => {
+describe("createStorefrontVerificationApiModule.bootstrap", () => {
   it("registers the resolved sender bundle once", async () => {
     const resolveProviders = vi.fn(() => [
       {
@@ -24,7 +24,7 @@ describe("createStorefrontVerificationHonoModule.bootstrap", () => {
       },
     ])
 
-    const module = createStorefrontVerificationHonoModule({
+    const module = createStorefrontVerificationApiModule({
       resolveProviders,
     })
     const container = createContainer()

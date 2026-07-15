@@ -13,7 +13,7 @@ import { OpenAPIHono } from "@hono/zod-openapi"
 import type { SourceAdapterRegistry } from "@voyant-travel/catalog/booking-engine"
 import type { Extension } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { Context } from "hono"
 
 import { type AccommodationContentScope, getAccommodationContent } from "./service-content.js"
@@ -114,7 +114,7 @@ export function createAccommodationContentRoutes(
   }
 }
 
-export interface AccommodationContentHonoExtensionOptions {
+export interface AccommodationContentApiExtensionOptions {
   admin: CreateAccommodationContentRoutesOptions
   public: CreateAccommodationContentRoutesOptions
 }
@@ -125,9 +125,9 @@ export const accommodationContentExtension: Extension = {
 }
 
 /** Build accommodation content routes for operator and storefront callers. */
-export function createAccommodationContentHonoExtension(
-  options: AccommodationContentHonoExtensionOptions,
-): HonoExtension {
+export function createAccommodationContentApiExtension(
+  options: AccommodationContentApiExtensionOptions,
+): ApiExtension {
   return {
     extension: accommodationContentExtension,
     adminRoutes: createAccommodationContentRoutes(

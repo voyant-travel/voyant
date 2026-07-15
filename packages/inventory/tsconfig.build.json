@@ -958,10 +958,10 @@
       "@voyant-travel/flights-react/provider": ["../flights-react/dist/provider.d.ts"],
       "@voyant-travel/flights-react/query-keys": ["../flights-react/dist/query-keys.d.ts"],
       "@voyant-travel/flights-react/ui": ["../flights-react/dist/ui.d.ts"],
+      "@voyant-travel/flights/api-runtime": ["../flights/dist/api-runtime.d.ts"],
       "@voyant-travel/flights/contract/adapter": ["../flights/dist/contract/adapter.d.ts"],
       "@voyant-travel/flights/contract/schemas": ["../flights/dist/contract/schemas.d.ts"],
       "@voyant-travel/flights/contract/types": ["../flights/dist/contract/types.d.ts"],
-      "@voyant-travel/flights/hono": ["../flights/dist/hono.d.ts"],
       "@voyant-travel/flights/mcp-runtime": ["../flights/dist/mcp-runtime.d.ts"],
       "@voyant-travel/flights/orchestration/fan-out": [
         "../flights/dist/orchestration/fan-out.d.ts"
@@ -1186,11 +1186,11 @@
       "@voyant-travel/navigation-preferences-react/settings": [
         "../navigation-preferences-react/dist/settings.d.ts"
       ],
+      "@voyant-travel/navigation-preferences/api-runtime": [
+        "../navigation-preferences/dist/api-runtime.d.ts"
+      ],
       "@voyant-travel/navigation-preferences/contracts": [
         "../navigation-preferences/dist/contracts.d.ts"
-      ],
-      "@voyant-travel/navigation-preferences/hono-module": [
-        "../navigation-preferences/dist/hono-module.d.ts"
       ],
       "@voyant-travel/navigation-preferences/routes": [
         "../navigation-preferences/dist/routes.d.ts"
@@ -1396,8 +1396,8 @@
       "@voyant-travel/operator-settings-react/settings": [
         "../operator-settings-react/dist/settings.d.ts"
       ],
-      "@voyant-travel/operator-settings/hono-module": [
-        "../operator-settings/dist/hono-module.d.ts"
+      "@voyant-travel/operator-settings/api-runtime": [
+        "../operator-settings/dist/api-runtime.d.ts"
       ],
       "@voyant-travel/operator-settings/routes": ["../operator-settings/dist/routes.d.ts"],
       "@voyant-travel/operator-settings/runtime-contributor": [
@@ -1597,8 +1597,8 @@
       "@voyant-travel/setup-react/admin": ["../setup-react/dist/admin.d.ts"],
       "@voyant-travel/setup-react/client": ["../setup-react/dist/client.d.ts"],
       "@voyant-travel/setup-react/i18n": ["../setup-react/dist/i18n/index.d.ts"],
+      "@voyant-travel/setup/api-runtime": ["../setup/dist/api-runtime.d.ts"],
       "@voyant-travel/setup/contracts": ["../setup/dist/contracts.d.ts"],
-      "@voyant-travel/setup/hono-module": ["../setup/dist/hono-module.d.ts"],
       "@voyant-travel/setup/routes": ["../setup/dist/routes.d.ts"],
       "@voyant-travel/setup/schema": ["../setup/dist/schema.d.ts"],
       "@voyant-travel/setup/service": ["../setup/dist/service.d.ts"],
@@ -1771,7 +1771,7 @@
       "@voyant-travel/webhook-delivery": ["../webhook-delivery/dist/index.d.ts"],
       "@voyant-travel/webhook-delivery/postgres": ["../webhook-delivery/dist/postgres-store.d.ts"],
       "@voyant-travel/workflow-runs": ["../workflow-runs/dist/index.d.ts"],
-      "@voyant-travel/workflow-runs/hono-module": ["../workflow-runs/dist/hono-module.d.ts"],
+      "@voyant-travel/workflow-runs/api-runtime": ["../workflow-runs/dist/api-runtime.d.ts"],
       "@voyant-travel/workflow-runs/recorder": ["../workflow-runs/dist/recorder.d.ts"],
       "@voyant-travel/workflow-runs/routes": ["../workflow-runs/dist/routes.d.ts"],
       "@voyant-travel/workflow-runs/runtime-contributor": [

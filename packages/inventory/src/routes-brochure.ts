@@ -21,7 +21,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { Extension } from "@voyant-travel/core"
 import { openApiValidationHook } from "@voyant-travel/hono"
-import type { HonoExtension } from "@voyant-travel/hono/module"
+import type { ApiExtension } from "@voyant-travel/hono/module"
 import type { StorageProvider } from "@voyant-travel/storage"
 import type { Context } from "hono"
 
@@ -199,9 +199,9 @@ export const productBrochureExtension: Extension = {
 }
 
 /** Build the inventory-owned brochure generation extension. */
-export function createProductBrochureHonoExtension(
+export function createProductBrochureApiExtension(
   options: ProductBrochureRoutesOptions,
-): HonoExtension {
+): ApiExtension {
   return {
     extension: productBrochureExtension,
     adminRoutes: createProductBrochureRoutes(options),

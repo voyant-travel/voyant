@@ -1,6 +1,6 @@
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import type { HonoModule } from "@voyant-travel/hono/module"
+import type { ApiModule } from "@voyant-travel/hono/module"
 
 import { miceLinkable } from "./linkables.js"
 import type { MiceRouteRuntimeOptions } from "./route-runtime.js"
@@ -30,9 +30,9 @@ export const miceModule: Module = {
   linkable: miceLinkable,
 }
 
-export interface MiceHonoModuleOptions extends MiceRouteRuntimeOptions {}
+export interface MiceApiModuleOptions extends MiceRouteRuntimeOptions {}
 
-export function createMiceHonoModule(options: MiceHonoModuleOptions = {}): HonoModule {
+export function createMiceApiModule(options: MiceApiModuleOptions = {}): ApiModule {
   return {
     module: miceModule,
     adminRoutes: createMiceAdminRoutes(options),
@@ -41,15 +41,15 @@ export function createMiceHonoModule(options: MiceHonoModuleOptions = {}): HonoM
 
 /** Package-owned adapter from graph runtime ports to the MICE route factory. */
 export const createMiceVoyantRuntime = defineGraphRuntimeFactory(async ({ getPort }) =>
-  createMiceHonoModule(await getPort(miceRuntimePort)),
+  createMiceApiModule(await getPort(miceRuntimePort)),
 )
 
 export type { MiceRuntime } from "./runtime-port.js"
 export { miceRuntimePort } from "./runtime-port.js"
 
-export const miceHonoModule: HonoModule = createMiceHonoModule()
+export const miceApiModule: ApiModule = createMiceApiModule()
 
-export const miceHonoModules = [miceHonoModule] as const
+export const miceApiModules = [miceApiModule] as const
 
 export type {
   MiceRouteRuntime,
