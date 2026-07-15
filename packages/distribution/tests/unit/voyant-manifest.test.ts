@@ -30,6 +30,14 @@ describe("distribution deployment manifests", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/distribution",
       packageName: "@voyant-travel/distribution",
+      provides: {
+        ports: [
+          { id: "distribution.channel-push-runtime" },
+          { id: "catalog.extension.distribution" },
+          { id: "finance.distribution-payment-policy.runtime" },
+        ],
+      },
+      requires: { ports: [{ id: "catalog.runtime-services" }] },
       api: [
         {
           id: "@voyant-travel/distribution#api.external-refs",
@@ -147,9 +155,73 @@ describe("distribution deployment manifests", () => {
       "/suppliers",
       "/suppliers/$id",
     ])
+    expect(distributionVoyantModule.admin?.routes).toEqual([
+      expect.objectContaining({ requiredScopes: ["suppliers:read"] }),
+      expect.objectContaining({ requiredScopes: ["suppliers:read"] }),
+    ])
+    expect(distributionVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/distribution#admin.route.suppliers-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.suppliers" },
+      }),
+    ])
     expect(distributionChannelPushVoyantPlugin.admin?.routes?.map((route) => route.path)).toEqual([
       "/channel-sync",
     ])
+    expect(distributionChannelPushVoyantPlugin.admin?.routes?.[0]?.requiredScopes).toEqual([
+      "distribution:read",
+    ])
+    expect(distributionChannelPushVoyantPlugin.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/distribution#channel-push-extension.admin.route.channel-sync",
+        label: { namespace: "operator.admin.navigation", key: "nav.channelSync" },
+      }),
+    ])
+  })
+
+  it("declares the emitted publication and supplier payloads", () => {
+    const schemas = Object.fromEntries(
+      (distributionVoyantModule.events ?? []).map((event) => [
+        event.eventType,
+        event.payloadSchema,
+      ]),
+    )
+
+    expect(schemas["product.publication.changed"]).toEqual({
+      type: "object",
+      properties: {
+        productId: { type: "string" },
+        channelId: { type: "string" },
+        mappingId: { type: ["string", "null"] },
+        previousActive: { type: ["boolean", "null"] },
+        nextActive: { type: ["boolean", "null"] },
+        operation: {
+          type: "string",
+          enum: ["created", "updated", "deleted", "activated", "deactivated"],
+        },
+        channelKind: { type: ["string", "null"] },
+        channelStatus: { type: ["string", "null"] },
+      },
+      required: [
+        "productId",
+        "channelId",
+        "mappingId",
+        "previousActive",
+        "nextActive",
+        "operation",
+        "channelKind",
+        "channelStatus",
+      ],
+      additionalProperties: false,
+    })
+    for (const eventType of ["supplier.created", "supplier.updated", "supplier.deleted"]) {
+      expect(schemas[eventType]).toEqual({
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+        additionalProperties: false,
+      })
+    }
   })
 
   it("references exported runtimes with matching mounts", () => {
@@ -245,7 +317,7 @@ describe("distribution deployment manifests", () => {
         id: "@voyant-travel/distribution#subscriber.channel-push-booking-confirmed",
         eventType: "booking.confirmed",
         runtime: {
-          entry: "./channel-push-subscribers",
+          entry: "@voyant-travel/distribution/channel-push-subscribers",
           export: "channelPushBookingConfirmedSubscriber",
         },
       }),
@@ -253,7 +325,7 @@ describe("distribution deployment manifests", () => {
         id: "@voyant-travel/distribution#subscriber.channel-push-availability-changed",
         eventType: "availability.slot.changed",
         runtime: {
-          entry: "./channel-push-subscribers",
+          entry: "@voyant-travel/distribution/channel-push-subscribers",
           export: "channelPushAvailabilityChangedSubscriber",
         },
       }),
@@ -261,7 +333,7 @@ describe("distribution deployment manifests", () => {
         id: "@voyant-travel/distribution#subscriber.channel-push-content-changed",
         eventType: "product.content.changed",
         runtime: {
-          entry: "./channel-push-subscribers",
+          entry: "@voyant-travel/distribution/channel-push-subscribers",
           export: "channelPushContentChangedSubscriber",
         },
       }),

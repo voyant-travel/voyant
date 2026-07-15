@@ -16,6 +16,7 @@ export const actionLedgerVoyantModule = defineModule({
       surface: "admin",
       mount: "action-ledger",
       openapi: { document: "action-ledger" },
+      resource: "action-ledger",
       runtime: {
         entry: "@voyant-travel/action-ledger",
         export: "actionLedgerHonoModule",
@@ -34,20 +35,66 @@ export const actionLedgerVoyantModule = defineModule({
       source: "./migrations",
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/action-ledger#access.action-ledger",
+        resource: "action-ledger",
+        label: "Action ledger",
+        description: "Read action audit records and manage approval or reversal state.",
+        actions: [
+          {
+            action: "read",
+            label: "Read action ledger",
+            description: "Read action records, approval state, delegations, and relay status.",
+          },
+          {
+            action: "write",
+            label: "Manage action ledger",
+            description: "Record reversals and request or decide privileged action approvals.",
+            sensitive: true,
+          },
+        ],
+      },
+    ],
+  },
   admin: {
     compositionOrder: 120,
     runtime: {
       entry: "@voyant-travel/action-ledger-react/admin",
       export: "createSelectedActionLedgerAdminExtension",
     },
+    copy: [
+      {
+        id: "@voyant-travel/action-ledger#admin.copy.navigation",
+        namespace: "operator.admin.navigation",
+        fallbackLocale: "en",
+        runtime: {
+          entry: "@voyant-travel/i18n",
+          export: "operatorAdminNavMessages",
+        },
+      },
+    ],
     routes: [
       {
         id: "@voyant-travel/action-ledger#admin.route.index",
         path: "/action-ledger",
+        requiredScopes: ["action-ledger:read"],
         runtime: {
           entry: "@voyant-travel/action-ledger-react/admin",
           export: "createSelectedActionLedgerAdminExtension",
         },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/action-ledger#admin.nav.index",
+        routeId: "@voyant-travel/action-ledger#admin.route.index",
+        label: {
+          namespace: "operator.admin.navigation",
+          key: "nav.actionLedger",
+        },
+        order: 60,
       },
     ],
   },
@@ -68,12 +115,20 @@ export const actionLedgerHealthVoyantPlugin = defineExtension({
     requirePort(actionLedgerFinanceDriftRuntimePort),
     requirePort(actionLedgerInventoryDriftRuntimePort),
   ],
+  requires: {
+    ports: [
+      requirePort(actionLedgerBookingDriftRuntimePort),
+      requirePort(actionLedgerFinanceDriftRuntimePort),
+      requirePort(actionLedgerInventoryDriftRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/action-ledger#health-extension.api",
       surface: "admin",
       mount: "action-ledger",
       openapi: { document: "action-ledger-health" },
+      resource: "action-ledger",
       runtime: {
         entry: "@voyant-travel/action-ledger/graph-runtime",
         export: "createActionLedgerHealthVoyantRuntime",

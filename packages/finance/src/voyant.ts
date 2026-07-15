@@ -1,4 +1,11 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { actionLedgerFinanceDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
+import { bookingsFinanceRuntimePort } from "@voyant-travel/bookings/runtime-port"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
@@ -10,11 +17,23 @@ import {
   financeNotificationsRuntimePort,
   financeOperatorSettingsRuntimePort,
 } from "./runtime-port.js"
-
-const financeAdminRuntime = {
-  entry: "@voyant-travel/finance-react/admin",
-  export: "createFinanceAdminExtension",
-} as const
+import { financeVoyantAdmin } from "./voyant-admin.js"
+import {
+  bookingConfirmedPayloadSchema,
+  bookingContractDocumentRequestedPayloadSchema,
+  bookingCreatedPayloadSchema,
+  bookingCreateRejectedPayloadSchema,
+  bookingDualCreatedPayloadSchema,
+  bookingPaymentSchedulePaidPayloadSchema,
+  invoiceDocumentGeneratedPayloadSchema,
+  invoiceIssuedPayloadSchema,
+  invoicePaymentRecordedPayloadSchema,
+  invoiceProformaConvertedPayloadSchema,
+  invoiceRenderedPayloadSchema,
+  invoiceSettledPayloadSchema,
+  invoiceVoidedPayloadSchema,
+  paymentCompletedPayloadSchema,
+} from "./voyant-event-schemas.js"
 
 /** Import-cheap deployment declaration owned by the finance package. */
 export const financeVoyantModule = defineModule({
@@ -31,7 +50,14 @@ export const financeVoyantModule = defineModule({
       cardinality: "many",
     }),
   ],
-  provides: { capabilities: ["finance.payment-sessions"] },
+  provides: {
+    capabilities: ["finance.payment-sessions"],
+    ports: [
+      providePort(actionLedgerFinanceDriftRuntimePort),
+      providePort(bookingsFinanceRuntimePort),
+      providePort(financeHostRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/finance#api.admin",
@@ -98,7 +124,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.issued",
       eventType: "invoice.issued",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceIssuedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -106,7 +132,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.proforma.issued",
       eventType: "invoice.proforma.issued",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceIssuedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -114,7 +140,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.proforma.converted",
       eventType: "invoice.proforma.converted",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceProformaConvertedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -122,7 +148,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.voided",
       eventType: "invoice.voided",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceVoidedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -130,7 +156,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.settled",
       eventType: "invoice.settled",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceSettledPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -138,7 +164,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.rendered",
       eventType: "invoice.rendered",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceRenderedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -146,7 +172,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.document.generated",
       eventType: "invoice.document.generated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoiceDocumentGeneratedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -154,7 +180,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.invoice.payment.recorded",
       eventType: "invoice.payment.recorded",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: invoicePaymentRecordedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -162,7 +188,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.payment.completed",
       eventType: "payment.completed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: paymentCompletedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -170,7 +196,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.booking.created",
       eventType: "booking.created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingCreatedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -178,7 +204,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.booking.confirmed",
       eventType: "booking.confirmed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingConfirmedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -186,7 +212,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.booking.dual-created",
       eventType: "booking.dual-created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingDualCreatedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -194,7 +220,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.booking-create.rejected",
       eventType: "booking_create.rejected",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingCreateRejectedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -202,7 +228,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.booking.contract-document.requested",
       eventType: "booking.contract_document.requested",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingContractDocumentRequestedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -210,7 +236,7 @@ export const financeVoyantModule = defineModule({
       id: "@voyant-travel/finance#event.booking-payment-schedule.paid",
       eventType: "booking_payment_schedule.paid",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: bookingPaymentSchedulePaidPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "finance", category: "domain" },
     },
@@ -231,12 +257,33 @@ export const financeVoyantModule = defineModule({
       {
         id: "@voyant-travel/finance#access.finance",
         resource: "finance",
-        actions: ["read", "write", "refund", "void"],
-      },
-      {
-        id: "@voyant-travel/finance#access.transactions",
-        resource: "transactions",
-        actions: ["read", "write"],
+        label: "Finance",
+        description: "Read and manage invoices, payments, credits, and settlements.",
+        actions: [
+          {
+            action: "read",
+            label: "Read finance records",
+            description: "Read invoices, payments, credits, and settlement state.",
+          },
+          {
+            action: "write",
+            label: "Manage finance records",
+            description: "Create and update invoices, payments, credits, and settlements.",
+            sensitive: true,
+          },
+          {
+            action: "refund",
+            label: "Refund payments",
+            description: "Issue financial refunds against eligible payments.",
+            sensitive: true,
+          },
+          {
+            action: "void",
+            label: "Void invoices",
+            description: "Irreversibly void an eligible invoice.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -247,6 +294,7 @@ export const financeVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/finance/tools", export: "listInvoicesTool" },
       requiredScopes: ["finance:read"],
       context: ["finance"],
+      risk: "low",
     },
     {
       id: "@voyant-travel/finance#tool.get-invoice",
@@ -254,6 +302,7 @@ export const financeVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/finance/tools", export: "getInvoiceTool" },
       requiredScopes: ["finance:read"],
       context: ["finance"],
+      risk: "low",
     },
     {
       id: "@voyant-travel/finance#tool.void-invoice",
@@ -261,56 +310,35 @@ export const financeVoyantModule = defineModule({
       runtime: { entry: "@voyant-travel/finance/tools", export: "voidInvoiceTool" },
       requiredScopes: ["finance:void"],
       context: ["finance"],
+      risk: "critical",
     },
   ],
-  admin: {
-    compositionOrder: 40,
-    runtime: {
-      entry: "@voyant-travel/finance-react/admin",
-      export: "createSelectedFinanceAdminExtension",
+  actions: [
+    {
+      id: "@voyant-travel/finance#action.void-invoice",
+      version: "v1",
+      kind: "execute",
+      targetType: "invoice",
+      resource: "finance",
+      action: "void",
+      requiredScopes: ["finance:void"],
+      risk: "critical",
+      ledger: "required",
+      approval: "required",
+      reversible: false,
+      from: { tools: ["@voyant-travel/finance#tool.void-invoice"] },
     },
-    copy: [
-      {
-        id: "@voyant-travel/finance#admin.copy",
-        namespace: "finance.admin",
-        fallbackLocale: "en",
-        runtime: {
-          entry: "@voyant-travel/finance-react/i18n",
-          export: "financeUiMessageDefinitions",
-        },
+  ],
+  admin: financeVoyantAdmin,
+  presentations: [
+    {
+      id: "@voyant-travel/finance#presentation.public",
+      runtime: {
+        entry: "@voyant-travel/finance-react/public-routes",
+        export: "createFinancePublicRouteContribution",
       },
-    ],
-    routes: (
-      [
-        ["index", "/finance"],
-        ["invoices-index", "/finance/invoices"],
-        ["invoices-detail", "/finance/invoices/$id"],
-        ["invoice-number-series", "/finance/invoice-number-series"],
-        ["payments-index", "/finance/payments"],
-        ["payments-detail", "/finance/payments/$id"],
-        ["supplier-invoices-index", "/finance/supplier-invoices"],
-        ["supplier-invoices-detail", "/finance/supplier-invoices/$id"],
-        ["profitability", "/finance/profitability"],
-      ] as const
-    ).map(([id, path]) => ({
-      id: `@voyant-travel/finance#admin.route.${id}`,
-      path,
-      runtime: financeAdminRuntime,
-    })),
-    contributions: (
-      [
-        ["booking-payment-controller", "booking.details.payment-controller"],
-        ["booking-invoices", "booking.details.invoices-tab"],
-        ["booking-pending-payment-sessions", "booking.details.finance-start"],
-        ["booking-payment-policy", "booking.details.finance-end"],
-        ["supplier-payment-policy", "supplier.details.payment-policy"],
-      ] as const
-    ).map(([id, slotId]) => ({
-      id: `@voyant-travel/finance#admin.contribution.${id}`,
-      slotId,
-      runtime: financeAdminRuntime,
-    })),
-  },
+    },
+  ],
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
@@ -411,7 +439,7 @@ export const financeBookingScheduleVoyantPlugin = defineExtension({
       eventType: "booking.confirmed",
       source: "@voyant-travel/finance/booking-schedule-subscriber",
       runtime: {
-        entry: "./booking-schedule-subscriber",
+        entry: "@voyant-travel/finance/booking-schedule-subscriber",
         export: "bookingScheduleConfirmedSubscriber",
       },
     },

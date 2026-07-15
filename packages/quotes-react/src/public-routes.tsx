@@ -32,7 +32,7 @@ export function createQuotesPublicRouteContribution(runtime: QuotesPublicRouteRu
   }
 
   return {
-    id: "@voyant-travel/quotes-react#public-routes" as const,
+    id: "@voyant-travel/quotes#presentation.public" as const,
     routes: { proposal: { component: ProposalRoute } },
   }
 }

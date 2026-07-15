@@ -1280,6 +1280,7 @@ describe("deployment graph v1", () => {
         database: "postgres",
         cache: "redis",
         search: "none",
+        realtime: "voyant-cloud",
         outboundWebhooks: "postgres",
       },
     })
@@ -1300,6 +1301,11 @@ describe("deployment graph v1", () => {
           resourceKey: "search:none",
           provider: "none",
           required: false,
+        }),
+        expect.objectContaining({
+          resourceKey: "realtime:voyant-cloud",
+          provider: "voyant-cloud",
+          roles: ["realtime"],
         }),
         expect.objectContaining({
           resourceKey: "outboundWebhooks:postgres",
@@ -1699,7 +1705,7 @@ describe("deployment graph v1", () => {
                 {
                   id: "@acme/notifications#access.notifications",
                   resource: "notifications",
-                  actions: [{ action: "send", wildcard: "explicit" }],
+                  actions: [{ action: "send", sensitive: true, wildcard: "explicit" }],
                 },
               ],
             },
@@ -1709,5 +1715,6 @@ describe("deployment graph v1", () => {
     })
 
     expect(graph.accessCatalog.resources[0]?.actions[0]?.wildcard).toBe("explicit")
+    expect(graph.accessCatalog.resources[0]?.actions[0]?.sensitive).toBe(true)
   })
 })

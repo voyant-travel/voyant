@@ -9,6 +9,7 @@ import {
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import type {} from "@voyant-travel/catalog-react/admin"
+import { Package } from "lucide-react"
 
 // Lean statics only: the client module (fetcher) and the skeletons (their
 // own modules, no page imports). Query options + the REST api adapter
@@ -80,11 +81,8 @@ export interface CreateInventoryAdminExtensionOptions {
  * The products admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-react/admin` convention).
  *
- * NAVIGATION: deliberately none. The Products item (with its Categories
- * sub-item) is part of the BASE operator navigation — see
- * `createOperatorAdminNavigation` in `@voyant-travel/admin` — so contributing
- * nav entries here would duplicate it. If the base nav ever drops the
- * products item, this extension is where the entry moves.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Products group.
  *
  * ROUTES: contributions carry the FULL route implementation (packaged-admin
  * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
@@ -217,12 +215,36 @@ export function createInventoryAdminExtension(
 export function createSelectedInventoryAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
+  const extension = withAdminRouteMessagesProvider(
     createInventoryAdminExtension({
       labels: { products: navMessages.products, categories: navMessages.categories },
     }),
     () => import("../i18n.js").then((module) => ({ default: module.ProductsUiMessagesProvider })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -120,
+        items: [
+          {
+            id: "products",
+            title: navMessages.products,
+            url: "/products",
+            icon: Package,
+            items: [
+              {
+                id: "product-categories",
+                title: navMessages.categories,
+                url: "/products/categories",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  }
 }
 
 /**

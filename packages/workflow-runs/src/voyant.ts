@@ -1,4 +1,4 @@
-import { defineModule, definePort, requirePort } from "@voyant-travel/core/project"
+import { defineModule, definePort, providePort, requirePort } from "@voyant-travel/core/project"
 
 import type { WorkflowRunner } from "./runner.js"
 
@@ -27,6 +27,7 @@ export const workflowRunsVoyantModule = defineModule({
   id: "@voyant-travel/workflow-runs",
   packageName: "@voyant-travel/workflow-runs",
   localId: "workflow-runs",
+  provides: { ports: [providePort(workflowRunnerRegistryRuntimePort)] },
   runtimePorts: [requirePort(workflowRunnerRegistryRuntimePort)],
   api: [
     {

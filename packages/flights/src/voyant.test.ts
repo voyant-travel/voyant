@@ -15,6 +15,7 @@ describe("flights deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/flights",
       packageName: "@voyant-travel/flights",
+      provides: { ports: [{ id: "flights.runtime" }] },
       runtimePorts: [{ id: "flights.runtime" }],
       requires: { capabilities: ["finance.payment-sessions"] },
       api: [
@@ -69,6 +70,21 @@ describe("flights deployment manifest", () => {
             description: expect.any(String),
           }),
         ],
+      }),
+    ])
+  })
+
+  it("scopes the selected Flights navigation and routes", () => {
+    expect(flightsVoyantModule.admin?.routes?.map((route) => route.requiredScopes)).toEqual([
+      ["flights:write"],
+      ["flights:write"],
+      ["flights:read"],
+      ["flights:read"],
+    ])
+    expect(flightsVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/flights#admin.route.flights-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.flights" },
       }),
     ])
   })

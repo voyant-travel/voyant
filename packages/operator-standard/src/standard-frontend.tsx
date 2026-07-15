@@ -24,7 +24,10 @@ import {
   type AdminHostWorkspace,
   createAdminHostWorkspace,
 } from "@voyant-travel/admin-host/workspace"
-import { createLocalAuthRouteContribution } from "@voyant-travel/auth-react/local-auth-routes"
+import type {
+  LocalAuthPresentationRuntime,
+  LocalAuthRouteContribution,
+} from "@voyant-travel/auth-react/local-auth-routes"
 import type { RedeemInvitationStatus } from "@voyant-travel/auth-react/ui"
 import {
   StorefrontBookingPage,
@@ -34,10 +37,16 @@ import {
 import { RealtimeChannel } from "@voyant-travel/cloud-sdk"
 import type { VoyantGraphJsonValue } from "@voyant-travel/core/project"
 import { CruiseDetailPage } from "@voyant-travel/cruises-react/storefront"
-import { createFinancePublicRouteContribution } from "@voyant-travel/finance-react/public-routes"
+import type {
+  createFinancePublicRouteContribution,
+  FinancePublicRouteRuntime,
+} from "@voyant-travel/finance-react/public-routes"
 import { ProductDetailPageProducts } from "@voyant-travel/inventory-react/storefront"
 import { VoyantAvailabilityProvider } from "@voyant-travel/operations-react/availability/provider"
-import { createQuotesPublicRouteContribution } from "@voyant-travel/quotes-react/public-routes"
+import type {
+  createQuotesPublicRouteContribution,
+  QuotesPublicRouteRuntime,
+} from "@voyant-travel/quotes-react/public-routes"
 import { AdminWorkspaceRealtimeProvider } from "@voyant-travel/realtime-react"
 import {
   AccommodationDetailPage,
@@ -93,9 +102,9 @@ export interface StandardOperatorFrontend {
   workspace: AdminHostWorkspace<StandardOperatorCurrentUser>
   routes: {
     docs: ReturnType<typeof createApiDocsRouteOptions>
-    finance: ReturnType<typeof createFinancePublicRouteContribution>["routes"]
-    localAuth: ReturnType<typeof createLocalAuthRouteContribution>["routes"]
-    quotes: ReturnType<typeof createQuotesPublicRouteContribution>["routes"]
+    finance?: ReturnType<typeof createFinancePublicRouteContribution>["routes"]
+    localAuth?: LocalAuthRouteContribution["routes"]
+    quotes?: ReturnType<typeof createQuotesPublicRouteContribution>["routes"]
     storefront?: StorefrontPresentationContribution["routes"]
   }
   createRouter<TRouteTree extends AnyRoute>(options: {
@@ -201,6 +210,15 @@ function createPresentationRuntime(
   presentationFactories: Readonly<Record<string, StandardOperatorPresentationFactory>>,
 ) {
   const StorefrontMessagesProvider = createStorefrontMessagesProvider(useStorefrontLocale)
+  const localAuthFactory = presentationFactories["@voyant-travel/auth#presentation.local-auth"] as
+    | LocalAuthPresentationFactory
+    | undefined
+  const financeFactory = presentationFactories["@voyant-travel/finance#presentation.public"] as
+    | FinancePublicPresentationFactory
+    | undefined
+  const quotesFactory = presentationFactories["@voyant-travel/quotes#presentation.public"] as
+    | QuotesPublicPresentationFactory
+    | undefined
   const storefrontFactory = presentationFactories[
     "@voyant-travel/storefront#presentation.customer"
   ] as ((runtime: StorefrontPresentationRuntime) => StorefrontPresentationContribution) | undefined
@@ -221,7 +239,7 @@ function createPresentationRuntime(
     useLocale: useStorefrontLocale,
     useSession: () => authClient.useSession(),
   })
-  const finance = createFinancePublicRouteContribution({
+  const finance = financeFactory?.({
     getApiUrl: getAdminApiUrl,
     StorefrontMessagesProvider,
     usePaymentResolverMessages: () => useStorefrontMessages().pay,
@@ -231,12 +249,12 @@ function createPresentationRuntime(
       tripSummary: useOperatorAdminMessages().trips.paymentLinkSummary,
     }),
   })
-  const quotes = createQuotesPublicRouteContribution({
+  const quotes = quotesFactory?.({
     getApiUrl: getAdminApiUrl,
     StorefrontMessagesProvider,
     useProposalMessages: () => useStorefrontMessages().proposal,
   })
-  const localAuth = createLocalAuthRouteContribution({
+  const localAuth = localAuthFactory?.({
     getCurrentUser,
     getBootstrapStatus,
     cloudAuthStartHref,
@@ -300,9 +318,9 @@ export function createStandardOperatorFrontend(
     workspace: runtime.workspace,
     routes: {
       docs: createApiDocsRouteOptions(options.openApiSpecs ?? {}),
-      finance: runtime.finance.routes,
-      localAuth: runtime.localAuth.routes,
-      quotes: runtime.quotes.routes,
+      ...(runtime.finance ? { finance: runtime.finance.routes } : {}),
+      ...(runtime.localAuth ? { localAuth: runtime.localAuth.routes } : {}),
+      ...(runtime.quotes ? { quotes: runtime.quotes.routes } : {}),
       ...(runtime.storefront ? { storefront: runtime.storefront.routes } : {}),
     },
     createRouter<TRouteTree extends AnyRoute>({
@@ -325,6 +343,18 @@ export function createStandardOperatorFrontend(
 }
 
 export type StandardOperatorRouterContext = AdminRouterContext
+
+type LocalAuthPresentationFactory = (
+  runtime: LocalAuthPresentationRuntime<StandardOperatorCurrentUser>,
+) => LocalAuthRouteContribution
+
+type FinancePublicPresentationFactory = (
+  runtime: FinancePublicRouteRuntime,
+) => ReturnType<typeof createFinancePublicRouteContribution>
+
+type QuotesPublicPresentationFactory = (
+  runtime: QuotesPublicRouteRuntime,
+) => ReturnType<typeof createQuotesPublicRouteContribution>
 
 function StandardStorefrontBookingPage({ search, ...props }: StorefrontBookingRouteProps) {
   return <StorefrontBookingPage {...props} search={search as StorefrontBookingSearch} />

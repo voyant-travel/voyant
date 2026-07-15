@@ -15,4 +15,14 @@ describe("deployment provider contracts", () => {
     expect(DEFAULT_MANAGED_CLOUD_PROVIDERS.search).toBe("typesense")
     expect(DEPLOYMENT_PROVIDER_CONTRACTS.search).toEqual(["typesense", "algolia", "custom", "none"])
   })
+
+  it("makes realtime transport selection explicit", () => {
+    expect(DEFAULT_MANAGED_CLOUD_PROVIDERS.realtime).toBe("voyant-cloud")
+    expect(DEPLOYMENT_PROVIDER_CONTRACTS.realtime).toEqual([
+      "voyant-cloud",
+      "local",
+      "custom",
+      "none",
+    ])
+  })
 })

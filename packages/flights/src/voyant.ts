@@ -1,4 +1,4 @@
-import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { flightsRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the flights package. */
@@ -6,6 +6,7 @@ export const flightsVoyantModule = defineModule({
   id: "@voyant-travel/flights",
   packageName: "@voyant-travel/flights",
   localId: "flights",
+  provides: { ports: [providePort(flightsRuntimePort)] },
   runtimePorts: [requirePort(flightsRuntimePort)],
   requires: { capabilities: ["finance.payment-sessions"] },
   api: [
@@ -75,6 +76,7 @@ export const flightsVoyantModule = defineModule({
       {
         id: "@voyant-travel/flights#admin.route.flights-index",
         path: "/flights",
+        requiredScopes: ["flights:write"],
         runtime: {
           entry: "@voyant-travel/flights-react/admin",
           export: "createFlightsAdminExtension",
@@ -83,6 +85,7 @@ export const flightsVoyantModule = defineModule({
       {
         id: "@voyant-travel/flights#admin.route.flights-book",
         path: "/flights/book/$offerId",
+        requiredScopes: ["flights:write"],
         runtime: {
           entry: "@voyant-travel/flights-react/admin",
           export: "createFlightsAdminExtension",
@@ -91,6 +94,7 @@ export const flightsVoyantModule = defineModule({
       {
         id: "@voyant-travel/flights#admin.route.flights-orders",
         path: "/flights/orders",
+        requiredScopes: ["flights:read"],
         runtime: {
           entry: "@voyant-travel/flights-react/admin",
           export: "createFlightsAdminExtension",
@@ -99,10 +103,18 @@ export const flightsVoyantModule = defineModule({
       {
         id: "@voyant-travel/flights#admin.route.flights-order-detail",
         path: "/flights/orders/$orderId",
+        requiredScopes: ["flights:read"],
         runtime: {
           entry: "@voyant-travel/flights-react/admin",
           export: "createFlightsAdminExtension",
         },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/flights#admin.nav.flights",
+        routeId: "@voyant-travel/flights#admin.route.flights-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.flights" },
       },
     ],
   },

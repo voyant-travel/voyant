@@ -56,7 +56,8 @@ import {
 } from "./runtime-contracts.js"
 
 type RuntimePortValue<T> = T | Promise<T>
-const CRUISES_ROUTES_RUNTIME_PORT_ID = "cruises.routes-runtime"
+// Importing Cruises here would create a Catalog <-> Cruises package cycle.
+const cruisesRoutesRuntimePortReference = { id: "cruises.routes-runtime" } as const
 
 export interface CatalogRuntimePortContribution {
   search: RuntimePortValue<CatalogSearchRuntimeOptions>
@@ -159,6 +160,6 @@ export function createCatalogRuntimePortContribution(
         })
       },
     } satisfies VoyantWorkflowServiceContribution,
-    [CRUISES_ROUTES_RUNTIME_PORT_ID]: cruisesRoutes,
+    [cruisesRoutesRuntimePortReference.id]: cruisesRoutes,
   }
 }

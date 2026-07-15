@@ -1,4 +1,7 @@
-import { catalogRuntimeServicesPort } from "@voyant-travel/catalog/runtime-contracts"
+import {
+  catalogCommerceRuntimeExtensionPort,
+  catalogRuntimeServicesPort,
+} from "@voyant-travel/catalog/runtime-contracts"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
@@ -9,6 +12,7 @@ import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/chec
 import { workflowRunnerRegistryRuntimePort } from "@voyant-travel/workflow-runs/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
+  bookingMaintenanceRuntimePort,
   catalogCheckoutApiRuntimePort,
   catalogCheckoutContractPdfRuntimePort,
   catalogCheckoutDatabaseRuntimePort,
@@ -38,6 +42,13 @@ describe("commerce deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/commerce",
       packageName: "@voyant-travel/commerce",
+      provides: {
+        ports: [
+          { id: catalogCommerceRuntimeExtensionPort.id },
+          { id: promotionRedemptionDatabaseRuntimePort.id },
+          { id: promotionsBulkReindexRuntimePort.id },
+        ],
+      },
       runtimePorts: [
         { id: promotionRedemptionDatabaseRuntimePort.id },
         { id: promotionsBulkReindexRuntimePort.id },
@@ -74,6 +85,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.markets.admin",
           surface: "admin",
+          resource: "markets",
           openapi: { document: "markets" },
           runtime: {
             entry: "@voyant-travel/commerce",
@@ -83,6 +95,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.markets.public",
           surface: "public",
+          resource: "markets",
           openapi: { document: "markets" },
           anonymous: true,
           runtime: {
@@ -93,6 +106,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.sellability.admin",
           surface: "admin",
+          resource: "sellability",
           openapi: { document: "sellability" },
           runtime: {
             entry: "@voyant-travel/commerce",
@@ -102,6 +116,7 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#api.promotions.admin",
           surface: "admin",
+          resource: "promotions",
           openapi: { document: "promotions" },
           runtime: {
             entry: "@voyant-travel/commerce",
@@ -134,7 +149,7 @@ describe("commerce deployment manifest", () => {
             schedule: { cron: "*/5 * * * *", name: "every-5-minutes" },
           },
           runtime: {
-            entry: "./promotion-boundary-workflow",
+            entry: "@voyant-travel/commerce/promotion-boundary-workflow",
             export: "promotionBoundarySchedulerWorkflow",
           },
         },
@@ -143,7 +158,7 @@ describe("commerce deployment manifest", () => {
           source: "@voyant-travel/commerce/product-reindex-workflow",
           config: { defaultRuntime: "node" },
           runtime: {
-            entry: "./product-reindex-workflow",
+            entry: "@voyant-travel/commerce/product-reindex-workflow",
             export: "bulkReindexProductsWorkflow",
           },
         },
@@ -154,7 +169,7 @@ describe("commerce deployment manifest", () => {
           eventType: "booking.confirmed",
           source: "@voyant-travel/commerce/promotion-redemption-subscriber",
           runtime: {
-            entry: "./promotion-redemption-subscriber",
+            entry: "@voyant-travel/commerce/promotion-redemption-subscriber",
             export: "createPromotionRedemptionSubscriberGraphRuntime",
           },
         },
@@ -181,6 +196,14 @@ describe("commerce deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/commerce#catalog-checkout-extension",
       packageName: "@voyant-travel/commerce",
+      provides: {
+        ports: [
+          { id: catalogCheckoutApiRuntimePort.id },
+          { id: catalogCheckoutDatabaseRuntimePort.id },
+          { id: catalogCheckoutLegalRuntimePort.id },
+          { id: catalogCheckoutContractPdfRuntimePort.id },
+        ],
+      },
       runtimePorts: [
         { id: catalogCheckoutApiRuntimePort.id },
         { id: catalogCheckoutDatabaseRuntimePort.id },
@@ -206,7 +229,7 @@ describe("commerce deployment manifest", () => {
           eventType: "contract.document.generated",
           source: "@voyant-travel/commerce/catalog-checkout-subscribers",
           runtime: {
-            entry: "./catalog-checkout-subscribers",
+            entry: "@voyant-travel/commerce/catalog-checkout-subscribers",
             export: "createAcceptanceSignatureSubscriberGraphRuntime",
           },
         },
@@ -215,7 +238,7 @@ describe("commerce deployment manifest", () => {
           eventType: "payment.completed",
           source: "@voyant-travel/commerce/catalog-checkout-subscribers",
           runtime: {
-            entry: "./catalog-checkout-subscribers",
+            entry: "@voyant-travel/commerce/catalog-checkout-subscribers",
             export: "createCheckoutFinalizeSubscriberGraphRuntime",
           },
         },
@@ -227,6 +250,7 @@ describe("commerce deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/commerce#booking-maintenance-extension",
       packageName: "@voyant-travel/commerce",
+      provides: { ports: [{ id: bookingMaintenanceRuntimePort.id }] },
       runtime: {
         entry: "@voyant-travel/commerce/checkout",
         export: "createBookingMaintenanceVoyantRuntime",
@@ -245,6 +269,13 @@ describe("commerce deployment manifest", () => {
         },
       ],
     })
+    expect(commerceVoyantModule.access?.resources?.map(({ resource }) => resource)).toEqual([
+      "pricing",
+      "markets",
+      "sellability",
+      "promotions",
+    ])
+    expectConcreteEventSchemas(commerceVoyantModule.events)
   })
 
   it("declares the promotions route, navigation, and existing copy catalog", () => {
@@ -299,6 +330,18 @@ function readApiIds(routes: OpenApiDocumentSource): unknown[] {
   return Object.values(document.paths ?? {}).flatMap((path) =>
     Object.values(path).map((operation) => operation["x-voyant-api-id"]),
   )
+}
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
+  }
 }
 
 interface OpenApiDocumentSource {

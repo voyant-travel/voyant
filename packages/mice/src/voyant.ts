@@ -1,13 +1,33 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import { miceRuntimePort } from "./runtime-port.js"
 
 const relationshipsMiceRuntimePortReference = { id: "relationships.mice.runtime" } as const
+
+const miceRfpAwardedEventPayloadSchema = {
+  type: "object",
+  properties: {
+    rfpId: { type: "string" },
+    programId: { type: "string" },
+    bidId: { type: "string" },
+    supplierId: { type: "string" },
+    actorId: { type: ["string", "null"] },
+    awardedAt: { type: "string", format: "date-time" },
+  },
+  required: ["rfpId", "programId", "bidId", "supplierId", "actorId", "awardedAt"],
+  additionalProperties: false,
+} as const
 
 /** Import-cheap deployment declarations owned by the MICE package. */
 export const miceVoyantModule = defineModule({
   id: "@voyant-travel/mice",
   packageName: "@voyant-travel/mice",
   localId: "mice",
+  provides: { ports: [providePort(miceRuntimePort)] },
   runtimePorts: [requirePort(miceRuntimePort), relationshipsMiceRuntimePortReference],
   api: [
     {
@@ -113,7 +133,7 @@ export const miceVoyantModule = defineModule({
       id: "@voyant-travel/mice#event.rfp-awarded",
       eventType: "mice.rfp.awarded",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: miceRfpAwardedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "mice", category: "domain" },
     },
@@ -128,6 +148,7 @@ export const miceVoyantModule = defineModule({
       {
         id: "@voyant-travel/mice#admin.route.programs-index",
         path: "/mice",
+        requiredScopes: ["mice:read"],
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
           export: "createSelectedMiceAdminExtension",
@@ -136,10 +157,18 @@ export const miceVoyantModule = defineModule({
       {
         id: "@voyant-travel/mice#admin.route.programs-detail",
         path: "/mice/$id",
+        requiredScopes: ["mice:read"],
         runtime: {
           entry: "@voyant-travel/mice-react/admin",
           export: "createSelectedMiceAdminExtension",
         },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/mice#admin.nav.programs",
+        routeId: "@voyant-travel/mice#admin.route.programs-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.mice" },
       },
     ],
   },

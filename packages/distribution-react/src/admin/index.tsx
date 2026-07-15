@@ -1,21 +1,17 @@
 import {
   type AdminExtension,
-  type AdminRouteLoaderContext,
-  type AdminRouteRuntime,
   adminRoutePageModule,
   composeAdminRouteMessagesProviders,
   defineAdminExtension,
   type SelectedAdminExtensionFactoryContext,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
+import { Building2, Radio } from "lucide-react"
 
 import {
   type CreateSuppliersAdminExtensionOptions,
   createSuppliersAdminExtension,
 } from "../suppliers/admin/index.js"
-import { SupplierDetailSkeleton } from "../suppliers/admin/supplier-detail-skeleton.js"
-import { SuppliersListSkeleton } from "../suppliers/admin/suppliers-list-skeleton.js"
-import { defaultFetcher } from "../suppliers/client.js"
 
 export { type CreateSuppliersAdminExtensionOptions, createSuppliersAdminExtension }
 
@@ -28,99 +24,45 @@ declare module "@voyant-travel/admin" {
   }
 }
 
-export interface CreateDistributionAdminExtensionOptions {
-  /** Mount path of the channel-sync page inside the admin workspace. Default `/channel-sync`. */
-  basePath?: string
-  /** Localized page titles. Defaults are the English operator nav labels. */
-  labels?: {
-    channelSync?: string
-    suppliers?: string
-  }
-  suppliers?: Omit<CreateSuppliersAdminExtensionOptions, "labels">
-}
+export interface CreateDistributionAdminExtensionOptions
+  extends CreateSuppliersAdminExtensionOptions {}
 
-/**
- * The distribution admin contribution owns channel-side sync plus supplier
- * counterparty pages. Supplier pages stay under `/suppliers`, but the v1
- * admin entry and package surface are distribution-owned.
- */
+/** Package-owned supplier administration for the base Distribution module. */
 export function createDistributionAdminExtension(
   options: CreateDistributionAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/channel-sync", labels = {}, suppliers = {} } = options
-  const { basePath: suppliersBasePath = "/suppliers" } = suppliers
-  const { channelSync = "Distribution", suppliers: suppliersLabel = "Suppliers" } = labels
+  return { ...createSuppliersAdminExtension(options), id: "distribution" }
+}
 
+export interface CreateDistributionChannelPushAdminExtensionOptions {
+  /** Mount path of the channel synchronization page. */
+  basePath?: string
+  /** Localized page title. */
+  label?: string
+}
+
+/** Admin surface owned exclusively by the channel-push extension. */
+export function createDistributionChannelPushAdminExtension({
+  basePath = "/channel-sync",
+  label = "Distribution",
+}: CreateDistributionChannelPushAdminExtensionOptions = {}): AdminExtension {
   return defineAdminExtension({
-    id: "distribution",
+    id: "distribution-channel-push",
     routes: [
       {
         id: "distribution-channel-sync",
         path: basePath,
-        title: channelSync,
+        title: label,
         page: () =>
           import("../components/channel-sync-page.js").then((module) =>
             adminRoutePageModule(module.ChannelSyncPage),
           ),
       },
-      {
-        id: "suppliers-index",
-        path: suppliersBasePath,
-        title: suppliersLabel,
-        destination: "supplier.list",
-        ssr: "data-only",
-        page: () =>
-          import("../suppliers/admin/suppliers-host.js").then((module) =>
-            adminRoutePageModule(module.SuppliersHost),
-          ),
-        loader: async ({ queryClient, runtime }: AdminRouteLoaderContext) => {
-          const { getSuppliersQueryOptions } = await import("../suppliers/query-options.js")
-          return queryClient.ensureQueryData(getSuppliersQueryOptions(loaderClient(runtime)))
-        },
-        pendingComponent: SuppliersListSkeleton,
-      },
-      {
-        id: "suppliers-detail",
-        path: `${suppliersBasePath}/$id`,
-        title: suppliersLabel,
-        destination: "supplier.detail",
-        destinationParams: { id: "supplierId" },
-        page: () => import("../suppliers/admin/pages/supplier-detail-page.js"),
-        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
-          const id = params.id
-          if (!id) return
-          const {
-            getSupplierNotesQueryOptions,
-            getSupplierQueryOptions,
-            getSupplierServiceRatesQueryOptions,
-            getSupplierServicesQueryOptions,
-          } = await import("../suppliers/query-options.js")
-          const client = loaderClient(runtime)
-          const servicesData = await queryClient.ensureQueryData(
-            getSupplierServicesQueryOptions(client, id),
-          )
-
-          await Promise.all([
-            queryClient.ensureQueryData(getSupplierQueryOptions(client, id)),
-            queryClient.ensureQueryData(getSupplierNotesQueryOptions(client, id)),
-            ...servicesData.data.map((service) =>
-              queryClient.ensureQueryData(
-                getSupplierServiceRatesQueryOptions(client, id, service.id),
-              ),
-            ),
-          ])
-        },
-        pendingComponent: SupplierDetailSkeleton,
-      },
     ],
   })
 }
 
-function loaderClient(runtime: AdminRouteRuntime) {
-  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
-}
-
-const distributionRouteMessagesProvider = composeAdminRouteMessagesProviders(
+const suppliersRouteMessagesProvider = composeAdminRouteMessagesProviders(
   () =>
     import("../i18n/index.js").then((module) => ({
       default: module.DistributionUiMessagesProvider,
@@ -134,13 +76,49 @@ const distributionRouteMessagesProvider = composeAdminRouteMessagesProviders(
 export function createSelectedDistributionAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
-    createDistributionAdminExtension({
-      labels: {
-        channelSync: navMessages.channelSync,
-        suppliers: navMessages.suppliers,
-      },
-    }),
-    distributionRouteMessagesProvider,
+  const extension = withAdminRouteMessagesProvider(
+    createDistributionAdminExtension({ labels: { suppliers: navMessages.suppliers } }),
+    suppliersRouteMessagesProvider,
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -80,
+        items: [
+          { id: "suppliers", title: navMessages.suppliers, url: "/suppliers", icon: Building2 },
+        ],
+      },
+    ],
+  }
+}
+
+export function createSelectedDistributionChannelPushAdminExtension({
+  navMessages,
+}: SelectedAdminExtensionFactoryContext): AdminExtension {
+  const extension = withAdminRouteMessagesProvider(
+    createDistributionChannelPushAdminExtension({ label: navMessages.channelSync }),
+    () =>
+      import("../i18n/index.js").then((module) => ({
+        default: module.DistributionUiMessagesProvider,
+      })),
+  )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -30,
+        items: [
+          {
+            id: "channel-sync",
+            title: navMessages.channelSync,
+            url: "/channel-sync",
+            icon: Radio,
+          },
+        ],
+      },
+    ],
+  }
 }

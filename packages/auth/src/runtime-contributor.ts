@@ -27,6 +27,15 @@ export function createAuthRuntimePortContribution(
   const identityAccess: IdentityAccessRuntimeProvider = {
     resolveDeployment(bindings) {
       const env = bindings as Record<string, string | undefined>
+      const selectedAuthProvider = host.primitives.config.read(
+        bindings,
+        "deployment.providers.auth",
+      )
+      if (selectedAuthProvider !== "better-auth" && selectedAuthProvider !== "voyant-cloud") {
+        throw new Error(
+          "Auth runtime requires deployment.providers.auth to select better-auth or voyant-cloud.",
+        )
+      }
       const appUrl = (env.APP_URL || env.DASH_BASE_URL || "http://localhost:3300")
         .trim()
         .replace(/\/$/, "")
@@ -35,7 +44,7 @@ export function createAuthRuntimePortContribution(
       const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
       return {
         appUrl,
-        authMode: env.VOYANT_ADMIN_AUTH_MODE?.trim() === "voyant-cloud" ? "voyant-cloud" : "local",
+        authMode: selectedAuthProvider === "voyant-cloud" ? "voyant-cloud" : "local",
         cloudAdminMembers:
           deploymentId && revalidateUrl && clientToken
             ? cloudAdminMembersConfigFromRevalidate({ revalidateUrl, deploymentId, clientToken })

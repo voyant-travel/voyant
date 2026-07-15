@@ -1,4 +1,6 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { commerceOperatorSettingsRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import { defineModule, providePort } from "@voyant-travel/core/project"
+import { financeOperatorSettingsRuntimePort } from "@voyant-travel/finance/runtime-port"
 
 const runtime = {
   entry: "@voyant-travel/operator-settings/hono-module",
@@ -15,6 +17,12 @@ export const operatorSettingsVoyantModule = defineModule({
   id: "@voyant-travel/operator-settings",
   packageName: "@voyant-travel/operator-settings",
   localId: "operator-settings",
+  provides: {
+    ports: [
+      providePort(commerceOperatorSettingsRuntimePort),
+      providePort(financeOperatorSettingsRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/operator-settings#api.admin",

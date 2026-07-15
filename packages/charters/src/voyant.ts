@@ -1,10 +1,12 @@
-import { defineExtension, defineModule } from "@voyant-travel/core/project"
+import { catalogChartersRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
+import { defineExtension, defineModule, providePort } from "@voyant-travel/core/project"
 
 /** Import-cheap deployment declaration owned by the charters package. */
 export const chartersVoyantModule = defineModule({
   id: "@voyant-travel/charters",
   packageName: "@voyant-travel/charters",
   localId: "charters",
+  provides: { ports: [providePort(catalogChartersRuntimeExtensionPort)] },
   api: [
     {
       id: "@voyant-travel/charters#api.admin",

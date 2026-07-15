@@ -9,8 +9,9 @@ describe("database deployment manifest", () => {
       id: "@voyant-travel/db",
       packageName: "@voyant-travel/db",
       runtimePorts: [{ id: "voyant.workflow-services", optional: true, cardinality: "many" }],
-      provides: { ports: [{ id: "database.client" }] },
-      requires: { ports: [{ id: "database.client" }] },
+      provides: {
+        ports: [{ id: "database.client" }, { id: "voyant.workflow-services" }],
+      },
       schema: [{ id: "@voyant-travel/db#schema", source: "@voyant-travel/db/schema" }],
       migrations: [{ id: "@voyant-travel/db#migrations", source: "./migrations" }],
       config: [{ id: "@voyant-travel/db#config.adapter", key: "DB_ADAPTER" }],

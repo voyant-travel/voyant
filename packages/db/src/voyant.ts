@@ -1,5 +1,6 @@
 import {
   defineModule,
+  providePort,
   requirePort,
   voyantWorkflowServiceContributionsPort,
 } from "@voyant-travel/core/project"
@@ -16,10 +17,7 @@ export const dbVoyantModule = defineModule({
     }),
   ],
   provides: {
-    ports: [{ id: "database.client" }],
-  },
-  requires: {
-    ports: [{ id: "database.client" }],
+    ports: [{ id: "database.client" }, providePort(voyantWorkflowServiceContributionsPort)],
   },
   schema: [
     {

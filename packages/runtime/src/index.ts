@@ -1,19 +1,15 @@
-import { access, readFile } from "node:fs/promises"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { serveAdminHost } from "@voyant-travel/admin-host/serve"
 import { createOperatorAuthNodeRuntime } from "@voyant-travel/auth/node-runtime"
-import type { EventEnvelope, VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
+import type { EventEnvelope } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { resolveNodeDatabase } from "@voyant-travel/db/runtime"
 import type { VoyantGraphRuntimePorts } from "@voyant-travel/framework"
-import type { VoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
-import type { VoyantGraphDeploymentRequirements } from "@voyant-travel/framework/deployment-graph"
 import {
   createVoyantNodeEnv,
   createVoyantNodeRuntimeHostPrimitives,
-  createVoyantNodeStorageResolver,
   createVoyantNodeWorkflowDriver,
   loadVoyantNodeRuntime,
   resolveVoyantNodeProviderPlan,
@@ -36,6 +32,14 @@ import {
   createVoyantDeploymentResources,
   resolveSelectedGraphProviderPorts,
 } from "./deployment-resources.js"
+import {
+  type GeneratedScheduledJob,
+  loadGeneratedProjectLinks,
+  loadGeneratedProjectRuntime,
+  readGeneratedDeploymentGraph,
+  resolveAdminAssetsDir,
+  resolveGeneratedArtifactRoot,
+} from "./project-artifacts.js"
 import { loadBuiltProjectStart, startVoyantProjectWithDependencies } from "./project-start.js"
 import { resolveCustomStorageResolver } from "./storage-resolver.js"
 
@@ -45,12 +49,6 @@ export {
   resolveSelectedGraphProviderPorts,
   type VoyantDeploymentResources,
 } from "./deployment-resources.js"
-
-const GENERATED_ARTIFACT_LAYOUTS = [".voyant", "dist/.voyant"] as const
-const PROJECT_RUNTIME_ENTRY = "runtime/project-runtime.generated.ts"
-const GRAPH_RUNTIME_ENTRY = "runtime/graph-runtime.generated.ts"
-const PROJECT_LINKS_ENTRY = "runtime/project-links.generated.ts"
-const PROJECT_GRAPH_ENTRY = "deployment-graph.generated.json"
 
 export interface LoadVoyantProjectOptions {
   projectRoot?: string
@@ -81,24 +79,6 @@ export interface VoyantProjectAuth {
   getCurrentUserForRequest(request: Request, env: VoyantNodeRuntimeEnv): Promise<unknown>
 }
 
-interface GeneratedProjectRuntime {
-  kind: "application"
-  graphHash: string
-  deployment: {
-    mode?: "local" | "managed-cloud" | "self-hosted"
-    providers: VoyantNodeRuntime["deployment"]["providers"]
-  }
-  graphRuntime: VoyantGraphRuntime
-  createRuntimePorts(host: {
-    primitives: VoyantRuntimeHostPrimitives
-    runtimePorts?: VoyantGraphRuntimePorts
-  }): import("@voyant-travel/framework").VoyantGraphRuntimePorts
-}
-
-interface GeneratedProjectLinks {
-  projectLinks?: readonly import("@voyant-travel/core").LinkDefinition[]
-}
-
 /** Load the generated graph and create the framework-owned Node/admin host. */
 export async function loadVoyantProject(
   options: LoadVoyantProjectOptions = {},
@@ -107,6 +87,7 @@ export async function loadVoyantProject(
   const artifactRoot = await resolveGeneratedArtifactRoot(projectRoot)
   const generated = await loadGeneratedProjectRuntime(artifactRoot)
   const graph = await readGeneratedDeploymentGraph(artifactRoot, generated)
+  const authMode = selectedOperatorAuthMode(generated.deployment.providers.auth)
   const providerPlan = resolveVoyantNodeProviderPlan(generated.deployment.providers)
   const rawEnv = Object.fromEntries(Object.entries(options.env ?? process.env))
   const providerIssues = validateVoyantNodeProviderPlanEnv(providerPlan, rawEnv)
@@ -123,21 +104,18 @@ export async function loadVoyantProject(
     {
       excludedPorts: [
         ...Object.keys(explicitRuntimePorts),
-        ...(options.host?.storage ? ["storage.object"] : []),
+        ...(providerPlan.storage === "custom" && options.host?.storage ? ["storage.object"] : []),
       ],
       deploymentValueAliases: { DATABASE_URL: ["DATABASE_URL_DIRECT"] },
     },
   )
   const providerPorts = { ...selectedProviderPorts, ...explicitRuntimePorts }
-  const customStorage =
+  const storage = resolveCustomStorageResolver(
     providerPlan.storage === "custom"
-      ? resolveCustomStorageResolver(options.host?.storage ?? providerPorts["storage.object"])
-      : undefined
-  const storage = createVoyantNodeStorageResolver({
-    plan: providerPlan,
-    env: rawEnv,
-    ...(customStorage ? { custom: customStorage } : {}),
-  })
+      ? (options.host?.storage ?? providerPorts["storage.object"])
+      : providerPorts["storage.object"],
+  )
+  const runtimeProviderPorts = { ...providerPorts, "storage.object": storage }
   const hostDeliverEvent = options.host?.deliverEvent
   const outboundWebhooks = resolveOutboundWebhookDeliveryEnqueuer({
     provider: generated.deployment.providers.outboundWebhooks,
@@ -158,6 +136,10 @@ export async function loadVoyantProject(
   })
   const primitives = createVoyantNodeRuntimeHostPrimitives({
     ...options.host,
+    config: {
+      ...options.host?.config,
+      "deployment.providers.auth": generated.deployment.providers.auth,
+    },
     env,
     storage,
     deliverEvent: outboundWebhooks
@@ -166,7 +148,7 @@ export async function loadVoyantProject(
   })
   const deploymentResources = createVoyantDeploymentResources({
     primitives,
-    providerPorts,
+    providerPorts: runtimeProviderPorts,
     createRuntimePorts: generated.createRuntimePorts,
     outboundWebhooks,
   })
@@ -174,6 +156,7 @@ export async function loadVoyantProject(
   const authRuntime = createOperatorAuthNodeRuntime({
     accessCatalog: generated.graphRuntime.accessCatalog,
     appName: path.basename(projectRoot),
+    authMode,
     reporter: consoleReporter(),
     resolveEmailSender: resolveVoyantCloudAuthEmailSender,
   })
@@ -265,6 +248,14 @@ export async function loadVoyantProject(
   }
 }
 
+function selectedOperatorAuthMode(provider: unknown): "local" | "voyant-cloud" {
+  if (provider === "better-auth") return "local"
+  if (provider === "voyant-cloud") return "voyant-cloud"
+  throw new Error(
+    `Unsupported deployment.providers.auth value ${JSON.stringify(provider)}. Expected "better-auth" or "voyant-cloud".`,
+  )
+}
+
 /** Generic TanStack Start server entry used by a project-owned one-line bootstrap. */
 export function createVoyantProjectServerEntry(options: LoadVoyantProjectOptions = {}) {
   let host: Promise<VoyantProjectHost> | undefined
@@ -284,195 +275,11 @@ export async function startVoyantProject(
   })
 }
 
-async function resolveGeneratedArtifactRoot(projectRoot: string): Promise<string> {
-  for (const layout of GENERATED_ARTIFACT_LAYOUTS) {
-    const artifactRoot = path.join(projectRoot, layout)
-    if (
-      (await pathExists(path.join(artifactRoot, PROJECT_GRAPH_ENTRY))) &&
-      ((await pathExists(path.join(artifactRoot, PROJECT_RUNTIME_ENTRY))) ||
-        (await pathExists(path.join(artifactRoot, GRAPH_RUNTIME_ENTRY))))
-    ) {
-      return artifactRoot
-    }
-  }
-  throw new Error(
-    `Generated Voyant project artifacts were not found under ${GENERATED_ARTIFACT_LAYOUTS.join(" or ")}. Run voyant build first.`,
-  )
-}
-
-async function loadGeneratedProjectRuntime(artifactRoot: string): Promise<GeneratedProjectRuntime> {
-  const entry = path.join(artifactRoot, PROJECT_RUNTIME_ENTRY)
-  let generated: GeneratedProjectRuntime
-  if (await pathExists(entry)) {
-    const namespace = (await tsImport(pathToFileURL(entry).href, {
-      parentURL: import.meta.url,
-    })) as { createGeneratedProjectRuntime?: () => GeneratedProjectRuntime }
-    if (typeof namespace.createGeneratedProjectRuntime !== "function") {
-      throw new Error(`${PROJECT_RUNTIME_ENTRY} does not export createGeneratedProjectRuntime().`)
-    }
-    generated = namespace.createGeneratedProjectRuntime()
-  } else {
-    generated = await loadDeploymentGraphRuntime(artifactRoot)
-  }
-  if (generated.kind !== "application") {
-    throw new Error(`${PROJECT_RUNTIME_ENTRY} is not a Voyant application runtime.`)
-  }
-  if (typeof generated.createRuntimePorts !== "function") {
-    throw new Error(`${PROJECT_RUNTIME_ENTRY} does not expose static runtime port composition.`)
-  }
-  return generated
-}
-
-async function loadDeploymentGraphRuntime(artifactRoot: string): Promise<GeneratedProjectRuntime> {
-  const entry = path.join(artifactRoot, GRAPH_RUNTIME_ENTRY)
-  const namespace = (await tsImport(pathToFileURL(entry).href, {
-    parentURL: import.meta.url,
-  })) as {
-    GENERATED_GRAPH_RUNTIME_HASH?: string
-    createGeneratedGraphRuntime?: () => GeneratedProjectRuntime["graphRuntime"]
-    createGeneratedGraphRuntimePorts?: GeneratedProjectRuntime["createRuntimePorts"]
-  }
-  const graph = JSON.parse(
-    await readFile(path.join(artifactRoot, PROJECT_GRAPH_ENTRY), "utf8"),
-  ) as {
-    deployment?: { mode?: GeneratedProjectRuntime["deployment"]["mode"]; providers?: unknown }
-  }
-  if (
-    typeof namespace.GENERATED_GRAPH_RUNTIME_HASH !== "string" ||
-    typeof namespace.createGeneratedGraphRuntime !== "function" ||
-    typeof namespace.createGeneratedGraphRuntimePorts !== "function" ||
-    !graph.deployment ||
-    !graph.deployment.providers ||
-    typeof graph.deployment.providers !== "object"
-  ) {
-    throw new Error("Generated deployment graph runtime is missing or invalid.")
-  }
-  const providers = graph.deployment.providers as Record<string, string>
-  return {
-    kind: "application",
-    graphHash: namespace.GENERATED_GRAPH_RUNTIME_HASH,
-    deployment: {
-      mode: graph.deployment.mode,
-      providers: {
-        ...providers,
-        workflows: resolveVoyantNodeWorkflowProvider(providers.workflows),
-      },
-    },
-    graphRuntime: namespace.createGeneratedGraphRuntime(),
-    createRuntimePorts: namespace.createGeneratedGraphRuntimePorts,
-  }
-}
-
-async function readGeneratedDeploymentGraph(
-  artifactRoot: string,
-  runtime: GeneratedProjectRuntime,
-): Promise<{
-  requirements: VoyantGraphDeploymentRequirements
-  scheduledJobs: readonly GeneratedScheduledJob[]
-}> {
-  const graph = JSON.parse(
-    await readFile(path.join(artifactRoot, PROJECT_GRAPH_ENTRY), "utf8"),
-  ) as {
-    contentHash?: unknown
-    requirements?: unknown
-    provisioning?: { scheduledJobs?: unknown }
-  }
-  if (graph.contentHash !== runtime.graphHash) {
-    throw new Error("Generated project runtime and deployment graph hashes do not match.")
-  }
-  if (
-    !graph.requirements ||
-    typeof graph.requirements !== "object" ||
-    !("resources" in graph.requirements) ||
-    !Array.isArray(graph.requirements.resources)
-  ) {
-    throw new Error("Generated deployment graph requirements are missing or invalid.")
-  }
-  return {
-    requirements: graph.requirements as VoyantGraphDeploymentRequirements,
-    scheduledJobs: Array.isArray(graph.provisioning?.scheduledJobs)
-      ? (graph.provisioning.scheduledJobs as GeneratedScheduledJob[])
-      : [],
-  }
-}
-
-interface GeneratedScheduledJob {
-  id: string
-  cron: string
-  workflowId?: string
-}
-
-async function loadGeneratedProjectLinks(artifactRoot: string) {
-  const entry = path.join(artifactRoot, PROJECT_LINKS_ENTRY)
-  try {
-    const namespace = (await tsImport(pathToFileURL(entry).href, {
-      parentURL: import.meta.url,
-    })) as GeneratedProjectLinks
-    return namespace.projectLinks ?? []
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return []
-    throw error
-  }
-}
-
-async function resolveAdminAssetsDir(
-  projectRoot: string,
-  artifactRoot: string,
-  explicit?: string,
-  preferBuiltAssets = false,
-): Promise<string> {
-  if (explicit) return path.resolve(explicit)
-  const sourceArtifactRoot = path.join(projectRoot, ".voyant")
-  const builtArtifactRoot = path.join(projectRoot, "dist/.voyant")
-  const builtClientDir = path.join(projectRoot, "dist/client")
-  if (artifactRoot === builtArtifactRoot) return builtClientDir
-  if (
-    preferBuiltAssets &&
-    artifactRoot === sourceArtifactRoot &&
-    (await pathExists(builtClientDir)) &&
-    (await generatedArtifactGraphsMatch(sourceArtifactRoot, builtArtifactRoot))
-  ) {
-    return builtClientDir
-  }
-  return path.join(artifactRoot, "admin/client")
-}
-
-async function generatedArtifactGraphsMatch(
-  sourceArtifactRoot: string,
-  builtArtifactRoot: string,
-): Promise<boolean> {
-  const [sourceHash, builtHash] = await Promise.all([
-    readGeneratedArtifactGraphHash(sourceArtifactRoot),
-    readGeneratedArtifactGraphHash(builtArtifactRoot),
-  ])
-  return sourceHash !== undefined && sourceHash === builtHash
-}
-
-async function readGeneratedArtifactGraphHash(artifactRoot: string): Promise<string | undefined> {
-  try {
-    const graph = JSON.parse(
-      await readFile(path.join(artifactRoot, PROJECT_GRAPH_ENTRY), "utf8"),
-    ) as { contentHash?: unknown }
-    return typeof graph.contentHash === "string" ? graph.contentHash : undefined
-  } catch {
-    return undefined
-  }
-}
-
 function rewriteLegacyMediaRequest(request: Request): Request {
   const url = new URL(request.url)
   if (!url.pathname.startsWith("/api/v1/media/")) return request
   url.pathname = url.pathname.replace("/api/v1/media/", "/api/v1/admin/media/")
   return new Request(url, request)
-}
-
-async function pathExists(candidate: string): Promise<boolean> {
-  try {
-    await access(candidate)
-    return true
-  } catch {
-    return false
-  }
 }
 
 async function dispatchScheduledProjectJob(input: {

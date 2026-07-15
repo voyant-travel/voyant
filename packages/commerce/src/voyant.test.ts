@@ -17,7 +17,7 @@ describe("commerce deployment manifest", () => {
         },
         source: "@voyant-travel/commerce/promotion-boundary-workflow",
         runtime: {
-          entry: "./promotion-boundary-workflow",
+          entry: "@voyant-travel/commerce/promotion-boundary-workflow",
           export: "promotionBoundarySchedulerWorkflow",
         },
       },
@@ -25,7 +25,7 @@ describe("commerce deployment manifest", () => {
         ...bulkReindexProductsWorkflowManifest,
         source: "@voyant-travel/commerce/product-reindex-workflow",
         runtime: {
-          entry: "./product-reindex-workflow",
+          entry: "@voyant-travel/commerce/product-reindex-workflow",
           export: "bulkReindexProductsWorkflow",
         },
       },
@@ -36,7 +36,7 @@ describe("commerce deployment manifest", () => {
         eventType: "booking.confirmed",
         source: "@voyant-travel/commerce/promotion-redemption-subscriber",
         runtime: {
-          entry: "./promotion-redemption-subscriber",
+          entry: "@voyant-travel/commerce/promotion-redemption-subscriber",
           export: "createPromotionRedemptionSubscriberGraphRuntime",
         },
       },
@@ -48,7 +48,7 @@ describe("commerce deployment manifest", () => {
         filter: promotionAffectedAllFilter.manifest,
         source: "@voyant-travel/commerce/product-reindex-workflow-manifest",
         runtime: {
-          entry: "./product-reindex-workflow-manifest",
+          entry: "@voyant-travel/commerce/product-reindex-workflow-manifest",
           export: "promotionAffectedAllFilter",
         },
       },

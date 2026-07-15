@@ -158,7 +158,6 @@ function envForProvider(
   }
   if (role === "auth" && provider === "voyant-cloud") {
     return [
-      variable("VOYANT_ADMIN_AUTH_MODE", 'Set to "voyant-cloud".'),
       variable("VOYANT_CLOUD_DEPLOYMENT_ID", "Voyant Cloud deployment id."),
       variable("VOYANT_CLOUD_ADMIN_AUTH_START_URL", "Cloud admin auth start URL."),
       variable("VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL", "Cloud admin auth token exchange URL."),
@@ -167,6 +166,13 @@ function envForProvider(
       secret("VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN", "Cloud admin auth client token."),
       secret("SESSION_CLAIMS_SECRET", "Session claim signing secret."),
       secret("BETTER_AUTH_SECRET", "Better Auth secret."),
+    ]
+  }
+  if (role === "realtime" && provider === "voyant-cloud") {
+    return [
+      secret("VOYANT_API_KEY", "Voyant Cloud API key for hosted realtime delivery."),
+      variable("VOYANT_CLOUD_API_URL", "Optional Voyant Cloud API base URL.", false, "http-url"),
+      variable("VOYANT_CLOUD_USER_AGENT", "Optional Voyant Cloud client user agent.", false),
     ]
   }
   if (role === "scheduledJobs" && provider === "cloud-scheduler") {

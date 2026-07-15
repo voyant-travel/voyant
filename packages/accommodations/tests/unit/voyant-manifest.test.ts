@@ -13,6 +13,13 @@ describe("accommodations deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/accommodations",
       packageName: "@voyant-travel/accommodations",
+      provides: {
+        ports: [
+          { id: "catalog.extension.accommodations" },
+          { id: "bookings.accommodation.runtime" },
+          { id: "finance.accommodations-payment-policy.runtime" },
+        ],
+      },
       api: [
         {
           id: "@voyant-travel/accommodations#api",

@@ -1,4 +1,11 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront/runtime-port"
 import {
   bookingDocumentsSentEventPayloadSchema,
   bookingFullyPaidEventPayloadSchema,
@@ -13,7 +20,14 @@ export const notificationsVoyantModule = defineModule({
   packageName: "@voyant-travel/notifications",
   localId: "notifications",
   runtimePorts: [requirePort(notificationsRuntimePort)],
-  provides: { capabilities: ["notifications.delivery"] },
+  provides: {
+    capabilities: ["notifications.delivery"],
+    ports: [
+      providePort(storefrontVerificationRuntimePort),
+      providePort(financeNotificationsRuntimePort),
+      providePort(notificationsRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/notifications#api.admin",
@@ -297,7 +311,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.contract.generated",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingConfirmationAutoDispatchSubscriber",
       },
     },
@@ -306,7 +320,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.confirmed",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingConfirmedReminderSubscriber",
       },
     },
@@ -315,7 +329,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "payment.completed",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsPaymentCompletedReminderSubscriber",
       },
     },
@@ -324,7 +338,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.fully-paid",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingFullyPaidDocumentLifecycleSubscriber",
       },
     },
@@ -333,7 +347,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.cancelled",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingCancelledReminderSubscriber",
       },
     },
@@ -342,7 +356,7 @@ export const notificationsReminderSubscribersVoyantPlugin = defineExtension({
       eventType: "booking.expired",
       source: "@voyant-travel/notifications/subscriber-runtime",
       runtime: {
-        entry: "./subscriber-runtime",
+        entry: "@voyant-travel/notifications/subscriber-runtime",
         export: "notificationsBookingExpiredReminderSubscriber",
       },
     },

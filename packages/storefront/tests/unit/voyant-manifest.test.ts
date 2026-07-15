@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { createStorefrontVoyantRuntime } from "../../src/index.js"
 import {
+  storefrontBookingIntentsRuntimePort,
+  storefrontCustomerPortalRuntimePort,
+  storefrontIntakeRuntimePort,
+  storefrontOffersRuntimePort,
+  storefrontPaymentLinkRuntimePort,
+} from "../../src/runtime-port.js"
+import {
   storefrontCustomerPortalVoyantModule,
   storefrontPaymentLinkVoyantModule,
   storefrontVerificationVoyantModule,
@@ -8,12 +15,23 @@ import {
 } from "../../src/voyant.js"
 
 describe("storefront deployment manifest", () => {
+  it("exports import-cheap runtime port contracts", () => {
+    expect(storefrontIntakeRuntimePort.id).toBe("storefront.intake.runtime")
+    expect(storefrontPaymentLinkRuntimePort.id).toBe("storefront.payment-link.runtime")
+  })
+
   it("owns the base runtime, persistence, and verification link facets", () => {
     expect(storefrontVoyantModule).toMatchObject({
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storefront",
       packageName: "@voyant-travel/storefront",
-      provides: { capabilities: ["storefront.data-owner"] },
+      provides: {
+        capabilities: ["storefront.data-owner"],
+        ports: [
+          { id: storefrontOffersRuntimePort.id },
+          { id: storefrontBookingIntentsRuntimePort.id },
+        ],
+      },
       runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
       runtimePorts: [
         { id: "storefront.offers.runtime" },
@@ -79,7 +97,7 @@ describe("storefront deployment manifest", () => {
           eventType: "storefront.booking.bootstrap.requested",
           source: "@voyant-travel/storefront",
           runtime: {
-            entry: "./booking-bootstrap-subscriber",
+            entry: "@voyant-travel/storefront/booking-bootstrap-subscriber",
             export: "storefrontBookingBootstrapSubscriber",
           },
         },
@@ -150,6 +168,7 @@ describe("storefront deployment manifest", () => {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/storefront#customer-portal",
         packageName: "@voyant-travel/storefront",
+        provides: { ports: [{ id: storefrontCustomerPortalRuntimePort.id }] },
         requires: { capabilities: ["storefront.data-owner"] },
         runtime: {
           entry: "@voyant-travel/storefront/customer-portal",
@@ -196,6 +215,9 @@ describe("storefront deployment manifest", () => {
         ],
       },
     ])
+    expect(storefrontVoyantModule.provides?.ports).not.toContainEqual({
+      id: storefrontCustomerPortalRuntimePort.id,
+    })
   })
 
   it("owns the payment-link bridge", () => {

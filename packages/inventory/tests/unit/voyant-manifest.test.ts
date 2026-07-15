@@ -1,4 +1,9 @@
+import { actionLedgerInventoryDriftRuntimePort } from "@voyant-travel/action-ledger/runtime-port"
+import { bookingsInventoryRuntimePort } from "@voyant-travel/bookings/runtime-port"
+import { catalogInventoryRuntimeExtensionPort } from "@voyant-travel/catalog/runtime-contracts"
+import { commerceInventoryRuntimePort } from "@voyant-travel/commerce/runtime-port"
 import { isGraphRuntimeFactory } from "@voyant-travel/core/project"
+import { financeInventoryPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   createInventoryBrochureVoyantRuntime,
@@ -26,6 +31,17 @@ describe("inventory deployment manifests", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/inventory",
       packageName: "@voyant-travel/inventory",
+      provides: {
+        capabilities: ["inventory.data-owner"],
+        ports: [
+          { id: catalogInventoryRuntimeExtensionPort.id },
+          { id: commerceInventoryRuntimePort.id },
+          { id: actionLedgerInventoryDriftRuntimePort.id },
+          { id: bookingsInventoryRuntimePort.id },
+          { id: financeInventoryPaymentPolicyRuntimePort.id },
+          { id: "inventory.runtime" },
+        ],
+      },
       api: [
         {
           id: "@voyant-travel/inventory#api.admin",
@@ -66,13 +82,16 @@ describe("inventory deployment manifests", () => {
         },
       ],
     })
+    expectConcreteEventSchemas(inventoryVoyantModule.events)
 
     expect(inventoryExtrasVoyantModule).toMatchObject({
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/inventory#extras",
+      requires: { capabilities: ["inventory.data-owner"] },
       api: [
         {
           id: "@voyant-travel/inventory#extras.api",
+          resource: "extras",
           openapi: { document: "extras" },
           runtime: {
             entry: "@voyant-travel/inventory/graph-runtime",
@@ -80,7 +99,24 @@ describe("inventory deployment manifests", () => {
           },
         },
       ],
+      access: {
+        resources: [expect.objectContaining({ resource: "extras" })],
+      },
     })
+  })
+
+  it("declares product navigation and route scopes", () => {
+    expect(
+      inventoryVoyantModule.admin?.routes?.every((route) =>
+        route.requiredScopes?.includes("products:read"),
+      ),
+    ).toBe(true)
+    expect(inventoryVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/inventory#admin.route.products-index",
+        label: { namespace: "inventory.admin", key: "productsPage.title" },
+      }),
+    ])
   })
 
   it("owns the authoring and booking plugin surfaces", () => {
@@ -140,6 +176,7 @@ describe("inventory deployment manifests", () => {
     expect(inventoryBrochureVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/inventory#brochure-extension",
+      provides: { ports: [{ id: "inventory.brochure-runtime" }] },
       api: [
         {
           surface: "admin",
@@ -180,3 +217,15 @@ describe("inventory deployment manifests", () => {
     })
   })
 })
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
+  }
+}

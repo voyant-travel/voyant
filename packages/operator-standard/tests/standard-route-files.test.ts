@@ -5,7 +5,12 @@ import { createStandardOperatorRouteFiles } from "../src/standard-route-files"
 describe("createStandardOperatorRouteFiles", () => {
   it("routes every standard frontend surface through the package runtime", () => {
     const standardOperatorRouteFiles = createStandardOperatorRouteFiles({
-      presentationIds: ["@voyant-travel/storefront#presentation.customer"],
+      presentationIds: [
+        "@voyant-travel/auth#presentation.local-auth",
+        "@voyant-travel/finance#presentation.public",
+        "@voyant-travel/quotes#presentation.public",
+        "@voyant-travel/storefront#presentation.customer",
+      ],
     })
     const runtime = standardOperatorRouteFiles.find(
       (file) => file.path === "_lib/operator-frontend.tsx",
@@ -22,6 +27,21 @@ describe("createStandardOperatorRouteFiles", () => {
       expect(file.source, file.path).not.toContain('from "@/lib/')
       expect(file.source, file.path).not.toContain('from "@/components/')
       expect(file.source, file.path).not.toContain('from "@/routes/')
+    }
+  })
+
+  it("emits each package route family only when its presentation is selected", () => {
+    const cases = [
+      ["@voyant-travel/auth#presentation.local-auth", "(auth)/"],
+      ["@voyant-travel/finance#presentation.public", "pay.tsx"],
+      ["@voyant-travel/quotes#presentation.public", "proposal.$quoteVersionId.tsx"],
+    ] as const
+
+    for (const [presentationId, expectedPath] of cases) {
+      const selected = createStandardOperatorRouteFiles({ presentationIds: [presentationId] })
+      const absent = createStandardOperatorRouteFiles({ presentationIds: [] })
+      expect(selected.some(({ path }) => path.startsWith(expectedPath))).toBe(true)
+      expect(absent.some(({ path }) => path.startsWith(expectedPath))).toBe(false)
     }
   })
 

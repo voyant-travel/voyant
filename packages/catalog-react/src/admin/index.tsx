@@ -6,6 +6,7 @@ import {
   type SelectedAdminExtensionFactoryContext,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
+import { Library } from "lucide-react"
 import type * as React from "react"
 import { z } from "zod"
 // Lean static: the browse search contract lives in its own schema-only
@@ -187,11 +188,8 @@ function catalogAdminPage(
  * The catalog admin contribution (packaged-admin RFC Phase 2,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The Catalog nav group (with its five surface
- * sub-items) is part of the BASE operator navigation — see
- * `createOperatorAdminNavigation` in `@voyant-travel/admin` — so contributing nav
- * entries here would duplicate them. If the base nav ever drops the catalog
- * group, this extension is where the entries move.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Catalog group.
  *
  * ROUTES: contributions carry the FULL route implementation (packaged-admin
  * RFC §4.8 endgame) — the package-owned search contracts
@@ -350,7 +348,7 @@ export const standardCatalogAdminScope = {
 export function createSelectedCatalogAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
+  const extension = withAdminRouteMessagesProvider(
     createCatalogAdminExtension({
       ...standardCatalogAdminScope,
       labels: {
@@ -364,4 +362,40 @@ export function createSelectedCatalogAdminExtension({
     () =>
       import("../i18n/index.js").then((module) => ({ default: module.CatalogUiMessagesProvider })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -140,
+        items: [
+          {
+            id: "catalog",
+            title: navMessages.catalog,
+            url: "/catalog/products",
+            icon: Library,
+            items: [
+              {
+                id: "catalog-products",
+                title: navMessages.catalogProducts,
+                url: "/catalog/products",
+              },
+              {
+                id: "catalog-excursions",
+                title: navMessages.catalogExcursions,
+                url: "/catalog/excursions",
+              },
+              { id: "catalog-tours", title: navMessages.catalogTours, url: "/catalog/tours" },
+              { id: "catalog-cruises", title: navMessages.catalogCruises, url: "/catalog/cruises" },
+              {
+                id: "catalog-accommodations",
+                title: navMessages.catalogAccommodations,
+                url: "/catalog/accommodations",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  }
 }

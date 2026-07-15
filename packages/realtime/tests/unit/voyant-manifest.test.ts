@@ -18,7 +18,11 @@ describe("realtime deployment manifest", () => {
       id: "@voyant-travel/realtime",
       packageName: "@voyant-travel/realtime",
       provides: {
-        ports: [{ id: "realtime.transport" }, { id: "realtime.admin-invalidation-publication" }],
+        ports: [
+          { id: "realtime.transport" },
+          { id: "realtime.admin-invalidation-publication" },
+          { id: realtimeRuntimePort.id },
+        ],
       },
       runtimePorts: [{ id: "realtime.runtime" }],
       api: [

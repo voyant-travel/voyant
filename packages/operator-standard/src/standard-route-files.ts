@@ -15,7 +15,7 @@ const contributionRoute = (
 import { createFileRoute } from "@tanstack/react-router"
 import { operatorFrontend } from ${JSON.stringify(runtimeImport(path))}
 
-export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFrontend.routes.${contribution}${contribution === "storefront" ? "!" : ""}.${member})
+export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFrontend.routes.${contribution}!.${member})
 `,
 })
 
@@ -30,11 +30,14 @@ const contributedPublicRoute = (
 import { createFileRoute } from "@tanstack/react-router"
 import { operatorFrontend } from ${JSON.stringify(runtimeImport(path))}
 
-export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFrontend.routes.${contribution}.${member})
+export const Route = createFileRoute(${JSON.stringify(routeId)})(operatorFrontend.routes.${contribution}!.${member})
 `,
 })
 
 const STOREFRONT_PRESENTATION_ID = "@voyant-travel/storefront#presentation.customer"
+const AUTH_PRESENTATION_ID = "@voyant-travel/auth#presentation.local-auth"
+const FINANCE_PRESENTATION_ID = "@voyant-travel/finance#presentation.public"
+const QUOTES_PRESENTATION_ID = "@voyant-travel/quotes#presentation.public"
 
 export interface CreateStandardOperatorRouteFilesOptions {
   presentationIds: readonly string[]
@@ -92,7 +95,6 @@ function RootComponent() {
 }
 `,
   },
-  contributedPublicRoute("accountant.$token.tsx", "/accountant/$token", "finance", "accountant"),
   {
     path: "docs.tsx",
     source: `
@@ -102,14 +104,24 @@ import { operatorFrontend } from "./_lib/operator-frontend.js"
 export const Route = createFileRoute("/docs")(operatorFrontend.routes.docs)
 `,
   },
+]
+
+const financeRouteFiles: readonly VoyantGeneratedRouteFile[] = [
+  contributedPublicRoute("accountant.$token.tsx", "/accountant/$token", "finance", "accountant"),
   contributedPublicRoute("pay.tsx", "/pay", "finance", "pay"),
   contributedPublicRoute("pay_.$sessionId.tsx", "/pay_/$sessionId", "finance", "paymentLink"),
+]
+
+const quotesRouteFiles: readonly VoyantGeneratedRouteFile[] = [
   contributedPublicRoute(
     "proposal.$quoteVersionId.tsx",
     "/proposal/$quoteVersionId",
     "quotes",
     "proposal",
   ),
+]
+
+const authRouteFiles: readonly VoyantGeneratedRouteFile[] = [
   contributionRoute("(auth)/route.tsx", "/(auth)", "localAuth", "layout"),
   contributionRoute(
     "(auth)/accept-invitation.tsx",
@@ -223,7 +235,13 @@ const storefrontRouteFiles: readonly VoyantGeneratedRouteFile[] = [
 export function createStandardOperatorRouteFiles(
   options: CreateStandardOperatorRouteFilesOptions,
 ): readonly VoyantGeneratedRouteFile[] {
-  return options.presentationIds.includes(STOREFRONT_PRESENTATION_ID)
-    ? [...standardOperatorRouteFiles, ...storefrontRouteFiles, ...workspaceRouteFiles]
-    : [...standardOperatorRouteFiles, ...workspaceRouteFiles]
+  const selected = new Set(options.presentationIds)
+  return [
+    ...standardOperatorRouteFiles,
+    ...(selected.has(AUTH_PRESENTATION_ID) ? authRouteFiles : []),
+    ...(selected.has(FINANCE_PRESENTATION_ID) ? financeRouteFiles : []),
+    ...(selected.has(QUOTES_PRESENTATION_ID) ? quotesRouteFiles : []),
+    ...(selected.has(STOREFRONT_PRESENTATION_ID) ? storefrontRouteFiles : []),
+    ...workspaceRouteFiles,
+  ]
 }

@@ -8,6 +8,7 @@ import { BookingPendingPaymentSessionsWidget } from "./booking-pending-payment-s
 import { CreditNoteDialog } from "./credit-note-dialog.js"
 import {
   createFinanceAdminExtension,
+  createSelectedFinanceAdminExtension,
   InvoiceDetailSkeleton,
   PaymentDetailSkeleton,
 } from "./index.js"
@@ -31,10 +32,43 @@ const IMPLEMENTED_ROUTE_IDS = [
 ] as const
 
 describe("createFinanceAdminExtension", () => {
-  it("contributes no navigation (finance nav is base-nav-owned)", () => {
+  it("adds localized standard navigation only through the selected factory", () => {
     const extension = createFinanceAdminExtension()
     expect(extension.id).toBe("finance")
     expect(extension.navigation).toBeUndefined()
+
+    const selected = createSelectedFinanceAdminExtension({
+      navMessages: {
+        finance: "Finante",
+        invoices: "Facturi",
+        invoiceNumberSeries: "Serii",
+        payments: "Plati",
+        supplierInvoices: "Facturi furnizori",
+        profitability: "Profitabilitate",
+      },
+    })
+    expect(selected.navigation?.[0]).toMatchObject({
+      order: -50,
+      items: [
+        {
+          id: "finance",
+          title: "Finante",
+          url: "/finance/invoices",
+          items: [
+            { id: "invoices", title: "Facturi", url: "/finance/invoices" },
+            { id: "invoice-number-series", title: "Serii", url: "/finance/invoice-number-series" },
+            { id: "payments", title: "Plati", url: "/finance/payments" },
+            {
+              id: "supplier-invoices",
+              title: "Facturi furnizori",
+              url: "/finance/supplier-invoices",
+            },
+            { id: "profitability", title: "Profitabilitate", url: "/finance/profitability" },
+          ],
+        },
+      ],
+    })
+    expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
   it("describes the finance routes with unique ids and paths", () => {

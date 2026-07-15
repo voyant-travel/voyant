@@ -18,6 +18,28 @@ export const mcpVoyantModule = defineModule({
       },
     },
   ],
+  access: {
+    resources: [
+      {
+        id: "@voyant-travel/mcp#access.mcp",
+        resource: "mcp",
+        label: "MCP",
+        description: "Connect to and invoke the selected deployment's MCP tool surface.",
+        actions: [
+          {
+            action: "read",
+            label: "Connect to MCP",
+            description: "Open and inspect an MCP transport session.",
+          },
+          {
+            action: "write",
+            label: "Invoke MCP tools",
+            description: "Send MCP requests and invoke tools admitted by the selected graph.",
+          },
+        ],
+      },
+    ],
+  },
   meta: {
     ownership: "package",
   },

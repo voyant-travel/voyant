@@ -26,6 +26,14 @@ describe("cruises deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/cruises",
       packageName: "@voyant-travel/cruises",
+      provides: {
+        ports: [
+          { id: "catalog.extension.cruises" },
+          { id: "finance.cruises-payment-policy.runtime" },
+          { id: "voyant.workflow-services" },
+        ],
+      },
+      requires: { ports: [{ id: "catalog.runtime-services" }] },
       api: [
         {
           surface: "admin",
@@ -164,6 +172,17 @@ describe("cruises deployment manifest", () => {
         ],
       }),
     ])
+  })
+
+  it("declares the emitted cruise lifecycle payload", () => {
+    for (const event of cruisesVoyantModule.events ?? []) {
+      expect(event.payloadSchema).toEqual({
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+        additionalProperties: false,
+      })
+    }
   })
 
   it("preserves deployment-injected lazy route bridges", () => {

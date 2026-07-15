@@ -22,6 +22,9 @@ describe("quotes deployment manifests", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/quotes",
       packageName: "@voyant-travel/quotes",
+      provides: {
+        ports: [{ id: "quotes.checkout-inquiry.runtime" }, { id: "quotes.runtime" }],
+      },
       api: [
         {
           id: "@voyant-travel/quotes#api",
@@ -49,10 +52,19 @@ describe("quotes deployment manifests", () => {
           {
             id: "@voyant-travel/quotes#admin.route.quotes-index",
             path: "/quotes",
+            requiredScopes: ["quotes:read"],
           },
           {
             id: "@voyant-travel/quotes#admin.route.quotes-detail",
             path: "/quotes/$id",
+            requiredScopes: ["quotes:read"],
+          },
+        ],
+        nav: [
+          {
+            id: "@voyant-travel/quotes#admin.nav.quotes",
+            routeId: "@voyant-travel/quotes#admin.route.quotes-index",
+            label: { namespace: "quotes.admin", key: "quotesBoardPage.title" },
           },
         ],
       },
@@ -61,6 +73,7 @@ describe("quotes deployment manifests", () => {
         { id: "@voyant-travel/quotes#linkable.quoteVersion" },
       ],
     })
+    expectConcreteEventSchemas(quotesVoyantModule.events)
   })
 
   it("owns the booking extension", () => {
@@ -91,11 +104,13 @@ describe("quotes deployment manifests", () => {
       {
         schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/quotes#proposal-extension",
+        provides: { ports: [{ id: "quotes.proposal-runtime" }] },
         api: [
           {
             id: "@voyant-travel/quotes#proposal-extension.api.admin",
             surface: "admin",
             mount: "quote-versions",
+            resource: "quotes",
             openapi: { document: "quotes" },
             runtime: {
               entry: "@voyant-travel/quotes",
@@ -117,6 +132,7 @@ describe("quotes deployment manifests", () => {
       {
         schemaVersion: "voyant.extension.v1",
         id: "@voyant-travel/quotes#quote-version-snapshot-extension",
+        provides: { ports: [{ id: "quotes.snapshot-runtime" }] },
         api: [
           {
             surface: "admin",
@@ -166,5 +182,17 @@ function readApiIds(routes: OpenApiDocumentSource): unknown[] {
 interface OpenApiDocumentSource {
   getOpenAPI31Document(input: { openapi: "3.1.0"; info: { title: string; version: string } }): {
     paths?: Record<string, Record<string, Record<string, unknown>>>
+  }
+}
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
   }
 }

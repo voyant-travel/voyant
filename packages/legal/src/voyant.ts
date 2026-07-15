@@ -1,4 +1,10 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import { commerceLegalRuntimePort } from "@voyant-travel/commerce/runtime-port"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
 import { legalContractDocumentRuntimePort } from "./contract-document-runtime-port.js"
 import { legalBookingContractSubscriberRuntimePort } from "./contracts/booking-contract-subscriber-port.js"
 import {
@@ -24,6 +30,9 @@ export const legalVoyantModule = defineModule({
   id: "@voyant-travel/legal",
   packageName: "@voyant-travel/legal",
   localId: "legal",
+  provides: {
+    ports: [providePort(commerceLegalRuntimePort), providePort(legalRuntimePort)],
+  },
   runtimePorts: [requirePort(legalRuntimePort)],
   api: [
     {
@@ -273,6 +282,7 @@ export const legalContractDocumentVoyantModule = defineModule({
   id: "@voyant-travel/legal#contract-document",
   packageName: "@voyant-travel/legal",
   localId: "legal.contract-document",
+  provides: { ports: [providePort(legalContractDocumentRuntimePort)] },
   runtime: {
     entry: "@voyant-travel/legal/contract-document-routes",
     export: "createContractDocumentVoyantRuntime",
@@ -299,8 +309,9 @@ export const legalBookingContractVoyantExtension = defineExtension({
   id: "@voyant-travel/legal#booking-contract-extension",
   packageName: "@voyant-travel/legal",
   localId: "legal.booking-contract-extension",
+  provides: { ports: [providePort(legalBookingContractSubscriberRuntimePort)] },
   runtime: {
-    entry: "./booking-contract-subscriber",
+    entry: "@voyant-travel/legal/booking-contract-subscriber",
     export: "createLegalBookingContractVoyantRuntime",
   },
   runtimePorts: [requirePort(legalBookingContractSubscriberRuntimePort)],
@@ -310,7 +321,7 @@ export const legalBookingContractVoyantExtension = defineExtension({
       eventType: "booking.confirmed",
       source: "@voyant-travel/legal/booking-contract-subscriber",
       runtime: {
-        entry: "./booking-contract-subscriber",
+        entry: "@voyant-travel/legal/booking-contract-subscriber",
         export: "legalBookingContractConfirmedSubscriber",
       },
     },

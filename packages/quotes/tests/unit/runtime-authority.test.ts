@@ -47,11 +47,8 @@ describe("quotes deployment authority", () => {
 
   it("declares package-owned factories and their narrow ports", () => {
     expect(quotesVoyantModule).toMatchObject({
-      runtimePorts: [
-        { id: "quotes.runtime" },
-        { id: "quotes.checkout-inquiry.runtime" },
-        { id: "trips.routes-runtime" },
-      ],
+      provides: { ports: [{ id: "quotes.checkout-inquiry.runtime" }] },
+      runtimePorts: [{ id: "quotes.runtime" }, { id: "trips.routes-runtime" }],
       api: [{ runtime: { export: "createQuotesVoyantRuntime" } }],
     })
     expect(quotesProposalVoyantPlugin).toMatchObject({
@@ -59,6 +56,15 @@ describe("quotes deployment authority", () => {
       api: [
         { surface: "admin", runtime: { export: "createQuoteProposalVoyantRuntime" } },
         { surface: "public", runtime: { export: "createQuoteProposalVoyantRuntime" } },
+      ],
+      presentations: [
+        {
+          id: "@voyant-travel/quotes#presentation.public",
+          runtime: {
+            entry: "@voyant-travel/quotes-react/public-routes",
+            export: "createQuotesPublicRouteContribution",
+          },
+        },
       ],
     })
     expect(quotesVersionSnapshotVoyantPlugin).toMatchObject({

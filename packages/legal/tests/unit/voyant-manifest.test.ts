@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs"
+import { commerceLegalRuntimePort } from "@voyant-travel/commerce/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   legalBookingContractVoyantExtension,
@@ -12,6 +13,9 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/legal",
       packageName: "@voyant-travel/legal",
+      provides: {
+        ports: [{ id: commerceLegalRuntimePort.id }, { id: "legal.runtime" }],
+      },
       api: [
         {
           id: "@voyant-travel/legal#api.admin",
@@ -131,6 +135,7 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/legal#contract-document",
       packageName: "@voyant-travel/legal",
+      provides: { ports: [{ id: "legal.contract-document.runtime" }] },
       runtime: {
         entry: "@voyant-travel/legal/contract-document-routes",
         export: "createContractDocumentVoyantRuntime",
@@ -168,8 +173,9 @@ describe("legal deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/legal#booking-contract-extension",
       packageName: "@voyant-travel/legal",
+      provides: { ports: [{ id: "legal.booking-contract-subscriber-runtime" }] },
       runtime: {
-        entry: "./booking-contract-subscriber",
+        entry: "@voyant-travel/legal/booking-contract-subscriber",
         export: "createLegalBookingContractVoyantRuntime",
       },
       runtimePorts: [{ id: "legal.booking-contract-subscriber-runtime" }],
@@ -179,11 +185,14 @@ describe("legal deployment manifest", () => {
           eventType: "booking.confirmed",
           source: "@voyant-travel/legal/booking-contract-subscriber",
           runtime: {
-            entry: "./booking-contract-subscriber",
+            entry: "@voyant-travel/legal/booking-contract-subscriber",
             export: "legalBookingContractConfirmedSubscriber",
           },
         },
       ],
+    })
+    expect(legalVoyantModule.provides?.ports).not.toContainEqual({
+      id: "legal.booking-contract-subscriber-runtime",
     })
   })
 

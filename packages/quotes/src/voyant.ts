@@ -1,23 +1,33 @@
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runtime-port"
+import { tripsRoutesRuntimePort } from "@voyant-travel/trips/runtime-port"
 import {
   quotesProposalRuntimePort,
   quotesRuntimePort,
   quotesSnapshotRuntimePort,
 } from "./runtime-port.js"
 
-const tripsRoutesRuntimePortReference = { id: "trips.routes-runtime" } as const
-const checkoutInquiryRuntimePortReference = { id: "quotes.checkout-inquiry.runtime" } as const
+const quoteChangedPayloadSchema = {
+  type: "object",
+  required: ["id"],
+  properties: { id: { type: "string" } },
+  additionalProperties: false,
+} as const
 
 /** Import-cheap deployment declarations owned by the quotes package. */
 export const quotesVoyantModule = defineModule({
   id: "@voyant-travel/quotes",
   packageName: "@voyant-travel/quotes",
   localId: "quotes",
-  runtimePorts: [
-    requirePort(quotesRuntimePort),
-    checkoutInquiryRuntimePortReference,
-    tripsRoutesRuntimePortReference,
-  ],
+  runtimePorts: [requirePort(quotesRuntimePort), requirePort(tripsRoutesRuntimePort)],
+  provides: {
+    ports: [providePort(checkoutInquiryRuntimePort), providePort(quotesRuntimePort)],
+  },
   api: [
     {
       id: "@voyant-travel/quotes#api",
@@ -55,7 +65,7 @@ export const quotesVoyantModule = defineModule({
       id: "@voyant-travel/quotes#event.quote-created",
       eventType: "quote.created",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: quoteChangedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "quotes", category: "domain" },
     },
@@ -63,7 +73,7 @@ export const quotesVoyantModule = defineModule({
       id: "@voyant-travel/quotes#event.quote-updated",
       eventType: "quote.updated",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: quoteChangedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "quotes", category: "domain" },
     },
@@ -71,7 +81,7 @@ export const quotesVoyantModule = defineModule({
       id: "@voyant-travel/quotes#event.quote-deleted",
       eventType: "quote.deleted",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: quoteChangedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "quotes", category: "domain" },
     },
@@ -81,7 +91,21 @@ export const quotesVoyantModule = defineModule({
       {
         id: "@voyant-travel/quotes#access.quotes",
         resource: "quotes",
-        actions: ["read", "write"],
+        label: "Quotes",
+        description: "Read and manage sales quotes, versions, and proposal state.",
+        actions: [
+          {
+            action: "read",
+            label: "Read quotes",
+            description: "Read quotes, quote versions, and proposal state.",
+          },
+          {
+            action: "write",
+            label: "Manage quotes",
+            description: "Create, update, issue, accept, decline, or delete quotes and versions.",
+            sensitive: true,
+          },
+        ],
       },
     ],
   },
@@ -166,6 +190,7 @@ export const quotesVoyantModule = defineModule({
       {
         id: "@voyant-travel/quotes#admin.route.quotes-index",
         path: "/quotes",
+        requiredScopes: ["quotes:read"],
         runtime: {
           entry: "@voyant-travel/quotes-react/admin",
           export: "createSelectedQuotesAdminExtension",
@@ -174,9 +199,20 @@ export const quotesVoyantModule = defineModule({
       {
         id: "@voyant-travel/quotes#admin.route.quotes-detail",
         path: "/quotes/$id",
+        requiredScopes: ["quotes:read"],
         runtime: {
           entry: "@voyant-travel/quotes-react/admin",
           export: "createSelectedQuotesAdminExtension",
+        },
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/quotes#admin.nav.quotes",
+        routeId: "@voyant-travel/quotes#admin.route.quotes-index",
+        label: {
+          namespace: "quotes.admin",
+          key: "quotesBoardPage.title",
         },
       },
     ],
@@ -214,6 +250,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#proposal-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.proposal-extension",
+  provides: { ports: [providePort(quotesProposalRuntimePort)] },
   runtimePorts: [requirePort(quotesProposalRuntimePort)],
   events: [
     {
@@ -242,6 +279,7 @@ export const quotesProposalVoyantPlugin = defineExtension({
       surface: "admin",
       mount: "quote-versions",
       openapi: { document: "quotes" },
+      resource: "quotes",
       transactional: true,
       runtime: {
         entry: "@voyant-travel/quotes",
@@ -261,6 +299,15 @@ export const quotesProposalVoyantPlugin = defineExtension({
       },
     },
   ],
+  presentations: [
+    {
+      id: "@voyant-travel/quotes#presentation.public",
+      runtime: {
+        entry: "@voyant-travel/quotes-react/public-routes",
+        export: "createQuotesPublicRouteContribution",
+      },
+    },
+  ],
   meta: {
     ownership: "package",
   },
@@ -270,6 +317,7 @@ export const quotesVersionSnapshotVoyantPlugin = defineExtension({
   id: "@voyant-travel/quotes#quote-version-snapshot-extension",
   packageName: "@voyant-travel/quotes",
   localId: "quotes.quote-version-snapshot-extension",
+  provides: { ports: [providePort(quotesSnapshotRuntimePort)] },
   runtimePorts: [requirePort(quotesSnapshotRuntimePort)],
   api: [
     {

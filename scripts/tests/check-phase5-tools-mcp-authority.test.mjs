@@ -24,9 +24,15 @@ function validFixture() {
       "packages/core/src/project.ts",
       "VoyantGraphRuntimeFactoryGraph readonly graph: readonly runtimePorts:",
     ],
-    ["packages/framework/src/runtime-composition.ts", "graph: runtime runtimePorts: ports ?? {}"],
+    [
+      "packages/framework/src/node-runtime.ts",
+      "composeVoyantGraphRuntime graphRuntime runtimePorts",
+    ],
     ["packages/operator-standard/src/index.ts", 'resolve: "@voyant-travel/mcp"'],
-    ["starters/operator/src/api/app.ts", "composeVoyantGraphRuntime({ ...deploymentResources })"],
+    [
+      "packages/runtime/src/index.ts",
+      "loadVoyantNodeRuntime generated.graphRuntime deploymentResources.ports",
+    ],
     ["packages/framework/src/project-resolver.ts", "buildProjectRuntimeModule(graph)"],
   ])
 }
@@ -65,7 +71,7 @@ describe("Phase 5 tools/MCP authority checker", () => {
   it("rejects an app-specific MCP runtime port", () => {
     const files = validFixture()
     files.set("packages/mcp/src/runtime-port.ts", 'definePort({ id: "mcp.runtime" })')
-    files.set("starters/operator/src/api/app.ts", "mcpRuntimePort")
+    files.set("packages/runtime/src/index.ts", "mcpRuntimePort")
     const failures = inspectPhase5ToolsMcpAuthority(files).join("\n")
     assert.match(failures, /generic graph factory context/)
     assert.match(failures, /mcpRuntimePort/)

@@ -1,8 +1,27 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { catalogOperationsRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
+import { defineModule, providePort } from "@voyant-travel/core/project"
 
 const operationsAdminRuntime = {
   entry: "@voyant-travel/operations-react/admin",
   export: "createOperationsAdminExtension",
+} as const
+
+const availabilitySlotChangedEventPayloadSchema = {
+  type: "object",
+  properties: {
+    slotId: { type: "string" },
+    productId: { type: "string" },
+    optionId: { type: ["string", "null"] },
+    startsAt: { type: "string", format: "date-time" },
+    remainingPax: { type: ["number", "null"] },
+    unlimited: { type: "boolean" },
+    source: {
+      type: "string",
+      enum: ["booking", "cancel", "expire", "modify", "manual", "refresh", "created", "deleted"],
+    },
+  },
+  required: ["slotId", "productId", "optionId", "startsAt", "remainingPax", "unlimited", "source"],
+  additionalProperties: false,
 } as const
 
 /** Import-cheap deployment declaration owned by the operations package. */
@@ -10,6 +29,7 @@ export const operationsVoyantModule = defineModule({
   id: "@voyant-travel/operations",
   packageName: "@voyant-travel/operations",
   localId: "operations",
+  provides: { ports: [providePort(catalogOperationsRuntimeExtensionPort)] },
   api: [
     {
       id: "@voyant-travel/operations#api.admin",
@@ -62,7 +82,7 @@ export const operationsVoyantModule = defineModule({
       id: "@voyant-travel/operations#event.availability-slot-changed",
       eventType: "availability.slot.changed",
       version: "1.0.0",
-      payloadSchema: { type: "object", additionalProperties: true },
+      payloadSchema: availabilitySlotChangedEventPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "operations", category: "domain" },
     },
@@ -136,13 +156,27 @@ export const operationsVoyantModule = defineModule({
     ).map(([id, path]) => ({
       id: `@voyant-travel/operations#admin.route.${id}`,
       path,
+      requiredScopes: ["operations:read"],
       runtime: operationsAdminRuntime,
     })),
     contributions: [
       {
         id: "@voyant-travel/operations#admin.contribution.product-option-resource-templates",
         slotId: "product.details.option-extras",
+        requiredScopes: ["operations:read"],
         runtime: operationsAdminRuntime,
+      },
+    ],
+    nav: [
+      {
+        id: "@voyant-travel/operations#admin.nav.availability",
+        routeId: "@voyant-travel/operations#admin.route.availability-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.availability" },
+      },
+      {
+        id: "@voyant-travel/operations#admin.nav.resources",
+        routeId: "@voyant-travel/operations#admin.route.resources-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.resources" },
       },
     ],
   },

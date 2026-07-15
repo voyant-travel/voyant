@@ -7,7 +7,7 @@ import {
   type SelectedAdminExtensionFactoryContext,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
-import { SlidersHorizontal } from "lucide-react"
+import { Building, SlidersHorizontal, Users } from "lucide-react"
 
 // Lean statics only: the client module (fetcher) and the skeletons. Query
 // options resolve via dynamic import inside the loaders so the data layer
@@ -78,11 +78,8 @@ export interface CreateRelationshipsAdminExtensionOptions {
  * The Relationships admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The People and Organizations nav items are
- * part of the BASE operator navigation — see `createOperatorAdminNavigation`
- * in `@voyant-travel/admin` — so contributing nav entries here would duplicate
- * them. If the base nav ever drops those items, this extension is where the
- * entries move.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator People and Organizations items.
  *
  * ROUTES: contributions carry the FULL route implementation (packaged-admin
  * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
@@ -245,6 +242,20 @@ export function createSelectedRelationshipsAdminExtension({
 
   return {
     ...extension,
+    navigation: [
+      {
+        order: -70,
+        items: [
+          { id: "people", title: navMessages.people, url: "/people", icon: Users },
+          {
+            id: "organizations",
+            title: navMessages.organizations,
+            url: "/organizations",
+            icon: Building,
+          },
+        ],
+      },
+    ],
     settingsPages: [
       {
         id: "custom-fields",

@@ -13,6 +13,7 @@ describe("workflow-runs deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/workflow-runs",
       packageName: "@voyant-travel/workflow-runs",
+      provides: { ports: [{ id: workflowRunnerRegistryRuntimePort.id }] },
       runtimePorts: [{ id: workflowRunnerRegistryRuntimePort.id }],
       api: [
         {

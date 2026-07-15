@@ -35,13 +35,15 @@ const OPERATOR_SCHEMA_ONLY_MODULE_SPECIFIERS = [
   "@voyant-travel/catalog-authoring",
   "@voyant-travel/workflow-runs",
 ] as const
-const OPERATOR_BRIDGE_MODULE_SPECIFIERS = [
+const PACKAGE_OWNED_RUNTIME_MODULE_SPECIFIERS = [
   "@voyant-travel/charters",
   "@voyant-travel/cruises",
   "@voyant-travel/realtime",
   "@voyant-travel/mice",
 ] as const
-const OPERATOR_BRIDGE_EXTENSION_SPECIFIERS = ["@voyant-travel/mice/booking-extension"] as const
+const PACKAGE_OWNED_RUNTIME_EXTENSION_SPECIFIERS = [
+  "@voyant-travel/mice/booking-extension",
+] as const
 
 const OPERATOR_PACKAGE_METADATA_KIND_EXPECTATIONS = new Map<string, string>([
   ["@voyant-travel/framework", "framework"],
@@ -299,11 +301,11 @@ async function main(): Promise<void> {
       failures.push(`expected operator graph to preserve customer surface ${id}`)
     }
   }
-  for (const specifier of OPERATOR_BRIDGE_MODULE_SPECIFIERS) {
+  for (const specifier of PACKAGE_OWNED_RUNTIME_MODULE_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorModuleIds.has(id)) failures.push(`expected direct package graph module ${id}`)
   }
-  for (const specifier of OPERATOR_BRIDGE_EXTENSION_SPECIFIERS) {
+  for (const specifier of PACKAGE_OWNED_RUNTIME_EXTENSION_SPECIFIERS) {
     const id = graphIdFromSpecifier(specifier)
     if (!operatorExtensionIds.has(id))
       failures.push(`expected direct package graph extension ${id}`)
@@ -383,7 +385,10 @@ async function main(): Promise<void> {
     ],
   ] as const) {
     const runtime = channelPushSubscriberRuntimes.get(id)
-    if (runtime?.entry !== "./channel-push-subscribers" || runtime.export !== exportName) {
+    if (
+      runtime?.entry !== "@voyant-travel/distribution/channel-push-subscribers" ||
+      runtime.export !== exportName
+    ) {
       failures.push(`expected ${id} to retain its package-owned subscriber runtime reference`)
     }
   }
@@ -410,7 +415,8 @@ async function main(): Promise<void> {
       subscriber.id === "@voyant-travel/finance#subscriber.booking-schedule-confirmed",
   )
   if (
-    bookingScheduleSubscriber?.runtime?.entry !== "./booking-schedule-subscriber" ||
+    bookingScheduleSubscriber?.runtime?.entry !==
+      "@voyant-travel/finance/booking-schedule-subscriber" ||
     bookingScheduleSubscriber.runtime.export !== "bookingScheduleConfirmedSubscriber"
   ) {
     failures.push(
@@ -438,7 +444,7 @@ async function main(): Promise<void> {
   for (const [id, exportName] of expectedCatalogCheckoutSubscribers) {
     const subscriber = catalogCheckoutUnit?.subscribers.find((candidate) => candidate.id === id)
     if (
-      subscriber?.runtime?.entry !== "./catalog-checkout-subscribers" ||
+      subscriber?.runtime?.entry !== "@voyant-travel/commerce/catalog-checkout-subscribers" ||
       subscriber.runtime.export !== exportName
     ) {
       failures.push(

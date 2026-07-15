@@ -17,6 +17,7 @@
     "./payment-subscribers": "./src/payment-subscriber-runtime.ts",
     "./routes": "./src/routes.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/trips.json",
     "./openapi/storefront": "./openapi/storefront/trips.json"
@@ -154,6 +155,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

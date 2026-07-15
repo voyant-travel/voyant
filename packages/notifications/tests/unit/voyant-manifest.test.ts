@@ -1,3 +1,5 @@
+import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { storefrontVerificationRuntimePort } from "@voyant-travel/storefront/runtime-port"
 import { describe, expect, it } from "vitest"
 import {
   NOTIFICATIONS_BOOKING_CONFIRMATION_AUTO_DISPATCH_SUBSCRIBER_ID,
@@ -19,6 +21,14 @@ describe("notifications deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/notifications",
       packageName: "@voyant-travel/notifications",
+      provides: {
+        capabilities: ["notifications.delivery"],
+        ports: [
+          { id: storefrontVerificationRuntimePort.id },
+          { id: financeNotificationsRuntimePort.id },
+          { id: "notifications.runtime" },
+        ],
+      },
       runtimePorts: [{ id: "notifications.runtime" }],
       api: [
         {

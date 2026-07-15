@@ -15,6 +15,7 @@
     "./voyant": "./src/voyant.ts",
     "./providers/local": "./src/providers/local.ts",
     "./providers/s3-compatible": "./src/providers/s3-compatible.ts",
+    "./providers/graph": "./src/providers/graph.ts",
     "./openapi/admin/media": "./openapi/admin/storage-media.json",
     "./openapi/admin/uploads": "./openapi/admin/storage-uploads.json",
     "./openapi/admin/video-upload-ticket": "./openapi/admin/storage-video-upload-ticket.json"
@@ -88,6 +89,11 @@
         "types": "./dist/providers/s3-compatible.d.ts",
         "import": "./dist/providers/s3-compatible.js",
         "default": "./dist/providers/s3-compatible.js"
+      },
+      "./providers/graph": {
+        "types": "./dist/providers/graph.d.ts",
+        "import": "./dist/providers/graph.js",
+        "default": "./dist/providers/graph.js"
       },
       "./openapi/admin/media": "./openapi/admin/storage-media.json",
       "./openapi/admin/uploads": "./openapi/admin/storage-uploads.json",

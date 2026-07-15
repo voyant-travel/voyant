@@ -36,6 +36,7 @@
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/bookings.json",
+    "./openapi/admin/booking-extras": "./openapi/admin/booking-extras.json",
     "./openapi/admin/booking-requirements": "./openapi/admin/booking-requirements.json",
     "./openapi/storefront": "./openapi/storefront/bookings.json",
     "./openapi/storefront/booking-requirements": "./openapi/storefront/booking-requirements.json"
@@ -234,6 +235,7 @@
         "default": "./dist/voyant.js"
       },
       "./openapi/admin": "./openapi/admin/bookings.json",
+      "./openapi/admin/booking-extras": "./openapi/admin/booking-extras.json",
       "./openapi/admin/booking-requirements": "./openapi/admin/booking-requirements.json",
       "./openapi/storefront": "./openapi/storefront/bookings.json",
       "./openapi/storefront/booking-requirements": "./openapi/storefront/booking-requirements.json"

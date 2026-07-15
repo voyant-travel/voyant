@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { createNotificationsAdminExtension } from "./index.js"
+import {
+  createNotificationsAdminExtension,
+  createSelectedNotificationsAdminExtension,
+} from "./index.js"
 import { NotificationDeliveriesHost } from "./notification-deliveries-host.js"
 import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
 import { NotificationReminderRuleDetailHost } from "./notification-reminder-rule-detail-host.js"
@@ -14,10 +17,49 @@ import { NotificationTemplatesHost } from "./notification-templates-host.js"
 import { RemindersPreviewHost } from "./reminders-preview-host.js"
 
 describe("createNotificationsAdminExtension", () => {
-  it("contributes no navigation (notifications nav is base-nav-owned)", () => {
+  it("adds localized standard navigation only through the selected factory", () => {
     const extension = createNotificationsAdminExtension()
     expect(extension.id).toBe("notifications")
     expect(extension.navigation).toBeUndefined()
+
+    const selected = createSelectedNotificationsAdminExtension({
+      navMessages: {
+        notifications: "Notificari",
+        notificationTemplates: "Sabloane",
+        notificationReminderRules: "Reguli",
+        notificationDeliveries: "Livrari",
+        notificationReminderRuns: "Rulari",
+        notificationPreview: "Previzualizare",
+        notificationSettings: "Setari",
+      },
+    })
+    expect(selected.navigation?.[0]).toMatchObject({
+      order: -90,
+      items: [
+        {
+          id: "notifications",
+          title: "Notificari",
+          url: "/notifications/templates",
+          items: [
+            { id: "notification-templates", title: "Sabloane", url: "/notifications/templates" },
+            {
+              id: "notification-reminder-rules",
+              title: "Reguli",
+              url: "/notifications/reminder-rules",
+            },
+            { id: "notification-deliveries", title: "Livrari", url: "/notifications/deliveries" },
+            {
+              id: "notification-reminder-runs",
+              title: "Rulari",
+              url: "/notifications/reminder-runs",
+            },
+            { id: "notification-preview", title: "Previzualizare", url: "/notifications/preview" },
+            { id: "notification-settings", title: "Setari", url: "/notifications/settings" },
+          ],
+        },
+      ],
+    })
+    expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
   it("describes the notifications routes with unique ids and paths", () => {

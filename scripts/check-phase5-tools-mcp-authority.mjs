@@ -11,7 +11,8 @@ const roots = [
   "packages/core/src",
   "packages/framework/src",
   "packages/mcp",
-  "starters/operator/src",
+  "packages/operator-standard/src",
+  "packages/runtime/src",
 ]
 const files = new Map()
 

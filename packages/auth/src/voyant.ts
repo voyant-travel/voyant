@@ -1,4 +1,4 @@
-import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 
 import { identityAccessRuntimePort } from "./identity-access-runtime-port.js"
 
@@ -6,6 +6,7 @@ export const authInvitationsVoyantModule = defineModule({
   id: "@voyant-travel/auth#invitations",
   packageName: "@voyant-travel/auth",
   localId: "auth.invitations",
+  provides: { ports: [providePort(identityAccessRuntimePort)] },
   runtimePorts: [requirePort(identityAccessRuntimePort)],
   api: [
     {
@@ -33,6 +34,15 @@ export const authInvitationsVoyantModule = defineModule({
       },
     },
   ],
+  presentations: [
+    {
+      id: "@voyant-travel/auth#presentation.local-auth",
+      runtime: {
+        entry: "@voyant-travel/auth-react/local-auth-routes",
+        export: "createLocalAuthRouteContribution",
+      },
+    },
+  ],
   meta: { ownership: "package" },
 })
 
@@ -40,6 +50,7 @@ export const authTeamVoyantModule = defineModule({
   id: "@voyant-travel/auth#team",
   packageName: "@voyant-travel/auth",
   localId: "auth.team",
+  provides: { ports: [providePort(identityAccessRuntimePort)] },
   runtimePorts: [requirePort(identityAccessRuntimePort)],
   api: [
     {

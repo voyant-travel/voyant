@@ -13,6 +13,7 @@ describe("action-ledger deployment manifest", () => {
         {
           id: "@voyant-travel/action-ledger#api.admin",
           surface: "admin",
+          resource: "action-ledger",
           openapi: { document: "action-ledger" },
           runtime: {
             entry: "@voyant-travel/action-ledger",
@@ -22,6 +23,9 @@ describe("action-ledger deployment manifest", () => {
       ],
       schema: [{ id: "@voyant-travel/action-ledger#schema" }],
       migrations: [{ id: "@voyant-travel/action-ledger#migrations" }],
+      access: {
+        resources: [expect.objectContaining({ resource: "action-ledger" })],
+      },
       admin: {
         runtime: {
           entry: "@voyant-travel/action-ledger-react/admin",
@@ -31,6 +35,15 @@ describe("action-ledger deployment manifest", () => {
           {
             id: "@voyant-travel/action-ledger#admin.route.index",
             path: "/action-ledger",
+            requiredScopes: ["action-ledger:read"],
+          },
+        ],
+        nav: [
+          {
+            id: "@voyant-travel/action-ledger#admin.nav.index",
+            routeId: "@voyant-travel/action-ledger#admin.route.index",
+            label: { namespace: "operator.admin.navigation", key: "nav.actionLedger" },
+            order: 60,
           },
         ],
       },
@@ -47,6 +60,7 @@ describe("action-ledger deployment manifest", () => {
           id: "@voyant-travel/action-ledger#health-extension.api",
           surface: "admin",
           mount: "action-ledger",
+          resource: "action-ledger",
           openapi: { document: "action-ledger-health" },
           runtime: {
             entry: "@voyant-travel/action-ledger/graph-runtime",
@@ -59,6 +73,13 @@ describe("action-ledger deployment manifest", () => {
         { id: "action-ledger.finance-drift-runtime" },
         { id: "action-ledger.inventory-drift-runtime" },
       ],
+      requires: {
+        ports: [
+          { id: "action-ledger.booking-drift-runtime" },
+          { id: "action-ledger.finance-drift-runtime" },
+          { id: "action-ledger.inventory-drift-runtime" },
+        ],
+      },
     })
     expect(isGraphRuntimeFactory(createActionLedgerHealthVoyantRuntime)).toBe(true)
   })

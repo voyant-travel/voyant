@@ -14,6 +14,7 @@
     "./payment-link": "./src/payment-link/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./runtime-port": "./src/runtime-port.ts",
     "./service": "./src/service.ts",
     "./transport-eligibility": "./src/transport-eligibility.ts",
     "./validation": "./src/validation.ts",
@@ -162,6 +163,11 @@
         "types": "./dist/runtime-contributor.d.ts",
         "import": "./dist/runtime-contributor.js",
         "default": "./dist/runtime-contributor.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
       },
       "./service": {
         "types": "./dist/service.d.ts",

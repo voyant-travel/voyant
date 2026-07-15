@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   createRelationshipsAdminExtension,
+  createSelectedRelationshipsAdminExtension,
   OrganizationDetailSkeleton,
   OrganizationsListSkeleton,
   PeopleListSkeleton,
@@ -14,10 +15,22 @@ import { PeopleHost } from "./people-host.js"
 import { PersonDetailHost } from "./person-detail-host.js"
 
 describe("createRelationshipsAdminExtension", () => {
-  it("contributes no navigation (people/organizations nav is base-nav-owned)", () => {
+  it("adds localized standard navigation only through the selected factory", () => {
     const extension = createRelationshipsAdminExtension()
     expect(extension.id).toBe("relationships")
     expect(extension.navigation).toBeUndefined()
+
+    const selected = createSelectedRelationshipsAdminExtension({
+      navMessages: { people: "Persoane", organizations: "Organizatii" },
+    })
+    expect(selected.navigation?.[0]).toMatchObject({
+      order: -70,
+      items: [
+        { id: "people", title: "Persoane", url: "/people" },
+        { id: "organizations", title: "Organizatii", url: "/organizations" },
+      ],
+    })
+    expect(selected.navigation?.[0]?.items.every((item) => item.icon)).toBe(true)
   })
 
   it("describes the people and organization routes with unique ids and paths", () => {

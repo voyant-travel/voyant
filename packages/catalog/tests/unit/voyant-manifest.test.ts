@@ -17,6 +17,31 @@ describe("catalog deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/catalog",
       packageName: "@voyant-travel/catalog",
+      provides: {
+        capabilities: ["catalog.data-owner"],
+        ports: [
+          { id: "catalog.search-runtime" },
+          { id: "catalog.content-runtime" },
+          { id: "catalog.projection-runtime" },
+          { id: "catalog.booking-snapshot-runtime" },
+          { id: "catalog.runtime-services" },
+          { id: "voyant.workflow-services" },
+          { id: "cruises.routes-runtime" },
+        ],
+      },
+      requires: {
+        ports: [
+          { id: "catalog.indexer", optional: true },
+          { id: "catalog.extension.accommodations" },
+          { id: "catalog.extension.charters" },
+          { id: "catalog.extension.commerce" },
+          { id: "catalog.extension.distribution" },
+          { id: "catalog.extension.cruises" },
+          { id: "catalog.extension.inventory" },
+          { id: "catalog.extension.operations" },
+          { id: "finance.operator-settings.runtime" },
+        ],
+      },
       api: [
         {
           id: "@voyant-travel/catalog#api.admin",
@@ -41,6 +66,7 @@ describe("catalog deployment manifest", () => {
       schema: [{ id: "@voyant-travel/catalog#schema" }],
       migrations: [{ id: "@voyant-travel/catalog#migrations" }],
     })
+    expectConcreteEventSchemas(catalogVoyantModule.events)
   })
 
   it("owns executable declarations for Catalog indexing and booking snapshots", () => {
@@ -65,11 +91,11 @@ describe("catalog deployment manifest", () => {
         runtime:
           eventType === "booking.confirmed"
             ? {
-                entry: "./booking-snapshot-subscriber",
+                entry: "@voyant-travel/catalog/booking-snapshot-subscriber",
                 export: "createCatalogBookingSnapshotSubscriberGraphRuntime",
               }
             : {
-                entry: "./index-subscribers",
+                entry: "@voyant-travel/catalog/index-subscribers",
                 export: expect.stringMatching(/^createCatalog.+IndexSubscriberGraphRuntime$/),
               },
       })),
@@ -80,6 +106,12 @@ describe("catalog deployment manifest", () => {
       { id: "catalog.booking-snapshot-runtime" },
       { id: "voyant.workflow-services", optional: true, cardinality: "many" },
     ])
+    expect(catalogVoyantModule.tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "search_catalog", risk: "low" }),
+        expect.objectContaining({ name: "get_catalog_entry", risk: "low" }),
+      ]),
+    )
     expect(catalogVoyantModule.workflows).toEqual([
       {
         id: "catalog.reap-expired-booking-drafts",
@@ -89,7 +121,7 @@ describe("catalog deployment manifest", () => {
         },
         source: "@voyant-travel/catalog/draft-reaper-workflow",
         runtime: {
-          entry: "./draft-reaper-workflow",
+          entry: "@voyant-travel/catalog/draft-reaper-workflow",
           export: "catalogDraftReaperWorkflow",
         },
       },
@@ -101,6 +133,8 @@ describe("catalog deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/catalog#booking-engine",
       packageName: "@voyant-travel/catalog",
+      requires: { capabilities: ["catalog.data-owner"] },
+      provides: { ports: [{ id: "catalog.booking-runtime" }] },
       api: [
         {
           id: "@voyant-travel/catalog#booking-engine.api.admin",
@@ -132,6 +166,7 @@ describe("catalog deployment manifest", () => {
       schemaVersion: "voyant.extension.v1",
       id: "@voyant-travel/catalog#offers-extension",
       packageName: "@voyant-travel/catalog",
+      provides: { ports: [{ id: "catalog.offers-runtime" }] },
       api: [
         {
           id: "@voyant-travel/catalog#offers-extension.api",
@@ -174,5 +209,28 @@ describe("catalog deployment manifest", () => {
         },
       ]),
     )
+    expect(
+      catalogVoyantModule.admin?.routes?.every((route) =>
+        route.requiredScopes?.includes("catalog:read"),
+      ),
+    ).toBe(true)
+    expect(catalogVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/catalog#admin.route.products-index",
+        label: { namespace: "catalog.admin", key: "catalogPage.title" },
+      }),
+    ])
   })
 })
+
+function expectConcreteEventSchemas(events: readonly { payloadSchema: unknown }[]) {
+  for (const event of events) {
+    expect(event.payloadSchema).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.any(Array),
+        properties: expect.any(Object),
+      }),
+    )
+  }
+}

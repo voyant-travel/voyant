@@ -13,6 +13,7 @@ describe("MICE deployment manifests", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/mice",
       packageName: "@voyant-travel/mice",
+      provides: { ports: [{ id: "mice.runtime" }] },
       api: [
         {
           id: "@voyant-travel/mice#api.admin",
@@ -34,10 +35,19 @@ describe("MICE deployment manifests", () => {
           {
             id: "@voyant-travel/mice#admin.route.programs-index",
             path: "/mice",
+            requiredScopes: ["mice:read"],
           },
           {
             id: "@voyant-travel/mice#admin.route.programs-detail",
             path: "/mice/$id",
+            requiredScopes: ["mice:read"],
+          },
+        ],
+        nav: [
+          {
+            id: "@voyant-travel/mice#admin.nav.programs",
+            routeId: "@voyant-travel/mice#admin.route.programs-index",
+            label: { namespace: "operator.admin.navigation", key: "nav.mice" },
           },
         ],
       },
@@ -117,6 +127,22 @@ describe("MICE deployment manifests", () => {
   it("references exported runtimes with matching mounts", () => {
     expect(createMiceHonoModule().module.name).toBe("mice")
     expect(miceBookingExtension.extension.module).toBe("bookings")
+  })
+
+  it("declares the emitted awarded RFP payload", () => {
+    expect(miceVoyantModule.events?.[0]?.payloadSchema).toEqual({
+      type: "object",
+      properties: {
+        rfpId: { type: "string" },
+        programId: { type: "string" },
+        bidId: { type: "string" },
+        supplierId: { type: "string" },
+        actorId: { type: ["string", "null"] },
+        awardedAt: { type: "string", format: "date-time" },
+      },
+      required: ["rfpId", "programId", "bidId", "supplierId", "actorId", "awardedAt"],
+      additionalProperties: false,
+    })
   })
 })
 

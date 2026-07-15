@@ -144,6 +144,7 @@ export interface VoyantGraphRuntimeFactoryGraph {
         readonly action: string
         readonly label: string
         readonly description: string
+        readonly sensitive?: boolean
         readonly wildcard?: "allow" | "explicit"
       }[]
       readonly legacyActions?: readonly string[]

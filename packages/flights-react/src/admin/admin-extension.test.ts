@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { flightsVoyantModule } from "../../../flights/src/voyant.js"
 import {
   createFlightsAdminExtension,
+  createSelectedFlightsAdminExtension,
   flightsBookSearchSchema,
   flightsIndexSearchSchema,
   flightsOrdersSearchSchema,
@@ -33,11 +34,30 @@ describe("createFlightsAdminExtension", () => {
     ])
   })
 
-  it("contributes no navigation (the flights item is base-nav-owned)", () => {
+  it("adds localized standard navigation only through the selected factory", () => {
     const extension = createFlightsAdminExtension()
     expect(extension.id).toBe("flights")
     expect(extension.navigation).toBeUndefined()
     expect(extension.widgets).toBeUndefined()
+
+    const selected = createSelectedFlightsAdminExtension({
+      navMessages: { flights: "Zboruri", flightsSearch: "Cautare", flightOrders: "Comenzi" },
+    })
+    expect(selected.navigation?.[0]).toMatchObject({
+      order: -130,
+      items: [
+        {
+          id: "flights",
+          title: "Zboruri",
+          url: "/flights",
+          items: [
+            { id: "flights-search", title: "Cautare", url: "/flights" },
+            { id: "flights-orders", title: "Comenzi", url: "/flights/orders" },
+          ],
+        },
+      ],
+    })
+    expect(selected.navigation?.[0]?.items[0]?.icon).toBeDefined()
   })
 
   it("describes the search page, wizard, and orders surfaces as flat siblings", () => {

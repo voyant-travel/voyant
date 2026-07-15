@@ -116,6 +116,7 @@ export interface OperatorAuthEmailSender {
 export interface CreateOperatorAuthNodeRuntimeOptions<Env extends OperatorAuthNodeEnv> {
   accessCatalog: AccessCatalog
   appName: string
+  authMode: OperatorAuthMode
   reporter: Reporter
   openDatabase?: (env: Env) => { db: VoyantDb; dispose: () => Promise<void> }
   cookieAdvanced?: (
@@ -176,17 +177,8 @@ export function createOperatorAuthNodeRuntime<Env extends OperatorAuthNodeEnv>(
     "/auth/token",
   ])
 
-  function resolveOperatorAuthMode(env: Env): OperatorAuthMode {
-    const mode = env.VOYANT_ADMIN_AUTH_MODE?.trim() || "local"
-
-    if (mode === "local" || mode === "voyant-cloud") {
-      return mode
-    }
-
-    console.error(
-      `[auth] Invalid VOYANT_ADMIN_AUTH_MODE="${mode}". Failing closed as voyant-cloud.`,
-    )
-    return "voyant-cloud"
+  function resolveOperatorAuthMode(_env: Env): OperatorAuthMode {
+    return runtimeOptions.authMode
   }
 
   function isVoyantCloudAuthMode(env: Env): boolean {

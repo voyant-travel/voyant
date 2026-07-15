@@ -1,11 +1,26 @@
+import { bookingsAccommodationRuntimePort } from "@voyant-travel/bookings/runtime-port"
+import { catalogAccommodationsRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
 import { catalogContentRuntimePort } from "@voyant-travel/catalog/runtime-port"
-import { defineExtension, defineModule, requirePort } from "@voyant-travel/core/project"
+import {
+  defineExtension,
+  defineModule,
+  providePort,
+  requirePort,
+} from "@voyant-travel/core/project"
+import { financeAccommodationsPaymentPolicyRuntimePort } from "@voyant-travel/finance/runtime-port"
 
 /** Import-cheap deployment declaration owned by the accommodations package. */
 export const accommodationsVoyantModule = defineModule({
   id: "@voyant-travel/accommodations",
   packageName: "@voyant-travel/accommodations",
   localId: "accommodations",
+  provides: {
+    ports: [
+      providePort(catalogAccommodationsRuntimeExtensionPort),
+      providePort(bookingsAccommodationRuntimePort),
+      providePort(financeAccommodationsPaymentPolicyRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/accommodations#api",

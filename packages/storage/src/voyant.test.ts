@@ -17,7 +17,17 @@ describe("storage deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/storage",
       packageName: "@voyant-travel/storage",
-      provides: { ports: [{ id: "storage.object" }] },
+      provides: { ports: [{ id: "storage.object" }, { id: "storage.media-runtime" }] },
+      providers: [
+        expect.objectContaining({
+          port: "storage.object",
+          selection: { role: "storage", value: "memory" },
+        }),
+        expect.objectContaining({
+          port: "storage.object",
+          selection: { role: "storage", value: "s3-compatible" },
+        }),
+      ],
       runtimePorts: [{ id: "storage.media-runtime" }],
       resources: [
         {

@@ -58,7 +58,8 @@
     "./openapi/admin/booking": "./openapi/admin/catalog-booking.json",
     "./openapi/storefront": "./openapi/storefront/catalog.json",
     "./openapi/storefront/booking": "./openapi/storefront/catalog-booking.json",
-    "./runtime-contracts": "./src/runtime-contracts.ts"
+    "./runtime-contracts": "./src/runtime-contracts.ts",
+    "./ports": "./src/runtime-contracts.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
@@ -357,6 +358,11 @@
       "./openapi/storefront": "./openapi/storefront/catalog.json",
       "./openapi/storefront/booking": "./openapi/storefront/catalog-booking.json",
       "./runtime-contracts": {
+        "types": "./dist/runtime-contracts.d.ts",
+        "import": "./dist/runtime-contracts.js",
+        "default": "./dist/runtime-contracts.js"
+      },
+      "./ports": {
         "types": "./dist/runtime-contracts.d.ts",
         "import": "./dist/runtime-contracts.js",
         "default": "./dist/runtime-contracts.js"

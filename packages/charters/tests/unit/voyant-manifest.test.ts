@@ -15,6 +15,7 @@ describe("charters deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/charters",
       packageName: "@voyant-travel/charters",
+      provides: { ports: [{ id: "catalog.extension.charters" }] },
       api: [
         {
           surface: "admin",

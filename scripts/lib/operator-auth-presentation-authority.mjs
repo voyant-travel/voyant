@@ -25,7 +25,9 @@ export function checkOperatorAuthPresentationAuthority({ routeHosts, adapter, pa
     const oldRuntime =
       source.includes("localAuthRouteContribution") && source.includes(`routes.${routeKey}`)
     const packagedRuntime =
-      source.includes("operatorFrontend") && source.includes(`routes.localAuth.${routeKey}`)
+      source.includes("operatorFrontend") &&
+      (source.includes(`routes.localAuth.${routeKey}`) ||
+        source.includes(`routes.localAuth!.${routeKey}`))
     if (!oldRuntime && !packagedRuntime) failures.push(`${file} must bind auth route ${routeKey}`)
     for (const token of [
       "function ",
@@ -45,7 +47,6 @@ export function checkOperatorAuthPresentationAuthority({ routeHosts, adapter, pa
   }
 
   for (const token of [
-    "createLocalAuthRouteContribution",
     "getCurrentUser",
     "getBootstrapStatus",
     "cloudAuthStartHref",
@@ -57,12 +58,15 @@ export function checkOperatorAuthPresentationAuthority({ routeHosts, adapter, pa
   ]) {
     if (!adapter.includes(token)) failures.push(`local auth adapter must contain ${token}`)
   }
+  if (/createLocalAuthRouteContribution\s*\(/.test(adapter)) {
+    failures.push("local auth adapter must not compose the package route factory directly")
+  }
   if (adapter.includes("resolveLocalAuthRedirect")) {
     failures.push("local auth adapter must not own bootstrap redirect policy")
   }
 
   for (const token of [
-    'id: "@voyant-travel/auth-react#local-auth-routes"',
+    'id: "@voyant-travel/auth#presentation.local-auth"',
     "resolveLocalAuthRedirect",
     "AcceptInvitationPage",
     "RedeemInvitationPage",

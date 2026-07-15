@@ -19,6 +19,14 @@ describe("trips deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/trips",
       packageName: "@voyant-travel/trips",
+      provides: {
+        ports: [
+          { id: "commerce.card-payment.runtime" },
+          { id: "storefront.payment-link.runtime" },
+          { id: "trips.routes-runtime" },
+          { id: "trips.database-runtime" },
+        ],
+      },
       runtimePorts: [
         { id: "trips.routes-runtime" },
         { id: "trips.database-runtime" },
@@ -50,7 +58,7 @@ describe("trips deployment manifest", () => {
           eventType: "payment.completed",
           source: "@voyant-travel/trips",
           runtime: {
-            entry: "./payment-subscribers",
+            entry: "@voyant-travel/trips/payment-subscribers",
             export: "tripsPaymentCompletedSubscriber",
           },
         },
@@ -60,6 +68,20 @@ describe("trips deployment manifest", () => {
 
   it("owns the executable payment completion runtime reference", () => {
     expect(tripsVoyantModule.subscribers?.[0]).toHaveProperty("runtime")
+  })
+
+  it("scopes selected Trips navigation, routes, and contributions", () => {
+    expect(tripsVoyantModule.admin?.routes?.map((route) => route.requiredScopes)).toEqual([
+      ["trips:read"],
+      ["trips:read"],
+    ])
+    expect(tripsVoyantModule.admin?.contributions?.[0]?.requiredScopes).toEqual(["trips:write"])
+    expect(tripsVoyantModule.admin?.nav).toEqual([
+      expect.objectContaining({
+        routeId: "@voyant-travel/trips#admin.route.trips-index",
+        label: { namespace: "operator.admin.navigation", key: "nav.trips" },
+      }),
+    ])
   })
 
   it("describes API access and binds the critical reservation action", () => {

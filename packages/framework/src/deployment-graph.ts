@@ -1752,6 +1752,14 @@ function validateAccessFacet(
               'Access action wildcard policy must be "allow" or "explicit".',
             )
           }
+          if (action.sensitive !== undefined && typeof action.sensitive !== "boolean") {
+            invalidFacet(
+              `${facet}.actions[${index}].sensitive`,
+              source,
+              diagnostics,
+              "Access action sensitive metadata must be a boolean.",
+            )
+          }
         } else {
           invalidFacet(
             `${facet}.actions[${index}]`,
@@ -2452,6 +2460,9 @@ function compileAccessCatalog(
                     ? `${titleFromPermissionName(name)} access to ${resource.resource}.`
                     : (action.description ??
                       `${titleFromPermissionName(name)} access to ${resource.resource}.`),
+                ...(typeof action !== "string" && action.sensitive
+                  ? { sensitive: true as const }
+                  : {}),
                 ...(typeof action !== "string" && action.wildcard === "explicit"
                   ? { wildcard: "explicit" as const }
                   : {}),

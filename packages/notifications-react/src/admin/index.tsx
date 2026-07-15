@@ -5,6 +5,7 @@ import {
   type SelectedAdminExtensionFactoryContext,
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
+import { Mail } from "lucide-react"
 
 /**
  * Semantic destinations the notifications admin surfaces navigate to
@@ -56,12 +57,8 @@ export interface CreateNotificationsAdminExtensionOptions {
  * The notifications admin contribution (packaged-admin RFC Phase 3,
  * `@voyant-travel/<domain>-ui/admin` convention).
  *
- * NAVIGATION: deliberately none. The Notifications nav group (templates,
- * reminder rules, deliveries, reminder runs, preview, settings) is part of
- * the BASE operator navigation — see `createOperatorAdminNavigation` in
- * `@voyant-travel/admin` — so contributing nav entries here would duplicate
- * them. If the base nav ever drops the notifications group, this extension
- * is where the entries move.
+ * NAVIGATION: the general-purpose factory remains neutral. The graph-selected
+ * factory below adds the standard operator Notifications group.
  *
  * ROUTES: full implementations (packaged-admin RFC §4.8 endgame) — each
  * contribution carries a lazy `page` module loader, so hosts bind them
@@ -187,7 +184,7 @@ export function createNotificationsAdminExtension(
 export function createSelectedNotificationsAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
-  return withAdminRouteMessagesProvider(
+  const extension = withAdminRouteMessagesProvider(
     createNotificationsAdminExtension({
       labels: {
         templates: navMessages.notificationTemplates,
@@ -203,4 +200,53 @@ export function createSelectedNotificationsAdminExtension({
         default: module.NotificationsUiMessagesProvider,
       })),
   )
+
+  return {
+    ...extension,
+    navigation: [
+      {
+        order: -90,
+        items: [
+          {
+            id: "notifications",
+            title: navMessages.notifications,
+            url: "/notifications/templates",
+            icon: Mail,
+            items: [
+              {
+                id: "notification-templates",
+                title: navMessages.notificationTemplates,
+                url: "/notifications/templates",
+              },
+              {
+                id: "notification-reminder-rules",
+                title: navMessages.notificationReminderRules,
+                url: "/notifications/reminder-rules",
+              },
+              {
+                id: "notification-deliveries",
+                title: navMessages.notificationDeliveries,
+                url: "/notifications/deliveries",
+              },
+              {
+                id: "notification-reminder-runs",
+                title: navMessages.notificationReminderRuns,
+                url: "/notifications/reminder-runs",
+              },
+              {
+                id: "notification-preview",
+                title: navMessages.notificationPreview,
+                url: "/notifications/preview",
+              },
+              {
+                id: "notification-settings",
+                title: navMessages.notificationSettings,
+                url: "/notifications/settings",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  }
 }

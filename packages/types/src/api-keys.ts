@@ -25,6 +25,7 @@ export interface ApiKeyPermissionDescriptor {
   action: string
   label: string
   description: string
+  sensitive?: boolean
 }
 
 export interface ApiKeyPermissionGroup {
@@ -38,6 +39,7 @@ export interface AccessCatalogAction {
   action: string
   label: string
   description: string
+  sensitive?: boolean
   wildcard?: "allow" | "explicit"
 }
 
@@ -77,6 +79,7 @@ export function accessCatalogPermissionGroups(catalog: AccessCatalog): ApiKeyPer
       action: action.action,
       label: action.label,
       description: action.description,
+      ...(action.sensitive ? { sensitive: true } : {}),
     })),
   }))
 }

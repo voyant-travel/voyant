@@ -48,6 +48,8 @@ export interface VoyantGraphAccessAction {
   action: string
   label?: string
   description?: string
+  /** Destructive, financial, PII, or otherwise privileged action surfaced distinctly to editors. */
+  sensitive?: boolean
   /** Explicit actions are never satisfied by wildcard grants. */
   wildcard?: "allow" | "explicit"
 }

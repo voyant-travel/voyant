@@ -10,6 +10,7 @@ export type VoyantDeploymentProviderRole =
   | "email"
   | "sms"
   | "auth"
+  | "realtime"
   | "scheduledJobs"
   | "workflows"
   | "outboundWebhooks"
@@ -24,6 +25,7 @@ export interface VoyantDeploymentProviders {
   email: "voyant-cloud" | "resend" | "sendgrid" | "smtp" | "none"
   sms: "voyant-cloud" | "twilio" | "none"
   auth: "voyant-cloud" | "better-auth"
+  realtime: "voyant-cloud" | "local" | "custom" | "none"
   scheduledJobs: "cloud-scheduler" | "node-cron" | "none"
   workflows: "voyant-cloud" | "self-hosted" | "none"
   outboundWebhooks: "postgres" | "host" | "none"
@@ -59,6 +61,7 @@ export const DEFAULT_MANAGED_CLOUD_PROVIDERS = {
   email: "voyant-cloud",
   sms: "voyant-cloud",
   auth: "voyant-cloud",
+  realtime: "voyant-cloud",
   scheduledJobs: "cloud-scheduler",
   workflows: "voyant-cloud",
   outboundWebhooks: "postgres",
@@ -74,6 +77,7 @@ export const DEPLOYMENT_PROVIDER_CONTRACTS = {
   email: ["voyant-cloud", "resend", "sendgrid", "smtp", "none"],
   sms: ["voyant-cloud", "twilio", "none"],
   auth: ["voyant-cloud", "better-auth"],
+  realtime: ["voyant-cloud", "local", "custom", "none"],
   scheduledJobs: ["cloud-scheduler", "node-cron", "none"],
   workflows: ["voyant-cloud", "self-hosted", "none"],
   outboundWebhooks: ["postgres", "host", "none"],

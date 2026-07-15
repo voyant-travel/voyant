@@ -46,48 +46,19 @@ from the unified operator graph artifacts if platform#954 still needs one.
 The phased plan below describes the superseded snapshot-era design. Its names
 are historical, not current API guidance.
 
-## Module-subset gating (source-free admin, #3063)
+## Module-subset composition
 
-A managed profile can declare a **module subset** (`modules: [...]` in the
-snapshot), and the runtime already honors it for the **API**
-(`computeCreateVoyantAppExclude` → `createVoyantApp({ exclude })`). The
-source-free admin, however, composes *every* `create<Module>AdminExtension()`
-factory unconditionally — so without gating, every managed operator sees the
-full nav (~18 modules) even when its profile activates a subset, and nav entries
-for inactive modules link to pages whose API isn't mounted (dead links / 404s).
+The deployment graph resolves the active module and extension set before the
+admin host is built. Each selected package contributes its own admin factory,
+and only those factories are lowered into the generated route tree,
+destinations, navigation, and widgets. The workspace shell therefore receives
+an already-selected extension list; it does not accept module ids or apply a
+second, fail-open visibility policy at runtime.
 
-This is inherently a **shared-image** problem: the managed admin is one
-framework-version-tagged image; the active-module set is per-operator, injected
-at deploy via the snapshot. The client bundle cannot know the subset at
-build/import time, so the composition needs a **runtime signal**:
-
-1. **Runtime exposes the active module set.** `resolveActiveModuleIds(project)`
-   (`@voyant-travel/framework/profile`) maps the resolved `include` specifiers —
-   the same set that drives `createVoyantApp({ exclude })`, so nav can never
-   drift from what the API mounts — to `moduleId`s. The managed runtime returns
-   them as `modules` on `GET /api/auth/bootstrap-status`
-   (`ManagedBootstrapStatus`), the probe the workspace already issues at
-   bootstrap. Local subset exercise should use the same operator-managed profile
-   artifact that graph check/build/deploy consume.
-
-2. **Admin gates composition by it.** The route tree + destinations stay built
-   from the FULL registry (kept **hydration-stable** across the shared image).
-   The packaged workspace shell accepts `activeModuleIds` and filters navigation
-   with fail-open behavior: if the runtime does not report a module set, every
-   item is kept.
-   Extension/widget gating must be package-owned metadata before it is re-enabled
-   in the unified operator starter; it must not live in a second host starter.
-
-Note `mice` maps to a module absent from the standard manifest, so full
-extension/widget gating must continue to drop it whenever the runtime reports
-its set, removing an extension whose API the managed runtime never mounts.
-
-Scoped follow-up: direct-URL navigation to a disabled module still resolves its
-route (the page renders, then its API 404s). Per-route gating would need routes
-to carry an owning-module tag; nav gating fully resolves the reported symptom
-(dead links in the sidebar). Under a per-operator *build* (client bundle built
-from the declared module set) the subset bakes in and no runtime signal is
-needed — see platform#1014.
+API and admin selection share the same graph authority. A module excluded from
+the graph contributes neither routes nor navigation, including for direct URL
+resolution. Hosts must not restore a full first-party registry or infer
+selection from bootstrap payloads.
 
 ## Problem
 

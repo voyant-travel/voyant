@@ -9,6 +9,12 @@ describe("operator-settings deployment manifest", () => {
       schemaVersion: "voyant.module.v1",
       id: "@voyant-travel/operator-settings",
       packageName: "@voyant-travel/operator-settings",
+      provides: {
+        ports: [
+          { id: "commerce.operator-settings.runtime" },
+          { id: "finance.operator-settings.runtime" },
+        ],
+      },
       api: [
         {
           id: "@voyant-travel/operator-settings#api.admin",

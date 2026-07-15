@@ -1,4 +1,4 @@
-import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import {
   bookingBootstrapRequestedEventPayloadSchema,
   customerSignalCreatedEventPayloadSchema,
@@ -17,7 +17,13 @@ export const storefrontVoyantModule = defineModule({
   id: "@voyant-travel/storefront",
   packageName: "@voyant-travel/storefront",
   localId: "storefront",
-  provides: { capabilities: ["storefront.data-owner"] },
+  provides: {
+    capabilities: ["storefront.data-owner"],
+    ports: [
+      providePort(storefrontOffersRuntimePort),
+      providePort(storefrontBookingIntentsRuntimePort),
+    ],
+  },
   runtime: { entry: "@voyant-travel/storefront", export: "createStorefrontVoyantRuntime" },
   runtimePorts: [
     requirePort(storefrontOffersRuntimePort),
@@ -91,7 +97,7 @@ export const storefrontVoyantModule = defineModule({
       eventType: "storefront.booking.bootstrap.requested",
       source: "@voyant-travel/storefront",
       runtime: {
-        entry: "./booking-bootstrap-subscriber",
+        entry: "@voyant-travel/storefront/booking-bootstrap-subscriber",
         export: "storefrontBookingBootstrapSubscriber",
       },
     },
@@ -148,6 +154,7 @@ export const storefrontCustomerPortalVoyantModule = defineModule({
   id: "@voyant-travel/storefront#customer-portal",
   packageName: "@voyant-travel/storefront",
   localId: "storefront.customer-portal",
+  provides: { ports: [providePort(storefrontCustomerPortalRuntimePort)] },
   requires: { capabilities: ["storefront.data-owner"] },
   runtime: {
     entry: "@voyant-travel/storefront/customer-portal",
