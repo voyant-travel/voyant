@@ -46,7 +46,7 @@ describe("charter tools", () => {
       destructive: false,
       reversible: false,
       confirmationRequired: true,
-      sideEffects: ["data-write", "external-call"],
+      sideEffects: ["data-write", "external-booking"],
     })
     for (const tool of chartersTools.filter(
       ({ requiredScopes }) => requiredScopes[0] === "charters:write" && requiredScopes.length === 1,
