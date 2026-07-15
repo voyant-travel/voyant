@@ -1,8 +1,5 @@
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
-import {
-  bookingBootstrapRequestedEventPayloadSchema,
-  customerSignalCreatedEventPayloadSchema,
-} from "./event-payload-schemas.js"
+import { bookingBootstrapRequestedEventPayloadSchema } from "./event-payload-schemas.js"
 import {
   storefrontBookingIntentsRuntimePort,
   storefrontCustomerPortalRuntimePort,
@@ -75,14 +72,6 @@ export const storefrontVoyantModule = defineModule({
     },
   ],
   events: [
-    {
-      id: "@voyant-travel/storefront#event.customer-signal-created",
-      eventType: "customer.signal.created",
-      version: "1.0.0",
-      payloadSchema: customerSignalCreatedEventPayloadSchema,
-      visibility: "internal",
-      audit: { sourceModule: "storefront", category: "domain" },
-    },
     {
       id: "@voyant-travel/storefront#event.booking-bootstrap-requested",
       eventType: "storefront.booking.bootstrap.requested",

@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: framework; runtime catalog, selected facet, lazy loading, and validation cases share one lowering harness.
 import { createToolRegistry } from "@voyant-travel/tools"
 import { describe, expect, it, vi } from "vitest"
 import {
@@ -87,6 +88,82 @@ function runtimeInput(load: () => Promise<unknown>) {
 }
 
 describe("graph runtime lowering", () => {
+  it("exposes a selected-owner event catalog to graph runtime factories", () => {
+    const input = runtimeInput(async () => ({ createLoyaltyModule: () => ({}) }))
+    const runtime = createVoyantGraphRuntime({
+      ...input,
+      modules: input.modules.map((module) => ({
+        ...module,
+        selectedIds: selectedIds({
+          routes: ["@acme/voyant-loyalty#api.admin", "@acme/voyant-loyalty#api.public"],
+          events: [
+            "@acme/voyant-loyalty#event.changed-v1",
+            "@acme/voyant-loyalty#event.changed-v2",
+          ],
+        }),
+      })),
+      eventCatalog: {
+        schemaVersion: "voyant.event-catalog.v1",
+        events: [
+          {
+            key: "loyalty.changed@1.0.0",
+            id: "@acme/voyant-loyalty#event.changed-v1",
+            unitId: "@acme/voyant-loyalty",
+            packageName: "@acme/voyant-loyalty",
+            eventType: "loyalty.changed",
+            version: "1.0.0",
+            payloadSchema: { type: "object", properties: {} },
+            visibility: "internal",
+            audit: { sourceModule: "loyalty", category: "domain" },
+            redactedFields: [],
+          },
+          {
+            key: "loyalty.changed@2.0.0",
+            id: "@acme/voyant-loyalty#event.changed-v2",
+            unitId: "@acme/voyant-loyalty",
+            packageName: "@acme/voyant-loyalty",
+            eventType: "loyalty.changed",
+            version: "2.0.0",
+            payloadSchema: { type: "object", properties: {} },
+            visibility: "internal",
+            audit: { sourceModule: "loyalty", category: "domain" },
+            redactedFields: [],
+          },
+        ],
+      },
+    })
+
+    expect(runtime.eventCatalog.events.map(({ key }) => key)).toEqual([
+      "loyalty.changed@1.0.0",
+      "loyalty.changed@2.0.0",
+    ])
+  })
+
+  it("rejects event catalog entries without a selected manifest owner", () => {
+    expect(() =>
+      createVoyantGraphRuntime({
+        ...runtimeInput(async () => ({})),
+        eventCatalog: {
+          schemaVersion: "voyant.event-catalog.v1",
+          events: [
+            {
+              key: "other.changed@1.0.0",
+              id: "@acme/other#event.changed",
+              unitId: "@acme/other",
+              packageName: "@acme/other",
+              eventType: "other.changed",
+              version: "1.0.0",
+              payloadSchema: { type: "object" },
+              visibility: "internal",
+              audit: { sourceModule: "other", category: "domain" },
+              redactedFields: [],
+            },
+          ],
+        },
+      }),
+    ).toThrow(/not declared by selected owner/)
+  })
+
   it("exposes only selected outbound webhook event types as delivery-eligible", () => {
     const runtime = createVoyantGraphRuntime({
       graphHash: "sha256:webhooks",

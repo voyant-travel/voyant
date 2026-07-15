@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "voyant.phase5-event-mutation-coverage.v1",
+  "uncoveredPackages": [
+    "packages/accommodations",
+    "packages/action-ledger",
+    "packages/auth",
+    "packages/catalog",
+    "packages/charters",
+    "packages/cruises",
+    "packages/db",
+    "packages/flights",
+    "packages/identity",
+    "packages/operator-settings",
+    "packages/trips",
+    "packages/workflow-runs"
+  ]
+}

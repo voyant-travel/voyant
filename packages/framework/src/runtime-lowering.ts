@@ -1,9 +1,11 @@
 // agent-quality: file-size exception -- owner: framework; runtime metadata normalization, validation, and lazy loader construction share one contract boundary.
 import {
   isExternalWebhookPayloadSchema,
+  VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
   type VoyantGraphActionBindings,
   type VoyantGraphActionDeclaration,
   type VoyantGraphConfigDeclaration,
+  type VoyantGraphEventCatalog,
   type VoyantGraphJsonObject,
   type VoyantGraphProviderDeclaration,
   type VoyantGraphResourceDeclaration,
@@ -256,6 +258,7 @@ export interface VoyantGraphRuntime {
   providers: readonly VoyantGraphRuntimeProviderLoader[]
   requiredPorts: readonly string[]
   accessCatalog: AccessCatalog
+  eventCatalog: VoyantGraphEventCatalog
   accessScopes: readonly string[]
   tools: readonly VoyantGraphRuntimeToolLoader[]
   workflows: readonly VoyantGraphRuntimeWorkflowLoader[]
@@ -268,6 +271,7 @@ export interface VoyantGraphRuntime {
 export interface CreateVoyantGraphRuntimeInput {
   graphHash: string
   accessCatalog?: AccessCatalog
+  eventCatalog?: VoyantGraphEventCatalog
   providerSelections?: Readonly<Record<string, string>>
   entries: Readonly<Record<string, () => Promise<unknown>>>
   modules: readonly VoyantGraphRuntimeUnitDefinition[]
@@ -328,6 +332,7 @@ export function createVoyantGraphRuntime(input: CreateVoyantGraphRuntimeInput): 
     providers,
     requiredPorts,
     accessCatalog: definitions.accessCatalog,
+    eventCatalog: definitions.eventCatalog,
     accessScopes,
     tools,
     workflows,
@@ -387,9 +392,10 @@ interface NormalizedVoyantGraphRuntimeUnitDefinition
 interface NormalizedVoyantGraphRuntimeInput
   extends Omit<
     CreateVoyantGraphRuntimeInput,
-    "accessCatalog" | "modules" | "extensions" | "plugins" | "webhookPlan"
+    "accessCatalog" | "eventCatalog" | "modules" | "extensions" | "plugins" | "webhookPlan"
   > {
   accessCatalog: AccessCatalog
+  eventCatalog: VoyantGraphEventCatalog
   modules: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   extensions: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
   plugins: readonly NormalizedVoyantGraphRuntimeUnitDefinition[]
@@ -409,6 +415,7 @@ function normalizeRuntimeDefinition(
       ...(input.extensions ?? []),
       ...input.plugins,
     ]),
+    eventCatalog: normalizeEventCatalog(input.eventCatalog),
     webhookPlan,
     modules: input.modules.map(normalizeUnit),
     extensions: (input.extensions ?? []).map(normalizeUnit),
@@ -444,6 +451,22 @@ function normalizeAccessCatalog(
     presets: [...catalog.presets]
       .map((preset) => ({ ...preset, grants: sortedUnique(preset.grants) }))
       .sort((left, right) => left.id.localeCompare(right.id)),
+  }
+}
+
+function normalizeEventCatalog(
+  catalog: VoyantGraphEventCatalog | undefined,
+): VoyantGraphEventCatalog {
+  return {
+    schemaVersion: catalog?.schemaVersion ?? VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
+    events: [...(catalog?.events ?? [])]
+      .map((event) => ({ ...event, redactedFields: sortedUnique(event.redactedFields) }))
+      .sort(
+        (left, right) =>
+          left.eventType.localeCompare(right.eventType) ||
+          left.version.localeCompare(right.version) ||
+          left.id.localeCompare(right.id),
+      ),
   }
 }
 
@@ -774,6 +797,7 @@ function validateRuntimeDefinition(input: NormalizedVoyantGraphRuntimeInput): st
       "createVoyantGraphRuntime: accessCatalog does not match selected unit access scopes.",
     )
   }
+  validateRuntimeEventCatalog(input.eventCatalog, units)
   for (const [expectedKind, units] of [
     ["module", input.modules],
     ["extension", input.extensions],
@@ -902,6 +926,56 @@ function normalizeWebhookPlan(plan: VoyantGraphWebhookPlan | undefined): VoyantG
     outbound: [...(plan?.outbound ?? [])]
       .map((entry) => ({ ...entry, secretIds: sortedUnique(entry.secretIds) }))
       .sort(byIdentity),
+  }
+}
+
+function validateRuntimeEventCatalog(
+  catalog: VoyantGraphEventCatalog,
+  units: readonly NormalizedVoyantGraphRuntimeUnitDefinition[],
+): void {
+  if (catalog.schemaVersion !== VOYANT_EVENT_CATALOG_SCHEMA_VERSION) {
+    throw new Error(
+      `createVoyantGraphRuntime: eventCatalog schemaVersion must be "${VOYANT_EVENT_CATALOG_SCHEMA_VERSION}".`,
+    )
+  }
+  const unitById = new Map(units.map((unit) => [unit.id, unit]))
+  const keys = new Set<string>()
+  const eventTypeOwners = new Map<string, string>()
+  for (const entry of catalog.events) {
+    const owner = unitById.get(entry.unitId)
+    if (
+      !owner ||
+      owner.packageName !== entry.packageName ||
+      !owner.selectedIds.events.includes(entry.id)
+    ) {
+      throw new Error(
+        `createVoyantGraphRuntime: event catalog entry "${entry.key}" is not declared by selected owner "${entry.unitId}".`,
+      )
+    }
+    if (
+      entry.key !== `${entry.eventType}@${entry.version}` ||
+      !entry.eventType.trim() ||
+      !/^\d+\.\d+\.\d+$/.test(entry.version) ||
+      !isRecord(entry.payloadSchema) ||
+      (entry.visibility !== "internal" && entry.visibility !== "external") ||
+      !entry.audit?.sourceModule.trim() ||
+      (entry.audit.category !== "domain" && entry.audit.category !== "internal")
+    ) {
+      throw new Error(
+        `createVoyantGraphRuntime: event catalog entry "${entry.key}" is not a valid versioned event contract.`,
+      )
+    }
+    if (keys.has(entry.key)) {
+      throw new Error(`createVoyantGraphRuntime: duplicate event catalog key "${entry.key}".`)
+    }
+    const eventTypeOwner = eventTypeOwners.get(entry.eventType)
+    if (eventTypeOwner && eventTypeOwner !== entry.unitId) {
+      throw new Error(
+        `createVoyantGraphRuntime: event catalog eventType "${entry.eventType}" has multiple selected owners "${eventTypeOwner}" and "${entry.unitId}".`,
+      )
+    }
+    keys.add(entry.key)
+    eventTypeOwners.set(entry.eventType, entry.unitId)
   }
 }
 

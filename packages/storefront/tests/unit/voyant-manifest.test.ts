@@ -83,10 +83,6 @@ describe("storefront deployment manifest", () => {
       ],
       events: [
         {
-          id: "@voyant-travel/storefront#event.customer-signal-created",
-          eventType: "customer.signal.created",
-        },
-        {
           id: "@voyant-travel/storefront#event.booking-bootstrap-requested",
           eventType: "storefront.booking.bootstrap.requested",
         },
@@ -128,7 +124,7 @@ describe("storefront deployment manifest", () => {
     expect(runtime.publicRoutes).toBeDefined()
   })
 
-  it("declares concrete event payloads without inventing an admin surface", () => {
+  it("declares its owned event payload without duplicating Relationships authority", () => {
     const events = new Map(
       storefrontVoyantModule.events?.map(({ eventType, payloadSchema }) => [
         eventType,
@@ -136,20 +132,7 @@ describe("storefront deployment manifest", () => {
       ]),
     )
 
-    expect(events.get("customer.signal.created")).toMatchObject({
-      type: "object",
-      required: ["id", "personId", "kind", "source", "status", "intake"],
-      properties: {
-        kind: { enum: ["wishlist", "notify", "inquiry", "request_offer", "referral"] },
-        intake: {
-          oneOf: [
-            expect.objectContaining({ required: ["surface", "type"] }),
-            expect.objectContaining({ required: ["surface", "type", "doubleOptIn"] }),
-          ],
-        },
-      },
-      additionalProperties: false,
-    })
+    expect(events.has("customer.signal.created")).toBe(false)
     expect(events.get("storefront.booking.bootstrap.requested")).toEqual({
       type: "object",
       required: ["intentId"],

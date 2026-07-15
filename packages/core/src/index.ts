@@ -90,6 +90,8 @@ export type {
   DefineVoyantGraphUnitInput,
   VoyantGraphCapabilityDeclaration,
   VoyantGraphEvent,
+  VoyantGraphEventCatalog,
+  VoyantGraphEventCatalogEntry,
   VoyantGraphFacetEntity,
   VoyantGraphJsonObject,
   VoyantGraphJsonValue,
@@ -113,6 +115,7 @@ export type {
   VoyantWorkflowServiceContributionContext,
 } from "./project.js"
 export {
+  VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
   VOYANT_WORKFLOW_SERVICE_CONTRIBUTIONS_PORT_ID,
   voyantWorkflowServiceContributionsPort,
 } from "./project.js"

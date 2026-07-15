@@ -14,8 +14,9 @@ describe("framework project config", () => {
       id: "@voyant-travel/operator-standard",
       version: "1",
     })
-    expect(project.modules.map((unit) => unit.id).slice(0, 3)).toEqual([
+    expect(project.modules.map((unit) => unit.id).slice(0, 4)).toEqual([
       "@voyant-travel/action-ledger",
+      "@voyant-travel/event-catalog",
       "@voyant-travel/mcp",
       "@voyant-travel/relationships",
     ])

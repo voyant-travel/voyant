@@ -92,6 +92,8 @@
     "@voyant-travel/db": "workspace:*",
     "@voyant-travel/distribution": "workspace:*",
     "@voyant-travel/distribution-react": "workspace:*",
+    "@voyant-travel/event-catalog": "workspace:*",
+    "@voyant-travel/event-catalog-react": "workspace:*",
     "@voyant-travel/finance": "workspace:*",
     "@voyant-travel/finance-react": "workspace:*",
     "@voyant-travel/flights": "workspace:*",

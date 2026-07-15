@@ -4,6 +4,7 @@ import {
   defineModule,
   defineProject,
   isExternalWebhookPayloadSchema,
+  VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
@@ -15,6 +16,8 @@ import {
   type VoyantGraphCapabilityDeclaration,
   type VoyantGraphConfigDeclaration,
   type VoyantGraphEvent,
+  type VoyantGraphEventCatalog,
+  type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
@@ -72,6 +75,7 @@ export {
   defineExtension,
   defineModule,
   defineProject,
+  VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
   VOYANT_GRAPH_EXTENSION_SCHEMA_VERSION,
   VOYANT_GRAPH_MODULE_SCHEMA_VERSION,
   VOYANT_GRAPH_PLUGIN_SCHEMA_VERSION,
@@ -82,6 +86,8 @@ export {
   type VoyantGraphCapabilityDeclaration,
   type VoyantGraphConfigDeclaration,
   type VoyantGraphEvent,
+  type VoyantGraphEventCatalog,
+  type VoyantGraphEventCatalogEntry,
   type VoyantGraphFacetEntity,
   type VoyantGraphJsonObject,
   type VoyantGraphJsonValue,
@@ -135,6 +141,10 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_ARTIFACT_MISSING: "A generated deployment graph artifact is missing.",
   VOYANT_GRAPH_ARTIFACT_STALE: "A generated deployment graph artifact is stale.",
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
+  VOYANT_GRAPH_DUPLICATE_EVENT_TYPE:
+    "Two selected graph units claim authority for the same emitted event type.",
+  VOYANT_GRAPH_DUPLICATE_EVENT_VERSION:
+    "One selected graph unit declares the same emitted event type and version more than once.",
   VOYANT_GRAPH_DUPLICATE_ID: "Two selected graph units resolved to the same graph id.",
   VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA:
     "An emitted-event payload schema is incompatible with its previous major-version contract.",
@@ -387,6 +397,7 @@ export interface ResolvedVoyantDeploymentGraph {
   }
   packageRecords: readonly VoyantGraphPackageRecord[]
   accessCatalog: AccessCatalog
+  eventCatalog: VoyantGraphEventCatalog
   webhookPlan: VoyantGraphWebhookPlan
   provisioning: {
     scheduledJobs: readonly VoyantGraphScheduledJob[]
@@ -673,11 +684,13 @@ export async function resolveDeploymentGraph(
     ...deriveWorkflowScheduledJobs(selectedUnits),
     ...(input.scheduledJobs ?? []),
   ])
+  const eventCatalog = compileEventCatalog(selectedUnits)
   const webhookPlan = compileWebhookPlan(selectedUnits)
   const accessCatalog = compileAccessCatalog(selectedUnits, input.project.access?.presets ?? [])
   const diagnostics = sortDiagnostics([
     ...selectedUnits.flatMap((unit) => validateGraphUnitManifest(unit.original, unit.kind)),
     ...validateDuplicateGraphIds(selectedUnits),
+    ...validateDuplicateEventTypes(selectedUnits),
     ...validateFacetReferences(selectedUnits),
     ...validateCapabilityClosure(selectedUnits),
     ...validatePortClosure(selectedUnits),
@@ -716,6 +729,7 @@ export async function resolveDeploymentGraph(
     },
     packageRecords,
     accessCatalog,
+    eventCatalog,
     webhookPlan,
     provisioning: {
       scheduledJobs,
@@ -2216,6 +2230,65 @@ function validateDuplicateGraphIds(
     )
 }
 
+function validateDuplicateEventTypes(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphDiagnostic[] {
+  const declarations = new Map<string, Map<string, string[]>>()
+  const versions = new Map<string, Map<string, string[]>>()
+  for (const unit of units) {
+    for (const event of unit.events) {
+      const eventType = event.eventType?.trim()
+      if (!eventType) continue
+      const owners = declarations.get(eventType) ?? new Map<string, string[]>()
+      const eventIds = owners.get(unit.id) ?? []
+      eventIds.push(event.id)
+      owners.set(unit.id, eventIds)
+      declarations.set(eventType, owners)
+
+      const version = event.version?.trim()
+      if (!version) continue
+      const key = `${eventType}@${version}`
+      const versionOwners = versions.get(key) ?? new Map<string, string[]>()
+      const versionEventIds = versionOwners.get(unit.id) ?? []
+      versionEventIds.push(event.id)
+      versionOwners.set(unit.id, versionEventIds)
+      versions.set(key, versionOwners)
+    }
+  }
+
+  const authorityDiagnostics = [...declarations.entries()].flatMap(([eventType, owners]) => {
+    if (owners.size < 2) return []
+    const authority = [...owners.entries()]
+      .map(([unitId, eventIds]) => `${eventIds.sort().join(", ")} (${unitId})`)
+      .sort()
+      .join(", ")
+    return [
+      diagnostic({
+        code: "VOYANT_GRAPH_DUPLICATE_EVENT_TYPE",
+        source: [...owners.keys()].sort()[1],
+        facet: "events.eventType",
+        message: `Event type "${eventType}" has multiple selected authorities: ${authority}. Keep one domain-owned contract; other packages may still emit that event type.`,
+      }),
+    ]
+  })
+
+  const versionDiagnostics = [...versions.entries()].flatMap(([key, owners]) =>
+    [...owners.entries()].flatMap(([unitId, eventIds]) => {
+      if (eventIds.length < 2) return []
+      return [
+        diagnostic({
+          code: "VOYANT_GRAPH_DUPLICATE_EVENT_VERSION",
+          source: unitId,
+          facet: "events.version",
+          message: `Event contract "${key}" is declared more than once by "${unitId}": ${eventIds.sort().join(", ")}. Keep one stable declaration per event type and version.`,
+        }),
+      ]
+    }),
+  )
+
+  return [...authorityDiagnostics, ...versionDiagnostics]
+}
+
 function validateFacetReferences(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
 ): VoyantGraphDiagnostic[] {
@@ -2607,6 +2680,75 @@ function titleFromPermissionName(value: string): string {
     .filter(Boolean)
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(" ")
+}
+
+function compileEventCatalog(
+  units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
+): VoyantGraphEventCatalog {
+  const events = units.flatMap((unit) =>
+    unit.events.flatMap((event): VoyantGraphEventCatalogEntry[] => {
+      const eventType = event.eventType?.trim()
+      const version = event.version?.trim()
+      if (
+        !eventType ||
+        !version ||
+        parseVersion(version) === null ||
+        !isRecord(event.payloadSchema) ||
+        (event.visibility !== "internal" && event.visibility !== "external") ||
+        !event.audit?.sourceModule.trim() ||
+        (event.audit.category !== "domain" && event.audit.category !== "internal")
+      ) {
+        return []
+      }
+      return [
+        {
+          key: `${eventType}@${version}`,
+          id: event.id,
+          unitId: unit.id,
+          packageName: unit.packageName,
+          eventType,
+          version,
+          payloadSchema: event.payloadSchema,
+          visibility: event.visibility,
+          audit: event.audit,
+          redactedFields: collectRedactedFieldPaths(event.payloadSchema),
+        },
+      ]
+    }),
+  )
+  return {
+    schemaVersion: VOYANT_EVENT_CATALOG_SCHEMA_VERSION,
+    events: events.sort(
+      (left, right) =>
+        left.eventType.localeCompare(right.eventType) ||
+        left.version.localeCompare(right.version) ||
+        left.id.localeCompare(right.id),
+    ),
+  }
+}
+
+function collectRedactedFieldPaths(schema: VoyantGraphJsonObject): string[] {
+  const paths = new Set<string>()
+
+  const visit = (value: unknown, path: string) => {
+    if (!isRecord(value)) return
+    if (path && (value.writeOnly === true || value["x-voyant-redact"] === true)) {
+      paths.add(path)
+    }
+    if (isRecord(value.properties)) {
+      for (const [property, propertySchema] of Object.entries(value.properties)) {
+        visit(propertySchema, path ? `${path}.${property}` : property)
+      }
+    }
+    if (value.items !== undefined) visit(value.items, `${path}[]`)
+    for (const combinator of ["allOf", "anyOf", "oneOf"] as const) {
+      if (!Array.isArray(value[combinator])) continue
+      for (const branch of value[combinator]) visit(branch, path)
+    }
+  }
+
+  visit(schema, "")
+  return [...paths].sort()
 }
 
 function compileWebhookPlan(
