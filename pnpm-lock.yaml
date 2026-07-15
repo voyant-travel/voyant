@@ -344,6 +344,9 @@ importers:
       '@voyant-travel/operations':
         specifier: workspace:^
         version: link:../operations
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -400,6 +403,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -1719,6 +1725,9 @@ importers:
       '@voyant-travel/suppliers-contracts':
         specifier: workspace:^
         version: link:../suppliers-contracts
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -2093,6 +2102,9 @@ importers:
       '@voyant-travel/plugin-netopia':
         specifier: ^0.105.21
         version: 0.105.21(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)(typesense@3.0.6(@babel/runtime@7.29.7))
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
@@ -2386,6 +2398,9 @@ importers:
       '@voyant-travel/identity-contracts':
         specifier: workspace:^
         version: link:../identity-contracts
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       '@voyant-travel/types':
         specifier: workspace:^
         version: link:../types
@@ -2929,6 +2944,9 @@ importers:
       '@voyant-travel/relationships':
         specifier: workspace:^
         version: link:../relationships
+      '@voyant-travel/tools':
+        specifier: workspace:^
+        version: link:../tools
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
