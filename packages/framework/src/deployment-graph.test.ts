@@ -258,6 +258,36 @@ describe("deployment graph v1", () => {
     ])
   })
 
+  it("rejects duplicate event versions declared by one selected unit", async () => {
+    const graph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/loyalty",
+            events: ["changed", "updated"].map((name) => ({
+              id: `@acme/loyalty#event.${name}`,
+              eventType: "loyalty.changed",
+              version: "1.0.0",
+              payloadSchema: { type: "object", properties: {} },
+              visibility: "internal" as const,
+              audit: { sourceModule: "loyalty", category: "domain" as const },
+            })),
+          }),
+        ],
+      }),
+    })
+
+    expect(graph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_DUPLICATE_EVENT_VERSION",
+          facet: "events.version",
+          source: "@acme/loyalty",
+        }),
+      ]),
+    )
+  })
+
   it("resolves the full package-owned facet contract without starter catalogs", async () => {
     const module = defineModule({
       id: "@acme/voyant-loyalty",
@@ -1627,6 +1657,7 @@ describe("deployment graph v1", () => {
       "VOYANT_GRAPH_ARTIFACT_STALE",
       "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
       "VOYANT_GRAPH_DUPLICATE_EVENT_TYPE",
+      "VOYANT_GRAPH_DUPLICATE_EVENT_VERSION",
       "VOYANT_GRAPH_DUPLICATE_ID",
       "VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA",
       "VOYANT_GRAPH_INCOMPATIBLE_UPGRADE",

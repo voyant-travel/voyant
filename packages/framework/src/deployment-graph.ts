@@ -143,6 +143,8 @@ export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
   VOYANT_GRAPH_DUPLICATE_EVENT_TYPE:
     "Two selected graph units claim authority for the same emitted event type.",
+  VOYANT_GRAPH_DUPLICATE_EVENT_VERSION:
+    "One selected graph unit declares the same emitted event type and version more than once.",
   VOYANT_GRAPH_DUPLICATE_ID: "Two selected graph units resolved to the same graph id.",
   VOYANT_GRAPH_INCOMPATIBLE_EVENT_SCHEMA:
     "An emitted-event payload schema is incompatible with its previous major-version contract.",
@@ -2232,6 +2234,7 @@ function validateDuplicateEventTypes(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
 ): VoyantGraphDiagnostic[] {
   const declarations = new Map<string, Map<string, string[]>>()
+  const versions = new Map<string, Map<string, string[]>>()
   for (const unit of units) {
     for (const event of unit.events) {
       const eventType = event.eventType?.trim()
@@ -2241,10 +2244,19 @@ function validateDuplicateEventTypes(
       eventIds.push(event.id)
       owners.set(unit.id, eventIds)
       declarations.set(eventType, owners)
+
+      const version = event.version?.trim()
+      if (!version) continue
+      const key = `${eventType}@${version}`
+      const versionOwners = versions.get(key) ?? new Map<string, string[]>()
+      const versionEventIds = versionOwners.get(unit.id) ?? []
+      versionEventIds.push(event.id)
+      versionOwners.set(unit.id, versionEventIds)
+      versions.set(key, versionOwners)
     }
   }
 
-  return [...declarations.entries()].flatMap(([eventType, owners]) => {
+  const authorityDiagnostics = [...declarations.entries()].flatMap(([eventType, owners]) => {
     if (owners.size < 2) return []
     const authority = [...owners.entries()]
       .map(([unitId, eventIds]) => `${eventIds.sort().join(", ")} (${unitId})`)
@@ -2259,6 +2271,22 @@ function validateDuplicateEventTypes(
       }),
     ]
   })
+
+  const versionDiagnostics = [...versions.entries()].flatMap(([key, owners]) =>
+    [...owners.entries()].flatMap(([unitId, eventIds]) => {
+      if (eventIds.length < 2) return []
+      return [
+        diagnostic({
+          code: "VOYANT_GRAPH_DUPLICATE_EVENT_VERSION",
+          source: unitId,
+          facet: "events.version",
+          message: `Event contract "${key}" is declared more than once by "${unitId}": ${eventIds.sort().join(", ")}. Keep one stable declaration per event type and version.`,
+        }),
+      ]
+    }),
+  )
+
+  return [...authorityDiagnostics, ...versionDiagnostics]
 }
 
 function validateFacetReferences(
