@@ -56,8 +56,18 @@ vi.mock("better-auth", () => ({
   betterAuth: betterAuthMock,
 }))
 
+vi.mock("better-auth/api", () => ({
+  APIError: class APIError extends Error {},
+  createAuthMiddleware: vi.fn((handler: unknown) => handler),
+  getSessionFromCtx: vi.fn(async () => null),
+}))
+
 vi.mock("better-auth/adapters/drizzle", () => ({
   drizzleAdapter: drizzleAdapterMock,
+}))
+
+vi.mock("better-auth/cookies", () => ({
+  deleteSessionCookie: vi.fn(),
 }))
 
 vi.mock("better-auth/plugins", () => ({
@@ -312,6 +322,7 @@ describe("createBetterAuth", () => {
         plugins: [
           expect.objectContaining({ id: "apiKey" }),
           expect.objectContaining({ id: "emailOTP" }),
+          expect.objectContaining({ id: "voyant-local-member-access" }),
           jwtPlugin,
           customPlugin,
         ],
