@@ -296,16 +296,17 @@ function registerMcpTool(
   ctx: ToolContext,
   aliasFor?: string,
 ): void {
+  const output = toMcpOutputContract(def.outputSchema)
   server.registerTool(
     invocationName,
     {
       description: entry.description,
-      inputSchema: toRawShape(def.inputSchema),
-      outputSchema: toMcpOutputSchema(def.outputSchema),
+      inputSchema: toMcpInputSchema(def.inputSchema),
+      outputSchema: output.schema,
       annotations: entry.annotations,
       _meta: toMcpMeta(entry, aliasFor),
     },
-    (args) => dispatchToResult(registry, invocationName, args, ctx),
+    (args) => dispatchToResult(registry, invocationName, args, ctx, output.envelopeResult),
   )
 }
 
@@ -329,21 +330,74 @@ function toMcpMeta(entry: ToolManifestEntry, aliasFor?: string): Record<string, 
   }
 }
 
-/** Extract a Zod raw shape for the MCP SDK. Tool inputs are objects by convention. */
-function toRawShape(schema: z.ZodType): z.ZodRawShape {
-  if (schema instanceof z.ZodObject) return schema.shape as z.ZodRawShape
-  return {}
+interface McpOutputContract {
+  schema: z.ZodType
+  envelopeResult: boolean
 }
 
-/** MCP structured output must be an object; wrap scalar schemas to match `toStructuredContent`. */
-function toMcpOutputSchema(schema: z.ZodType): z.ZodType {
+type ZodCompositionDef = {
+  type?: string
+  innerType?: unknown
+  in?: unknown
+  out?: unknown
+  left?: unknown
+  right?: unknown
+}
+
+/**
+ * The MCP SDK validates complete Zod schemas, but its discovery serializer only
+ * recognizes a direct object. Normalize object-bearing intersections,
+ * pipes/effects, and wrappers into one loose object for transport discovery and
+ * argument preservation. The registry still validates the untouched domain
+ * schema before dispatch, including cross-field refinements and transforms.
+ */
+function toMcpInputSchema(schema: z.ZodType): z.ZodObject {
+  if (schema instanceof z.ZodObject) return schema
+  const shapes = collectInputObjectShapes(schema)
+  return z.looseObject(Object.assign({}, ...shapes))
+}
+
+function collectInputObjectShapes(schema: unknown, seen = new Set<unknown>()): z.ZodRawShape[] {
+  if (!schema || seen.has(schema)) return []
+  seen.add(schema)
+  if (schema instanceof z.ZodObject) return [schema.shape]
+
+  const def = (schema as { _zod?: { def?: ZodCompositionDef } })._zod?.def
+  switch (def?.type) {
+    case "intersection":
+      return [
+        ...collectInputObjectShapes(def.left, seen),
+        ...collectInputObjectShapes(def.right, seen),
+      ]
+    case "pipe":
+      return [...collectInputObjectShapes(def.in, seen), ...collectInputObjectShapes(def.out, seen)]
+    case "catch":
+    case "default":
+    case "nonoptional":
+    case "nullable":
+    case "optional":
+    case "readonly":
+      return collectInputObjectShapes(def.innerType, seen)
+    default:
+      return []
+  }
+}
+
+/**
+ * MCP structured output must have an object root. Decide once whether the
+ * domain value needs a `{ result }` envelope, then use that same decision for
+ * both the advertised schema and the returned structured content.
+ */
+function toMcpOutputContract(schema: z.ZodType): McpOutputContract {
   try {
-    z.toJSONSchema(schema)
-    return schema instanceof z.ZodObject ? schema : z.object({ result: schema })
+    const jsonSchema = z.toJSONSchema(schema) as Record<string, unknown>
+    if (jsonSchema.type === "object") return { schema, envelopeResult: false }
+    return { schema: z.object({ result: schema }), envelopeResult: true }
   } catch {
     // The custom manifest labels this runtime-only schema. MCP still requires a
-    // serializable object output schema, so preserve structured data permissively.
-    return z.looseObject({})
+    // serializable object output schema, so preserve the value in an explicit
+    // permissive result envelope.
+    return { schema: z.object({ result: z.unknown() }), envelopeResult: true }
   }
 }
 
@@ -353,12 +407,13 @@ async function dispatchToResult(
   name: string,
   args: unknown,
   ctx: ToolContext,
+  envelopeResult: boolean,
 ): Promise<CallToolResult> {
   try {
     const data = await registry.dispatch(name, args, ctx)
     return {
       content: [{ type: "text", text: safeStringify(data) }],
-      structuredContent: toStructuredContent(data),
+      structuredContent: toStructuredContent(data, envelopeResult),
     }
   } catch (err) {
     const code = err instanceof ToolError ? err.code : "PROVIDER_ERROR"
@@ -367,10 +422,13 @@ async function dispatchToResult(
   }
 }
 
-function toStructuredContent(data: unknown): Record<string, unknown> {
-  return data !== null && typeof data === "object" && !Array.isArray(data)
-    ? (data as Record<string, unknown>)
-    : { result: data }
+function toStructuredContent(data: unknown, envelopeResult: boolean): Record<string, unknown> {
+  if (envelopeResult) return { result: data }
+  if (isRecord(data)) return data
+  throw new ToolError(
+    "MCP object output did not produce object structured content.",
+    "INVALID_OUTPUT",
+  )
 }
 
 function safeStringify(data: unknown): string {

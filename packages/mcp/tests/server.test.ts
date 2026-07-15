@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { createGraphMcpHonoApp, createMcpHonoApp } from "../src/index.js"
+import { createMcpVoyantRuntime } from "../src/runtime.js"
 import { mcpVoyantModule } from "../src/voyant.js"
 
 const accessCatalog = {
@@ -36,6 +37,34 @@ const accessCatalog = {
           label: "Send",
           description: "Send",
           wildcard: "explicit" as const,
+        },
+      ],
+    },
+    {
+      id: "records",
+      unitId: "@voyant-travel/test",
+      resource: "records",
+      label: "Records",
+      description: "Test records",
+      wildcard: "allow" as const,
+      actions: [
+        { action: "read", label: "Read", description: "Read records" },
+        { action: "write", label: "Write", description: "Write records" },
+      ],
+    },
+    {
+      id: "secrets",
+      unitId: "@voyant-travel/test",
+      resource: "secrets",
+      label: "Secrets",
+      description: "Sensitive test records",
+      wildcard: "explicit-resource" as const,
+      actions: [
+        {
+          action: "read",
+          label: "Read",
+          description: "Read sensitive records",
+          sensitive: true,
         },
       ],
     },
@@ -103,6 +132,43 @@ const sendNotificationTool = defineTool({
   },
 })
 
+const updateRecordTool = defineTool({
+  name: "update_record",
+  description: "Update a record through a composed input contract.",
+  inputSchema: z
+    .object({ id: z.string().min(1) })
+    .and(z.object({ name: z.string().min(1) }))
+    .optional()
+    .transform((input) => input),
+  outputSchema: z.object({ id: z.string(), name: z.string() }).nullable(),
+  requiredScopes: ["records:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "write",
+  riskPolicy: {
+    destructive: false,
+    reversible: true,
+    dryRunSupported: false,
+    sideEffects: ["data-write"],
+  },
+  async handler(input) {
+    return !input || input.name === "missing" ? null : input
+  },
+})
+
+const getSensitiveRecordTool = defineTool({
+  name: "get_sensitive_record",
+  description: "Read a sensitive record.",
+  inputSchema: z.object({ id: z.string().min(1) }),
+  outputSchema: z.object({ id: z.string(), classification: z.literal("sensitive") }),
+  requiredScopes: ["secrets:read"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "sensitive",
+  riskPolicy: READ_ONLY_RISK,
+  async handler({ id }) {
+    return { id, classification: "sensitive" as const }
+  },
+})
+
 function buildContext(audience: ToolContext["audience"] = "staff"): ToolContext {
   return {
     db: {},
@@ -118,6 +184,8 @@ function appWithScopes(scopes: string[], audience: ToolContext["audience"] = "st
   const registry = createToolRegistry()
   registry.register(echoTool)
   registry.register(sendNotificationTool)
+  registry.register(updateRecordTool)
+  registry.register(getSensitiveRecordTool)
   const mcp = createMcpHonoApp({
     accessCatalog,
     registry,
@@ -131,6 +199,40 @@ function appWithScopes(scopes: string[], audience: ToolContext["audience"] = "st
   })
   outer.route("/", mcp)
   return outer
+}
+
+async function selectedRuntimeRoutes() {
+  const runtimeTool = {
+    id: "@voyant-travel/test#tool.echo",
+    unitId: "@voyant-travel/test",
+    name: "echo",
+    requiredScopes: ["catalog:read"],
+    risk: "low" as const,
+    referenceId: "test-tools",
+    async load<T>() {
+      return echoTool as T
+    },
+  }
+  const module = await createMcpVoyantRuntime({
+    graph: {
+      accessCatalog,
+      providerSelections: {},
+      tools: [runtimeTool],
+      references: [
+        {
+          id: "test-tools",
+          importEntry: "@voyant-travel/test/tools",
+          async loadModule<T extends Record<string, unknown>>() {
+            return {} as T
+          },
+        },
+      ],
+    },
+    runtimePorts: {},
+  } as never)
+  const routes = await module.lazyAdminRoutes?.()
+  if (!routes) throw new Error("MCP selected runtime did not expose admin routes")
+  return routes
 }
 
 describe("createMcpHonoApp", () => {
@@ -370,7 +472,146 @@ describe("createMcpHonoApp", () => {
     expect(tools.map((t) => t.name)).toContain("send_notification")
     expect(tools.find((tool) => tool.name === "send_notification")?.outputSchema).toMatchObject({
       type: "object",
-      additionalProperties: {},
+      properties: { result: {} },
+      required: ["result"],
     })
+
+    const called = await readRpc(
+      await appWithScopes(["notifications:send"]).request(
+        "/",
+        rpc("tools/call", {
+          name: "send_notification",
+          arguments: { templateSlug: "booking-confirmed", to: "customer@example.test" },
+        }),
+      ),
+    )
+    expect(called.result).toMatchObject({ structuredContent: { result: { ok: true } } })
+  })
+
+  it("preserves composed object inputs and applies the same nullable output envelope to schema and data", async () => {
+    const app = appWithScopes(["records:write"])
+    const listed = await readRpc(await app.request("/", rpc("tools/list", {})))
+    const tool = (
+      listed.result as {
+        tools?: Array<{
+          name: string
+          inputSchema?: Record<string, unknown>
+          outputSchema?: Record<string, unknown>
+          _meta?: Record<string, unknown>
+        }>
+      }
+    ).tools?.find(({ name }) => name === "update_record")
+
+    expect(tool?._meta).toMatchObject({ "voyant.travel/tool": { tier: "write" } })
+    const serializedInput = JSON.stringify(tool?.inputSchema)
+    expect(serializedInput).toContain('"id"')
+    expect(serializedInput).toContain('"name"')
+    expect(serializedInput).toContain('"required"')
+    expect(tool?.outputSchema).toMatchObject({
+      type: "object",
+      properties: { result: {} },
+      required: ["result"],
+    })
+
+    const updated = await readRpc(
+      await app.request(
+        "/",
+        rpc("tools/call", {
+          name: "update_record",
+          arguments: { id: "record_1", name: "Updated" },
+        }),
+      ),
+    )
+    expect(updated.result).toMatchObject({
+      structuredContent: { result: { id: "record_1", name: "Updated" } },
+    })
+
+    const missing = await readRpc(
+      await app.request(
+        "/",
+        rpc("tools/call", {
+          name: "update_record",
+          arguments: { id: "record_404", name: "missing" },
+        }),
+      ),
+    )
+    expect(missing.result).toMatchObject({ structuredContent: { result: null } })
+  })
+
+  it("discovers and invokes a sensitive Tool only with its explicit grant", async () => {
+    const denied = await readRpc(
+      await appWithScopes(["catalog:read"]).request("/", rpc("tools/list", {})),
+    )
+    expect(
+      (denied.result as { tools?: Array<{ name: string }> } | undefined)?.tools?.map(
+        ({ name }) => name,
+      ),
+    ).not.toContain("get_sensitive_record")
+
+    const app = appWithScopes(["secrets:read"])
+    const listed = await readRpc(await app.request("/", rpc("tools/list", {})))
+    expect(
+      (listed.result as { tools?: Array<{ name: string }> }).tools?.find(
+        ({ name }) => name === "get_sensitive_record",
+      ),
+    ).toMatchObject({
+      _meta: { "voyant.travel/tool": { tier: "sensitive" } },
+    })
+
+    const called = await readRpc(
+      await app.request(
+        "/",
+        rpc("tools/call", {
+          name: "get_sensitive_record",
+          arguments: { id: "secret_1" },
+        }),
+      ),
+    )
+    expect(called.result).toMatchObject({
+      structuredContent: { id: "secret_1", classification: "sensitive" },
+    })
+  })
+
+  it("serves tools/list and tools/call through the selected graph runtime", async () => {
+    const routes = await selectedRuntimeRoutes()
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("scopes", ["catalog:read"])
+      c.set("actor", "staff")
+      c.set("audience", "staff")
+      await next()
+    })
+    app.route("/", routes)
+
+    const listed = await readRpc(await app.request("/", rpc("tools/list", {})))
+    expect(
+      (listed.result as { tools?: Array<{ name: string }> } | undefined)?.tools?.map(
+        ({ name }) => name,
+      ),
+    ).toContain("echo")
+
+    const called = await readRpc(
+      await app.request("/", rpc("tools/call", { name: "echo", arguments: { text: "graph" } })),
+    )
+    expect(called.result).toMatchObject({ structuredContent: { text: "echo: graph" } })
+  })
+
+  it.each([
+    ["missing actor and audience", {}],
+    ["missing audience", { actor: "staff" }],
+    ["missing actor", { audience: "staff" }],
+    ["invalid actor", { actor: "unknown", audience: "staff" }],
+    ["invalid audience", { actor: "staff", audience: "unknown" }],
+  ])("fails closed for %s claims in the selected graph runtime", async (_case, claims) => {
+    const routes = await selectedRuntimeRoutes()
+    const app = new Hono()
+    app.use("*", async (c, next) => {
+      c.set("scopes", ["catalog:read"])
+      for (const [claim, value] of Object.entries(claims)) c.set(claim as never, value as never)
+      await next()
+    })
+    app.route("/", routes)
+
+    expect((await app.request("/manifest")).status).toBe(500)
   })
 })

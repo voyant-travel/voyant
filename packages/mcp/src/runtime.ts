@@ -4,6 +4,7 @@ import {
   TOOL_GRAPH_ACTIONS_RESOURCE,
   TOOL_PROVIDER_SELECTIONS_RESOURCE,
   type ToolContext,
+  ToolError,
   type Visibility,
 } from "@voyant-travel/tools"
 import type { Context } from "hono"
@@ -32,9 +33,9 @@ function buildMcpBaseContext(c: Context): ToolContext {
     audience?: unknown
     db?: unknown
   }
-  const env = c.env as Record<string, unknown>
-  const actor = visibility(request.actor, "staff")
-  const audience = visibility(request.audience, actor)
+  const env = (c.env ?? {}) as Record<string, unknown>
+  const actor = requireVisibility(request.actor, "actor")
+  const audience = requireVisibility(request.audience, "audience")
   return {
     db: request.db,
     actor,
@@ -49,10 +50,15 @@ function buildMcpBaseContext(c: Context): ToolContext {
   }
 }
 
-function visibility(value: unknown, fallback: Visibility): Visibility {
-  return value === "staff" || value === "customer" || value === "partner" || value === "supplier"
-    ? value
-    : fallback
+function requireVisibility(value: unknown, claim: "actor" | "audience"): Visibility {
+  if (value === "staff" || value === "customer" || value === "partner" || value === "supplier") {
+    return value
+  }
+  throw new ToolError(
+    `MCP requests require an authenticated ${claim} grant claim.`,
+    "AUTHORIZATION_DENIED",
+    { claim },
+  )
 }
 
 function stringValue(value: unknown): string | undefined {
