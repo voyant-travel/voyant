@@ -39,7 +39,7 @@ export const listProductsTool = defineTool({
   name: "list_products",
   description: "List products with filters and pagination. Read-only.",
   inputSchema: productListQuerySchema,     // reuse the domain's zod schema
-  outputSchema: z.custom<ProductListResult>(), // start loose; tighten over time
+  outputSchema: listResponseSchema(productToolSchema), // structural and MCP-serializable
   requiredScopes: ["products:read"],        // resource:action, AND-enforced
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
@@ -72,8 +72,31 @@ Rules:
   deployment risk against the loaded runtime definition. Drift fails registration
   instead of producing a misleading manifest.
 - Prefer serializable output schemas. Runtime-only/permissive schemas remain callable,
-  but the manifest labels their schema quality so coverage checks and clients do not
-  treat them as strong contracts.
+  but first-party manifest Tool runtimes must expose structural output schemas. The
+  architecture checker rejects `z.custom()` and opaque top-level output schemas in
+  canonical Tool runtime modules.
+
+## Domain completeness notes
+
+Inventory owns guarded core authoring and lifecycle Tools (`create_product`,
+`update_product`, `publish_product`, `unpublish_product`, and `archive_product`) over
+the real product service. Publication continues to use that service's readiness gate;
+the Tool does not reproduce the rule. `get_product_content` composes owned and sourced
+content through the selected Catalog content runtime, preserving provider authority.
+
+There is intentionally no monolithic `update_product_content` Tool. The unified
+product-content service is a read resolver; authored options, itineraries, media,
+translations, merchandising, and availability are separate aggregate services with
+different invariants. A single record-shaped write wrapper would bypass those service
+boundaries and expose shallow storage mechanics. Future content mutation Tools must be
+workflow-shaped and delegate to the appropriate Inventory aggregate service.
+
+Trips owns cross-module candidate composition. A guarded requirement-creation Tool is
+the workflow entry point; requirement sourcing and re-shop Tools resolve the
+deployment-selected provider-neutral availability fan-out, while candidate selection
+delegates to the Trips invariant service that pins a draft component. Tool outputs
+omit provider replay/economics payloads even though Trips retains them internally for
+later reservation.
 
 ## Coverage posture
 
@@ -156,12 +179,10 @@ capability. Consumers resolve capabilities by `capabilityId` plus an exact suppo
 
 ## Migration status
 
-The migrated surface covers 59 Tools across 12 module units. Of the 41 governed
-module units, 20 still declare planned module-owned or composed coverage, eight are
-explicitly not applicable, and the MCP transport is excluded because it does not own
-domain capabilities. Remaining coverage is tracked in voyant#3370 and is visible
-through the coverage report. A `planned` declaration records an uncovered surface;
-it is not a substitute for implementing the Tool.
+The deterministic coverage report is the source of truth for current Tool and module
+counts. Remaining coverage is tracked in voyant#3370 and is visible through
+`pnpm report:agent-tool-coverage`. A `planned` declaration records an uncovered
+surface; it is not a substitute for implementing the Tool.
 
 ## Reconciliation
 

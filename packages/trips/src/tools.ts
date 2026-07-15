@@ -27,15 +27,55 @@ import {
   createTripResultSchema,
   priceTripResultSchema,
   reserveTripResultSchema,
+  reshopTripResultSchema,
   reviseTripResultSchema,
+  selectTripCandidateResultSchema,
+  sourceTripCandidatesResultSchema,
+  tripRequirementToolSchema,
 } from "./tool-output-schemas.js"
 import {
+  addRequirementSchema,
   createTripComponentBodySchema,
   type createTripComponentSchema,
   createTripEnvelopeSchema,
   priceTripSchema,
   reserveTripSchema,
+  reshopTripSchema,
+  selectCandidateSchema,
+  sourceRequirementCandidatesSchema,
 } from "./validation.js"
+
+const OWNER = "@voyant-travel/trips"
+const VERSION = "v1"
+const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
+const REQUIREMENT_WRITE_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: false,
+  sideEffects: ["data-write"],
+} as const
+const CANDIDATE_WRITE_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: false,
+  sideEffects: ["data-write"],
+} as const
+const CANDIDATE_SELECTION_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: true,
+  sideEffects: ["data-write"],
+} as const
+const RESHOP_RISK = {
+  destructive: true,
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: true,
+  sideEffects: ["data-write"],
+} as const
 
 /** The trips service surface a deployment binds into the tool context. */
 export interface TripsToolServices {
@@ -44,6 +84,13 @@ export interface TripsToolServices {
   removeComponent?(componentId: string): Promise<TripComponent | null>
   priceTrip(input: z.infer<typeof priceTripSchema>): Promise<ServicePriceTripResult>
   reserveTrip(input: z.infer<typeof reserveTripSchema>): Promise<ServiceReserveTripResult>
+  addRequirement(input: z.infer<typeof addRequirementSchema>): Promise<unknown>
+  sourceRequirementCandidates(
+    input: z.infer<typeof sourceRequirementCandidatesSchema>,
+  ): Promise<unknown>
+  selectCandidate(input: z.infer<typeof selectCandidateSchema>): Promise<unknown>
+  reshopRequirement(input: z.infer<typeof sourceRequirementCandidatesSchema>): Promise<unknown>
+  reshopTrip(input: z.infer<typeof reshopTripSchema>): Promise<unknown>
 }
 
 /** Tool context with the trips service injected. */
@@ -189,8 +236,112 @@ export const reserveTripTool = defineTool<ReserveTripArgs, ReserveTripResult, Tr
   },
 })
 
+export const addTripRequirementTool = defineTool({
+  capabilityId: `${OWNER}#tool.add-requirement`,
+  capabilityVersion: VERSION,
+  name: "add_trip_requirement",
+  description:
+    "Add an unresolved customer need to a mutable trip envelope so it can be sourced into provider-neutral candidates.",
+  inputSchema: addRequirementSchema,
+  outputSchema: tripRequirementToolSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: REQUIREMENT_WRITE_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    return parseJsonResult(tripRequirementToolSchema, await trips(ctx).addRequirement(input))
+  },
+})
+
+export const sourceTripRequirementCandidatesTool = defineTool({
+  capabilityId: `${OWNER}#tool.source-requirement-candidates`,
+  capabilityVersion: VERSION,
+  name: "source_trip_requirement_candidates",
+  description:
+    "Run the selected provider-neutral catalog availability fan-out for one unresolved trip requirement and persist fresh ranked candidates.",
+  inputSchema: sourceRequirementCandidatesSchema,
+  outputSchema: sourceTripCandidatesResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: CANDIDATE_WRITE_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    assertToolAudience(ctx, input.scope.audience)
+    return parseJsonResult(
+      sourceTripCandidatesResultSchema,
+      await trips(ctx).sourceRequirementCandidates(input),
+    )
+  },
+})
+
+export const selectTripCandidateTool = defineTool({
+  capabilityId: `${OWNER}#tool.select-candidate`,
+  capabilityVersion: VERSION,
+  name: "select_trip_candidate",
+  description:
+    "Select a still-valid ranked candidate for a trip requirement and pin it as a draft trip component.",
+  inputSchema: selectCandidateSchema,
+  outputSchema: selectTripCandidateResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "write",
+  riskPolicy: CANDIDATE_SELECTION_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    return parseJsonResult(selectTripCandidateResultSchema, await trips(ctx).selectCandidate(input))
+  },
+})
+
+export const reshopTripRequirementTool = defineTool({
+  capabilityId: `${OWNER}#tool.reshop-requirement`,
+  capabilityVersion: VERSION,
+  name: "reshop_trip_requirement",
+  description:
+    "Retire a requirement's prior pinned component and source a fresh provider-neutral ranked candidate set.",
+  inputSchema: sourceRequirementCandidatesSchema,
+  outputSchema: sourceTripCandidatesResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "destructive",
+  riskPolicy: RESHOP_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    assertToolAudience(ctx, input.scope.audience)
+    return parseJsonResult(
+      sourceTripCandidatesResultSchema,
+      await trips(ctx).reshopRequirement(input),
+    )
+  },
+})
+
+export const reshopTripTool = defineTool({
+  capabilityId: `${OWNER}#tool.reshop-trip`,
+  capabilityVersion: VERSION,
+  name: "reshop_trip",
+  description:
+    "Retire prior selections and run fresh provider-neutral candidate sourcing for every requirement on a trip envelope.",
+  inputSchema: reshopTripSchema,
+  outputSchema: reshopTripResultSchema,
+  requiredScopes: ["trips:write"],
+  audience: STAFF_AUDIENCE,
+  tier: "destructive",
+  riskPolicy: RESHOP_RISK,
+  async handler(input, ctx: TripsToolContext) {
+    assertToolAudience(ctx, input.scope.audience)
+    return parseJsonResult(reshopTripResultSchema, await trips(ctx).reshopTrip(input))
+  },
+})
+
 /** All trips agent tools, ready to register on a `ToolRegistry`. */
-export const tripsTools = [createTripTool, reviseTripTool, priceTripTool, reserveTripTool] as const
+export const tripsTools = [
+  createTripTool,
+  reviseTripTool,
+  priceTripTool,
+  reserveTripTool,
+  addTripRequirementTool,
+  sourceTripRequirementCandidatesTool,
+  selectTripCandidateTool,
+  reshopTripRequirementTool,
+  reshopTripTool,
+] as const
 
 function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
   return schema.parse(toJsonValue(value))

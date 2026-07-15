@@ -122,6 +122,38 @@ describe("trips deployment manifest", () => {
       reversible: false,
       from: { tools: ["@voyant-travel/trips#tool.reserve-trip"] },
     })
+    expect(tripsVoyantModule.actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/trips#action.add-requirement",
+          risk: "medium",
+          ledger: "required",
+          approval: "never",
+          allowedActorTypes: ["staff"],
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/trips#action.source-requirement-candidates",
+          risk: "medium",
+          ledger: "required",
+          approval: "never",
+          allowedActorTypes: ["staff"],
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/trips#action.select-candidate",
+          risk: "medium",
+          ledger: "required",
+          approval: "required",
+          allowedActorTypes: ["staff"],
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/trips#action.reshop-trip",
+          risk: "high",
+          ledger: "required",
+          approval: "required",
+          allowedActorTypes: ["staff"],
+        }),
+      ]),
+    )
   })
 
   it("marks every public OpenAPI operation with its graph API id", () => {

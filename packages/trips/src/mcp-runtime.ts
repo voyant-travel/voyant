@@ -34,6 +34,23 @@ export const voyantToolContextContribution = defineToolContextContribution({
         if (!deps) throw new Error("Trips reserve dependencies are not configured")
         return tripsService.reserveTrip(c.var.db, input, deps)
       },
+      addRequirement: (input) => tripsService.addRequirement(c.var.db, input),
+      sourceRequirementCandidates: async (input) => {
+        const deps = await resolveDeps(c, options.sourceCandidatesDeps)
+        if (!deps) throw new Error("Trips availability-sourcing dependencies are not configured")
+        return tripsService.sourceRequirementCandidates(c.var.db, input, deps)
+      },
+      selectCandidate: (input) => tripsService.selectCandidate(c.var.db, input),
+      reshopRequirement: async (input) => {
+        const deps = await resolveDeps(c, options.sourceCandidatesDeps)
+        if (!deps) throw new Error("Trips availability-sourcing dependencies are not configured")
+        return tripsService.reshopRequirement(c.var.db, input, deps)
+      },
+      reshopTrip: async (input) => {
+        const deps = await resolveDeps(c, options.sourceCandidatesDeps)
+        if (!deps) throw new Error("Trips availability-sourcing dependencies are not configured")
+        return tripsService.reshopTrip(c.var.db, input, deps)
+      },
     }
     return { trips }
   },

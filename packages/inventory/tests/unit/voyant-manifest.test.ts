@@ -119,6 +119,35 @@ describe("inventory deployment manifests", () => {
     ])
   })
 
+  it("binds product authoring and lifecycle Tools to governed actions", () => {
+    expect(inventoryVoyantModule.tools?.map(({ name }) => name)).toEqual([
+      "list_products",
+      "get_product",
+      "create_product",
+      "update_product",
+      "publish_product",
+      "unpublish_product",
+      "archive_product",
+    ])
+    expect(inventoryVoyantModule.actions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#action.create-product",
+          ledger: "required",
+          approval: "never",
+          allowedActorTypes: ["staff"],
+        }),
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#action.publish-product",
+          risk: "high",
+          ledger: "required",
+          approval: "required",
+          allowedActorTypes: ["staff"],
+        }),
+      ]),
+    )
+  })
+
   it("owns the authoring and booking plugin surfaces", () => {
     expect(inventoryAuthoringVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",
@@ -172,6 +201,19 @@ describe("inventory deployment manifests", () => {
         },
       ],
       runtimePorts: [{ id: "catalog.content-runtime" }],
+      tools: [
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#content-extension.tool.get-product-content",
+          name: "get_product_content",
+          context: ["inventoryContent"],
+        }),
+      ],
+      actions: [
+        expect.objectContaining({
+          id: "@voyant-travel/inventory#content-extension.action.get-product-content",
+          ledger: "optional",
+        }),
+      ],
     })
     expect(inventoryBrochureVoyantPlugin).toMatchObject({
       schemaVersion: "voyant.extension.v1",

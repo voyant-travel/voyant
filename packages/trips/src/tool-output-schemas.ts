@@ -73,6 +73,66 @@ export const tripComponentToolSchema = z.object({
   updatedAt: isoTimestamp,
 })
 
+export const tripRequirementToolSchema = z.object({
+  id: z.string(),
+  envelopeId: z.string(),
+  sequence: z.number().int(),
+  status: z.enum([
+    "open",
+    "sourcing",
+    "candidates_ready",
+    "selected",
+    "no_availability",
+    "cancelled",
+  ]),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  vertical: z.string(),
+  criteria: jsonObject,
+  criteriaVersion: z.string(),
+  required: z.boolean(),
+  selectedCandidateId: z.string().nullable(),
+  resolvedComponentId: z.string().nullable(),
+  lastSourcedAt: isoTimestamp.nullable(),
+  metadata: jsonObject,
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+/** Provider replay/economics data is deliberately omitted from the agent-visible shape. */
+export const tripCandidateToolSchema = z.object({
+  id: z.string(),
+  requirementId: z.string(),
+  envelopeId: z.string(),
+  rank: z.number().int(),
+  status: z.enum(["ranked", "selected", "expired", "discarded"]),
+  candidateRef: z.string(),
+  entityModule: z.string(),
+  entityId: z.string(),
+  sourceKind: z.string(),
+  sourceConnectionId: z.string().nullable(),
+  sourceModule: z.string().nullable(),
+  selection: jsonObject,
+  priceCurrency: z.string(),
+  priceAmount: z.string(),
+  expiresAt: isoTimestamp.nullable(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+export const sourceTripCandidatesResultSchema = z.object({
+  requirement: tripRequirementToolSchema,
+  candidates: z.array(tripCandidateToolSchema),
+})
+
+export const selectTripCandidateResultSchema = z.object({
+  requirement: tripRequirementToolSchema,
+  candidate: tripCandidateToolSchema,
+  component: tripComponentToolSchema,
+})
+
+export const reshopTripResultSchema = z.array(sourceTripCandidatesResultSchema)
+
 export const createTripResultSchema = z.object({
   envelope: tripEnvelopeToolSchema,
   components: z.array(tripComponentToolSchema),
