@@ -1,5 +1,13 @@
 # @voyant-travel/framework-migrations
 
+## 0.9.0
+
+### Minor Changes
+
+- 46e7edf: Add the validated resolved-graph export bundle and deterministic self-host
+  projection contract, including provider remaps, provisioning diagnostics,
+  standard Node starter metadata, and a shared migration-journal lineage.
+
 ## 0.8.1
 
 ### Patch Changes

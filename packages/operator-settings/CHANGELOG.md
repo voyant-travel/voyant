@@ -1,5 +1,23 @@
 # @voyant-travel/operator-settings
 
+## 0.3.13
+
+### Patch Changes
+
+- 73ab096: Standardize first-party packages on package-owned deployment manifests, provider selection,
+  access metadata, concrete event contracts, selected admin navigation, and published runtime
+  references. Add Bookings Extras as an independently selected graph unit and remove the central
+  admin navigation catalog.
+  Link facets now distinguish entity `linkable` metadata from executable `definition` exports, and
+  generated Node registries reject malformed definitions before service registration.
+  Provider-owned required config and secrets now apply only when that provider is selected, so
+  local and in-memory deployments do not require credentials for inactive remote providers.
+- Updated dependencies [73ab096]
+  - @voyant-travel/commerce@0.35.8
+  - @voyant-travel/core@0.122.2
+  - @voyant-travel/db@0.114.5
+  - @voyant-travel/finance@0.158.0
+
 ## 0.3.12
 
 ### Patch Changes

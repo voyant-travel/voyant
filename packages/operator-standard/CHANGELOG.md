@@ -1,5 +1,83 @@
 # @voyant-travel/operator-standard
 
+## 0.5.0
+
+### Minor Changes
+
+- 73ab096: Standardize first-party packages on package-owned deployment manifests, provider selection,
+  access metadata, concrete event contracts, selected admin navigation, and published runtime
+  references. Add Bookings Extras as an independently selected graph unit and remove the central
+  admin navigation catalog.
+  Link facets now distinguish entity `linkable` metadata from executable `definition` exports, and
+  generated Node registries reject malformed definitions before service registration.
+  Provider-owned required config and secrets now apply only when that provider is selected, so
+  local and in-memory deployments do not require credentials for inactive remote providers.
+
+### Patch Changes
+
+- Updated dependencies [46e7edf]
+- Updated dependencies [73ab096]
+  - @voyant-travel/framework-migrations@0.9.0
+  - @voyant-travel/admin@0.124.0
+  - @voyant-travel/auth@0.129.0
+  - @voyant-travel/auth-react@0.129.0
+  - @voyant-travel/bookings@0.158.0
+  - @voyant-travel/distribution-react@0.148.0
+  - @voyant-travel/finance-react@0.158.0
+  - @voyant-travel/realtime@0.5.0
+  - @voyant-travel/quotes-react@0.156.0
+  - @voyant-travel/storage@0.110.0
+  - @voyant-travel/accommodations@0.118.0
+  - @voyant-travel/action-ledger@0.108.5
+  - @voyant-travel/availability@0.2.11
+  - @voyant-travel/bookings-react@0.158.0
+  - @voyant-travel/catalog@0.156.0
+  - @voyant-travel/catalog-authoring@0.107.11
+  - @voyant-travel/catalog-react@0.156.0
+  - @voyant-travel/charters@0.156.0
+  - @voyant-travel/commerce@0.35.8
+  - @voyant-travel/commerce-react@0.40.0
+  - @voyant-travel/core@0.122.2
+  - @voyant-travel/cruises@0.157.0
+  - @voyant-travel/db@0.114.5
+  - @voyant-travel/distribution@0.148.0
+  - @voyant-travel/finance@0.158.0
+  - @voyant-travel/flights@0.158.0
+  - @voyant-travel/flights-react@0.158.0
+  - @voyant-travel/identity@0.158.0
+  - @voyant-travel/identity-react@0.158.0
+  - @voyant-travel/inventory@0.10.3
+  - @voyant-travel/inventory-react@0.40.0
+  - @voyant-travel/legal@0.158.0
+  - @voyant-travel/legal-react@0.158.0
+  - @voyant-travel/mcp@0.2.5
+  - @voyant-travel/mice@0.14.0
+  - @voyant-travel/notifications@0.127.0
+  - @voyant-travel/notifications-react@0.127.0
+  - @voyant-travel/operations@0.6.13
+  - @voyant-travel/operations-react@0.39.0
+  - @voyant-travel/operator-settings@0.3.13
+  - @voyant-travel/public-document-delivery@0.3.5
+  - @voyant-travel/quotes@0.128.7
+  - @voyant-travel/quotes-contracts@0.108.3
+  - @voyant-travel/relationships@0.125.3
+  - @voyant-travel/relationships-react@0.158.0
+  - @voyant-travel/storefront@0.160.0
+  - @voyant-travel/trips@0.149.0
+  - @voyant-travel/trips-react@0.149.0
+  - @voyant-travel/types@0.109.2
+  - @voyant-travel/workflow-runs@0.120.3
+  - @voyant-travel/workflows@0.120.3
+  - @voyant-travel/workflows-orchestrator@0.120.3
+  - @voyant-travel/action-ledger-react@0.45.0
+  - @voyant-travel/admin-app@0.50.0
+  - @voyant-travel/admin-host@0.8.0
+  - @voyant-travel/mice-react@0.26.0
+  - @voyant-travel/operator-settings-react@0.11.0
+  - @voyant-travel/storefront-react@0.160.0
+  - @voyant-travel/cruises-react@0.157.0
+  - @voyant-travel/admin-react@0.124.0
+
 ## 0.4.6
 
 ### Patch Changes
