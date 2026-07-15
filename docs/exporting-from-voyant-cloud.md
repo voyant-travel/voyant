@@ -1,13 +1,14 @@
 # Exporting From Voyant Cloud
 
 Voyant Cloud exports a running Operator as a
-`voyant.self-host-export-bundle.v1` bundle. The bundle is a data and admitted
+`voyant.self-host-export-bundle.v2` bundle. The bundle is a data and admitted
 graph handoff, not a runtime profile: it contains the canonical
 `voyant.resolved-graph.v1`, graph hash and product BOM, framework version,
 Postgres dump metadata, and an object-storage manifest.
 
 The public framework contract is
-`@voyant-travel/framework/self-host-export`. Project generation belongs to the
+`@voyant-travel/framework/self-host-export`; a validated bundle produces a
+`voyant.self-host-projection.v2` projection. Project generation belongs to the
 external CLI and must use the framework's `STANDARD_NODE_STARTER` contract. It
 must not copy a framework package catalog or construct a second runtime graph.
 
@@ -33,13 +34,20 @@ if (!projection.ready) throw new Error(JSON.stringify(projection.diagnostics, nu
 
 Validation rejects a stale or malformed graph, a graph/envelope hash mismatch,
 a product BOM mismatch, graph admission errors, invalid dump/object metadata,
-or a database from a different migration-journal lineage.
+or a database from a different migration-journal lineage. Every registry package
+record must carry an exact version, its matching npm/pnpm-lock reference, and
+sha512 integrity. This provenance is preserved in `projection.packageInstalls`
+so generation and post-install verification use the same admitted evidence.
 
 The projection preserves the selected module, extension, and plugin IDs plus
-their package-scoped JSON config. It derives installable package/version data
-from the graph's admitted package records. A workspace, file, or unknown package
-source is not portable from the bundle alone and blocks generation until that
-package is published or supplied through an installable source.
+their package-scoped JSON config. Before projection, validation recursively
+rejects secret-like config fields and values, including nested credentials,
+credential-bearing URLs, private keys, and common token formats. Diagnostics
+contain only the config path and never echo the value. Secrets must be
+re-provisioned from `projection.provisioning.resources`; they are not exportable
+project settings. A workspace, file, or unknown package source is not portable
+from the bundle alone and blocks generation until that package is published or
+supplied through an installable source.
 
 ## 2. Resolve Provider Diagnostics
 
@@ -73,11 +81,16 @@ them into generated project source.
 
 ## 3. Generate The Standard Node Project
 
-Generate from `projection.starter` and `projection.project`. Install the exact
-framework version from the bundle and the package versions admitted by the
-resolved graph. The generated config is selection intent; package manifests are
-still the only authority for APIs, schemas, migrations, admin UI, workflows,
-and runtime contributors.
+Generate from the `voyant.node-starter.v3` data in `projection.starter` and from
+`projection.project`. The `runtimeDependencyCoordinates` and
+`developmentDependencyCoordinates` maps contain an exact coordinate for every
+starter dependency; the projected framework coordinate is the bundle's exact
+framework version. Generators must require key parity with the dependency-name
+arrays and must not substitute tags or ranges such as `latest`. Install selected
+graph packages from `projection.packageInstalls`, then verify each registry
+resolution against its preserved reference and sha512 integrity. The generated
+config is selection intent; package manifests are still the only authority for
+APIs, schemas, migrations, admin UI, workflows, and runtime contributors.
 
 Resolve the generated project before restoring production traffic. Compare its
 selected IDs and package config with the projection and require a clean graph.
@@ -92,6 +105,12 @@ restore according to `database.format` (`pg-custom`, `pg-directory`, or `sql`).
 Do not delete or rename `drizzle._voyant_migrations`: Cloud and standard Node use
 the same `voyant.migration-journal-lineage.v1` journal keyed by `(source, tag)`
 with immutable SQL content hashes.
+
+The public projection carries this as `migrationJournal` plus a machine-readable
+`migrationPolicy`: matching `(source, tag)` entries are skipped, absent entries
+are applied, and a different content hash for an existing identity is rejected
+as drift. Restore tooling must enforce that policy and must not offer a replay or
+journal-rewrite fallback.
 
 After restore, run the generated project's migration command. Package migrations
 already represented in the restored journal are no-ops. New migrations selected

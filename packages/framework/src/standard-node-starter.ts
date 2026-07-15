@@ -1,7 +1,7 @@
 import standardNodeStarter from "./standard-node-starter.json" with { type: "json" }
 
 type StandardNodeStarterContract = {
-  readonly schemaVersion: "voyant.node-starter.v2"
+  readonly schemaVersion: "voyant.node-starter.v3"
   readonly rootFiles: readonly [".env.example", ".gitignore", "package.json", "voyant.config.ts"]
   readonly optionalDirectories: readonly [
     "src/api/admin",
@@ -36,7 +36,22 @@ type StandardNodeStarterContract = {
     "react-dom",
     "pg",
   ]
+  readonly runtimeDependencyCoordinates: {
+    readonly "@voyant-travel/framework": "0.45.0"
+    readonly "@voyant-travel/runtime": "0.11.0"
+    readonly "@voyant-travel/operator-standard": "0.5.0"
+    readonly "@tanstack/react-query": "5.101.2"
+    readonly "@tanstack/react-router": "1.170.17"
+    readonly react: "19.2.7"
+    readonly "react-dom": "19.2.7"
+    readonly pg: "8.22.0"
+  }
   readonly developmentDependencies: readonly ["@voyant-travel/cli", "tsx", "typescript"]
+  readonly developmentDependencyCoordinates: {
+    readonly "@voyant-travel/cli": "0.40.5"
+    readonly tsx: "4.22.4"
+    readonly typescript: "6.0.3"
+  }
   readonly gitignoreEntries: readonly [
     ".voyant/",
     "dist/",

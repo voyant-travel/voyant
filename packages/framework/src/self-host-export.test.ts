@@ -88,6 +88,22 @@ describe("Voyant self-host export bundle", () => {
     )
   })
 
+  it("rejects a mutable framework coordinate", async () => {
+    const bundle = await exportBundle()
+    bundle.frameworkVersion = "latest"
+
+    const result = await validateVoyantSelfHostExportBundle(bundle)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "VOYANT_EXPORT_INVALID_FRAMEWORK_VERSION",
+        path: "$.frameworkVersion",
+      }),
+    )
+  })
+
   it("reports malformed graph array entries without throwing", async () => {
     const bundle = await exportBundle()
     const malformed = structuredClone(bundle) as unknown as Record<string, unknown>
@@ -113,6 +129,87 @@ describe("Voyant self-host export bundle", () => {
     )
     await expect(projectVoyantSelfHostExport(malformed)).rejects.toBeInstanceOf(Error)
   })
+
+  it("rejects registry packages without exact lockfile provenance and integrity", async () => {
+    const mutations = [
+      (bundle: VoyantSelfHostExportBundle) => {
+        bundle.resolvedGraph.packageRecords[0]!.version = "^1.2.3"
+      },
+      (bundle: VoyantSelfHostExportBundle) => {
+        bundle.resolvedGraph.packageRecords[0]!.source.reference = "@acme/voyant-loyalty"
+      },
+      (bundle: VoyantSelfHostExportBundle) => {
+        delete bundle.resolvedGraph.packageRecords[0]!.source.integrity
+      },
+    ]
+
+    for (const mutate of mutations) {
+      const bundle = await exportBundle()
+      mutate(bundle)
+      await rehashBundle(bundle)
+      const result = await validateVoyantSelfHostExportBundle(bundle)
+
+      expect(result.ok).toBe(false)
+      if (result.ok) continue
+      expect(result.issues).toContainEqual(
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_INVALID_PACKAGE_PROVENANCE",
+          path: "$.resolvedGraph.packageRecords[0].source",
+        }),
+      )
+    }
+  })
+
+  it("rejects secret-like fields and values in projected unit config without echoing secrets", async () => {
+    const bundle = await exportBundle()
+    const graph = bundle.resolvedGraph as unknown as {
+      modules: Array<{ projectConfig?: Record<string, unknown> }>
+      extensions: Array<Record<string, unknown>>
+      plugins: Array<Record<string, unknown>>
+    }
+    graph.modules[0]!.projectConfig = {
+      mail: { apiKey: "sk_live_exported_123456789" },
+    }
+    graph.extensions.push({
+      id: "@acme/voyant-loyalty#sync",
+      packageName: "@acme/voyant-loyalty",
+      projectConfig: {
+        endpoint: ["postgresql", "://operator:s3cret@db.internal/voyant"].join(""),
+      },
+    })
+    graph.plugins.push({
+      id: "@acme/voyant-loyalty#signing",
+      packageName: "@acme/voyant-loyalty",
+      projectConfig: {
+        material: "-----BEGIN PRIVATE KEY-----\nZXhwb3J0ZWQ=\n-----END PRIVATE KEY-----",
+      },
+    })
+    await rehashBundle(bundle)
+
+    const result = await validateVoyantSelfHostExportBundle(bundle)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_SECRET_IN_PROJECT_CONFIG",
+          path: "$.resolvedGraph.modules[0].projectConfig.mail.apiKey",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_SECRET_IN_PROJECT_CONFIG",
+          path: "$.resolvedGraph.extensions[0].projectConfig.endpoint",
+        }),
+        expect.objectContaining({
+          code: "VOYANT_EXPORT_SECRET_IN_PROJECT_CONFIG",
+          path: "$.resolvedGraph.plugins[0].projectConfig.material",
+        }),
+      ]),
+    )
+    expect(JSON.stringify(result.issues)).not.toContain("sk_live_exported")
+    expect(JSON.stringify(result.issues)).not.toContain("operator:s3cret")
+    expect(JSON.stringify(result.issues)).not.toContain("ZXhwb3J0ZWQ")
+  })
 })
 
 describe("self-host projection", () => {
@@ -125,6 +222,13 @@ describe("self-host projection", () => {
     expect(projection.schemaVersion).toBe(VOYANT_SELF_HOST_PROJECTION_SCHEMA_VERSION)
     expect(projection.ready).toBe(true)
     expect(projection.sourceGraphHash).toBe(bundle.graphHash)
+    expect(projection.starter.runtimeDependencyCoordinates["@voyant-travel/framework"]).toBe(
+      bundle.frameworkVersion,
+    )
+    expect([
+      ...Object.values(projection.starter.runtimeDependencyCoordinates),
+      ...Object.values(projection.starter.developmentDependencyCoordinates),
+    ]).not.toContain("latest")
     expect(projection.project.modules).toEqual([
       {
         id: "@acme/voyant-loyalty#rewards",
@@ -165,6 +269,17 @@ describe("self-host projection", () => {
         },
       ]),
     )
+    expect(projection.packageInstalls).toEqual([
+      {
+        packageName: "@acme/voyant-loyalty",
+        coordinate: "1.2.3",
+        source: {
+          kind: "registry",
+          reference: "pnpm-lock:@acme/voyant-loyalty@1.2.3",
+          integrity: expect.stringMatching(/^sha512-/),
+        },
+      },
+    ])
     expect(projection.provisioning.resources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ resourceKey: "database:postgres", provider: "postgres" }),
@@ -243,6 +358,12 @@ describe("self-host projection", () => {
 
     expect(bundle.database.migrationJournal).toBe(VOYANT_MIGRATION_JOURNAL_LINEAGE)
     expect(projection.migrationJournal).toBe(VOYANT_MIGRATION_JOURNAL_LINEAGE)
+    expect(projection.migrationPolicy).toEqual({
+      identity: ["source", "tag"],
+      matchingEntry: "skip",
+      contentHashMismatch: "reject-drift",
+      pendingEntry: "apply",
+    })
     expect(selfHostPackageMigration).toEqual(cloudPackageMigration)
     expect(selfHostPlan.migrations.map((migration) => migration.id)).toContain(
       "@voyant-travel/workflows-orchestrator#migrations",
@@ -281,7 +402,15 @@ async function exportBundle(
       {
         packageName: "@acme/voyant-loyalty",
         version: "1.2.3",
-        source: { kind: options.sourceKind ?? "registry", reference: "@1.2.3" },
+        source:
+          options.sourceKind === "workspace"
+            ? { kind: "workspace", reference: "link:../voyant-loyalty" }
+            : {
+                kind: "registry",
+                reference: "pnpm-lock:@acme/voyant-loyalty@1.2.3",
+                integrity:
+                  "sha512-YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5eg==",
+              },
         metadata: {
           schemaVersion: "voyant.package.v1",
           kind: "module",
