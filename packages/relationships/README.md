@@ -30,6 +30,15 @@ const app = createApp({
 | `./schema` | Relationships-owned Drizzle tables |
 | `./validation` | Relationships validation schemas |
 | `./routes` | Hono routes for people, organizations, activities, signals, documents, and custom fields |
+| `./tools` | Staff-only CRM lifecycle Tools and request-scoped MCP service contribution |
+
+## Agent Tools
+
+The module owns typed Tools for people and organization reads, duplicate-aware person creation,
+organization creation, profile/tag/status updates, and person/organization notes, contact methods,
+and addresses. Contact, address, note, and person-write capabilities are marked sensitive; all
+writes bind to ledgered graph actions. Delete and merge operations remain excluded until an
+explicit destructive action and approval policy is selected.
 
 ## License
 

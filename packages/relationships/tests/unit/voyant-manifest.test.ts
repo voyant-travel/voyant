@@ -53,7 +53,30 @@ describe("relationships deployment manifest", () => {
         }),
       ]),
     )
-    expect(relationshipsVoyantModule.tools?.every((tool) => tool.risk === "low")).toBe(true)
+    expect(relationshipsVoyantModule.tools).toHaveLength(17)
+    const toolActions = (relationshipsVoyantModule.actions ?? []).filter(
+      (action) => action.from?.tools?.length,
+    )
+    expect(toolActions).toHaveLength(17)
+    for (const tool of relationshipsVoyantModule.tools ?? []) {
+      const action = toolActions.find((candidate) => candidate.from?.tools?.includes(tool.id))
+      expect(action).toBeDefined()
+      if (tool.requiredScopes.includes("crm:write")) {
+        expect(action).toMatchObject({
+          kind: "execute",
+          ledger: "required",
+          approval: "never",
+          reversible: true,
+        })
+      }
+      if (tool.risk === "high" && tool.requiredScopes.includes("crm:read")) {
+        expect(action).toMatchObject({
+          kind: "sensitive-read",
+          ledger: "required",
+          approval: "never",
+        })
+      }
+    }
     expectConcreteEventSchemas(relationshipsVoyantModule.events)
   })
 

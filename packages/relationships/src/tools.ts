@@ -1,19 +1,205 @@
-/**
- * Relationships (CRM) agent tools on the framework tool contract. Thin, read-only
- * wrappers over the existing relationships service (people + organizations); the
- * service is injected on the tool context by intersection so this module stays
- * deployment-agnostic. Gated on the `crm` api-key resource.
- */
-import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+/** Module-owned CRM lifecycle tools backed by Relationships services. */
+
+import {
+  insertAddressForEntitySchema,
+  insertContactPointForEntitySchema,
+  updateAddressSchema,
+  updateContactPointSchema,
+} from "@voyant-travel/identity/validation"
+import {
+  defineTool,
+  READ_ONLY_RISK,
+  requireService,
+  type ToolContext,
+  ToolError,
+} from "@voyant-travel/tools"
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
-import { organizationListQuerySchema, personListQuerySchema } from "./validation.js"
+import {
+  addressSchema,
+  contactMethodSchema,
+  organizationNoteSchema,
+  organizationSchema,
+  personNoteSchema,
+  personSchema,
+} from "./routes/accounts-openapi-schemas.js"
+import {
+  insertOrganizationSchema,
+  insertPersonNoteSchema,
+  insertPersonSchema,
+  organizationListQuerySchema,
+  organizationListSortDirSchema,
+  organizationListSortFieldSchema,
+  personListQuerySchema,
+  recordStatusSchema,
+  relationTypeSchema,
+  updateOrganizationSchema,
+  updatePersonNoteSchema,
+  updatePersonSchema,
+} from "./validation.js"
 
+const OWNER = "@voyant-travel/relationships"
+const VERSION = "v1"
+const READ_SCOPES = ["crm:read"] as const
+const WRITE_SCOPES = ["crm:write"] as const
+const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
+const ROUTINE_WRITE_RISK = {
+  destructive: false,
+  reversible: true,
+  dryRunSupported: false,
+  sideEffects: ["data-write"],
+} as const
+const SENSITIVE_WRITE_RISK = {
+  ...ROUTINE_WRITE_RISK,
+  confirmationRequired: false,
+} as const
+
+const idArgsSchema = z.object({ id: z.string().min(1).describe("The CRM record id.") })
+const relationshipEntitySchema = z.enum(["person", "organization"])
+const relationshipEntityArgsSchema = z.object({
+  entityType: relationshipEntitySchema,
+  entityId: z.string().min(1),
+})
+
+// Encrypted KMS envelopes are intentionally absent from the agent surface.
+const personToolSchema = personSchema.omit({
+  accessibilityEncrypted: true,
+  dietaryEncrypted: true,
+  loyaltyEncrypted: true,
+  insuranceEncrypted: true,
+})
+const peopleListOutputSchema = listResponseSchema(personToolSchema)
+const organizationListOutputSchema = listResponseSchema(organizationSchema)
+
+export const organizationToolListInputSchema = z.object({
+  ownerId: z.string().optional(),
+  relation: relationTypeSchema.optional(),
+  status: recordStatusSchema.optional(),
+  search: z.string().optional(),
+  taxId: z.string().optional(),
+  tax_id: z.string().optional(),
+  vatNumber: z.string().optional().describe("Compatibility alias for taxId."),
+  sortBy: organizationListSortFieldSchema.default("updatedAt"),
+  sortDir: organizationListSortDirSchema.default("desc"),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+export const createPersonToolInputSchema = insertPersonSchema
+  .omit({
+    ownerId: true,
+    source: true,
+    sourceRef: true,
+    customFields: true,
+    accessibilityEncrypted: true,
+    dietaryEncrypted: true,
+    loyaltyEncrypted: true,
+    insuranceEncrypted: true,
+  })
+  .extend({
+    allowDuplicateName: z
+      .boolean()
+      .default(false)
+      .describe("Only set after confirming a same-name person is genuinely distinct."),
+  })
+
+export const updatePersonToolInputSchema = updatePersonSchema
+  .omit({
+    ownerId: true,
+    source: true,
+    sourceRef: true,
+    customFields: true,
+    accessibilityEncrypted: true,
+    dietaryEncrypted: true,
+    loyaltyEncrypted: true,
+    insuranceEncrypted: true,
+  })
+  .extend({ id: z.string().min(1) })
+
+const billingAddressSchema = insertAddressForEntitySchema.omit({ metadata: true }).optional()
+
+export const createOrganizationToolInputSchema = insertOrganizationSchema
+  .omit({ ownerId: true, source: true, sourceRef: true, customFields: true })
+  .extend({
+    vatNumber: z.string().optional().describe("Compatibility alias for taxId."),
+    billingAddress: billingAddressSchema,
+  })
+
+export const updateOrganizationToolInputSchema = updateOrganizationSchema
+  .omit({ ownerId: true, source: true, sourceRef: true, customFields: true })
+  .extend({
+    id: z.string().min(1),
+    vatNumber: z.string().optional().describe("Compatibility alias for taxId."),
+  })
+
+const createPersonOutputSchema = z.object({
+  person: personToolSchema,
+  alreadyExists: z.boolean(),
+})
+const createOrganizationOutputSchema = z.object({
+  organization: organizationSchema,
+  billingAddress: addressSchema.nullable(),
+})
+
+const noteSchema = z.union([personNoteSchema, organizationNoteSchema])
+const noteListOutputSchema = z.array(noteSchema)
+const addNoteInputSchema = relationshipEntityArgsSchema.and(insertPersonNoteSchema)
+const editNoteInputSchema = z.object({
+  entityType: relationshipEntitySchema,
+  id: z.string().min(1),
+  content: updatePersonNoteSchema.shape.content,
+})
+
+const contactMethodWriteSchema = insertContactPointForEntitySchema.omit({
+  normalizedValue: true,
+  metadata: true,
+})
+const addContactMethodInputSchema = relationshipEntityArgsSchema.and(contactMethodWriteSchema)
+const editContactMethodInputSchema = updateContactPointSchema
+  .omit({ entityType: true, entityId: true, normalizedValue: true, metadata: true })
+  .extend({ id: z.string().min(1) })
+
+const addressWriteSchema = insertAddressForEntitySchema.omit({ metadata: true })
+const addAddressInputSchema = relationshipEntityArgsSchema.and(addressWriteSchema)
+const editAddressInputSchema = updateAddressSchema
+  .omit({ entityType: true, entityId: true, metadata: true })
+  .extend({ id: z.string().min(1) })
+
+type PersonListQuery = z.infer<typeof personListQuerySchema>
+type OrganizationListQuery = z.infer<typeof organizationListQuerySchema>
+type OrganizationToolListInput = z.infer<typeof organizationToolListInputSchema>
+type CreatePersonInput = z.infer<typeof createPersonToolInputSchema>
+type UpdatePersonInput = z.infer<typeof updatePersonToolInputSchema>
+type CreateOrganizationInput = z.infer<typeof createOrganizationToolInputSchema>
+type UpdateOrganizationInput = z.infer<typeof updateOrganizationToolInputSchema>
+type EntityArgs = z.infer<typeof relationshipEntityArgsSchema>
+type AddNoteInput = z.infer<typeof addNoteInputSchema>
+type EditNoteInput = z.infer<typeof editNoteInputSchema>
+type AddContactMethodInput = z.infer<typeof addContactMethodInputSchema>
+type EditContactMethodInput = z.infer<typeof editContactMethodInputSchema>
+type AddAddressInput = z.infer<typeof addAddressInputSchema>
+type EditAddressInput = z.infer<typeof editAddressInputSchema>
+
+/** Request-scoped Relationships operations used by CRM tools. */
 export interface RelationshipsToolServices {
-  listPeople(query: z.infer<typeof personListQuerySchema>): Promise<unknown>
+  listPeople(query: PersonListQuery): Promise<unknown>
   getPersonById(id: string): Promise<unknown>
-  listOrganizations(query: z.infer<typeof organizationListQuerySchema>): Promise<unknown>
+  createPerson(input: CreatePersonInput): Promise<unknown>
+  updatePerson(input: UpdatePersonInput): Promise<unknown>
+  listOrganizations(query: OrganizationListQuery): Promise<unknown>
   getOrganizationById(id: string): Promise<unknown>
+  createOrganization(input: CreateOrganizationInput): Promise<unknown>
+  updateOrganization(input: UpdateOrganizationInput): Promise<unknown>
+  listNotes(input: EntityArgs): Promise<unknown>
+  addNote(input: AddNoteInput): Promise<unknown>
+  updateNote(input: EditNoteInput): Promise<unknown>
+  listContactMethods(input: EntityArgs): Promise<unknown>
+  addContactMethod(input: AddContactMethodInput): Promise<unknown>
+  updateContactMethod(input: EditContactMethodInput): Promise<unknown>
+  listAddresses(input: EntityArgs): Promise<unknown>
+  addAddress(input: AddAddressInput): Promise<unknown>
+  updateAddress(input: EditAddressInput): Promise<unknown>
 }
 
 export type RelationshipsToolContext = ToolContext & { relationships?: RelationshipsToolServices }
@@ -22,79 +208,385 @@ function crm(ctx: RelationshipsToolContext): RelationshipsToolServices {
   return requireService(ctx.relationships, "relationships")
 }
 
+const readMetadata = {
+  owner: OWNER,
+  capabilityVersion: VERSION,
+  requiredScopes: READ_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "read" as const,
+  riskPolicy: READ_ONLY_RISK,
+  annotations: { idempotentHint: true },
+}
+const routineWriteMetadata = {
+  owner: OWNER,
+  capabilityVersion: VERSION,
+  requiredScopes: WRITE_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "write" as const,
+  riskPolicy: ROUTINE_WRITE_RISK,
+}
+const sensitiveReadMetadata = {
+  owner: OWNER,
+  capabilityVersion: VERSION,
+  requiredScopes: READ_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "sensitive" as const,
+  riskPolicy: READ_ONLY_RISK,
+  annotations: { readOnlyHint: true, idempotentHint: true },
+}
+const sensitiveWriteMetadata = {
+  owner: OWNER,
+  capabilityVersion: VERSION,
+  requiredScopes: WRITE_SCOPES,
+  audience: STAFF_AUDIENCE,
+  tier: "sensitive" as const,
+  riskPolicy: SENSITIVE_WRITE_RISK,
+}
+
 export const listPeopleTool = defineTool<
-  z.infer<typeof personListQuerySchema>,
-  unknown,
+  PersonListQuery,
+  z.infer<typeof peopleListOutputSchema>,
   RelationshipsToolContext
 >({
+  ...readMetadata,
+  capabilityId: `${OWNER}#tool.list-people`,
   name: "list_people",
-  description: "List CRM people with filters and pagination. Read-only.",
+  aliases: ["crm_people_list"],
+  description: "Search CRM people by name, contact point, organization, relationship, or status.",
   inputSchema: personListQuerySchema,
-  outputSchema: z.custom<unknown>(),
-  requiredScopes: ["crm:read"],
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
+  outputSchema: peopleListOutputSchema,
   async handler(query, ctx) {
-    return crm(ctx).listPeople(query)
+    return parseJsonResult(peopleListOutputSchema, await crm(ctx).listPeople(query))
   },
 })
 
-const getByIdArgs = z.object({ id: z.string().min(1).describe("The record id.") })
-
 export const getPersonTool = defineTool<
-  z.infer<typeof getByIdArgs>,
-  unknown,
+  z.infer<typeof idArgsSchema>,
+  z.infer<typeof personToolSchema> | null,
   RelationshipsToolContext
 >({
+  ...readMetadata,
+  capabilityId: `${OWNER}#tool.get-person`,
   name: "get_person",
-  description: "Read a single CRM person by id. Read-only.",
-  inputSchema: getByIdArgs,
-  outputSchema: z.custom<unknown>(),
-  requiredScopes: ["crm:read"],
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
+  aliases: ["crm_people_get"],
+  description: "Read one CRM person by id. Returns null when not found.",
+  inputSchema: idArgsSchema,
+  outputSchema: personToolSchema.nullable(),
   async handler({ id }, ctx) {
-    return crm(ctx).getPersonById(id)
+    return parseJsonResult(personToolSchema.nullable(), await crm(ctx).getPersonById(id))
+  },
+})
+
+export const createPersonTool = defineTool<
+  CreatePersonInput,
+  z.infer<typeof createPersonOutputSchema>,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.create-person`,
+  name: "create_person",
+  aliases: ["crm_person_create"],
+  description:
+    "Create a CRM person with at least one real email or phone. Reuses a compatible exact-name " +
+    "record unless allowDuplicateName is explicitly set.",
+  inputSchema: createPersonToolInputSchema,
+  outputSchema: createPersonOutputSchema,
+  async handler(input, ctx) {
+    if (!input.email?.trim() && !input.phone?.trim()) {
+      throw new ToolError("A CRM person requires an email or phone.", "INVALID_INPUT")
+    }
+    return parseJsonResult(createPersonOutputSchema, await crm(ctx).createPerson(input))
+  },
+})
+
+export const updatePersonTool = defineTool<
+  UpdatePersonInput,
+  z.infer<typeof personToolSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.update-person`,
+  name: "update_person",
+  aliases: ["crm_person_update"],
+  description:
+    "Update a CRM person's profile, inline primary contact, tags, or lifecycle status. Returns null when not found.",
+  inputSchema: updatePersonToolInputSchema,
+  outputSchema: personToolSchema.nullable(),
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return parseJsonResult(personToolSchema.nullable(), await crm(ctx).updatePerson(input))
   },
 })
 
 export const listOrganizationsTool = defineTool<
-  z.infer<typeof organizationListQuerySchema>,
-  unknown,
+  OrganizationToolListInput,
+  z.infer<typeof organizationListOutputSchema>,
   RelationshipsToolContext
 >({
+  ...readMetadata,
+  capabilityId: `${OWNER}#tool.list-organizations`,
   name: "list_organizations",
-  description: "List CRM organizations with filters and pagination. Read-only.",
-  inputSchema: organizationListQuerySchema,
-  outputSchema: z.custom<unknown>(),
-  requiredScopes: ["crm:read"],
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
+  aliases: ["crm_organizations_list"],
+  description: "Search CRM organizations by name, website, exact tax id, relationship, or status.",
+  inputSchema: organizationToolListInputSchema,
+  outputSchema: organizationListOutputSchema,
   async handler(query, ctx) {
-    return crm(ctx).listOrganizations(query)
+    return parseJsonResult(
+      organizationListOutputSchema,
+      await crm(ctx).listOrganizations(
+        organizationListQuerySchema.parse({
+          ...query,
+          taxId: query.taxId ?? query.tax_id ?? query.vatNumber,
+        }),
+      ),
+    )
   },
 })
 
 export const getOrganizationTool = defineTool<
-  z.infer<typeof getByIdArgs>,
-  unknown,
+  z.infer<typeof idArgsSchema>,
+  z.infer<typeof organizationSchema> | null,
   RelationshipsToolContext
 >({
+  ...readMetadata,
+  capabilityId: `${OWNER}#tool.get-organization`,
   name: "get_organization",
-  description: "Read a single CRM organization by id. Read-only.",
-  inputSchema: getByIdArgs,
-  outputSchema: z.custom<unknown>(),
-  requiredScopes: ["crm:read"],
-  tier: "read",
-  riskPolicy: READ_ONLY_RISK,
+  aliases: ["crm_organizations_get"],
+  description: "Read one CRM organization by id. Returns null when not found.",
+  inputSchema: idArgsSchema,
+  outputSchema: organizationSchema.nullable(),
   async handler({ id }, ctx) {
-    return crm(ctx).getOrganizationById(id)
+    return parseJsonResult(organizationSchema.nullable(), await crm(ctx).getOrganizationById(id))
+  },
+})
+
+export const createOrganizationTool = defineTool<
+  CreateOrganizationInput,
+  z.infer<typeof createOrganizationOutputSchema>,
+  RelationshipsToolContext
+>({
+  ...routineWriteMetadata,
+  capabilityId: `${OWNER}#tool.create-organization`,
+  name: "create_organization",
+  aliases: ["crm_organization_create"],
+  description:
+    "Create a CRM organization and, when supplied, its billing address in the same transaction.",
+  inputSchema: createOrganizationToolInputSchema,
+  outputSchema: createOrganizationOutputSchema,
+  async handler(input, ctx) {
+    return parseJsonResult(createOrganizationOutputSchema, await crm(ctx).createOrganization(input))
+  },
+})
+
+export const updateOrganizationTool = defineTool<
+  UpdateOrganizationInput,
+  z.infer<typeof organizationSchema> | null,
+  RelationshipsToolContext
+>({
+  ...routineWriteMetadata,
+  capabilityId: `${OWNER}#tool.update-organization`,
+  name: "update_organization",
+  aliases: ["crm_organization_update"],
+  description:
+    "Update an organization's profile, tags, or lifecycle status. Returns null when not found.",
+  inputSchema: updateOrganizationToolInputSchema,
+  outputSchema: organizationSchema.nullable(),
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return parseJsonResult(organizationSchema.nullable(), await crm(ctx).updateOrganization(input))
+  },
+})
+
+export const listRelationshipNotesTool = defineTool<
+  EntityArgs,
+  z.infer<typeof noteListOutputSchema>,
+  RelationshipsToolContext
+>({
+  ...sensitiveReadMetadata,
+  capabilityId: `${OWNER}#tool.list-relationship-notes`,
+  name: "list_relationship_notes",
+  aliases: ["crm_notes_list"],
+  description: "List staff-authored notes on a CRM person or organization.",
+  inputSchema: relationshipEntityArgsSchema,
+  outputSchema: noteListOutputSchema,
+  async handler(input, ctx) {
+    return parseJsonResult(noteListOutputSchema, await crm(ctx).listNotes(input))
+  },
+})
+
+export const addRelationshipNoteTool = defineTool<
+  AddNoteInput,
+  z.infer<typeof noteSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.add-relationship-note`,
+  name: "add_relationship_note",
+  aliases: ["crm_note_add"],
+  description: "Add a staff-attributed note to a CRM person or organization.",
+  inputSchema: addNoteInputSchema,
+  outputSchema: noteSchema.nullable(),
+  async handler(input, ctx) {
+    return parseJsonResult(noteSchema.nullable(), await crm(ctx).addNote(input))
+  },
+})
+
+export const updateRelationshipNoteTool = defineTool<
+  EditNoteInput,
+  z.infer<typeof noteSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.update-relationship-note`,
+  name: "update_relationship_note",
+  aliases: ["crm_note_update"],
+  description: "Edit an existing CRM person or organization note. Returns null when not found.",
+  inputSchema: editNoteInputSchema,
+  outputSchema: noteSchema.nullable(),
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return parseJsonResult(noteSchema.nullable(), await crm(ctx).updateNote(input))
+  },
+})
+
+export const listRelationshipContactMethodsTool = defineTool<
+  EntityArgs,
+  z.infer<typeof contactMethodSchema>[],
+  RelationshipsToolContext
+>({
+  ...sensitiveReadMetadata,
+  capabilityId: `${OWNER}#tool.list-relationship-contact-methods`,
+  name: "list_relationship_contact_methods",
+  aliases: ["crm_contact_methods_list"],
+  description: "List email, phone, messaging, website, and other contact methods for a CRM entity.",
+  inputSchema: relationshipEntityArgsSchema,
+  outputSchema: z.array(contactMethodSchema),
+  async handler(input, ctx) {
+    return parseJsonResult(z.array(contactMethodSchema), await crm(ctx).listContactMethods(input))
+  },
+})
+
+export const addRelationshipContactMethodTool = defineTool<
+  AddContactMethodInput,
+  z.infer<typeof contactMethodSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.add-relationship-contact-method`,
+  name: "add_relationship_contact_method",
+  aliases: ["crm_contact_method_add"],
+  description: "Add a contact method to a CRM person or organization.",
+  inputSchema: addContactMethodInputSchema,
+  outputSchema: contactMethodSchema.nullable(),
+  async handler(input, ctx) {
+    return parseJsonResult(contactMethodSchema.nullable(), await crm(ctx).addContactMethod(input))
+  },
+})
+
+export const updateRelationshipContactMethodTool = defineTool<
+  EditContactMethodInput,
+  z.infer<typeof contactMethodSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.update-relationship-contact-method`,
+  name: "update_relationship_contact_method",
+  aliases: ["crm_contact_method_update"],
+  description: "Update a CRM contact method without re-parenting it. Returns null when not found.",
+  inputSchema: editContactMethodInputSchema,
+  outputSchema: contactMethodSchema.nullable(),
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return parseJsonResult(
+      contactMethodSchema.nullable(),
+      await crm(ctx).updateContactMethod(input),
+    )
+  },
+})
+
+export const listRelationshipAddressesTool = defineTool<
+  EntityArgs,
+  z.infer<typeof addressSchema>[],
+  RelationshipsToolContext
+>({
+  ...sensitiveReadMetadata,
+  capabilityId: `${OWNER}#tool.list-relationship-addresses`,
+  name: "list_relationship_addresses",
+  aliases: ["crm_addresses_list"],
+  description: "List billing, legal, primary, and other addresses for a CRM entity.",
+  inputSchema: relationshipEntityArgsSchema,
+  outputSchema: z.array(addressSchema),
+  async handler(input, ctx) {
+    return parseJsonResult(z.array(addressSchema), await crm(ctx).listAddresses(input))
+  },
+})
+
+export const addRelationshipAddressTool = defineTool<
+  AddAddressInput,
+  z.infer<typeof addressSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.add-relationship-address`,
+  name: "add_relationship_address",
+  aliases: ["crm_address_add"],
+  description: "Add an address to a CRM person or organization.",
+  inputSchema: addAddressInputSchema,
+  outputSchema: addressSchema.nullable(),
+  async handler(input, ctx) {
+    return parseJsonResult(addressSchema.nullable(), await crm(ctx).addAddress(input))
+  },
+})
+
+export const updateRelationshipAddressTool = defineTool<
+  EditAddressInput,
+  z.infer<typeof addressSchema> | null,
+  RelationshipsToolContext
+>({
+  ...sensitiveWriteMetadata,
+  capabilityId: `${OWNER}#tool.update-relationship-address`,
+  name: "update_relationship_address",
+  aliases: ["crm_address_update"],
+  description: "Update a CRM address without re-parenting it. Returns null when not found.",
+  inputSchema: editAddressInputSchema,
+  outputSchema: addressSchema.nullable(),
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return parseJsonResult(addressSchema.nullable(), await crm(ctx).updateAddress(input))
   },
 })
 
 export const relationshipsTools = [
   listPeopleTool,
   getPersonTool,
+  createPersonTool,
+  updatePersonTool,
   listOrganizationsTool,
   getOrganizationTool,
+  createOrganizationTool,
+  updateOrganizationTool,
+  listRelationshipNotesTool,
+  addRelationshipNoteTool,
+  updateRelationshipNoteTool,
+  listRelationshipContactMethodsTool,
+  addRelationshipContactMethodTool,
+  updateRelationshipContactMethodTool,
+  listRelationshipAddressesTool,
+  addRelationshipAddressTool,
+  updateRelationshipAddressTool,
 ] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}
