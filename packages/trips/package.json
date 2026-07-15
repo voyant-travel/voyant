@@ -68,7 +68,6 @@
     "@voyant-travel/hono": "workspace:^",
     "@voyant-travel/inventory": "workspace:^",
     "@voyant-travel/operator-settings": "workspace:^",
-    "@voyant-travel/plugin-netopia": "^0.105.21",
     "@voyant-travel/storefront": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
@@ -77,10 +76,19 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@voyant-travel/plugin-netopia": "^0.105.21",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
     "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@voyant-travel/plugin-netopia": "^0.105.21"
+  },
+  "peerDependenciesMeta": {
+    "@voyant-travel/plugin-netopia": {
+      "optional": true
+    }
   },
   "files": [
     "dist",

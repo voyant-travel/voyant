@@ -23,6 +23,7 @@ import path from "node:path"
 import { promisify } from "node:util"
 
 import { packedFileExportsName } from "./lib/packed-exports.mjs"
+import { verifyPackedPackageInstall } from "./lib/packed-install.mjs"
 import { collectPackedManifestProtocolDependencies } from "./lib/packed-manifest.mjs"
 import { collectPackedSourceMapProblems } from "./lib/packed-sourcemaps.mjs"
 
@@ -452,10 +453,10 @@ async function packAndInspectPackage(packageDir) {
     missingPackedExports = collectPackedExportProblems(extracted.root, packedManifest.name)
     packedSourceMapProblems = collectPackedSourceMapProblems(extracted.root, packInfo)
   } catch (error) {
+    fs.rmSync(packDestination, { recursive: true, force: true })
     return { error: `could not parse pnpm pack output: ${error.message}` }
   } finally {
     extracted?.cleanup()
-    fs.rmSync(packDestination, { recursive: true, force: true })
   }
 
   return {
@@ -465,6 +466,13 @@ async function packAndInspectPackage(packageDir) {
     legacyVoyantSpecifiers,
     missingPackedExports,
     packedSourceMapProblems,
+    packedTarball: {
+      name: packedManifest.name,
+      tarballPath: path.join(packDestination, path.basename(packInfo.filename)),
+      cleanup() {
+        fs.rmSync(packDestination, { recursive: true, force: true })
+      },
+    },
   }
 }
 
@@ -586,6 +594,7 @@ async function verifyPackage(packageDir) {
   let { missingTargets, problems } = collectTarballProblems(inspection, sourceFiles)
 
   if (REUSE_DIST && missingTargets.length > 0 && pkg.scripts?.build) {
+    inspection.packedTarball.cleanup()
     const buildProblem = await cleanAndBuildPackage(packageDir, pkg)
     if (buildProblem) return { name: pkg.name, packageDir, problems: [buildProblem] }
 
@@ -600,22 +609,21 @@ async function verifyPackage(packageDir) {
     ;({ problems } = collectTarballProblems(inspection, sourceFiles))
   }
 
-  if (problems.length === 0) return null
-
-  return { name: pkg.name, packageDir, problems }
+  return { name: pkg.name, packageDir, problems, packedTarball: inspection.packedTarball }
 }
 
-const failures = []
+const results = []
 const queue = [...packageDirs]
 const workers = Array.from({ length: Math.min(PACK_CONCURRENCY, queue.length) }, async () => {
   while (queue.length > 0) {
     const packageDir = queue.shift()
     if (!packageDir) break
     const result = await verifyPackage(packageDir)
-    if (result) failures.push(result)
+    if (result) results.push(result)
   }
 })
 await Promise.all(workers)
+const failures = results.filter((result) => result.problems.length > 0)
 failures.sort((left, right) => left.name.localeCompare(right.name))
 
 if (failures.length > 0) {
@@ -627,7 +635,17 @@ if (failures.length > 0) {
     }
     console.error("")
   }
+  for (const result of results) result.packedTarball?.cleanup()
   process.exit(1)
 }
 
+try {
+  await verifyPackedPackageInstall(results.map((result) => result.packedTarball))
+} catch (error) {
+  console.error(`Publish tarball verification failed:\n\n${error.message}`)
+  for (const result of results) result.packedTarball?.cleanup()
+  process.exit(1)
+}
+
+for (const result of results) result.packedTarball?.cleanup()
 console.log(`Verified publish tarballs for ${packageDirs.length} package directories.`)
