@@ -1682,6 +1682,7 @@
       ],
       "@voyant-travel/workflow-runs/schema": ["../workflow-runs/dist/schema.d.ts"],
       "@voyant-travel/workflow-runs/service": ["../workflow-runs/dist/service.d.ts"],
+      "@voyant-travel/workflow-runs/tools": ["../workflow-runs/dist/mcp-runtime.d.ts"],
       "@voyant-travel/workflow-runs/voyant": ["../workflow-runs/dist/voyant.d.ts"],
       "@voyant-travel/workflow-runs/workflows": ["../workflow-runs/dist/workflows.d.ts"],
       "@voyant-travel/workflows": ["../workflows/dist/index.d.ts"],
