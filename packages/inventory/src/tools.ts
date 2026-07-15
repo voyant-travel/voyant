@@ -8,6 +8,7 @@
  * shared MCP registry alongside every other domain's tools.
  */
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
 import {
@@ -23,6 +24,28 @@ import {
 import { productListQuerySchema } from "./validation.js"
 
 type ProductListQuery = z.infer<typeof productListQuerySchema>
+
+const productToolSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    status: z.enum(["draft", "active", "archived"]),
+    bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
+    capacityMode: z.enum(["free_sale", "limited", "on_request"]),
+    visibility: z.enum(["public", "private", "hidden"]),
+    activated: z.boolean(),
+    sellCurrency: z.string(),
+    sellAmountCents: z.number().int().nullable(),
+    startDate: z.string().nullable(),
+    endDate: z.string().nullable(),
+    pax: z.number().int().nullable(),
+    productTypeId: z.string().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .passthrough()
+const productListToolSchema = listResponseSchema(productToolSchema)
+type ProductListToolResult = z.output<typeof productListToolSchema>
 
 /** A paginated product list result (the shape the products service returns). */
 export interface ProductListResult {
@@ -59,7 +82,7 @@ function isVisibleProduct(product: unknown, ctx: ToolContext): boolean {
 
 export const listProductsTool = defineTool<
   z.infer<typeof productListQuerySchema>,
-  ProductListResult,
+  ProductListToolResult,
   InventoryToolContext
 >({
   name: "list_products",
@@ -68,12 +91,15 @@ export const listProductsTool = defineTool<
     "date range, price/pax bounds) and pagination. Returns { data, total, limit, offset }. " +
     "Read-only.",
   inputSchema: productListQuerySchema,
-  outputSchema: z.custom<ProductListResult>(),
+  outputSchema: productListToolSchema,
   requiredScopes: ["products:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(query, ctx) {
-    return inventory(ctx).listProducts(constrainProductListQuery(query, ctx))
+    return parseJsonResult(
+      productListToolSchema,
+      await inventory(ctx).listProducts(constrainProductListQuery(query, ctx)),
+    )
   },
 })
 
@@ -88,13 +114,15 @@ export const getProductTool = defineTool<
   name: "get_product",
   description: "Read a single product by id. Returns null when not found. Read-only.",
   inputSchema: getProductArgs,
-  outputSchema: z.object({ product: z.unknown().nullable() }),
+  outputSchema: z.object({ product: productToolSchema.nullable() }),
   requiredScopes: ["products:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler({ id }, ctx) {
     const product = await inventory(ctx).getProductById(id)
-    return { product: product && isVisibleProduct(product, ctx) ? product : null }
+    return parseJsonResult(z.object({ product: productToolSchema.nullable() }), {
+      product: product && isVisibleProduct(product, ctx) ? product : null,
+    })
   },
 })
 
@@ -109,3 +137,18 @@ export const updateOptionExtraConfigTool = defineTool(updateOptionExtraConfigDef
 
 /** All inventory agent tools, ready to register on a `ToolRegistry`. */
 export const inventoryTools = [listProductsTool, getProductTool] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}

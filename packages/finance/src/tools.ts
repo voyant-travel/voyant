@@ -4,9 +4,25 @@
  * by intersection so this module stays deployment-agnostic.
  */
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
+import {
+  invoiceDetailSchema,
+  invoiceListItemSchema,
+  invoiceSchema,
+} from "./routes-invoice-schemas.js"
 import { invoiceListQuerySchema } from "./validation.js"
+
+const voidInvoiceResultSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("not_found") }),
+  z.object({ status: z.literal("already_void"), invoice: invoiceSchema }),
+  z.object({ status: z.literal("draft"), invoice: invoiceSchema }),
+  z.object({ status: z.literal("invalid_status"), invoice: invoiceSchema }),
+  z.object({ status: z.literal("has_payments"), invoice: invoiceSchema }),
+  z.object({ status: z.literal("has_credit_notes"), invoice: invoiceSchema }),
+  z.object({ status: z.literal("voided"), invoice: invoiceSchema }),
+])
 
 export interface FinanceToolServices {
   listInvoices(query: z.infer<typeof invoiceListQuerySchema>): Promise<unknown>
@@ -28,12 +44,15 @@ export const listInvoicesTool = defineTool<
   name: "list_invoices",
   description: "List invoices with filters and pagination. Read-only.",
   inputSchema: invoiceListQuerySchema,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: listResponseSchema(invoiceListItemSchema),
   requiredScopes: ["finance:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(query, ctx) {
-    return finance(ctx).listInvoices(query)
+    return parseJsonResult(
+      listResponseSchema(invoiceListItemSchema),
+      await finance(ctx).listInvoices(query),
+    )
   },
 })
 
@@ -47,12 +66,12 @@ export const getInvoiceTool = defineTool<
   name: "get_invoice",
   description: "Read a single invoice by id. Read-only.",
   inputSchema: getInvoiceArgs,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: invoiceDetailSchema.nullable(),
   requiredScopes: ["finance:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler({ id }, ctx) {
-    return finance(ctx).getInvoiceById(id)
+    return parseJsonResult(invoiceDetailSchema.nullable(), await finance(ctx).getInvoiceById(id))
   },
 })
 
@@ -70,7 +89,7 @@ export const voidInvoiceTool = defineTool<
   description:
     "Void an invoice (irreversible). Returns a not-found status when the invoice does not exist.",
   inputSchema: voidInvoiceArgs,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: voidInvoiceResultSchema,
   requiredScopes: ["finance:void"],
   tier: "destructive",
   riskPolicy: {
@@ -80,8 +99,23 @@ export const voidInvoiceTool = defineTool<
     confirmationRequired: true,
   },
   async handler({ id, reason }, ctx) {
-    return finance(ctx).voidInvoice(id, { reason })
+    return parseJsonResult(voidInvoiceResultSchema, await finance(ctx).voidInvoice(id, { reason }))
   },
 })
 
 export const financeTools = [listInvoicesTool, getInvoiceTool, voidInvoiceTool] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}

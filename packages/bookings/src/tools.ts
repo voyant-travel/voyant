@@ -8,6 +8,7 @@
  * PII surface) and are not exposed here.
  */
 import { defineTool, READ_ONLY_RISK, requireService, type ToolContext } from "@voyant-travel/tools"
+import { listResponseSchema } from "@voyant-travel/types"
 import { z } from "zod"
 
 import {
@@ -55,6 +56,7 @@ import {
   updateProductBookingQuestionTool as updateProductBookingQuestionDefinition,
   updateProductContactRequirementTool as updateProductContactRequirementDefinition,
 } from "./requirements/tools.js"
+import { bookingToolSchema } from "./tool-output-schemas.js"
 import { bookingListQuerySchema } from "./validation.js"
 
 export interface BookingsToolServices {
@@ -76,12 +78,15 @@ export const listBookingsTool = defineTool<
   name: "list_bookings",
   description: "List bookings with filters and pagination. Non-PII state only. Read-only.",
   inputSchema: bookingListQuerySchema,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: listResponseSchema(bookingToolSchema),
   requiredScopes: ["bookings:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(query, ctx) {
-    return bookings(ctx).listBookings(query)
+    return parseJsonResult(
+      listResponseSchema(bookingToolSchema),
+      await bookings(ctx).listBookings(query),
+    )
   },
 })
 
@@ -95,12 +100,12 @@ export const getBookingTool = defineTool<
   name: "get_booking",
   description: "Read a single booking's non-PII state by id. Read-only.",
   inputSchema: getBookingArgs,
-  outputSchema: z.custom<unknown>(),
+  outputSchema: bookingToolSchema.nullable(),
   requiredScopes: ["bookings:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler({ id }, ctx) {
-    return bookings(ctx).getBookingById(id)
+    return parseJsonResult(bookingToolSchema.nullable(), await bookings(ctx).getBookingById(id))
   },
 })
 
@@ -230,3 +235,18 @@ export const bookingRequirementsTools = [
   createBookingAnswerTool,
   updateBookingAnswerTool,
 ] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}

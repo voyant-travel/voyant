@@ -26,6 +26,55 @@ const visibilitySchema = z.enum(["staff", "customer", "partner", "supplier"])
 const searchModeSchema = z.enum(["keyword", "semantic", "hybrid"])
 const searchSortSchema = z.enum(["relevance", "price-asc", "price-desc", "departure-asc", "newest"])
 
+const indexerDocumentSchema = z.object({
+  id: z.string(),
+  fields: z.record(z.string(), z.unknown()),
+  embeddings: z.record(z.string(), z.array(z.number())).optional(),
+  embedding_model_id: z.string().optional(),
+})
+
+const searchResultsSchema = z.object({
+  hits: z.array(
+    z.object({
+      id: z.string(),
+      score: z.number(),
+      document: indexerDocumentSchema,
+    }),
+  ),
+  totalRelation: z.enum(["eq", "gte"]).optional(),
+  total: z.number().int().nonnegative(),
+  next_cursor: z.string().optional(),
+  facets: z
+    .record(
+      z.string(),
+      z.array(
+        z.object({
+          value: z.union([z.string(), z.number()]),
+          count: z.number().int().nonnegative(),
+        }),
+      ),
+    )
+    .optional(),
+})
+
+const catalogEntrySchema = z.object({
+  vertical: z.string(),
+  id: z.string(),
+  fields: z.record(z.string(), z.unknown()),
+  provenance: z
+    .record(
+      z.string(),
+      z
+        .object({
+          locale: z.string(),
+          audience: z.string(),
+          market: z.string(),
+        })
+        .nullable(),
+    )
+    .optional(),
+})
+
 const searchFilterSchema: z.ZodType<SearchFilter> = z.lazy(() =>
   z.union([
     z.object({
@@ -148,21 +197,24 @@ export const searchCatalogTool = defineTool<CatalogSearchArgs, SearchResults, Ca
   description:
     "Search a catalog vertical in one locale/audience/market slice. Returns raw index hits, total, cursor, and facets. Read-only.",
   inputSchema: catalogSearchArgs,
-  outputSchema: z.custom<SearchResults>(),
+  outputSchema: searchResultsSchema,
   requiredScopes: ["catalog:search"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
   async handler(args, ctx) {
     const audience = resolveAudience(ctx, args.audience)
-    return catalog(ctx).search({
-      slice: {
-        vertical: args.vertical,
-        locale: args.locale ?? ctx.resolverScope.locale,
-        audience,
-        market: args.market ?? ctx.resolverScope.market,
-      },
-      request: searchRequest(args),
-    })
+    return parseJsonResult(
+      searchResultsSchema,
+      await catalog(ctx).search({
+        slice: {
+          vertical: args.vertical,
+          locale: args.locale ?? ctx.resolverScope.locale,
+          audience,
+          market: args.market ?? ctx.resolverScope.market,
+        },
+        request: searchRequest(args),
+      }),
+    )
   },
 })
 
@@ -175,7 +227,7 @@ export const getCatalogEntryTool = defineTool<
   description:
     "Read one resolved catalog entry by vertical and id. Returns null when not found. Read-only.",
   inputSchema: getCatalogEntryArgs,
-  outputSchema: z.object({ entry: z.custom<CatalogEntryResult>().nullable() }),
+  outputSchema: z.object({ entry: catalogEntrySchema.nullable() }),
   requiredScopes: ["catalog:read"],
   tier: "read",
   riskPolicy: READ_ONLY_RISK,
@@ -191,9 +243,26 @@ export const getCatalogEntryTool = defineTool<
         actor: ctx.actor,
       },
     })
-    return { entry: entry ?? null }
+    return parseJsonResult(z.object({ entry: catalogEntrySchema.nullable() }), {
+      entry: entry ?? null,
+    })
   },
 })
 
 /** All catalog agent tools, ready to register on a `ToolRegistry`. */
 export const catalogTools = [searchCatalogTool, getCatalogEntryTool] as const
+
+function parseJsonResult<T extends z.ZodType>(schema: T, value: unknown): z.output<T> {
+  return schema.parse(toJsonValue(value))
+}
+
+function toJsonValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(toJsonValue)
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, nested]) => [key, toJsonValue(nested)] as const)
+      .filter(([, nested]) => nested !== undefined),
+  )
+}
