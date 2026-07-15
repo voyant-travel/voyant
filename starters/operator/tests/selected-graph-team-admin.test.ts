@@ -26,6 +26,7 @@ describe("selected-graph Team admin composition", () => {
     })
     const routeTree = rootRoute.addChildren([workspaceRoute])
 
+    operatorFrontend.createRouter({ routeTree, workspaceRoute })
     const router = operatorFrontend.createRouter({ routeTree, workspaceRoute })
     const teamRouteIds = Object.keys(router.routesById).filter(
       (routeId) => routeId === "/_workspace/settings/team",
