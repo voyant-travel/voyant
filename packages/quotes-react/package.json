@@ -41,7 +41,7 @@
     "@voyant-travel/quotes": "workspace:^",
     "@voyant-travel/relationships-react": "workspace:^",
     "@voyant-travel/ui": "workspace:^",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "^0.475.0 || ^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.0"
