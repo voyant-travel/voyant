@@ -1,5 +1,55 @@
 # @voyant-travel/operator-standard
 
+## 0.6.5
+
+### Patch Changes
+
+- 7a7fd97: Strengthen the internationalization platform across the operator and package UI.
+
+  Add ICU message formatting, explicit locale and time-zone formatters, hierarchical
+  locale fallback, validated runtime overrides, account-authoritative preferences,
+  localized setup and navigation surfaces, and fail-closed catalog and UI-literal
+  checks. Package message providers now accept an optional time zone and expose the
+  shared formatting capabilities to package-owned UI.
+
+- Updated dependencies [7a7fd97]
+  - @voyant-travel/admin@0.126.1
+  - @voyant-travel/admin-host@0.12.1
+  - @voyant-travel/auth-react@0.132.2
+  - @voyant-travel/bookings-react@0.162.2
+  - @voyant-travel/catalog-react@0.160.1
+  - @voyant-travel/commerce-react@0.44.1
+  - @voyant-travel/cruises-react@0.161.1
+  - @voyant-travel/distribution-react@0.152.1
+  - @voyant-travel/event-catalog-react@0.4.1
+  - @voyant-travel/finance-react@0.162.2
+  - @voyant-travel/flights-react@0.162.1
+  - @voyant-travel/i18n@0.111.3
+  - @voyant-travel/identity-react@0.162.1
+  - @voyant-travel/inventory-react@0.44.1
+  - @voyant-travel/legal-react@0.162.2
+  - @voyant-travel/navigation-preferences-react@0.5.1
+  - @voyant-travel/notifications-react@0.130.2
+  - @voyant-travel/operations-react@0.43.1
+  - @voyant-travel/quotes-react@0.160.1
+  - @voyant-travel/relationships-react@0.162.1
+  - @voyant-travel/admin-react@0.126.1
+  - @voyant-travel/auth@0.132.2
+  - @voyant-travel/bookings@0.162.2
+  - @voyant-travel/catalog@0.160.1
+  - @voyant-travel/charters@0.160.1
+  - @voyant-travel/cruises@0.161.1
+  - @voyant-travel/distribution@0.152.1
+  - @voyant-travel/finance@0.162.2
+  - @voyant-travel/flights@0.162.1
+  - @voyant-travel/identity@0.162.1
+  - @voyant-travel/legal@0.162.2
+  - @voyant-travel/notifications@0.130.2
+  - @voyant-travel/navigation-preferences@0.5.1
+  - @voyant-travel/workflow-runs@0.122.1
+  - @voyant-travel/workflows@0.122.1
+  - @voyant-travel/workflows-orchestrator@0.122.1
+
 ## 0.6.4
 
 ### Patch Changes
