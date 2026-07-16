@@ -102,23 +102,44 @@ export class MigrationImmutabilityError extends Error {
 
 const contentHash = (sql: string) => createHash("sha256").update(sql).digest("hex")
 
-// `db/0001_db_baseline` originally shipped a plain `ADD COLUMN scopes`; it is
-// equivalent after narrowing to `ADD COLUMN IF NOT EXISTS` for framework-bundle
-// replay safety. Keep this exception exact so migration immutability remains the default.
+// `db/0001_db_baseline` originally shipped plain `ADD COLUMN` statements; both
+// columns are narrowed to `ADD COLUMN IF NOT EXISTS` for framework-bundle
+// replay safety (`scopes` first, then `permissions` — the frozen bundle also
+// materialises `user_profiles.permissions`, so adopted databases replay the
+// migration against an existing column). Keep these exceptions exact so
+// migration immutability remains the default.
+// Every generation of a rewritten migration accepts every OTHER generation's
+// ledger hash (the closure is symmetric): a rolled-back image shipping older
+// SQL must still verify against a ledger written by a newer image, and vice
+// versa.
+const DB_0001_HASHES = [
+  // original: plain ADD COLUMN for both scopes and permissions.
+  "a152b612c5f41e6dd6ad1271faf9e51d3926526de7995df68e28046dc518ad0f",
+  // scopes narrowed to ADD COLUMN IF NOT EXISTS.
+  "073492f087f0b3035aa7215cbb03560e910712dd08f28b41a5ef0daa8f9d0e10",
+  // permissions narrowed too (the frozen framework bundle also materialises
+  // user_profiles.permissions, so adopted databases replay against it).
+  "32dea1b446ddecb3c8231c89b45ce8782962e27e84e3c81de4b7b94cd514d75f",
+] as const
+// `framework/0004_framework_baseline`: guarded custom_field_values drop
+// rewritten to a plain DROP TABLE IF EXISTS once custom fields were confirmed
+// to have no production adoption at the cutline — identical outcome on any
+// database where either generation applied.
+const FRAMEWORK_0004_HASHES = [
+  "5ba3a342b91d2d48f6b27dd15bc0cbf46478003d73b497709c5f56d2628bac8d",
+  "c089643f03ce56e76239ecd96582b9886d3bc4ae26adcbea48308bcf92a71ed3",
+] as const
+
+function equivalenceClosure(
+  key: string,
+  hashes: readonly string[],
+): Array<[string, ReadonlySet<string>]> {
+  return hashes.map((hash) => [`${key}/${hash}`, new Set(hashes.filter((other) => other !== hash))])
+}
+
 const EQUIVALENT_MIGRATION_HASHES = new Map<string, ReadonlySet<string>>([
-  [
-    "db/0001_db_baseline/073492f087f0b3035aa7215cbb03560e910712dd08f28b41a5ef0daa8f9d0e10",
-    new Set(["a152b612c5f41e6dd6ad1271faf9e51d3926526de7995df68e28046dc518ad0f"]),
-  ],
-  // `framework/0004_framework_baseline` originally shipped a guarded
-  // `custom_field_values` drop (refuse while rows remain); it was rewritten to a
-  // plain `DROP TABLE IF EXISTS` once custom fields were confirmed to have no
-  // production adoption at the cutline. Identical outcome on any database where
-  // the original already applied — the table is gone either way.
-  [
-    "framework/0004_framework_baseline/c089643f03ce56e76239ecd96582b9886d3bc4ae26adcbea48308bcf92a71ed3",
-    new Set(["5ba3a342b91d2d48f6b27dd15bc0cbf46478003d73b497709c5f56d2628bac8d"]),
-  ],
+  ...equivalenceClosure("db/0001_db_baseline", DB_0001_HASHES),
+  ...equivalenceClosure("framework/0004_framework_baseline", FRAMEWORK_0004_HASHES),
 ])
 
 function isEquivalentMigrationHash(
