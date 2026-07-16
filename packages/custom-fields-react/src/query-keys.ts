@@ -1,5 +1,7 @@
 export interface CustomFieldDefinitionListFilters {
   entityType?: string
+  ownerKind?: "platform" | "operator" | "app"
+  lifecycleState?: "active" | "inactive" | "deprecated"
   limit?: number
   offset?: number
 }

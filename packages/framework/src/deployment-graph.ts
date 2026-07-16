@@ -143,6 +143,8 @@ export const VOYANT_GRAPH_RESERVED_FACETS = [
 export const VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY = {
   VOYANT_GRAPH_ARTIFACT_MISSING: "A generated deployment graph artifact is missing.",
   VOYANT_GRAPH_ARTIFACT_STALE: "A generated deployment graph artifact is stale.",
+  VOYANT_GRAPH_CONFLICTING_CUSTOM_FIELD_NAMESPACE_OWNER:
+    "Two selected graph units claim authority for the same custom-field namespace.",
   VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET:
     "Two selected graph units claim authority for the same custom-field target.",
   VOYANT_GRAPH_DUPLICATE_ENTITY_ID: "Two v1 graph entities resolved to the same stable entity id.",
@@ -1083,6 +1085,7 @@ function resolveUnit(
     customFieldTargets: [...(unit.customFieldTargets ?? [])]
       .map((target) => ({
         ...target,
+        namespace: target.namespace.trim(),
         ownerUnitId: unit.id,
         fieldTypes: sortedUnique(target.fieldTypes),
         capabilities: sortedUnique(target.capabilities),
@@ -1264,6 +1267,22 @@ function validateCustomFieldTargets(
           source,
           facet: `${facet}.id`,
           message: "Custom-field target ids must use stable lower-case kebab identifiers.",
+        }),
+      )
+    }
+    if (
+      typeof target.namespace !== "string" ||
+      !/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/.test(target.namespace) ||
+      target.namespace === "custom" ||
+      target.namespace.startsWith("app--")
+    ) {
+      diagnostics.push(
+        diagnostic({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          source,
+          facet: `${facet}.namespace`,
+          message:
+            "Custom-field target namespaces must be non-reserved stable lower-case dot-case identifiers.",
         }),
       )
     }
@@ -2383,15 +2402,19 @@ function validateDuplicateCustomFieldTargets(
   units: readonly (ResolvedVoyantGraphUnit & { original: VoyantGraphUnitManifest })[],
 ): VoyantGraphDiagnostic[] {
   const owners = new Map<string, string[]>()
+  const namespaceOwners = new Map<string, string[]>()
   for (const unit of units) {
     for (const target of unit.customFieldTargets) {
       const targetOwners = owners.get(target.id) ?? []
       targetOwners.push(unit.id)
       owners.set(target.id, targetOwners)
+      const unitIds = namespaceOwners.get(target.namespace) ?? []
+      unitIds.push(unit.id)
+      namespaceOwners.set(target.namespace, unitIds)
     }
   }
 
-  return [...owners.entries()]
+  const duplicateTargetDiagnostics = [...owners.entries()]
     .filter(([, unitIds]) => unitIds.length > 1)
     .map(([target, unitIds]) =>
       diagnostic({
@@ -2401,6 +2424,17 @@ function validateDuplicateCustomFieldTargets(
         message: `Custom-field target "${target}" is declared by more than one selected graph unit.`,
       }),
     )
+  const conflictingNamespaceDiagnostics = [...namespaceOwners.entries()]
+    .filter(([, unitIds]) => new Set(unitIds).size > 1)
+    .map(([namespace, unitIds]) =>
+      diagnostic({
+        code: "VOYANT_GRAPH_CONFLICTING_CUSTOM_FIELD_NAMESPACE_OWNER",
+        source: sortedUnique(unitIds).join(", "),
+        facet: "customFieldTargets",
+        message: `Custom-field namespace "${namespace}" is claimed by more than one selected graph unit.`,
+      }),
+    )
+  return [...duplicateTargetDiagnostics, ...conflictingNamespaceDiagnostics]
 }
 
 function validateDuplicateEventTypes(

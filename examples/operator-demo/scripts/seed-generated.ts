@@ -849,6 +849,11 @@ async function seedCustomers(ctx: SeedContext, plan: WorldPlan) {
     .values({
       id: newId("custom_field_definitions"),
       entityType: "organization",
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+      provenance: { source: "operator-demo-generated-seed" },
       key: `travel_style_${ctx.labelSlug}`,
       label: "Travel Style",
       fieldType: "text",

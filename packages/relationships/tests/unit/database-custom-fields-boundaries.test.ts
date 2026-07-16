@@ -19,6 +19,10 @@ import { createRelationshipsRuntimePortContribution } from "../../src/runtime-co
 import { relationshipsRouteRuntimePort } from "../../src/runtime-port.js"
 import { relationshipsService } from "../../src/service/index.js"
 
+function runtimePortValues<T>(values: readonly unknown[]): readonly T[] {
+  return values as readonly T[]
+}
+
 const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
@@ -27,6 +31,7 @@ const json = (body: Record<string, unknown>) => ({
 const rows = [
   {
     entityType: "booking",
+    namespace: "custom",
     key: "group_size",
     fieldType: "double",
     label: "Group size",
@@ -38,6 +43,7 @@ const rows = [
   },
   {
     entityType: "person",
+    namespace: "custom",
     key: "loyalty_tier",
     fieldType: "enum",
     label: "Tier",
@@ -61,6 +67,7 @@ const customFields = createCustomFieldsRuntimePortContribution({
   customFieldTargets: [
     {
       id: "booking",
+      namespace: "bookings",
       label: "Booking",
       fieldTypes: ["double"],
       capabilities: ["read", "write", "export"],
@@ -68,6 +75,7 @@ const customFields = createCustomFieldsRuntimePortContribution({
     },
     {
       id: "person",
+      namespace: "relationships",
       label: "Person",
       fieldTypes: ["enum"],
       capabilities: ["read", "write", "search", "export", "invoice"],
@@ -75,10 +83,12 @@ const customFields = createCustomFieldsRuntimePortContribution({
     },
   ],
   getRuntimePorts: <T>(port: { id: string }) =>
-    (port.id === customFieldValueReaderRuntimePort.id &&
-    runtimePorts[customFieldValueReaderRuntimePort.id]
-      ? [runtimePorts[customFieldValueReaderRuntimePort.id]]
-      : []) as unknown as readonly T[],
+    runtimePortValues<T>(
+      port.id === customFieldValueReaderRuntimePort.id &&
+        runtimePorts[customFieldValueReaderRuntimePort.id]
+        ? [runtimePorts[customFieldValueReaderRuntimePort.id]]
+        : [],
+    ),
 })[customFieldsRuntimePort.id] as CustomFieldsRuntime
 runtimePorts[customFieldsRuntimePort.id] = customFields
 const contributions = createRelationshipsRuntimePortContribution({

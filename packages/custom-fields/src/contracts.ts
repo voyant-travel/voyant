@@ -14,20 +14,26 @@ export const customFieldTypeSchema = z.enum([
   "phone",
 ])
 
-export const customFieldDefinitionInputSchema = z.object({
-  entityType: z.string().min(1),
-  key: z.string().min(1),
-  label: z.string().min(1),
-  fieldType: customFieldTypeSchema,
-  isRequired: z.boolean().default(false),
-  isSearchable: z.boolean().default(false),
-  isExportable: z.boolean().default(true),
-  isInvoiceable: z.boolean().default(false),
-  options: z
-    .array(z.object({ label: z.string(), value: z.string() }))
-    .nullable()
-    .optional(),
-})
+export const customFieldOwnerKindSchema = z.enum(["platform", "operator", "app"])
+export const customFieldLifecycleStateSchema = z.enum(["active", "inactive", "deprecated"])
+export const customFieldDefinitionProvenanceSchema = z.record(z.string(), z.unknown())
+
+export const customFieldDefinitionInputSchema = z
+  .object({
+    entityType: z.string().min(1),
+    key: z.string().min(1),
+    label: z.string().min(1),
+    fieldType: customFieldTypeSchema,
+    isRequired: z.boolean().default(false),
+    isSearchable: z.boolean().default(false),
+    isExportable: z.boolean().default(true),
+    isInvoiceable: z.boolean().default(false),
+    options: z
+      .array(z.object({ label: z.string(), value: z.string() }))
+      .nullable()
+      .optional(),
+  })
+  .strict()
 
 export const updateCustomFieldDefinitionSchema = z
   .object({
@@ -45,6 +51,8 @@ export const updateCustomFieldDefinitionSchema = z
 
 export const customFieldDefinitionListQuerySchema = z.object({
   entityType: z.string().min(1).optional(),
+  ownerKind: customFieldOwnerKindSchema.optional(),
+  lifecycleState: customFieldLifecycleStateSchema.optional(),
   limit: z.coerce.number().int().positive().max(100).default(25),
   offset: z.coerce.number().int().nonnegative().default(0),
 })

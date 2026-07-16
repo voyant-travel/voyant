@@ -1329,6 +1329,11 @@ async function seedCrm() {
     {
       id: cfVipId,
       entityType: "person",
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+      provenance: { source: "operator-demo-seed" },
       key: "vip_tier",
       label: "VIP Tier",
       fieldType: "enum",
@@ -1337,6 +1342,11 @@ async function seedCrm() {
     {
       id: cfPrefId,
       entityType: "person",
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+      provenance: { source: "operator-demo-seed" },
       key: "travel_preferences",
       label: "Travel preferences",
       fieldType: "text",

@@ -573,6 +573,7 @@ export const relationshipsVoyantModule = defineModule({
   customFieldTargets: [
     {
       id: "organization",
+      namespace: "relationships",
       label: "Organization",
       fieldTypes: [
         "varchar",
@@ -591,6 +592,7 @@ export const relationshipsVoyantModule = defineModule({
     },
     {
       id: "person",
+      namespace: "relationships",
       label: "Person",
       fieldTypes: [
         "varchar",
@@ -609,6 +611,7 @@ export const relationshipsVoyantModule = defineModule({
     },
     {
       id: "activity",
+      namespace: "relationships",
       label: "Activity",
       fieldTypes: ["varchar", "text", "double", "date", "boolean", "enum", "set", "json"],
       capabilities: ["read", "write", "presentation"],

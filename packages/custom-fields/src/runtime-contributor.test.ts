@@ -6,6 +6,10 @@ import {
 import { describe, expect, it } from "vitest"
 import { createCustomFieldsRuntimePortContribution } from "./runtime-contributor.js"
 
+function runtimePortValues<T>(values: readonly unknown[]): readonly T[] {
+  return values as readonly T[]
+}
+
 describe("custom-fields runtime value readers", () => {
   it("delegates visible values to selected entity readers", async () => {
     const readers: unknown[] = []
@@ -17,6 +21,7 @@ describe("custom-fields runtime value readers", () => {
       customFieldTargets: [
         {
           id: "person",
+          namespace: "relationships",
           label: "Person",
           fieldTypes: ["text"],
           capabilities: ["read", "invoice"],
@@ -24,9 +29,7 @@ describe("custom-fields runtime value readers", () => {
         },
       ],
       getRuntimePorts: <T>(port: { id: string }) =>
-        (port.id === customFieldValueReaderRuntimePort.id
-          ? readers
-          : []) as unknown as readonly T[],
+        runtimePortValues<T>(port.id === customFieldValueReaderRuntimePort.id ? readers : []),
     })[customFieldsRuntimePort.id] as CustomFieldsRuntime
     readers.push(reader)
     await expect(

@@ -154,6 +154,7 @@ describe("deployment graph artifacts", () => {
         customFieldTargets: [
           {
             id: "person",
+            namespace: "loyalty",
             label: "Person",
             fieldTypes: ["text"],
             capabilities: ["read"],

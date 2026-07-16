@@ -41,6 +41,7 @@ import {
 
 const PAGE_SIZE = 25
 const ALL_ENTITIES = "all"
+const ALL_OWNERS = "all"
 
 export interface CustomFieldDefinitionsPageProps {
   className?: string
@@ -56,12 +57,15 @@ export function CustomFieldDefinitionsPage({
   const [editing, setEditing] = useState<CustomFieldDefinitionRecord | undefined>()
   const [deleting, setDeleting] = useState<CustomFieldDefinitionRecord | undefined>()
   const [entityFilter, setEntityFilter] = useState<string>(ALL_ENTITIES)
+  const [ownerFilter, setOwnerFilter] = useState<string>(ALL_OWNERS)
   const [pageIndex, setPageIndex] = useState(0)
   const { remove } = useCustomFieldDefinitionMutation()
   const targets = useCustomFieldTargets()
 
   const query = useCustomFieldDefinitions({
     entityType: entityFilter === ALL_ENTITIES ? undefined : entityFilter,
+    ownerKind:
+      ownerFilter === ALL_OWNERS ? undefined : (ownerFilter as "platform" | "operator" | "app"),
     limit: pageSize,
     offset: pageIndex * pageSize,
   })
@@ -120,6 +124,26 @@ export function CustomFieldDefinitionsPage({
             ))}
           </SelectContent>
         </Select>
+        <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {messages.page.owner}
+        </Label>
+        <Select
+          value={ownerFilter}
+          onValueChange={(value) => {
+            setOwnerFilter(value ?? ALL_OWNERS)
+            setPageIndex(0)
+          }}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_OWNERS}>{messages.page.allOwners}</SelectItem>
+            <SelectItem value="operator">{messages.page.operatorOwned}</SelectItem>
+            <SelectItem value="app">{messages.page.appOwned}</SelectItem>
+            <SelectItem value="platform">{messages.page.platformOwned}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {query.isError ? (
@@ -143,72 +167,99 @@ export function CustomFieldDefinitionsPage({
             </div>
           ) : (
             <div className="flex flex-col divide-y">
-              {definitions.map((definition) => (
-                <div
-                  key={definition.id}
-                  className="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium">{definition.label}</span>
-                      <Badge variant="outline">
-                        {entityLabels[definition.entityType] ?? definition.entityType}
-                      </Badge>
-                      <Badge variant="secondary">
-                        {fieldTypeLabels[definition.fieldType] ?? definition.fieldType}
-                      </Badge>
-                      {definition.isRequired ? <Badge>{messages.page.required}</Badge> : null}
-                      {definition.isSearchable ? (
-                        <Badge variant="outline">{messages.page.searchable}</Badge>
-                      ) : null}
-                      {definition.isExportable ? (
-                        <Badge variant="outline">{messages.page.exportable}</Badge>
-                      ) : null}
-                      {definition.isInvoiceable ? (
-                        <Badge variant="outline">{messages.page.invoiceable}</Badge>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <span className="font-mono">{definition.key}</span>
-                      {definition.options?.length ? (
+              {definitions.map((definition) => {
+                const isOperatorOwned =
+                  definition.ownerKind === "operator" && definition.namespace === "custom"
+                const ownerLabel =
+                  definition.ownerKind === "operator"
+                    ? messages.page.operatorOwned
+                    : definition.ownerKind === "app"
+                      ? messages.page.appOwned
+                      : messages.page.platformOwned
+                return (
+                  <div
+                    key={definition.id}
+                    className="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium">{definition.label}</span>
+                        <Badge variant="outline">
+                          {entityLabels[definition.entityType] ?? definition.entityType}
+                        </Badge>
+                        <Badge variant="secondary">
+                          {fieldTypeLabels[definition.fieldType] ?? definition.fieldType}
+                        </Badge>
+                        <Badge variant="outline">{ownerLabel}</Badge>
+                        {!isOperatorOwned ? (
+                          <Badge variant="outline">{messages.page.readOnly}</Badge>
+                        ) : null}
+                        {definition.isRequired ? <Badge>{messages.page.required}</Badge> : null}
+                        {definition.isSearchable ? (
+                          <Badge variant="outline">{messages.page.searchable}</Badge>
+                        ) : null}
+                        {definition.isExportable ? (
+                          <Badge variant="outline">{messages.page.exportable}</Badge>
+                        ) : null}
+                        {definition.isInvoiceable ? (
+                          <Badge variant="outline">{messages.page.invoiceable}</Badge>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="font-mono">{definition.key}</span>
                         <span>
-                          {formatMessage(messages.page.optionsCount, {
-                            count: definition.options.length,
-                          })}
+                          {messages.page.namespace}:{" "}
+                          <span className="font-mono">{definition.namespace}</span>
                         </span>
-                      ) : null}
+                        {definition.ownerId ? (
+                          <span className="font-mono">{definition.ownerId}</span>
+                        ) : null}
+                        {definition.options?.length ? (
+                          <span>
+                            {formatMessage(messages.page.optionsCount, {
+                              count: definition.options.length,
+                            })}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8 text-muted-foreground">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setEditing(definition)
-                          setSheetOpen(true)
-                        }}
-                      >
-                        <Pencil className="size-4" />
-                        {messages.page.edit}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        disabled={remove.isPending}
-                        onClick={() => setDeleting(definition)}
-                      >
-                        <Trash2 className="size-4" />
-                        {messages.page.delete}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ))}
+                    {isOperatorOwned ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 text-muted-foreground"
+                          >
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditing(definition)
+                              setSheetOpen(true)
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                            {messages.page.edit}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            disabled={remove.isPending}
+                            onClick={() => setDeleting(definition)}
+                          >
+                            <Trash2 className="size-4" />
+                            {messages.page.delete}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

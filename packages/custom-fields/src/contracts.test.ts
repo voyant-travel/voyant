@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { customFieldDefinitionInputSchema, updateCustomFieldDefinitionSchema } from "./contracts.js"
+import {
+  customFieldDefinitionInputSchema,
+  customFieldDefinitionListQuerySchema,
+  updateCustomFieldDefinitionSchema,
+} from "./contracts.js"
 
 describe("custom-field definition contracts", () => {
   it("defaults visibility and admits graph-validated target ids", () => {
@@ -24,5 +28,20 @@ describe("custom-field definition contracts", () => {
       label: "Updated",
     })
     expect(() => updateCustomFieldDefinitionSchema.parse({ key: "renamed" })).toThrow()
+  })
+
+  it("rejects submitted physical ownership and supports ownership-aware reads", () => {
+    expect(() =>
+      customFieldDefinitionInputSchema.parse({
+        entityType: "booking",
+        key: "external_id",
+        label: "External ID",
+        fieldType: "text",
+        namespace: "app--foreign",
+      }),
+    ).toThrow()
+    expect(
+      customFieldDefinitionListQuerySchema.parse({ ownerKind: "app", lifecycleState: "active" }),
+    ).toMatchObject({ ownerKind: "app", lifecycleState: "active" })
   })
 })

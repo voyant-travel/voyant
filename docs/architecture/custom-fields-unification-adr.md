@@ -71,6 +71,13 @@ on the entity. `custom_field_values` is retired.**
 5. **Visibility.** `is_searchable`, `is_exportable`, and `is_invoiceable` map
    directly onto registry visibility (admin-editable; defaults
    `export=true`, `invoice=false`, `search=false`).
+6. **Definition ownership and namespaces.** Definitions now persist a physical
+   namespace, owner kind/id, lifecycle, and provenance. Uniqueness is
+   `(entity_type, namespace, key)`. Because definitions had no production
+   adoption, the migration discards pre-cutline rows instead of assigning
+   unverifiable ownership. Settings shows app-owned rows but can mutate only
+   operator rows. Entity value JSON remains flat in this phase, and #3400 will
+   make it namespaced before app-owned values enter the effective registry.
 
 ## Migration
 

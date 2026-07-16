@@ -8,6 +8,11 @@ import { z } from "zod"
 const single = <T extends z.ZodTypeAny>(schema: T) => z.object({ data: schema })
 export const customFieldDefinitionRecordSchema = customFieldDefinitionInputSchema.extend({
   id: z.string(),
+  namespace: z.string(),
+  ownerKind: z.enum(["platform", "operator", "app"]),
+  ownerId: z.string().nullable(),
+  lifecycleState: z.enum(["active", "inactive", "deprecated"]),
+  provenance: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -20,6 +25,7 @@ export const customFieldTargetsResponse = single(
   z.array(
     z.object({
       id: z.string(),
+      namespace: z.string(),
       label: z.string(),
       fieldTypes: z.array(customFieldTypeSchema),
       capabilities: z.array(

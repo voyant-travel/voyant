@@ -1,6 +1,5 @@
 // agent-quality: file-size exception -- owner: framework; deployment graph v1 tests stay co-located while resolver, diagnostics, hashing, and compatibility behavior share one harness.
 
-import type { VoyantGraphCustomFieldTargetDeclaration } from "@voyant-travel/core/project"
 import { describe, expect, it } from "vitest"
 import {
   createTestDeployment,
@@ -26,6 +25,7 @@ describe("deployment graph v1", () => {
       customFieldTargets: [
         {
           id: "booking",
+          namespace: "bookings",
           label: "Booking",
           fieldTypes: ["text", "boolean", "text"],
           capabilities: ["write", "read"],
@@ -41,6 +41,7 @@ describe("deployment graph v1", () => {
     expect(graph.modules[0]?.customFieldTargets).toEqual([
       {
         id: "booking",
+        namespace: "bookings",
         label: "Booking",
         fieldTypes: ["boolean", "text"],
         capabilities: ["read", "write"],
@@ -52,10 +53,11 @@ describe("deployment graph v1", () => {
   it("rejects invalid and duplicate selected custom-field target authorities", async () => {
     const invalidTarget = {
       id: "Booking",
+      namespace: "Invalid Namespace",
       label: "",
       fieldTypes: [],
       capabilities: ["vendor-specific"],
-    } as unknown as VoyantGraphCustomFieldTargetDeclaration
+    }
 
     expect(
       validateGraphUnitManifest({
@@ -70,6 +72,7 @@ describe("deployment graph v1", () => {
 
     const target = {
       id: "booking",
+      namespace: "bookings",
       label: "Booking",
       fieldTypes: ["text"],
       capabilities: ["read"] as const,
@@ -88,6 +91,42 @@ describe("deployment graph v1", () => {
         expect.objectContaining({
           code: "VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET",
           facet: "customFieldTargets",
+        }),
+      ]),
+    )
+
+    const namespaceGraph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({ id: "@acme/voyant-bookings", customFieldTargets: [target] }),
+          defineModule({
+            id: "@acme/voyant-orders",
+            customFieldTargets: [{ ...target, id: "order" }],
+          }),
+        ],
+      }),
+    })
+    expect(namespaceGraph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "VOYANT_GRAPH_CONFLICTING_CUSTOM_FIELD_NAMESPACE_OWNER" }),
+      ]),
+    )
+
+    const reservedNamespaceGraph = await resolveDeploymentGraph({
+      project: defineProject({
+        modules: [
+          defineModule({
+            id: "@acme/voyant-bookings",
+            customFieldTargets: [{ ...target, namespace: "app--claimed" }],
+          }),
+        ],
+      }),
+    })
+    expect(reservedNamespaceGraph.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "VOYANT_GRAPH_INVALID_CUSTOM_FIELD_TARGET",
+          facet: "customFieldTargets[0].namespace",
         }),
       ]),
     )
@@ -1754,6 +1793,7 @@ describe("deployment graph v1", () => {
     expect(Object.keys(VOYANT_GRAPH_DIAGNOSTIC_CODE_REGISTRY)).toEqual([
       "VOYANT_GRAPH_ARTIFACT_MISSING",
       "VOYANT_GRAPH_ARTIFACT_STALE",
+      "VOYANT_GRAPH_CONFLICTING_CUSTOM_FIELD_NAMESPACE_OWNER",
       "VOYANT_GRAPH_DUPLICATE_CUSTOM_FIELD_TARGET",
       "VOYANT_GRAPH_DUPLICATE_ENTITY_ID",
       "VOYANT_GRAPH_DUPLICATE_EVENT_TYPE",

@@ -18,6 +18,11 @@ type Env = {
 
 const definitionSchema = customFieldDefinitionInputSchema.extend({
   id: z.string(),
+  namespace: z.string(),
+  ownerKind: z.enum(["platform", "operator", "app"]),
+  ownerId: z.string().nullable(),
+  lifecycleState: z.enum(["active", "inactive", "deprecated"]),
+  provenance: z.record(z.string(), z.unknown()),
   createdAt: z.union([z.string(), z.date()]),
   updatedAt: z.union([z.string(), z.date()]),
 })
@@ -27,6 +32,7 @@ const errorSchema = z.object({ error: z.string() })
 const successSchema = z.object({ success: z.literal(true) })
 const targetSchema = z.object({
   id: z.string(),
+  namespace: z.string(),
   label: z.string(),
   fieldTypes: z.array(customFieldTypeSchema),
   capabilities: z.array(z.enum(["read", "write", "search", "export", "invoice", "presentation"])),
@@ -161,6 +167,10 @@ export function createCustomFieldRoutes(
           description: "Custom-field definition not found",
           ...jsonContent(errorSchema),
         },
+        403: {
+          description: "Definition is controlled by another owner",
+          ...jsonContent(errorSchema),
+        },
       },
     }),
     async (c) => {
@@ -181,6 +191,10 @@ export function createCustomFieldRoutes(
         },
         404: {
           description: "Custom-field definition not found",
+          ...jsonContent(errorSchema),
+        },
+        403: {
+          description: "Definition is controlled by another owner",
           ...jsonContent(errorSchema),
         },
       },

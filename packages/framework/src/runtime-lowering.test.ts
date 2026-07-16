@@ -99,6 +99,7 @@ describe("graph runtime lowering", () => {
         customFieldTargets: [
           {
             id: "person",
+            namespace: "loyalty",
             label: "Person",
             fieldTypes: ["text"],
             capabilities: ["read", "write"],
@@ -111,6 +112,7 @@ describe("graph runtime lowering", () => {
     expect(runtime.customFieldTargets).toEqual([
       {
         id: "person",
+        namespace: "loyalty",
         label: "Person",
         fieldTypes: ["text"],
         capabilities: ["read", "write"],

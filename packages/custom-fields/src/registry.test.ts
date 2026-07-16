@@ -4,9 +4,10 @@ import { loadCustomFieldDefinitions, loadCustomFieldRegistry } from "./registry.
 import { createCustomFieldTargetRegistry } from "./targets.js"
 
 function fakeDb(rows: unknown[]): PostgresJsDatabase {
-  return {
+  const db = Object.create(null) as PostgresJsDatabase
+  return Object.assign(db, {
     select: () => ({ from: () => Promise.resolve(rows) }),
-  } as unknown as PostgresJsDatabase
+  })
 }
 
 describe("database custom-field registry", () => {
@@ -14,6 +15,8 @@ describe("database custom-field registry", () => {
     const rows = [
       {
         entityType: "person",
+        namespace: "custom",
+        lifecycleState: "active",
         key: "tier",
         fieldType: "enum",
         label: "Tier",
@@ -48,6 +51,8 @@ describe("database custom-field registry", () => {
     const rows = [
       {
         entityType: "person",
+        namespace: "custom",
+        lifecycleState: "active",
         key: "tier",
         fieldType: "text",
         label: "Tier",
@@ -59,6 +64,8 @@ describe("database custom-field registry", () => {
       },
       {
         entityType: "activity",
+        namespace: "custom",
+        lifecycleState: "active",
         key: "private_note",
         fieldType: "text",
         label: "Private note",
@@ -72,6 +79,7 @@ describe("database custom-field registry", () => {
     const targets = createCustomFieldTargetRegistry([
       {
         id: "person",
+        namespace: "relationships",
         label: "Person",
         fieldTypes: ["text"],
         capabilities: ["read", "export"],
@@ -85,5 +93,58 @@ describe("database custom-field registry", () => {
         visibility: { export: true, invoice: false, search: false },
       }),
     ])
+  })
+
+  it("keeps app-owned definitions out of the flat-value registry until namespaced values land", async () => {
+    const rows = [
+      {
+        entityType: "person",
+        namespace: "custom",
+        lifecycleState: "active",
+        key: "external_id",
+        fieldType: "text",
+        label: "Operator external ID",
+        isRequired: false,
+        isSearchable: false,
+        isExportable: true,
+        isInvoiceable: false,
+        options: null,
+      },
+      {
+        entityType: "person",
+        namespace: "app--acme-7f3",
+        lifecycleState: "active",
+        key: "external_id",
+        fieldType: "text",
+        label: "App external ID",
+        isRequired: false,
+        isSearchable: false,
+        isExportable: true,
+        isInvoiceable: false,
+        options: null,
+      },
+    ]
+
+    expect(await loadCustomFieldDefinitions(fakeDb(rows))).toHaveLength(1)
+  })
+
+  it("keeps inactive definitions out of the runtime registry", async () => {
+    const rows = [
+      {
+        entityType: "person",
+        namespace: "custom",
+        lifecycleState: "inactive",
+        key: "retired",
+        fieldType: "text",
+        label: "Retired",
+        isRequired: false,
+        isSearchable: false,
+        isExportable: false,
+        isInvoiceable: false,
+        options: null,
+      },
+    ]
+
+    expect(await loadCustomFieldDefinitions(fakeDb(rows))).toEqual([])
   })
 })

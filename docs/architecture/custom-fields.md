@@ -81,6 +81,14 @@ TypeScript authoring helpers remain deprecated compatibility exports until
 #3401, but they are not connected to runtime composition and cannot shadow a
 persisted `(entity, key)` definition.
 
+Definition identity is `(entity, namespace, key)`. Operator fields use the
+server-assigned `custom` namespace; app/platform callers receive owner and
+physical namespace only from trusted runtime context. Settings can inspect
+active definitions from every owner, but ordinary CRUD structurally controls
+only operator-owned rows. The flat entity JSON value representation remains an
+operator-namespace runtime until #3400 introduces namespaced values, so app
+definitions cannot collide with or shadow current operator fields.
+
 ## Entity Adoption
 
 An owning package adopts custom fields by implementing all of these boundaries:

@@ -6,6 +6,7 @@ describe("selected custom-field target registry", () => {
     const registry = createCustomFieldTargetRegistry([
       {
         id: "booking",
+        namespace: "bookings",
         label: "Booking",
         fieldTypes: ["text", "text", "boolean"],
         capabilities: ["read", "write"],
@@ -17,6 +18,7 @@ describe("selected custom-field target registry", () => {
       createCustomFieldTargetRegistry([
         {
           id: "booking",
+          namespace: "bookings",
           label: "Booking",
           fieldTypes: ["text"],
           capabilities: ["read"],
@@ -24,6 +26,7 @@ describe("selected custom-field target registry", () => {
         },
         {
           id: "booking",
+          namespace: "orders",
           label: "Another booking",
           fieldTypes: ["text"],
           capabilities: ["read"],

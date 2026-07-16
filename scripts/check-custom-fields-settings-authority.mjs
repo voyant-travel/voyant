@@ -14,6 +14,14 @@ const settingsQueryOptions = read("packages/custom-fields-react/src/query-option
 const settingsSheet = read(
   "packages/custom-fields-react/src/components/custom-field-definition-sheet.tsx",
 )
+const settingsPage = read(
+  "packages/custom-fields-react/src/components/custom-field-definitions-page.tsx",
+)
+const definitionService = read("packages/custom-fields/src/service.ts")
+const relationshipsValueService = read("packages/relationships/src/service/custom-fields.ts")
+const namespaceOwnershipMigration = read(
+  "packages/custom-fields/migrations/20260716000100_custom_field_namespace_ownership.sql",
+)
 const relationshipsRoutes = read("packages/relationships/src/routes/custom-fields.ts")
 const relationshipsPackage = read("packages/relationships/package.json")
 
@@ -47,6 +55,36 @@ if (!settingsSheet.includes("target.id === values.entityType"))
   failures.push("custom-fields Settings must constrain field types to the selected target")
 if (!settingsSheet.includes("normalizeCustomFieldDefinitionFormValues"))
   failures.push("custom-fields Settings must clear unsupported target capabilities")
+if (
+  !settingsPage.includes('definition.ownerKind === "operator" && definition.namespace === "custom"')
+)
+  failures.push(
+    "custom-fields Settings must expose app/platform definitions as structurally read-only",
+  )
+if (!settingsPage.includes("messages.page.namespace"))
+  failures.push("custom-fields Settings must display physical namespace provenance")
+if (!definitionService.includes('namespace: "custom"'))
+  failures.push("operator-created definitions must use the server-assigned custom namespace")
+if (!definitionService.includes("createForOwner") || !definitionService.includes("updateForOwner"))
+  failures.push("app/platform definition operations must be owner-constrained domain operations")
+if (
+  !relationshipsValueService.includes('eq(customFieldDefinitions.namespace, "custom")') ||
+  !relationshipsValueService.includes('eq(customFieldDefinitions.lifecycleState, "active")')
+)
+  failures.push(
+    "pre-namespaced Relationships value paths must reject non-operator or inactive definitions",
+  )
+if (!namespaceOwnershipMigration.includes('DELETE FROM "custom_field_definitions"'))
+  failures.push(
+    "namespace ownership migration must explicitly discard unused pre-cutline definitions",
+  )
+if (
+  namespaceOwnershipMigration.includes("ADD COLUMN IF NOT EXISTS") ||
+  namespaceOwnershipMigration.includes("CREATE INDEX IF NOT EXISTS") ||
+  /\bUPDATE\s+"custom_field_definitions"/.test(namespaceOwnershipMigration) ||
+  /\bDEFAULT\b/.test(namespaceOwnershipMigration)
+)
+  failures.push("namespace ownership migration must not contain compatibility defaults or backfill")
 if (relationshipsManifest.includes('path: "/settings/custom-fields"'))
   failures.push("Relationships must not own the custom-fields Settings route")
 if (relationshipsAdmin.includes('id: "custom-fields"'))
@@ -59,6 +97,12 @@ if (relationshipsPackage.includes("./custom-fields-registry"))
   failures.push("Relationships must not export a definition registry")
 if (existsSync(resolve(root, "packages/relationships/src/service/custom-fields-registry.ts")))
   failures.push("Relationships definition registry adapter must stay deleted")
+if (!read("packages/bookings/src/voyant.ts").includes('namespace: "bookings"'))
+  failures.push("Bookings must declare a stable custom-field namespace")
+if (!read("packages/relationships/src/voyant.ts").includes('namespace: "relationships"'))
+  failures.push("Relationships must declare a stable custom-field namespace")
+if (!read("packages/quotes/src/voyant.ts").includes('namespace: "quotes"'))
+  failures.push("Quotes must declare a stable custom-field namespace")
 if (!read("packages/bookings/src/voyant.ts").includes("customFieldTargets"))
   failures.push("Bookings must declare its custom-field target")
 if (!read("packages/relationships/src/voyant.ts").includes("customFieldTargets"))

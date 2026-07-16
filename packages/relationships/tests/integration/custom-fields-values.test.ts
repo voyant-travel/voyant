@@ -18,6 +18,7 @@ describe.skipIf(!DB_AVAILABLE)("custom-field values on the entity column", () =>
   const pid = `pers_cfv_${rand}`
   const dEnum = `cfd_e_${rand}`
   const dMoney = `cfd_m_${rand}`
+  const dApp = `cfd_a_${rand}`
 
   beforeAll(async () => {
     const { createTestDb } = await import("@voyant-travel/db/test-utils")
@@ -26,16 +27,21 @@ describe.skipIf(!DB_AVAILABLE)("custom-field values on the entity column", () =>
       sql`INSERT INTO people (id, first_name, last_name) VALUES (${pid}, 'CF', 'Values')`,
     )
     await db.execute(
-      sql`INSERT INTO custom_field_definitions (id, entity_type, key, label, field_type) VALUES
-        (${dEnum}, 'person', 'loyalty_tier', 'Tier', 'enum'),
-        (${dMoney}, 'person', 'budget', 'Budget', 'monetary')`,
+      sql`INSERT INTO custom_field_definitions
+        (id, entity_type, namespace, owner_kind, owner_id, lifecycle_state, provenance, key, label, field_type)
+        VALUES
+        (${dEnum}, 'person', 'custom', 'operator', NULL, 'active', '{"source":"test"}', 'loyalty_tier', 'Tier', 'enum'),
+        (${dMoney}, 'person', 'custom', 'operator', NULL, 'active', '{"source":"test"}', 'budget', 'Budget', 'monetary'),
+        (${dApp}, 'person', 'app--test', 'app', 'app_test', 'active', '{"source":"test"}', 'loyalty_tier', 'App tier', 'enum')`,
     )
   })
 
   afterAll(async () => {
     if (!db) return
     await db.execute(sql`DELETE FROM people WHERE id = ${pid}`)
-    await db.execute(sql`DELETE FROM custom_field_definitions WHERE id IN (${dEnum}, ${dMoney})`)
+    await db.execute(
+      sql`DELETE FROM custom_field_definitions WHERE id IN (${dEnum}, ${dMoney}, ${dApp})`,
+    )
   })
 
   it("upsert writes the value into the entity custom_fields column", async () => {
@@ -87,6 +93,16 @@ describe.skipIf(!DB_AVAILABLE)("custom-field values on the entity column", () =>
         textValue: "gold",
       }),
     ).rejects.toMatchObject({ status: 400 })
+  })
+
+  it("does not expose app-owned definitions through the temporary flat-value service", async () => {
+    await expect(
+      relationshipsService.upsertCustomFieldValue(db, dApp, {
+        entityType: "person",
+        entityId: pid,
+        textValue: "gold",
+      }),
+    ).rejects.toMatchObject({ status: 404 })
   })
 
   it("404s an upsert against a nonexistent entity row (no synthetic success)", async () => {

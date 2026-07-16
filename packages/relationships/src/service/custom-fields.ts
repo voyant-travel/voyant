@@ -1,6 +1,6 @@
 import { customFieldDefinitions } from "@voyant-travel/custom-fields/schema"
 import { ApiHttpError, RequestValidationError } from "@voyant-travel/hono"
-import { eq, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import type {
@@ -39,7 +39,13 @@ export const customFieldsService = {
     const defs = await db
       .select()
       .from(customFieldDefinitions)
-      .where(eq(customFieldDefinitions.entityType, query.entityType))
+      .where(
+        and(
+          eq(customFieldDefinitions.entityType, query.entityType),
+          eq(customFieldDefinitions.namespace, "custom"),
+          eq(customFieldDefinitions.lifecycleState, "active"),
+        ),
+      )
     const defByKey = new Map(defs.map((d) => [d.key, d]))
 
     const entities = toEntityCustomFieldsRows(
@@ -84,7 +90,13 @@ export const customFieldsService = {
     const [def] = await db
       .select()
       .from(customFieldDefinitions)
-      .where(eq(customFieldDefinitions.id, definitionId))
+      .where(
+        and(
+          eq(customFieldDefinitions.id, definitionId),
+          eq(customFieldDefinitions.namespace, "custom"),
+          eq(customFieldDefinitions.lifecycleState, "active"),
+        ),
+      )
       .limit(1)
     if (!def) {
       throw new ApiHttpError(`no custom-field definition "${definitionId}"`, {
@@ -144,7 +156,13 @@ export const customFieldsService = {
     const [def] = await db
       .select()
       .from(customFieldDefinitions)
-      .where(eq(customFieldDefinitions.id, parsed.definitionId))
+      .where(
+        and(
+          eq(customFieldDefinitions.id, parsed.definitionId),
+          eq(customFieldDefinitions.namespace, "custom"),
+          eq(customFieldDefinitions.lifecycleState, "active"),
+        ),
+      )
       .limit(1)
     if (!def) return null
     // The synthetic id encodes the entity type; if it disagrees with the

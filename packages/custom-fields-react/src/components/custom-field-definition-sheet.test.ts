@@ -9,6 +9,7 @@ describe("custom-field definition sheet target capabilities", () => {
     expect(
       defaultFormValues({
         id: "booking",
+        namespace: "bookings",
         label: "Booking",
         fieldTypes: ["text"],
         capabilities: ["read", "write"],
@@ -22,6 +23,7 @@ describe("custom-field definition sheet target capabilities", () => {
       normalizeCustomFieldDefinitionFormValues(
         {
           id: "activity",
+          namespace: "relationships",
           label: "Activity",
           fieldTypes: ["text"],
           capabilities: ["read", "write"],

@@ -29,6 +29,7 @@ export const quotesVoyantModule = defineModule({
   customFieldTargets: [
     {
       id: "quote",
+      namespace: "quotes",
       label: "Quote",
       fieldTypes: [
         "varchar",

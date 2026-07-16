@@ -25,6 +25,13 @@ export type CustomFieldsUiMessages = {
     addField: string
     entity: string
     allEntities: string
+    owner: string
+    allOwners: string
+    operatorOwned: string
+    appOwned: string
+    platformOwned: string
+    namespace: string
+    readOnly: string
     loadFailed: string
     requestFailed: string
     emptyTitle: string

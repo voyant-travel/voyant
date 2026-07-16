@@ -266,6 +266,7 @@ export const bookingsVoyantModule = defineModule({
   customFieldTargets: [
     {
       id: "booking",
+      namespace: "bookings",
       label: "Booking",
       fieldTypes: [
         "varchar",

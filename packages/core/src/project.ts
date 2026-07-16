@@ -67,6 +67,8 @@ export type VoyantGraphCustomFieldCapability =
 /** An entity-owner declaration that Settings may expose as a custom-field target. */
 export interface VoyantGraphCustomFieldTargetDeclaration {
   id: string
+  /** Immutable namespace used by the target's owning deployment unit. */
+  namespace: string
   label: string
   fieldTypes: readonly string[]
   capabilities: readonly VoyantGraphCustomFieldCapability[]

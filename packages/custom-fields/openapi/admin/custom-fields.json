@@ -1,13 +1,17 @@
 {
   "openapi": "3.1.0",
-  "info": { "title": "Voyant Custom Fields API", "version": "1.0.0" },
+  "info": {
+    "title": "Voyant Custom Fields API",
+    "version": "1.0.0",
+    "description": "Definition identity is target, physical namespace, and key. Operator Settings creates only server-assigned custom-namespace definitions."
+  },
   "paths": {
     "/v1/admin/custom-fields/targets": {
       "get": { "summary": "List selected target and field-type capabilities" }
     },
     "/v1/admin/custom-fields": {
       "get": { "summary": "List selected-target custom-field definitions" },
-      "post": { "summary": "Create a custom-field definition" }
+      "post": { "summary": "Create an operator-owned custom-field definition" }
     },
     "/v1/admin/custom-fields/{id}": {
       "get": { "summary": "Get a custom-field definition" },

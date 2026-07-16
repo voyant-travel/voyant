@@ -15,6 +15,8 @@ export function getCustomFieldDefinitionsQueryOptions(
 ) {
   const params = new URLSearchParams()
   if (filters.entityType) params.set("entityType", filters.entityType)
+  if (filters.ownerKind) params.set("ownerKind", filters.ownerKind)
+  if (filters.lifecycleState) params.set("lifecycleState", filters.lifecycleState)
   if (filters.limit !== undefined) params.set("limit", String(filters.limit))
   if (filters.offset !== undefined) params.set("offset", String(filters.offset))
   const query = params.toString()
