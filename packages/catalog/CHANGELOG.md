@@ -1,5 +1,16 @@
 # @voyant-travel/catalog
 
+## 0.162.0
+
+### Minor Changes
+
+- fc3224a: The Typesense catalog indexer provider reads an optional `TYPESENSE_COLLECTION_PREFIX` deployment config and namespaces every collection with it, so multi-tenant deployments can share one Typesense cluster with per-tenant key scoping (`<prefix>__.*`).
+
+### Patch Changes
+
+- @voyant-travel/bookings@0.164.0
+- @voyant-travel/finance@0.164.0
+
 ## 0.161.0
 
 ### Patch Changes
