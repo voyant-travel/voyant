@@ -1,5 +1,13 @@
 # @voyant-travel/auth
 
+## 0.132.4
+
+### Patch Changes
+
+- 2c863ab: Grant managed-cloud admin sessions explicit access-catalog scopes for admin-only resources such as Team management.
+- Updated dependencies [2c863ab]
+  - @voyant-travel/types@0.109.3
+
 ## 0.132.3
 
 ### Patch Changes
