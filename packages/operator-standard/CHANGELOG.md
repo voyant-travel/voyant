@@ -1,5 +1,12 @@
 # @voyant-travel/operator-standard
 
+## 0.6.9
+
+### Patch Changes
+
+- Updated dependencies [207a29c]
+  - @voyant-travel/custom-fields-react@0.2.2
+
 ## 0.6.8
 
 ### Patch Changes
