@@ -13,7 +13,6 @@ const expected = [
   "admin/README.md",
   "api/admin/README.md",
   "api/public/README.md",
-  "custom-fields/README.md",
   "extensions/README.md",
   "jobs/README.md",
   "links/README.md",
@@ -31,7 +30,6 @@ for (const directory of [
   "admin",
   "api/admin",
   "api/public",
-  "custom-fields",
   "extensions",
   "jobs",
   "links",
@@ -41,6 +39,8 @@ for (const directory of [
 ]) {
   assert(existsSync(join(starterRoot, directory, "README.md")), `${directory} overlay must remain`)
 }
+
+assert(!existsSync(join(starterRoot, "custom-fields")), "custom-fields overlay must stay deleted")
 
 const composition = ["router.tsx", "start.ts", "styles.css"]
   .map((file) => readFileSync(join(starterRoot, file), "utf8"))

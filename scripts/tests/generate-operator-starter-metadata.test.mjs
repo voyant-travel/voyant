@@ -32,6 +32,7 @@ test("emits disposable operator config with rebased declaration paths", () => {
     assert.deepEqual(client.compilerOptions.paths["@voyant-travel/example"], [
       "../../../packages/example/dist/index.d.ts",
     ])
+    assert.ok(!client.exclude.includes("../src/custom-fields/**"))
     const server = JSON.parse(
       readFileSync(join(root, "starters/operator/.voyant/tsconfig.server.json"), "utf8"),
     )
@@ -39,6 +40,7 @@ test("emits disposable operator config with rebased declaration paths", () => {
     assert.ok(!server.include.includes("../tests/**/*.ts"))
     assert.ok(server.include.includes("./vite.config.ts"))
     assert.ok(server.include.includes("./vitest.config.ts"))
+    assert.ok(!server.include.includes("../src/custom-fields/**/*.ts"))
     assert.ok(!server.include.includes("./**/*.ts"))
     assert.ok(server.exclude.includes("./runtime/**"))
     const smokeTests = JSON.parse(

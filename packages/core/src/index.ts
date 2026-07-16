@@ -13,10 +13,7 @@ export type {
 } from "./custom-fields.js"
 export {
   createCustomFieldRegistry,
-  customFieldsFromGlob,
   customFieldsVisibleIn,
-  defineCustomField,
-  mergeCustomFieldDefinitions,
   validateCustomFields,
 } from "./custom-fields.js"
 export type {

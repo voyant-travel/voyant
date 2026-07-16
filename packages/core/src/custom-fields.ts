@@ -16,8 +16,6 @@
  * Runtime definitions are persisted in `custom_field_definitions` and resolved
  * from the database on each request. This module remains dependency-free and
  * owns the registry, validation, and visibility primitives shared by consumers.
- * Legacy project-authoring helpers remain temporarily for source compatibility,
- * but they have no runtime authority.
  */
 
 /**
@@ -77,21 +75,6 @@ export interface CustomFieldDefinition {
   /** Sensitive data — the deployment should encrypt at rest / redact in logs. */
   pii?: boolean
   visibility?: CustomFieldVisibility
-  /**
-   * Extra validation beyond type/required/options. Return an error message to
-   * reject, or `null` to accept. Runs only when a value is present.
-   */
-  validate?: (value: unknown) => string | null
-}
-
-/**
- * Identity helper retained temporarily for source compatibility.
- *
- * @deprecated Project-local TypeScript definitions have no runtime authority.
- * Create operator definitions through Settings.
- */
-export function defineCustomField<T extends CustomFieldDefinition>(definition: T): T {
-  return definition
 }
 
 /** A resolved, indexed set of custom-field declarations. */
@@ -163,33 +146,6 @@ export function createCustomFieldRegistry(
     entities: () => [...byEntity.keys()],
     all: () => [...definitions],
   }
-}
-
-/**
- * Merge custom-field declarations from several sources into one duplicate-free
- * list. Retained only for source compatibility; runtime registry composition
- * must load persisted definitions directly.
- *
- * @deprecated Runtime custom-field definitions are database-owned. This helper
- * will be removed with the legacy local-definition surface.
- */
-export function mergeCustomFieldDefinitions(
-  sources: ReadonlyArray<ReadonlyArray<CustomFieldDefinition>>,
-  onShadow?: (shadowed: CustomFieldDefinition, winner: CustomFieldDefinition) => void,
-): CustomFieldDefinition[] {
-  const winners = new Map<string, CustomFieldDefinition>()
-  for (const source of sources) {
-    for (const def of source) {
-      const id = `${def.entity}.${def.namespace}.${def.key}`
-      const existing = winners.get(id)
-      if (existing) {
-        onShadow?.(def, existing)
-        continue
-      }
-      winners.set(id, def)
-    }
-  }
-  return [...winners.values()]
 }
 
 /** Fields of `entity` visible in `channel` (export / invoice / search). */
@@ -268,7 +224,7 @@ function checkType(def: CustomFieldDefinition, value: unknown): string | null {
 /**
  * Validate a custom-fields payload for `entity` against the registry. Unknown
  * keys are rejected (typo-proofing), missing required fields error, present
- * values are type/options/custom-rule checked. `null`/`undefined` values for a
+ * values are type/options checked. `null`/`undefined` values for a
  * non-required field are treated as "omitted". Returns the cleaned value and any
  * errors — callers persist `value` (e.g. into the entity's `custom_fields` or
  * `metadata` jsonb) only when `ok`.
@@ -316,43 +272,10 @@ export function validateCustomFields(
       errors.push({ namespace: def.namespace, key: def.key, message: typeError })
       continue
     }
-    const customError = def.validate?.(raw)
-    if (customError) {
-      errors.push({ namespace: def.namespace, key: def.key, message: customError })
-      continue
-    }
     const namespaceValues = value[def.namespace] ?? {}
     namespaceValues[def.key] = raw
     value[def.namespace] = namespaceValues
   }
 
   return { ok: errors.length === 0, value, errors }
-}
-
-/**
- * Discover deployment-local custom-field declarations from a Vite
- * `import.meta.glob` (eager) of `src/custom-fields/*.ts` files — the custom-field
- * half of the "extend without forking" seam (mirrors `modulesFromGlob` etc.).
- * Each file's `default` export is a {@link CustomFieldDefinition} or an array of
- * them; the results flatten into one list to feed
- * {@link createCustomFieldRegistry}. Empty until a deployment adds one.
- *
- * @deprecated Project-local TypeScript definitions have no runtime authority.
- * @throws if a matched file has no default export.
- */
-export function customFieldsFromGlob(glob: Record<string, unknown>): CustomFieldDefinition[] {
-  return Object.entries(glob)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .flatMap(([path, namespace]) => {
-      const declaration = (namespace as { default?: unknown }).default
-      if (declaration == null) {
-        throw new Error(
-          `[voyant-custom-fields] "${path}" has no default export — ` +
-            "export default defineCustomField(...) (or an array of them)",
-        )
-      }
-      return Array.isArray(declaration)
-        ? (declaration as CustomFieldDefinition[])
-        : [declaration as CustomFieldDefinition]
-    })
 }
