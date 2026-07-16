@@ -1,5 +1,27 @@
 # @voyant-travel/finance
 
+## 0.163.0
+
+### Patch Changes
+
+- 52352c4: Resolve custom-field definitions exclusively from persisted Settings records.
+  Bookings and Relationships now share the package-owned database resolver.
+  Project-local TypeScript authoring is removed by the completed custom-fields
+  cutline.
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+  - @voyant-travel/bookings@0.163.0
+  - @voyant-travel/core@0.125.0
+  - @voyant-travel/action-ledger@0.111.1
+  - @voyant-travel/db@0.114.9
+  - @voyant-travel/hono@0.128.1
+  - @voyant-travel/public-document-delivery@0.4.1
+  - @voyant-travel/storage@0.111.1
+  - @voyant-travel/finance-contracts@0.106.2
+
 ## 0.162.2
 
 ### Patch Changes

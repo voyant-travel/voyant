@@ -1,5 +1,15 @@
 # @voyant-travel/schema-kit
 
+## 0.113.0
+
+### Minor Changes
+
+- 52352c4: Remove project-local TypeScript custom-field declarations, discovery globs,
+  executable validation callbacks, and code/database merge helpers. The generic
+  custom-fields package now owns canonical value routes and dispatches operations
+  to selected entity-owning packages through typed runtime contributions, with no
+  Relationships compatibility adapter.
+
 ## 0.112.2
 
 ### Patch Changes

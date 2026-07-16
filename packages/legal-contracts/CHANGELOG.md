@@ -1,5 +1,12 @@
 # @voyant-travel/legal-contracts
 
+## 0.106.11
+
+### Patch Changes
+
+- Updated dependencies [52352c4]
+  - @voyant-travel/schema-kit@0.113.0
+
 ## 0.106.10
 
 ### Patch Changes

@@ -1,5 +1,86 @@
 # @voyant-travel/operator-standard
 
+## 0.6.6
+
+### Patch Changes
+
+- 52352c4: Move custom-field definition Settings ownership to the generic custom-fields
+  package. Selected entity manifests now declare the targets and field types that
+  the canonical API may accept. The unused Relationships definition API and
+  Settings surfaces are removed without compatibility adapters.
+
+  Target capability declarations now constrain searchable, exportable, and
+  invoiceable settings end to end, and unsupported flags are stored as false.
+
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+  - @voyant-travel/bookings@0.163.0
+  - @voyant-travel/core@0.125.0
+  - @voyant-travel/finance@0.163.0
+  - @voyant-travel/relationships@0.128.0
+  - @voyant-travel/relationships-react@0.163.0
+  - @voyant-travel/custom-fields@0.2.0
+  - @voyant-travel/custom-fields-react@0.2.0
+  - @voyant-travel/quotes@0.131.0
+  - @voyant-travel/framework-migrations@0.10.0
+  - @voyant-travel/accommodations@0.123.0
+  - @voyant-travel/bookings-react@0.163.0
+  - @voyant-travel/catalog@0.161.0
+  - @voyant-travel/charters@0.161.0
+  - @voyant-travel/commerce@0.37.1
+  - @voyant-travel/cruises@0.162.0
+  - @voyant-travel/distribution@0.153.0
+  - @voyant-travel/inventory@0.13.0
+  - @voyant-travel/legal@0.163.0
+  - @voyant-travel/mice@0.19.0
+  - @voyant-travel/notifications@0.130.3
+  - @voyant-travel/storefront@0.165.0
+  - @voyant-travel/trips@0.154.0
+  - @voyant-travel/action-ledger@0.111.1
+  - @voyant-travel/auth@0.132.3
+  - @voyant-travel/availability@0.2.14
+  - @voyant-travel/catalog-authoring@0.107.15
+  - @voyant-travel/db@0.114.9
+  - @voyant-travel/event-catalog@0.2.3
+  - @voyant-travel/event-catalog-react@0.5.0
+  - @voyant-travel/flights@0.163.0
+  - @voyant-travel/identity@0.163.0
+  - @voyant-travel/mcp@0.4.1
+  - @voyant-travel/navigation-preferences@0.5.2
+  - @voyant-travel/operations@0.8.1
+  - @voyant-travel/operator-settings@0.5.1
+  - @voyant-travel/public-document-delivery@0.4.1
+  - @voyant-travel/realtime@0.6.1
+  - @voyant-travel/setup@0.4.1
+  - @voyant-travel/storage@0.111.1
+  - @voyant-travel/workflow-runs@0.122.2
+  - @voyant-travel/action-ledger-react@0.51.0
+  - @voyant-travel/distribution-react@0.153.0
+  - @voyant-travel/flights-react@0.163.0
+  - @voyant-travel/identity-react@0.163.0
+  - @voyant-travel/legal-react@0.163.0
+  - @voyant-travel/mice-react@0.31.0
+  - @voyant-travel/quotes-react@0.161.0
+  - @voyant-travel/trips-react@0.154.0
+  - @voyant-travel/finance-react@0.163.0
+  - @voyant-travel/operations-react@0.44.0
+  - @voyant-travel/inventory-react@0.45.0
+  - @voyant-travel/storefront-react@0.165.0
+  - @voyant-travel/admin-app@0.55.0
+  - @voyant-travel/catalog-react@0.161.0
+  - @voyant-travel/commerce-react@0.45.0
+  - @voyant-travel/operator-settings-react@0.16.0
+  - @voyant-travel/cruises-react@0.162.0
+  - @voyant-travel/admin-host@0.13.0
+  - @voyant-travel/auth-react@0.132.3
+  - @voyant-travel/notifications-react@0.130.3
+  - @voyant-travel/navigation-preferences-react@0.5.2
+  - @voyant-travel/workflows@0.122.2
+  - @voyant-travel/workflows-orchestrator@0.122.2
+
 ## 0.6.5
 
 ### Patch Changes

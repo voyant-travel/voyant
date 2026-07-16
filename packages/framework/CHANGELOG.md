@@ -1,5 +1,42 @@
 # @voyant-travel/framework
 
+## 0.48.0
+
+### Minor Changes
+
+- 52352c4: Move custom-field definition Settings ownership to the generic custom-fields
+  package. Selected entity manifests now declare the targets and field types that
+  the canonical API may accept. The unused Relationships definition API and
+  Settings surfaces are removed without compatibility adapters.
+
+  Target capability declarations now constrain searchable, exportable, and
+  invoiceable settings end to end, and unsupported flags are stored as false.
+
+- 52352c4: Persist custom-field namespace, owner, lifecycle, and provenance metadata.
+  Operator definitions use the reserved `custom` namespace, app operations are
+  owner-constrained, platform definitions derive ownership from the selected
+  target, and Settings renders non-operator definitions as read-only.
+
+### Patch Changes
+
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+- Updated dependencies [52352c4]
+  - @voyant-travel/core@0.125.0
+  - @voyant-travel/operator-standard@0.6.6
+  - @voyant-travel/framework-migrations@0.10.0
+  - @voyant-travel/cruises@0.162.0
+  - @voyant-travel/action-ledger@0.111.1
+  - @voyant-travel/auth@0.132.3
+  - @voyant-travel/db@0.114.9
+  - @voyant-travel/hono@0.128.1
+  - @voyant-travel/mcp@0.4.1
+  - @voyant-travel/storage@0.111.1
+  - @voyant-travel/workflows@0.122.2
+  - @voyant-travel/workflows-orchestrator@0.122.2
+
 ## 0.47.4
 
 ### Patch Changes
