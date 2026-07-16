@@ -17,11 +17,15 @@ There will be two discovery paths but one installation model:
 
 1. **Marketplace discovery:** an operator selects a reviewed listing and grants
    its requested permissions.
-2. **Custom discovery:** a developer or operator supplies a registered custom
-   app or installation link and grants permissions through the same flow.
+2. **Custom app creation:** a developer or authorized operator creates a private
+   app registration directly in Voyant, supplies its manifest and endpoints,
+   and grants permissions through the same flow.
 
 Both paths create the same durable app installation, grants, extension
 descriptors, webhook subscriptions, and app-owned custom-field definitions.
+A custom app does not require a marketplace listing, marketplace review, or
+publication. Marketplace submission is an optional later distribution choice,
+not a prerequisite for app creation or installation.
 
 Npm remains a deployment mechanism for trusted code selected by the developer:
 Voyant modules, project modules, infrastructure providers, and deeply integrated
@@ -44,6 +48,11 @@ Every app receives a platform-assigned reserved namespace. Apps address their
 own namespace through an alias; they cannot submit, claim, or write another
 app's physical namespace. Custom-field identity is `(target, namespace, key)`,
 so two apps can safely use the same key on the same entity type.
+
+Each app owns its remote UI and its localization resources. Voyant passes the
+active locale to app extensions, while app releases provide validated localized
+metadata for the small amount of app text rendered by the Voyant host, such as
+navigation labels and extension titles.
 
 ## Problem Statement
 
@@ -91,6 +100,10 @@ search, export, invoice, and workflow surfaces cannot understand.
     Operator schema and runtime code.
 13. Make installation, grants, calls, deliveries, and custom-field mutations
     auditable.
+14. Let developers and authorized operators create and install custom apps
+    without marketplace publication.
+15. Let every app own its UI, translations, supported locales, and fallback
+    locale without adding app strings to Voyant translation catalogs.
 
 ## Non-Goals
 
@@ -102,6 +115,8 @@ search, export, invoice, and workflow surfaces cannot understand.
 - Making storage, cache, search, payment, or other deployment infrastructure
   operator-installable marketplace apps.
 - Supporting arbitrary remote JavaScript or React in the admin origin.
+- Requiring a custom app to be listed, reviewed, or published in a marketplace.
+- Hosting or compiling an app's iframe UI or in-frame translation bundles.
 - Guaranteeing ordered or exactly-once webhook delivery.
 - Allowing custom validation functions in custom-field definitions.
 - Migrating every existing integration in the first implementation phase.
@@ -115,8 +130,9 @@ search, export, invoice, and workflow surfaces cannot understand.
 | **App release** | An immutable, validated snapshot of an app manifest and its declared capabilities. |
 | **App installation** | The deployment-local relationship between one app registration and one Voyant deployment. |
 | **Marketplace app** | An app discovered through a reviewed marketplace listing. |
-| **Custom app** | An app registered or shared directly for a particular operator or set of deployments. |
+| **Custom app** | A private app created directly by an authorized developer or operator and installed without marketplace publication. |
 | **Admin extension** | A remote page or slot contribution rendered through the sandboxed admin extension host. |
+| **App locale catalog** | App-owned translations for the app's remote UI and validated localized metadata for host-rendered app labels. |
 | **Deployment component** | Trusted npm-selected module, adapter, or provider included in the resolved deployment graph. |
 | **Payment adapter** | A deployment component implementing the canonical payment processor contract. |
 | **Custom-field target** | A Voyant entity type whose owning module supports namespaced custom fields. |
@@ -229,6 +245,17 @@ module, extension, adapter, or provider.
     retention behavior, so that marketplace review is evidence-based.
 40. As a user, I want a failed app extension to fail softly, so that the native
     admin remains usable.
+41. As an authorized operator or developer, I want to create a custom app
+    directly in Voyant, so that private and operator-specific integrations do
+    not require marketplace publication.
+42. As a custom app developer, I want the same manifest, OAuth, UI, webhook, and
+    custom-field capabilities as a marketplace app, so that private
+    distribution is not a reduced app model.
+43. As an app developer, I want to own my app's UI and translation bundles, so
+    that I can release localized experiences on my own cadence.
+44. As a staff user, I want an app extension and its host-rendered labels to use
+    my active locale with deterministic fallbacks, so that the embedded
+    experience is linguistically consistent with the admin.
 
 ## Architecture
 
@@ -269,9 +296,34 @@ The registration records:
 - current released manifest version;
 - review and suspension state.
 
-A marketplace listing references an approved app registration. A custom app is
-still registered and identified by Voyant; accepting an arbitrary URL must not
-let the URL choose its app ID or reserved namespace.
+A marketplace listing references an approved app registration but is not the
+source of app identity. A custom app is created from an Apps developer or
+Settings surface by an authorized actor. Creation assigns the immutable app ID,
+reserved namespace, distribution policy, and initial credential generation
+before installation.
+
+Custom app creation must support at least:
+
+1. Create a private app registration for one operator organization or
+   deployment.
+2. Record developer ownership, redirect URIs, lifecycle URLs, and a signed
+   manifest source or uploaded manifest snapshot.
+3. Validate requested scopes and manifest compatibility.
+4. Create an immutable app release.
+5. Issue or register client authentication material.
+6. Start installation directly or generate a restricted installation link.
+
+None of these steps creates a marketplace listing or requires marketplace
+review. A custom app may remain private indefinitely. If its owner later submits
+it for marketplace distribution, the listing references the existing app
+identity; publication must not replace its app ID, namespace, releases, or
+existing installations.
+
+Accepting an arbitrary URL must never let the URL choose its app ID or reserved
+namespace. The actor creating a custom app must hold a dedicated app-development
+or app-administration permission. Managed deployments may store the registration
+in a managed control plane and self-hosted deployments may store it locally, but
+both must expose the same app and installation semantics.
 
 ### 3. App Manifest And Releases
 
@@ -281,6 +333,7 @@ The manifest is closed, versioned, declarative data. It may declare:
 - Voyant API compatibility range;
 - requested and optional scopes;
 - admin pages and slot extensions;
+- default locale, supported locales, and localized host-rendered metadata;
 - webhook event subscriptions and event versions;
 - app-owned custom-field definitions;
 - setup and configuration descriptors;
@@ -357,6 +410,11 @@ Remote UI uses the existing sandboxed iframe and versioned message protocol.
 The runtime installation store replaces the static self-hosted descriptor list
 as the source for operator-installed extensions.
 
+The app owns all UI rendered inside its iframe: framework, components, styling,
+content, accessibility, and localization. Voyant neither bundles app UI nor
+requires app strings to be added to a Voyant package. This is equally true for
+marketplace and custom apps.
+
 Extensions may contribute:
 
 - full app pages under an app-owned admin route;
@@ -375,6 +433,54 @@ access; the session token itself is not a general Voyant API credential.
 
 Session tokens must be short enough to make replay low value and must be
 reissued for current context. Third-party cookies are not part of the design.
+
+#### 6.1 App UI Internationalization
+
+The host sends the active canonical locale in the initial extension context and
+on every locale change. Locale identifiers use canonical BCP 47 language tags.
+The context also includes resolved text direction, `ltr` or `rtl`, so the app
+can render correctly without inferring direction from an incomplete language
+list.
+
+The app manifest declares:
+
+- one required default locale;
+- supported locale tags;
+- localized app name, navigation labels, extension titles, setup labels, and
+  other text rendered by the Voyant host;
+- optional localized custom-field labels and descriptions;
+- the location or release digest of app-owned in-frame locale catalogs.
+
+The iframe fetches and renders its own locale catalog from the app's origin.
+Voyant does not proxy, merge, compile, or become the source of truth for
+in-frame translations. The manifest's localized host metadata is different:
+Voyant validates and pins it with the app release because the host renders those
+strings outside the iframe.
+
+Locale resolution is deterministic:
+
+1. exact active locale match;
+2. progressively less specific language match where declared, such as
+   `pt-BR` to `pt`;
+3. the app's declared default locale.
+
+The app receives both the requested active locale and the resolved app locale.
+It may choose a more sophisticated in-frame fallback, but host-rendered labels
+always use the platform algorithm above. Missing translations do not prevent an
+app from loading when the default locale is complete; they produce release
+validation warnings. A missing or incomplete default locale is a release error.
+
+Localized host metadata is plain text with field-specific length limits. It
+cannot contain HTML, scripts, message-format code, or executable expressions.
+Variable interpolation for host-rendered strings is limited to platform-defined
+placeholders with validated types. App-owned iframe catalogs may use the app's
+chosen localization library because they execute only inside the sandboxed app
+origin.
+
+Locale changes remount or notify the extension through the versioned protocol
+without requiring a new OAuth grant or installation. An app release may add
+translations without changing scopes; removing the default locale or a locale
+required by an installation's policy is a compatibility change.
 
 ### 7. App APIs
 
@@ -628,7 +734,10 @@ design, but ownership and uniqueness are decisions of this RFC.
 - `app_redirect_uris`: exact authorized redirects.
 - `app_credentials`: client and signing-key generations, never raw public API
   tokens.
-- `app_releases`: immutable validated manifest snapshots.
+- `app_releases`: immutable validated manifest snapshots, default locale, and
+  supported locales.
+- `app_release_localizations`: validated host-rendered strings keyed by release,
+  locale, surface, and message key.
 - `app_listings`: marketplace metadata and review state.
 
 ### Installation
@@ -695,6 +804,7 @@ The platform versions these surfaces independently:
 - Voyant App API;
 - event payload schema per event type;
 - admin extension protocol;
+- app manifest localization and host-label schema;
 - payment adapter contract and conformance version.
 
 An app release declares compatible ranges. Install and upgrade fail closed when
@@ -731,6 +841,8 @@ reviewability and rollback.
     evidence.
 16. Tenant identity derived from the deployment and installation, never from an
     app-supplied tenant parameter.
+17. Localized host metadata treated as untrusted plain text with strict schema
+    and length validation.
 
 ## Reliability And Operational Requirements
 
@@ -757,13 +869,13 @@ Implementation should prefer these independently testable modules:
 2. **Installation Service:** consent, state machine, grants, pause, uninstall,
    reinstall, and purge planning.
 3. **Manifest Compiler:** closed-schema validation and deterministic
-   reconciliation into installation capabilities.
+   reconciliation into installation capabilities and localized host metadata.
 4. **App Authorization Server:** OAuth codes, offline credentials, online token
    exchange, rotation, revocation, and scope intersection.
 5. **Remote App Gateway:** version negotiation, rate limits, authenticated
    service context, and app-safe resource APIs.
 6. **Admin Extension Broker:** installed descriptors, iframe session tokens,
-   token exchange, context, and fail-soft hosting.
+   token exchange, locale context, host-label resolution, and fail-soft hosting.
 7. **Webhook Delivery Service:** subscription resolution, signing, durable
    attempts, retry, replay, and health.
 8. **Custom Fields Module:** targets, namespaces, definitions, values,
@@ -800,7 +912,9 @@ or marketplace listing.
 ### Phase 2: App registry and OAuth installation
 
 - Add app registration, release, installation, grants, and lifecycle services.
-- Implement marketplace and custom discovery over the same release model.
+- Build custom app creation in Apps developer or Settings UI without a
+  marketplace dependency.
+- Implement optional marketplace discovery over the same release model.
 - Implement offline credentials, rotation, pause, revoke, and uninstall.
 - Build Installed Apps and consent UI.
 - Add audit and health surfaces.
@@ -809,6 +923,8 @@ or marketplace listing.
 
 - Source admin extension descriptors from active installations.
 - Add app pages, navigation contributions, and selected slots.
+- Add manifest localization validation, release-pinned host labels, locale
+  negotiation, and locale/direction extension context.
 - Implement short-lived iframe session tokens and online token exchange.
 - Keep the existing sandbox posture and compatibility checks.
 
@@ -869,14 +985,21 @@ function shape.
 - Webhook signing, duplicate delivery IDs, retry scheduling, and terminal
   failure.
 - Admin session token audience, context, expiry, and replay posture.
+- Locale canonicalization, exact and language fallback, default-locale
+  completeness, and host-label validation.
 - Payment adapter conformance for every implementation.
 
 ### Integration tests
 
-- Marketplace and custom discovery produce equivalent installation aggregates.
+- Directly created custom apps and marketplace-discovered apps produce
+  equivalent installation aggregates.
+- Creating and installing a custom app never creates or requires a marketplace
+  listing.
 - OAuth install, API call, token refresh/rotation, pause, and uninstall.
 - Iframe handshake, session token, backend exchange, contextual API call, and
   revocation.
+- Iframe UI receives requested locale, resolved app locale, direction, and live
+  locale changes; host labels use the same pinned app release.
 - Event emission through durable signed webhook delivery and replay.
 - App-owned definition install, value write, search/export visibility, uninstall,
   and reinstall.
@@ -892,6 +1015,8 @@ function shape.
 
 - Consent accurately displays effective required and optional grants.
 - Native admin remains usable when the app origin is slow, invalid, or down.
+- Missing non-default app translations fall back deterministically, while an
+  incomplete default locale fails release validation.
 - Third-party cookie blocking does not break embedded app authentication.
 - OAuth redirect, state, code replay, token audience, and confused-deputy tests.
 - Manifest-fetch SSRF, redirect, oversized body, invalid signature, and timeout
@@ -911,35 +1036,44 @@ the prior art. New tests should use the same package-owned contract style.
 
 1. Installing an app changes no package, graph artifact, migration plan, or
    Operator process code.
-2. Marketplace and custom apps use one installation aggregate and OAuth flow.
-3. No remote app manifest can declare schema, migrations, providers, or runtime
+2. An authorized actor can create, release, and install a custom app without a
+   marketplace listing, publication, or review.
+3. Marketplace-discovered and directly created custom apps use one installation
+   aggregate and OAuth flow.
+4. No remote app manifest can declare schema, migrations, providers, or runtime
    code.
-4. Installed app UI is always remote and sandboxed.
-5. The iframe receives no installation credential and can authenticate through
+5. Installed app UI is always app-owned, remote, and sandboxed.
+6. Every app can declare its default locale, supported locales, and localized
+   host-rendered metadata without adding strings to Voyant packages.
+7. The iframe receives the active locale, resolved app locale, and text
+   direction, and the app remains authoritative for its in-frame translations.
+8. Host-rendered app labels use deterministic locale fallback and a
+   release-pinned, complete default locale.
+9. The iframe receives no installation credential and can authenticate through
    a short-lived session-token flow.
-6. Every app API request resolves an active installation and effective scopes.
-7. Every app has an immutable platform-assigned namespace.
-8. An app cannot name, claim, read, define, or write another app namespace.
-9. Two apps can define the same key on the same target without collision.
-10. Operator-owned fields and app-owned fields have distinct definition and
+10. Every app API request resolves an active installation and effective scopes.
+11. Every app has an immutable platform-assigned namespace.
+12. An app cannot name, claim, read, define, or write another app namespace.
+13. Two apps can define the same key on the same target without collision.
+14. Operator-owned fields and app-owned fields have distinct definition and
     value controls.
-11. Custom-field definitions have one database authority; project TypeScript
+15. Custom-field definitions have one database authority; project TypeScript
     declarations are unsupported.
-12. Custom-field targets come from selected entity-owning modules rather than a
+16. Custom-field targets come from selected entity-owning modules rather than a
     Relationships-owned enum.
-13. Uninstall revokes access and extensions immediately while retaining values
+17. Uninstall revokes access and extensions immediately while retaining values
     by default.
-14. Webhook delivery is signed, durable, at-least-once, idempotency-friendly,
+18. Webhook delivery is signed, durable, at-least-once, idempotency-friendly,
     observable, and replayable.
-15. Remote app outages cannot block Operator boot or native admin pages.
-16. Accounting integrations can operate through the App API and event surface
+19. Remote app outages cannot block Operator boot or native admin pages.
+20. Accounting integrations can operate through the App API and event surface
     without in-process code.
-17. Netopia and Voyant Payments implement the same selected payment adapter
+21. Netopia and Voyant Payments implement the same selected payment adapter
     contract and pass its conformance suite.
-18. Environment variables never implicitly select a payment adapter.
-19. High-impact app actions remain subject to Voyant approval and action-ledger
+22. Environment variables never implicitly select a payment adapter.
+23. High-impact app actions remain subject to Voyant approval and action-ledger
     policy.
-20. Architecture checks prevent vocabulary and authority from drifting back to
+24. Architecture checks prevent vocabulary and authority from drifting back to
     runtime-installed npm plugins.
 
 ## Consequences
@@ -973,6 +1107,8 @@ Operator or maintaining two app delivery models.
 ## Resolved Decisions
 
 - Apps are remote-only.
+- Custom apps can be created and installed without marketplace listing,
+  publication, or review.
 - Marketplace and custom discovery converge on one OAuth installation model.
 - Npm remains for deployment components and is not an app installation mode.
 - There is no hybrid app mode.
@@ -989,12 +1125,15 @@ Operator or maintaining two app delivery models.
 - Accounting integrations are remote apps.
 - V1 selects one active payment adapter per deployment.
 - Uninstall retains app-owned values by default; purge is explicit.
+- Each app owns its iframe UI and in-frame localization catalogs.
+- Voyant stores only validated, release-pinned localization used for
+  host-rendered app labels.
+- Locale resolution uses exact match, declared language fallback, then the
+  app's complete default locale.
 
 ## Deferred Decisions
 
 - Marketplace commercial terms, billing, revenue share, and payouts.
-- Whether custom apps require centralized registration in managed deployments
-  or may be registered entirely within a self-hosted deployment.
 - Exact App API transport shape beyond HTTP/JSON and webhook contracts.
 - Public-key versus confidential-secret client authentication defaults.
 - Fine-grained limits per custom-field target and deployment plan.
