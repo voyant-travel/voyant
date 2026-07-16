@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import type { CustomFieldValueLifecycleRuntime } from "@voyant-travel/core/runtime-port"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -52,9 +53,12 @@ const requiredJsonBody = <T extends z.ZodTypeAny>(schema: T) => ({
 
 export function createCustomFieldRoutes(
   targets: ReadonlyMap<string, CustomFieldTarget>,
-  options: { includeTargets?: boolean } = {},
+  options: {
+    includeTargets?: boolean
+    valueLifecycles?: readonly CustomFieldValueLifecycleRuntime[]
+  } = {},
 ) {
-  const service = createCustomFieldsService(targets)
+  const service = createCustomFieldsService(targets, options.valueLifecycles)
   const routes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 
   if (options.includeTargets !== false) {

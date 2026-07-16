@@ -1,3 +1,4 @@
+import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import { boolean, index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
@@ -22,7 +23,7 @@ export const activities = pgTable(
     location: text("location"),
     description: text("description"),
     /** Unified custom fields — see the custom-fields unification ADR. */
-    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    customFields: jsonb("custom_fields").$type<NamespacedCustomFieldValues>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

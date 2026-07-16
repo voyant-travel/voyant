@@ -14,9 +14,10 @@ resource. Target capabilities are also server-enforced: definitions can enable
 search, export, or invoice visibility only when the selected target declares
 that capability; unsupported flags are stored as `false`.
 
-Definition target, field type, and key are immutable in this slice. Changing a
-key requires the future namespaced-value migration rather than risking an
-orphaned JSON key.
+Definition target and field type remain immutable. A key rename is allowed and
+atomically delegates to the selected target package, which moves only
+`custom_fields[definition.namespace][oldKey]` to the new key. Definition delete
+removes values only from that same namespace.
 
 ## Namespace and ownership
 
@@ -38,10 +39,12 @@ namespace, lifecycle state, and provenance. Its durable identity is
   hidden by default; owner-scoped reconciliation can request a lifecycle state
   explicitly.
 
-The current entity value JSON remains flat for this definition-only cutover.
-Until #3400 lands namespaced values, only the `custom` namespace enters the
-runtime validation/visibility registry; app definitions remain durable and
-visible in Settings without being conflated with an operator key.
+Entity values use `custom_fields[namespace][key]`. All active definitions enter
+the runtime validation and visibility registry, so two owners may use the same
+key without collision. Ordinary operator entity routes validate only the
+server-reserved `custom` namespace and preserve app/platform namespaces on
+partial updates. Trusted app/platform value operations receive owner and
+namespace from authenticated runtime context rather than request input.
 
 The namespace-ownership migration intentionally discards existing definition
 rows before adding the required ownership columns. Custom fields had no

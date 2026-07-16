@@ -73,10 +73,12 @@ const activityParticipantRow: InferSelectModel<typeof activityParticipants> = {
 
 // The value API row is synthetic (no table); assert its declared shape directly.
 const customFieldValueRow: z.infer<typeof customFieldValueSchema> = {
-  id: "person::people_000000000000000000000000::custom_field_definitions_0000000000",
+  id: "person::people_000000000000000000000000::custom::custom_field_definitions_0000000000",
   definitionId: "custom_field_definitions_0000000000",
   entityType: "person",
   entityId: "people_000000000000000000000000",
+  namespace: "custom",
+  key: "loyalty_tier",
   textValue: "gold",
   numberValue: null,
   dateValue: null,

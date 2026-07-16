@@ -28,9 +28,7 @@ export async function loadCustomFieldDefinitions(
   targets?: ReadonlyMap<string, CustomFieldTarget>,
 ): Promise<CustomFieldDefinition[]> {
   return (await db.select().from(customFieldDefinitions)).flatMap((row) => {
-    // Entity values remain flat until #3400 introduces namespaced JSON. Only
-    // the operator namespace can participate in that flat runtime safely.
-    if (row.namespace !== "custom" || row.lifecycleState !== "active") return []
+    if (row.lifecycleState !== "active") return []
     const target = targets?.get(row.entityType)
     if (targets && !target) return []
     if (target && !target.fieldTypes.includes(row.fieldType)) return []
@@ -38,6 +36,7 @@ export async function loadCustomFieldDefinitions(
     return [
       {
         entity: row.entityType,
+        namespace: row.namespace,
         key: row.key,
         type: TYPE_MAP[row.fieldType] ?? "text",
         label: row.label,

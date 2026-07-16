@@ -15,7 +15,7 @@ describe("custom-fields runtime value readers", () => {
     const readers: unknown[] = []
     const reader = {
       resolveVisibleValues: (_db: unknown, entity: string) =>
-        entity === "person" ? { loyalty: "gold" } : undefined,
+        entity === "person" ? { custom: { loyalty: "gold" } } : undefined,
     }
     const runtime = createCustomFieldsRuntimePortContribution({
       customFieldTargets: [
@@ -34,7 +34,7 @@ describe("custom-fields runtime value readers", () => {
     readers.push(reader)
     await expect(
       runtime.resolveVisibleValues({}, "person", "person_1", "invoice"),
-    ).resolves.toEqual({ loyalty: "gold" })
+    ).resolves.toEqual({ custom: { loyalty: "gold" } })
     await expect(
       runtime.resolveVisibleValues({}, "booking", "booking_1", "invoice"),
     ).resolves.toEqual({})

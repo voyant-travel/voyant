@@ -1,3 +1,4 @@
+import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import type { KmsEnvelope } from "@voyant-travel/db/schema/iam/kms"
 import { sql } from "drizzle-orm"
@@ -82,7 +83,7 @@ export const organizations = pgTable(
      * ADR). Validated at the write boundary against the resolved registry
      * (persisted in `custom_field_definitions`); `{}` when none are set.
      */
-    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    customFields: jsonb("custom_fields").$type<NamespacedCustomFieldValues>().notNull().default({}),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -125,7 +126,7 @@ export const people = pgTable(
      * ADR). Validated at the write boundary against the resolved registry
      * (persisted in `custom_field_definitions`); `{}` when none are set.
      */
-    customFields: jsonb("custom_fields").$type<Record<string, unknown>>().notNull().default({}),
+    customFields: jsonb("custom_fields").$type<NamespacedCustomFieldValues>().notNull().default({}),
     dateOfBirth: date("date_of_birth"),
     notes: text("notes"),
     /**

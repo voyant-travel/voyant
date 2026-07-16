@@ -1,4 +1,8 @@
-import type { CustomFieldRegistryResolver, CustomFieldVisibilityChannel } from "./custom-fields.js"
+import type {
+  CustomFieldRegistryResolver,
+  CustomFieldVisibilityChannel,
+  NamespacedCustomFieldValues,
+} from "./custom-fields.js"
 import { definePort } from "./project.js"
 
 /**
@@ -15,7 +19,7 @@ export interface CustomFieldsRuntime {
     entity: string,
     entityId: string,
     channel: CustomFieldVisibilityChannel,
-  ): Promise<Record<string, unknown>> | Record<string, unknown>
+  ): Promise<NamespacedCustomFieldValues> | NamespacedCustomFieldValues
 }
 
 /** Additive owner read capability used by the generic custom-fields runtime. */
@@ -25,7 +29,31 @@ export interface CustomFieldValueReaderRuntime {
     entity: string,
     entityId: string,
     channel: CustomFieldVisibilityChannel,
-  ): Promise<Record<string, unknown> | undefined> | Record<string, unknown> | undefined
+  ): Promise<NamespacedCustomFieldValues | undefined> | NamespacedCustomFieldValues | undefined
+}
+
+export interface CustomFieldValueDefinitionIdentity {
+  entityType: string
+  namespace: string
+  key: string
+}
+
+/**
+ * Package-owned value lifecycle capability used when a persisted definition
+ * changes identity or is removed. Each provider mutates only its own entity
+ * tables and receives namespace/key identity from the trusted definition row.
+ */
+export interface CustomFieldValueLifecycleRuntime {
+  supports(entityType: string): boolean
+  renameDefinitionKey(
+    db: unknown,
+    definition: CustomFieldValueDefinitionIdentity,
+    nextKey: string,
+  ): Promise<void> | void
+  deleteDefinitionValues(
+    db: unknown,
+    definition: CustomFieldValueDefinitionIdentity,
+  ): Promise<void> | void
 }
 
 export const customFieldValueReaderRuntimePort = definePort<CustomFieldValueReaderRuntime>({
@@ -37,6 +65,23 @@ export const customFieldValueReaderRuntimePort = definePort<CustomFieldValueRead
       typeof provider.resolveVisibleValues !== "function"
     ) {
       throw new Error("custom-fields.value-reader provider must implement resolveVisibleValues().")
+    }
+  },
+})
+
+export const customFieldValueLifecycleRuntimePort = definePort<CustomFieldValueLifecycleRuntime>({
+  id: "custom-fields.value-lifecycle",
+  test(provider) {
+    if (
+      !provider ||
+      typeof provider !== "object" ||
+      typeof provider.supports !== "function" ||
+      typeof provider.renameDefinitionKey !== "function" ||
+      typeof provider.deleteDefinitionValues !== "function"
+    ) {
+      throw new Error(
+        "custom-fields.value-lifecycle provider must implement supports(), renameDefinitionKey(), and deleteDefinitionValues().",
+      )
     }
   },
 })

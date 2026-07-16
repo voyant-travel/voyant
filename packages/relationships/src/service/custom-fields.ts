@@ -1,6 +1,11 @@
+import {
+  assertCustomFieldDefinitionOwner,
+  type CustomFieldDefinitionOwner,
+  operatorCustomFieldDefinitionOwner,
+} from "@voyant-travel/custom-fields"
 import { customFieldDefinitions } from "@voyant-travel/custom-fields/schema"
 import { ApiHttpError, RequestValidationError } from "@voyant-travel/hono"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import type {
@@ -19,173 +24,244 @@ import {
 type CustomFieldValueListQuery = z.infer<typeof customFieldValueListQuerySchema>
 type UpsertCustomFieldValueInput = z.infer<typeof upsertCustomFieldValueSchema>
 
-export const customFieldsService = {
-  // ---- Values: unified storage on the entity's `custom_fields` jsonb column ----
-  // (custom_field_values is retired — see the custom-fields unification ADR.)
-
-  async listCustomFieldValues(db: PostgresJsDatabase, query: CustomFieldValueListQuery) {
-    // Locating the value requires the entity type (→ table). The admin UI always
-    // scopes by entityType; without one there is nothing to list.
-    const table = query.entityType ? entityTableName(query.entityType) : null
-    if (!query.entityType || !table) {
-      return {
-        data: [] as CustomFieldValueRow[],
-        total: 0,
-        limit: query.limit,
-        offset: query.offset,
-      }
-    }
-
-    const defs = await db
-      .select()
-      .from(customFieldDefinitions)
-      .where(
-        and(
-          eq(customFieldDefinitions.entityType, query.entityType),
-          eq(customFieldDefinitions.namespace, "custom"),
-          eq(customFieldDefinitions.lifecycleState, "active"),
-        ),
+function ownerWhere(owner: CustomFieldDefinitionOwner) {
+  return owner.kind === "operator"
+    ? and(
+        eq(customFieldDefinitions.ownerKind, "operator"),
+        eq(customFieldDefinitions.namespace, "custom"),
+        isNull(customFieldDefinitions.ownerId),
       )
-    const defByKey = new Map(defs.map((d) => [d.key, d]))
+    : and(
+        eq(customFieldDefinitions.ownerKind, owner.kind),
+        eq(customFieldDefinitions.namespace, owner.namespace),
+        eq(customFieldDefinitions.ownerId, owner.ownerId),
+      )
+}
 
-    const entities = toEntityCustomFieldsRows(
-      query.entityId
-        ? await db.execute(
-            sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE id = ${query.entityId}`,
-          )
-        : await db.execute(
-            sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE custom_fields <> '{}'::jsonb ORDER BY updated_at DESC`,
-          ),
-    )
-
-    const all: CustomFieldValueRow[] = []
-    for (const ent of entities) {
-      for (const [key, value] of Object.entries(ent.custom_fields ?? {})) {
-        const def = defByKey.get(key)
-        if (!def) continue // orphaned key (definition deleted) — skip
-        if (query.definitionId && def.id !== query.definitionId) continue
-        all.push({
-          id: syntheticValueId(query.entityType, ent.id, def.id),
-          definitionId: def.id,
-          entityType: query.entityType,
-          entityId: ent.id,
-          ...typedFromJsonbValue(def.fieldType, value),
-        })
-      }
-    }
-
+async function listCustomFieldValuesForOwner(
+  db: PostgresJsDatabase,
+  owner: CustomFieldDefinitionOwner,
+  query: CustomFieldValueListQuery,
+) {
+  assertCustomFieldDefinitionOwner(owner)
+  const table = query.entityType ? entityTableName(query.entityType) : null
+  if (!query.entityType || !table) {
     return {
-      data: all.slice(query.offset, query.offset + query.limit),
-      total: all.length,
+      data: [] as CustomFieldValueRow[],
+      total: 0,
       limit: query.limit,
       offset: query.offset,
     }
-  },
+  }
 
-  async upsertCustomFieldValue(
-    db: PostgresJsDatabase,
-    definitionId: string,
-    data: UpsertCustomFieldValueInput,
-  ): Promise<CustomFieldValueRow> {
-    const [def] = await db
+  const defs = await db
+    .select()
+    .from(customFieldDefinitions)
+    .where(
+      and(
+        eq(customFieldDefinitions.entityType, query.entityType),
+        eq(customFieldDefinitions.lifecycleState, "active"),
+        ownerWhere(owner),
+      ),
+    )
+  const defByIdentity = new Map(defs.map((definition) => [definition.key, definition]))
+
+  const entities = toEntityCustomFieldsRows(
+    query.entityId
+      ? await db.execute(
+          sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE id = ${query.entityId}`,
+        )
+      : await db.execute(
+          sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE custom_fields <> '{}'::jsonb ORDER BY updated_at DESC`,
+        ),
+  )
+
+  const all: CustomFieldValueRow[] = []
+  for (const entity of entities) {
+    const namespaceValues = entity.custom_fields?.[owner.namespace]
+    if (!isCustomFieldNamespaceValues(namespaceValues)) continue
+    for (const [key, value] of Object.entries(namespaceValues)) {
+      const definition = defByIdentity.get(key)
+      if (!definition) continue
+      if (query.definitionId && definition.id !== query.definitionId) continue
+      all.push({
+        id: syntheticValueId(query.entityType, entity.id, definition.namespace, definition.id),
+        definitionId: definition.id,
+        entityType: query.entityType,
+        entityId: entity.id,
+        namespace: definition.namespace,
+        key: definition.key,
+        ...typedFromJsonbValue(definition.fieldType, value),
+      })
+    }
+  }
+
+  return {
+    data: all.slice(query.offset, query.offset + query.limit),
+    total: all.length,
+    limit: query.limit,
+    offset: query.offset,
+  }
+}
+
+async function upsertCustomFieldValueForOwner(
+  db: PostgresJsDatabase,
+  owner: CustomFieldDefinitionOwner,
+  definitionId: string,
+  data: UpsertCustomFieldValueInput,
+): Promise<CustomFieldValueRow> {
+  assertCustomFieldDefinitionOwner(owner)
+  return db.transaction(async (tx) => {
+    const [definition] = await tx
       .select()
       .from(customFieldDefinitions)
       .where(
         and(
           eq(customFieldDefinitions.id, definitionId),
-          eq(customFieldDefinitions.namespace, "custom"),
           eq(customFieldDefinitions.lifecycleState, "active"),
+          ownerWhere(owner),
         ),
       )
+      .for("update")
       .limit(1)
-    if (!def) {
+    if (!definition) {
       throw new ApiHttpError(`no custom-field definition "${definitionId}"`, {
         status: 404,
         code: "not_found",
       })
     }
 
-    // The definition's entityType is authoritative — it decides the physical
-    // table. Reject a payload pointing at a different entity type rather than
-    // writing e.g. a person field into an organization row, where listing
-    // (which loads definitions by the requested entity type) would never
-    // surface it again. See the custom-fields unification ADR.
-    if (data.entityType !== def.entityType) {
+    if (data.entityType !== definition.entityType) {
       throw new RequestValidationError(
-        `custom field "${def.key}" belongs to ${def.entityType}, not ${data.entityType}`,
+        `custom field "${definition.key}" belongs to ${definition.entityType}, not ${data.entityType}`,
       )
     }
-    const table = entityTableName(def.entityType)
+    const table = entityTableName(definition.entityType)
     if (!table) {
       throw new RequestValidationError(
-        `entity type "${def.entityType}" has no custom_fields column`,
+        `entity type "${definition.entityType}" has no custom_fields column`,
       )
     }
 
-    const value = jsonbValueFromTyped(def.fieldType, data)
-    const patch = JSON.stringify({ [def.key]: value })
-    // RETURNING id lets us distinguish "stored" from "no such entity row" — a
-    // bare UPDATE silently affects zero rows, which previously returned a
-    // synthetic success for a nonexistent entity id.
+    const value = jsonbValueFromTyped(definition.fieldType, data)
     const updated = Array.from(
-      await db.execute(
-        sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields || ${patch}::jsonb, updated_at = now() WHERE id = ${data.entityId} RETURNING id`,
+      await tx.execute(
+        sql`UPDATE ${sql.identifier(table)}
+            SET custom_fields = jsonb_set(
+                  custom_fields,
+                  ARRAY[${definition.namespace}]::text[],
+                  COALESCE(custom_fields -> ${definition.namespace}, '{}'::jsonb)
+                    || jsonb_build_object(
+                      ${definition.key}::text,
+                      ${JSON.stringify(value)}::jsonb
+                    ),
+                  true
+                ),
+                updated_at = now()
+            WHERE id = ${data.entityId}
+            RETURNING id`,
       ),
     )
     if (updated.length === 0) {
-      throw new ApiHttpError(`${def.entityType} "${data.entityId}" not found`, {
+      throw new ApiHttpError(`${definition.entityType} "${data.entityId}" not found`, {
         status: 404,
         code: "not_found",
       })
     }
 
     return {
-      id: syntheticValueId(def.entityType, data.entityId, definitionId),
+      id: syntheticValueId(
+        definition.entityType,
+        data.entityId,
+        definition.namespace,
+        definitionId,
+      ),
       definitionId,
-      entityType: def.entityType,
+      entityType: definition.entityType,
       entityId: data.entityId,
-      ...typedFromJsonbValue(def.fieldType, value),
+      namespace: definition.namespace,
+      key: definition.key,
+      ...typedFromJsonbValue(definition.fieldType, value),
     }
-  },
+  })
+}
 
-  async deleteCustomFieldValue(db: PostgresJsDatabase, id: string) {
-    const parsed = parseSyntheticValueId(id)
-    if (!parsed) return null
-    const table = entityTableName(parsed.entityType)
-    if (!table) return null
-    const [def] = await db
+async function deleteCustomFieldValueForOwner(
+  db: PostgresJsDatabase,
+  owner: CustomFieldDefinitionOwner,
+  id: string,
+) {
+  assertCustomFieldDefinitionOwner(owner)
+  const parsed = parseSyntheticValueId(id)
+  if (!parsed || parsed.namespace !== owner.namespace) return null
+  const table = entityTableName(parsed.entityType)
+  if (!table) return null
+  return db.transaction(async (tx) => {
+    const [definition] = await tx
       .select()
       .from(customFieldDefinitions)
       .where(
         and(
           eq(customFieldDefinitions.id, parsed.definitionId),
-          eq(customFieldDefinitions.namespace, "custom"),
           eq(customFieldDefinitions.lifecycleState, "active"),
+          ownerWhere(owner),
         ),
       )
+      .for("update")
       .limit(1)
-    if (!def) return null
-    // The synthetic id encodes the entity type; if it disagrees with the
-    // definition it is forged/stale — treat as not found.
-    if (def.entityType !== parsed.entityType) return null
+    if (!definition) return null
+    if (definition.entityType !== parsed.entityType || definition.namespace !== parsed.namespace) {
+      return null
+    }
+
     const deleted = Array.from(
-      await db.execute(
-        sql`UPDATE ${sql.identifier(table)} SET custom_fields = custom_fields - ${def.key}, updated_at = now() WHERE id = ${parsed.entityId} AND custom_fields ? ${def.key} RETURNING id`,
+      await tx.execute(
+        sql`UPDATE ${sql.identifier(table)}
+            SET custom_fields = custom_fields #- ARRAY[${definition.namespace}, ${definition.key}]::text[],
+                updated_at = now()
+            WHERE id = ${parsed.entityId}
+              AND custom_fields -> ${definition.namespace} ? ${definition.key}
+            RETURNING id`,
       ),
     )
-    // No matching entity row, or the value was never set → 404 (not a fake 200).
     if (deleted.length === 0) return null
     return { id }
-  },
+  })
 }
 
-/** A row in the entity table with just its id + custom_fields (raw query shape). */
+export const customFieldsService = {
+  listCustomFieldValues(db: PostgresJsDatabase, query: CustomFieldValueListQuery) {
+    return listCustomFieldValuesForOwner(db, operatorCustomFieldDefinitionOwner, query)
+  },
+  upsertCustomFieldValue(
+    db: PostgresJsDatabase,
+    definitionId: string,
+    data: UpsertCustomFieldValueInput,
+  ) {
+    return upsertCustomFieldValueForOwner(
+      db,
+      operatorCustomFieldDefinitionOwner,
+      definitionId,
+      data,
+    )
+  },
+  deleteCustomFieldValue(db: PostgresJsDatabase, id: string) {
+    return deleteCustomFieldValueForOwner(db, operatorCustomFieldDefinitionOwner, id)
+  },
+  listCustomFieldValuesForOwner,
+  upsertCustomFieldValueForOwner,
+  deleteCustomFieldValueForOwner,
+}
+
 interface EntityCustomFieldsRow {
   id: string
   custom_fields: Record<string, unknown> | null
 }
 
-/** Narrow a raw `db.execute` result into typed `(id, custom_fields)` rows. */
+function isCustomFieldNamespaceValues(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 function toEntityCustomFieldsRows(
   result: Iterable<Record<string, unknown>>,
 ): EntityCustomFieldsRow[] {
@@ -195,10 +271,11 @@ function toEntityCustomFieldsRows(
   }))
 }
 
-/** The value-API row shape, reconstructed from the entity's `custom_fields`. */
 type CustomFieldValueRow = {
   id: string
   definitionId: string
   entityType: string
   entityId: string
+  namespace: string
+  key: string
 } & TypedValueColumns

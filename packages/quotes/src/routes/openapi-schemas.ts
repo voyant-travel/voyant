@@ -31,6 +31,7 @@ export const idParamSchema = z.object({ id: idSchema })
 const isoTimestamp = z.string()
 const isoDate = z.string()
 const jsonRecord = z.record(z.string(), z.unknown())
+const namespacedCustomFields = z.record(z.string(), jsonRecord)
 
 // --- pipeline ---------------------------------------------------------------
 
@@ -79,7 +80,7 @@ export const quoteSchema = z.object({
   sourceRef: z.string().nullable(),
   lostReason: z.string().nullable(),
   tags: z.array(z.string()),
-  customFields: jsonRecord,
+  customFields: namespacedCustomFields,
   description: z.string().nullable(),
   createdBy: z.string().nullable(),
   updatedBy: z.string().nullable(),

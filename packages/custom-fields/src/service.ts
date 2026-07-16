@@ -1,3 +1,4 @@
+import type { CustomFieldValueLifecycleRuntime } from "@voyant-travel/core/runtime-port"
 import { ApiHttpError } from "@voyant-travel/hono"
 import { and, eq, inArray, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -76,7 +77,7 @@ export function createPlatformCustomFieldDefinitionOwner(
   })
 }
 
-function assertOwner(owner: CustomFieldDefinitionOwner): void {
+export function assertCustomFieldDefinitionOwner(owner: CustomFieldDefinitionOwner): void {
   if (owner.kind === "operator") {
     if (owner.namespace !== "custom" || owner.ownerId !== undefined) {
       throw new Error("Operator custom-field definitions must use the reserved custom namespace.")
@@ -108,8 +109,19 @@ function ownerWhere(owner: CustomFieldDefinitionOwner) {
       )
 }
 
-export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFieldTarget>) {
+export function createCustomFieldsService(
+  targets: ReadonlyMap<string, CustomFieldTarget>,
+  valueLifecycles: readonly CustomFieldValueLifecycleRuntime[] = [],
+) {
   const targetIds = [...targets.keys()]
+
+  const valueLifecycleFor = (entityType: string) => {
+    const lifecycle = valueLifecycles.find((candidate) => candidate.supports(entityType))
+    if (!lifecycle) {
+      throw new Error(`No custom-field value lifecycle provider owns target "${entityType}".`)
+    }
+    return lifecycle
+  }
 
   const assertAllowed = (
     target: string,
@@ -149,9 +161,10 @@ export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFie
     id: string,
     owner?: CustomFieldDefinitionOwner,
     includeInactive = false,
+    lockForUpdate = false,
   ) => {
     if (targetIds.length === 0) return null
-    const [row] = await db
+    const query = db
       .select()
       .from(customFieldDefinitions)
       .where(
@@ -162,7 +175,7 @@ export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFie
           owner ? ownerWhere(owner) : undefined,
         ),
       )
-      .limit(1)
+    const [row] = lockForUpdate ? await query.for("update").limit(1) : await query.limit(1)
     return row ?? null
   }
 
@@ -198,7 +211,7 @@ export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFie
     owner: CustomFieldDefinitionOwner,
     input: CustomFieldDefinitionInput,
   ) => {
-    assertOwner(owner)
+    assertCustomFieldDefinitionOwner(owner)
     const target = assertAllowed(input.entityType, input.fieldType)
     if (
       owner.kind === "platform" &&
@@ -243,47 +256,73 @@ export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFie
     owner: CustomFieldDefinitionOwner,
     input: CustomFieldDefinitionUpdate,
   ) => {
-    assertOwner(owner)
-    const existing = await getById(db, id, undefined, true)
-    if (!existing) return null
-    if (
-      existing.ownerKind !== owner.kind ||
-      existing.ownerId !== (owner.ownerId ?? null) ||
-      existing.namespace !== owner.namespace
-    ) {
-      throw new ApiHttpError("Custom-field definition is controlled by another owner", {
-        status: 403,
-        code: "custom_field_definition_read_only",
-      })
-    }
-    const target = assertAllowed(existing.entityType)
-    const [row] = await db
-      .update(customFieldDefinitions)
-      .set({ ...input, ...normalizeCustomFieldVisibility(target, input), updatedAt: new Date() })
-      .where(and(eq(customFieldDefinitions.id, id), ownerWhere(owner)))
-      .returning()
-    return row ?? null
+    assertCustomFieldDefinitionOwner(owner)
+    return db.transaction(async (tx) => {
+      const existing = await getById(tx, id, undefined, true, true)
+      if (!existing) return null
+      if (
+        existing.ownerKind !== owner.kind ||
+        existing.ownerId !== (owner.ownerId ?? null) ||
+        existing.namespace !== owner.namespace
+      ) {
+        throw new ApiHttpError("Custom-field definition is controlled by another owner", {
+          status: 403,
+          code: "custom_field_definition_read_only",
+        })
+      }
+      const target = assertAllowed(existing.entityType)
+      const nextKey = input.key
+      const valueLifecycle =
+        nextKey && nextKey !== existing.key ? valueLifecycleFor(existing.entityType) : undefined
+      let row: typeof existing | undefined
+      try {
+        ;[row] = await tx
+          .update(customFieldDefinitions)
+          .set({
+            ...input,
+            ...normalizeCustomFieldVisibility(target, input),
+            updatedAt: new Date(),
+          })
+          .where(and(eq(customFieldDefinitions.id, id), ownerWhere(owner)))
+          .returning()
+      } catch (error) {
+        if (isCustomFieldDefinitionKeyConflict(error)) {
+          throw duplicateCustomFieldKeyError()
+        }
+        throw error
+      }
+      if (row && valueLifecycle && nextKey) {
+        await valueLifecycle.renameDefinitionKey(tx, existing, nextKey)
+      }
+      return row ?? null
+    })
   }
 
   const remove = async (db: PostgresJsDatabase, id: string, owner: CustomFieldDefinitionOwner) => {
-    assertOwner(owner)
-    const existing = await getById(db, id, undefined, true)
-    if (!existing) return null
-    if (
-      existing.ownerKind !== owner.kind ||
-      existing.ownerId !== (owner.ownerId ?? null) ||
-      existing.namespace !== owner.namespace
-    ) {
-      throw new ApiHttpError("Custom-field definition is controlled by another owner", {
-        status: 403,
-        code: "custom_field_definition_read_only",
-      })
-    }
-    const [row] = await db
-      .delete(customFieldDefinitions)
-      .where(and(eq(customFieldDefinitions.id, id), ownerWhere(owner)))
-      .returning({ id: customFieldDefinitions.id })
-    return row ?? null
+    assertCustomFieldDefinitionOwner(owner)
+    return db.transaction(async (tx) => {
+      const existing = await getById(tx, id, undefined, true, true)
+      if (!existing) return null
+      if (
+        existing.ownerKind !== owner.kind ||
+        existing.ownerId !== (owner.ownerId ?? null) ||
+        existing.namespace !== owner.namespace
+      ) {
+        throw new ApiHttpError("Custom-field definition is controlled by another owner", {
+          status: 403,
+          code: "custom_field_definition_read_only",
+        })
+      }
+      const valueLifecycle = valueLifecycleFor(existing.entityType)
+      const [row] = await tx
+        .delete(customFieldDefinitions)
+        .where(and(eq(customFieldDefinitions.id, id), ownerWhere(owner)))
+        .returning({ id: customFieldDefinitions.id })
+      if (row) {
+        await valueLifecycle.deleteDefinitionValues(tx, existing)
+      }
+      return row ?? null
+    })
   }
 
   return {
@@ -310,11 +349,11 @@ export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFie
       owner: CustomFieldDefinitionOwner,
       query: CustomFieldDefinitionListQuery,
     ) {
-      assertOwner(owner)
+      assertCustomFieldDefinitionOwner(owner)
       return list(db, { ...query, ownerKind: undefined }, owner)
     },
     getForOwner(db: PostgresJsDatabase, owner: CustomFieldDefinitionOwner, id: string) {
-      assertOwner(owner)
+      assertCustomFieldDefinitionOwner(owner)
       return getById(db, id, owner)
     },
     createForOwner(
@@ -336,4 +375,52 @@ export function createCustomFieldsService(targets: ReadonlyMap<string, CustomFie
       return remove(db, id, owner)
     },
   }
+}
+
+function duplicateCustomFieldKeyError() {
+  return new ApiHttpError("Custom field key already exists for this target and namespace", {
+    status: 409,
+    code: "duplicate_custom_field_key",
+  })
+}
+
+function isCustomFieldDefinitionKeyConflict(error: unknown): boolean {
+  return collectErrorStrings(error, new Set(), 0).some(
+    (value) =>
+      value.includes("23505") || value.includes("uidx_custom_field_definitions_namespace_key"),
+  )
+}
+
+function collectErrorStrings(error: unknown, seen: Set<object>, depth: number): string[] {
+  if (!error || typeof error !== "object" || depth > 6 || seen.has(error)) return []
+  seen.add(error)
+  const record = error as Record<string, unknown>
+  const values = [
+    record.code,
+    record.sqlState,
+    record.sqlstate,
+    record.sql_state,
+    record.constraint,
+    record.constraintName,
+    record.constraint_name,
+    record.detail,
+    record.message,
+    record.stack,
+  ].filter((value): value is string => typeof value === "string")
+  for (const nested of [
+    record.cause,
+    record.originalError,
+    record.original,
+    record.error,
+    record.queryError,
+    record.sourceError,
+  ]) {
+    values.push(...collectErrorStrings(nested, seen, depth + 1))
+  }
+  if (Array.isArray(record.errors)) {
+    for (const nested of record.errors) {
+      values.push(...collectErrorStrings(nested, seen, depth + 1))
+    }
+  }
+  return values
 }

@@ -7,6 +7,7 @@ export {
   customFieldTypeEnum,
 } from "./schema.js"
 export {
+  assertCustomFieldDefinitionOwner,
   type CustomFieldDefinitionOwner,
   createAppCustomFieldDefinitionOwner,
   createCustomFieldsService,

@@ -1,11 +1,8 @@
 # ADR: Unify custom fields — database definitions and values on the entity
 
-> **Proposed successor:**
-> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) retains
-> entity-local JSONB values but replaces the two-source registry with one
-> database authority and introduces operator/app ownership plus collision-proof
-> namespaces. This ADR remains the record of the currently implemented
-> unification.
+[`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) extends this
+decision with database-only authority, operator/app ownership, and
+collision-proof namespaces.
 
 - **Status:** Accepted (implementation in phases)
 - **Date:** 2026-06-17
@@ -76,8 +73,13 @@ on the entity. `custom_field_values` is retired.**
    `(entity_type, namespace, key)`. Because definitions had no production
    adoption, the migration discards pre-cutline rows instead of assigning
    unverifiable ownership. Settings shows app-owned rows but can mutate only
-   operator rows. Entity value JSON remains flat in this phase, and #3400 will
-   make it namespaced before app-owned values enter the effective registry.
+   operator rows.
+7. **Namespaced entity values.** Every supported entity stores values as
+   `custom_fields[namespace][key]`. Active definitions from every owner enter
+   the runtime registry. Ordinary operator routes accept only `custom`, while
+   trusted owner-scoped value operations derive app/platform namespaces from
+   server context. Definition rename/delete side effects are delegated to the
+   package that owns the target table.
 
 ## Migration
 
@@ -94,6 +96,10 @@ on the entity. `custom_field_values` is retired.**
    instead of `custom_field_values`. The admin "set value" UX is unchanged.
 4. **Retire `custom_field_values`** once backfill + repoint ship and bake
    (drop the table in a later migration). `custom_field_definitions` stays.
+5. **Wrap pre-cutline entity JSON under `custom`.** The owning Bookings, Quotes,
+   and Relationships packages each migrate only their own tables. Custom fields
+   had no production adoption at this cutline, so this is a one-way migration
+   with no flat compatibility reader or telemetry seam.
 
 ## Phases (each its own PR)
 
@@ -128,14 +134,22 @@ on the entity. `custom_field_values` is retired.**
    - 4b — readers consume `customFieldsVisibleIn`.
      - **Export ✅** — the people CSV export appends a column per export-visible
        custom field (`exportPeopleCsv` + `resolveVisibleCustomFields`).
-     - **Search ✅** — the people search ORs a `custom_fields ->> key ILIKE term`
-       per search-visible field.
+     - **Search ✅** — the people search ORs a
+       `custom_fields -> namespace ->> key ILIKE term` condition per
+       search-visible field.
      - **Invoice ✅ (seam)** — `InvoiceDocumentRuntimeOptions.resolveCustomFields`
        populates a `customFields` template variable. Finance just exposes the
        hook (decoupled from `relationships`); the deployment wires the resolver
        where it builds the invoice-generation runtime (it holds the registry +
        reads the entity's `custom_fields`) and the template references
-       `{{customFields.<key>}}`.
+       `{{customFields.<namespace>.<key>}}`.
+5. **Namespaced values + owner isolation. ✅ landed.**
+   - Entity schemas, contracts, write validation, value APIs, search, export,
+     and invoice resolution use the nested value shape only.
+   - Synthetic value ids include namespace identity.
+   - Same-key values in two namespaces round-trip independently.
+   - Package-owned lifecycle providers perform namespace-scoped definition
+     rename/delete cleanup.
 
 ## Consequences
 

@@ -5,6 +5,7 @@ import { bookingSourceTypeSchema, bookingStatusSchema } from "./validation.js"
 
 const isoTimestamp = z.string()
 const jsonObject = z.record(z.string(), z.unknown())
+const namespacedCustomFields = z.record(z.string(), jsonObject)
 
 /** Booking wire shape exposed by the non-PII Tool surface. Sensitive contact fields are redacted. */
 export const bookingToolSchema = z.object({
@@ -43,7 +44,7 @@ export const bookingToolSchema = z.object({
   internalNotes: z.string().nullable(),
   customerPaymentPolicy: bookingCustomerPaymentPolicySchema.nullable(),
   priceOverride: jsonObject.nullable(),
-  customFields: jsonObject,
+  customFields: namespacedCustomFields,
   holdExpiresAt: isoTimestamp.nullable(),
   confirmedAt: isoTimestamp.nullable(),
   expiredAt: isoTimestamp.nullable(),

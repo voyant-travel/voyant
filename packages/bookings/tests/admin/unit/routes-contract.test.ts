@@ -88,7 +88,7 @@ const booking: Booking = {
   internalNotes: null,
   customerPaymentPolicy: null,
   priceOverride: null,
-  customFields: { source: "intake" },
+  customFields: { custom: { source: "intake" } },
   holdExpiresAt: null,
   confirmedAt,
   expiredAt: null,
@@ -269,7 +269,7 @@ describe("bookings core admin contract", () => {
     expect(typeof parsed.createdAt).toBe("string")
     expect(parsed.confirmedAt).toBe("2026-05-15T12:00:00.000Z")
     expect(parsed.cancelledAt).toBeNull()
-    expect(parsed.customFields).toEqual({ source: "intake" })
+    expect(parsed.customFields).toEqual({ custom: { source: "intake" } })
     expect(parsed.startDate).toBe("2026-06-01")
   })
 

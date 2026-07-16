@@ -1,3 +1,4 @@
+import { createCustomFieldRegistry } from "@voyant-travel/core/custom-fields"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { describe, expect, it } from "vitest"
 import { loadCustomFieldDefinitions, loadCustomFieldRegistry } from "./registry.js"
@@ -41,7 +42,9 @@ describe("database custom-field registry", () => {
       }),
     ])
 
-    expect((await loadCustomFieldRegistry(fakeDb(rows))).field("person", "tier")).toMatchObject({
+    expect(
+      (await loadCustomFieldRegistry(fakeDb(rows))).field("person", "custom", "tier"),
+    ).toMatchObject({
       type: "select",
       visibility: { export: true, invoice: true, search: true },
     })
@@ -95,7 +98,7 @@ describe("database custom-field registry", () => {
     ])
   })
 
-  it("keeps app-owned definitions out of the flat-value registry until namespaced values land", async () => {
+  it("keeps same-key definitions distinct by physical namespace", async () => {
     const rows = [
       {
         entityType: "person",
@@ -125,7 +128,11 @@ describe("database custom-field registry", () => {
       },
     ]
 
-    expect(await loadCustomFieldDefinitions(fakeDb(rows))).toHaveLength(1)
+    const definitions = await loadCustomFieldDefinitions(fakeDb(rows))
+    expect(definitions).toHaveLength(2)
+    expect(
+      createCustomFieldRegistry(definitions).field("person", "app--acme-7f3", "external_id"),
+    ).toMatchObject({ label: "App external ID" })
   })
 
   it("keeps inactive definitions out of the runtime registry", async () => {

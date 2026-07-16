@@ -5,7 +5,10 @@ import {
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
-import { customFieldsRuntimePort } from "@voyant-travel/core/runtime-port"
+import {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+} from "@voyant-travel/core/runtime-port"
 
 import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
 import {
@@ -284,7 +287,10 @@ export const bookingsVoyantModule = defineModule({
   ],
   provides: {
     capabilities: ["bookings.data-owner"],
-    ports: [providePort(actionLedgerBookingDriftRuntimePort)],
+    ports: [
+      providePort(actionLedgerBookingDriftRuntimePort),
+      providePort(customFieldValueLifecycleRuntimePort),
+    ],
   },
   api: [
     {

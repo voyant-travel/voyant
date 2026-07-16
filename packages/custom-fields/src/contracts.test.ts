@@ -23,11 +23,11 @@ describe("custom-field definition contracts", () => {
     })
   })
 
-  it("keeps target, type, and key immutable after creation", () => {
+  it("keeps target and type immutable while allowing a namespace-scoped key rename", () => {
     expect(updateCustomFieldDefinitionSchema.parse({ label: "Updated" })).toEqual({
       label: "Updated",
     })
-    expect(() => updateCustomFieldDefinitionSchema.parse({ key: "renamed" })).toThrow()
+    expect(updateCustomFieldDefinitionSchema.parse({ key: "renamed" })).toEqual({ key: "renamed" })
   })
 
   it("rejects submitted physical ownership and supports ownership-aware reads", () => {

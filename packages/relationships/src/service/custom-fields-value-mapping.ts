@@ -28,22 +28,24 @@ export function entityTableName(entityType: string): string | null {
 export function syntheticValueId(
   entityType: string,
   entityId: string,
+  namespace: string,
   definitionId: string,
 ): string {
-  return `${entityType}::${entityId}::${definitionId}`
+  return `${entityType}::${entityId}::${namespace}::${definitionId}`
 }
 
 export function parseSyntheticValueId(
   id: string,
-): { entityType: string; entityId: string; definitionId: string } | null {
+): { entityType: string; entityId: string; namespace: string; definitionId: string } | null {
   const parts = id.split("::")
-  if (parts.length !== 3 || parts.some((p) => p.length === 0)) {
+  if (parts.length !== 4 || parts.some((p) => p.length === 0)) {
     return null
   }
   return {
     entityType: parts[0] as string,
     entityId: parts[1] as string,
-    definitionId: parts[2] as string,
+    namespace: parts[2] as string,
+    definitionId: parts[3] as string,
   }
 }
 

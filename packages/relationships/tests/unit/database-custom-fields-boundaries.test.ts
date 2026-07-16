@@ -32,6 +32,7 @@ const rows = [
   {
     entityType: "booking",
     namespace: "custom",
+    lifecycleState: "active",
     key: "group_size",
     fieldType: "double",
     label: "Group size",
@@ -44,6 +45,7 @@ const rows = [
   {
     entityType: "person",
     namespace: "custom",
+    lifecycleState: "active",
     key: "loyalty_tier",
     fieldType: "enum",
     label: "Tier",
@@ -139,12 +141,12 @@ describe("database-owned custom-field write boundaries", () => {
 
   it("returns only channel-visible persisted values through the shared runtime", async () => {
     vi.spyOn(relationshipsService, "getPersonById").mockResolvedValue({
-      customFields: { loyalty_tier: "gold", internal_note: "hidden" },
+      customFields: { custom: { loyalty_tier: "gold", internal_note: "hidden" } },
     } as never)
 
     await expect(
       customFields.resolveVisibleValues(fakeDb(), "person", "person_1", "invoice"),
-    ).resolves.toEqual({ loyalty_tier: "gold" })
+    ).resolves.toEqual({ custom: { loyalty_tier: "gold" } })
   })
 
   it("validates valid, invalid, required, and unknown booking fields from persisted rows", async () => {
@@ -157,13 +159,13 @@ describe("database-owned custom-field write boundaries", () => {
       (
         await bookingApp().request(`/${id}`, {
           method: "PATCH",
-          ...json({ customFields: { group_size: 4 } }),
+          ...json({ customFields: { custom: { group_size: 4 } } }),
         })
       ).status,
     ).toBe(200)
     expect(update).toHaveBeenCalled()
 
-    for (const customFields of [{ group_size: "four" }, { unknown: 4 }]) {
+    for (const customFields of [{ custom: { group_size: "four" } }, { custom: { unknown: 4 } }]) {
       expect(
         (
           await bookingApp().request(`/${id}`, {
@@ -196,14 +198,18 @@ describe("database-owned custom-field write boundaries", () => {
           ...json({
             firstName: "Jo",
             lastName: "Doe",
-            customFields: { loyalty_tier: "gold" },
+            customFields: { custom: { loyalty_tier: "gold" } },
           }),
         })
       ).status,
     ).toBe(201)
     expect(create).toHaveBeenCalled()
 
-    for (const customFields of [{ loyalty_tier: "bronze" }, { unknown: "gold" }, {}]) {
+    for (const customFields of [
+      { custom: { loyalty_tier: "bronze" } },
+      { custom: { unknown: "gold" } },
+      {},
+    ]) {
       expect(
         (
           await relationshipsApp().request("/people", {

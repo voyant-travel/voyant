@@ -25,7 +25,9 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import {
   type CustomFieldDefinition,
+  createCustomFieldRegistry,
   customFieldsVisibleIn,
+  type NamespacedCustomFieldValues,
   validateCustomFields,
 } from "@voyant-travel/core/custom-fields"
 import {
@@ -129,7 +131,7 @@ function optionalHydratedPersonField(row: object, field: "email" | "phone" | "we
 async function validateRelationshipsCustomFields(
   c: Context<Env>,
   entity: "person" | "organization",
-  data: { customFields?: Record<string, unknown> },
+  data: { customFields?: NamespacedCustomFieldValues },
   mode: "create" | "update",
 ): Promise<void> {
   const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
@@ -150,15 +152,17 @@ async function validateRelationshipsCustomFields(
   if (!resolveRegistry) {
     return
   }
-  const result = validateCustomFields(
-    await resolveRegistry(c.get("db")),
-    entity,
-    data.customFields ?? {},
+  const registry = await resolveRegistry(c.get("db"))
+  const operatorRegistry = createCustomFieldRegistry(
+    registry.forEntity(entity).filter((definition) => definition.namespace === "custom"),
   )
+  const result = validateCustomFields(operatorRegistry, entity, data.customFields ?? {})
   if (!result.ok) {
     throw new RequestValidationError(`Invalid ${entity} custom fields`, {
       fields: {
-        fieldErrors: Object.fromEntries(result.errors.map((e) => [e.key, [e.message]])),
+        fieldErrors: Object.fromEntries(
+          result.errors.map((e) => [`${e.namespace}.${e.key}`, [e.message]]),
+        ),
         formErrors: [],
       },
     })

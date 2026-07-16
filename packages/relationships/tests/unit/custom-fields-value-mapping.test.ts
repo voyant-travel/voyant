@@ -20,11 +20,12 @@ describe("entityTableName", () => {
 })
 
 describe("synthetic value id", () => {
-  it("round-trips entityType/entityId/definitionId", () => {
-    const id = syntheticValueId("person", "pers_1", "cfd_2")
+  it("round-trips entityType/entityId/namespace/definitionId", () => {
+    const id = syntheticValueId("person", "pers_1", "custom", "cfd_2")
     expect(parseSyntheticValueId(id)).toEqual({
       entityType: "person",
       entityId: "pers_1",
+      namespace: "custom",
       definitionId: "cfd_2",
     })
   })

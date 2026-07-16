@@ -2,6 +2,7 @@ import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtim
 import { createContainer, createEventBus } from "@voyant-travel/core"
 import {
   customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/custom-fields"
 import { assertPortConforms } from "@voyant-travel/core/project"
@@ -25,6 +26,7 @@ describe("relationships deployment manifest", () => {
           { id: bookingsRelationshipsRuntimePort.id },
           { id: relationshipsRouteRuntimePort.id },
           { id: customFieldValueReaderRuntimePort.id },
+          { id: customFieldValueLifecycleRuntimePort.id },
         ],
       },
       runtimePorts: [{ id: customFieldsRuntimePort.id }, { id: "relationships.route-runtime" }],

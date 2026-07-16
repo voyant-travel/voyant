@@ -3,6 +3,7 @@ import { bookingsRelationshipsRuntimePort } from "@voyant-travel/bookings/runtim
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import {
   customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 import { relationshipsMiceRuntimePort, relationshipsRouteRuntimePort } from "./runtime-port.js"
@@ -81,6 +82,7 @@ export const relationshipsVoyantModule = defineModule({
       providePort(bookingsRelationshipsRuntimePort),
       providePort(relationshipsRouteRuntimePort),
       providePort(customFieldValueReaderRuntimePort),
+      providePort(customFieldValueLifecycleRuntimePort),
     ],
   },
   runtimePorts: [requirePort(customFieldsRuntimePort), requirePort(relationshipsRouteRuntimePort)],

@@ -29,6 +29,13 @@
       "when": 1784188103002,
       "tag": "0003_add_booking_custom_field_target",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784192582000,
+      "tag": "20260716000302_namespace_custom_field_values",
+      "breakpoints": true
     }
   ]
 }

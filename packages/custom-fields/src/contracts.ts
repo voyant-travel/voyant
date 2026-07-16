@@ -37,6 +37,7 @@ export const customFieldDefinitionInputSchema = z
 
 export const updateCustomFieldDefinitionSchema = z
   .object({
+    key: z.string().min(1).optional(),
     label: z.string().min(1).optional(),
     isRequired: z.boolean().optional(),
     isSearchable: z.boolean().optional(),

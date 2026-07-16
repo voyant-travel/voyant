@@ -6,6 +6,7 @@ import { identityService } from "@voyant-travel/identity/service"
 import { toCsvRow } from "@voyant-travel/utils"
 import type { AnyColumn } from "drizzle-orm"
 import { and, asc, desc, eq, exists, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm"
+import type { PgUpdateSetSource } from "drizzle-orm/pg-core/query-builders/update"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -137,11 +138,11 @@ function buildPersonSearchCondition(
       )
     : undefined
 
-  // Search-visible custom fields (unified custom-fields system): match the term
-  // against each field's value in the entity's custom_fields jsonb.
+  // Namespaced values use only definition-owned registry components; request
+  // input never participates in a JSONB path.
   const customFieldConditions = searchableCustomFields.map(
-    // agent-quality: raw-sql reviewed -- owner: crm; the key is a vetted registry field key, the term is parameter-bound.
-    (field) => sql`${people.customFields} ->> ${field.key} ILIKE ${term}`,
+    // agent-quality: raw-sql reviewed -- owner: crm; namespace/key are vetted registry values and term is parameter-bound.
+    (field) => sql`${people.customFields} -> ${field.namespace} ->> ${field.key} ILIKE ${term}`,
   )
 
   return or(
@@ -256,7 +257,15 @@ export const peopleAccountsService = {
     if (!existing) return null
     const updates = Object.fromEntries(
       Object.entries(personBaseFields(data)).filter(([, value]) => value !== undefined),
-    )
+    ) as PgUpdateSetSource<typeof people>
+    if (data.customFields !== undefined) {
+      updates.customFields = sql`jsonb_set(
+        ${people.customFields},
+        ARRAY['custom']::text[],
+        ${JSON.stringify(data.customFields.custom ?? {})}::jsonb,
+        true
+      )`
+    }
 
     await db
       .update(people)
@@ -609,17 +618,19 @@ export const peopleAccountsService = {
       "organizationId",
     ]
 
-    // Append a column per export-visible custom field (unified custom-fields
-    // system); the header is the field's label, the cell its stored value.
-    const csvLines = [toCsvRow([...baseHeaders, ...customFields.map((field) => field.label)])]
+    // Namespace disambiguates same-key fields from different owners.
+    const csvLines = [
+      toCsvRow([
+        ...baseHeaders,
+        ...customFields.map((field) => `${field.label} (${field.namespace})`),
+      ]),
+    ]
     for (const row of rows) {
       // toCsvRow quotes delimiters/quotes/newlines AND neutralizes
       // spreadsheet formula-injection prefixes (= + - @ tab CR); see L4.
       const base = baseHeaders.map((header) => row[header as keyof typeof row])
       const custom = customFields.map((field) =>
-        formatCustomFieldCell(
-          (row.customFields as Record<string, unknown> | undefined)?.[field.key],
-        ),
+        formatCustomFieldCell(row.customFields?.[field.namespace]?.[field.key]),
       )
       csvLines.push(toCsvRow([...base, ...custom]))
     }

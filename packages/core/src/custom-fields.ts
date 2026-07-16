@@ -63,6 +63,8 @@ export interface CustomFieldVisibility {
 export interface CustomFieldDefinition {
   /** Entity the field attaches to, e.g. `"booking"`, `"person"`, `"product"`. */
   entity: string
+  /** Physical owner namespace. Together with entity + key this is the identity. */
+  namespace: string
   /** Stable key within the entity's custom-field namespace (typo-proof). */
   key: string
   type: CustomFieldType
@@ -96,8 +98,8 @@ export function defineCustomField<T extends CustomFieldDefinition>(definition: T
 export interface CustomFieldRegistry {
   /** All fields declared for `entity`, in declaration order. */
   forEntity(entity: string): CustomFieldDefinition[]
-  /** A single field by `(entity, key)`, or `undefined`. */
-  field(entity: string, key: string): CustomFieldDefinition | undefined
+  /** A single field by `(entity, namespace, key)`, or `undefined`. */
+  field(entity: string, namespace: string, key: string): CustomFieldDefinition | undefined
   /** Entities that have at least one field. */
   entities(): string[]
   /** Every declared field. */
@@ -116,8 +118,17 @@ export type CustomFieldRegistryResolver = (
 
 export type CustomFieldVisibilityChannel = keyof CustomFieldVisibility
 
-export type { CustomFieldsRuntime, CustomFieldValueReaderRuntime } from "./runtime-port.js"
-export { customFieldsRuntimePort, customFieldValueReaderRuntimePort } from "./runtime-port.js"
+export type {
+  CustomFieldsRuntime,
+  CustomFieldValueDefinitionIdentity,
+  CustomFieldValueLifecycleRuntime,
+  CustomFieldValueReaderRuntime,
+} from "./runtime-port.js"
+export {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "./runtime-port.js"
 
 const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
   export: true,
@@ -127,7 +138,7 @@ const VISIBILITY_DEFAULTS: Required<CustomFieldVisibility> = {
 
 /**
  * Build a {@link CustomFieldRegistry} from declarations. Throws on a duplicate
- * `(entity, key)` — a collision is a config bug, not something to resolve
+ * `(entity, namespace, key)` — a collision is a config bug, not something to resolve
  * silently.
  */
 export function createCustomFieldRegistry(
@@ -136,7 +147,7 @@ export function createCustomFieldRegistry(
   const byEntity = new Map<string, CustomFieldDefinition[]>()
   const seen = new Set<string>()
   for (const def of definitions) {
-    const id = `${def.entity}.${def.key}`
+    const id = `${def.entity}.${def.namespace}.${def.key}`
     if (seen.has(id)) {
       throw new Error(`[voyant-custom-fields] duplicate custom field "${id}"`)
     }
@@ -147,7 +158,8 @@ export function createCustomFieldRegistry(
   }
   return {
     forEntity: (entity) => [...(byEntity.get(entity) ?? [])],
-    field: (entity, key) => byEntity.get(entity)?.find((f) => f.key === key),
+    field: (entity, namespace, key) =>
+      byEntity.get(entity)?.find((f) => f.namespace === namespace && f.key === key),
     entities: () => [...byEntity.keys()],
     all: () => [...definitions],
   }
@@ -168,7 +180,7 @@ export function mergeCustomFieldDefinitions(
   const winners = new Map<string, CustomFieldDefinition>()
   for (const source of sources) {
     for (const def of source) {
-      const id = `${def.entity}.${def.key}`
+      const id = `${def.entity}.${def.namespace}.${def.key}`
       const existing = winners.get(id)
       if (existing) {
         onShadow?.(def, existing)
@@ -193,6 +205,7 @@ export function customFieldsVisibleIn(
 
 /** One field's validation failure. */
 export interface CustomFieldError {
+  namespace: string
   key: string
   message: string
 }
@@ -201,7 +214,7 @@ export interface CustomFieldError {
 export interface CustomFieldValidationResult {
   ok: boolean
   /** Validated values, unknown/absent keys dropped. Only meaningful when `ok`. */
-  value: Record<string, unknown>
+  value: NamespacedCustomFieldValues
   errors: CustomFieldError[]
 }
 
@@ -260,43 +273,57 @@ function checkType(def: CustomFieldDefinition, value: unknown): string | null {
  * errors — callers persist `value` (e.g. into the entity's `custom_fields` or
  * `metadata` jsonb) only when `ok`.
  */
+export type NamespacedCustomFieldValues = Record<string, Record<string, unknown>>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 export function validateCustomFields(
   registry: CustomFieldRegistry,
   entity: string,
-  input: Record<string, unknown> | null | undefined,
+  input: NamespacedCustomFieldValues | null | undefined,
 ): CustomFieldValidationResult {
   const provided = input ?? {}
   const fields = registry.forEntity(entity)
-  const known = new Set(fields.map((f) => f.key))
+  const known = new Set(fields.map((f) => `${f.namespace}.${f.key}`))
   const errors: CustomFieldError[] = []
-  const value: Record<string, unknown> = {}
+  const value: NamespacedCustomFieldValues = {}
 
-  for (const key of Object.keys(provided)) {
-    if (!known.has(key)) {
-      errors.push({ key, message: `unknown custom field for "${entity}"` })
+  for (const [namespace, fieldsForNamespace] of Object.entries(provided)) {
+    if (!isRecord(fieldsForNamespace)) {
+      errors.push({ namespace, key: "", message: "must be an object keyed by custom-field key" })
+      continue
+    }
+    for (const key of Object.keys(fieldsForNamespace)) {
+      if (!known.has(`${namespace}.${key}`)) {
+        errors.push({ namespace, key, message: `unknown custom field for "${entity}"` })
+      }
     }
   }
 
   for (const def of fields) {
-    const raw = provided[def.key]
+    const raw = provided[def.namespace]?.[def.key]
     const absent = raw === null || raw === undefined
     if (absent) {
       if (def.required) {
-        errors.push({ key: def.key, message: "is required" })
+        errors.push({ namespace: def.namespace, key: def.key, message: "is required" })
       }
       continue
     }
     const typeError = checkType(def, raw)
     if (typeError) {
-      errors.push({ key: def.key, message: typeError })
+      errors.push({ namespace: def.namespace, key: def.key, message: typeError })
       continue
     }
     const customError = def.validate?.(raw)
     if (customError) {
-      errors.push({ key: def.key, message: customError })
+      errors.push({ namespace: def.namespace, key: def.key, message: customError })
       continue
     }
-    value[def.key] = raw
+    const namespaceValues = value[def.namespace] ?? {}
+    namespaceValues[def.key] = raw
+    value[def.namespace] = namespaceValues
   }
 
   return { ok: errors.length === 0, value, errors }

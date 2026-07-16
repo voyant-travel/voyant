@@ -4,7 +4,7 @@ import { createFinanceRuntime } from "../../src/runtime.js"
 
 describe("finance custom-field runtime", () => {
   it("resolves invoice-visible customer values through the database-backed runtime port", async () => {
-    const resolveVisibleValues = vi.fn(async () => ({ loyalty_tier: "gold" }))
+    const resolveVisibleValues = vi.fn(async () => ({ custom: { loyalty_tier: "gold" } }))
     const runtime = createFinanceRuntime(
       {
         primitives: {
@@ -35,7 +35,7 @@ describe("finance custom-field runtime", () => {
           personId: "person_1",
         } as never,
       ),
-    ).resolves.toEqual({ loyalty_tier: "gold" })
+    ).resolves.toEqual({ custom: { loyalty_tier: "gold" } })
     expect(resolveVisibleValues).toHaveBeenCalledWith(
       expect.anything(),
       "organization",

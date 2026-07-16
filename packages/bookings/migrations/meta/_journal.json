@@ -15,6 +15,13 @@
       "when": 1784051209834,
       "tag": "0001_service_voucher_vocabulary",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784192580000,
+      "tag": "20260716000300_namespace_custom_field_values",
+      "breakpoints": true
     }
   ]
 }

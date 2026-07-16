@@ -137,7 +137,11 @@ export type { RegistryOptions } from "./registry.js"
 export { createRegistry } from "./registry.js"
 export type { VoyantRuntimeHostPrimitives } from "./runtime-host.js"
 export type { CustomFieldsRuntime, CustomFieldValueReaderRuntime } from "./runtime-port.js"
-export { customFieldsRuntimePort, customFieldValueReaderRuntimePort } from "./runtime-port.js"
+export {
+  customFieldsRuntimePort,
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueReaderRuntimePort,
+} from "./runtime-port.js"
 export type {
   StepBuilder,
   StepCompensateFn,

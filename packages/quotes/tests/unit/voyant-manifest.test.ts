@@ -23,7 +23,11 @@ describe("quotes deployment manifests", () => {
       id: "@voyant-travel/quotes",
       packageName: "@voyant-travel/quotes",
       provides: {
-        ports: [{ id: "quotes.checkout-inquiry.runtime" }, { id: "quotes.runtime" }],
+        ports: [
+          { id: "quotes.checkout-inquiry.runtime" },
+          { id: "quotes.runtime" },
+          { id: "custom-fields.value-lifecycle" },
+        ],
       },
       api: [
         {

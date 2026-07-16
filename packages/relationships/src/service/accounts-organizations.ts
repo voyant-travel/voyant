@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm"
+import type { PgUpdateSetSource } from "drizzle-orm/pg-core/query-builders/update"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { organizations, people } from "../schema.js"
@@ -77,7 +78,15 @@ export const organizationAccountsService = {
   async updateOrganization(db: PostgresJsDatabase, id: string, data: UpdateOrganizationInput) {
     const updates = Object.fromEntries(
       Object.entries(data).filter(([, value]) => value !== undefined),
-    )
+    ) as PgUpdateSetSource<typeof organizations>
+    if (data.customFields !== undefined) {
+      updates.customFields = sql`jsonb_set(
+        ${organizations.customFields},
+        ARRAY['custom']::text[],
+        ${JSON.stringify(data.customFields.custom ?? {})}::jsonb,
+        true
+      )`
+    }
     const [row] = await db
       .update(organizations)
       .set({ ...updates, updatedAt: new Date() })

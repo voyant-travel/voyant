@@ -203,8 +203,8 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
       await db.execute(sql`
           UPDATE organizations
           SET custom_fields = CASE id
-            WHEN ${keep.id} THEN '{"merge_org_tier":"gold"}'::jsonb
-            WHEN ${merge.id} THEN '{"merge_org_tier":"silver","merge_org_region":"emea"}'::jsonb
+            WHEN ${keep.id} THEN '{"custom":{"merge_org_tier":"gold"},"app--keep":{"flag":true}}'::jsonb
+            WHEN ${merge.id} THEN '{"custom":{"merge_org_tier":"silver","merge_org_region":"emea"},"app--merge":{"flag":true}}'::jsonb
           END
           WHERE id IN (${keep.id}, ${merge.id})
         `)
@@ -248,7 +248,11 @@ describe.skipIf(!DB_AVAILABLE)("Organization account routes", () => {
       expect(customFieldRows).toEqual([
         {
           id: keep.id,
-          custom_fields: { merge_org_region: "emea", merge_org_tier: "gold" },
+          custom_fields: {
+            custom: { merge_org_region: "emea", merge_org_tier: "gold" },
+            "app--keep": { flag: true },
+            "app--merge": { flag: true },
+          },
         },
       ])
     })

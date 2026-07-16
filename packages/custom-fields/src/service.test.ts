@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { customFieldDefinitionInputSchema } from "./contracts.js"
 import {
   createAppCustomFieldDefinitionOwner,
@@ -28,7 +28,13 @@ const input = customFieldDefinitionInputSchema.parse({
 
 function postgresStub(implementation: object): PostgresJsDatabase {
   const db = Object.create(null) as PostgresJsDatabase
-  return Object.assign(db, implementation)
+  Object.assign(db, implementation)
+  if (!("transaction" in db)) {
+    Object.assign(db, {
+      transaction: async (callback: (tx: PostgresJsDatabase) => unknown) => callback(db),
+    })
+  }
+  return db
 }
 
 function insertDb() {
@@ -92,15 +98,17 @@ describe("custom-field definition ownership", () => {
       select: () => ({
         from: () => ({
           where: () => ({
-            limit: async () => [
-              {
-                id: "definition_1",
-                entityType: "booking",
-                namespace: "app--other-92c",
-                ownerKind: "app",
-                ownerId: "app_other",
-              },
-            ],
+            for: () => ({
+              limit: async () => [
+                {
+                  id: "definition_1",
+                  entityType: "booking",
+                  namespace: "app--other-92c",
+                  ownerKind: "app",
+                  ownerId: "app_other",
+                },
+              ],
+            }),
           }),
         }),
       }),
@@ -114,6 +122,97 @@ describe("custom-field definition ownership", () => {
     ).rejects.toMatchObject({
       status: 403,
       code: "custom_field_definition_read_only",
+    })
+  })
+
+  it("renames definitions and stored values in one transaction", async () => {
+    const existing = {
+      id: "definition_1",
+      ...input,
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+    }
+    const renameDefinitionKey = vi.fn(async () => undefined)
+    const tx = postgresStub({
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            for: () => ({ limit: async () => [existing] }),
+          }),
+        }),
+      }),
+      update: () => ({
+        set: (value: Record<string, unknown>) => ({
+          where: () => ({
+            returning: async () => [{ ...existing, ...value }],
+          }),
+        }),
+      }),
+    })
+    const transaction = vi.fn(async (callback: (db: PostgresJsDatabase) => unknown) => callback(tx))
+    const db = postgresStub({ transaction })
+    const service = createCustomFieldsService(targets, [
+      {
+        supports: (entityType) => entityType === "booking",
+        renameDefinitionKey,
+        deleteDefinitionValues: vi.fn(async () => undefined),
+      },
+    ])
+
+    await service.update(db, existing.id, { key: "renamed_external_id" })
+
+    expect(transaction).toHaveBeenCalledOnce()
+    expect(renameDefinitionKey).toHaveBeenCalledWith(tx, existing, "renamed_external_id")
+  })
+
+  it("maps rename key collisions to the definition conflict response", async () => {
+    const existing = {
+      id: "definition_1",
+      ...input,
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+    }
+    const tx = postgresStub({
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            for: () => ({ limit: async () => [existing] }),
+          }),
+        }),
+      }),
+      update: () => ({
+        set: () => ({
+          where: () => ({
+            returning: async () => {
+              throw {
+                code: "23505",
+                constraint: "uidx_custom_field_definitions_namespace_key",
+              }
+            },
+          }),
+        }),
+      }),
+    })
+    const db = postgresStub({
+      transaction: async (callback: (transaction: PostgresJsDatabase) => unknown) => callback(tx),
+    })
+    const service = createCustomFieldsService(targets, [
+      {
+        supports: (entityType) => entityType === "booking",
+        renameDefinitionKey: vi.fn(async () => undefined),
+        deleteDefinitionValues: vi.fn(async () => undefined),
+      },
+    ])
+
+    await expect(
+      service.update(db, existing.id, { key: "duplicate_external_id" }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "duplicate_custom_field_key",
     })
   })
 

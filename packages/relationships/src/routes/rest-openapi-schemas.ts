@@ -38,6 +38,7 @@ export {
 const isoTimestamp = z.string()
 const isoDate = z.string()
 const jsonRecord = z.record(z.string(), z.unknown())
+const namespacedCustomFields = z.record(z.string(), jsonRecord)
 /** KMS envelopes are opaque jsonb objects; only their presence/absence matters. */
 const encryptedEnvelope = z.unknown()
 
@@ -53,7 +54,7 @@ export const activitySchema = z.object({
   completedAt: isoTimestamp.nullable(),
   location: z.string().nullable(),
   description: z.string().nullable(),
-  customFields: jsonRecord,
+  customFields: namespacedCustomFields,
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 })
@@ -78,7 +79,7 @@ export const activityParticipantSchema = z.object({
 /**
  * Custom-field values no longer have their own rows (custom-fields unification
  * ADR); the value API reconstructs this synthetic shape from each entity's
- * `custom_fields` jsonb. `id` is the `entityType::entityId::definitionId`
+ * `custom_fields` jsonb. `id` is the `entityType::entityId::namespace::definitionId`
  * synthetic key; exactly one typed column is populated per `fieldType`.
  */
 export const customFieldValueSchema = z.object({
@@ -86,6 +87,8 @@ export const customFieldValueSchema = z.object({
   definitionId: z.string(),
   entityType: z.string(),
   entityId: z.string(),
+  namespace: z.string(),
+  key: z.string(),
   textValue: z.string().nullable(),
   numberValue: z.number().nullable(),
   dateValue: z.string().nullable(),

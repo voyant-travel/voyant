@@ -293,14 +293,29 @@ async function mergeEntityLinks(
     .set({ entityId: keepId })
     .where(and(eq(activityLinks.entityType, entityType), eq(activityLinks.entityId, mergeId)))
 
-  // Unified custom fields live on the entity row: merge the loser's into the
-  // keeper's, keeper winning on key collisions (`loser || keeper`).
+  // Merge each namespace independently so a keeper collision wins at the field
+  // key without discarding unrelated values from the loser's same namespace.
   const table = entityTableName(entityType)
   if (table) {
     // agent-quality: raw-sql reviewed -- owner: relationships; table names come from the closed entityTableName mapping and values remain bound parameters.
     await db.execute(
       sql`UPDATE ${sql.identifier(table)} k
-            SET custom_fields = m.custom_fields || k.custom_fields, updated_at = now()
+            SET custom_fields = (
+                  SELECT COALESCE(
+                    jsonb_object_agg(
+                      namespaces.namespace,
+                      COALESCE(m.custom_fields -> namespaces.namespace, '{}'::jsonb)
+                        || COALESCE(k.custom_fields -> namespaces.namespace, '{}'::jsonb)
+                    ),
+                    '{}'::jsonb
+                  )
+                  FROM (
+                    SELECT jsonb_object_keys(m.custom_fields) AS namespace
+                    UNION
+                    SELECT jsonb_object_keys(k.custom_fields) AS namespace
+                  ) namespaces
+                ),
+                updated_at = now()
           FROM ${sql.identifier(table)} m
           WHERE k.id = ${keepId} AND m.id = ${mergeId}`,
     )

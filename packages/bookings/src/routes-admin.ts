@@ -18,7 +18,11 @@ import {
   evaluateActionLedgerCapabilityAccess,
   ledgerSensitiveRead,
 } from "@voyant-travel/action-ledger"
-import { validateCustomFields } from "@voyant-travel/core/custom-fields"
+import {
+  createCustomFieldRegistry,
+  type NamespacedCustomFieldValues,
+  validateCustomFields,
+} from "@voyant-travel/core/custom-fields"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
   aggregateSnapshotKey,
@@ -364,7 +368,7 @@ async function validateBookingBillingPartyReferences<T extends Env>(
  */
 async function validateBookingCustomFields<T extends Env>(
   c: Context<T>,
-  data: { customFields?: Record<string, unknown> },
+  data: { customFields?: NamespacedCustomFieldValues },
   mode: "create" | "update",
 ): Promise<void> {
   const resolveRegistry = getRouteRuntime(c).customFields
@@ -384,11 +388,16 @@ async function validateBookingCustomFields<T extends Env>(
     return
   }
   const registry = await resolveRegistry(c.get("db"))
-  const result = validateCustomFields(registry, "booking", data.customFields ?? {})
+  const operatorRegistry = createCustomFieldRegistry(
+    registry.forEntity("booking").filter((definition) => definition.namespace === "custom"),
+  )
+  const result = validateCustomFields(operatorRegistry, "booking", data.customFields ?? {})
   if (!result.ok) {
     throw new RequestValidationError("Invalid booking custom fields", {
       fields: {
-        fieldErrors: Object.fromEntries(result.errors.map((e) => [e.key, [e.message]])),
+        fieldErrors: Object.fromEntries(
+          result.errors.map((e) => [`${e.namespace}.${e.key}`, [e.message]]),
+        ),
         formErrors: [],
       },
     })
@@ -1235,6 +1244,7 @@ const errorResponseSchema = z.object({ error: z.string() })
 const deleteResponseSchema = z.object({ success: z.boolean() })
 const idParamSchema = z.object({ id: z.string() })
 const jsonObject = z.record(z.string(), z.unknown())
+const namespacedCustomFields = z.record(z.string(), jsonObject)
 
 // --- row response schemas (from $inferSelect) ------------------------------
 
@@ -1274,7 +1284,7 @@ const bookingSchema = z.object({
   internalNotes: z.string().nullable(),
   customerPaymentPolicy: z.unknown().nullable(),
   priceOverride: jsonObject.nullable(),
-  customFields: jsonObject,
+  customFields: namespacedCustomFields,
   holdExpiresAt: nullableIsoTimestamp,
   confirmedAt: nullableIsoTimestamp,
   expiredAt: nullableIsoTimestamp,

@@ -1,4 +1,5 @@
 import { handleApiError } from "@voyant-travel/hono"
+import { sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -12,10 +13,12 @@ const json = (body: Record<string, unknown>) => ({
 
 describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
   let app: Hono
+  // biome-ignore lint/suspicious/noExplicitAny: integration DB handle is provided by the shared test utility.
+  let db: any
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
-    const db = createTestDb()
+    db = createTestDb()
     await cleanupTestDb(db)
 
     app = new Hono()
@@ -31,141 +34,41 @@ describe.skipIf(!DB_AVAILABLE)("Custom field routes", () => {
   })
 
   beforeEach(async () => {
-    const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
-    await cleanupTestDb(createTestDb())
-  })
-
-  describe("Custom Field Definitions", () => {
-    const validDef = {
-      entityType: "organization",
-      key: "industry_code",
-      label: "Industry Code",
-      fieldType: "varchar",
-    }
-
-    it("creates a field definition", async () => {
-      const res = await app.request("/custom-fields", {
-        method: "POST",
-        ...json(validDef),
-      })
-
-      expect(res.status).toBe(201)
-      const body = await res.json()
-      expect(body.data.key).toBe("industry_code")
-      expect(body.data.entityType).toBe("organization")
-      expect(body.data.id).toBeTruthy()
-    })
-
-    it("rejects a duplicate (entityType, key) with a 409 field error", async () => {
-      const first = await app.request("/custom-fields", { method: "POST", ...json(validDef) })
-      expect(first.status).toBe(201)
-
-      const res = await app.request("/custom-fields", {
-        method: "POST",
-        ...json({ ...validDef, label: "Industry Code (dup)" }),
-      })
-
-      expect(res.status).toBe(409)
-      const body = await res.json()
-      expect(body.code).toBe("duplicate_custom_field_key")
-      expect(body.error).toBe("Custom field key already exists for this entity type")
-      expect(body.details.resource).toBe("custom_field_definition")
-      expect(body.details.fields).toEqual({
-        key: ["Custom field key already exists for this entity type"],
-      })
-      expect(body.details.issues).toEqual([
-        {
-          code: "duplicate_custom_field_key",
-          path: ["key"],
-          message: "Custom field key already exists for this entity type",
-        },
-      ])
-    })
-
-    it("lists definitions filtered by entityType", async () => {
-      await app.request("/custom-fields", {
-        method: "POST",
-        ...json(validDef),
-      })
-      await app.request("/custom-fields", {
-        method: "POST",
-        ...json({ ...validDef, key: "other_field", label: "Other", entityType: "person" }),
-      })
-
-      const res = await app.request("/custom-fields?entityType=organization", { method: "GET" })
-
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body.data.length).toBe(1)
-      expect(body.data[0].entityType).toBe("organization")
-    })
-
-    it("gets a definition by id", async () => {
-      const createRes = await app.request("/custom-fields", {
-        method: "POST",
-        ...json(validDef),
-      })
-      const { data: created } = await createRes.json()
-
-      const res = await app.request(`/custom-fields/${created.id}`, { method: "GET" })
-
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body.data.key).toBe("industry_code")
-    })
-
-    it("updates a definition", async () => {
-      const createRes = await app.request("/custom-fields", {
-        method: "POST",
-        ...json(validDef),
-      })
-      const { data: created } = await createRes.json()
-
-      const res = await app.request(`/custom-fields/${created.id}`, {
-        method: "PATCH",
-        ...json({ label: "Updated Label" }),
-      })
-
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body.data.label).toBe("Updated Label")
-    })
-
-    it("deletes a definition", async () => {
-      const createRes = await app.request("/custom-fields", {
-        method: "POST",
-        ...json(validDef),
-      })
-      const { data: created } = await createRes.json()
-
-      const res = await app.request(`/custom-fields/${created.id}`, { method: "DELETE" })
-
-      expect(res.status).toBe(200)
-      const body = await res.json()
-      expect(body.success).toBe(true)
-    })
-
-    it("returns 404 for non-existent definition", async () => {
-      const res = await app.request("/custom-fields/crm_cfd_00000000000000000000000000", {
-        method: "GET",
-      })
-      expect(res.status).toBe(404)
-    })
+    const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
+    await cleanupTestDb(db)
   })
 
   describe("Custom Field Values", () => {
     async function seedDefinition() {
-      const res = await app.request("/custom-fields", {
-        method: "POST",
-        ...json({
-          entityType: "organization",
-          key: `field_${Date.now()}`,
-          label: "Test Field",
-          fieldType: "varchar",
-        }),
-      })
-      const { data } = await res.json()
-      return data
+      const id = `cfd_route_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      const key = `field_${Date.now()}`
+      await db.execute(sql`
+        INSERT INTO custom_field_definitions (
+          id,
+          entity_type,
+          namespace,
+          owner_kind,
+          owner_id,
+          lifecycle_state,
+          provenance,
+          key,
+          label,
+          field_type
+        )
+        VALUES (
+          ${id},
+          'organization',
+          'custom',
+          'operator',
+          NULL,
+          'active',
+          '{"source":"integration-test"}'::jsonb,
+          ${key},
+          'Test Field',
+          'varchar'
+        )
+      `)
+      return { id, key }
     }
 
     // The value API stores onto the entity's `custom_fields` column and now

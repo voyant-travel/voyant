@@ -881,8 +881,10 @@ async function seedCustomers(ctx: SeedContext, plan: WorldPlan) {
         sourceRef: ctx.labelSlug,
         tags: ["seeded", ctx.labelSlug, index === 0 ? "vip" : "standard"],
         customFields: {
-          [customFieldDefinition.key]:
-            index === 0 ? "VIP experiential travel" : "Managed FIT and group travel",
+          custom: {
+            [customFieldDefinition.key]:
+              index === 0 ? "VIP experiential travel" : "Managed FIT and group travel",
+          },
         },
         notes: customer.notes,
       })

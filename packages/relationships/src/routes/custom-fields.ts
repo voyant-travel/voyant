@@ -1,7 +1,6 @@
 /**
- * Entity value routes remain with Relationships until #3400 moves namespaced
- * value storage and operations to the generic custom-fields boundary.
- * Definition CRUD is exclusively owned by @voyant-travel/custom-fields.
+ * Entity-owned value routes resolve definitions by their durable namespace
+ * identity and persist only `custom_fields[namespace][key]`.
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"

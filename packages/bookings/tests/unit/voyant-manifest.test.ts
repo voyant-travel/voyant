@@ -20,7 +20,10 @@ describe("bookings deployment manifest", () => {
       packageName: "@voyant-travel/bookings",
       provides: {
         capabilities: ["bookings.data-owner"],
-        ports: [{ id: "action-ledger.booking-drift-runtime" }],
+        ports: [
+          { id: "action-ledger.booking-drift-runtime" },
+          { id: "custom-fields.value-lifecycle" },
+        ],
       },
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },
       runtimePorts: [

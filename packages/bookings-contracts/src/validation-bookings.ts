@@ -83,10 +83,9 @@ const bookingCoreSchema = z.object({
   internalNotes: z.string().optional().nullable(),
   customerPaymentPolicy: bookingCustomerPaymentPolicySchema.optional().nullable(),
   priceOverride: bookingPriceOverrideSchema.optional().nullable(),
-  // Deployment-declared custom fields — shape is validated against the
-  // deployment's custom-field registry at the write boundary (see
-  // `@voyant-travel/core/custom-fields`); zod only accepts the object envelope.
-  customFields: z.record(z.string(), z.unknown()).optional(),
+  // Values are always `customFields[namespace][key]`; definitions and scalar
+  // types are validated against the resolved registry at the write boundary.
+  customFields: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
   holdExpiresAt: z.string().datetime().optional().nullable(),
   confirmedAt: z.string().datetime().optional().nullable(),
   expiredAt: z.string().datetime().optional().nullable(),
