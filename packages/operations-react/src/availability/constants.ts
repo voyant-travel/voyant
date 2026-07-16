@@ -1,17 +1,20 @@
+import { adminAvailabilityMessages } from "@voyant-travel/i18n"
 import type { AvailabilitySlotRow } from "./schemas.js"
 
 export const NONE_VALUE = "__none__"
 
+const labels = adminAvailabilityMessages.en.availability
+
 export const booleanOptions = [
-  { value: "true", label: "Yes" },
-  { value: "false", label: "No" },
+  { value: "true", label: labels.details.yes },
+  { value: "false", label: labels.details.no },
 ] as const
 
 export const slotStatusOptions = [
-  { value: "open", label: "Open" },
-  { value: "closed", label: "Closed" },
-  { value: "sold_out", label: "Sold Out" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "open", label: labels.statusOpen },
+  { value: "closed", label: labels.statusClosed },
+  { value: "sold_out", label: labels.statusSoldOut },
+  { value: "cancelled", label: labels.statusCancelled },
 ] as const
 
 export const slotStatusVariant: Record<

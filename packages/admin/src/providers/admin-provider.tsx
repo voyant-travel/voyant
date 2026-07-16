@@ -4,7 +4,7 @@ import { type QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { type ReactNode, useState } from "react"
 
 import type { ThemeMode } from "../types.js"
-import { LocaleProvider } from "./locale.js"
+import { LocaleProvider, type LocaleProviderProps } from "./locale.js"
 import { makeQueryClient } from "./query-client.js"
 import { ThemeProvider } from "./theme.js"
 
@@ -41,6 +41,8 @@ export interface AdminProviderProps {
   supportedLocales?: readonly string[]
   /** Fallback locale when no supported locale is resolved. Defaults to `"en"`. */
   fallbackLocale?: string
+  preferenceAuthority?: "device" | "account"
+  onPreferenceChange?: LocaleProviderProps["onPreferenceChange"]
 }
 
 /**
@@ -63,11 +65,13 @@ export function AdminProvider({
   defaultTheme = "system",
   themeStorageKey = "theme",
   defaultLocale,
-  defaultTimeZone = null,
+  defaultTimeZone,
   localeStorageKey = "admin-locale",
   timeZoneStorageKey = "admin-timezone",
   supportedLocales,
   fallbackLocale,
+  preferenceAuthority,
+  onPreferenceChange,
 }: AdminProviderProps) {
   // Keep a single QueryClient instance per mount when one isn't passed in.
   const [client] = useState(() => queryClient ?? makeQueryClient())
@@ -82,6 +86,8 @@ export function AdminProvider({
           timeZoneStorageKey={timeZoneStorageKey}
           supportedLocales={supportedLocales}
           fallbackLocale={fallbackLocale}
+          preferenceAuthority={preferenceAuthority}
+          onPreferenceChange={onPreferenceChange}
         >
           {children}
         </LocaleProvider>

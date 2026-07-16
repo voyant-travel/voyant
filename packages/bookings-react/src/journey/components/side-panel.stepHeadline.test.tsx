@@ -15,7 +15,7 @@ describe("stepHeadline — departure stay range (#2967)", () => {
       { dateRange: { checkIn: "2026-07-06", checkOut: "2026-07-09" } },
     )
 
-    const text = stepHeadline("departure", draft, messages)
+    const text = stepHeadline("departure", draft, messages, "en")
 
     expect(text).toContain(" → ")
     expect(text).not.toContain("2026-07-06")
@@ -32,7 +32,7 @@ describe("stepHeadline — departure stay range (#2967)", () => {
       { dateRange: { checkIn: "2026-07-06", checkOut: "2026-07-09" } },
     )
 
-    const text = stepHeadline("departure", draft, messages)
+    const text = stepHeadline("departure", draft, messages, "en")
 
     // Day numbers must stay 6 and 9, not slide to 5 and 8.
     expect(text).toMatch(/\b6\b/)

@@ -1,5 +1,6 @@
 "use client"
 
+import { useLocale } from "@voyant-travel/admin"
 import { useSlots } from "@voyant-travel/operations-react/availability"
 import {
   Combobox,
@@ -29,12 +30,6 @@ import type { DeparturePickerProps } from "../journey/index.js"
  * Wired into `<BookingJourneyHost />` via the journey's
  * `renderDeparturePicker` slot.
  */
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-})
-
 type LoadedSlot = {
   id: string
   optionId: string | null
@@ -56,6 +51,16 @@ export function JourneyDeparturePicker({
    *  show it read-only rather than a re-editable input. */
   lockDeparture?: boolean
 }): React.ReactElement {
+  const { resolvedLocale } = useLocale()
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(resolvedLocale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    [resolvedLocale],
+  )
   const messages = useBookingsUiMessagesOrDefault().bookingCreateDialog
   // Stable "now" so the slot query + future filter don't churn every render.
   const [nowIso] = useState(() => new Date().toISOString())

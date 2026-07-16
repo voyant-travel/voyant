@@ -18,7 +18,7 @@ import type {
   AdminNavigationPreferencesContribution,
   AdminNavigationPreferencesSnapshot,
 } from "../navigation/preferences.js"
-import { AdminLocalePreferenceSync } from "../providers/locale-preferences.js"
+import { LocaleProvider, type LocaleProviderProps } from "../providers/locale.js"
 import {
   getOperatorAdminMessageOverridesFromUiPrefs,
   type OperatorAdminMessages,
@@ -184,6 +184,7 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
   /** Host-owned right slot for persistent workspace header actions. */
   headerSlotRight?: ReactNode
   onSignOut?: () => void | Promise<void>
+  onPreferenceChange?: LocaleProviderProps["onPreferenceChange"]
   /** Maps the loaded user for the layout; default covers the common fields. */
   mapUser?: (user: TUser) => AdminUser
   children: ReactNode
@@ -205,6 +206,7 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
   headerSlot,
   headerSlotRight,
   onSignOut,
+  onPreferenceChange,
   mapUser = defaultAdminWorkspaceUser,
   children,
 }: AdminWorkspaceShellProps<TUser>) {
@@ -217,24 +219,30 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
       loadingFallback={<AdminWorkspacePendingFallback label={messages?.loading} />}
     >
       {({ user: loadedUser }) => (
-        <OperatorAdminMessagesProvider
-          overrides={getOperatorAdminMessageOverridesFromUiPrefs(loadedUser.uiPrefs)}
+        <LocaleProvider
+          defaultLocale={loadedUser.locale ?? undefined}
+          defaultTimeZone={loadedUser.timeZone ?? loadedUser.timezone}
+          preferenceAuthority="account"
+          onPreferenceChange={onPreferenceChange}
         >
-          <AdminLocalePreferenceSync source={loadedUser} />
-          <AdminWorkspaceShellInner
-            user={loadedUser}
-            extensions={extensions}
-            icons={icons}
-            linkComponent={linkComponent}
-            destinations={destinations}
-            headerSlot={headerSlot}
-            headerSlotRight={headerSlotRight}
-            onSignOut={onSignOut}
-            mapUser={mapUser}
+          <OperatorAdminMessagesProvider
+            overrides={getOperatorAdminMessageOverridesFromUiPrefs(loadedUser.uiPrefs)}
           >
-            {children}
-          </AdminWorkspaceShellInner>
-        </OperatorAdminMessagesProvider>
+            <AdminWorkspaceShellInner
+              user={loadedUser}
+              extensions={extensions}
+              icons={icons}
+              linkComponent={linkComponent}
+              destinations={destinations}
+              headerSlot={headerSlot}
+              headerSlotRight={headerSlotRight}
+              onSignOut={onSignOut}
+              mapUser={mapUser}
+            >
+              {children}
+            </AdminWorkspaceShellInner>
+          </OperatorAdminMessagesProvider>
+        </LocaleProvider>
       )}
     </OperatorAdminBootstrapGate>
   )

@@ -14,7 +14,7 @@ import { Label } from "@voyant-travel/ui/components/label"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Briefcase, CheckCircle2, Luggage } from "lucide-react"
 import { useMemo } from "react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault, useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 type BaggagePicks = NonNullable<AncillarySelection["baggage"]>
 type BaggagePick = BaggagePicks[number]
@@ -177,6 +177,7 @@ function BaggageLegSection({
   onPick: (next: BaggagePick | null, removeMatch: BaggagePick) => void
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   const itin = offer.itineraries[0]
   const first = itin?.segments[0]
   const last = itin?.segments[itin.segments.length - 1]
@@ -190,7 +191,8 @@ function BaggageLegSection({
         </h3>
         {first && last && (
           <span className="text-muted-foreground text-xs">
-            {first.departure.iataCode} → {last.arrival.iataCode} · {formatDate(first.departure.at)}
+            {first.departure.iataCode} → {last.arrival.iataCode} ·{" "}
+            {formatDate(first.departure.at, locale)}
           </span>
         )}
       </header>
@@ -236,6 +238,7 @@ function PaxBaggageRow({
   onSelect: (optionId: string | null) => void
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -296,7 +299,7 @@ function PaxBaggageRow({
               <span className="font-mono text-[11px] text-muted-foreground">
                 {opt.price.amount === "0.00"
                   ? messages.common.included
-                  : `+${formatMoney(opt.price.amount, opt.price.currency)}`}
+                  : `+${formatMoney(opt.price.amount, opt.price.currency, locale)}`}
               </span>
             </button>
           )
@@ -352,20 +355,20 @@ function nameOrFallback(
   return `${messages.common.passengerTypeLabels[p.type]} ${idx}`
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(amount: string, currency: string, locale: string): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(n)
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",

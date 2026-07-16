@@ -4,9 +4,12 @@ import {
   createReadyMessage,
   createRequestTokenMessage,
 } from "@voyant-travel/admin-extension-sdk"
+import type { ReactElement, ReactNode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  LocaleProvider,
+  OperatorAdminMessagesProvider,
   type UiExtensionContext,
   type UiExtensionDescriptor,
   UiExtensionHost,
@@ -44,6 +47,15 @@ function deliver(source: unknown, message: unknown) {
   })
 }
 
+function renderWithAdminMessages(element: ReactElement) {
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <LocaleProvider localeStorageKey={null} timeZoneStorageKey={null}>
+      <OperatorAdminMessagesProvider>{children}</OperatorAdminMessagesProvider>
+    </LocaleProvider>
+  )
+  return render(element, { wrapper })
+}
+
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
@@ -52,7 +64,9 @@ afterEach(() => {
 
 describe("UiExtensionHost", () => {
   it("renders a sandboxed frame and completes the handshake on ready", async () => {
-    render(<UiExtensionHost descriptor={descriptor()} slot="dashboard.header" context={context} />)
+    renderWithAdminMessages(
+      <UiExtensionHost descriptor={descriptor()} slot="dashboard.header" context={context} />,
+    )
 
     const frame = getFrame()
     expect(frame.getAttribute("sandbox")).toBe("allow-scripts allow-forms allow-popups")
@@ -72,7 +86,7 @@ describe("UiExtensionHost", () => {
   })
 
   it("renders a quiet incompatible card and never mounts a frame", () => {
-    render(
+    renderWithAdminMessages(
       <UiExtensionHost
         descriptor={descriptor({ extensionApi: "^2" })}
         slot="dashboard.header"
@@ -85,7 +99,7 @@ describe("UiExtensionHost", () => {
 
   it("degrades to an error card when the handshake times out", async () => {
     vi.useFakeTimers()
-    render(
+    renderWithAdminMessages(
       <UiExtensionHost
         descriptor={descriptor()}
         slot="dashboard.header"
@@ -102,7 +116,7 @@ describe("UiExtensionHost", () => {
 
   it("only navigates on relative admin paths", async () => {
     const onNavigate = vi.fn()
-    render(
+    renderWithAdminMessages(
       <UiExtensionHost
         descriptor={descriptor()}
         slot="dashboard.header"
@@ -123,7 +137,9 @@ describe("UiExtensionHost", () => {
   })
 
   it("answers the reserved token request with not-supported", async () => {
-    render(<UiExtensionHost descriptor={descriptor()} slot="dashboard.header" context={context} />)
+    renderWithAdminMessages(
+      <UiExtensionHost descriptor={descriptor()} slot="dashboard.header" context={context} />,
+    )
     const source = getFrame().contentWindow as Window
     const post = vi.spyOn(source, "postMessage")
     deliver(source, createReadyMessage())
@@ -141,7 +157,7 @@ describe("UiExtensionHost", () => {
 
   it("ignores messages from a source that is not the frame", async () => {
     const onNavigate = vi.fn()
-    render(
+    renderWithAdminMessages(
       <UiExtensionHost
         descriptor={descriptor()}
         slot="dashboard.header"

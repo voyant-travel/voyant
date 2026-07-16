@@ -10,7 +10,7 @@ import {
 } from "@voyant-travel/ui/components/tooltip"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Plane } from "lucide-react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault, useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 /**
  * Marker rendered on top of a seat to indicate which passenger picked it.
@@ -201,12 +201,13 @@ function SeatTile({
   onClick?: (seat: Seat) => void
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   const isClickable =
     !!onClick && (seat.status === "available" || seat.status === "selected" || pick != null)
   const tile = (
     <button
       type="button"
-      aria-label={seatAriaLabel(seat, pick, messages)}
+      aria-label={seatAriaLabel(seat, pick, messages, locale)}
       disabled={!isClickable}
       onClick={onClick ? () => onClick(seat) : undefined}
       className={cn(
@@ -246,6 +247,7 @@ function SeatTooltip({
   pickedBy?: string
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   return (
     <div className="flex flex-col gap-1 text-xs">
       <div className="flex items-center justify-between gap-2">
@@ -257,7 +259,9 @@ function SeatTooltip({
         </span>
       </div>
       {seat.price ? (
-        <span className="font-medium">+{formatMoney(seat.price.amount, seat.price.currency)}</span>
+        <span className="font-medium">
+          +{formatMoney(seat.price.amount, seat.price.currency, locale)}
+        </span>
       ) : (
         <span className="text-muted-foreground">{messages.flightSeatMap.noCharge}</span>
       )}
@@ -315,6 +319,7 @@ function seatAriaLabel(
   seat: Seat,
   pick: SeatPickMarker | null,
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>,
+  locale: string,
 ): string {
   const m = messages.flightSeatMap
   if (pick) {
@@ -332,7 +337,7 @@ function seatAriaLabel(
         : formatMessage(m.seatAvailable, { seat: seat.seatNumber })
     const parts = [prefix, humanCategory(seat.category, messages)]
     if (seat.price) {
-      parts.push(formatMoney(seat.price.amount, seat.price.currency))
+      parts.push(formatMoney(seat.price.amount, seat.price.currency, locale))
     }
     return parts.join(", ")
   }
@@ -374,10 +379,10 @@ function humanCategory(
   }
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(amount: string, currency: string, locale: string): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

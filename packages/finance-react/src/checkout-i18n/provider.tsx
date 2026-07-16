@@ -62,10 +62,12 @@ export function getCheckoutUiI18n({
 export function CheckoutUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: CheckoutUiMessageOverrides | null
 }) {
   return (
@@ -73,6 +75,7 @@ export function CheckoutUiMessagesProvider({
       definitions={checkoutUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

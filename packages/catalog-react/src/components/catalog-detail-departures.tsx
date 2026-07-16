@@ -15,6 +15,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronRight, X } from "l
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react"
 
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import { useCatalogUiI18nOrDefault } from "../i18n/provider.js"
 import type {
   CatalogDeparturePricingRow,
   CatalogDetailEnrichment,
@@ -37,8 +38,11 @@ function monthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 }
 
-function collectMonthOptions(departures: ReadonlyArray<DepartureEntry>): MonthOption[] {
-  const formatter = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" })
+function collectMonthOptions(
+  departures: ReadonlyArray<DepartureEntry>,
+  locale: string,
+): MonthOption[] {
+  const formatter = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" })
   const map = new Map<string, MonthOption>()
   for (const d of departures) {
     const date = new Date(d.startsAt)
@@ -102,12 +106,13 @@ export function DeparturesTable({
   ) => Promise<CatalogDeparturePricingRow[] | null>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
+  const { locale } = useCatalogUiI18nOrDefault()
   const tableMessages = messages.departuresTable
   // Cruises call a scheduled departure a "sailing" — pick the cruise wording.
   const isCruise = vertical === "cruises"
   const noUpcomingLabel = isCruise ? messages.noUpcomingSailings : messages.noUpcomingDepartures
   const noResultsLabel = isCruise ? tableMessages.noResultsSailings : tableMessages.noResults
-  const monthOptions = useMemo(() => collectMonthOptions(departures), [departures])
+  const monthOptions = useMemo(() => collectMonthOptions(departures, locale), [departures, locale])
   const statusOptions = useMemo(() => collectStatusOptions(departures), [departures])
 
   const [monthFilter, setMonthFilter] = useState<string>(ALL_FILTER_VALUE)
@@ -121,7 +126,7 @@ export function DeparturesTable({
 
   const dateTimeFormatter = useMemo(
     () =>
-      new Intl.DateTimeFormat(undefined, {
+      new Intl.DateTimeFormat(locale, {
         weekday: "short",
         day: "numeric",
         month: "short",
@@ -129,7 +134,7 @@ export function DeparturesTable({
         hour: "numeric",
         minute: "2-digit",
       }),
-    [],
+    [locale],
   )
 
   const filtersActive =
@@ -327,7 +332,9 @@ export function DeparturesTable({
                         {remaining != null ? remaining : "—"}
                       </td>
                       <td className="px-3 py-2 text-right font-medium tabular-nums">
-                        {priceCents != null ? formatPriceCents(priceCents, priceCurrency) : "—"}
+                        {priceCents != null
+                          ? formatPriceCents(priceCents, priceCurrency, locale)
+                          : "—"}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {bookable ? (
@@ -451,6 +458,7 @@ function DepartureDetailPanel({
   ) => Promise<CatalogDeparturePricingRow[] | null>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
+  const { locale } = useCatalogUiI18nOrDefault()
   const tableMessages = messages.departuresTable
   const currency = departure.currency ?? productSellCurrency ?? undefined
   const departurePriceCents = departure.lowestPriceCents ?? productSellAmountCents
@@ -536,7 +544,7 @@ function DepartureDetailPanel({
                       <div className="text-right text-xs text-muted-foreground">
                         {tableMessages.priceFrom}{" "}
                         <span className="font-medium text-foreground tabular-nums">
-                          {formatPriceCents(livePrice.cents, livePrice.currency)}
+                          {formatPriceCents(livePrice.cents, livePrice.currency, locale)}
                         </span>
                       </div>
                     </>
@@ -558,7 +566,7 @@ function DepartureDetailPanel({
                         <div className="text-right text-xs text-muted-foreground">
                           {tableMessages.priceFrom}{" "}
                           <span className="font-medium text-foreground tabular-nums">
-                            {formatPriceCents(departurePriceCents, currency)}
+                            {formatPriceCents(departurePriceCents, currency, locale)}
                           </span>
                         </div>
                       )}

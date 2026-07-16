@@ -1,7 +1,7 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useOperatorAdminMessages } from "@voyant-travel/admin"
+import { useLocale, useOperatorAdminMessages } from "@voyant-travel/admin"
 import { bookingsQueryKeys, useBookingActivity } from "@voyant-travel/bookings-react"
 import type { BookingDetailHostSlotContext } from "@voyant-travel/bookings-react/admin"
 import type { PaymentPolicy, PaymentPolicySource } from "@voyant-travel/finance/payment-policy"
@@ -234,6 +234,7 @@ function PaymentPolicyHistory({
   bookingId: string
   messages: PaymentPolicyCardMessages
 }) {
+  const { resolvedLocale } = useLocale()
   const { data, isLoading } = useBookingActivity(bookingId)
   const rows = Array.isArray(data) ? data : (data?.data ?? [])
   const policyRows = rows
@@ -279,7 +280,7 @@ function PaymentPolicyHistory({
                   {formatMessage(template, { source: sourceLabel, count: entries.length })}
                 </span>
                 <span className="font-mono text-muted-foreground">
-                  {new Date(row.createdAt).toLocaleString()}
+                  {new Date(row.createdAt).toLocaleString(resolvedLocale)}
                 </span>
               </div>
               <span className="text-muted-foreground">{row.description}</span>

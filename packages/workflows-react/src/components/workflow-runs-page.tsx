@@ -5,7 +5,10 @@ import { Card, CardContent } from "@voyant-travel/ui/components/card"
 import { Clock, Workflow } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { useWorkflowRunsUiMessagesOrDefault } from "../i18n/index.js"
+import {
+  useWorkflowRunsUiI18nOrDefault,
+  useWorkflowRunsUiMessagesOrDefault,
+} from "../i18n/index.js"
 import type {
   ListWorkflowRunsQuery,
   WorkflowRun,
@@ -241,7 +244,7 @@ function RunListItem({
   onToggleStatus: (status: WorkflowRunStatus) => void
   onToggleTag: (tag: string) => void
 }) {
-  const messages = useWorkflowRunsUiMessagesOrDefault()
+  const { locale, messages } = useWorkflowRunsUiI18nOrDefault()
   return (
     <div
       className={`rounded-md border bg-card p-3 text-sm transition-colors hover:bg-muted/50 ${
@@ -257,7 +260,7 @@ function RunListItem({
           <StatusIcon status={run.status} />
           <span className="truncate font-medium">{run.workflowName}</span>
           <span className="ml-auto whitespace-nowrap text-muted-foreground text-xs">
-            {formatRelative(run.startedAt, messages)}
+            {formatRelative(run.startedAt, messages, locale)}
           </span>
         </button>
         <button

@@ -171,10 +171,7 @@ export function StageChannelEditorDialog({
                 channel={form.channel}
                 placeholder={messages.channel.placeholders.template}
               />
-              <FieldDescription>
-                Filtered by the channel above. Resolved at send time so editing the template doesn't
-                need a rule update.
-              </FieldDescription>
+              <FieldDescription>{messages.admin.common.templateResolutionHint}</FieldDescription>
             </Field>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

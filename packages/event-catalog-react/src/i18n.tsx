@@ -36,7 +36,8 @@ export const eventCatalogUiEn: EventCatalogUiMessages = {
   navigation: { title: "Event catalog" },
   page: {
     title: "Event catalog",
-    selectedContracts: "{count} selected event contracts",
+    selectedContracts:
+      "{count, plural, one {# selected event contract} other {# selected event contracts}}",
     selectedContractsLoading: "Selected event contracts",
     requestFailed: "Event catalog request failed",
     requestFailedWithStatus: "Event catalog request failed ({status})",
@@ -56,10 +57,36 @@ export const eventCatalogUiEn: EventCatalogUiMessages = {
   },
 }
 
+export const eventCatalogUiRo: EventCatalogUiMessages = {
+  navigation: { title: "Catalog de evenimente" },
+  page: {
+    title: "Catalog de evenimente",
+    selectedContracts:
+      "{count, plural, one {# contract de eveniment selectat} few {# contracte de eveniment selectate} other {# de contracte de eveniment selectate}}",
+    selectedContractsLoading: "Contracte de eveniment selectate",
+    requestFailed: "Solicitarea catalogului de evenimente a eșuat",
+    requestFailedWithStatus: "Solicitarea catalogului de evenimente a eșuat ({status})",
+    eventsLabel: "Evenimente",
+    contractLabel: "Contract de eveniment",
+    filterLabel: "Filtrează evenimentele",
+    filterPlaceholder: "Filtrează evenimentele",
+    loading: "Se încarcă...",
+    noMatchingEvents: "Nu există evenimente corespunzătoare.",
+    owner: "Proprietar",
+    sourceModule: "Modul sursă",
+    visibility: "Vizibilitate",
+    category: "Categorie",
+    redactedFields: "Câmpuri mascate",
+    noneDeclared: "Niciunul declarat.",
+    payloadSchema: "Schema conținutului",
+  },
+}
+
 const fallbackLocale = "en"
 
 export const eventCatalogMessageDefinitions = {
   en: eventCatalogUiEn,
+  ro: eventCatalogUiRo,
 } satisfies LocaleMessageDefinitions<EventCatalogUiMessages>
 
 const eventCatalogUiContext =
@@ -73,15 +100,18 @@ const defaultEventCatalogUiI18n: PackageI18nValue<EventCatalogUiMessages> = {
 export function EventCatalogUiMessagesProvider({
   children,
   locale,
+  timeZone,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
 }) {
   return (
     <eventCatalogUiContext.ResolvedMessagesProvider
       definitions={eventCatalogMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
     >
       {children}
     </eventCatalogUiContext.ResolvedMessagesProvider>

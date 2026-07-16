@@ -14,6 +14,7 @@ export interface PackageMessagesProviderProps<T extends Record<string, unknown>>
   children: ReactNode
   locale: string | null | undefined
   messages: T
+  timeZone?: string | null
 }
 
 export type PackageI18nValue<T extends Record<string, unknown>> = LocaleFormatters & {
@@ -26,6 +27,7 @@ export interface ResolvedPackageMessagesProviderProps<T extends Record<string, u
   fallbackLocale: string
   locale: string | null | undefined
   overrides?: LocaleMessageOverrides<T> | null
+  timeZone?: string | null
 }
 
 export function createPackageMessagesContext<T extends Record<string, unknown>>(
@@ -34,8 +36,13 @@ export function createPackageMessagesContext<T extends Record<string, unknown>>(
   const Context = createContext<PackageI18nValue<T> | undefined>(undefined)
   Context.displayName = `${displayName}Context`
 
-  function MessagesProvider({ children, locale, messages }: PackageMessagesProviderProps<T>) {
-    const formatters = useMemo(() => createLocaleFormatters(locale), [locale])
+  function MessagesProvider({
+    children,
+    locale,
+    messages,
+    timeZone,
+  }: PackageMessagesProviderProps<T>) {
+    const formatters = useMemo(() => createLocaleFormatters(locale, timeZone), [locale, timeZone])
     const value = useMemo<PackageI18nValue<T>>(
       () => ({
         ...formatters,
@@ -55,6 +62,7 @@ export function createPackageMessagesContext<T extends Record<string, unknown>>(
     fallbackLocale,
     locale,
     overrides,
+    timeZone,
   }: ResolvedPackageMessagesProviderProps<T>) {
     const messages = useResolvedLocaleMessages({
       locale,
@@ -64,7 +72,7 @@ export function createPackageMessagesContext<T extends Record<string, unknown>>(
     })
 
     return (
-      <MessagesProvider locale={locale ?? fallbackLocale} messages={messages}>
+      <MessagesProvider locale={locale ?? fallbackLocale} messages={messages} timeZone={timeZone}>
         {children}
       </MessagesProvider>
     )

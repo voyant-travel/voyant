@@ -177,7 +177,8 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
 
   const defaultTz =
     typeof Intl !== "undefined"
-      ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC")
+      ? (Intl.DateTimeFormat() // i18n-format-ok -- timezone discovery does not render output.
+          .resolvedOptions().timeZone ?? "UTC")
       : "UTC"
 
   const form = useForm<DepartureFormValues, unknown, DepartureFormOutput>({

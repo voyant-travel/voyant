@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { LocaleProvider, OperatorAdminMessagesProvider } from "@voyant-travel/admin"
 import { act, type ReactNode } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { renderToStaticMarkup } from "react-dom/server"
@@ -95,11 +96,15 @@ function makeQueryClient() {
 
 function renderWithProviders(element: ReactNode, fetcher: VoyantFetcher = asyncFetcher()) {
   return renderToStaticMarkup(
-    <QueryClientProvider client={makeQueryClient()}>
-      <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={fetcher}>
-        {element}
-      </VoyantAuthProvider>
-    </QueryClientProvider>,
+    <LocaleProvider localeStorageKey={null} timeZoneStorageKey={null}>
+      <OperatorAdminMessagesProvider>
+        <QueryClientProvider client={makeQueryClient()}>
+          <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={fetcher}>
+            {element}
+          </VoyantAuthProvider>
+        </QueryClientProvider>
+      </OperatorAdminMessagesProvider>
+    </LocaleProvider>,
   )
 }
 
@@ -125,11 +130,15 @@ async function renderClient(element: ReactNode, fetcher: VoyantFetcher) {
 
   await act(async () => {
     root.render(
-      <QueryClientProvider client={makeQueryClient()}>
-        <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={fetcher}>
-          {element}
-        </VoyantAuthProvider>
-      </QueryClientProvider>,
+      <LocaleProvider localeStorageKey={null} timeZoneStorageKey={null}>
+        <OperatorAdminMessagesProvider>
+          <QueryClientProvider client={makeQueryClient()}>
+            <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={fetcher}>
+              {element}
+            </VoyantAuthProvider>
+          </QueryClientProvider>
+        </OperatorAdminMessagesProvider>
+      </LocaleProvider>,
     )
   })
 
@@ -209,11 +218,15 @@ describe("OrganizationMembersPage", () => {
     )
 
     const emptyMarkup = renderToStaticMarkup(
-      <QueryClientProvider client={emptyQueryClient}>
-        <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={asyncFetcher()}>
-          <OrganizationMembersPage organizationId="org_1" showSidebarTrigger={false} />
-        </VoyantAuthProvider>
-      </QueryClientProvider>,
+      <LocaleProvider localeStorageKey={null} timeZoneStorageKey={null}>
+        <OperatorAdminMessagesProvider>
+          <QueryClientProvider client={emptyQueryClient}>
+            <VoyantAuthProvider baseUrl="https://operator.example/api" fetcher={asyncFetcher()}>
+              <OrganizationMembersPage organizationId="org_1" showSidebarTrigger={false} />
+            </VoyantAuthProvider>
+          </QueryClientProvider>
+        </OperatorAdminMessagesProvider>
+      </LocaleProvider>,
     )
     const skeletonMarkup = renderToStaticMarkup(<OrganizationMembersPageSkeleton />)
 

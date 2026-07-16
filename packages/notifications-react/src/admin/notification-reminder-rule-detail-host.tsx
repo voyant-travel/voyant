@@ -30,6 +30,7 @@ export function NotificationReminderRuleDetailHost({
   id,
 }: NotificationReminderRuleDetailHostProps) {
   const messages = useNotificationsUiMessagesOrDefault()
+  const common = messages.admin.common
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
   const { data: rule, isLoading } = useNotificationReminderRule(id)
@@ -67,14 +68,15 @@ export function NotificationReminderRuleDetailHost({
       {rule && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Rule</CardTitle>
+            <CardTitle className="text-base">{common.table.rule}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm grid grid-cols-2 gap-x-8 gap-y-2 text-muted-foreground">
             <div>
-              Template slug: <span className="font-mono">{rule.templateSlug ?? "—"}</span>
+              {common.templateSlugLabel}{" "}
+              <span className="font-mono">{rule.templateSlug ?? "—"}</span>
             </div>
             <div>
-              Template id: <span className="font-mono">{rule.templateId ?? "—"}</span>
+              {common.templateIdLabel} <span className="font-mono">{rule.templateId ?? "—"}</span>
             </div>
           </CardContent>
         </Card>

@@ -33,7 +33,7 @@ import {
 import { ListFilter, X } from "lucide-react"
 import * as React from "react"
 import { BOOKING_STATUS_ALL } from "../booking-list-constants.js"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { useBookingsUiI18nOrDefault } from "../i18n/provider.js"
 import { type BookingStatus, bookingStatuses } from "../index.js"
 
 export { BOOKING_STATUS_ALL }
@@ -103,7 +103,7 @@ export function BookingListFiltersPopover({
   hasActiveFilters,
   onClearFilters,
 }: BookingListFiltersPopoverProps) {
-  const messages = useBookingsUiMessagesOrDefault()
+  const { locale, messages } = useBookingsUiI18nOrDefault()
   const filterMessages = messages.bookingList.filters
   const statusLabels = messages.common.bookingStatusLabels
 
@@ -289,7 +289,7 @@ export function BookingListFiltersPopover({
               items={slots}
               selectedItem={selectedSlot}
               getKey={(slot) => slot.id}
-              getLabel={(slot) => formatSlotLabel(slot)}
+              getLabel={(slot) => formatSlotLabel(slot, locale)}
               getSecondary={(slot) => slot.status}
               placeholder={filterMessages.departure}
               emptyText={
@@ -454,9 +454,9 @@ function formatPersonName(person: PersonRecord) {
  * in the slot's own timezone so the operator sees what the customer
  * sees, not whatever the admin's browser locale converts it to.
  */
-function formatSlotLabel(slot: AvailabilitySlotRecord): string {
+function formatSlotLabel(slot: AvailabilitySlotRecord, locale: string): string {
   try {
-    const formatter = new Intl.DateTimeFormat(undefined, {
+    const formatter = new Intl.DateTimeFormat(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",

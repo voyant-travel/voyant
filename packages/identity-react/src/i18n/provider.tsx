@@ -65,10 +65,12 @@ export function getIdentityUiI18n({
 export function IdentityUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: IdentityUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function IdentityUiMessagesProvider({
       definitions={identityUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

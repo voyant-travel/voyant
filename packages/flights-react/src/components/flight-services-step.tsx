@@ -15,7 +15,7 @@ import { Checkbox } from "@voyant-travel/ui/components/checkbox"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Accessibility, Minus, Package, Plus, Sparkles } from "lucide-react"
 import { useMemo } from "react"
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault, useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 
 type AssistancePicks = NonNullable<AncillarySelection["assistance"]>
 type ExtrasPicks = NonNullable<AncillarySelection["extras"]>
@@ -309,6 +309,7 @@ function ExtraRow({
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
   onChange: (next: number) => void
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   const labelArgs = { leg: legLabel, service: option.label, passenger: passengerLabel }
   return (
     <li className="flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2">
@@ -316,7 +317,7 @@ function ExtraRow({
         <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm">{option.label}</span>
         <span className="font-mono text-[11px] text-muted-foreground">
-          {formatMoney(option.price.amount, option.price.currency)}
+          {formatMoney(option.price.amount, option.price.currency, locale)}
         </span>
       </div>
       <div className="flex items-center gap-1">
@@ -392,10 +393,10 @@ function nameOrFallback(
   return `${messages.common.passengerTypeLabels[p.type]} ${idx}`
 }
 
-function formatMoney(amount: string, currency: string): string {
+function formatMoney(amount: string, currency: string, locale: string): string {
   const n = Number(amount)
   if (!Number.isFinite(n)) return `${amount} ${currency}`
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

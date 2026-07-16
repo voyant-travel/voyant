@@ -23,7 +23,7 @@
     "generate:schema-docs": "tsx scripts/generate-schema-docs.ts",
     "i18n:check": "pnpm i18n:check:admin && pnpm i18n:check:packages && pnpm i18n:check:ui-literals",
     "i18n:check:admin": "node --import tsx scripts/check-i18n-parity.ts",
-    "i18n:check:packages": "node --import tsx scripts/check-package-i18n-parity.mjs",
+    "i18n:check:packages": "node --test scripts/tests/check-package-i18n-parity.test.mjs && node --import tsx scripts/check-package-i18n-parity.mjs",
     "i18n:check:ui-literals": "node --test scripts/tests/check-ui-hardcoded-strings.test.mjs && node --import tsx scripts/check-ui-hardcoded-strings.mjs",
     "verify:package-exports": "tsx scripts/verify-package-exports.ts",
     "verify:ui-components-barrel": "node scripts/check-ui-components-barrel.mjs",
@@ -132,6 +132,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@formatjs/icu-messageformat-parser": "catalog:",
     "@changesets/apply-release-plan": "^7.1.1",
     "@changesets/assemble-release-plan": "^6.0.10",
     "@changesets/cli": "^2.31.0",

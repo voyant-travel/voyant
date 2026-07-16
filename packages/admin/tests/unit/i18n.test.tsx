@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   dmcAdminMessageDefinitions,
+  formatMessage,
   getLocaleMessageOverridesFromUiPrefs,
   resolveLocaleMessages,
 } from "../../src/lib/i18n.js"
@@ -70,6 +71,69 @@ describe("i18n helpers", () => {
     })
 
     expect(result?.locales?.ro?.nav?.settings).toBe("Preferinte")
+  })
+
+  it("layers language and region-specific overrides from least to most specific", () => {
+    const result = resolveLocaleMessages<TestMessages>({
+      locale: "ro-RO",
+      fallbackLocale: "en",
+      definitions: {
+        en: {
+          loading: "Loading...",
+          nav: { dashboard: "Dashboard", settings: "Settings" },
+        },
+        ro: {
+          loading: "Se încarcă...",
+          nav: { dashboard: "Panou", settings: "Setări" },
+        },
+      },
+      overrides: {
+        locales: {
+          ro: { nav: { settings: "Preferințe" } },
+          "ro-RO": { loading: "Se personalizează..." },
+        },
+      },
+    })
+
+    expect(result.loading).toBe("Se personalizează...")
+    expect(result.nav.settings).toBe("Preferințe")
+  })
+
+  it("sanitizes untrusted ui preference overrides against message definitions", () => {
+    const definitions = {
+      en: {
+        loading: "Loading...",
+        nav: { dashboard: "Dashboard", settings: "Settings" },
+      },
+    }
+
+    const result = getLocaleMessageOverridesFromUiPrefs<TestMessages>(
+      {
+        i18n: {
+          admin: {
+            shared: {
+              loading: 42,
+              nav: { dashboard: "Home", unknown: "ignored" },
+            },
+          },
+        },
+      },
+      definitions,
+    )
+
+    expect(result).toEqual({ shared: { nav: { dashboard: "Home" } } })
+  })
+
+  it("formats ICU plurals using the requested locale and rejects missing values", () => {
+    expect(
+      formatMessage(
+        "{count, plural, one {# noapte} few {# nopți} other {# de nopți}}",
+        { count: 20 },
+        { locale: "ro" },
+      ),
+    ).toBe("20 de nopți")
+
+    expect(() => formatMessage("Hello, {name}!", {})).toThrow(/name/)
   })
 
   it("returns undefined for invalid ui prefs override payloads", () => {

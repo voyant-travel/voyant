@@ -65,10 +65,12 @@ export function getExtrasUiI18n({
 export function ExtrasUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: ExtrasUiMessageOverrides | null
 }) {
   return (
@@ -76,6 +78,7 @@ export function ExtrasUiMessagesProvider({
       definitions={extrasUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

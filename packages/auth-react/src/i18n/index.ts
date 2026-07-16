@@ -12,3 +12,4 @@ export {
   useAuthUiMessagesOrDefault,
 } from "./provider.js"
 export { authUiRo } from "./ro.js"
+export { authTeamSetupMessageDefinitions } from "./setup.js"

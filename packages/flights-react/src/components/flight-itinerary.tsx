@@ -6,7 +6,7 @@ import { Badge } from "@voyant-travel/ui/components/badge"
 import { cn } from "@voyant-travel/ui/lib/utils"
 import { Plane } from "lucide-react"
 
-import { useFlightsUiMessagesOrDefault } from "../i18n/index.js"
+import { useFlightsUiI18nOrDefault, type useFlightsUiMessagesOrDefault } from "../i18n/index.js"
 import { AirlineLogo } from "./airline-logo.js"
 
 export interface FlightItineraryProps {
@@ -45,7 +45,7 @@ export function FlightItinerary({
   compact,
   className,
 }: FlightItineraryProps) {
-  const messages = useFlightsUiMessagesOrDefault()
+  const { locale, messages } = useFlightsUiI18nOrDefault()
   const segs = itinerary.segments
   const first = segs[0]
   const last = segs[segs.length - 1]
@@ -78,7 +78,7 @@ export function FlightItinerary({
             {first.departure.iataCode} → {last.arrival.iataCode}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            {formatTime(first.departure.at)} – {formatTime(last.arrival.at)}
+            {formatTime(first.departure.at, locale)} – {formatTime(last.arrival.at, locale)}
           </span>
           <span className="ml-auto text-[11px] text-muted-foreground">
             {formatStops(stops, messages)}
@@ -239,11 +239,12 @@ function Endpoint({
   messages: ReturnType<typeof useFlightsUiMessagesOrDefault>
   align?: "start" | "end"
 }) {
+  const { locale } = useFlightsUiI18nOrDefault()
   return (
     <div
       className={cn("flex flex-col leading-tight", align === "end" ? "items-end" : "items-start")}
     >
-      <span className="font-semibold text-lg tabular-nums">{formatTime(at)}</span>
+      <span className="font-semibold text-lg tabular-nums">{formatTime(at, locale)}</span>
       <span className="font-mono text-muted-foreground text-xs">{iata}</span>
       {airportName && <span className="text-[11px] text-muted-foreground">{airportName}</span>}
       {terminal && (
@@ -251,7 +252,7 @@ function Endpoint({
           {formatMessage(messages.flightItinerary.terminal, { terminal })}
         </span>
       )}
-      <span className="mt-0.5 text-[10px] text-muted-foreground">{formatDate(at)}</span>
+      <span className="mt-0.5 text-[10px] text-muted-foreground">{formatDate(at, locale)}</span>
     </div>
   )
 }
@@ -271,16 +272,16 @@ function formatStops(
 
 // ── Formatters ───────────────────────────────────────────────────────────────
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(d)
+  return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(d)
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",

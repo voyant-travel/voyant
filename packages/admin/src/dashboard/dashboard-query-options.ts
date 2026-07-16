@@ -201,20 +201,41 @@ export function getStatusColor(status: string): string {
 }
 
 export const revenueChartConfig = {
-  revenue: { label: "Revenue", color: "#ff4405" },
-  bookings: { label: "Bookings", color: "#86cb3c" },
+  revenue: {
+    label: operatorAdminDashboardMessages.en.dashboard.chartRevenueLabel,
+    color: "#ff4405",
+  },
+  bookings: {
+    label: operatorAdminDashboardMessages.en.dashboard.chartBookingsLabel,
+    color: "#86cb3c",
+  },
 } satisfies ChartConfig
 
 export const bookingStatusConfig = {
-  confirmed: { label: "Confirmed", color: "#86cb3c" },
-  completed: { label: "Completed", color: "#6172f3" },
-  in_progress: { label: "In Progress", color: "hsl(47 96% 53%)" },
-  draft: { label: "Draft", color: "#efefeb" },
-  cancelled: { label: "Cancelled", color: "#ff4405" },
+  confirmed: {
+    label: operatorAdminDashboardMessages.en.dashboard.statusConfirmedLabel,
+    color: "#86cb3c",
+  },
+  completed: {
+    label: operatorAdminDashboardMessages.en.dashboard.statusCompletedLabel,
+    color: "#6172f3",
+  },
+  in_progress: {
+    label: operatorAdminDashboardMessages.en.dashboard.statusInProgressLabel,
+    color: "hsl(47 96% 53%)",
+  },
+  draft: { label: operatorAdminDashboardMessages.en.dashboard.statusDraftLabel, color: "#efefeb" },
+  cancelled: {
+    label: operatorAdminDashboardMessages.en.dashboard.statusCancelledLabel,
+    color: "#ff4405",
+  },
 } satisfies ChartConfig
 
 export const monthlyBookingsConfig = {
-  count: { label: "Bookings", color: "#ff4405" },
+  count: {
+    label: operatorAdminDashboardMessages.en.dashboard.chartBookingsLabel,
+    color: "#ff4405",
+  },
 } satisfies ChartConfig
 
 export function buildMonthSeries() {
@@ -247,3 +268,5 @@ export function pickPrimaryCurrency(
   }
   return bestCurrency
 }
+
+import { operatorAdminDashboardMessages } from "@voyant-travel/i18n"

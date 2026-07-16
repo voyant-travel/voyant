@@ -1,5 +1,13 @@
+import { canonicalizeLocale, canonicalizeTimeZone } from "./locale.js"
+import {
+  formatIcuMessage,
+  type MessageFormatOptions,
+  type MessageValues,
+} from "./message-format.js"
+
 export interface LocaleFormatters {
   locale: string
+  timeZone: string | null
   formatCurrency: (
     value: number | string | bigint,
     currency: string,
@@ -8,10 +16,7 @@ export interface LocaleFormatters {
   formatDate: (value: Date | string | number, options?: Intl.DateTimeFormatOptions) => string
   formatDateTime: (value: Date | string | number, options?: Intl.DateTimeFormatOptions) => string
   formatNumber: (value: number | string | bigint, options?: Intl.NumberFormatOptions) => string
-}
-
-function normalizeLocale(locale: string | null | undefined): string {
-  return (locale ?? "").trim() || "en"
+  formatMessage: (template: string, values: MessageValues) => string
 }
 
 function coerceNumber(value: number | string | bigint): number | bigint | null {
@@ -24,22 +29,67 @@ function coerceNumber(value: number | string | bigint): number | bigint | null {
 }
 
 function coerceDate(value: Date | string | number): Date | null {
-  const date = value instanceof Date ? value : new Date(value)
+  const normalizedValue =
+    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value
+  const date = normalizedValue instanceof Date ? normalizedValue : new Date(normalizedValue)
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-export function createLocaleFormatters(locale: string | null | undefined): LocaleFormatters {
-  const resolvedLocale = normalizeLocale(locale)
+function cacheKey(options: object | undefined): string {
+  return JSON.stringify(options ?? {})
+}
+
+function boundedGetOrCreate<T>(cache: Map<string, T>, key: string, create: () => T): T {
+  const existing = cache.get(key)
+  if (existing) return existing
+  if (cache.size >= 100) {
+    const oldestKey = cache.keys().next().value
+    if (oldestKey !== undefined) cache.delete(oldestKey)
+  }
+  const value = create()
+  cache.set(key, value)
+  return value
+}
+
+export function createLocaleFormatters(
+  locale: string | null | undefined,
+  timeZone?: string | null,
+): LocaleFormatters {
+  const resolvedLocale = canonicalizeLocale(locale)
+  const resolvedTimeZone = canonicalizeTimeZone(timeZone)
+  const numberFormatters = new Map<string, Intl.NumberFormat>()
+  const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+
+  function getNumberFormatter(options: Intl.NumberFormatOptions) {
+    return boundedGetOrCreate(
+      numberFormatters,
+      cacheKey(options),
+      () => new Intl.NumberFormat(resolvedLocale, options),
+    )
+  }
+
+  function getDateTimeFormatter(options: Intl.DateTimeFormatOptions | undefined) {
+    const resolvedOptions = {
+      ...(resolvedTimeZone ? { timeZone: resolvedTimeZone } : {}),
+      ...options,
+    }
+    return boundedGetOrCreate(
+      dateTimeFormatters,
+      cacheKey(resolvedOptions),
+      () => new Intl.DateTimeFormat(resolvedLocale, resolvedOptions),
+    )
+  }
 
   return {
     locale: resolvedLocale,
+    timeZone: resolvedTimeZone,
     formatCurrency(value, currency, options) {
       const normalizedValue = coerceNumber(value)
       if (normalizedValue === null) {
         return `${currency} ${value}`
       }
 
-      return new Intl.NumberFormat(resolvedLocale, {
+      return getNumberFormatter({
         currency,
         style: "currency",
         ...options,
@@ -51,7 +101,7 @@ export function createLocaleFormatters(locale: string | null | undefined): Local
         return String(value)
       }
 
-      return new Intl.DateTimeFormat(resolvedLocale, options).format(normalizedValue)
+      return getDateTimeFormatter(options).format(normalizedValue)
     },
     formatDateTime(value, options) {
       const normalizedValue = coerceDate(value)
@@ -59,7 +109,7 @@ export function createLocaleFormatters(locale: string | null | undefined): Local
         return String(value)
       }
 
-      return new Intl.DateTimeFormat(resolvedLocale, {
+      return getDateTimeFormatter({
         dateStyle: "medium",
         timeStyle: "short",
         ...options,
@@ -71,7 +121,14 @@ export function createLocaleFormatters(locale: string | null | undefined): Local
         return String(value)
       }
 
-      return new Intl.NumberFormat(resolvedLocale, options).format(normalizedValue)
+      return getNumberFormatter(options ?? {}).format(normalizedValue)
+    },
+    formatMessage(template, values) {
+      const options: MessageFormatOptions = {
+        locale: resolvedLocale,
+        timeZone: resolvedTimeZone,
+      }
+      return formatIcuMessage(template, values, options)
     },
   }
 }

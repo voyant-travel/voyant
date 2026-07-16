@@ -17,7 +17,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { Loader2, RotateCcw, Search } from "lucide-react"
 import { useState } from "react"
-import { type NotificationsUiMessages, useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { type NotificationsUiMessages, useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import {
   type NotificationDeliveryRecord,
   type UseNotificationDeliveriesOptions,
@@ -31,9 +31,10 @@ import {
  * details dialog is in-page — no cross-route navigation.
  */
 export function NotificationDeliveriesHost() {
-  const messages = useNotificationsUiMessagesOrDefault()
+  const { formatDateTime, messages } = useNotificationsUiI18nOrDefault()
   const t = messages.admin.deliveriesPage
   const common = messages.admin.common
+  const table = common.table
   const [channel, setChannel] = useState<UseNotificationDeliveriesOptions["channel"] | "all">("all")
   const [status, setStatus] = useState<UseNotificationDeliveriesOptions["status"] | "all">("all")
   const [selectedDelivery, setSelectedDelivery] = useState<NotificationDeliveryRecord | null>(null)
@@ -95,13 +96,13 @@ export function NotificationDeliveriesHost() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">To</th>
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Provider</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Created</th>
-                <th className="px-4 py-3 text-right">Logs</th>
+                <th className="px-4 py-3">{table.to}</th>
+                <th className="px-4 py-3">{table.template}</th>
+                <th className="px-4 py-3">{table.channel}</th>
+                <th className="px-4 py-3">{table.provider}</th>
+                <th className="px-4 py-3">{table.status}</th>
+                <th className="px-4 py-3">{table.created}</th>
+                <th className="px-4 py-3 text-right">{table.logs}</th>
               </tr>
             </thead>
             <tbody>
@@ -138,7 +139,7 @@ export function NotificationDeliveriesHost() {
                       </div>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3">{new Date(delivery.createdAt).toLocaleString()}</td>
+                  <td className="px-4 py-3">{formatDateTime(delivery.createdAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
                       {delivery.status === "failed" ? (
@@ -222,6 +223,7 @@ function DeliveryDetailsDialog({
   onResend?: () => void
   isResending?: boolean
 }) {
+  const { formatDateTime } = useNotificationsUiI18nOrDefault()
   if (!delivery) return null
 
   const t = messages.admin.deliveriesPage
@@ -271,9 +273,18 @@ function DeliveryDetailsDialog({
             />
             <Detail label={t.labels.channel} value={delivery.channel} />
             <Detail label={t.labels.created} value={formatDateTime(delivery.createdAt)} />
-            <Detail label={t.labels.failed} value={formatDateTime(delivery.failedAt)} />
-            <Detail label={t.labels.sent} value={formatDateTime(delivery.sentAt)} />
-            <Detail label={t.labels.scheduled} value={formatDateTime(delivery.scheduledFor)} />
+            <Detail
+              label={t.labels.failed}
+              value={delivery.failedAt ? formatDateTime(delivery.failedAt) : "—"}
+            />
+            <Detail
+              label={t.labels.sent}
+              value={delivery.sentAt ? formatDateTime(delivery.sentAt) : "—"}
+            />
+            <Detail
+              label={t.labels.scheduled}
+              value={delivery.scheduledFor ? formatDateTime(delivery.scheduledFor) : "—"}
+            />
           </section>
 
           {delivery.errorMessage ? (
@@ -352,10 +363,6 @@ function readRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null
-}
-
-function formatDateTime(value: string | null) {
-  return value ? new Date(value).toLocaleString() : "—"
 }
 
 function formatTarget(delivery: NotificationDeliveryRecord) {

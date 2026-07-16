@@ -66,10 +66,12 @@ export function getExternalRefsUiI18n({
 export function ExternalRefsUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: ExternalRefsUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function ExternalRefsUiMessagesProvider({
       definitions={externalRefsUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

@@ -6,6 +6,7 @@ import { useStorefrontUi } from "@voyant-travel/storefront-react/storefront"
 import { useMemo } from "react"
 import { z } from "zod"
 
+import { useBookingsUiI18nOrDefault } from "../i18n/provider.js"
 import type { BookingEntitySummary } from "../journey/index.js"
 import type { ContractSourceContext } from "./resolve-contract-variables.js"
 import {
@@ -148,6 +149,7 @@ function useEntityContent(
   entityId: string,
   search: StorefrontBookingSearch,
 ): { summary: BookingEntitySummary | undefined; source: ContractSourceContext | undefined } {
+  const { locale } = useBookingsUiI18nOrDefault()
   const url = entityContentUrl(apiUrl, entityModule, entityId)
   const { data } = useQuery({
     queryKey: ["public-entity-summary", entityModule, entityId],
@@ -167,8 +169,8 @@ function useEntityContent(
     [entityModule, data?.provenance, content],
   )
   const summary = useMemo(
-    () => resolveEntitySummary(entityModule, content, search),
-    [content, entityModule, search],
+    () => resolveEntitySummary(entityModule, content, search, locale),
+    [content, entityModule, search, locale],
   )
   return { summary, source }
 }
@@ -187,12 +189,15 @@ function resolveEntitySummary(
   entityModule: string,
   content: unknown,
   search: StorefrontBookingSearch,
+  locale: string,
 ): BookingEntitySummary | undefined {
   if (!content) return undefined
-  if (entityModule === "products") return resolveProductSummary(content as ProductContent, search)
-  if (entityModule === "cruises") return resolveCruiseSummary(content as CruiseContent, search)
+  if (entityModule === "products")
+    return resolveProductSummary(content as ProductContent, search, locale)
+  if (entityModule === "cruises")
+    return resolveCruiseSummary(content as CruiseContent, search, locale)
   if (entityModule === "accommodations") {
-    return resolveAccommodationSummary(content as AccommodationContent, search)
+    return resolveAccommodationSummary(content as AccommodationContent, search, locale)
   }
   return undefined
 }
@@ -200,6 +205,7 @@ function resolveEntitySummary(
 function resolveProductSummary(
   content: ProductContent,
   search: StorefrontBookingSearch,
+  locale: string,
 ): BookingEntitySummary {
   const subtitle = [
     content.product.duration_days
@@ -213,7 +219,7 @@ function resolveProductSummary(
     subtitle: subtitle.join(" · ") || undefined,
     heroImageUrl: content.product.hero_image_url ?? content.media?.[0]?.url ?? undefined,
     vertical: "products",
-    whenLabel: departure ? formatDate(departure.starts_at) : undefined,
+    whenLabel: departure ? formatDate(departure.starts_at, locale) : undefined,
     locationLabel: content.product.departure_city ?? content.product.country ?? undefined,
     startDate: departure?.starts_at ?? undefined,
     endDate: departure?.ends_at ?? undefined,
@@ -224,6 +230,7 @@ function resolveProductSummary(
 function resolveCruiseSummary(
   content: CruiseContent,
   search: StorefrontBookingSearch,
+  locale: string,
 ): BookingEntitySummary {
   const sailing = content.sailings.find((item) => item.id === search.departureSlotId)
   const subtitle = [
@@ -242,7 +249,7 @@ function resolveCruiseSummary(
     subtitle: subtitle.join(" · ") || undefined,
     heroImageUrl: content.cruise.hero_image_url ?? undefined,
     vertical: "cruises",
-    whenLabel: sailing ? formatDate(sailing.start_date) : undefined,
+    whenLabel: sailing ? formatDate(sailing.start_date, locale) : undefined,
     locationLabel: route ?? undefined,
     startDate: sailing?.start_date ?? undefined,
     endDate: sailing?.end_date ?? undefined,
@@ -253,6 +260,7 @@ function resolveCruiseSummary(
 function resolveAccommodationSummary(
   content: AccommodationContent,
   search: StorefrontBookingSearch,
+  locale: string,
 ): BookingEntitySummary {
   const stars = content.hotel.star_rating ? "★".repeat(Math.floor(content.hotel.star_rating)) : null
   return {
@@ -262,7 +270,7 @@ function resolveAccommodationSummary(
     vertical: "accommodations",
     whenLabel:
       search.checkIn && search.checkOut
-        ? `${formatDate(search.checkIn)} → ${formatDate(search.checkOut)}`
+        ? `${formatDate(search.checkIn, locale)} → ${formatDate(search.checkOut, locale)}`
         : undefined,
     startDate: search.checkIn ?? undefined,
     endDate: search.checkOut ?? undefined,
@@ -288,9 +296,9 @@ function resolveEntitySource(
   }
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   try {
-    return new Date(iso).toLocaleDateString(undefined, {
+    return new Date(iso).toLocaleDateString(locale, {
       weekday: "short",
       day: "numeric",
       month: "short",

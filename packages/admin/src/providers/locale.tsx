@@ -1,5 +1,6 @@
 "use client"
 
+import { canonicalizeTimeZone } from "@voyant-travel/i18n"
 import {
   createContext,
   type ReactNode,
@@ -7,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 
@@ -16,12 +18,36 @@ export const DEFAULT_ADMIN_LOCALE = "en"
 export interface LocaleContextValue {
   locale: string
   resolvedLocale: string
-  setLocale: (locale: string) => void
+  setLocale: (locale: string) => Promise<void>
   timeZone: string | null
-  setTimeZone: (timeZone: string | null) => void
+  setTimeZone: (timeZone: string | null) => Promise<void>
+  isSavingPreferences: boolean
+  preferenceError: Error | null
 }
 
-const LocaleContext = createContext<LocaleContextValue | undefined>(undefined)
+interface LocaleContextState extends LocaleContextValue {
+  providerDepth: number
+}
+
+const LocaleContext = createContext<LocaleContextState | undefined>(undefined)
+const documentLocaleProviders = new Map<symbol, { depth: number; locale: string; order: number }>()
+let documentLocaleOrder = 0
+
+function synchronizeDocumentLocale() {
+  if (typeof document === "undefined") return
+
+  let selected: { depth: number; locale: string; order: number } | undefined
+  for (const candidate of documentLocaleProviders.values()) {
+    if (
+      !selected ||
+      candidate.depth > selected.depth ||
+      (candidate.depth === selected.depth && candidate.order > selected.order)
+    ) {
+      selected = candidate
+    }
+  }
+  if (selected) document.documentElement.lang = selected.locale
+}
 
 function pickSupportedLocale(
   locale: string | null | undefined,
@@ -72,43 +98,49 @@ export interface LocaleProviderProps {
   timeZoneStorageKey?: string | null
   supportedLocales?: readonly string[]
   fallbackLocale?: string
+  /**
+   * Account preferences outrank device cache and browser defaults. Use this
+   * for an authenticated user boundary whose defaults came from `/auth/me`.
+   */
+  preferenceAuthority?: "device" | "account"
+  /** Persist an optimistic preference change to the authoritative profile. */
+  onPreferenceChange?: (preference: {
+    locale?: string
+    timezone?: string | null
+  }) => void | Promise<void>
 }
 
 export function LocaleProvider({
   children,
   defaultLocale,
-  defaultTimeZone = null,
+  defaultTimeZone,
   localeStorageKey = "admin-locale",
   timeZoneStorageKey = "admin-timezone",
   supportedLocales = DEFAULT_ADMIN_LOCALES,
   fallbackLocale = DEFAULT_ADMIN_LOCALE,
+  preferenceAuthority = "device",
+  onPreferenceChange,
 }: LocaleProviderProps) {
+  const parentContext = useContext(LocaleContext)
+  const providerDepth = (parentContext?.providerDepth ?? -1) + 1
+  const documentLocaleId = useRef(Symbol("locale-provider"))
   const [locale, setLocaleState] = useState<string>(() => {
-    const storedLocale = readStoredValue(localeStorageKey)
-    if (storedLocale) {
-      return storedLocale
-    }
-
     if (defaultLocale) {
       return defaultLocale
     }
-
-    const browserLocale = getBrowserLocale()
-    return browserLocale ?? fallbackLocale
+    return fallbackLocale
   })
 
   const [timeZone, setTimeZoneState] = useState<string | null>(() => {
-    const storedTimeZone = readStoredValue(timeZoneStorageKey)
-    if (storedTimeZone) {
-      return storedTimeZone
-    }
-
     if (defaultTimeZone !== undefined) {
-      return defaultTimeZone
+      return canonicalizeTimeZone(defaultTimeZone)
     }
-
-    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null
+    return null
   })
+  const [pendingPreferenceUpdates, setPendingPreferenceUpdates] = useState(0)
+  const [preferenceError, setPreferenceError] = useState<Error | null>(null)
+  const localeRequest = useRef(0)
+  const timeZoneRequest = useRef(0)
 
   const resolvedLocale = useMemo(
     () => pickSupportedLocale(locale, supportedLocales, fallbackLocale),
@@ -116,38 +148,133 @@ export function LocaleProvider({
   )
 
   const setLocale = useCallback(
-    (nextLocale: string) => {
-      setLocaleState(nextLocale)
+    async (nextLocale: string) => {
+      const resolvedNextLocale = pickSupportedLocale(nextLocale, supportedLocales, fallbackLocale)
+      const previousLocale = locale
+      const request = ++localeRequest.current
+      setLocaleState(resolvedNextLocale)
+      setPreferenceError(null)
       if (typeof window !== "undefined" && localeStorageKey !== null) {
-        window.localStorage.setItem(localeStorageKey, nextLocale)
+        window.localStorage.setItem(localeStorageKey, resolvedNextLocale)
+      }
+
+      if (!onPreferenceChange) return
+
+      setPendingPreferenceUpdates((count) => count + 1)
+      try {
+        await onPreferenceChange({ locale: resolvedNextLocale })
+      } catch (cause) {
+        const error = cause instanceof Error ? cause : new Error("Could not save locale preference")
+        if (localeRequest.current === request) {
+          setLocaleState(previousLocale)
+          if (typeof window !== "undefined" && localeStorageKey !== null) {
+            window.localStorage.setItem(localeStorageKey, previousLocale)
+          }
+          setPreferenceError(error)
+        }
+        throw error
+      } finally {
+        setPendingPreferenceUpdates((count) => Math.max(0, count - 1))
       }
     },
-    [localeStorageKey],
+    [fallbackLocale, locale, localeStorageKey, onPreferenceChange, supportedLocales],
   )
 
   const setTimeZone = useCallback(
-    (nextTimeZone: string | null) => {
-      setTimeZoneState(nextTimeZone)
-      if (typeof window === "undefined" || timeZoneStorageKey === null) {
-        return
+    async (nextTimeZone: string | null) => {
+      const resolvedNextTimeZone = canonicalizeTimeZone(nextTimeZone)
+      if (nextTimeZone && !resolvedNextTimeZone) {
+        throw new RangeError(`Invalid time zone: ${nextTimeZone}`)
       }
 
-      if (nextTimeZone) {
-        window.localStorage.setItem(timeZoneStorageKey, nextTimeZone)
-      } else {
-        window.localStorage.removeItem(timeZoneStorageKey)
+      const previousTimeZone = timeZone
+      const request = ++timeZoneRequest.current
+      setTimeZoneState(resolvedNextTimeZone)
+      setPreferenceError(null)
+      if (typeof window !== "undefined" && timeZoneStorageKey !== null) {
+        if (resolvedNextTimeZone) {
+          window.localStorage.setItem(timeZoneStorageKey, resolvedNextTimeZone)
+        } else {
+          window.localStorage.removeItem(timeZoneStorageKey)
+        }
+      }
+
+      if (!onPreferenceChange) return
+
+      setPendingPreferenceUpdates((count) => count + 1)
+      try {
+        await onPreferenceChange({ timezone: resolvedNextTimeZone })
+      } catch (cause) {
+        const error =
+          cause instanceof Error ? cause : new Error("Could not save time zone preference")
+        if (timeZoneRequest.current === request) {
+          setTimeZoneState(previousTimeZone)
+          if (typeof window !== "undefined" && timeZoneStorageKey !== null) {
+            if (previousTimeZone) {
+              window.localStorage.setItem(timeZoneStorageKey, previousTimeZone)
+            } else {
+              window.localStorage.removeItem(timeZoneStorageKey)
+            }
+          }
+          setPreferenceError(error)
+        }
+        throw error
+      } finally {
+        setPendingPreferenceUpdates((count) => Math.max(0, count - 1))
       }
     },
-    [timeZoneStorageKey],
+    [onPreferenceChange, timeZone, timeZoneStorageKey],
   )
 
   useEffect(() => {
-    if (typeof document === "undefined") {
+    if (preferenceAuthority === "account") {
+      const accountLocale = pickSupportedLocale(defaultLocale, supportedLocales, fallbackLocale)
+      const accountTimeZone = canonicalizeTimeZone(defaultTimeZone)
+      setLocaleState(accountLocale)
+      setTimeZoneState(accountTimeZone)
+      if (typeof window !== "undefined") {
+        if (localeStorageKey !== null) window.localStorage.setItem(localeStorageKey, accountLocale)
+        if (timeZoneStorageKey !== null) {
+          if (accountTimeZone) window.localStorage.setItem(timeZoneStorageKey, accountTimeZone)
+          else window.localStorage.removeItem(timeZoneStorageKey)
+        }
+      }
       return
     }
 
-    document.documentElement.lang = resolvedLocale
-  }, [resolvedLocale])
+    const storedLocale = readStoredValue(localeStorageKey)
+    const browserLocale = getBrowserLocale()
+    setLocaleState(storedLocale ?? defaultLocale ?? browserLocale ?? fallbackLocale)
+
+    const storedTimeZone = readStoredValue(timeZoneStorageKey)
+    // Locale does not affect timezone discovery; this formatter never renders output.
+    const browserTimeZone =
+      Intl.DateTimeFormat() // i18n-format-ok
+        .resolvedOptions().timeZone ?? null
+    setTimeZoneState(canonicalizeTimeZone(storedTimeZone ?? defaultTimeZone ?? browserTimeZone))
+  }, [
+    defaultLocale,
+    defaultTimeZone,
+    fallbackLocale,
+    localeStorageKey,
+    preferenceAuthority,
+    supportedLocales,
+    timeZoneStorageKey,
+  ])
+
+  useEffect(() => {
+    const id = documentLocaleId.current
+    documentLocaleProviders.set(id, {
+      depth: providerDepth,
+      locale: resolvedLocale,
+      order: ++documentLocaleOrder,
+    })
+    synchronizeDocumentLocale()
+    return () => {
+      documentLocaleProviders.delete(id)
+      synchronizeDocumentLocale()
+    }
+  }, [providerDepth, resolvedLocale])
 
   return (
     <LocaleContext.Provider
@@ -157,6 +284,9 @@ export function LocaleProvider({
         setLocale,
         timeZone,
         setTimeZone,
+        isSavingPreferences: pendingPreferenceUpdates > 0,
+        preferenceError,
+        providerDepth,
       }}
     >
       {children}

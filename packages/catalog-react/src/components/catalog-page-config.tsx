@@ -25,6 +25,7 @@ export type CatalogPageMessages = ReturnType<typeof useCatalogUiMessagesOrDefaul
 export function makeProductColumns(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
     nameColumn(messages.fallbacks.productName, messages),
@@ -33,7 +34,7 @@ export function makeProductColumns(
     lookupColumn("supplierId", messages.columns.supplier, formatSupplier, messages),
     daysColumn(messages),
     nightsColumn(messages),
-    priceColumn("sellAmountCents", "sellCurrency", messages.columns.price, messages),
+    priceColumn("sellAmountCents", "sellCurrency", messages.columns.price, messages, locale),
   ]
 }
 
@@ -55,6 +56,7 @@ export function makeExtraColumns(
 export function makeCruiseColumns(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
     nameColumn(messages.fallbacks.cruiseName, messages),
@@ -68,6 +70,7 @@ export function makeCruiseColumns(
       "lowestPriceCurrencyCached",
       messages.columns.price,
       messages,
+      locale,
       "major",
       "lowestPriceUnit",
     ),
@@ -77,6 +80,7 @@ export function makeCruiseColumns(
 export function makeCharterColumns(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
     nameColumn(messages.fallbacks.charterName, messages, "heroImageUrl"),
@@ -89,6 +93,7 @@ export function makeCharterColumns(
       "lowestPriceCachedCurrency",
       messages.columns.from,
       messages,
+      locale,
     ),
   ]
 }
@@ -96,6 +101,7 @@ export function makeCharterColumns(
 export function makeAccommodationColumns(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  _locale: string,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
     nameColumn(messages.fallbacks.roomName, messages),
@@ -111,10 +117,15 @@ export function makeAccommodationColumns(
 export function makeProductFilters(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): CatalogFilterField[] {
   return [
     { field: "status", label: messages.filters.status },
-    { field: "countryCodes", label: messages.filters.country, formatValue: formatCountry },
+    {
+      field: "countryCodes",
+      label: messages.filters.country,
+      formatValue: (value) => formatCountry(value, locale),
+    },
     { field: "destinations", label: messages.filters.destination },
     {
       field: "board",
@@ -199,6 +210,7 @@ export function makeExtraFilters(
 export function makeCruiseFilters(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
+  locale: string,
 ): CatalogFilterField[] {
   return [
     { field: "status", label: messages.filters.status },
@@ -213,7 +225,7 @@ export function makeCruiseFilters(
       // shown as "Mar 2027".
       field: "departureMonths",
       label: messages.filters.departureMonth,
-      formatValue: formatDepartureMonth,
+      formatValue: (value) => formatDepartureMonth(value, locale),
       sortValues: "value-asc",
     },
     { field: "lineSupplierId", label: messages.filters.supplier, formatValue: formatSupplier },
@@ -462,6 +474,7 @@ function priceColumn(
   currencyField: string,
   header: string,
   messages: CatalogPageMessages,
+  locale: string,
   unit: PriceUnit = "minor",
   unitField?: string,
 ): ColumnDef<CatalogSearchHit, unknown> {
@@ -470,7 +483,13 @@ function priceColumn(
     header,
     cell: ({ row }) => {
       const resolvedUnit = resolveHitPriceUnit(row.original, unit, unitField)
-      const formatted = formatHitPrice(row.original, amountField, currencyField, resolvedUnit)
+      const formatted = formatHitPrice(
+        row.original,
+        amountField,
+        currencyField,
+        locale,
+        resolvedUnit,
+      )
       return (
         <span className="font-medium">
           {formatted ?? <span className="text-muted-foreground">{messages.values.empty}</span>}

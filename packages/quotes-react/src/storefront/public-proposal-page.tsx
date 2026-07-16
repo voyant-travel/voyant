@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2, MessageSquare } from "lucide-react"
 import { useState } from "react"
+import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 
 export interface PublicProposalPageMessages {
   unavailableTitle: string
@@ -113,6 +114,7 @@ export function PublicProposalPage({
   apiBaseUrl,
   messages: t,
 }: PublicProposalPageProps) {
+  const { locale } = useCrmUiI18nOrDefault()
   const queryClient = useQueryClient()
   const [feedbackMessage, setFeedbackMessage] = useState("")
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
@@ -243,9 +245,9 @@ export function PublicProposalPage({
         <section className="grid gap-4 border-[#d8d2c3] border-b pb-6 sm:grid-cols-3">
           <Metric
             label={t.metricTotal}
-            value={formatMoney(proposal.totalAmountCents, proposal.currency)}
+            value={formatMoney(proposal.totalAmountCents, proposal.currency, locale)}
           />
-          <Metric label={t.validUntil} value={formatDate(proposal.validUntil, t.notSet)} />
+          <Metric label={t.validUntil} value={formatDate(proposal.validUntil, t.notSet, locale)} />
           <Metric label={t.statusLabel} value={formatStatus(proposal.status, t.statuses)} />
         </section>
 
@@ -293,10 +295,10 @@ export function PublicProposalPage({
                   </div>
                   <div className="col-span-2 text-right text-[#52645d]">{line.quantity}</div>
                   <div className="col-span-2 text-right text-[#52645d]">
-                    {formatMoney(line.unitPriceAmountCents, line.currency)}
+                    {formatMoney(line.unitPriceAmountCents, line.currency, locale)}
                   </div>
                   <div className="col-span-2 text-right font-medium">
-                    {formatMoney(line.totalAmountCents, line.currency)}
+                    {formatMoney(line.totalAmountCents, line.currency, locale)}
                   </div>
                 </li>
               ))}
@@ -305,15 +307,15 @@ export function PublicProposalPage({
           <div className="grid gap-2 border-[#d8d2c3] border-t bg-[#fbfaf6] px-4 py-4 text-sm">
             <AmountRow
               label={t.subtotal}
-              value={formatMoney(proposal.subtotalAmountCents, proposal.currency)}
+              value={formatMoney(proposal.subtotalAmountCents, proposal.currency, locale)}
             />
             <AmountRow
               label={t.tax}
-              value={formatMoney(proposal.taxAmountCents, proposal.currency)}
+              value={formatMoney(proposal.taxAmountCents, proposal.currency, locale)}
             />
             <AmountRow
               label={t.colTotal}
-              value={formatMoney(proposal.totalAmountCents, proposal.currency)}
+              value={formatMoney(proposal.totalAmountCents, proposal.currency, locale)}
               strong
             />
           </div>
@@ -500,9 +502,9 @@ function publicMutationError(
   return body.error ?? fallback
 }
 
-function formatMoney(amountCents: number, currency: string) {
+function formatMoney(amountCents: number, currency: string, locale: string) {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
     }).format(amountCents / 100)
@@ -511,9 +513,9 @@ function formatMoney(amountCents: number, currency: string) {
   }
 }
 
-function formatDate(value: string | null, notSetLabel: string) {
+function formatDate(value: string | null, notSetLabel: string, locale: string) {
   if (!value) return notSetLabel
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value))
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(value))
 }
 
 function formatStatus(status: string, statuses: PublicProposalPageMessages["statuses"]) {

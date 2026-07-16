@@ -16,11 +16,7 @@ export interface AdminLocalePreferenceSyncProps {
   timeZoneStorageKey?: string | null
 }
 
-export function AdminLocalePreferenceSync({
-  source,
-  localeStorageKey = "admin-locale",
-  timeZoneStorageKey = "admin-timezone",
-}: AdminLocalePreferenceSyncProps) {
+export function AdminLocalePreferenceSync({ source }: AdminLocalePreferenceSyncProps) {
   const { locale, setLocale, setTimeZone, timeZone } = useLocale()
   const preferredTimeZone = source?.timeZone ?? source?.timezone ?? null
 
@@ -29,31 +25,14 @@ export function AdminLocalePreferenceSync({
       return
     }
 
-    if (
-      source.locale &&
-      source.locale !== locale &&
-      (!localeStorageKey || !window.localStorage.getItem(localeStorageKey))
-    ) {
-      setLocale(source.locale)
+    if (source.locale && source.locale !== locale) {
+      void setLocale(source.locale)
     }
 
-    if (
-      preferredTimeZone &&
-      preferredTimeZone !== timeZone &&
-      (!timeZoneStorageKey || !window.localStorage.getItem(timeZoneStorageKey))
-    ) {
-      setTimeZone(preferredTimeZone)
+    if (preferredTimeZone && preferredTimeZone !== timeZone) {
+      void setTimeZone(preferredTimeZone)
     }
-  }, [
-    locale,
-    localeStorageKey,
-    preferredTimeZone,
-    setLocale,
-    setTimeZone,
-    source,
-    timeZone,
-    timeZoneStorageKey,
-  ])
+  }, [locale, preferredTimeZone, setLocale, setTimeZone, source, timeZone])
 
   return null
 }

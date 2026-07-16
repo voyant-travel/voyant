@@ -156,10 +156,14 @@ export function PayloadBlock({
   )
 }
 
-export function formatRelative(iso: string, messages: WorkflowRunsUiMessages): string {
+export function formatRelative(
+  iso: string,
+  messages: WorkflowRunsUiMessages,
+  locale: string,
+): string {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
   if (Math.abs(seconds) < 5) return messages.format.relativeNow
-  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" })
   if (Math.abs(seconds) < 60) return formatter.format(-seconds, "second")
   const minutes = Math.round(seconds / 60)
   if (Math.abs(minutes) < 60) return formatter.format(-minutes, "minute")

@@ -66,10 +66,12 @@ export function getCrmUiI18n({
 export function CrmUiMessagesProvider({
   children,
   locale,
+  timeZone,
   overrides,
 }: {
   children: ReactNode
   locale: string | null | undefined
+  timeZone?: string | null
   overrides?: CrmUiMessageOverrides | null
 }) {
   return (
@@ -77,6 +79,7 @@ export function CrmUiMessagesProvider({
       definitions={crmUiMessageDefinitions}
       fallbackLocale={fallbackLocale}
       locale={locale}
+      timeZone={timeZone}
       overrides={overrides}
     >
       {children}

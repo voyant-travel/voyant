@@ -30,13 +30,12 @@ import { AlertCircle, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "luci
 import { useState } from "react"
 import { useCustomFieldDefinitionMutation } from "../hooks/use-custom-field-definition-mutation.js"
 import { useCustomFieldDefinitions } from "../hooks/use-custom-field-definitions.js"
-import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 import type { CustomFieldDefinitionRecord } from "../schemas.js"
 import {
   CustomFieldDefinitionSheet,
   type EntityType,
   entityTypes,
-  fieldTypeLabels,
 } from "./custom-field-definition-sheet.js"
 
 const PAGE_SIZE = 25
@@ -51,7 +50,8 @@ export function CustomFieldDefinitionsPage({
   className,
   pageSize = PAGE_SIZE,
 }: CustomFieldDefinitionsPageProps = {}) {
-  const messages = useCrmUiMessagesOrDefault()
+  const { formatMessage, messages } = useCrmUiI18nOrDefault()
+  const customFields = messages.customFields
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<CustomFieldDefinitionRecord | undefined>()
   const [deleting, setDeleting] = useState<CustomFieldDefinitionRecord | undefined>()
@@ -77,10 +77,8 @@ export function CustomFieldDefinitionsPage({
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <h2 className="text-lg font-semibold tracking-tight">Custom fields</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage runtime CRM fields that operators can add without changing code.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{customFields.title}</h2>
+          <p className="text-sm text-muted-foreground">{customFields.description}</p>
         </div>
         <Button
           size="sm"
@@ -90,13 +88,13 @@ export function CustomFieldDefinitionsPage({
           }}
         >
           <Plus className="mr-1.5 size-3.5" />
-          Add field
+          {customFields.addField}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Entity
+          {customFields.entity}
         </Label>
         <Select
           value={entityFilter}
@@ -109,7 +107,7 @@ export function CustomFieldDefinitionsPage({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_ENTITIES}>All entities</SelectItem>
+            <SelectItem value={ALL_ENTITIES}>{customFields.allEntities}</SelectItem>
             {entityTypes.map((entityType) => (
               <SelectItem key={entityType} value={entityType}>
                 {entityLabels[entityType]}
@@ -123,8 +121,8 @@ export function CustomFieldDefinitionsPage({
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
           <AlertDescription>
-            Could not load custom fields.{" "}
-            {query.error instanceof Error ? query.error.message : "The request failed."}
+            {customFields.loadFailed}{" "}
+            {query.error instanceof Error ? query.error.message : customFields.requestFailed}
           </AlertDescription>
         </Alert>
       ) : query.isPending ? (
@@ -133,10 +131,9 @@ export function CustomFieldDefinitionsPage({
         <div className="rounded-md border bg-card text-card-foreground shadow-sm">
           {definitions.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-              <p className="text-sm font-medium">No custom fields yet</p>
+              <p className="text-sm font-medium">{customFields.emptyTitle}</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                Add a field definition to collect structured data on people, organizations, quotes,
-                or activities.
+                {customFields.emptyDescription}
               </p>
             </div>
           ) : (
@@ -150,14 +147,22 @@ export function CustomFieldDefinitionsPage({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium">{definition.label}</span>
                       <Badge variant="outline">{entityLabels[definition.entityType]}</Badge>
-                      <Badge variant="secondary">{fieldTypeLabels[definition.fieldType]}</Badge>
-                      {definition.isRequired ? <Badge>Required</Badge> : null}
-                      {definition.isSearchable ? <Badge variant="outline">Searchable</Badge> : null}
+                      <Badge variant="secondary">
+                        {customFields.fieldTypeLabels[definition.fieldType]}
+                      </Badge>
+                      {definition.isRequired ? <Badge>{customFields.required}</Badge> : null}
+                      {definition.isSearchable ? (
+                        <Badge variant="outline">{customFields.searchable}</Badge>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span className="font-mono">{definition.key}</span>
                       {definition.options?.length ? (
-                        <span>{definition.options.length} options</span>
+                        <span>
+                          {formatMessage(customFields.optionsCount, {
+                            count: definition.options.length,
+                          })}
+                        </span>
                       ) : null}
                     </div>
                   </div>
@@ -176,7 +181,7 @@ export function CustomFieldDefinitionsPage({
                         }}
                       >
                         <Pencil className="size-4" />
-                        Edit
+                        {customFields.edit}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -185,7 +190,7 @@ export function CustomFieldDefinitionsPage({
                         onClick={() => setDeleting(definition)}
                       >
                         <Trash2 className="size-4" />
-                        Delete
+                        {customFields.delete}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -197,9 +202,7 @@ export function CustomFieldDefinitionsPage({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-        <span>
-          Showing {definitions.length} of {total}
-        </span>
+        <span>{formatMessage(customFields.showing, { shown: definitions.length, total })}</span>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -240,10 +243,9 @@ export function CustomFieldDefinitionsPage({
       >
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete custom field?</AlertDialogTitle>
+            <AlertDialogTitle>{customFields.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the definition for "{deleting?.label}". Existing stored values for this
-              key will no longer be surfaced by the custom-field API.
+              {formatMessage(customFields.deleteDescription, { label: deleting?.label ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -261,7 +263,7 @@ export function CustomFieldDefinitionsPage({
               }}
             >
               {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              Delete
+              {customFields.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

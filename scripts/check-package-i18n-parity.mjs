@@ -1,4 +1,4 @@
-import { access, readdir } from "node:fs/promises"
+import { readdir } from "node:fs/promises"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
@@ -6,31 +6,32 @@ import { collectLocaleDefinitionExports, validateLocaleDefinitions } from "./lib
 
 const rootDir = process.cwd()
 
-async function exists(filePath) {
-  try {
-    await access(filePath)
-    return true
-  } catch {
-    return false
-  }
-}
-
 async function collectPackageI18nEntries() {
   const entries = []
-
   const packagesDir = path.join(rootDir, "packages")
-  const packageNames = await readdir(packagesDir)
 
-  for (const packageName of packageNames) {
-    if (packageName.endsWith("-ui")) {
-      const filePath = path.join(packagesDir, packageName, "src", "i18n", "index.ts")
-      if (await exists(filePath)) {
+  async function walk(currentPath) {
+    const directoryEntries = await readdir(currentPath, { withFileTypes: true })
+    for (const entry of directoryEntries) {
+      if (entry.name === "node_modules" || entry.name === "dist") continue
+      const filePath = path.join(currentPath, entry.name)
+      if (entry.isDirectory()) {
+        await walk(filePath)
+        continue
+      }
+
+      const parentName = path.basename(path.dirname(filePath))
+      if (entry.name === "index.ts" && (parentName === "i18n" || parentName.endsWith("-i18n"))) {
+        entries.push(filePath)
+      } else if (/^i18n\.tsx?$/.test(entry.name)) {
         entries.push(filePath)
       }
     }
   }
 
-  return entries.sort()
+  await walk(packagesDir)
+
+  return [...new Set(entries)].sort()
 }
 
 function isPlainObject(value) {
@@ -74,19 +75,33 @@ async function collectLocaleFileDefinitions(entryFile) {
 
 async function main() {
   const entryFiles = await collectPackageI18nEntries()
+  if (entryFiles.length === 0) {
+    throw new Error("No package i18n entrypoints were discovered; refusing to pass an empty check.")
+  }
   const definitions = []
 
   for (const entryFile of entryFiles) {
+    const moduleExports = await import(pathToFileURL(entryFile).href)
+    const exportedDefinitions = collectLocaleDefinitionExports(
+      path.relative(rootDir, entryFile),
+      moduleExports,
+    )
+
+    if (exportedDefinitions.length > 0) {
+      definitions.push(...exportedDefinitions)
+      continue
+    }
+
     const localeFileDefinitions = await collectLocaleFileDefinitions(entryFile)
 
     if (localeFileDefinitions) {
       definitions.push(localeFileDefinitions)
-      continue
     }
+  }
 
-    const moduleExports = await import(pathToFileURL(entryFile).href)
-    definitions.push(
-      ...collectLocaleDefinitionExports(path.relative(rootDir, entryFile), moduleExports),
+  if (definitions.length === 0) {
+    throw new Error(
+      `Discovered ${entryFiles.length} package i18n entrypoints but no locale definitions; refusing to pass an empty check.`,
     )
   }
 

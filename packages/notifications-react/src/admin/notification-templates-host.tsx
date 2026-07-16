@@ -13,7 +13,7 @@ import {
 } from "@voyant-travel/ui/components"
 import { Loader2, Pencil, Plus, Search } from "lucide-react"
 import { lazy, Suspense, useState } from "react"
-import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+import { useNotificationsUiI18nOrDefault } from "../i18n/index.js"
 import {
   type NotificationTemplateRecord,
   type UseNotificationTemplatesOptions,
@@ -38,9 +38,10 @@ const NotificationTemplateDialog = lazy(() =>
  * dialog stays lazily loaded inside the package.
  */
 export function NotificationTemplatesHost() {
-  const messages = useNotificationsUiMessagesOrDefault()
+  const { formatDateTime, messages } = useNotificationsUiI18nOrDefault()
   const t = messages.admin.templatesPage
   const common = messages.admin.common
+  const table = common.table
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<UseNotificationTemplatesOptions["channel"] | "all">("all")
   const [status, setStatus] = useState<UseNotificationTemplatesOptions["status"] | "all">("all")
@@ -122,11 +123,11 @@ export function NotificationTemplatesHost() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Updated</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{table.template}</th>
+                <th className="px-4 py-3">{table.channel}</th>
+                <th className="px-4 py-3">{table.status}</th>
+                <th className="px-4 py-3">{table.updated}</th>
+                <th className="px-4 py-3 text-right">{table.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -154,7 +155,7 @@ export function NotificationTemplatesHost() {
                       {template.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">{new Date(template.updatedAt).toLocaleString()}</td>
+                  <td className="px-4 py-3">{formatDateTime(template.updatedAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <Button
                       variant="ghost"

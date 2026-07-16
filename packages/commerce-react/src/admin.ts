@@ -8,7 +8,7 @@ import {
   withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import { Globe2, Tag } from "lucide-react"
-
+import { commerceMarketSetupMessageDefinitions } from "./markets/i18n/setup.js"
 import { COMMERCE_MARKET_SETUP_STEP_ID, parseMarketSetupPrefill } from "./markets/setup-prefill.js"
 
 export {
@@ -69,6 +69,10 @@ export function createSelectedCommerceAdminExtension({
   navMessages,
 }: SelectedAdminExtensionFactoryContext): AdminExtension {
   const promotionsLabel = navMessages.promotions ?? "Promotions"
+  const marketsLabel =
+    navMessages.markets ??
+    navMessages.settings ??
+    commerceMarketSetupMessageDefinitions.en.navigationLabel
   const extension = withAdminRouteMessagesProvider(
     createCommerceAdminExtension({
       labels: { promotions: promotionsLabel },
@@ -86,8 +90,8 @@ export function createSelectedCommerceAdminExtension({
       {
         id: "markets",
         path: "/markets",
-        title: "Markets",
-        label: "Markets",
+        title: marketsLabel,
+        label: marketsLabel,
         icon: Globe2,
         group: "general",
         order: 35,
@@ -107,18 +111,7 @@ export function createSelectedCommerceAdminExtension({
         order: 30,
         skippable: true,
         href: "/settings/markets",
-        messages: {
-          en: {
-            title: "Locale, currency, and market",
-            description: "Define the primary market, language, and selling currency.",
-            action: "Configure markets",
-          },
-          ro: {
-            title: "Limba, moneda si piata",
-            description: "Defineste piata principala, limba si moneda de vanzare.",
-            action: "Configureaza pietele",
-          },
-        },
+        messages: commerceMarketSetupMessageDefinitions,
         prefill: parseMarketSetupPrefill,
         isComplete: hasCommerceMarket,
       },

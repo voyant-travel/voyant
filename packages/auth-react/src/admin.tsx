@@ -3,19 +3,24 @@ import {
   type AdminRouteLoaderContext,
   adminRoutePageModule,
   defineAdminExtension,
+  type SelectedAdminExtensionFactoryContext,
 } from "@voyant-travel/admin/extensions"
 import { Users } from "lucide-react"
+import { authTeamSetupMessageDefinitions } from "./i18n/setup.js"
 
 /** Selected-graph team settings contribution owned by Auth React. */
-export function createSelectedAuthTeamAdminExtension(): AdminExtension {
+export function createSelectedAuthTeamAdminExtension(
+  context?: SelectedAdminExtensionFactoryContext,
+): AdminExtension {
+  const label = context?.navMessages.team ?? authTeamSetupMessageDefinitions.en.navigationLabel
   return defineAdminExtension({
     id: "auth-team",
     settingsPages: [
       {
         id: "team",
         path: "/team",
-        title: "Team",
-        label: "Team",
+        title: label,
+        label,
         icon: Users,
         group: "general",
         order: 20,
@@ -33,18 +38,7 @@ export function createSelectedAuthTeamAdminExtension(): AdminExtension {
         order: 60,
         skippable: true,
         href: "/settings/team",
-        messages: {
-          en: {
-            title: "Invite your team",
-            description: "Add colleagues and assign the access they need.",
-            action: "Manage team",
-          },
-          ro: {
-            title: "Invita echipa",
-            description: "Adauga colegi si atribuie accesul de care au nevoie.",
-            action: "Gestioneaza echipa",
-          },
-        },
+        messages: authTeamSetupMessageDefinitions,
         isComplete: hasAdditionalTeamMember,
       },
     ],

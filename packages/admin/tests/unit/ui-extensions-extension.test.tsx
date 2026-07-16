@@ -9,6 +9,7 @@ import {
   AdminWidgetSlotRenderer,
   createStaticUiExtensionsClient,
   createUiExtensionsAdminExtension,
+  OperatorAdminMessagesProvider,
   type UiExtensionDescriptor,
   UiExtensionEnvironmentProvider,
 } from "../../src/index.js"
@@ -71,11 +72,13 @@ describe("createUiExtensionsAdminExtension", () => {
 
     const wrapper = ({ children }: { children: ReactNode }) => (
       <AdminProvider themeStorageKey={null}>
-        <AdminExtensionsProvider extensions={[extension]}>
-          <UiExtensionEnvironmentProvider value={environment}>
-            {children}
-          </UiExtensionEnvironmentProvider>
-        </AdminExtensionsProvider>
+        <OperatorAdminMessagesProvider>
+          <AdminExtensionsProvider extensions={[extension]}>
+            <UiExtensionEnvironmentProvider value={environment}>
+              {children}
+            </UiExtensionEnvironmentProvider>
+          </AdminExtensionsProvider>
+        </OperatorAdminMessagesProvider>
       </AdminProvider>
     )
 

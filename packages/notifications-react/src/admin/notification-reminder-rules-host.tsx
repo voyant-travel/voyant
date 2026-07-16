@@ -47,6 +47,7 @@ export function NotificationReminderRulesHost() {
   const messages = useNotificationsUiMessagesOrDefault()
   const t = messages.admin.reminderRulesPage
   const common = messages.admin.common
+  const table = common.table
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
   const [search, setSearch] = useState("")
@@ -147,11 +148,11 @@ export function NotificationReminderRulesHost() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Rule</th>
-                <th className="px-4 py-3">Target</th>
-                <th className="px-4 py-3">Channel</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{table.rule}</th>
+                <th className="px-4 py-3">{table.target}</th>
+                <th className="px-4 py-3">{table.channel}</th>
+                <th className="px-4 py-3">{table.status}</th>
+                <th className="px-4 py-3 text-right">{table.actions}</th>
               </tr>
             </thead>
             <tbody>

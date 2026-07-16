@@ -42,7 +42,7 @@ export function OperatorAdminUserMenu({
   const { setLocale, resolvedLocale } = useLocale()
   const messages = useOperatorAdminMessages()
 
-  const displayName = getDisplayName(user)
+  const displayName = getDisplayName(user, messages.unknownUser)
   const initials = getInitials(user.firstName, user.lastName, user.email)
   const showEmailSeparately = Boolean(user.email && displayName !== user.email)
 
@@ -116,11 +116,11 @@ export function OperatorAdminUserMenu({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled>{messages.language}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocale("en")}>
+              <DropdownMenuItem onClick={() => void setLocale("en").catch(() => undefined)}>
                 {messages.english}
                 {resolvedLocale === "en" && <Check className="ml-auto h-4 w-4" />}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocale("ro")}>
+              <DropdownMenuItem onClick={() => void setLocale("ro").catch(() => undefined)}>
                 {messages.romanian}
                 {resolvedLocale === "ro" && <Check className="ml-auto h-4 w-4" />}
               </DropdownMenuItem>

@@ -6,6 +6,7 @@ import {
   type OperatorAdminMessages,
   useAdminHref,
   useAdminNavigate,
+  useLocale,
   useOperatorAdminMessages,
 } from "@voyant-travel/admin"
 import {
@@ -112,6 +113,7 @@ export interface PaymentDetailHostProps {
  */
 export function PaymentDetailHost({ id }: PaymentDetailHostProps) {
   const messages = useOperatorAdminMessages()
+  const { resolvedLocale } = useLocale()
   const navigateTo = useAdminNavigate()
   const { data, isPending, isError } = usePayment(id)
   const f = messages.finance
@@ -134,7 +136,7 @@ export function PaymentDetailHost({ id }: PaymentDetailHostProps) {
   }
 
   const payment = data.data
-  const fxRateLabel = formatFxRate(payment)
+  const fxRateLabel = formatFxRate(payment, resolvedLocale)
 
   // Subtitle surfaces the related document (invoice / booking number) so an
   // operator can recognise *what* this payment is for, but the page itself
@@ -316,8 +318,12 @@ export function PaymentDetailHost({ id }: PaymentDetailHostProps) {
             <Row label={detail.kindLabel}>
               <span className="capitalize">{getKindLabel(messages, payment.kind)}</span>
             </Row>
-            <Row label={detail.createdLabel}>{new Date(payment.createdAt).toLocaleString()}</Row>
-            <Row label={detail.updatedLabel}>{new Date(payment.updatedAt).toLocaleString()}</Row>
+            <Row label={detail.createdLabel}>
+              {new Date(payment.createdAt).toLocaleString(resolvedLocale)}
+            </Row>
+            <Row label={detail.updatedLabel}>
+              {new Date(payment.updatedAt).toLocaleString(resolvedLocale)}
+            </Row>
           </dl>
         </CardContent>
       </Card>
@@ -325,12 +331,15 @@ export function PaymentDetailHost({ id }: PaymentDetailHostProps) {
   )
 }
 
-function formatFxRate(payment: {
-  amountCents: number
-  currency: string
-  baseAmountCents: number | null
-  baseCurrency: string | null
-}) {
+function formatFxRate(
+  payment: {
+    amountCents: number
+    currency: string
+    baseAmountCents: number | null
+    baseCurrency: string | null
+  },
+  locale: string,
+) {
   if (
     payment.baseAmountCents === null ||
     !payment.baseCurrency ||
@@ -341,7 +350,7 @@ function formatFxRate(payment: {
   }
 
   const rate = payment.amountCents / payment.baseAmountCents
-  return `1 ${payment.baseCurrency} = ${new Intl.NumberFormat(undefined, {
+  return `1 ${payment.baseCurrency} = ${new Intl.NumberFormat(locale, {
     maximumFractionDigits: 6,
   }).format(rate)} ${payment.currency}`
 }

@@ -61,7 +61,9 @@ export function ProductDeparturesSection({
               <th className="px-3 py-2.5 text-left font-medium">
                 {productMessages.departureEndColumn}
               </th>
-              <th className="px-3 py-2.5 text-left font-medium">Itinerary</th>
+              <th className="px-3 py-2.5 text-left font-medium">
+                {productMessages.departureItineraryColumn}
+              </th>
               <th className="px-3 py-2.5 text-left font-medium">
                 {productMessages.departureDurationColumn}
               </th>

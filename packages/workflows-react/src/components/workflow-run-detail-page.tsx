@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@voyant-travel/ui/comp
 import { ChevronDown, ChevronRight, Link2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { useWorkflowRunsUiMessagesOrDefault } from "../i18n/index.js"
+import {
+  useWorkflowRunsUiI18nOrDefault,
+  useWorkflowRunsUiMessagesOrDefault,
+} from "../i18n/index.js"
 import type {
   WorkflowRun,
   WorkflowRunErrorPayload,
@@ -102,7 +105,7 @@ export function WorkflowRunDetailPage({
 }
 
 function RunHeaderCard({ run, onOpenRun }: { run: WorkflowRun; onOpenRun?: (id: string) => void }) {
-  const messages = useWorkflowRunsUiMessagesOrDefault()
+  const { formatDateTime, messages } = useWorkflowRunsUiI18nOrDefault()
   return (
     <Card>
       <CardHeader className="space-y-3 pb-4">
@@ -124,12 +127,12 @@ function RunHeaderCard({ run, onOpenRun }: { run: WorkflowRun; onOpenRun?: (id: 
         </div>
         <div className="text-muted-foreground text-sm">
           <span>
-            {messages.detail.started} {new Date(run.startedAt).toLocaleString()}
+            {messages.detail.started} {formatDateTime(run.startedAt)}
           </span>
           {run.completedAt ? (
             <span>
               {" · "}
-              {messages.detail.finished} {new Date(run.completedAt).toLocaleString()}
+              {messages.detail.finished} {formatDateTime(run.completedAt)}
             </span>
           ) : null}
         </div>
@@ -217,7 +220,7 @@ function RerunsListCard({
   reruns: WorkflowRun[]
   onOpenRun?: (id: string) => void
 }) {
-  const messages = useWorkflowRunsUiMessagesOrDefault()
+  const { locale, messages } = useWorkflowRunsUiI18nOrDefault()
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -245,7 +248,7 @@ function RerunsListCard({
                   </Badge>
                 ) : null}
                 <span className="ml-auto whitespace-nowrap text-muted-foreground text-xs">
-                  {formatRelative(run.startedAt, messages)}
+                  {formatRelative(run.startedAt, messages, locale)}
                 </span>
               </button>
             </li>

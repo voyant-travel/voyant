@@ -51,13 +51,14 @@ export function formatHitPrice(
   hit: CatalogSearchHit,
   amountField: string,
   currencyField: string,
+  locale: string,
   unit: PriceUnit = "minor",
 ): string | null {
   const amount = numberField(hit, amountField)
   const currency = stringField(hit, currencyField, null)
   if (amount == null || !currency) return null
   const major = unit === "major" ? amount : amount / 100
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
