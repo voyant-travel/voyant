@@ -23,12 +23,15 @@ export async function runActionLedgerCanary(
 ): Promise<RunActionLedgerCanaryResult> {
   const now = input.now ?? new Date()
   const idempotencyKey = input.idempotencyKey ?? `action-ledger-canary:${now.toISOString()}`
+  // Keep the pre-removal fingerprint input stable so persisted canary keys replay
+  // across upgrades even though the relay outbox no longer consumes this reference.
+  const legacyPayloadRef = `action-ledger-canary:${idempotencyKey}`
   const idempotencyFingerprint = await buildIdempotencyFingerprint({
     actionName: "action_ledger.canary.write",
     actionVersion: "v1",
     targetType: "action_ledger_canary",
     targetId: idempotencyKey,
-    commandInput: { idempotencyKey },
+    commandInput: { payloadRef: legacyPayloadRef },
   })
 
   const appendResult = await actionLedgerService.appendEntry(db, {

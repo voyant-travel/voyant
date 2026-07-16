@@ -1,6 +1,7 @@
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { runActionLedgerCanary } from "../../src/canary.js"
+import { buildIdempotencyFingerprint } from "../../src/fingerprint.js"
 import type { ActionLedgerEntry } from "../../src/schema.js"
 import { actionLedgerService } from "../../src/service.js"
 
@@ -89,6 +90,36 @@ describe("runActionLedgerCanary", () => {
         targetType: "action_ledger_canary",
         targetId: "canary-1",
       }),
+    )
+  })
+
+  it("preserves the pre-upgrade fingerprint when replaying an explicit idempotency key", async () => {
+    const legacyFingerprint = await buildIdempotencyFingerprint({
+      actionName: "action_ledger.canary.write",
+      actionVersion: "v1",
+      targetType: "action_ledger_canary",
+      targetId: "canary-1",
+      commandInput: { payloadRef: "action-ledger-canary:canary-1" },
+    })
+    const entry = makeEntry({ idempotencyFingerprint: legacyFingerprint })
+    const appendEntry = vi.spyOn(actionLedgerService, "appendEntry").mockResolvedValue({
+      entry,
+      replayed: true,
+    })
+    vi.spyOn(actionLedgerService, "listEntries").mockResolvedValue({
+      entries: [entry],
+      nextCursor: null,
+    })
+
+    await expect(
+      runActionLedgerCanary(db, {
+        idempotencyKey: "canary-1",
+        now: baseDate,
+      }),
+    ).resolves.toMatchObject({ ok: true, replayed: true })
+    expect(appendEntry).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ idempotencyFingerprint: legacyFingerprint }),
     )
   })
 
