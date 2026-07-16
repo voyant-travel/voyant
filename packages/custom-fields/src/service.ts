@@ -121,11 +121,13 @@ export function createCustomFieldsService(
   const targetIds = [...targets.keys()]
 
   const valueLifecycleFor = (entityType: string) => {
-    const lifecycle = valueLifecycles.find((candidate) => candidate.supports(entityType))
-    if (!lifecycle) {
-      throw new Error(`No custom-field value lifecycle provider owns target "${entityType}".`)
+    const matches = valueLifecycles.filter((candidate) => candidate.supports(entityType))
+    if (matches.length !== 1) {
+      throw new Error(
+        `Expected exactly one custom-field value lifecycle provider for target "${entityType}", found ${matches.length}.`,
+      )
     }
-    return lifecycle
+    return matches[0] as CustomFieldValueLifecycleRuntime
   }
 
   const assertAllowed = (

@@ -5,7 +5,7 @@ import {
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { loadCustomFieldRegistry } from "./registry.js"
+import { loadCustomFieldRegistry, loadCustomFieldRegistryForWrite } from "./registry.js"
 import { createCustomFieldTargetRegistry } from "./targets.js"
 
 interface CustomFieldsRuntimeContributorHost {
@@ -20,6 +20,8 @@ export function createCustomFieldsRuntimePortContribution(
   const targets = createCustomFieldTargetRegistry(host.customFieldTargets ?? [])
   const runtime: CustomFieldsRuntime = {
     resolveRegistry: (db) => loadCustomFieldRegistry(db as PostgresJsDatabase, targets),
+    resolveRegistryForWrite: (db, entity) =>
+      loadCustomFieldRegistryForWrite(db as PostgresJsDatabase, entity, targets),
     async resolveVisibleValues(db, entity, entityId, channel) {
       const readers = await Promise.resolve(
         host.getRuntimePorts?.<CustomFieldValueReaderRuntime>(customFieldValueReaderRuntimePort) ??

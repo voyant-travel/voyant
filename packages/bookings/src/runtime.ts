@@ -48,7 +48,7 @@ export function createBookingsRuntime(
         (await relationships.getPersonById(db, personId)) != null,
       resolveBillingOrganizationById: async (db, organizationId) =>
         (await relationships.getOrganizationById(db, organizationId)) != null,
-      customFields: customFields.resolveRegistry,
+      customFieldsForWrite: (db) => customFields.resolveRegistryForWrite(db, "booking"),
       overviewItemEnrichers: { accommodation: accommodation.enrichOverviewItems },
     },
     registerWorkflowService: ({ container, bindings }) => {

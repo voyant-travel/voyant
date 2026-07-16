@@ -35,14 +35,14 @@ adapter over the package-owned `AccountantPortal` finance UI.
 
 `node scripts/check-operator-product-ui-authority.mjs` enforces:
 
-- at most 17 files under `starters/operator/src`;
+- at most 16 files under `starters/operator/src`;
 - deleted booking-journey, storefront browse/detail, and payment-summary copies
   cannot return;
 - package storefront subpaths and thin route adapters remain connected;
 - generated selected-graph admin loading remains authoritative; and
 - `src/admin`, `src/extensions`, and `src/modules` remain available for project
-  overrides. `src/custom-fields` is a deprecated source-compatibility location
-  only; persisted Settings definitions are the sole runtime authority.
+  overrides. `src/custom-fields` must remain absent: operator definitions are
+  authored only through persisted Settings records.
 
 New generic product UI must deepen an existing package React/admin surface and
 lower this ratchet when starter files are removed. Framework Node runtime, auth

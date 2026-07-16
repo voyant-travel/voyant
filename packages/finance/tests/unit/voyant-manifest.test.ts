@@ -147,6 +147,12 @@ describe("finance deployment manifest", () => {
               field: () => undefined,
               forEntity: () => [],
             }),
+            resolveRegistryForWrite: async () => ({
+              all: () => [],
+              entities: () => [],
+              field: () => undefined,
+              forEntity: () => [],
+            }),
             resolveVisibleValues: async () => ({}),
           },
           "finance.notifications.runtime": {

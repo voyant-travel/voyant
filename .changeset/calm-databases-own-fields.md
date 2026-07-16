@@ -8,6 +8,6 @@
 ---
 
 Resolve custom-field definitions exclusively from persisted Settings records.
-Bookings and Relationships now share the package-owned database resolver, while
-legacy TypeScript authoring helpers remain deprecated compatibility exports with
-no runtime authority.
+Bookings and Relationships now share the package-owned database resolver.
+Project-local TypeScript authoring is removed by the completed custom-fields
+cutline.

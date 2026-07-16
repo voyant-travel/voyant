@@ -154,6 +154,30 @@ export function createCustomFieldRoutes(
   routes.openapi(
     createRoute({
       method: "get",
+      path: "/values",
+      request: { query: customFieldValueListQuerySchema },
+      responses: {
+        200: {
+          description: "Paginated list of custom-field values",
+          ...jsonContent(customFieldValueListResponseSchema),
+        },
+        400: { description: "Unsupported custom-field target", ...jsonContent(errorSchema) },
+      },
+    }),
+    async (c) =>
+      c.json(
+        await service.values.listForOwner(
+          c.get("db"),
+          operatorCustomFieldDefinitionOwner,
+          c.req.valid("query"),
+        ),
+        200,
+      ),
+  )
+
+  routes.openapi(
+    createRoute({
+      method: "get",
       path: "/{id}",
       request: { params: idParamSchema },
       responses: {
@@ -228,30 +252,6 @@ export function createCustomFieldRoutes(
         ? c.json({ success: true } as const, 200)
         : c.json({ error: "Custom field not found" }, 404)
     },
-  )
-
-  routes.openapi(
-    createRoute({
-      method: "get",
-      path: "/values",
-      request: { query: customFieldValueListQuerySchema },
-      responses: {
-        200: {
-          description: "Paginated list of custom-field values",
-          ...jsonContent(customFieldValueListResponseSchema),
-        },
-        400: { description: "Unsupported custom-field target", ...jsonContent(errorSchema) },
-      },
-    }),
-    async (c) =>
-      c.json(
-        await service.values.listForOwner(
-          c.get("db"),
-          operatorCustomFieldDefinitionOwner,
-          c.req.valid("query"),
-        ),
-        200,
-      ),
   )
 
   routes.openapi(

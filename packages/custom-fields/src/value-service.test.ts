@@ -26,6 +26,12 @@ const appDefinition = {
   key: "external_id",
   fieldType: "text",
   lifecycleState: "active",
+  label: "External ID",
+  isRequired: false,
+  isSearchable: false,
+  isExportable: true,
+  isInvoiceable: false,
+  options: null,
 }
 
 function listDb(definitions: readonly (typeof appDefinition)[]): PostgresJsDatabase {
@@ -35,6 +41,21 @@ function listDb(definitions: readonly (typeof appDefinition)[]): PostgresJsDatab
         where: async () => definitions,
       }),
     }),
+  } as unknown as PostgresJsDatabase
+}
+
+function lockedDefinitionDb(definition: Record<string, unknown>): PostgresJsDatabase {
+  const tx = {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          for: () => ({ limit: async () => [definition] }),
+        }),
+      }),
+    }),
+  } as unknown as PostgresJsDatabase
+  return {
+    transaction: async (callback: (db: PostgresJsDatabase) => unknown) => callback(tx),
   } as unknown as PostgresJsDatabase
 }
 
@@ -95,5 +116,84 @@ describe("generic custom-field value orchestration", () => {
         offset: 0,
       }),
     ).rejects.toMatchObject({ status: 400, code: "unsupported_custom_field_target" })
+  })
+
+  it("validates values against the locked persisted definition before writing", async () => {
+    const upsert = vi.fn(async () => true)
+    const operations: CustomFieldValueOperationsRuntime = {
+      supports: (entityType) => entityType === "person",
+      list: async () => [],
+      upsert,
+      delete: async () => true,
+    }
+    const enumDefinition = {
+      ...appDefinition,
+      fieldType: "enum",
+      options: [
+        { label: "Gold", value: "gold" },
+        { label: "Silver", value: "silver" },
+      ],
+    }
+    const service = createCustomFieldsService(targets, [], [operations])
+    const owner = createAppCustomFieldDefinitionOwner({
+      appId: "app_acme",
+      namespace: "app--acme-7f3",
+    })
+
+    await expect(
+      service.values.upsertForOwner(lockedDefinitionDb(enumDefinition), owner, enumDefinition.id, {
+        entityType: "person",
+        entityId: "pers_1",
+        textValue: "bronze",
+      }),
+    ).rejects.toMatchObject({ status: 400 })
+    expect(upsert).not.toHaveBeenCalled()
+  })
+
+  it("persists valid fractional double values and rejects null or stray columns", async () => {
+    const upsert = vi.fn(async () => true)
+    const operations: CustomFieldValueOperationsRuntime = {
+      supports: (entityType) => entityType === "person",
+      list: async () => [],
+      upsert,
+      delete: async () => true,
+    }
+    const doubleDefinition = { ...appDefinition, fieldType: "double" }
+    const service = createCustomFieldsService(targets, [], [operations])
+    const owner = createAppCustomFieldDefinitionOwner({
+      appId: "app_acme",
+      namespace: "app--acme-7f3",
+    })
+
+    await service.values.upsertForOwner(
+      lockedDefinitionDb(doubleDefinition),
+      owner,
+      doubleDefinition.id,
+      {
+        entityType: "person",
+        entityId: "pers_1",
+        numberValue: 1.25,
+      },
+    )
+    expect(upsert).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ value: 1.25 }),
+    )
+
+    for (const invalid of [{ numberValue: null }, { numberValue: 1.25, textValue: "stray" }]) {
+      await expect(
+        service.values.upsertForOwner(
+          lockedDefinitionDb(doubleDefinition),
+          owner,
+          doubleDefinition.id,
+          {
+            entityType: "person",
+            entityId: "pers_1",
+            ...invalid,
+          },
+        ),
+      ).rejects.toMatchObject({ status: 400 })
+    }
   })
 })

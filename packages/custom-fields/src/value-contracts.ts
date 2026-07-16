@@ -4,7 +4,7 @@ export const upsertCustomFieldValueSchema = z.object({
   entityType: z.string().min(1),
   entityId: z.string().min(1),
   textValue: z.string().nullable().optional(),
-  numberValue: z.number().int().nullable().optional(),
+  numberValue: z.number().finite().nullable().optional(),
   dateValue: z.string().date().nullable().optional(),
   booleanValue: z.boolean().nullable().optional(),
   monetaryValueCents: z.number().int().nullable().optional(),

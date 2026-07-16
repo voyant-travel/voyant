@@ -1,7 +1,11 @@
 import { createCustomFieldRegistry } from "@voyant-travel/core/custom-fields"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { describe, expect, it } from "vitest"
-import { loadCustomFieldDefinitions, loadCustomFieldRegistry } from "./registry.js"
+import { describe, expect, it, vi } from "vitest"
+import {
+  loadCustomFieldDefinitions,
+  loadCustomFieldRegistry,
+  loadCustomFieldRegistryForWrite,
+} from "./registry.js"
 import { createCustomFieldTargetRegistry } from "./targets.js"
 
 function fakeDb(rows: unknown[]): PostgresJsDatabase {
@@ -153,5 +157,18 @@ describe("database custom-field registry", () => {
     ]
 
     expect(await loadCustomFieldDefinitions(fakeDb(rows))).toEqual([])
+  })
+
+  it("takes a shared definition lock for entity write validation", async () => {
+    const forLock = vi.fn(async () => [])
+    const where = vi.fn(() => ({ for: forLock }))
+    const db = {
+      select: () => ({ from: () => ({ where }) }),
+    } as unknown as PostgresJsDatabase
+
+    await loadCustomFieldRegistryForWrite(db, "person")
+
+    expect(where).toHaveBeenCalledOnce()
+    expect(forLock).toHaveBeenCalledWith("share")
   })
 })

@@ -16,4 +16,14 @@ describe("custom-field value contracts", () => {
     expect(() => upsertCustomFieldValueSchema.parse({ entityId: "crm_org_abc" })).toThrow()
     expect(() => upsertCustomFieldValueSchema.parse({ entityType: "organization" })).toThrow()
   })
+
+  it("accepts finite fractional values for double definitions", () => {
+    expect(
+      upsertCustomFieldValueSchema.parse({
+        entityType: "person",
+        entityId: "pers_1",
+        numberValue: 1.25,
+      }).numberValue,
+    ).toBe(1.25)
+  })
 })

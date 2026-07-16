@@ -35,12 +35,18 @@ function app(withRegistry = true) {
   return new Hono()
     .onError(handleApiError)
     .use("*", async (c, next) => {
-      c.set("db" as never, {})
+      const db = {
+        transaction: async (callback: (tx: unknown) => unknown) => callback({}),
+      }
+      c.set("db" as never, db)
       c.set("userId" as never, "u")
       c.set("container" as never, {
         resolve: (key: string) =>
           key === RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: withRegistry ? () => registry : undefined }
+            ? {
+                customFields: withRegistry ? () => registry : undefined,
+                customFieldsForWrite: withRegistry ? () => registry : undefined,
+              }
             : undefined,
       })
       await next()
@@ -142,12 +148,18 @@ function requiredApp() {
   return new Hono()
     .onError(handleApiError)
     .use("*", async (c, next) => {
-      c.set("db" as never, {})
+      const db = {
+        transaction: async (callback: (tx: unknown) => unknown) => callback({}),
+      }
+      c.set("db" as never, db)
       c.set("userId" as never, "u")
       c.set("container" as never, {
         resolve: (key: string) =>
           key === RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: () => requiredRegistry }
+            ? {
+                customFields: () => requiredRegistry,
+                customFieldsForWrite: () => requiredRegistry,
+              }
             : undefined,
       })
       await next()

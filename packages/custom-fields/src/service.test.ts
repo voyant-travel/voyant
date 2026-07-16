@@ -167,6 +167,43 @@ describe("custom-field definition ownership", () => {
     expect(renameDefinitionKey).toHaveBeenCalledWith(tx, existing, "renamed_external_id")
   })
 
+  it("fails closed when multiple lifecycle providers claim one target", async () => {
+    const existing = {
+      id: "definition_1",
+      ...input,
+      namespace: "custom",
+      ownerKind: "operator",
+      ownerId: null,
+      lifecycleState: "active",
+    }
+    const tx = postgresStub({
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            for: () => ({ limit: async () => [existing] }),
+          }),
+        }),
+      }),
+    })
+    const lifecycle = {
+      supports: (entityType: string) => entityType === "booking",
+      renameDefinitionKey: vi.fn(async () => undefined),
+      deleteDefinitionValues: vi.fn(async () => undefined),
+    }
+    const service = createCustomFieldsService(targets, [lifecycle, lifecycle])
+
+    await expect(
+      service.update(
+        postgresStub({
+          transaction: async (callback: (db: PostgresJsDatabase) => unknown) => callback(tx),
+        }),
+        existing.id,
+        { key: "renamed_external_id" },
+      ),
+    ).rejects.toThrow(/exactly one.*found 2/)
+    expect(lifecycle.renameDefinitionKey).not.toHaveBeenCalled()
+  })
+
   it("maps rename key collisions to the definition conflict response", async () => {
     const existing = {
       id: "definition_1",

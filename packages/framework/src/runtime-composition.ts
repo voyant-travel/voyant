@@ -115,6 +115,7 @@ function runtimePortStub(id: string): unknown {
     createService: () => runtimeServiceStub(id),
     resolveRuntime: unavailableAsync,
     resolveRegistry: unavailableAsync,
+    resolveRegistryForWrite: unavailableAsync,
     resolveSourceAdapterRegistry: unavailableAsync,
     ensureSourceRegistry: unavailableAsync,
     getSourceRegistryFromContext: unavailable,

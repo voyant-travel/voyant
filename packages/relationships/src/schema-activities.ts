@@ -80,10 +80,6 @@ export const activityParticipants = pgTable(
   ],
 )
 
-// `custom_field_values` (the EAV value side table) was retired by the
-// custom-fields unification — values now live on each entity's `custom_fields`
-// jsonb column. See docs/architecture/custom-fields-unification-adr.md.
-
 export type Activity = typeof activities.$inferSelect
 export type NewActivity = typeof activities.$inferInsert
 export type ActivityLink = typeof activityLinks.$inferSelect

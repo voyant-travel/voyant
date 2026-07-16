@@ -221,6 +221,12 @@ describe("bookings deployment manifest", () => {
               field: () => undefined,
               forEntity: () => [],
             }),
+            resolveRegistryForWrite: async () => ({
+              all: () => [],
+              entities: () => [],
+              field: () => undefined,
+              forEntity: () => [],
+            }),
             resolveVisibleValues: async () => ({}),
           },
           "bookings.finance.runtime": { createStaleBookingHoldsRuntime: () => ({}) },

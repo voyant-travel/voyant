@@ -96,12 +96,16 @@ describe("relationships deployment manifest", () => {
       field: () => undefined,
       forEntity: () => [],
     }))
+    const customFieldsForWrite = vi.fn(customFields)
     await expect(
-      assertPortConforms(relationshipsRouteRuntimePort, { customFields }),
+      assertPortConforms(relationshipsRouteRuntimePort, { customFields, customFieldsForWrite }),
     ).resolves.toBeUndefined()
     await expect(
       assertPortConforms(relationshipsRouteRuntimePort, { customFields: true } as never),
     ).rejects.toThrow(/customFields/)
+    await expect(
+      assertPortConforms(relationshipsRouteRuntimePort, { customFieldsForWrite: true } as never),
+    ).rejects.toThrow(/customFieldsForWrite/)
 
     const module = await createRelationshipsVoyantRuntime({
       unitId: relationshipsVoyantModule.id,
@@ -117,7 +121,7 @@ describe("relationships deployment manifest", () => {
       },
       runtimePorts: {},
       hasPort: () => true,
-      getPort: vi.fn(async () => ({ customFields })) as never,
+      getPort: vi.fn(async () => ({ customFields, customFieldsForWrite })) as never,
       getPorts: vi.fn(async () => []) as never,
     })
     const container = createContainer()
@@ -127,6 +131,7 @@ describe("relationships deployment manifest", () => {
     expect(module.adminRoutes).toBe(relationshipsRoutes)
     expect(container.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY)).toMatchObject({
       customFields,
+      customFieldsForWrite,
     })
   })
 

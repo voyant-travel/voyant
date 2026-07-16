@@ -7,7 +7,7 @@ const rootArg = process.argv.indexOf("--root")
 const root = rootArg >= 0 ? resolve(process.argv[rootArg + 1]) : defaultRoot
 const starterSource = join(root, "starters/operator/src")
 const failures = []
-const starterFileRatchet = 13
+const starterFileRatchet = 16
 
 const starterFiles = readdirSync(starterSource, { recursive: true, withFileTypes: true }).filter(
   (entry) => entry.isFile(),
@@ -95,7 +95,9 @@ for (const relativePath of [
 }
 
 if (existsSync(join(root, "starters/operator/src/custom-fields"))) {
-  failures.push("project override folder authority must stay deleted: starters/operator/src/custom-fields")
+  failures.push(
+    "project override folder authority must stay deleted: starters/operator/src/custom-fields",
+  )
 }
 
 const requiredTokens = new Map([

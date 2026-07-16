@@ -133,11 +133,12 @@ async function validateRelationshipsCustomFields(
   entity: "person" | "organization",
   data: { customFields?: NamespacedCustomFieldValues },
   mode: "create" | "update",
+  db: PostgresJsDatabase,
 ): Promise<void> {
   const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
     | RelationshipsRouteRuntime
     | undefined
-  const resolveRegistry = runtime?.customFields
+  const resolveRegistry = runtime?.customFieldsForWrite
   if (data.customFields === undefined) {
     // Partial update without custom fields, or no registry → no-op. A create with
     // an absent envelope still validates `{}` so `required` fields are enforced.
@@ -152,7 +153,7 @@ async function validateRelationshipsCustomFields(
   if (!resolveRegistry) {
     return
   }
-  const registry = await resolveRegistry(c.get("db"))
+  const registry = await resolveRegistry(db, entity)
   const operatorRegistry = createCustomFieldRegistry(
     registry.forEntity(entity).filter((definition) => definition.namespace === "custom"),
   )
@@ -382,8 +383,19 @@ organizationRoutes
   )
   .openapi(createOrganizationRoute, async (c) => {
     const data = c.req.valid("json")
-    await validateRelationshipsCustomFields(c, organizationEntity, data, "create")
-    const row = await relationshipsService.createOrganization(c.get("db"), data)
+    const db = c.get("db")
+    const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+      | RelationshipsRouteRuntime
+      | undefined
+    const row = runtime?.customFieldsForWrite
+      ? await db.transaction(async (tx) => {
+          await validateRelationshipsCustomFields(c, organizationEntity, data, "create", tx)
+          return relationshipsService.createOrganization(tx, data)
+        })
+      : await (async () => {
+          await validateRelationshipsCustomFields(c, organizationEntity, data, "create", db)
+          return relationshipsService.createOrganization(db, data)
+        })()
     if (row) await emitOrganizationChanged(c.get("eventBus"), { id: row.id, action: "created" })
     return c.json({ data: row! }, 201)
   })
@@ -393,12 +405,20 @@ organizationRoutes
   })
   .openapi(updateOrganizationRoute, async (c) => {
     const data = c.req.valid("json")
-    await validateRelationshipsCustomFields(c, organizationEntity, data, "update")
-    const row = await relationshipsService.updateOrganization(
-      c.get("db"),
-      c.req.valid("param").id,
-      data,
-    )
+    const db = c.get("db")
+    const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+      | RelationshipsRouteRuntime
+      | undefined
+    const row =
+      data.customFields !== undefined && runtime?.customFieldsForWrite
+        ? await db.transaction(async (tx) => {
+            await validateRelationshipsCustomFields(c, organizationEntity, data, "update", tx)
+            return relationshipsService.updateOrganization(tx, c.req.valid("param").id, data)
+          })
+        : await (async () => {
+            await validateRelationshipsCustomFields(c, organizationEntity, data, "update", db)
+            return relationshipsService.updateOrganization(db, c.req.valid("param").id, data)
+          })()
     if (!row) return c.json({ error: "Organization not found" }, 404)
     await emitOrganizationChanged(c.get("eventBus"), { id: row.id, action: "updated" })
     return c.json({ data: row }, 200)
@@ -769,8 +789,19 @@ peopleRoutes
   })
   .openapi(createPersonRoute, async (c) => {
     const data = c.req.valid("json")
-    await validateRelationshipsCustomFields(c, personEntity, data, "create")
-    const row = await relationshipsService.createPerson(c.get("db"), data)
+    const db = c.get("db")
+    const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+      | RelationshipsRouteRuntime
+      | undefined
+    const row = runtime?.customFieldsForWrite
+      ? await db.transaction(async (tx) => {
+          await validateRelationshipsCustomFields(c, personEntity, data, "create", tx)
+          return relationshipsService.createPerson(tx, data)
+        })
+      : await (async () => {
+          await validateRelationshipsCustomFields(c, personEntity, data, "create", db)
+          return relationshipsService.createPerson(db, data)
+        })()
     if (row) await emitPersonChanged(c.get("eventBus"), { id: row.id, action: "created" })
     return c.json({ data: row! }, 201)
   })
@@ -780,8 +811,20 @@ peopleRoutes
   })
   .openapi(updatePersonRoute, async (c) => {
     const data = c.req.valid("json")
-    await validateRelationshipsCustomFields(c, personEntity, data, "update")
-    const row = await relationshipsService.updatePerson(c.get("db"), c.req.valid("param").id, data)
+    const db = c.get("db")
+    const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+      | RelationshipsRouteRuntime
+      | undefined
+    const row =
+      data.customFields !== undefined && runtime?.customFieldsForWrite
+        ? await db.transaction(async (tx) => {
+            await validateRelationshipsCustomFields(c, personEntity, data, "update", tx)
+            return relationshipsService.updatePerson(tx, c.req.valid("param").id, data)
+          })
+        : await (async () => {
+            await validateRelationshipsCustomFields(c, personEntity, data, "update", db)
+            return relationshipsService.updatePerson(db, c.req.valid("param").id, data)
+          })()
     if (!row) return c.json({ error: "Person not found" }, 404)
     await emitPersonChanged(c.get("eventBus"), { id: row.id, action: "updated" })
     return c.json({ data: row }, 200)

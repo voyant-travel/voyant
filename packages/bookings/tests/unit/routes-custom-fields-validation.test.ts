@@ -37,14 +37,19 @@ function appWithCustomFields(opts: { withRegistry: boolean }) {
   return new Hono()
     .onError(handleApiError)
     .use("*", async (c, next) => {
-      c.set("db" as never, {})
+      const db = {
+        transaction: async (callback: (tx: unknown) => unknown) => callback({}),
+      }
+      c.set("db" as never, db)
       c.set("eventBus" as never, createEventBus())
       c.set("userId" as never, "test-user")
       c.set("actor" as never, "staff")
       c.set("container" as never, {
         resolve: (key: string) =>
           key === BOOKING_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: opts.withRegistry ? () => registry : undefined }
+            ? {
+                customFieldsForWrite: opts.withRegistry ? () => registry : undefined,
+              }
             : undefined,
       })
       await next()

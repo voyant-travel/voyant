@@ -14,6 +14,12 @@ import { definePort } from "./project.js"
  */
 export interface CustomFieldsRuntime {
   resolveRegistry: CustomFieldRegistryResolver
+  /**
+   * Resolve definitions under a transaction-scoped shared lock before an
+   * entity write. Definition rename/delete takes the conflicting update lock,
+   * so validation and persistence observe one authoritative definition state.
+   */
+  resolveRegistryForWrite: (db: unknown, entity: string) => ReturnType<CustomFieldRegistryResolver>
   resolveVisibleValues(
     db: unknown,
     entity: string,
@@ -165,10 +171,11 @@ export const customFieldsRuntimePort = definePort<CustomFieldsRuntime>({
       provider === null ||
       typeof provider !== "object" ||
       typeof provider.resolveRegistry !== "function" ||
+      typeof provider.resolveRegistryForWrite !== "function" ||
       typeof provider.resolveVisibleValues !== "function"
     ) {
       throw new Error(
-        "custom-fields.runtime provider must implement resolveRegistry() and resolveVisibleValues().",
+        "custom-fields.runtime provider must implement resolveRegistry(), resolveRegistryForWrite(), and resolveVisibleValues().",
       )
     }
   },

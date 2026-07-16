@@ -18,7 +18,7 @@ valid, which values are sensitive, or which channels may expose them.
 A custom-field declaration supplies that contract:
 
 - `entity` and stable `key`
-- `type`, `required`, options, and optional custom validation
+- `type`, `required`, and declarative options
 - channel visibility for export, invoice, and search
 - a `pii` marker for storage and redaction policy
 
@@ -59,8 +59,9 @@ if (!result.ok) throw badRequest(result.errors)
 const exported = customFieldsVisibleIn(registry, "booking", "export")
 ```
 
-Unknown keys, missing required fields, invalid types, unsupported options, and
-failed custom rules are rejected before persistence.
+Unknown keys, missing required fields, invalid types, and unsupported options
+are rejected before persistence. Definitions contain persisted declarative
+constraints only; executable validation callbacks are unsupported.
 
 ## Runtime Ownership
 
@@ -74,16 +75,19 @@ The authority chain is:
 2. Generated graph composition loads only the selected package runtime
    contributors.
 3. `@voyant-travel/custom-fields` loads `custom_field_definitions` through
-   `loadCustomFieldRegistry(db)` on each request.
+   `loadCustomFieldRegistry(db)` on each request. Entity writes use
+   `loadCustomFieldRegistryForWrite(db, entity)` inside their write transaction,
+   taking shared definition locks before validation.
 4. The generic package exposes that database-backed resolver through the typed
    custom-fields runtime port.
 5. Bookings, Relationships, search, export, and invoice consumers use the same
    persisted definition shape.
 
 Operator-owned definitions are created and edited in Settings. Project-local
-TypeScript authoring helpers remain deprecated compatibility exports until
-#3401, but they are not connected to runtime composition and cannot shadow a
-persisted `(entity, namespace, key)` definition.
+TypeScript declarations, discovery globs, host injection, and code/database
+merge precedence are unsupported. App-owned definitions use the authenticated,
+owner-constrained app API. Neither path can shadow a persisted
+`(entity, namespace, key)` definition.
 
 Definition identity is `(entity, namespace, key)`. Operator fields use the
 server-assigned `custom` namespace; app/platform callers receive owner and
@@ -101,16 +105,20 @@ An owning package adopts custom fields by implementing all of these boundaries:
 
 1. **Storage:** persist validated values under
    `custom_fields[namespace][key]` in the owning entity row.
-2. **Write validation:** resolve the selected registry and run
-   `validateCustomFields` before create or update.
+2. **Write validation:** inside the entity transaction, lock the entity's
+   definitions, run `validateCustomFields`, and then persist. Definition
+   rename/delete takes conflicting locks in the same definition-first order.
 3. **Read policy:** call `customFieldsVisibleIn` before including fields in
    exports, invoices, or search indexes.
 4. **Runtime declaration:** request the narrow typed port in the package
-   manifest and adapt it in package-owned runtime composition.
+   manifest and contribute package-owned value operations for the entity tables
+   it owns.
 
-Bookings and Relationships use the graph-selected runtime path described above.
-Additional entities adopt the same contract incrementally; a generic host-level
-provider or package-specific starter branch must not be reintroduced.
+The generic custom-fields API dispatches value operations through those
+selected-graph contributions. It contains no cross-package entity table map,
+and unsupported targets fail closed. Additional entities adopt the same
+contract incrementally; a generic host-level provider or package-specific
+starter branch must not be reintroduced.
 
 ## Invariants
 
@@ -121,8 +129,13 @@ provider or package-specific starter branch must not be reintroduced.
 - Target capabilities are authoritative: unsupported search, export, and
   invoice flags are stored as `false`.
 - Unknown fields fail closed on writes.
+- Generic value writes validate their typed payload against the locked
+  persisted definition, including required/options/type constraints.
 - Ordinary operator writes cannot overwrite or delete app/platform namespaces.
+- Entity validation and persistence share a transaction-scoped definition lock,
+  so rename/delete cannot race a write using an obsolete key.
 - Definition key rename and delete delegate to the package that owns the entity
-  table and mutate only the matching namespace.
+  table, require exactly one owning provider, and mutate only the matching
+  namespace.
 - Visibility defaults remain conservative: export on, invoice and search off.
 - Adding or updating an operator field requires no rebuild or restart.

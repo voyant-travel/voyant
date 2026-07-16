@@ -21,11 +21,14 @@ export interface RelationshipsRouteRuntime {
   getKmsProvider(): Promise<KmsProvider | null>
   /** Resolves the custom-field registry from persisted definitions for a request. */
   customFields?: CustomFieldRegistryResolver
+  /** Resolves and locks persisted definitions for an entity write transaction. */
+  customFieldsForWrite?: (db: unknown, entity: string) => ReturnType<CustomFieldRegistryResolver>
 }
 
 export interface RelationshipsRouteRuntimeOptions {
   resolveKmsProvider?: ResolveRelationshipsKmsProvider
   customFields?: CustomFieldRegistryResolver
+  customFieldsForWrite?: (db: unknown, entity: string) => ReturnType<CustomFieldRegistryResolver>
 }
 
 function buildRuntimeEnv(bindings: Record<string, unknown>): Record<string, string | undefined> {
@@ -63,5 +66,6 @@ export function buildRelationshipsRouteRuntime(
       }
     },
     customFields: options.customFields,
+    customFieldsForWrite: options.customFieldsForWrite,
   }
 }

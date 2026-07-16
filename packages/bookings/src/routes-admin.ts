@@ -360,18 +360,17 @@ async function validateBookingBillingPartyReferences<T extends Env>(
 }
 
 /**
- * Validate a booking write's `customFields` against the deployment's injected
- * custom-field registry (see `@voyant-travel/core/custom-fields`) and replace
- * the payload value with the cleaned, registry-approved object. No-op when the
- * write carries no `customFields`. Rejects (400) unknown keys / missing required
- * / bad types, or any `customFields` at all when the deployment declares none.
+ * Validate a booking write against database definitions locked for the entire
+ * entity transaction. This prevents a definition rename/delete from racing a
+ * write validated against the old key.
  */
 async function validateBookingCustomFields<T extends Env>(
   c: Context<T>,
   data: { customFields?: NamespacedCustomFieldValues },
   mode: "create" | "update",
+  db: PostgresJsDatabase,
 ): Promise<void> {
-  const resolveRegistry = getRouteRuntime(c).customFields
+  const resolveRegistry = getRouteRuntime(c).customFieldsForWrite
   if (data.customFields === undefined) {
     // A partial update without custom fields, or no registry at all, is a no-op.
     // A create with an absent envelope still validates `{}` so `required` fields
@@ -387,7 +386,7 @@ async function validateBookingCustomFields<T extends Env>(
   if (!resolveRegistry) {
     return
   }
-  const registry = await resolveRegistry(c.get("db"))
+  const registry = await resolveRegistry(db)
   const operatorRegistry = createCustomFieldRegistry(
     registry.forEntity("booking").filter((definition) => definition.namespace === "custom"),
   )
@@ -1838,11 +1837,20 @@ coreCrudRoutes
       (async () => {
         try {
           const data = c.req.valid("json")
-          await validateBookingCustomFields(c, data, "create")
           await validateBookingBillingPartyReferences(c, data)
+          const db = c.get("db")
+          const row = getRouteRuntime(c).customFieldsForWrite
+            ? await db.transaction(async (tx) => {
+                await validateBookingCustomFields(c, data, "create", tx)
+                return bookingsService.createBooking(tx, data, c.get("userId"))
+              })
+            : await (async () => {
+                await validateBookingCustomFields(c, data, "create", db)
+                return bookingsService.createBooking(db, data, c.get("userId"))
+              })()
           return c.json(
             {
-              data: await bookingsService.createBooking(c.get("db"), data, c.get("userId")),
+              data: row,
             },
             201,
           )
@@ -1864,9 +1872,18 @@ coreCrudRoutes
   )
   .openapi(updateBookingRoute, async (c) => {
     const data = c.req.valid("json") ?? {}
-    await validateBookingCustomFields(c, data, "update")
     await validateBookingBillingPartyReferences(c, data)
-    const row = await bookingsService.updateBooking(c.get("db"), c.req.valid("param").id, data)
+    const db = c.get("db")
+    const row =
+      data.customFields !== undefined && getRouteRuntime(c).customFieldsForWrite
+        ? await db.transaction(async (tx) => {
+            await validateBookingCustomFields(c, data, "update", tx)
+            return bookingsService.updateBooking(tx, c.req.valid("param").id, data)
+          })
+        : await (async () => {
+            await validateBookingCustomFields(c, data, "update", db)
+            return bookingsService.updateBooking(db, c.req.valid("param").id, data)
+          })()
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
     }

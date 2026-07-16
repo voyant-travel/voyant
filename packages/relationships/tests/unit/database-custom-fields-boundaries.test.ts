@@ -61,7 +61,18 @@ const rows = [
 ]
 
 function fakeDb() {
-  return { select: () => ({ from: () => Promise.resolve(rows) }) }
+  const writeDb = {
+    select: () => ({
+      from: () => ({
+        where: () => ({ for: async () => rows }),
+      }),
+    }),
+  }
+  const db = {
+    select: () => ({ from: () => Promise.resolve(rows) }),
+    transaction: async (callback: (tx: unknown) => unknown) => callback(writeDb),
+  }
+  return db
 }
 
 const runtimePorts: Record<string, unknown> = {}
@@ -100,6 +111,7 @@ runtimePorts[customFieldValueReaderRuntimePort.id] =
   contributions[customFieldValueReaderRuntimePort.id]
 const relationshipsRuntime = contributions[relationshipsRouteRuntimePort.id] as {
   customFields: (db: unknown) => Promise<unknown>
+  customFieldsForWrite: (db: unknown, entity: string) => Promise<unknown>
 }
 
 function bookingApp() {
@@ -113,7 +125,10 @@ function bookingApp() {
       c.set("container" as never, {
         resolve: (key: string) =>
           key === BOOKING_ROUTE_RUNTIME_CONTAINER_KEY
-            ? { customFields: customFields.resolveRegistry }
+            ? {
+                customFieldsForWrite: (db: unknown) =>
+                  customFields.resolveRegistryForWrite(db, "booking"),
+              }
             : undefined,
       })
       await next()

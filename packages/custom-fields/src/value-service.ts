@@ -1,3 +1,4 @@
+import { createCustomFieldRegistry, validateCustomFields } from "@voyant-travel/core/custom-fields"
 import type {
   CustomFieldValueDefinitionContext,
   CustomFieldValueOperationsRuntime,
@@ -6,6 +7,7 @@ import type {
 import { ApiHttpError, RequestValidationError } from "@voyant-travel/hono"
 import { and, eq, isNull } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { customFieldDefinitionFromRow } from "./registry.js"
 import { customFieldDefinitions } from "./schema.js"
 import { assertCustomFieldDefinitionOwner, type CustomFieldDefinitionOwner } from "./service.js"
 import type { CustomFieldValueListQuery, UpsertCustomFieldValueInput } from "./value-contracts.js"
@@ -69,6 +71,66 @@ function namespaceValues(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null
+}
+
+const typedValueColumns = [
+  "textValue",
+  "numberValue",
+  "dateValue",
+  "booleanValue",
+  "monetaryValueCents",
+  "currencyCode",
+  "jsonValue",
+] as const
+
+function validatedJsonbValue(
+  definition: typeof customFieldDefinitions.$inferSelect,
+  input: UpsertCustomFieldValueInput,
+): unknown {
+  const value = jsonbValueFromTypedCustomFieldValue(definition.fieldType, input)
+  const expectedColumns =
+    definition.fieldType === "monetary"
+      ? new Set<(typeof typedValueColumns)[number]>(["monetaryValueCents", "currencyCode"])
+      : new Set<(typeof typedValueColumns)[number]>([
+          definition.fieldType === "double"
+            ? "numberValue"
+            : definition.fieldType === "date"
+              ? "dateValue"
+              : definition.fieldType === "boolean"
+                ? "booleanValue"
+                : ["set", "json", "address"].includes(definition.fieldType)
+                  ? "jsonValue"
+                  : "textValue",
+        ])
+  const unexpected = typedValueColumns.filter(
+    (column) => !expectedColumns.has(column) && input[column] != null,
+  )
+  const coreDefinition = customFieldDefinitionFromRow(definition)
+  if (!coreDefinition) {
+    throw new RequestValidationError(`custom field "${definition.key}" is not active`)
+  }
+  const result = validateCustomFields(
+    createCustomFieldRegistry([coreDefinition]),
+    definition.entityType,
+    { [definition.namespace]: { [definition.key]: value } },
+  )
+  const validated = result.value[definition.namespace]?.[definition.key]
+  if (!result.ok || validated === undefined || unexpected.length > 0) {
+    const messages = [
+      ...result.errors.map((error) => error.message),
+      ...(validated === undefined ? ["must provide a non-null value"] : []),
+      ...(unexpected.length > 0
+        ? [`unexpected typed value column(s): ${unexpected.join(", ")}`]
+        : []),
+    ]
+    throw new RequestValidationError(`Invalid value for custom field "${definition.key}"`, {
+      fields: {
+        fieldErrors: { [`${definition.namespace}.${definition.key}`]: messages },
+        formErrors: [],
+      },
+    })
+  }
+  return validated
 }
 
 export type CustomFieldValueRow = {
@@ -186,7 +248,7 @@ export function createCustomFieldValueService(
           `custom field "${definition.key}" belongs to ${definition.entityType}, not ${input.entityType}`,
         )
       }
-      const value = jsonbValueFromTypedCustomFieldValue(definition.fieldType, input)
+      const value = validatedJsonbValue(definition, input)
       const updated = await operationFor(operations, definition.entityType).upsert(
         tx,
         ownerContext(owner),

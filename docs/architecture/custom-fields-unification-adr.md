@@ -4,7 +4,7 @@
 decision with database-only authority, operator/app ownership, and
 collision-proof namespaces.
 
-- **Status:** Accepted (implementation in phases)
+- **Status:** Accepted and implemented
 - **Date:** 2026-06-17
 - **Supersedes:** the split between `@voyant-travel/core/custom-fields` (registry + `custom_fields` jsonb column, adopted on `booking`) and the relationships EAV custom-fields system (`custom_field_definitions` + `custom_field_values`).
 - **Context:** consolidated-deployments RFC — "custom fields without forking" (the 20%).
@@ -52,8 +52,8 @@ on the entity. `custom_field_values` is retired.**
    - Runtime DB: `custom_field_definitions` rows (operator-created at runtime via
      the generic `@voyant-travel/custom-fields` Settings CRUD + UI).
    - `loadCustomFieldRegistry(db)` reads and maps persisted definitions on each
-     request. Project-local declarations are deprecated compatibility surface
-     only and cannot shadow database definitions.
+     request. Project-local declarations, discovery globs, and code/database
+     merge helpers do not exist.
 3. **The registry is resolved per request** through the typed
    `custom-fields.runtime` graph port. The provider reads persisted definitions;
    Bookings, Relationships, and Finance consume the same runtime without host
@@ -80,33 +80,30 @@ on the entity. `custom_field_values` is retired.**
    trusted owner-scoped value operations derive app/platform namespaces from
    server context. Definition rename/delete side effects are delegated to the
    package that owns the target table.
+8. **Generic value API ownership.** The generic custom-fields module owns the
+   canonical definition and value routes. Entity-owning packages contribute
+   typed list/upsert/delete operations through the selected deployment graph;
+   Relationships has no forwarding route or service adapter.
 
 ## Migration
 
 1. Add `custom_fields jsonb default '{}'` to `people`, `organizations`, and the
    other EAV entities (`quotes`, `activities`). (Schema + framework bundle.)
-2. **Backfill** — for each `custom_field_values` row, group by
-   `(entityType, entityId)`, map each typed value column to its scalar/struct
-   form (`text_value`→string, `number_value`→number, `date_value`→ISO,
-   `boolean_value`→bool, `monetary_value_cents`+`currency_code`→`{amountCents,
-   currency}`, `json_value`→as-is), key by the definition's `key`, and write the
-   object into the entity's `custom_fields` column. One data migration, idempotent.
-3. **Repoint the value API** — `upsertCustomFieldValue` / `listCustomFieldValues`
-   / `deleteCustomFieldValue` read+write the entity's `custom_fields` column
-   instead of `custom_field_values`. The admin "set value" UX is unchanged.
-4. **Retire `custom_field_values`** once backfill + repoint ship and bake
-   (drop the table in a later migration). `custom_field_definitions` stays.
-5. **Wrap pre-cutline entity JSON under `custom`.** The owning Bookings, Quotes,
+2. **Repoint the generic value API** to read and write the entity's
+   `custom_fields[namespace][key]` value.
+3. **Retire `custom_field_values` directly.** Custom fields had no production
+   adoption, so the cutline intentionally has no EAV backfill, compatibility
+   reader, or transitional adapter. `custom_field_definitions` stays.
+4. **Wrap pre-cutline entity JSON under `custom`.** The owning Bookings, Quotes,
    and Relationships packages each migrate only their own tables. Custom fields
    had no production adoption at this cutline, so this is a one-way migration
    with no flat compatibility reader or telemetry seam.
 
 ## Phases (each its own PR)
 
-1. **Type model + registry merge (no storage change). ✅ landed.**
+1. **Type model + registry projection (no storage change). ✅ landed.**
    - 1a — `core`'s `CustomFieldType` superset (`multiselect`/`monetary`/`json`) +
-     `validateCustomFields`; the historical merge helper remains deprecated
-     compatibility surface until #3401.
+     `validateCustomFields`.
    - 1b — `loadCustomFieldDefinitions(db)` in relationships (DB→registry mapping);
      `customFields` injection becomes a per-request `CustomFieldRegistryResolver`
      backed exclusively by the database; `booking` moved onto it. Pure addition;
@@ -116,21 +113,15 @@ on the entity. `custom_field_values` is retired.**
    accounts route validates person/org writes against the resolved registry
    (`validateRelationshipsCustomFields`); reads return the column. The
    relationships factory moved Tier 1 → 2 to receive `capabilities.customFields`.
-3. **Repoint the value API + backfill. ✅ landed.**
+3. **Repoint the generic value API. ✅ landed.**
    - 3a — `custom_fields` column on `quotes` + `activities` (bundle `0003`).
-   - 3b — `upsert/list/deleteCustomFieldValue` read/write the entity column
-     (synthetic value-ids `entityType::entityId::definitionId`; bidirectional
-     typed↔jsonb mapping; cross-table writes via `sql.identifier`). Round-trip
-     integration-tested.
-   - 3c — package-owned post-cutline data migration (merge-safe `backfilled ||
-     current`), applied automatically during the graph migration plan.
+   - 3b — the generic custom-fields package owns list/upsert/delete orchestration
+     and namespace-bearing synthetic ids; entity packages contribute only their
+     own table operations.
 4. **Retire `custom_field_values`** + export/invoice/search consume
    `customFieldsVisibleIn`.
-   - 4a — table removed from the schema. The package-owned migration copies and
-     validates every legacy row before dropping the table in the same
-     transaction; unknown entity types, missing definitions, missing target
-     tables, and orphaned entity ids abort without data loss. The older bundle
-     guard remains immutable migration history. ✅ landed.
+   - 4a — the unused table is removed directly, with no backfill or compatibility
+     fallback. ✅ landed.
    - 4b — readers consume `customFieldsVisibleIn`.
      - **Export ✅** — the people CSV export appends a column per export-visible
        custom field (`exportPeopleCsv` + `resolveVisibleCustomFields`).
@@ -150,6 +141,13 @@ on the entity. `custom_field_values` is retired.**
    - Same-key values in two namespaces round-trip independently.
    - Package-owned lifecycle providers perform namespace-scoped definition
      rename/delete cleanup.
+6. **Retire local authoring and compatibility seams. ✅ landed.**
+   - Removed project-local TypeScript declarations, discovery globs, executable
+     validation callbacks, and code/database merge precedence.
+   - Moved value routes and orchestration from Relationships to the generic
+     custom-fields package.
+   - Added architecture checks that reject restored authoring conventions,
+     Relationships adapters, and flat-value paths.
 
 ## Consequences
 

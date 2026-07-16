@@ -7,7 +7,7 @@
  * The free-form `metadata` jsonb most entities already carry is the unstructured
  * escape hatch (Medusa's model); this registry turns a *declared* subset of that
  * space into fields that are:
- *   - **validated** on write (type / required / options / custom rule),
+ *   - **validated** on write (type / required / options),
  *   - **visibility-aware** — each field declares whether it surfaces in exports,
  *     invoices, and search, so those readers can consult the registry instead of
  *     dumping or hiding everything,
@@ -19,9 +19,9 @@
  */
 
 /**
- * The supported types a custom field can hold — the canonical superset across
- * code-declared and runtime (DB-defined) fields (see the custom-fields
- * unification ADR). Runtime equivalents map in: `varchar`→`text`, `double`→
+ * The supported types a custom field can hold — the canonical persisted
+ * definition model (see the custom-fields unification ADR). Runtime equivalents
+ * map in: `varchar`→`text`, `double`→
  * `number`, `enum`→`select`, `set`→`multiselect`, `address`/`phone`→`json`.
  */
 export type CustomFieldType =
@@ -103,13 +103,18 @@ export type CustomFieldVisibilityChannel = keyof CustomFieldVisibility
 
 export type {
   CustomFieldsRuntime,
+  CustomFieldValueDefinitionContext,
   CustomFieldValueDefinitionIdentity,
+  CustomFieldValueEntityValues,
   CustomFieldValueLifecycleRuntime,
+  CustomFieldValueOperationsRuntime,
+  CustomFieldValueOwnerContext,
   CustomFieldValueReaderRuntime,
 } from "./runtime-port.js"
 export {
   customFieldsRuntimePort,
   customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
   customFieldValueReaderRuntimePort,
 } from "./runtime-port.js"
 

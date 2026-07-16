@@ -19,6 +19,12 @@ describe("finance custom-field runtime", () => {
           field: () => undefined,
           forEntity: () => [],
         }),
+        resolveRegistryForWrite: async () => ({
+          all: () => [],
+          entities: () => [],
+          field: () => undefined,
+          forEntity: () => [],
+        }),
         resolveVisibleValues,
       },
       {

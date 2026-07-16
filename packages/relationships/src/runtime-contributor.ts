@@ -193,6 +193,8 @@ export function createRelationshipsRuntimePortContribution(
     [relationshipsRouteRuntimePort.id]: {
       customFields: async (db) =>
         (await customFieldsRuntime).resolveRegistry(db as PostgresJsDatabase),
+      customFieldsForWrite: async (db, entity) =>
+        (await customFieldsRuntime).resolveRegistryForWrite(db as PostgresJsDatabase, entity),
     } satisfies RelationshipsRouteRuntimeOptions,
     [relationshipsMiceRuntimePort.id]: {
       personExists: async (db, personId) =>

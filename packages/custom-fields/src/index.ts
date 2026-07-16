@@ -1,5 +1,10 @@
 export * from "./contracts.js"
-export { loadCustomFieldDefinitions, loadCustomFieldRegistry } from "./registry.js"
+export {
+  customFieldDefinitionFromRow,
+  loadCustomFieldDefinitions,
+  loadCustomFieldRegistry,
+  loadCustomFieldRegistryForWrite,
+} from "./registry.js"
 export {
   customFieldDefinitions,
   customFieldLifecycleStateEnum,

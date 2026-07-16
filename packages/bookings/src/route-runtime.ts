@@ -134,8 +134,8 @@ export interface BookingRouteRuntime {
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
   recordCancellationFinancialSettlement?: RecordCancellationFinancialSettlement
-  /** Deployment custom-field registry — validates `customFields` on write. */
-  customFields?: CustomFieldRegistryResolver
+  /** Transaction-locking registry resolver used by entity writes. */
+  customFieldsForWrite?: CustomFieldRegistryResolver
   /** Per-`booking_item_type` public-overview enrichers (issue #2969). */
   overviewItemEnrichers?: Partial<Record<string, BookingOverviewItemEnricher>>
 }
@@ -160,7 +160,7 @@ export interface BookingRouteRuntimeOptions {
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
   closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
   recordCancellationFinancialSettlement?: RecordCancellationFinancialSettlement
-  customFields?: CustomFieldRegistryResolver
+  customFieldsForWrite?: CustomFieldRegistryResolver
   overviewItemEnrichers?: Partial<Record<string, BookingOverviewItemEnricher>>
 }
 
@@ -198,7 +198,7 @@ export function buildBookingRouteRuntime(
     resolveBillingOrganizationById: options.resolveBillingOrganizationById,
     closePaymentSchedulesForBooking: options.closePaymentSchedulesForBooking,
     recordCancellationFinancialSettlement: options.recordCancellationFinancialSettlement,
-    customFields: options.customFields,
+    customFieldsForWrite: options.customFieldsForWrite,
     overviewItemEnrichers: options.overviewItemEnrichers,
   }
 }
