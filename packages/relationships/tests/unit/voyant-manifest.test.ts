@@ -6,6 +6,7 @@ import {
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/custom-fields"
 import { assertPortConforms } from "@voyant-travel/core/project"
+import { customFieldValueOperationsRuntimePort } from "@voyant-travel/core/runtime-port"
 import { describe, expect, it, vi } from "vitest"
 import { createRelationshipsVoyantRuntime, relationshipsRouteRuntimePort } from "../../src/index.js"
 import { RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
@@ -27,6 +28,7 @@ describe("relationships deployment manifest", () => {
           { id: relationshipsRouteRuntimePort.id },
           { id: customFieldValueReaderRuntimePort.id },
           { id: customFieldValueLifecycleRuntimePort.id },
+          { id: customFieldValueOperationsRuntimePort.id },
         ],
       },
       runtimePorts: [{ id: customFieldsRuntimePort.id }, { id: "relationships.route-runtime" }],

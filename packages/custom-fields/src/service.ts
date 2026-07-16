@@ -1,4 +1,7 @@
-import type { CustomFieldValueLifecycleRuntime } from "@voyant-travel/core/runtime-port"
+import type {
+  CustomFieldValueLifecycleRuntime,
+  CustomFieldValueOperationsRuntime,
+} from "@voyant-travel/core/runtime-port"
 import { ApiHttpError } from "@voyant-travel/hono"
 import { and, eq, inArray, isNull, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -10,6 +13,7 @@ import type {
 import { customFieldDefinitions } from "./schema.js"
 import { normalizeCustomFieldVisibility } from "./target-capabilities.js"
 import type { CustomFieldTarget } from "./targets.js"
+import { createCustomFieldValueService } from "./value-service.js"
 
 const PHYSICAL_NAMESPACE = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/
 
@@ -112,6 +116,7 @@ function ownerWhere(owner: CustomFieldDefinitionOwner) {
 export function createCustomFieldsService(
   targets: ReadonlyMap<string, CustomFieldTarget>,
   valueLifecycles: readonly CustomFieldValueLifecycleRuntime[] = [],
+  valueOperations: readonly CustomFieldValueOperationsRuntime[] = [],
 ) {
   const targetIds = [...targets.keys()]
 
@@ -374,6 +379,7 @@ export function createCustomFieldsService(
     removeForOwner(db: PostgresJsDatabase, owner: CustomFieldDefinitionOwner, id: string) {
       return remove(db, id, owner)
     },
+    values: createCustomFieldValueService(valueOperations),
   }
 }
 

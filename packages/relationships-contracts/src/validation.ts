@@ -37,10 +37,6 @@ export {
   communicationListQuerySchema,
   insertCommunicationLogSchema,
 } from "./validation/communication-log.js"
-export {
-  customFieldValueListQuerySchema,
-  upsertCustomFieldValueSchema,
-} from "./validation/custom-fields.js"
 export type {
   CustomerSignalInput,
   CustomerSignalListQueryInput,

@@ -8,6 +8,7 @@ import {
 import {
   customFieldsRuntimePort,
   customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 
 import { BOOKING_VOYANT_ACTIONS } from "./action-declarations.js"
@@ -290,6 +291,7 @@ export const bookingsVoyantModule = defineModule({
     ports: [
       providePort(actionLedgerBookingDriftRuntimePort),
       providePort(customFieldValueLifecycleRuntimePort),
+      providePort(customFieldValueOperationsRuntimePort),
     ],
   },
   api: [

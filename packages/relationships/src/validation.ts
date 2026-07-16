@@ -29,7 +29,6 @@ export {
   customerSignalSourceSchema,
   customerSignalStatusSchema,
   customFieldTargetSchema,
-  customFieldValueListQuerySchema,
   entityTypeSchema,
   insertActivityLinkSchema,
   insertActivityParticipantSchema,
@@ -75,5 +74,4 @@ export {
   updatePersonProfilePiiSchema,
   updatePersonRelationshipSchema,
   updatePersonSchema,
-  upsertCustomFieldValueSchema,
 } from "@voyant-travel/relationships-contracts"

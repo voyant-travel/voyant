@@ -161,7 +161,6 @@ export {
   customerSignalPrioritySchema,
   customerSignalSourceSchema,
   customerSignalStatusSchema,
-  customFieldValueListQuerySchema,
   insertActivityLinkSchema,
   insertActivityParticipantSchema,
   insertActivitySchema,
@@ -197,6 +196,5 @@ export {
   updatePersonProfilePiiSchema,
   updatePersonRelationshipSchema,
   updatePersonSchema,
-  upsertCustomFieldValueSchema,
 } from "./validation.js"
 export { CUSTOMER_SIGNAL_CREATED_EVENT, emitCustomerSignalCreated, relationshipsService }

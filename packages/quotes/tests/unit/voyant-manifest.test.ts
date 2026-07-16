@@ -27,6 +27,7 @@ describe("quotes deployment manifests", () => {
           { id: "quotes.checkout-inquiry.runtime" },
           { id: "quotes.runtime" },
           { id: "custom-fields.value-lifecycle" },
+          { id: "custom-fields.value-operations" },
         ],
       },
       api: [

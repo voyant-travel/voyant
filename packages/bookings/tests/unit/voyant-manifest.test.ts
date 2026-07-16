@@ -23,6 +23,7 @@ describe("bookings deployment manifest", () => {
         ports: [
           { id: "action-ledger.booking-drift-runtime" },
           { id: "custom-fields.value-lifecycle" },
+          { id: "custom-fields.value-operations" },
         ],
       },
       runtime: { entry: "@voyant-travel/bookings", export: "createBookingsVoyantRuntime" },

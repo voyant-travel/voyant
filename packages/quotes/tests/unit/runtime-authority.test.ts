@@ -54,6 +54,7 @@ describe("quotes deployment authority", () => {
           { id: "quotes.checkout-inquiry.runtime" },
           { id: "quotes.runtime" },
           { id: "custom-fields.value-lifecycle" },
+          { id: "custom-fields.value-operations" },
         ],
       },
       runtimePorts: [{ id: "quotes.runtime" }, { id: "trips.routes-runtime" }],

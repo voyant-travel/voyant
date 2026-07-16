@@ -2,6 +2,7 @@ import { defineModule, providePort, requirePort } from "@voyant-travel/core/proj
 import {
   customFieldsRuntimePort,
   customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 
@@ -16,6 +17,10 @@ export const customFieldsVoyantModule = defineModule({
       cardinality: "many",
     }),
     requirePort(customFieldValueLifecycleRuntimePort, {
+      optional: true,
+      cardinality: "many",
+    }),
+    requirePort(customFieldValueOperationsRuntimePort, {
       optional: true,
       cardinality: "many",
     }),

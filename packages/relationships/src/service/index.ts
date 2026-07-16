@@ -1,6 +1,5 @@
 import { accountsService } from "./accounts.js"
 import { activitiesService } from "./activities.js"
-import { customFieldsService } from "./custom-fields.js"
 import { customerSignalsService } from "./customer-signals.js"
 import { personDocumentsService } from "./person-documents.js"
 import { personRelationshipsService } from "./person-relationships.js"
@@ -8,7 +7,6 @@ import { personRelationshipsService } from "./person-relationships.js"
 export const relationshipsService = {
   ...accountsService,
   ...activitiesService,
-  ...customFieldsService,
   ...personDocumentsService,
   ...personRelationshipsService,
   ...customerSignalsService,

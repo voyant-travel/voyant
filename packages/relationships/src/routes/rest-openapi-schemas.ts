@@ -76,28 +76,6 @@ export const activityParticipantSchema = z.object({
   createdAt: isoTimestamp,
 })
 
-/**
- * Custom-field values no longer have their own rows (custom-fields unification
- * ADR); the value API reconstructs this synthetic shape from each entity's
- * `custom_fields` jsonb. `id` is the `entityType::entityId::namespace::definitionId`
- * synthetic key; exactly one typed column is populated per `fieldType`.
- */
-export const customFieldValueSchema = z.object({
-  id: z.string(),
-  definitionId: z.string(),
-  entityType: z.string(),
-  entityId: z.string(),
-  namespace: z.string(),
-  key: z.string(),
-  textValue: z.string().nullable(),
-  numberValue: z.number().nullable(),
-  dateValue: z.string().nullable(),
-  booleanValue: z.boolean().nullable(),
-  monetaryValueCents: z.number().int().nullable(),
-  currencyCode: z.string().nullable(),
-  jsonValue: z.union([jsonRecord, z.array(z.string())]).nullable(),
-})
-
 // --- customer signals -------------------------------------------------------
 
 export const customerSignalSchema = z.object({

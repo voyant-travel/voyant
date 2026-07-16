@@ -4,7 +4,10 @@ import {
   providePort,
   requirePort,
 } from "@voyant-travel/core/project"
-import { customFieldValueLifecycleRuntimePort } from "@voyant-travel/core/runtime-port"
+import {
+  customFieldValueLifecycleRuntimePort,
+  customFieldValueOperationsRuntimePort,
+} from "@voyant-travel/core/runtime-port"
 import { checkoutInquiryRuntimePort } from "@voyant-travel/quotes-contracts/runtime-port"
 import { tripsRoutesRuntimePort } from "@voyant-travel/trips/runtime-port"
 import {
@@ -51,6 +54,7 @@ export const quotesVoyantModule = defineModule({
       providePort(checkoutInquiryRuntimePort),
       providePort(quotesRuntimePort),
       providePort(customFieldValueLifecycleRuntimePort),
+      providePort(customFieldValueOperationsRuntimePort),
     ],
   },
   api: [

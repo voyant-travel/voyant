@@ -17,6 +17,15 @@
       "get": { "summary": "Get a custom-field definition" },
       "patch": { "summary": "Update a custom-field definition" },
       "delete": { "summary": "Delete a custom-field definition" }
+    },
+    "/v1/admin/custom-fields/values": {
+      "get": { "summary": "List custom-field values" }
+    },
+    "/v1/admin/custom-fields/{id}/value": {
+      "put": { "summary": "Upsert a custom-field value" }
+    },
+    "/v1/admin/custom-fields/values/{id}": {
+      "delete": { "summary": "Delete a custom-field value" }
     }
   }
 }

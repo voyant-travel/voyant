@@ -12,6 +12,10 @@ import {
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/custom-fields"
 import type { VoyantPort } from "@voyant-travel/core/project"
+import {
+  type CustomFieldValueOperationsRuntime,
+  customFieldValueOperationsRuntimePort,
+} from "@voyant-travel/core/runtime-port"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
@@ -74,6 +78,73 @@ const relationshipCustomFieldValues: CustomFieldValueLifecycleRuntime = {
   },
 }
 
+const relationshipCustomFieldValueOperations: CustomFieldValueOperationsRuntime = {
+  supports: (entityType) => entityType in relationshipCustomFieldTables,
+  async list(db, _owner, input) {
+    const table =
+      relationshipCustomFieldTables[input.entityType as keyof typeof relationshipCustomFieldTables]
+    if (!table) return []
+    const database = db as PostgresJsDatabase
+    const rows = input.entityId
+      ? await database.execute(
+          sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE id = ${input.entityId}`,
+        )
+      : await database.execute(
+          sql`SELECT id, custom_fields FROM ${sql.identifier(table)} WHERE custom_fields <> '{}'::jsonb ORDER BY updated_at DESC`,
+        )
+    return Array.from(rows, (row) => ({
+      entityId: String(row.id),
+      customFields: (row.custom_fields as Record<string, unknown> | null) ?? {},
+    }))
+  },
+  async upsert(db, _owner, input) {
+    const table =
+      relationshipCustomFieldTables[
+        input.definition.entityType as keyof typeof relationshipCustomFieldTables
+      ]
+    if (!table) return false
+    const database = db as PostgresJsDatabase
+    const updated = Array.from(
+      await database.execute(
+        sql`UPDATE ${sql.identifier(table)}
+            SET custom_fields = jsonb_set(
+                  custom_fields,
+                  ARRAY[${input.definition.namespace}]::text[],
+                  COALESCE(custom_fields -> ${input.definition.namespace}, '{}'::jsonb)
+                    || jsonb_build_object(
+                      ${input.definition.key}::text,
+                      ${JSON.stringify(input.value)}::jsonb
+                    ),
+                  true
+                ),
+                updated_at = now()
+            WHERE id = ${input.entityId}
+            RETURNING id`,
+      ),
+    )
+    return updated.length > 0
+  },
+  async delete(db, _owner, input) {
+    const table =
+      relationshipCustomFieldTables[
+        input.definition.entityType as keyof typeof relationshipCustomFieldTables
+      ]
+    if (!table) return false
+    const database = db as PostgresJsDatabase
+    const deleted = Array.from(
+      await database.execute(
+        sql`UPDATE ${sql.identifier(table)}
+            SET custom_fields = custom_fields #- ARRAY[${input.definition.namespace}, ${input.definition.key}]::text[],
+                updated_at = now()
+            WHERE id = ${input.entityId}
+              AND custom_fields -> ${input.definition.namespace} ? ${input.definition.key}
+            RETURNING id`,
+      ),
+    )
+    return deleted.length > 0
+  },
+}
+
 interface RelationshipsRuntimeContributorHost {
   getRuntimePort<T>(port: Pick<VoyantPort<T>, "id">): T | Promise<T>
 }
@@ -118,6 +189,7 @@ export function createRelationshipsRuntimePortContribution(
     [storefrontIntakeRuntimePortReference.id]: createStorefrontIntakePersistence(),
     [customFieldValueReaderRuntimePort.id]: customFields,
     [customFieldValueLifecycleRuntimePort.id]: relationshipCustomFieldValues,
+    [customFieldValueOperationsRuntimePort.id]: relationshipCustomFieldValueOperations,
     [relationshipsRouteRuntimePort.id]: {
       customFields: async (db) =>
         (await customFieldsRuntime).resolveRegistry(db as PostgresJsDatabase),

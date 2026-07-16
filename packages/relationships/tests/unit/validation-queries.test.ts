@@ -5,28 +5,7 @@ import {
   communicationListQuerySchema,
   organizationListQuerySchema,
   personListQuerySchema,
-  upsertCustomFieldValueSchema,
 } from "../../src/validation.js"
-
-describe("Custom field value upsert schema", () => {
-  it("requires entityType and entityId", () => {
-    const result = upsertCustomFieldValueSchema.parse({
-      entityType: "organization",
-      entityId: "crm_org_abc",
-      textValue: "hello",
-    })
-    expect(result.entityType).toBe("organization")
-    expect(result.entityId).toBe("crm_org_abc")
-  })
-
-  it("rejects missing entityType", () => {
-    expect(() => upsertCustomFieldValueSchema.parse({ entityId: "crm_org_abc" })).toThrow()
-  })
-
-  it("rejects missing entityId", () => {
-    expect(() => upsertCustomFieldValueSchema.parse({ entityType: "organization" })).toThrow()
-  })
-})
 
 describe("Communication list query schema", () => {
   it("applies pagination defaults", () => {

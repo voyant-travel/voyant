@@ -1,5 +1,8 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
-import type { CustomFieldValueLifecycleRuntime } from "@voyant-travel/core/runtime-port"
+import type {
+  CustomFieldValueLifecycleRuntime,
+  CustomFieldValueOperationsRuntime,
+} from "@voyant-travel/core/runtime-port"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
@@ -8,8 +11,13 @@ import {
   customFieldTypeSchema,
   updateCustomFieldDefinitionSchema,
 } from "./contracts.js"
-import { createCustomFieldsService } from "./service.js"
+import { createCustomFieldsService, operatorCustomFieldDefinitionOwner } from "./service.js"
 import type { CustomFieldTarget } from "./targets.js"
+import {
+  customFieldValueListQuerySchema,
+  customFieldValueSchema,
+  upsertCustomFieldValueSchema,
+} from "./value-contracts.js"
 
 type Env = {
   Variables: {
@@ -31,6 +39,12 @@ const definitionSchema = customFieldDefinitionInputSchema.extend({
 const idParamSchema = z.object({ id: z.string() })
 const errorSchema = z.object({ error: z.string() })
 const successSchema = z.object({ success: z.literal(true) })
+const customFieldValueListResponseSchema = z.object({
+  data: z.array(customFieldValueSchema),
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number(),
+})
 const targetSchema = z.object({
   id: z.string(),
   namespace: z.string(),
@@ -56,9 +70,14 @@ export function createCustomFieldRoutes(
   options: {
     includeTargets?: boolean
     valueLifecycles?: readonly CustomFieldValueLifecycleRuntime[]
+    valueOperations?: readonly CustomFieldValueOperationsRuntime[]
   } = {},
 ) {
-  const service = createCustomFieldsService(targets, options.valueLifecycles)
+  const service = createCustomFieldsService(
+    targets,
+    options.valueLifecycles,
+    options.valueOperations,
+  )
   const routes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
 
   if (options.includeTargets !== false) {
@@ -208,6 +227,83 @@ export function createCustomFieldRoutes(
       return row
         ? c.json({ success: true } as const, 200)
         : c.json({ error: "Custom field not found" }, 404)
+    },
+  )
+
+  routes.openapi(
+    createRoute({
+      method: "get",
+      path: "/values",
+      request: { query: customFieldValueListQuerySchema },
+      responses: {
+        200: {
+          description: "Paginated list of custom-field values",
+          ...jsonContent(customFieldValueListResponseSchema),
+        },
+        400: { description: "Unsupported custom-field target", ...jsonContent(errorSchema) },
+      },
+    }),
+    async (c) =>
+      c.json(
+        await service.values.listForOwner(
+          c.get("db"),
+          operatorCustomFieldDefinitionOwner,
+          c.req.valid("query"),
+        ),
+        200,
+      ),
+  )
+
+  routes.openapi(
+    createRoute({
+      method: "put",
+      path: "/{id}/value",
+      request: { params: idParamSchema, ...requiredJsonBody(upsertCustomFieldValueSchema) },
+      responses: {
+        200: {
+          description: "The upserted custom-field value",
+          ...jsonContent(z.object({ data: customFieldValueSchema })),
+        },
+        400: { description: "invalid_request", ...jsonContent(errorSchema) },
+        404: {
+          description: "Custom-field definition or entity not found",
+          ...jsonContent(errorSchema),
+        },
+      },
+    }),
+    async (c) =>
+      c.json(
+        {
+          data: await service.values.upsertForOwner(
+            c.get("db"),
+            operatorCustomFieldDefinitionOwner,
+            c.req.valid("param").id,
+            c.req.valid("json"),
+          ),
+        },
+        200,
+      ),
+  )
+
+  routes.openapi(
+    createRoute({
+      method: "delete",
+      path: "/values/{id}",
+      request: { params: idParamSchema },
+      responses: {
+        200: { description: "Custom-field value deleted", ...jsonContent(successSchema) },
+        404: { description: "Custom-field value not found", ...jsonContent(errorSchema) },
+      },
+    }),
+    async (c) => {
+      const row = await service.values.deleteForOwner(
+        c.get("db"),
+        operatorCustomFieldDefinitionOwner,
+        c.req.valid("param").id,
+      )
+      return row
+        ? c.json({ success: true } as const, 200)
+        : c.json({ error: "Custom field value not found" }, 404)
     },
   )
 

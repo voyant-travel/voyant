@@ -22,7 +22,10 @@ import {
   segmentMembers,
 } from "../schema.js"
 import { hydratePeople, organizationEntityType, personEntityType } from "./accounts-shared.js"
-import { entityTableName } from "./custom-fields-value-mapping.js"
+
+function relationshipEntityTableName(entityType: "person" | "organization") {
+  return entityType === "person" ? "people" : "organizations"
+}
 
 export class RelationshipsMergeError extends Error {
   readonly status: 400 | 404
@@ -295,11 +298,10 @@ async function mergeEntityLinks(
 
   // Merge each namespace independently so a keeper collision wins at the field
   // key without discarding unrelated values from the loser's same namespace.
-  const table = entityTableName(entityType)
-  if (table) {
-    // agent-quality: raw-sql reviewed -- owner: relationships; table names come from the closed entityTableName mapping and values remain bound parameters.
-    await db.execute(
-      sql`UPDATE ${sql.identifier(table)} k
+  const table = relationshipEntityTableName(entityType)
+  // agent-quality: raw-sql reviewed -- owner: relationships; table names come from the closed relationship mapping and values remain bound parameters.
+  await db.execute(
+    sql`UPDATE ${sql.identifier(table)} k
             SET custom_fields = (
                   SELECT COALESCE(
                     jsonb_object_agg(
@@ -318,8 +320,7 @@ async function mergeEntityLinks(
                 updated_at = now()
           FROM ${sql.identifier(table)} m
           WHERE k.id = ${keepId} AND m.id = ${mergeId}`,
-    )
-  }
+  )
 }
 
 async function dedupePersonJoinTables(db: PostgresJsDatabase, keepId: string, mergeId: string) {

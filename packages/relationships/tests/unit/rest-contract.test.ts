@@ -7,7 +7,6 @@ import {
   activityParticipantSchema,
   activitySchema,
   customerSignalSchema,
-  customFieldValueSchema,
   personDocumentRevealSchema,
   personDocumentSchema,
   personRelationshipSchema,
@@ -69,23 +68,6 @@ const activityParticipantRow: InferSelectModel<typeof activityParticipants> = {
   personId: "people_000000000000000000000000",
   isPrimary: true,
   createdAt,
-}
-
-// The value API row is synthetic (no table); assert its declared shape directly.
-const customFieldValueRow: z.infer<typeof customFieldValueSchema> = {
-  id: "person::people_000000000000000000000000::custom::custom_field_definitions_0000000000",
-  definitionId: "custom_field_definitions_0000000000",
-  entityType: "person",
-  entityId: "people_000000000000000000000000",
-  namespace: "custom",
-  key: "loyalty_tier",
-  textValue: "gold",
-  numberValue: null,
-  dateValue: null,
-  booleanValue: null,
-  monetaryValueCents: null,
-  currencyCode: null,
-  jsonValue: null,
 }
 
 const customerSignalRow: InferSelectModel<typeof customerSignals> = {
@@ -161,7 +143,6 @@ const singleCases = [
   ["activity", activitySchema, activityRow],
   ["activity link", activityLinkSchema, activityLinkRow],
   ["activity participant", activityParticipantSchema, activityParticipantRow],
-  ["custom field value", customFieldValueSchema, customFieldValueRow],
   ["customer signal", customerSignalSchema, customerSignalRow],
   ["person document", personDocumentSchema, personDocumentRow],
   ["person relationship", personRelationshipSchema, personRelationshipRow],
@@ -180,11 +161,9 @@ describe("relationships rest single-entity response contracts", () => {
 })
 
 describe("relationships rest list response contracts", () => {
-  // Activities, custom-field values, and customer signals are the
-  // offset-paginated list surfaces.
+  // Activities and customer signals are the offset-paginated list surfaces.
   const listCases = [
     ["activity", activitySchema, activityRow],
-    ["custom field value", customFieldValueSchema, customFieldValueRow],
     ["customer signal", customerSignalSchema, customerSignalRow],
   ] as const
 
