@@ -1,5 +1,12 @@
 # Voyant Module, Provider, Extension, And Plugin Taxonomy
 
+> **Proposed evolution:**
+> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) reserves **app**
+> for separately deployed OAuth installations and removes npm as an app delivery
+> mode. Npm bundles remain deployment-time modules, extensions, adapters, or
+> providers. This guide remains normative for the current package graph until
+> that RFC is accepted.
+
 This guide defines how Voyant should classify reusable packages and extension
 surfaces.
 

@@ -1,5 +1,12 @@
 # Custom Fields
 
+> **Proposed successor:**
+> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) removes
+> deployment-local TypeScript definitions, makes database definitions the sole
+> runtime authority, extracts targets from Relationships, and adds immutable
+> platform-assigned app namespaces. This document describes current behavior
+> until that RFC is accepted and its migration is complete.
+
 Custom fields add typed, visibility-aware fields to core entities without
 forking their owning packages. They are appropriate when a value must be
 validated or intentionally exposed to exports, invoices, or search.

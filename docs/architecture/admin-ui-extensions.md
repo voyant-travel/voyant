@@ -1,5 +1,12 @@
 # Admin UI Extensions
 
+> **Proposed evolution:**
+> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) makes remote OAuth
+> app installations the dynamic source of extension descriptors and replaces
+> the reserved-but-unsupported token request with a short-lived, audience-bound
+> admin session token. This document describes the currently implemented host
+> and protocol until that RFC is accepted and delivered.
+
 The admin UI-extension API lets a first- or third-party bundle render inside a
 Voyant admin surface through a **named insertion slot**, isolated in a
 sandboxed iframe and talking to the host over a versioned `postMessage`

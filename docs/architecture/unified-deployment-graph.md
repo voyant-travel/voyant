@@ -1,5 +1,11 @@
 # Unified Deployment Graph
 
+> **Proposed adjacent runtime model:**
+> [`remote-app-platform-rfc.md`](./remote-app-platform-rfc.md) keeps this graph
+> immutable at runtime and introduces remote OAuth apps as installation data,
+> never graph units. Deployment modules, adapters, and providers remain selected
+> here; operator-installed apps do not.
+
 Status: accepted architecture rule
 
 Related:
